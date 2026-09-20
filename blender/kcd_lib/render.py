@@ -2,6 +2,7 @@
 
 import math
 import os
+import time
 
 import bpy
 from mathutils import Vector
@@ -34,11 +35,21 @@ def setup_world(engine="BLENDER_EEVEE_NEXT", sky=(0.42, 0.60, 0.85)):
 
     if engine.startswith("BLENDER_EEVEE"):
         ee = scene.eevee
-        for attr, val in (("taa_render_samples", 24), ("use_gtao", True),
-                          ("use_shadows", True), ("use_raytracing", False)):
+        # Blender 4.5 (Eevee Next): use_shadows / use_raytracing が既定 False のままだと
+        # 影も水面反射も出ない。ray_tracing_method=SCREEN で site_water に建物が映る。
+        for attr, val in (("taa_render_samples", 32), ("use_gtao", True),
+                          ("use_shadows", True), ("use_raytracing", True),
+                          ("ray_tracing_method", "SCREEN"), ("use_fast_gi", True)):
             if hasattr(ee, attr):
                 try:
                     setattr(ee, attr, val)
+                except Exception:
+                    pass
+        rto = getattr(ee, "ray_tracing_options", None)
+        if rto is not None:
+            for attr, val in (("resolution_scale", "2"), ("screen_trace_quality", 0.5)):
+                try:
+                    setattr(rto, attr, val)
                 except Exception:
                     pass
     elif engine == "BLENDER_WORKBENCH":
@@ -58,7 +69,9 @@ def setup_world(engine="BLENDER_EEVEE_NEXT", sky=(0.42, 0.60, 0.85)):
     sun.data.angle = math.radians(1.5)
     sun.data.color = (1.0, 0.96, 0.88)
     sun.location = (0.0, 0.0, 300.0)
-    sun.rotation_euler = (math.radians(48.0), 0.0, math.radians(-125.0))
+    # 太陽は南西・仰角 50 度（Sun はローカル -Z 方向へ照らす。旧値 (48, 0, -125) は
+    # 光が北西から来る向きになっていて、東京の日照と逆だった）
+    sun.rotation_euler = (math.radians(40.0), 0.0, math.radians(-30.0))
     return sun
 
 
@@ -78,10 +91,30 @@ def make_camera(name, loc, target, lens=35.0):
     return cam
 
 
-def render_to(cam, path):
+def render_to(cam, path, retries=3):
+    """一時ファイルに書いてから置き換える。Windows では書いた直後の PNG を別プロセス
+    （サムネイラ・スキャナ）が掴んで 'Invalid argument' で保存に失敗することがあるので、
+    数回リトライする。"""
     scene = bpy.context.scene
     scene.camera = cam
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    scene.render.filepath = path
-    bpy.ops.render.render(write_still=True)
-    return os.path.exists(path) and os.path.getsize(path) > 0
+    tmp = path[:-4] + ".tmp.png" if path.lower().endswith(".png") else path + ".tmp"
+    for attempt in range(1, retries + 1):
+        scene.render.filepath = tmp
+        try:
+            bpy.ops.render.render(write_still=True)
+        except Exception as exc:  # noqa: BLE001
+            print("[render] %s: %s (attempt %d/%d)" % (os.path.basename(path), exc, attempt, retries))
+            time.sleep(1.5)
+            continue
+        if not (os.path.exists(tmp) and os.path.getsize(tmp) > 0):
+            time.sleep(1.5)
+            continue
+        for _ in range(retries):
+            try:
+                os.replace(tmp, path)
+                return True
+            except OSError as exc:
+                print("[render] replace %s: %s" % (os.path.basename(path), exc))
+                time.sleep(1.5)
+    return False

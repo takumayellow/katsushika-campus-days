@@ -22,7 +22,7 @@ PALETTE = {
     "line_white":      ((0.900, 0.900, 0.880), 0.70, 0.0, 1.0),
     "grass":           ((0.250, 0.430, 0.170), 0.92, 0.0, 1.0),
     "grass_dark":      ((0.310, 0.372, 0.250), 0.93, 0.0, 1.0),
-    "water":           ((0.045, 0.110, 0.130), 0.05, 0.0, 1.0),
+    "water":           ((0.100, 0.340, 0.380), 0.05, 0.0, 0.80),  # 青緑の半透明（site_water）
     "soil":            ((0.400, 0.300, 0.200), 0.94, 0.0, 1.0),
     "sand":            ((0.760, 0.690, 0.520), 0.92, 0.0, 1.0),
     "wood":            ((0.400, 0.260, 0.140), 0.80, 0.0, 1.0),
@@ -37,6 +37,12 @@ PALETTE = {
     "sign_familymart_white": ((0.940, 0.940, 0.930), 0.55, 0.0, 1.0),
     "sign_plate":      ((0.870, 0.870, 0.860), 0.60, 0.0, 1.0),
     "tus_green":       ((0.000, 0.517, 0.239), 0.55, 0.0, 1.0),
+    # 外構小物（自販機・ゴミ箱・駐輪場）
+    "vending_red":     ((0.760, 0.100, 0.090), 0.45, 0.0, 1.0),
+    "vending_blue":    ((0.060, 0.330, 0.720), 0.45, 0.0, 1.0),
+    "bin_green":       ((0.160, 0.400, 0.220), 0.60, 0.0, 1.0),
+    "bike_frame":      ((0.180, 0.180, 0.200), 0.45, 0.60, 1.0),
+    "bike_tire":       ((0.060, 0.060, 0.060), 0.85, 0.0, 1.0),
 }
 
 # 背景建物用のクリーム〜グレー
@@ -67,6 +73,14 @@ def _make(name, rgb, rough, metal, alpha):
     mat.diffuse_color = (rgb[0], rgb[1], rgb[2], alpha)  # Workbench / ビューポート用
     mat.roughness = rough
     mat.metallic = metal
+    if alpha < 1.0:
+        # 半透明（水面）。Eevee Next はブレンド方式を surface_render_method で持つ
+        for attr, val in (("surface_render_method", "BLENDED"), ("blend_method", "BLEND"),
+                          ("show_transparent_back", False)):
+            try:
+                setattr(mat, attr, val)
+            except Exception:
+                pass
     return mat
 
 

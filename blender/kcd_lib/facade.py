@@ -98,11 +98,12 @@ def add_solid(mb, loop, z0, z1, mat, edges=None):
                     (b[0], b[1], z1), (a[0], a[1], z1), mat)
 
 
-def add_parapet(mb, loop, z, h=1.10, t=0.40, mat="concrete_light"):
+def add_parapet(mb, loop, z, h=1.10, t=0.40, mat="concrete_light", edges=None):
     loop = geom.ensure_ccw(geom.dedup(loop))
     inner = geom.offset_polygon(loop, -t)
     n = len(loop)
-    for i in range(n):
+    targets = range(n) if edges is None else [i for i in edges if 0 <= i < n]
+    for i in targets:
         a, b = loop[i], loop[(i + 1) % n]
         ai, bi = inner[i], inner[(i + 1) % n]
         mb.add_quad((a[0], a[1], z), (b[0], b[1], z),

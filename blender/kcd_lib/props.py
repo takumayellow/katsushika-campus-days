@@ -82,7 +82,8 @@ TREE_SPECIES = [
 ]
 
 
-def add_bench(mb, x, y, ang):
+def add_bench(mb, x, y, ang, back=True):
+    """ベンチ。ローカル +v 側に背もたれ（back=True）。"""
     c, s = math.cos(ang), math.sin(ang)
 
     def P(du, dv, z):
@@ -101,6 +102,10 @@ def add_bench(mb, x, y, ang):
     for du in (-0.7, 0.7):
         p = P(du, 0, 0)
         mb.add_box_c(p[0], p[1], 0.0, 0.10, 0.55, 0.40, "metal_grey")
+    if back:
+        add_box_rot(mb, x, y, ang, -0.9, 0.22, 0.50, 0.9, 0.28, 0.92, "wood")
+        for du in (-0.7, 0.7):
+            add_box_rot(mb, x, y, ang, du - 0.03, 0.22, 0.40, du + 0.03, 0.28, 0.50, "metal_grey")
 
 
 def add_lamp(mb, x, y, h=4.0):
@@ -146,3 +151,85 @@ def line_positions(a, b, step, blocked, offset=0.0):
         if not blocked(p[0], p[1]):
             out.append(p)
     return out
+
+
+# --------------------------------------------------------------------------- #
+#  外構小物（看板・駐輪場・自販機・ゴミ箱）
+# --------------------------------------------------------------------------- #
+def _local(x, y, ang):
+    """(x, y) を原点に ang 回転したローカル座標 (du, dv, z) → ワールド 3D 点。"""
+    c, s = math.cos(ang), math.sin(ang)
+
+    def P(du, dv, z):
+        return (x + c * du - s * dv, y + s * du + c * dv, z)
+    return P
+
+
+def add_box_rot(mb, x, y, ang, du0, dv0, z0, du1, dv1, z1, mat, top=True):
+    """ローカル座標 (du, dv) で指定した直方体を ang 回転して置く。"""
+    P = _local(x, y, ang)
+    poly = [P(du0, dv0, 0)[:2], P(du1, dv0, 0)[:2], P(du1, dv1, 0)[:2], P(du0, dv1, 0)[:2]]
+    mb.add_prism(poly, z0, z1, mat, mat if top else None, None)
+
+
+def add_pylon_sign(mb, x, y, ang, zc, w=2.4, h=1.2):
+    """建物名の立て看板。ローカル +u が板の正面（法線）。文字は Unity 側で貼る。"""
+    hw = w * 0.5
+    band = 0.28
+    add_box_rot(mb, x, y, ang, -0.05, -hw, zc - h * 0.5, 0.05, hw, zc + h * 0.5 - band,
+                "sign_plate")
+    add_box_rot(mb, x, y, ang, -0.05, -hw, zc + h * 0.5 - band, 0.05, hw, zc + h * 0.5,
+                "tus_green")
+    P = _local(x, y, ang)
+    for dv in (-hw + 0.25, hw - 0.25):
+        p = P(0.0, dv, 0.0)
+        mb.add_cylinder(p[0], p[1], 0.0, zc - h * 0.5, 0.05, "metal_grey", seg=8,
+                        cap_top=False)
+
+
+def add_bike(mb, x, y, ang):
+    """自転車の粗いシルエット（前後輪 + フレーム + サドル + ハンドル）。ローカル +u が前。"""
+    for du in (-0.55, 0.55):
+        add_box_rot(mb, x, y, ang, du - 0.33, -0.02, 0.0, du + 0.33, 0.02, 0.66, "bike_tire")
+    add_box_rot(mb, x, y, ang, -0.45, -0.025, 0.55, 0.45, 0.025, 0.62, "bike_frame")
+    add_box_rot(mb, x, y, ang, -0.30, -0.025, 0.30, -0.22, 0.025, 0.95, "bike_frame")
+    add_box_rot(mb, x, y, ang, 0.40, -0.025, 0.30, 0.48, 0.025, 1.00, "bike_frame")
+    add_box_rot(mb, x, y, ang, -0.36, -0.12, 0.93, -0.16, 0.12, 0.98, "bike_tire")
+    add_box_rot(mb, x, y, ang, 0.42, -0.28, 0.98, 0.46, 0.28, 1.02, "bike_frame")
+
+
+def add_bike_shed(mb, x, y, ang, length=14.0, depth=2.4, bikes=True):
+    """屋根付き駐輪場。ローカル u = 長手、v = 奥行（-v 側が開口、+v 側が背面の腰壁）。"""
+    P = _local(x, y, ang)
+    hl, hd = length * 0.5, depth * 0.5
+    z_roof = 2.3
+    for du in (-hl + 0.3, hl - 0.3):
+        for dv in (-hd + 0.3, hd - 0.3):
+            p = P(du, dv, 0.0)
+            mb.add_cylinder(p[0], p[1], 0.0, z_roof, 0.06, "metal_grey", seg=8, cap_top=False)
+    add_box_rot(mb, x, y, ang, -hl - 0.2, -hd - 0.3, z_roof, hl + 0.2, hd + 0.3, z_roof + 0.12,
+                "metal_grey")
+    add_box_rot(mb, x, y, ang, -hl, hd - 0.10, 0.0, hl, hd, 1.0, "concrete_light")
+    add_box_rot(mb, x, y, ang, -hl + 0.2, -0.2, 0.0, hl - 0.2, 0.2, 0.12, "concrete_grey")
+    n = int(length / 0.6)
+    for i in range(n):
+        du = -hl + 0.5 + i * 0.6
+        add_box_rot(mb, x, y, ang, du - 0.02, -0.15, 0.12, du + 0.02, 0.15, 0.45, "metal_grey")
+        if bikes and i % 2 == 0:
+            p = P(du, 0.0, 0.0)
+            add_bike(mb, p[0], p[1], ang + math.pi * 0.5)
+
+
+def add_vending(mb, x, y, ang, color="vending_red"):
+    """自販機 1.0 (幅) × 0.75 (奥行) × 1.85 m。ローカル +u が正面。"""
+    add_box_rot(mb, x, y, ang, -0.375, -0.5, 0.0, 0.375, 0.5, 1.85, color)
+    P = _local(x, y, ang)
+    mb.add_quad(P(0.39, -0.42, 0.95), P(0.39, 0.42, 0.95),
+                P(0.39, 0.42, 1.75), P(0.39, -0.42, 1.75), "glass_dark")
+    mb.add_quad(P(0.39, -0.42, 0.25), P(0.39, 0.42, 0.25),
+                P(0.39, 0.42, 0.60), P(0.39, -0.42, 0.60), "metal_grey")
+
+
+def add_trash_can(mb, x, y):
+    mb.add_cylinder(x, y, 0.0, 0.85, 0.28, "bin_green", seg=10, cap_top=True)
+    mb.add_cylinder(x, y, 0.85, 0.92, 0.30, "metal_grey", seg=10, cap_top=True)

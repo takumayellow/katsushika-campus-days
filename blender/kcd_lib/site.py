@@ -14,6 +14,7 @@ Z_FOOT = 0.055
 Z_LINE = 0.070
 Z_MALL = 0.085
 Z_WATER = 0.060
+Z_BASIN_FLOOR = Z_WATER - 0.45
 
 # キャンパスモール（OSM の直線 footway が v = -24 を u = -56..199 で走る）
 MALL_V = -24.0
@@ -176,7 +177,7 @@ def build_basin(mb, frame, occ):
     """図書館南の浅い水盤（石の縁石 + 水面）。"""
     inner = frame.rect(BASIN_U[0], BASIN_V[0], BASIN_U[1], BASIN_V[1])
     outer = geom.offset_polygon(inner, 1.6)
-    mb.add_ngon_flat(inner, Z_WATER, "water")
+    mb.add_ngon_flat(inner, Z_BASIN_FLOOR, "stone_dark")   # 水面は build_water（site_water）
     n = len(inner)
     for i in range(n):
         a, b = inner[i], inner[(i + 1) % n]
@@ -184,7 +185,7 @@ def build_basin(mb, frame, occ):
         mb.add_quad((ao[0], ao[1], 0.36), (bo[0], bo[1], 0.36),
                     (b[0], b[1], 0.36), (a[0], a[1], 0.36), "stone_dark")
         mb.add_quad((a[0], a[1], 0.36), (b[0], b[1], 0.36),
-                    (b[0], b[1], Z_WATER), (a[0], a[1], Z_WATER), "stone_dark")
+                    (b[0], b[1], Z_BASIN_FLOOR), (a[0], a[1], Z_BASIN_FLOOR), "stone_dark")
         mb.add_quad((ao[0], ao[1], Z_CAMPUS), (bo[0], bo[1], Z_CAMPUS),
                     (bo[0], bo[1], 0.36), (ao[0], ao[1], 0.36), "stone_dark")
     occ.stamp_poly(outer, margin=2.0)
@@ -192,6 +193,87 @@ def build_basin(mb, frame, occ):
     deck = frame.rect(BASIN_U[0], BASIN_V[1] + 1.8, BASIN_U[1], MALL_V - MALL_HW)
     mb.add_ngon_flat(deck, Z_FOOT, "stone_light")
     occ.stamp_poly(deck)
+
+
+def build_water(mb, frame):
+    """水盤の水面だけを別メッシュ（site_water）にする。Unity 側で反射・屈折を付けるため。"""
+    inner = frame.rect(BASIN_U[0], BASIN_V[0], BASIN_U[1], BASIN_V[1])
+    mb.add_ngon_flat(inner, Z_WATER, "water")
+
+
+def build_signs(mb, frame, ctx):
+    """各建物の入口脇に立て看板。ctx["sign_placed"] に (id, (x, y), z, yaw) を返す。
+    板の正面は建物の重心から入口へ向かう向き（＝建物から離れる向き）。"""
+    cents = {fid: geom.centroid(fp) for fid, fp, _h in ctx.get("footprints", [])}
+    placed = []
+    for sid, pos, z in ctx["sign"]:
+        c = cents.get(sid)
+        d = geom.sub(pos, c) if c else (0.0, -1.0)
+        if geom.length(d) < 1e-6:
+            d = (0.0, -1.0)
+        d = geom.normalize(d)
+        side = (-d[1], d[0])
+        p = (pos[0] + side[0] * 3.5, pos[1] + side[1] * 3.5)
+        yaw = math.atan2(d[1], d[0])
+        props.add_pylon_sign(mb, p[0], p[1], yaw, z)
+        placed.append((sid, p, z, yaw))
+    ctx["sign_placed"] = placed
+
+
+def build_bike_sheds(mb, frame, occ, hard, ctx, roads=None):
+    """屋根付き駐輪場。講義棟の北側（駐車場の縁）と、正門（モール東端）の近く。
+    campus.json に学生寮は無いので、寮の分は正門側で代替する。
+    roads: 道路・歩道だけの占有。講義棟北は OSM の駐車場エリアなので occ では全面
+    ブロックされる。そこは建物 (hard) と道路 (roads) だけを避ける。"""
+    ang = math.atan2(frame.u[1], frame.u[0])
+    uvbb = ctx.get("uvbb", {})
+    cands = []
+    if "lecture" in uvbb:
+        u0, v0, u1, v1 = uvbb["lecture"]
+        cands.append(("lecture_north", (u0 + u1) * 0.5, v1 + 5.4, 14.0, ang,
+                      [hard] + ([roads] if roads else [])))
+    cands.append(("main_gate", MALL_U1 - 10.0, MALL_V + MALL_HW + 9.0, 12.0, ang, [occ]))
+    placed = []
+    for name, uc, vc, length, a, checks in cands:
+        done = False
+        for dv in (0.0, 3.0, 6.0, 9.0):
+            for du in (0.0, -6.0, 6.0, -12.0, 12.0, -18.0, 18.0):
+                u, v = uc + du, vc + dv
+                rect = frame.rect(u - length * 0.5 - 0.5, v - 1.7, u + length * 0.5 + 0.5, v + 1.7)
+                probe = list(rect) + [frame.xy(u, v), frame.xy(u - length * 0.25, v),
+                                      frame.xy(u + length * 0.25, v)]
+                if any(o.blocked(p[0], p[1]) for o in checks for p in probe):
+                    continue
+                p = frame.xy(u, v)
+                props.add_bike_shed(mb, p[0], p[1], a, length=length)
+                occ.stamp_poly(rect, margin=1.5)
+                hard.stamp_poly(rect, margin=1.0)
+                placed.append((name, u, v))
+                done = True
+                break
+            if done:
+                break
+    ctx["bike_sheds"] = placed
+
+
+def build_amenities(mb_vend, mb_trash, frame, ctx):
+    """食堂（第2研究棟）とコンビニ（共創棟）の入口脇に自販機 2 台とゴミ箱 1 個。"""
+    uvbb = ctx.get("uvbb", {})
+    ang_u = math.atan2(frame.u[1], frame.u[0])
+    spots = []
+    if "research2" in uvbb:
+        u0, v0, u1, v1 = uvbb["research2"]
+        spots.append(((u0 + u1) * 0.5 + 7.0, v0 - 0.95, ang_u - math.pi * 0.5))   # 正面 -v
+    if "kyoso" in uvbb and "kyoso_mall_v" in ctx:
+        u0, v0, u1, v1 = uvbb["kyoso"]
+        sb_u = u0 + (u1 - u0) * 0.30
+        spots.append((sb_u - 3.0, ctx["kyoso_mall_v"] + 1.0, ang_u + math.pi * 0.5))  # 正面 +v
+    for u, v, face in spots:
+        for k, col in enumerate(("vending_red", "vending_blue")):
+            p = frame.xy(u + k * 1.2, v)
+            props.add_vending(mb_vend, p[0], p[1], face, col)
+        p = frame.xy(u + 2.6, v)
+        props.add_trash_can(mb_trash, p[0], p[1])
 
 
 def build_basin_keepout(frame, hard):
@@ -205,7 +287,7 @@ def build_street_furniture(mb, frame, hard):
     ang = math.atan2(frame.u[1], frame.u[0])
     u = MALL_U0 + 6.0
     while u < MALL_U1 - 6.0:
-        for v, a in ((MALL_V - MALL_HW + 3.4, ang),
+        for v, a in ((MALL_V - MALL_HW + 3.4, ang + math.pi),
                      (MALL_V + MALL_HW - 3.4, ang)):
             p = frame.xy(u, v)
             if not hard.blocked(p[0], p[1]):

@@ -44,6 +44,8 @@ FBX_OPTS = dict(
 )
 
 # プレビュー 4 枚。(名前, 視点 (u, v, z), 注視点 (u, v, z), 焦点距離, 樹木の除外半径)
+BG_WINDOW_BUDGET = 24000   # 背景建物の窓（四角 1 枚 = 三角 2）の上限
+
 CAM_SPECS = [
     ("campus_overview", (-30.0, -300.0, 205.0), (28.0, -8.0, 18.0), 35.0, 0.0),
     ("campus_mall", (176.0, -24.5, 1.60), (-20.0, -23.0, 10.0), 28.0, 8.0),
@@ -148,10 +150,33 @@ def build_campus(data, frame, rng, max_trees):
     site_mb = MeshBuilder("site_ground")
     site.build_ground(site_mb, data, frame, occ)
     site.build_paths(site_mb, data, occ)
+    roads = site.Occupancy()     # 道路・歩道だけ（駐輪場の配置判定に使う）
+    site.build_paths(MeshBuilder("_discard_roads"), data, roads)
     site.build_mall(site_mb, frame, occ)
     site.build_basin(site_mb, frame, occ)
     site.build_basin_keepout(frame, hard)
     objects.append(site_mb.to_object(scene_coll))
+    water_mb = MeshBuilder("site_water")
+    site.build_water(water_mb, frame)
+    objects.append(water_mb.to_object(scene_coll))
+
+    # 建物どうしの接触判定（共創棟が第1研究棟に接する辺）と小物配置のために先に集める
+    on_campus = []
+    for b in data["buildings"]:
+        style = b.get("style") or "background"
+        loop = geom.ensure_ccw(geom.dedup(b["footprint"]))
+        if len(loop) >= 3 and style in buildings.BUILDERS and b.get("on_campus"):
+            on_campus.append((b["id"], loop, float(b.get("height") or 10.0)))
+    ctx["footprints"] = on_campus
+    ctx["uvbb"] = {fid: frame.uv_bbox(fp) for fid, fp, _h in on_campus}
+    # 背景建物の窓: 合計が BG_WINDOW_BUDGET 枚に収まるよう間隔を決める
+    spacing = 2.4
+    n_win = sum(buildings.bg_window_count(b, spacing) for b in data["buildings"]
+                if (b.get("style") or "background") not in buildings.BUILDERS
+                or not b.get("on_campus"))
+    if n_win > BG_WINDOW_BUDGET:
+        spacing *= n_win / float(BG_WINDOW_BUDGET)
+    ctx["bg_window_spacing"] = spacing
 
     # --- 建物 ---
     bg_mb = MeshBuilder("bld_background")
@@ -177,6 +202,8 @@ def build_campus(data, frame, rng, max_trees):
         obj["kcd_id"] = b["id"]
         objects.append(obj)
     objects.append(bg_mb.to_object(scene_coll))
+    print("[bg] window quads=%d (spacing %.2f m)"
+          % (ctx.get("bg_window_quads", 0), ctx["bg_window_spacing"]))
 
     # 共創棟はフットプリントを広げているので、そのぶんも占有に反映する
     if "kyoso_rect" in ctx:
@@ -188,11 +215,27 @@ def build_campus(data, frame, rng, max_trees):
     site.build_street_furniture(fur_mb, frame, hard)
     objects.append(fur_mb.to_object(scene_coll))
 
+    # --- 看板・駐輪場・自販機・ゴミ箱 ---
+    sign_mb = MeshBuilder("site_props_signs")
+    site.build_signs(sign_mb, frame, ctx)
+    objects.append(sign_mb.to_object(scene_coll))
+    shed_mb = MeshBuilder("site_props_bikeshed")
+    site.build_bike_sheds(shed_mb, frame, occ, hard, ctx, roads=roads)
+    objects.append(shed_mb.to_object(scene_coll))
+    print("[props] bike sheds: %s" % ", ".join("%s@(u%.0f,v%.0f)" % s for s in ctx["bike_sheds"]))
+    vend_mb = MeshBuilder("site_props_vending")
+    trash_mb = MeshBuilder("site_props_trash")
+    site.build_amenities(vend_mb, trash_mb, frame, ctx)
+    objects.append(vend_mb.to_object(scene_coll))
+    objects.append(trash_mb.to_object(scene_coll))
+
     # --- Empty（入口・看板・プレイヤー初期位置）---
     for eid, pos, z in ctx["entrance"]:
         add_empty("entrance_%s" % eid, (pos[0], pos[1], z), kind="ARROWS")
-    for sid, pos, z in ctx["sign"]:
+    # 看板 Empty は板の位置に置き、+X が板の正面（法線）になるよう回す
+    for sid, pos, z, yaw in ctx.get("sign_placed") or [(s, p, z, 0.0) for s, p, z in ctx["sign"]]:
         add_empty("sign_%s" % sid, (pos[0], pos[1], z), kind="SINGLE_ARROW")
+        bpy.data.objects["sign_%s" % sid].rotation_euler = (0.0, 0.0, yaw)
     spawn = frame.xy(site.MALL_U1 - 12.0, site.MALL_V)
     add_empty("spawn_player", (spawn[0], spawn[1], site.Z_MALL), kind="SPHERE", size=1.0)
 
@@ -293,8 +336,9 @@ def main():
     print("[build] objects=%d  verts=%d  trees=%d  %.1fs"
           % (len(objects), campus_verts, len(trees), t_build - t0))
     for o in sorted(objects, key=lambda x: -len(x.data.vertices)):
-        print("   %-20s %7d verts  %7d faces"
-              % (o.name, len(o.data.vertices), len(o.data.polygons)))
+        tris = sum(len(p.vertices) - 2 for p in o.data.polygons)
+        print("   %-20s %7d verts  %7d faces  %7d tris"
+              % (o.name, len(o.data.vertices), len(o.data.polygons), tris))
 
     campus_fbx = os.path.join(args.out_dir, "campus.fbx")
     size_campus = export_fbx(campus_fbx)

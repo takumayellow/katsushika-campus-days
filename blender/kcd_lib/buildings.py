@@ -2,6 +2,7 @@
 
 import math
 import random
+import zlib
 
 from . import facade, geom
 
@@ -49,11 +50,11 @@ def build_lab_tower(mb, b, frame, ctx):
                       wall="concrete_dark", glass="glass_dark",
                       seg=3.6, sill=0.55, header=0.55, inset=0.55, mullion=0.30)
 
-    # レンガ色の階段コア（南北両面に出っ張る）
+    # レンガ色の階段コア（南面のみ。北面は共創棟が全長で接していて、出っ張ると
+    # 共創棟の躯体に 2.7 m 食い込む）
     for t in (0.10, 0.50, 0.90):
         uc = u0 + (u1 - u0) * t
         _brick_core(mb, frame, uc, v0 - 1.4, v0 + 6.0, 0.0, h + 2.2, lv, fh)
-        _brick_core(mb, frame, uc, v1 - 6.0, v1 + 1.4, 0.0, h + 2.2, lv, fh)
 
     # ガラスのエレベータ塔（南面）
     for t in (0.30, 0.70):
@@ -68,6 +69,7 @@ def build_lab_tower(mb, b, frame, ctx):
                          mat="concrete_light", slab=True, slab_depth=4.0,
                          slab_mat="concrete_light")
 
+    mb.add_ngon_flat(loop, h, "roof_grey")
     facade.add_parapet(mb, loop, h, 1.2, 0.45, "concrete_light")
     _roof_boxes(mb, frame, (u0, v0, u1, v1), h + 1.2, n=3, du=14.0, dv=16.0, h=3.8)
     ctx["entrance"].append((b["id"], frame.xy((u0 + u1) * 0.5, v0 - 6.5), 0.0))
@@ -77,27 +79,61 @@ def build_lab_tower(mb, b, frame, ctx):
 # --------------------------------------------------------------------------- #
 #  共創棟 — 11F・47 m。白ルーバー + ガラス。1F にスタバ / ファミマ
 # --------------------------------------------------------------------------- #
+def _hidden_edges(loop, self_id, ctx, push=0.4):
+    """他棟に接して見えない辺を探す。辺上 3 点を push だけ外へ出し、全部が他棟の
+    フットプリント内なら隠れているとみなす。戻り値 {辺番号: 隠している棟の高さ}。"""
+    out = {}
+    fps = ctx.get("footprints") or []
+    n = len(loop)
+    for i in range(n):
+        a, b = loop[i], loop[(i + 1) % n]
+        d = geom.sub(b, a)
+        L = geom.length(d)
+        if L < 1e-6:
+            continue
+        e = geom.mul(d, 1.0 / L)
+        nrm = (e[1], -e[0])
+        pts = [(a[0] + e[0] * L * t + nrm[0] * push, a[1] + e[1] * L * t + nrm[1] * push)
+               for t in (0.25, 0.5, 0.75)]
+        for fid, fp, fh in fps:
+            if fid == self_id:
+                continue
+            if all(geom.point_in_poly(p, fp) for p in pts):
+                out[i] = max(out.get(i, 0.0), fh)
+    return out
+
+
 def build_kyoso(mb, b, frame, ctx):
-    src = geom.ensure_ccw(geom.dedup(b["footprint"]))
-    u0, v0, u1, v1 = frame.uv_bbox(src)
-    # OSM のフットプリントは奥行 5.6 m しか取れていないので、11F の板状棟として
-    # モール側（+v）へ 10.5 m まで広げる（README に記載の唯一の形状逸脱）。
-    v1 = v0 + 10.5
-    loop = _uv_rect(frame, u0, v0, u1, v1)
+    # OSM 実測のフットプリントをそのまま使う（6 点・722 m²・奥行 5.6〜6.8 m）。
+    loop = geom.ensure_ccw(geom.dedup(b["footprint"]))
+    u0, v0, u1, v1 = frame.uv_bbox(loop)
     h = b["height"]
     lv = b["levels"]
     fh = h / lv
-    MALL_EDGE = 2  # _uv_rect の並びで +v 側
+    n = len(loop)
+
+    def _edge(i):
+        return geom.sub(loop[(i + 1) % n], loop[i])
+
+    # 第1研究棟に接する南辺などは壁を出さない（同一平面で z-fight するだけ）
+    hidden = _hidden_edges(loop, b["id"], ctx)
+    visible = [i for i in range(n) if i not in hidden]
+    louver_edges = [i for i in visible if geom.length(_edge(i)) >= 5.0]
 
     facade.add_facade(mb, loop, 0.0, fh, 1, lv,
                       wall="louver_white", glass="glass_clear",
-                      seg=2.6, sill=0.85, header=0.30, inset=0.32, mullion=0.22)
+                      seg=2.6, sill=0.85, header=0.30, inset=0.32, mullion=0.22,
+                      edges=visible)
     facade.add_louvers(mb, loop, 0.0, fh, 1, lv, mat="louver_white",
-                       depth=0.6, thick=0.10, edges=[MALL_EDGE, 0], per_floor=2)
+                       depth=0.6, thick=0.10, edges=louver_edges, per_floor=2)
     # 1F: ラーニングスクエア（全面ガラス）
-    facade.add_curtain_wall(mb, loop, 0.0, fh, 0, 1, seg=3.0, inset=0.30)
+    facade.add_curtain_wall(mb, loop, 0.0, fh, 0, 1, seg=3.0, inset=0.30, edges=visible)
+    # 隠れた辺は、相手の棟より高い部分だけ壁を出す
+    for i, other_h in hidden.items():
+        if other_h < h - 0.5:
+            facade.add_solid(mb, loop, other_h, h, "louver_white", edges=[i])
 
-    # 店舗サイン（色板。文字は Unity 側 TMP）。1F 開口の上に帯状に貼る
+    # 店舗サイン（色板。文字は Unity 側 TMP）。モール側（+v）の 1F 開口の上に帯状に貼る
     sb_u = u0 + (u1 - u0) * 0.30
     fm_u = u0 + (u1 - u0) * 0.58
     z0 = fh - 1.75
@@ -114,8 +150,9 @@ def build_kyoso(mb, b, frame, ctx):
     _plate(fm_u, 4.6, z0, z0 + 0.40, "sign_familymart_green", out=0.40)
     _plate(fm_u, 4.6, z1 - 0.40, z1, "sign_familymart_blue", out=0.40)
 
-    facade.add_parapet(mb, loop, h, 1.1, 0.4, "louver_white")
-    _roof_boxes(mb, frame, (u0, v0, u1, v1), h + 1.1, n=2, du=10.0, dv=7.0, h=3.2)
+    mb.add_ngon_flat(loop, h, "roof_grey")
+    facade.add_parapet(mb, loop, h, 1.1, 0.4, "louver_white", edges=visible)
+    _roof_boxes(mb, frame, (u0, v0, u1, v1), h + 1.1, n=2, du=10.0, dv=4.0, h=3.2)
 
     ctx["entrance"].append((b["id"], frame.xy(sb_u - 8.0, v1 + 4.0), 0.0))
     ctx["sign"].append((b["id"], frame.xy(sb_u - 8.0, v1 + 4.0), 3.4))
@@ -155,6 +192,7 @@ def build_lecture(mb, b, frame, ctx):
         uc = u0 + (u1 - u0) * t
         _brick_core(mb, frame, uc, v1 - 6.0, v1 + 1.3, 0.0, h + 2.0, lv, fh)
 
+    mb.add_ngon_flat(loop, h, "roof_grey")
     facade.add_parapet(mb, loop, h, 1.15, 0.4, "concrete_light")
     _roof_boxes(mb, frame, (u0, v0, u1, v1), h + 1.15, n=2, du=12.0, dv=13.0, h=3.4)
 
@@ -191,6 +229,7 @@ def build_office(mb, b, frame, ctx):
     mb.add_ngon_flat(geom.offset_polygon(wing, -0.6), 7.35, "grass")
     facade.add_parapet(mb, wing, 7.2, 0.7, 0.35, "concrete_light")
 
+    mb.add_ngon_flat(loop, h, "roof_grey")
     facade.add_parapet(mb, loop, h, 1.1, 0.4, "concrete_light")
     _roof_boxes(mb, frame, (u0, v0, u1, v1), h + 1.1, n=2, du=9.0, dv=10.0, h=3.0)
 
@@ -306,6 +345,7 @@ def build_lab_low(mb, b, frame, ctx):
                       seg=2.6, sill=1.15, header=0.45, inset=0.40, mullion=0.34)
     _brick_core(mb, frame, u0 + (u1 - u0) * 0.12, v1 - 5.0, v1 + 1.2, 0.0, h + 1.6, lv, fh,
                 du=6.5)
+    mb.add_ngon_flat(loop, h, "roof_grey")
     facade.add_parapet(mb, loop, h, 0.9, 0.35, "concrete_light")
     for t in (0.35, 0.55, 0.75):
         p = frame.xy(u0 + (u1 - u0) * t, (v0 + v1) * 0.5)
@@ -354,19 +394,80 @@ def build_dormitory(mb, b, frame, ctx):
     facade.add_facade(mb, loop, 0.0, fh, 0, lv,
                       wall="concrete_light", glass="glass_dark",
                       seg=3.2, sill=1.0, header=0.5, inset=0.55, mullion=0.35)
+    mb.add_ngon_flat(loop, h, "roof_grey")
     facade.add_parapet(mb, loop, h, 0.9, 0.3, "concrete_light")
 
 
 # --------------------------------------------------------------------------- #
 #  周辺の家・ビル — 押し出しのみ
 # --------------------------------------------------------------------------- #
+BG_FLOOR_H = 3.1
+BG_WIN_W = 1.3
+BG_WIN_H = 1.2
+BG_WIN_SILL = 1.0
+BG_MIN_AREA = 40.0
+BG_MIN_H = 4.5
+
+
+def _bg_window_slots(loop, h, spacing):
+    """辺ごとの (辺番号, 窓数) と階数。窓を貼る価値のない小屋は空を返す。"""
+    if len(loop) < 3 or abs(geom.poly_area(loop)) < BG_MIN_AREA or h < BG_MIN_H:
+        return [], 0
+    floors = max(1, int(h // BG_FLOOR_H))
+    slots = []
+    n = len(loop)
+    for i in range(n):
+        L = geom.length(geom.sub(loop[(i + 1) % n], loop[i]))
+        if L >= 3.0:
+            slots.append((i, max(1, int((L - 1.0) / spacing))))
+    return slots, floors
+
+
+def bg_window_count(b, spacing):
+    loop = geom.ensure_ccw(geom.dedup(b["footprint"]))
+    h = max(2.5, b.get("height") or 8.0)
+    slots, floors = _bg_window_slots(loop, h, spacing)
+    return sum(k for _, k in slots) * floors
+
+
+def _bg_windows(mb, loop, h, spacing, glass="glass_dark"):
+    """押し出し壁の外側 4 cm に暗いガラスの四角を並べる（1 窓 = 四角 1 枚 = 三角 2）。"""
+    slots, floors = _bg_window_slots(loop, h, spacing)
+    n = len(loop)
+    count = 0
+    for i, k in slots:
+        a, b = loop[i], loop[(i + 1) % n]
+        d = geom.sub(b, a)
+        L = geom.length(d)
+        e = geom.mul(d, 1.0 / L)
+        nrm = (e[1] * 0.04, -e[0] * 0.04)
+        for f in range(floors):
+            zb = f * BG_FLOOR_H + BG_WIN_SILL
+            zt = zb + BG_WIN_H
+            if zt > h - 0.3:
+                break
+            for j in range(k):
+                tc = L * 0.5 + (j - (k - 1) * 0.5) * spacing
+                t0, t1 = tc - BG_WIN_W * 0.5, tc + BG_WIN_W * 0.5
+                p0 = (a[0] + e[0] * t0 + nrm[0], a[1] + e[1] * t0 + nrm[1])
+                p1 = (a[0] + e[0] * t1 + nrm[0], a[1] + e[1] * t1 + nrm[1])
+                mb.add_quad((p0[0], p0[1], zb), (p1[0], p1[1], zb),
+                            (p1[0], p1[1], zt), (p0[0], p0[1], zt), glass)
+                count += 1
+    return count
+
+
 def build_background(mb, b, ctx):
     loop = geom.ensure_ccw(geom.dedup(b["footprint"]))
     if len(loop) < 3 or abs(geom.poly_area(loop)) < 4.0:
         return
     h = max(2.5, b.get("height") or 8.0)
-    idx = abs(hash(b["id"])) % 6
+    # hash() はプロセスごとに種が変わるので色が毎回変わる。crc32 で固定する
+    idx = zlib.crc32(b["id"].encode("utf-8")) % 6
     mb.add_prism(loop, 0.0, h, "bg_wall_%d" % idx, "roof_grey")
+    spacing = ctx.get("bg_window_spacing")
+    if spacing:
+        ctx["bg_window_quads"] = ctx.get("bg_window_quads", 0) + _bg_windows(mb, loop, h, spacing)
 
 
 BUILDERS = {
