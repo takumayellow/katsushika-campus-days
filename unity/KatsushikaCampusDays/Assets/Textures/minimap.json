@@ -1,0 +1,7 @@
+{
+  "center_x": 13.687202453613281,
+  "center_z": -29.149269104003906,
+  "half_extent": 175.3716101074219,
+  "size_px": 2048,
+  "note": "u = (x - center_x)/(2*half) + 0.5, v = (z - center_z)/(2*half) + 0.5 (v up = north)"
+}
