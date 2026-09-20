@@ -1,0 +1,176 @@
+{
+  "id": "inari",
+  "speaker": "花之木 いなり",
+  "topics": [
+    {
+      "id": "t_sunset",
+      "requiresCompletedQuest": "q_sunset",
+      "once": true,
+      "lines": [
+        {
+          "text": "見た？ 18 時の水盤。",
+          "text_en": "Did you see it? The pool at six."
+        },
+        {
+          "text": "あの深い軒が西日を切って、水の面にだけ橙が残るの。年に何回かしか、あの色にならない。",
+          "text_en": "Those deep eaves cut the low sun, so only the water keeps the orange. It only goes that colour a few times a year."
+        },
+        {
+          "speaker": "自分",
+          "text": "……写真、撮ればよかった。",
+          "text_en": "...I should have taken a photo."
+        },
+        {
+          "text": "だめだめ。ああいうのは、その場で見た人の記憶がいちばん綺麗なんだから。",
+          "text_en": "No, no. Things like that are prettiest in the memory of whoever was there."
+        }
+      ]
+    },
+    {
+      "id": "t_done",
+      "requiresCompletedQuest": "q_library",
+      "once": true,
+      "lines": [
+        {
+          "text": "ありがとう、助かった。これ、閉架から出してもらうのに三日かかったの。",
+          "text_en": "Thank you, that's a real help. It took three days to get this out of the closed stacks."
+        },
+        {
+          "text": "お礼。押し花の栞。ここの水盤のふちに落ちてた葉で作ったやつ。",
+          "text_en": "Here's your thanks. A pressed-flower bookmark. Made from a leaf that fell by the edge of this pool."
+        },
+        {
+          "speaker": "自分",
+          "text": "もらっていいんですか。",
+          "text_en": "Are you sure I can have it?"
+        },
+        {
+          "text": "いいの。次はあなたが誰かに貸す番ね。",
+          "text_en": "Of course. Next time it's your turn to lend it to someone."
+        }
+      ]
+    },
+    {
+      "id": "t_active",
+      "requiresActiveQuest": "q_library",
+      "lines": [
+        {
+          "text": "カウンターの奥、「花之木」の名前で取り置きしてあるはず。",
+          "text_en": "It should be reserved at the back of the counter under 'Hananoki'."
+        },
+        {
+          "text": "図書館はこの水盤の北側。屋根がやたら大きくて、屋上に八角形のドームが載ってる建物。中は 600 席のホールなんだって。",
+          "text_en": "The library is north of this pool. The building with the enormous roof and the octagonal dome on top. There's a 600-seat hall inside, apparently."
+        },
+        {
+          "text": "受け取ったら、ここに戻ってきて。わたし、この池のふちから動かないから。",
+          "text_en": "Once you've got it, come back here. I'm not moving from the edge of this pond."
+        }
+      ]
+    },
+    {
+      "id": "t_start",
+      "once": true,
+      "startsQuest": "q_library",
+      "lines": [
+        {
+          "text": "ねえ、そこの新入り。……いや、新入りって顔してる。当たってるでしょ。",
+          "text_en": "Hey, new kid. ...Well, you've got a new-kid face. I'm right, aren't I."
+        },
+        {
+          "text": "悪いんだけど、図書館で本を一冊受け取ってきてくれない？ わたし、今ここを離れられなくて。",
+          "text_en": "Sorry to ask, but could you pick up a book for me at the library? I can't leave this spot right now."
+        },
+        {
+          "speaker": "自分",
+          "text": "離れられない、というのは。",
+          "text_en": "Can't leave, meaning...?"
+        },
+        {
+          "text": "この水盤ね、風がないときだけ図書館がまるごと映るの。今日は朝からずっと凪。",
+          "text_en": "This pool, see, only reflects the whole library when there's no wind. And it's been dead calm since morning."
+        },
+        {
+          "text": "……という理由じゃ、だめ？",
+          "text_en": "...Is that not a good enough reason?"
+        }
+      ]
+    },
+    {
+      "id": "t_sq_stray_book_start",
+      "requiresCompletedQuest": "q_park",
+      "once": true,
+      "startsQuest": "q_sq_stray_book",
+      "lines": [
+        {
+          "text": "押し花、できたのね。……ねえ、もうひとつ頼まれてくれない？",
+          "text_en": "You pressed the leaves. ...Say, could I ask one more thing?"
+        },
+        {
+          "text": "先週返した本が、書架に戻ってないんだって。誰かが借りたまま、館内のどこかに置いてるらしくて。",
+          "text_en": "A book I returned last week never made it back to the shelf. Apparently someone's left it somewhere in the building."
+        },
+        {
+          "speaker": "自分",
+          "text": "館内のどこか、って広いですよね。",
+          "text_en": "Somewhere in the building is a lot of ground."
+        },
+        {
+          "text": "開架書架の奥から、個人閲覧ブースまで。見つけたら場所をカウンターに伝えて。",
+          "text_en": "From the back of the open stacks to the study carrels. When you find it, tell the counter where."
+        }
+      ]
+    },
+    {
+      "id": "t_sq_stray_book_active",
+      "requiresActiveQuest": "q_sq_stray_book",
+      "lines": [
+        {
+          "text": "書架は 14 連。いちばん奥から見て。それでなければ、個人閲覧ブースの 66 席のどこか。",
+          "text_en": "Fourteen rows of shelves. Start from the very back. Failing that, one of the 66 study carrels."
+        },
+        {
+          "text": "見つけたら、カウンターに伝えて。それから、ここに戻ってきて。",
+          "text_en": "When you find it, tell the counter. Then come back here."
+        }
+      ]
+    },
+    {
+      "id": "t_sq_stray_book_done",
+      "requiresCompletedQuest": "q_sq_stray_book",
+      "once": true,
+      "lines": [
+        {
+          "text": "見つかったのね。ありがとう。",
+          "text_en": "You found it. Thank you."
+        },
+        {
+          "text": "はい、二枚目の栞。今度のは公園の葉で作ったの。あなたが集めた五枚のうちの一枚。",
+          "text_en": "Here, a second bookmark. This one's from a park leaf. One of the five you gathered."
+        },
+        {
+          "speaker": "自分",
+          "text": "……大事にします。",
+          "text_en": "...I'll take good care of it."
+        },
+        {
+          "text": "だめ。栞は使うもの。大事にするのは本のほう。",
+          "text_en": "No. A bookmark is for using. The thing you take care of is the book."
+        }
+      ]
+    },
+    {
+      "id": "t_idle",
+      "lines": [
+        {
+          "text": "この池、深さは 10 cm もないのよ。落ちても濡れるだけ。",
+          "text_en": "This pond isn't even ten centimetres deep. Fall in and you just get wet."
+        },
+        {
+          "text": "落ちたことがある人が言ってるんだから、間違いない。",
+          "text_en": "Take it from someone who has fallen in. I'm not wrong."
+        }
+      ]
+    }
+  ]
+}

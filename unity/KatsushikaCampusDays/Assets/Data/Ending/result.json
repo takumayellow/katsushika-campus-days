@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "day_end_hour": 20.0,
+  "weights": {
+    "quests": 0.45,
+    "collectibles": 0.3,
+    "photos": 0.15,
+    "buildings": 0.1
+  },
+  "totals": {
+    "quests": 13,
+    "collectibles": 20,
+    "photos": 6,
+    "buildings": 9
+  },
+  "ranks": [
+    {
+      "rank": "S",
+      "min_percent": 90,
+      "title_ja": "葛飾を歩ききった",
+      "title_en": "You Walked All of Katsushika",
+      "comment_ja": "正門から水盤まで、この一日でキャンパスのほとんどを見た。次に来るときは、案内する側になっている。",
+      "comment_en": "From the main gate to the reflecting pool, you saw nearly all of the campus in a single day. Next time, you'll be the one giving the tour."
+    },
+    {
+      "rank": "A",
+      "min_percent": 70,
+      "title_ja": "もう迷わない",
+      "title_en": "You Won't Get Lost Again",
+      "comment_ja": "モールを軸に、だいたいの建物と人の顔がつながった。見落とした場所は、明日の楽しみに取っておこう。",
+      "comment_en": "With the mall as your axis, most of the buildings and faces now connect. Save the spots you missed for tomorrow."
+    },
+    {
+      "rank": "B",
+      "min_percent": 45,
+      "title_ja": "石畳の上なら大丈夫",
+      "title_en": "Fine as Long as It's Paved",
+      "comment_ja": "モールを外れると、まだ知らない場所が多い。角を曲がった先にも、誰かが待っている。",
+      "comment_en": "Step off the mall and there's still plenty you haven't seen. Someone's waiting around the corners too."
+    },
+    {
+      "rank": "C",
+      "min_percent": 0,
+      "title_ja": "はじめての登校",
+      "title_en": "First Day",
+      "comment_ja": "今日はまず、正門からモールを歩けた。それで十分。明日はもう少し寄り道してみよう。",
+      "comment_en": "Today you walked the mall from the main gate. That's enough. Tomorrow, take a few more detours."
+    }
+  ]
+}

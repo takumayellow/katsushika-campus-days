@@ -1,0 +1,148 @@
+{
+  "id": "kaname",
+  "speaker": "中川 かなめ",
+  "topics": [
+    {
+      "id": "t_done",
+      "requiresCompletedQuest": "q_lunch",
+      "once": true,
+      "lines": [
+        {
+          "text": "助かった！ ほんとに助かった！ ピークに牛乳切らすと、ここ、地獄になるのよ。",
+          "text_en": "You saved me! Seriously, you saved me! Run out of milk at the peak and this place turns into hell."
+        },
+        {
+          "text": "はい、日替わり一皿おまけ。席は空いてるとこ好きに使って。",
+          "text_en": "Here, an extra plate of the daily special. Sit wherever's free."
+        },
+        {
+          "speaker": "自分",
+          "text": "1,400 席もあるのに、埋まるんですか。",
+          "text_en": "There are 1,400 seats. Does it really fill up?"
+        },
+        {
+          "text": "12 時 20 分から 40 分まではね。あの 20 分だけは戦争。",
+          "text_en": "From 12:20 to 12:40, yes. Those twenty minutes are a war."
+        }
+      ]
+    },
+    {
+      "id": "t_active",
+      "requiresActiveQuest": "q_lunch",
+      "lines": [
+        {
+          "text": "ファミマは共創棟の 1 階、ガラス張りのほう。青と緑と白の看板が見えたらそこ。",
+          "text_en": "The convenience store is on the first floor of Kyoso Hall, the glass side. Look for the blue, green and white sign."
+        },
+        {
+          "text": "牛乳ね。1 本でいいから。走らなくていいけど、急いで。",
+          "text_en": "Milk. One carton is fine. You don't have to run, but hurry."
+        }
+      ]
+    },
+    {
+      "id": "t_start",
+      "once": true,
+      "startsQuest": "q_lunch",
+      "lines": [
+        {
+          "text": "ちょっと！ そこのあなた、手、空いてる？",
+          "text_en": "Hey! You there, are your hands free?"
+        },
+        {
+          "text": "ここ第2研究棟の食堂、席が 1,400 あるの。で、今その全部にお客が来る時間なの。",
+          "text_en": "This is the Research Building 2 cafeteria, 1,400 seats. And right now is when every one of them fills up."
+        },
+        {
+          "text": "なのに牛乳が切れた。共創棟 1 階のファミマで買ってきてくれない？ お金はこっち持ちで。",
+          "text_en": "And we're out of milk. Could you buy some at the convenience store on the first floor of Kyoso Hall? It's on us."
+        },
+        {
+          "speaker": "自分",
+          "text": "ええと、はい、行けます。",
+          "text_en": "Um, yes, I can do that."
+        },
+        {
+          "text": "ありがと！ エプロンの人に言えば通してくれるから。",
+          "text_en": "Thanks! Tell whoever's in an apron and they'll let you through."
+        }
+      ]
+    },
+    {
+      "id": "t_sq_lost_card_start",
+      "requiresCompletedQuest": "q_lunch",
+      "once": true,
+      "startsQuest": "q_sq_lost_card",
+      "lines": [
+        {
+          "text": "ねえ、もうひとつだけお願い。券売機のところで学生証の落とし物があったの。",
+          "text_en": "Hey, one more favour. Somebody dropped a student ID over by the ticket machines."
+        },
+        {
+          "text": "ピークが終わったばかりで、こっちは片付けで手が離せなくて。券売機から返却口まで、持ち主の手がかりを見てきてくれない？",
+          "text_en": "The peak just ended and I'm stuck clearing up. Could you check from the ticket machines to the tray return for any clue who it belongs to?"
+        },
+        {
+          "speaker": "自分",
+          "text": "手がかり、ですか。",
+          "text_en": "A clue?"
+        },
+        {
+          "text": "食べ終わったトレーに、名前入りの箸箱とか残ってることがあるのよ。",
+          "text_en": "Sometimes there's a chopstick case with a name on it left on a finished tray, that kind of thing."
+        }
+      ]
+    },
+    {
+      "id": "t_sq_lost_card_active",
+      "requiresActiveQuest": "q_sq_lost_card",
+      "lines": [
+        {
+          "text": "券売機は入って左の壁ぎわ、6 台並んでるところ。返却口は反対側の奥。",
+          "text_en": "The ticket machines are along the left wall as you come in, the row of six. The tray return is at the far end on the opposite side."
+        },
+        {
+          "text": "配膳カウンターは 38 m もあるから、まっすぐ歩けば着くわ。",
+          "text_en": "The serving counter runs 38 metres, so just walk straight along it and you'll get there."
+        }
+      ]
+    },
+    {
+      "id": "t_sq_lost_card_done",
+      "requiresCompletedQuest": "q_sq_lost_card",
+      "once": true,
+      "lines": [
+        {
+          "text": "ありがと。持ち主、2 階の回廊でお昼食べてた子だったみたい。さっき取りに来た。",
+          "text_en": "Thanks. Looks like the owner was someone eating lunch up on the second-floor gallery. They just came to collect it."
+        },
+        {
+          "text": "あなた、もう常連ね。顔、覚えたから。",
+          "text_en": "You're a regular now, you know. I've got your face memorised."
+        },
+        {
+          "speaker": "自分",
+          "text": "まだ二回目なんですけど。",
+          "text_en": "This is only my second time here."
+        },
+        {
+          "text": "二回来たら常連。この食堂のルール。",
+          "text_en": "Twice makes a regular. Cafeteria rules."
+        }
+      ]
+    },
+    {
+      "id": "t_idle",
+      "lines": [
+        {
+          "text": "窓際の席、おすすめ。西向きだから夕方は眩しいけどね。",
+          "text_en": "The window seats are the good ones. They face west, so it's glaring in the evening, mind."
+        },
+        {
+          "text": "上の階は研究室。だからときどき、白衣のまま定食食べにくる人がいる。",
+          "text_en": "The upper floors are labs. So every now and then someone comes down for a set meal still in their lab coat."
+        }
+      ]
+    }
+  ]
+}
