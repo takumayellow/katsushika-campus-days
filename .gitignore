@@ -1,0 +1,21 @@
+# Unity
+unity/*/[Ll]ibrary/
+unity/*/[Tt]emp/
+unity/*/[Oo]bj/
+unity/*/[Bb]uild/
+unity/*/[Bb]uilds/
+unity/*/[Ll]ogs/
+unity/*/[Uu]ser[Ss]ettings/
+unity/*/.vs/
+unity/*/*.csproj
+unity/*/*.sln
+build/
+# Blender
+*.blend1
+*.blend2
+blender/out/
+# python
+__pycache__/
+*.pyc
+# large raw data
+data/osm/raw_overpass.json
