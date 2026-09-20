@@ -1,0 +1,123 @@
+{
+ "id": "kyoso",
+ "display": "共創棟",
+ "entrance_world": {
+  "x": 69.5657,
+  "z": -63.9849
+ },
+ "yaw_deg": -155.4486,
+ "campus_frame_deg": -24.5514,
+ "envelope": {
+  "x0": -99.102,
+  "x1": 31.044,
+  "y_face": 4.0,
+  "y_back": 14.5
+ },
+ "wall_thickness": 0.3,
+ "spawn": {
+  "x": 0.0,
+  "y": 0.0,
+  "z": 5.8
+ },
+ "empties": {
+  "spawn_kyoso": {
+   "x": 0.0,
+   "y": 0.0,
+   "z": 5.8
+  },
+  "exit_kyoso": {
+   "x": 0.0,
+   "y": 0.0,
+   "z": 4.55
+  },
+  "sign_kyoso_1": {
+   "x": -8.6,
+   "y": 2.05,
+   "z": 13.9
+  },
+  "poi_kyoso_stair": {
+   "x": -5.8,
+   "y": 0.0,
+   "z": 10.2
+  },
+  "poi_kyoso_starbucks": {
+   "x": 14.0,
+   "y": 0.0,
+   "z": 10.4
+  },
+  "npc_kyoso_1": {
+   "x": 12.0,
+   "y": 0.0,
+   "z": 12.45
+  },
+  "npc_kyoso_2": {
+   "x": 15.4,
+   "y": 0.0,
+   "z": 12.45
+  },
+  "sign_kyoso_2": {
+   "x": 14.0,
+   "y": 2.55,
+   "z": 12.2
+  },
+  "poi_kyoso_store": {
+   "x": -13.4,
+   "y": 0.0,
+   "z": 7.2
+  },
+  "npc_kyoso_3": {
+   "x": -13.4,
+   "y": 0.0,
+   "z": 6.25
+  },
+  "sign_kyoso_3": {
+   "x": -13.4,
+   "y": 2.35,
+   "z": 5.25
+  },
+  "npc_kyoso_4": {
+   "x": -28.0,
+   "y": 0.0,
+   "z": 9.5
+  },
+  "npc_kyoso_5": {
+   "x": -22.0,
+   "y": 0.0,
+   "z": 7.9
+  },
+  "poi_kyoso_lounge": {
+   "x": -32.8,
+   "y": 4.3,
+   "z": 7.8
+  },
+  "npc_kyoso_6": {
+   "x": -34.0,
+   "y": 4.3,
+   "z": 9.9
+  },
+  "npc_kyoso_7": {
+   "x": -29.6,
+   "y": 4.3,
+   "z": 6.3
+  },
+  "sign_kyoso_4": {
+   "x": -35.8,
+   "y": 6.4,
+   "z": 13.96
+  }
+ },
+ "triangles": 25186,
+ "seats": 90,
+ "notes": [
+  "1F=カフェ（吹き抜け）+ コンビニ、2F=ラウンジ。q_coffee の舞台"
+ ],
+ "objects": [
+  "floor_kyoso",
+  "wall_kyoso",
+  "furn_kyoso_01_entry",
+  "furn_kyoso_02_lobby",
+  "furn_kyoso_03_cafe",
+  "furn_kyoso_04_cvs",
+  "furn_kyoso_05_lounge"
+ ]
+}

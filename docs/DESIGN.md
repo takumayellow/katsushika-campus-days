@@ -126,6 +126,60 @@ FBX 共通オプション: `use_selection=False`, `global_scale=1.0`, `apply_uni
 `axis_forward='-Z'`, `axis_up='Y'`, `bake_space_transform=True`（キャンパス）, `mesh_smooth_type='FACE'`,
 `use_mesh_modifiers=True`, `add_leaf_bones=False`, `bake_anim=True`（キャラ）, `path_mode='COPY'`, `embed_textures=False`。
 
+### 3.4 建物内部
+
+屋内は `blender/build_interiors.py`（+ `blender/kcd_interior/*.py`）が屋外とは独立に生成する。
+棟ごとに 1 FBX。運用手順は `blender/README_interiors.md`。
+
+```
+unity/KatsushikaCampusDays/Assets/Models/Interiors/<building_id>.fbx
+unity/KatsushikaCampusDays/Assets/Models/Interiors/<building_id>.json  配置用メタ（entrance_world / yaw_deg / envelope / 全 Empty のローカル座標）
+unity/KatsushikaCampusDays/Assets/Models/Interiors/_summary.json   全棟の三角数・Empty 名・座席数
+docs/previews/interior_<building_id>*.png                          検証用レンダ（Eevee Next, 1280×720）
+```
+
+**座標**: ローカル原点は `entrance_<id>` 直下の床レベル。Unity の +Z が入口から建物の奥へ向く。
+`entrance_<id>` に重ねても、地下のオフセット領域に隔離して置いても成立する。
+FBX オプションは §3.3 と同じ。
+
+**メッシュ分割**（Unity で MeshCollider を個別に張るため）:
+
+- `floor_<id>` 床スラブ / `wall_<id>` 外壁・間仕切り・建具・ガラス
+- `furn_<id>_<nn>_<区画名>` 区画ごとの什器（例 `furn_lecture_02_hall_seats`）
+
+**Empty**: `spawn_<id>`（入口から 1.5 m 内側）、`exit_<id>`、`poi_<id>_<name>`、`npc_<id>_<n>`、`sign_<id>_<n>`。
+§4 のクエストが屋内で踏む地点はすべて用意してある。`q_library` は `poi_library_counter` と
+`poi_library_desk`、`q_lunch` は `poi_kyoso_store` と `poi_research2_counter`・`poi_research2_hall`、
+`q_coffee` は `poi_kyoso_starbucks`、`q_gym` は `poi_gym_court`。
+`q_coffee` の最終目的地（キャンパスモールのベンチ）と `q_orientation` / `q_park` / `q_sunset` は屋外。
+
+**棟ごとの中身**（実測 2026-09-21・合計 299,113 三角形 / 上限 300,000）:
+
+| id | 三角形 | 中身 |
+|---|---:|---|
+| `research1` | 40,285 | 1F ロビー（受付・ソファ・掲示板・立席島）+ EV 3 基 + 廊下 142 m + 研究室 2 室 + 教授室 |
+| `lecture` | 46,053 | 3 層吹き抜けの大階段ホール + 大ホール 600 席 + ホワイエ + 演習室 3 室 + 中教室 60 席 |
+| `research2` | 65,000 | 1〜2F 吹き抜けの大食堂 1,400 席（配膳カウンター 38 m・券売機 6 台・返却口・2F 回廊） |
+| `kyoso` | 25,186 | 1F カフェ + コンビニ、2F ラウンジ（計 90 席） |
+| `library` | 57,654 | 開架書架 14 連 + 閲覧長机 6 列 + 個人閲覧ブース 66 席 + 2F 回廊（計 299 席） |
+| `gym` | 20,181 | アリーナ（28×15 m コート・ゴール 2 基・ステージ）+ 観覧席 540 席 + 屋根トラス + 用具庫 |
+| `lab1` | 24,154 | 廊下（ロッカー・掲示板・自販機）+ 実験室 3 室（実験台・ドラフト・ボンベ・薬品庫・試薬棚・流し） |
+| `lab2` | 16,384 | 廊下 + 実験室 2 室（同上） |
+| `greenhouse` | 4,216 | 切妻ガラス屋根・栽培ベンチ 2 列・鉢植え・灌水パイプ |
+
+1 棟あたり 20,000〜80,000 三角形を目安とする。`lab2`（23.7×15.8 m）と `greenhouse`（7.5×10.7 m）は
+フットプリントが小さく、下限を割るのを許容する。
+
+**上層階**: 床スラブ・手すり・吹き抜けから見える什器までを作り、上層の個室は作らない
+（EV 扉と階数表示のみ）。
+
+**共通の作り付け**: 壁厚 0.3 m、外観と揃えた `glass_clear` の窓、`light_panel` の天井照明、
+誘導灯、掲示板・ポスター、ゴミ箱、消火器、`sign_<id>_<n>` 付きの案内サイン。
+マテリアルは `kcd_lib/mats.py` の命名規則に `kcd_interior/imats.py` が屋内分を足す。
+
+**検証**: 書き出した FBX を bpy で読み戻し、Empty がすべて揃っているかを照合してから終了する
+（欠落があれば exit 1）。
+
 ## 4. Unity プロジェクト
 
 - パス: `unity/KatsushikaCampusDays/`（Unity 6000.6.2f1、URP 17、Input System、Cinemachine 3、TextMeshPro）。

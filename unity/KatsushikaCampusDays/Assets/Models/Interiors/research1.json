@@ -1,0 +1,155 @@
+{
+ "id": "research1",
+ "display": "第1研究棟",
+ "entrance_world": {
+  "x": 73.0954,
+  "z": -127.5594
+ },
+ "yaw_deg": 24.5514,
+ "campus_frame_deg": -24.5514,
+ "envelope": {
+  "x0": -71.23,
+  "x1": 71.23,
+  "y_face": 6.5,
+  "y_back": 43.146
+ },
+ "wall_thickness": 0.3,
+ "spawn": {
+  "x": 0.0,
+  "y": 0.0,
+  "z": 8.3
+ },
+ "empties": {
+  "spawn_research1": {
+   "x": 0.0,
+   "y": 0.0,
+   "z": 8.3
+  },
+  "exit_research1": {
+   "x": 0.0,
+   "y": 0.0,
+   "z": 7.05
+  },
+  "poi_research1_elevator": {
+   "x": 0.0,
+   "y": 0.0,
+   "z": 17.6
+  },
+  "sign_research1_1": {
+   "x": 0.0,
+   "y": 2.6,
+   "z": 19.6
+  },
+  "poi_research1_reception": {
+   "x": -9.5,
+   "y": 0.0,
+   "z": 12.4
+  },
+  "npc_research1_1": {
+   "x": -9.5,
+   "y": 0.0,
+   "z": 15.3
+  },
+  "npc_research1_2": {
+   "x": -6.0,
+   "y": 0.0,
+   "z": 11.2
+  },
+  "poi_research1_notice": {
+   "x": -13.4,
+   "y": 0.0,
+   "z": 11.0
+  },
+  "poi_research1_lounge": {
+   "x": 11.0,
+   "y": 0.0,
+   "z": 11.5
+  },
+  "npc_research1_3": {
+   "x": 11.4,
+   "y": 0.0,
+   "z": 9.0
+  },
+  "sign_research1_2": {
+   "x": 0.0,
+   "y": 1.65,
+   "z": 8.4
+  },
+  "sign_research1_3": {
+   "x": 0.0,
+   "y": 2.6,
+   "z": 9.6
+  },
+  "poi_research1_lab_a": {
+   "x": -28.0,
+   "y": 0.0,
+   "z": 32.0
+  },
+  "npc_research1_4": {
+   "x": -30.0,
+   "y": 0.0,
+   "z": 31.4
+  },
+  "npc_research1_5": {
+   "x": -25.6,
+   "y": 0.0,
+   "z": 36.8
+  },
+  "sign_research1_4": {
+   "x": -26.9,
+   "y": 2.2,
+   "z": 27.18
+  },
+  "poi_research1_professor": {
+   "x": -6.6,
+   "y": 0.0,
+   "z": 41.246
+  },
+  "npc_research1_6": {
+   "x": -6.6,
+   "y": 0.0,
+   "z": 41.096
+  },
+  "sign_research1_5": {
+   "x": -6.95,
+   "y": 2.2,
+   "z": 27.18
+  },
+  "poi_research1_lab_b": {
+   "x": 13.0,
+   "y": 0.0,
+   "z": 32.0
+  },
+  "npc_research1_7": {
+   "x": 11.0,
+   "y": 0.0,
+   "z": 31.4
+  },
+  "npc_research1_8": {
+   "x": 15.4,
+   "y": 0.0,
+   "z": 36.8
+  },
+  "sign_research1_6": {
+   "x": 14.1,
+   "y": 2.2,
+   "z": 27.18
+  }
+ },
+ "triangles": 40285,
+ "seats": 6,
+ "notes": [
+  "1F ロビー（受付・ソファ・掲示板）+ EV3 基 + 廊下 142 m + 研究室2室 + 教授室"
+ ],
+ "objects": [
+  "floor_research1",
+  "wall_research1",
+  "furn_research1_01_entry",
+  "furn_research1_02_core",
+  "furn_research1_03_lobby",
+  "furn_research1_04_corridor",
+  "furn_research1_05_lab_a",
+  "furn_research1_06_professor",
+  "furn_research1_07_lab_b"
+ ]
+}

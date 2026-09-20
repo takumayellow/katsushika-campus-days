@@ -1,0 +1,142 @@
+{
+ "id": "library",
+ "display": "図書館",
+ "entrance_world": {
+  "x": -60.9831,
+  "z": 1.4721
+ },
+ "yaw_deg": -65.4486,
+ "campus_frame_deg": -24.5514,
+ "envelope": {
+  "x0": -41.654,
+  "x1": 49.661,
+  "y_face": 4.0,
+  "y_back": 66.735
+ },
+ "wall_thickness": 0.3,
+ "spawn": {
+  "x": 0.0,
+  "y": 0.0,
+  "z": 5.8
+ },
+ "empties": {
+  "spawn_library": {
+   "x": 0.0,
+   "y": 0.0,
+   "z": 5.8
+  },
+  "exit_library": {
+   "x": 0.0,
+   "y": 0.0,
+   "z": 4.55
+  },
+  "poi_library_counter": {
+   "x": -12.0,
+   "y": 0.0,
+   "z": 10.5
+  },
+  "npc_library_1": {
+   "x": -13.2,
+   "y": 0.0,
+   "z": 12.5
+  },
+  "npc_library_2": {
+   "x": -10.6,
+   "y": 0.0,
+   "z": 12.5
+  },
+  "sign_library_1": {
+   "x": -12.0,
+   "y": 2.45,
+   "z": 12.7
+  },
+  "poi_library_search": {
+   "x": 10.0,
+   "y": 0.0,
+   "z": 7.3
+  },
+  "poi_library_stacks": {
+   "x": -22.427,
+   "y": 0.0,
+   "z": 24.3
+  },
+  "npc_library_3": {
+   "x": -36.854,
+   "y": 0.0,
+   "z": 26.3
+  },
+  "npc_library_4": {
+   "x": -31.854,
+   "y": 0.0,
+   "z": 34.3
+  },
+  "poi_library_reading": {
+   "x": 22.68,
+   "y": 0.0,
+   "z": 34.3
+  },
+  "npc_library_5": {
+   "x": 0.0,
+   "y": 0.0,
+   "z": 23.3
+  },
+  "npc_library_6": {
+   "x": 9.0,
+   "y": 0.0,
+   "z": 31.3
+  },
+  "npc_library_7": {
+   "x": 18.0,
+   "y": 0.0,
+   "z": 39.3
+  },
+  "npc_library_8": {
+   "x": 27.0,
+   "y": 0.0,
+   "z": 23.3
+  },
+  "sign_library_2": {
+   "x": -1.2,
+   "y": 2.45,
+   "z": 51.66
+  },
+  "poi_library_desk": {
+   "x": -1.0,
+   "y": 0.0,
+   "z": 53.5
+  },
+  "npc_library_9": {
+   "x": 2.0,
+   "y": 0.0,
+   "z": 55.4
+  },
+  "poi_library_gallery": {
+   "x": -35.354,
+   "y": 4.4,
+   "z": 29.3
+  },
+  "npc_library_10": {
+   "x": -36.354,
+   "y": 4.4,
+   "z": 37.3
+  }
+ },
+ "triangles": 57654,
+ "seats": 299,
+ "notes": [
+  "開架書架 14 連",
+  "閲覧長机 6 列",
+  "個人閲覧ブース 66 席",
+  "開架書架 + 閲覧席 + 2F 回廊の吹き抜け + 個人閲覧ブース"
+ ],
+ "objects": [
+  "floor_library",
+  "wall_library",
+  "furn_library_01_entry",
+  "furn_library_02_counter",
+  "furn_library_03_stacks",
+  "furn_library_04_reading",
+  "furn_library_05_booths",
+  "furn_library_06_gallery"
+ ]
+}

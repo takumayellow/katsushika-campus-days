@@ -1,0 +1,188 @@
+{
+ "id": "lecture",
+ "display": "講義棟",
+ "entrance_world": {
+  "x": 102.3947,
+  "z": -66.1383
+ },
+ "yaw_deg": 24.5514,
+ "campus_frame_deg": -24.5514,
+ "envelope": {
+  "x0": -33.201,
+  "x1": 49.801,
+  "y_face": 4.0,
+  "y_back": 54.921
+ },
+ "wall_thickness": 0.3,
+ "spawn": {
+  "x": 0.0,
+  "y": 0.0,
+  "z": 5.8
+ },
+ "empties": {
+  "spawn_lecture": {
+   "x": 0.0,
+   "y": 0.0,
+   "z": 5.8
+  },
+  "exit_lecture": {
+   "x": 0.0,
+   "y": 0.0,
+   "z": 4.55
+  },
+  "poi_lecture_hall_stage": {
+   "x": 17.0,
+   "y": 0.8,
+   "z": 10.3
+  },
+  "npc_lecture_1": {
+   "x": 10.0,
+   "y": 0.8,
+   "z": 10.3
+  },
+  "npc_lecture_2": {
+   "x": 23.0,
+   "y": 0.8,
+   "z": 10.8
+  },
+  "poi_lecture_hall_booth": {
+   "x": 5.9,
+   "y": 3.6,
+   "z": 28.5
+  },
+  "poi_lecture_hall_seats": {
+   "x": 17.0,
+   "y": 2.1,
+   "z": 20.65
+  },
+  "poi_lecture_foyer_counter": {
+   "x": 6.5,
+   "y": 0.0,
+   "z": 36.8
+  },
+  "npc_lecture_3": {
+   "x": 6.5,
+   "y": 0.0,
+   "z": 34.6
+  },
+  "sign_lecture_1": {
+   "x": 17.0,
+   "y": 2.05,
+   "z": 54.321
+  },
+  "sign_lecture_2": {
+   "x": 17.0,
+   "y": 3.0,
+   "z": 37.2
+  },
+  "poi_lecture_foyer": {
+   "x": 17.0,
+   "y": 0.0,
+   "z": 43.81
+  },
+  "npc_lecture_4": {
+   "x": 14.0,
+   "y": 0.0,
+   "z": 40.0
+  },
+  "npc_lecture_5": {
+   "x": 19.4,
+   "y": 0.0,
+   "z": 46.0
+  },
+  "sign_lecture_3": {
+   "x": 35.68,
+   "y": 2.05,
+   "z": 13.737
+  },
+  "poi_lecture_seminar": {
+   "x": 42.65,
+   "y": 0.0,
+   "z": 12.687
+  },
+  "npc_lecture_6": {
+   "x": 48.001,
+   "y": 0.0,
+   "z": 9.287
+  },
+  "npc_lecture_7": {
+   "x": 42.65,
+   "y": 0.0,
+   "z": 14.687
+  },
+  "sign_lecture_4": {
+   "x": 35.68,
+   "y": 2.05,
+   "z": 30.51
+  },
+  "sign_lecture_5": {
+   "x": 35.68,
+   "y": 2.05,
+   "z": 47.284
+  },
+  "poi_lecture_grand_stair": {
+   "x": -7.5,
+   "y": 0.0,
+   "z": 10.3
+  },
+  "sign_lecture_6": {
+   "x": -1.4,
+   "y": 2.35,
+   "z": 7.5
+  },
+  "sign_lecture_7": {
+   "x": -16.95,
+   "y": 3.4,
+   "z": 7.3
+  },
+  "poi_lecture_atrium": {
+   "x": -16.95,
+   "y": 0.0,
+   "z": 11.3
+  },
+  "npc_lecture_8": {
+   "x": -27.901,
+   "y": 0.0,
+   "z": 9.3
+  },
+  "npc_lecture_9": {
+   "x": -21.901,
+   "y": 0.0,
+   "z": 13.3
+  },
+  "poi_lecture_lecture_room": {
+   "x": -16.95,
+   "y": 0.0,
+   "z": 52.021
+  },
+  "npc_lecture_10": {
+   "x": -21.55,
+   "y": 0.0,
+   "z": 52.021
+  },
+  "sign_lecture_8": {
+   "x": -27.301,
+   "y": 2.3,
+   "z": 31.16
+  }
+ },
+ "triangles": 46053,
+ "seats": 820,
+ "notes": [
+  "大ホール 600 席（16/18/16 × 12 列）",
+  "中教室 60 席",
+  "3 層吹き抜けの大階段ホール + 大ホール + ホワイエ + 演習室 3 室 + 中教室"
+ ],
+ "objects": [
+  "floor_lecture",
+  "wall_lecture",
+  "furn_lecture_01_entry",
+  "furn_lecture_02_hall_seats",
+  "furn_lecture_03_hall_tiers",
+  "furn_lecture_04_hall_stage",
+  "furn_lecture_05_foyer",
+  "furn_lecture_06_seminar",
+  "furn_lecture_07_atrium",
+  "furn_lecture_08_lecture_room"
+ ]
+}

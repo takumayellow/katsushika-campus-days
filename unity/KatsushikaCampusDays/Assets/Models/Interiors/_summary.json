@@ -1,0 +1,417 @@
+{
+ "total_tris": 295249,
+ "buildings": [
+  {
+   "tris": 40285,
+   "objects": [
+    "floor_research1",
+    "wall_research1",
+    "furn_research1_01_entry",
+    "furn_research1_02_core",
+    "furn_research1_03_lobby",
+    "furn_research1_04_corridor",
+    "furn_research1_05_lab_a",
+    "furn_research1_06_professor",
+    "furn_research1_07_lab_b"
+   ],
+   "empties": [
+    "spawn_research1",
+    "exit_research1",
+    "poi_research1_elevator",
+    "sign_research1_1",
+    "poi_research1_reception",
+    "npc_research1_1",
+    "npc_research1_2",
+    "poi_research1_notice",
+    "poi_research1_lounge",
+    "npc_research1_3",
+    "sign_research1_2",
+    "sign_research1_3",
+    "poi_research1_lab_a",
+    "npc_research1_4",
+    "npc_research1_5",
+    "sign_research1_4",
+    "poi_research1_professor",
+    "npc_research1_6",
+    "sign_research1_5",
+    "poi_research1_lab_b",
+    "npc_research1_7",
+    "npc_research1_8",
+    "sign_research1_6"
+   ],
+   "seats": 6,
+   "notes": [
+    "1F ロビー（受付・ソファ・掲示板）+ EV3 基 + 廊下 142 m + 研究室2室 + 教授室"
+   ],
+   "size": 421324,
+   "fbx": "C:\\Users\\takum\\dev\\katsushika-campus-days\\unity\\KatsushikaCampusDays\\Assets\\Models\\Interiors\\research1.fbx",
+   "previews": [
+    "C:\\Users\\takum\\dev\\katsushika-campus-days\\docs\\previews\\interior_research1.png"
+   ],
+   "id": "research1",
+   "label": "第1研究棟",
+   "sec": 6.564573287963867
+  },
+  {
+   "tris": 46053,
+   "objects": [
+    "floor_lecture",
+    "wall_lecture",
+    "furn_lecture_01_entry",
+    "furn_lecture_02_hall_seats",
+    "furn_lecture_03_hall_tiers",
+    "furn_lecture_04_hall_stage",
+    "furn_lecture_05_foyer",
+    "furn_lecture_06_seminar",
+    "furn_lecture_07_atrium",
+    "furn_lecture_08_lecture_room"
+   ],
+   "empties": [
+    "spawn_lecture",
+    "exit_lecture",
+    "poi_lecture_hall_stage",
+    "npc_lecture_1",
+    "npc_lecture_2",
+    "poi_lecture_hall_booth",
+    "poi_lecture_hall_seats",
+    "poi_lecture_foyer_counter",
+    "npc_lecture_3",
+    "sign_lecture_1",
+    "sign_lecture_2",
+    "poi_lecture_foyer",
+    "npc_lecture_4",
+    "npc_lecture_5",
+    "sign_lecture_3",
+    "poi_lecture_seminar",
+    "npc_lecture_6",
+    "npc_lecture_7",
+    "sign_lecture_4",
+    "sign_lecture_5",
+    "poi_lecture_grand_stair",
+    "sign_lecture_6",
+    "sign_lecture_7",
+    "poi_lecture_atrium",
+    "npc_lecture_8",
+    "npc_lecture_9",
+    "poi_lecture_lecture_room",
+    "npc_lecture_10",
+    "sign_lecture_8"
+   ],
+   "seats": 820,
+   "notes": [
+    "大ホール 600 席（16/18/16 × 12 列）",
+    "中教室 60 席",
+    "3 層吹き抜けの大階段ホール + 大ホール + ホワイエ + 演習室 3 室 + 中教室"
+   ],
+   "size": 472364,
+   "fbx": "C:\\Users\\takum\\dev\\katsushika-campus-days\\unity\\KatsushikaCampusDays\\Assets\\Models\\Interiors\\lecture.fbx",
+   "previews": [
+    "C:\\Users\\takum\\dev\\katsushika-campus-days\\docs\\previews\\interior_lecture_hall.png",
+    "C:\\Users\\takum\\dev\\katsushika-campus-days\\docs\\previews\\interior_lecture.png"
+   ],
+   "id": "lecture",
+   "label": "講義棟",
+   "sec": 41.65901327133179
+  },
+  {
+   "tris": 65000,
+   "objects": [
+    "floor_research2",
+    "wall_research2",
+    "furn_research2_01_entry",
+    "furn_research2_02_gallery",
+    "furn_research2_03_serving",
+    "furn_research2_04_ops",
+    "furn_research2_05_tables",
+    "furn_research2_06_chairs",
+    "furn_research2_07_window_counter",
+    "furn_research2_08_green"
+   ],
+   "empties": [
+    "spawn_research2",
+    "exit_research2",
+    "sign_research2_1",
+    "sign_research2_2",
+    "sign_research2_3",
+    "sign_research2_4",
+    "sign_research2_5",
+    "sign_research2_6",
+    "poi_research2_counter",
+    "npc_research2_1",
+    "npc_research2_2",
+    "npc_research2_3",
+    "npc_research2_4",
+    "npc_research2_5",
+    "poi_research2_ticket",
+    "npc_research2_6",
+    "poi_research2_tray_return",
+    "poi_research2_hall",
+    "npc_research2_7",
+    "npc_research2_8",
+    "npc_research2_9",
+    "npc_research2_10",
+    "npc_research2_11",
+    "npc_research2_12"
+   ],
+   "seats": 1400,
+   "notes": [
+    "食堂 1F 1098 席",
+    "2F 回廊 240 席",
+    "窓際カウンター席 26",
+    "食堂 合計 1400 席",
+    "1〜2F 吹き抜けの大食堂。配膳カウンター 38 m・券売機 6 台・返却口・2F 回廊"
+   ],
+   "size": 634988,
+   "fbx": "C:\\Users\\takum\\dev\\katsushika-campus-days\\unity\\KatsushikaCampusDays\\Assets\\Models\\Interiors\\research2.fbx",
+   "previews": [
+    "C:\\Users\\takum\\dev\\katsushika-campus-days\\docs\\previews\\interior_research2.png",
+    "C:\\Users\\takum\\dev\\katsushika-campus-days\\docs\\previews\\interior_cafeteria.png"
+   ],
+   "id": "research2",
+   "label": "第2研究棟",
+   "sec": 18.972931385040283
+  },
+  {
+   "tris": 25186,
+   "objects": [
+    "floor_kyoso",
+    "wall_kyoso",
+    "furn_kyoso_01_entry",
+    "furn_kyoso_02_lobby",
+    "furn_kyoso_03_cafe",
+    "furn_kyoso_04_cvs",
+    "furn_kyoso_05_lounge"
+   ],
+   "empties": [
+    "spawn_kyoso",
+    "exit_kyoso",
+    "sign_kyoso_1",
+    "poi_kyoso_stair",
+    "poi_kyoso_starbucks",
+    "npc_kyoso_1",
+    "npc_kyoso_2",
+    "sign_kyoso_2",
+    "poi_kyoso_store",
+    "npc_kyoso_3",
+    "sign_kyoso_3",
+    "npc_kyoso_4",
+    "npc_kyoso_5",
+    "poi_kyoso_lounge",
+    "npc_kyoso_6",
+    "npc_kyoso_7",
+    "sign_kyoso_4"
+   ],
+   "seats": 90,
+   "notes": [
+    "1F=カフェ（吹き抜け）+ コンビニ、2F=ラウンジ。q_coffee の舞台"
+   ],
+   "size": 309564,
+   "fbx": "C:\\Users\\takum\\dev\\katsushika-campus-days\\unity\\KatsushikaCampusDays\\Assets\\Models\\Interiors\\kyoso.fbx",
+   "previews": [
+    "C:\\Users\\takum\\dev\\katsushika-campus-days\\docs\\previews\\interior_kyoso.png"
+   ],
+   "id": "kyoso",
+   "label": "共創棟",
+   "sec": 6.207871437072754
+  },
+  {
+   "tris": 57654,
+   "objects": [
+    "floor_library",
+    "wall_library",
+    "furn_library_01_entry",
+    "furn_library_02_counter",
+    "furn_library_03_stacks",
+    "furn_library_04_reading",
+    "furn_library_05_booths",
+    "furn_library_06_gallery"
+   ],
+   "empties": [
+    "spawn_library",
+    "exit_library",
+    "poi_library_counter",
+    "npc_library_1",
+    "npc_library_2",
+    "sign_library_1",
+    "poi_library_search",
+    "poi_library_stacks",
+    "npc_library_3",
+    "npc_library_4",
+    "poi_library_reading",
+    "npc_library_5",
+    "npc_library_6",
+    "npc_library_7",
+    "npc_library_8",
+    "sign_library_2",
+    "poi_library_desk",
+    "npc_library_9",
+    "poi_library_gallery",
+    "npc_library_10"
+   ],
+   "seats": 299,
+   "notes": [
+    "開架書架 14 連",
+    "閲覧長机 6 列",
+    "個人閲覧ブース 66 席",
+    "開架書架 + 閲覧席 + 2F 回廊の吹き抜け + 個人閲覧ブース"
+   ],
+   "size": 554268,
+   "fbx": "C:\\Users\\takum\\dev\\katsushika-campus-days\\unity\\KatsushikaCampusDays\\Assets\\Models\\Interiors\\library.fbx",
+   "previews": [
+    "C:\\Users\\takum\\dev\\katsushika-campus-days\\docs\\previews\\interior_library.png",
+    "C:\\Users\\takum\\dev\\katsushika-campus-days\\docs\\previews\\interior_library_hall.png"
+   ],
+   "id": "library",
+   "label": "図書館",
+   "sec": 133.25747156143188
+  },
+  {
+   "tris": 20181,
+   "objects": [
+    "floor_gym",
+    "wall_gym",
+    "furn_gym_01_entry",
+    "furn_gym_02_entry_hall",
+    "furn_gym_03_court",
+    "furn_gym_04_stage",
+    "furn_gym_05_seats",
+    "furn_gym_06_equipment",
+    "furn_gym_07_extras"
+   ],
+   "empties": [
+    "spawn_gym",
+    "exit_gym",
+    "sign_gym_1",
+    "poi_gym_court",
+    "npc_gym_1",
+    "npc_gym_2",
+    "npc_gym_3",
+    "poi_gym_stage",
+    "npc_gym_4",
+    "poi_gym_bleachers",
+    "npc_gym_5",
+    "npc_gym_6",
+    "sign_gym_2",
+    "poi_gym_storage",
+    "npc_gym_7",
+    "poi_gym_catwalk"
+   ],
+   "seats": 540,
+   "notes": [
+    "観覧席 540 席",
+    "用具庫 + 体操器具（跳び箱・マット・平均台）+ 得点板 + 肋木・キャットウォーク",
+    "アリーナ（28×15 m コート・ゴール 2 基・ステージ・観覧席・屋根トラス）"
+   ],
+   "size": 259308,
+   "fbx": "C:\\Users\\takum\\dev\\katsushika-campus-days\\unity\\KatsushikaCampusDays\\Assets\\Models\\Interiors\\gym.fbx",
+   "previews": [
+    "C:\\Users\\takum\\dev\\katsushika-campus-days\\docs\\previews\\interior_gym.png"
+   ],
+   "id": "gym",
+   "label": "体育館",
+   "sec": 0.5862321853637695
+  },
+  {
+   "tris": 22444,
+   "objects": [
+    "floor_lab1",
+    "wall_lab1",
+    "furn_lab1_01_entry",
+    "furn_lab1_02_corridor",
+    "furn_lab1_03_lab01",
+    "furn_lab1_04_lab02",
+    "furn_lab1_05_prep03"
+   ],
+   "empties": [
+    "spawn_lab1",
+    "exit_lab1",
+    "sign_lab1_1",
+    "sign_lab1_2",
+    "sign_lab1_3",
+    "poi_lab1_lab",
+    "npc_lab1_1",
+    "npc_lab1_2",
+    "poi_lab1_lab_b",
+    "npc_lab1_3",
+    "poi_lab1_prep"
+   ],
+   "seats": 40,
+   "notes": [
+    "廊下 + 実験室 3 室（実験台・ドラフト・ボンベ・薬品庫）"
+   ],
+   "size": 266780,
+   "fbx": "C:\\Users\\takum\\dev\\katsushika-campus-days\\unity\\KatsushikaCampusDays\\Assets\\Models\\Interiors\\lab1.fbx",
+   "previews": [
+    "C:\\Users\\takum\\dev\\katsushika-campus-days\\docs\\previews\\interior_lab1.png",
+    "C:\\Users\\takum\\dev\\katsushika-campus-days\\docs\\previews\\interior_lab1_room.png"
+   ],
+   "id": "lab1",
+   "label": "実験棟1",
+   "sec": 8.545644521713257
+  },
+  {
+   "tris": 14230,
+   "objects": [
+    "floor_lab2",
+    "wall_lab2",
+    "furn_lab2_01_entry",
+    "furn_lab2_02_corridor",
+    "furn_lab2_03_lab01",
+    "furn_lab2_04_prep02"
+   ],
+   "empties": [
+    "spawn_lab2",
+    "exit_lab2",
+    "sign_lab2_1",
+    "sign_lab2_2",
+    "poi_lab2_lab",
+    "npc_lab2_1",
+    "npc_lab2_2",
+    "poi_lab2_lab_b",
+    "npc_lab2_3",
+    "poi_lab2_prep"
+   ],
+   "seats": 20,
+   "notes": [
+    "廊下 + 実験室 2 室（実験台・ドラフト・ボンベ・薬品庫）"
+   ],
+   "size": 196044,
+   "fbx": "C:\\Users\\takum\\dev\\katsushika-campus-days\\unity\\KatsushikaCampusDays\\Assets\\Models\\Interiors\\lab2.fbx",
+   "previews": [
+    "C:\\Users\\takum\\dev\\katsushika-campus-days\\docs\\previews\\interior_lab2.png",
+    "C:\\Users\\takum\\dev\\katsushika-campus-days\\docs\\previews\\interior_lab2_room.png"
+   ],
+   "id": "lab2",
+   "label": "実験棟2",
+   "sec": 3.8616790771484375
+  },
+  {
+   "tris": 4216,
+   "objects": [
+    "floor_greenhouse",
+    "wall_greenhouse",
+    "furn_greenhouse_01_entry",
+    "furn_greenhouse_02_benches"
+   ],
+   "empties": [
+    "spawn_greenhouse",
+    "exit_greenhouse",
+    "poi_greenhouse_plants",
+    "npc_greenhouse_1",
+    "sign_greenhouse_1"
+   ],
+   "seats": 0,
+   "notes": [
+    "切妻ガラス屋根の温室（栽培ベンチ 2 列・鉢植え・灌水パイプ）"
+   ],
+   "size": 111164,
+   "fbx": "C:\\Users\\takum\\dev\\katsushika-campus-days\\unity\\KatsushikaCampusDays\\Assets\\Models\\Interiors\\greenhouse.fbx",
+   "previews": [
+    "C:\\Users\\takum\\dev\\katsushika-campus-days\\docs\\previews\\interior_greenhouse.png"
+   ],
+   "id": "greenhouse",
+   "label": "温室",
+   "sec": 0.4588744640350342
+  }
+ ]
+}

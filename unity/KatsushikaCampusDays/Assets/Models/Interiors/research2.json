@@ -1,0 +1,165 @@
+{
+ "id": "research2",
+ "display": "第2研究棟",
+ "entrance_world": {
+  "x": -1.9285,
+  "z": -17.9728
+ },
+ "yaw_deg": 24.5514,
+ "campus_frame_deg": -24.5514,
+ "envelope": {
+  "x0": -40.663,
+  "x1": 40.663,
+  "y_face": 4.0,
+  "y_back": 44.327
+ },
+ "wall_thickness": 0.3,
+ "spawn": {
+  "x": 0.0,
+  "y": 0.0,
+  "z": 5.8
+ },
+ "empties": {
+  "spawn_research2": {
+   "x": 0.0,
+   "y": 0.0,
+   "z": 5.8
+  },
+  "exit_research2": {
+   "x": 0.0,
+   "y": 0.0,
+   "z": 4.55
+  },
+  "sign_research2_1": {
+   "x": -30.363,
+   "y": 2.8,
+   "z": 35.527
+  },
+  "sign_research2_2": {
+   "x": -23.363,
+   "y": 2.8,
+   "z": 35.527
+  },
+  "sign_research2_3": {
+   "x": -16.363,
+   "y": 2.8,
+   "z": 35.527
+  },
+  "sign_research2_4": {
+   "x": -9.363,
+   "y": 2.8,
+   "z": 35.527
+  },
+  "sign_research2_5": {
+   "x": -2.363,
+   "y": 2.8,
+   "z": 35.527
+  },
+  "sign_research2_6": {
+   "x": 4.637,
+   "y": 2.8,
+   "z": 35.527
+  },
+  "poi_research2_counter": {
+   "x": -13.363,
+   "y": 0.0,
+   "z": 35.027
+  },
+  "npc_research2_1": {
+   "x": -28.363,
+   "y": 0.0,
+   "z": 36.477
+  },
+  "npc_research2_2": {
+   "x": -20.363,
+   "y": 0.0,
+   "z": 36.477
+  },
+  "npc_research2_3": {
+   "x": -12.363,
+   "y": 0.0,
+   "z": 36.477
+  },
+  "npc_research2_4": {
+   "x": -4.363,
+   "y": 0.0,
+   "z": 36.477
+  },
+  "npc_research2_5": {
+   "x": 3.637,
+   "y": 0.0,
+   "z": 36.477
+  },
+  "poi_research2_ticket": {
+   "x": -34.363,
+   "y": 0.0,
+   "z": 10.3
+  },
+  "npc_research2_6": {
+   "x": -33.963,
+   "y": 0.0,
+   "z": 10.5
+  },
+  "poi_research2_tray_return": {
+   "x": 32.363,
+   "y": 0.0,
+   "z": 40.627
+  },
+  "poi_research2_hall": {
+   "x": 0.0,
+   "y": 0.0,
+   "z": 23.664
+  },
+  "npc_research2_7": {
+   "x": -31.963,
+   "y": 0.0,
+   "z": 15.9
+  },
+  "npc_research2_8": {
+   "x": -20.963,
+   "y": 0.0,
+   "z": 20.9
+  },
+  "npc_research2_9": {
+   "x": -9.963,
+   "y": 0.0,
+   "z": 25.9
+  },
+  "npc_research2_10": {
+   "x": 1.037,
+   "y": 0.0,
+   "z": 15.9
+  },
+  "npc_research2_11": {
+   "x": 12.037,
+   "y": 0.0,
+   "z": 20.9
+  },
+  "npc_research2_12": {
+   "x": 23.037,
+   "y": 0.0,
+   "z": 25.9
+  }
+ },
+ "triangles": 65000,
+ "seats": 1400,
+ "notes": [
+  "食堂 1F 1098 席",
+  "2F 回廊 240 席",
+  "窓際カウンター席 26",
+  "食堂 合計 1400 席",
+  "1〜2F 吹き抜けの大食堂。配膳カウンター 38 m・券売機 6 台・返却口・2F 回廊"
+ ],
+ "objects": [
+  "floor_research2",
+  "wall_research2",
+  "furn_research2_01_entry",
+  "furn_research2_02_gallery",
+  "furn_research2_03_serving",
+  "furn_research2_04_ops",
+  "furn_research2_05_tables",
+  "furn_research2_06_chairs",
+  "furn_research2_07_window_counter",
+  "furn_research2_08_green"
+ ]
+}

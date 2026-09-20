@@ -1,0 +1,60 @@
+{
+ "id": "greenhouse",
+ "display": "温室",
+ "entrance_world": {
+  "x": 107.653,
+  "z": 14.6969
+ },
+ "yaw_deg": 24.5514,
+ "campus_frame_deg": -24.5514,
+ "envelope": {
+  "x0": -3.736,
+  "x1": 3.736,
+  "y_face": 2.5,
+  "y_back": 13.241
+ },
+ "wall_thickness": 0.3,
+ "spawn": {
+  "x": 0.0,
+  "y": 0.0,
+  "z": 4.0
+ },
+ "empties": {
+  "spawn_greenhouse": {
+   "x": 0.0,
+   "y": 0.0,
+   "z": 4.0
+  },
+  "exit_greenhouse": {
+   "x": 0.0,
+   "y": 0.0,
+   "z": 3.05
+  },
+  "poi_greenhouse_plants": {
+   "x": 0.0,
+   "y": 0.0,
+   "z": 7.87
+  },
+  "npc_greenhouse_1": {
+   "x": 0.0,
+   "y": 0.0,
+   "z": 5.4
+  },
+  "sign_greenhouse_1": {
+   "x": 0.0,
+   "y": 2.2,
+   "z": 12.721
+  }
+ },
+ "triangles": 4216,
+ "seats": 0,
+ "notes": [
+  "切妻ガラス屋根の温室（栽培ベンチ 2 列・鉢植え・灌水パイプ）"
+ ],
+ "objects": [
+  "floor_greenhouse",
+  "wall_greenhouse",
+  "furn_greenhouse_01_entry",
+  "furn_greenhouse_02_benches"
+ ]
+}
