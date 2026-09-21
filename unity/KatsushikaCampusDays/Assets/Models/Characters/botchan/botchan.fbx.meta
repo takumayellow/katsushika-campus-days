@@ -52,6 +52,11 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: furoshiki_orange
+    second: {fileID: 2100000, guid: 9c9248f1597204544bb03f0f6ea524c9, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: furoshiki_red
     second: {fileID: 2100000, guid: fc6d80adbdf4f824d8ce5c4f7e9a6aeb, type: 2}
   - first:

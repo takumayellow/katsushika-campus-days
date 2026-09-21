@@ -37,11 +37,15 @@ def garment_rings(p: dict, a: B.Anatomy, z_list, inflate, *, seg: int = 28,
         # 素肌のプロファイルは肩から上で首へ向かって急に細る。服がそれを
         # なぞると肩の面に布が載らず、上端の切り口から素肌の帯が出て
         # オフショルダーに見える。肩の高さから上は肩幅を保たせる。
+        # ただし肩の高さより上まで同じ幅を保つと、上端が水平な棚になって
+        # 肩が箱に見える。肩の頂点から上は円弧で内へ落とす。
         hh = p["height"]
-        t = np.clip((z_list - (a.shoulder[2] - hh * 0.045)) / (hh * 0.051),
-                    0.0, 1.0)
+        z_sh = a.shoulder[2]
+        t = np.clip((z_list - (z_sh - hh * 0.045)) / (hh * 0.045), 0.0, 1.0)
         w = t * t * (3.0 - 2.0 * t)
-        tgt = rxi * (1.0 - w) + a.shoulder_half * w
+        up = np.clip((z_list - z_sh) / (hh * 0.034), 0.0, 1.0)
+        round_ = np.sqrt(np.clip(1.0 - up * up, 0.0, 1.0))
+        tgt = rxi * (1.0 - w) + a.shoulder_half * round_ * w
         rxi = np.maximum(rxi, tgt)
     if span is None:
         ang = np.linspace(0.0, 2 * math.pi, seg, endpoint=False)
@@ -254,7 +258,98 @@ def _ribbon(mb, p, a, mat, z, *, size=1.0):
                          (s * 0.22, s * 1.05)], mat, n=6, power=3.0)
 
 
+def _surface_pt(p, a, az: float, z: float, inflate: float) -> np.ndarray:
+    """胴プロファイルを inflate だけ膨らませた面上の 1 点。"""
+    return garment_rings(p, a, [z], inflate, seg=1, span=(az, az))[0][0][0]
+
+
+#: セーラー襟の背面フラップの角度範囲（+Y が背中）
+_SAILOR_BACK_SPAN = (math.pi * 0.24, math.pi * 0.76)
+
+
+def _sailor_collar(mb, p, a, z_top, *, mat="cloth_skirt_navy",
+                   stripe="collar_white", drop=0.115, lapel_w=0.034):
+    """セーラー襟。背中に垂れる四角いフラップと、胸のリボンへ向かう V 字の
+    ラペルで作る。首もとを帯で巻くと、正面から見たときに肩幅いっぱいの
+    白いケープになってしまうので、布の形をそのまま作る。"""
+    h = p["height"]
+    z = p["z"]
+    base_inf = h * 0.0085
+    # --- 背面フラップ（肩の上端から背中へ、下へ行くほど少し浮かせる）
+    zs = np.linspace(z_top, z_top - h * drop, 5)
+    infl = np.linspace(base_inf + h * 0.006, base_inf + h * 0.017, len(zs))
+    # 上辺は首側へ絞る。肩幅いっぱいに取ると角が肩の外へ出て、後ろから
+    # 見たとき肩章のように見える。
+    narrow = math.pi * 0.085
+    rings = []
+    for k, (z_k, infl_k) in enumerate(zip(zs, infl)):
+        f = 1.0 - k / (len(zs) - 1)
+        span_k = (_SAILOR_BACK_SPAN[0] + narrow * f,
+                  _SAILOR_BACK_SPAN[1] - narrow * f)
+        rings.append(garment_rings(p, a, [z_k], infl_k, seg=16,
+                                   span=span_k)[0][0])
+    az_top = (_SAILOR_BACK_SPAN[0] + narrow, _SAILOR_BACK_SPAN[1] - narrow)
+    with mb.part("collar"):
+        mb.add_grid(rings, mat, smooth=True, close_u=False)
+        # 白いライン（フラップの外周: 左辺 -> 下辺 -> 右辺）
+        edge = np.vstack([np.array([r[0] for r in rings]),
+                          rings[-1][1:],
+                          np.array([r[-1] for r in rings[-2::-1]])])
+        mb.add_tube(edge, [h * 0.0032] * len(edge), stripe, n=6,
+                    cap_start=True, cap_end=True)
+    # --- 前の V ラペル: フラップの前角からリボン位置へ
+    z_end = z["bust"] + h * 0.018
+    n = 9
+    for sgn, az_s in ((-1, az_top[1]), (1, az_top[0])):
+        az_e = math.pi * 1.5 - sgn * math.radians(6.0)
+        if sgn > 0:
+            az_e -= 2.0 * math.pi
+        ts = np.linspace(0.0, 1.0, n)
+        az_c = az_s + (az_e - az_s) * ts
+        z_c = z_top + (z_end - z_top) * ts ** 1.15
+        # 肩を越えるところ（az が真横を通る ts≈0.38）では高い位置を通す。
+        # 肩の高さのまま回すと帯が肩先の外側を巻いて、後ろから見ると
+        # 肩章のように張り出す。高い位置ほど胴の輪は首側に細るので、
+        # 帯は肩の付け根寄りを横切る。
+        bump = np.sin(math.pi * np.clip(ts / 0.76, 0.0, 1.0))
+        z_c = z_c + h * 0.024 * bump
+        infl_c = base_inf + h * 0.007
+        ctr = np.array([_surface_pt(p, a, float(az_i), float(z_i), infl_c)
+                        for az_i, z_i in zip(az_c, z_c)])
+        tang = np.gradient(ctr, axis=0)
+        nrm = ctr * np.array([1.0, 1.0, 0.0])
+        nrm = nrm / (np.linalg.norm(nrm, axis=1, keepdims=True) + 1e-9)
+        # 肩の上では面の法線が上を向く。水平法線のままだと帯が肩の上で
+        # 縦に立ち、肩章のような板が肩から突き出て見える。
+        up_w = (np.clip(1.0 - ts / 0.38, 0.0, 1.0) ** 1.4)[:, None]
+        nrm = nrm * (1.0 - up_w) + np.array([0.0, 0.0, 1.0]) * up_w * 1.3
+        nrm = nrm / (np.linalg.norm(nrm, axis=1, keepdims=True) + 1e-9)
+        ctr = ctr + nrm * (h * 0.0025)
+        # 肩の上では帯を首側へ寄せ、幅も絞る。肩先まで広げると肩の外に
+        # はみ出して見える。寄せた分だけ上げて肩の面に沿わせる。
+        axis_in = -ctr * np.array([1.0, 1.0, 0.0])
+        axis_in = axis_in / (np.linalg.norm(axis_in, axis=1, keepdims=True) + 1e-9)
+        shift = h * lapel_w * 0.35 * up_w
+        ctr = ctr + axis_in * shift + np.array([0.0, 0.0, 1.0]) * shift * 0.20
+        across = np.cross(nrm, tang)
+        across = across / (np.linalg.norm(across, axis=1, keepdims=True) + 1e-9)
+        # 幅は胸側で広く、リボンへ向かって細る。肩の上は細く。
+        w = h * lapel_w * (1.0 - 0.45 * ts)[:, None] * (1.0 - 0.45 * up_w)
+        # 肩の上では帯の外縁を芯線に揃える（外側へ張り出さない）
+        out_dir = across * (-sgn)
+        ctr = ctr - out_dir * w * 0.5 * up_w
+        left = ctr + across * w * 0.5
+        right = ctr - across * w * 0.5
+        with mb.part("collar"):
+            mb.add_quad_strip(left, right, mat)
+            mb.add_quad_strip(right, left, mat)
+            outer = left if sgn < 0 else right
+            mb.add_tube(outer, [h * 0.0030] * len(outer), stripe, n=6,
+                        cap_start=True, cap_end=True)
+
+
 def _collar(mb, p, a, mat, z, *, drop=0.055):
+    """首もとに巻く帯状の襟（セーラー襟でない服向け）。"""
     h = p["height"]
     zs = np.array([z, z - h * drop])
     rings, _ = garment_rings(p, a, zs, [h * 0.006, h * 0.020], seg=26)
@@ -265,35 +360,34 @@ def _collar(mb, p, a, mat, z, *, drop=0.055):
 def _arm_sleeve(mb, p, a: B.Anatomy, mat, part, *, t_end=0.55, r_scale=1.45,
                 puff=1.0):
     r0, r1, r2 = a.arm_r
+    hh = p["height"]
     for sgn in (-1, 1):
         sh = a.shoulder * np.array([sgn, 1, 1])
         el = a.elbow * np.array([sgn, 1, 1])
         wr = a.wrist * np.array([sgn, 1, 1])
-        # 腕軸に沿って付け根を遡らせると肩より上へ抜けて白い板が飛び出す。
-        # 代わりに肩関節に球（肩パッド）を置き、袖の筒はその中から始める。
-        root = sh + (el - sh) * 0.03
-        full = np.array([root, sh + (el - sh) * 0.5, el,
+        # 袖の筒は胴シェルの内側（肩関節より胴寄り）から始める。肩関節に
+        # 球を置くと肩が四角い塊に見え、腕軸に沿って肩より上へ遡らせると
+        # 白い板が飛び出す。付け根を細めにして肩の丸みへ滑らかにつなぐ。
+        root = sh + (el - sh) * (-0.12) + np.array([0.0, 0.0, -0.010 * hh])
+        full = np.array([root, sh, sh + (el - sh) * 0.5, el,
                          el + (wr - el) * 0.55, wr])
-        tt = np.array([0.0, 0.25, 0.5, 0.78, 1.0])
+        tt = np.array([-0.12, 0.0, 0.25, 0.5, 0.78, 1.0])
         k = int(np.searchsorted(tt, t_end))
         path = list(full[:k])
         pt = _interp_path(full, tt, t_end)
         path.append(pt)
         ts = np.append(tt[:k], t_end)
-        rr = np.interp(ts, [0.0, 0.5, 1.0], [r0, r1, r2])
-        # 肩口をふくらませる（パフスリーブ）
-        # 付け根で急に太らせると肩から四角い塊が飛び出す。ピークを少し
-        # 肘寄り（t=0.18）に置いてなだらかにする。
-        radii = [float(r * r_scale
-                       * (1.00 + 0.20 * puff * math.exp(-(t / 0.30) ** 2)))
-                 for r, t in zip(rr, ts)]
+        rr = np.interp(ts, [-0.12, 0.0, 0.5, 1.0], [r0, r0, r1, r2])
+        # 肩口をふくらませる（パフスリーブ）。ピークを肩関節の少し先
+        # （t=0.16）に置き、付け根と袖口は絞る。
+        radii = []
+        for r, t in zip(rr, ts):
+            bulge = 0.22 * puff * math.exp(-((t - 0.16) / 0.22) ** 2)
+            neck = 0.80 + 0.20 * float(np.clip((t + 0.12) / 0.12, 0.0, 1.0))
+            cuff = 1.0 - 0.10 * float(np.clip((t - t_end + 0.06) / 0.06,
+                                              0.0, 1.0))
+            radii.append(float(r * r_scale * (1.0 + bulge) * neck * cuff))
         with mb.part(f"{part}_{'l' if sgn > 0 else 'r'}"):
-            # 胴シェルの上端は水平なので、肩の丸み（三角筋）がその上に
-            # はみ出して素肌の帯になる。肩関節に腕と同じ太さの球を置いて
-            # 覆う。中心を胴側へずらしたり前後へ伸ばしたりすると、襟もとや
-            # 胸の上に丸い瘤が浮き出るので、真球を関節の位置に置く。
-            cap = r0 * r_scale * 1.10
-            mb.add_sphere(sh, (cap, cap, cap), mat, nu=16, nv=10)
             mb.add_tube(np.array(path), radii, mat, n=12, cap_start=True,
                         cap_end=True)
 
@@ -393,7 +487,7 @@ def build_seifuku(mb, p, a: B.Anatomy, *, apron: bool = False,
                      shoulder=True)
     yoke(mb, p, a, "cloth_blouse", "blouse_yoke", bl_rings[-1],
          z["shoulder"] + h * 0.016, h * 0.0085, rise=h * 0.030)
-    _collar(mb, p, a, "cloth_blouse", z["shoulder"] + h * 0.016)
+    _sailor_collar(mb, p, a, z["shoulder"] + h * 0.016)
     _arm_sleeve(mb, p, a, "cloth_blouse", "sleeve", t_end=0.42, r_scale=1.26,
                 puff=1.00)
     if hoodie:
@@ -602,7 +696,36 @@ def _boots(mb, p, a: B.Anatomy):
                 mb.add_tube(np.array([p2, p3]), [h * 0.0035] * 2, "metal", n=4)
 
 
+def _furoshiki_shoulder(mb, p, a: B.Anatomy):
+    """右肩に担いだ風呂敷包み。包みは肩の後ろ、結び目は肩の前。"""
+    h = p["height"]
+    sh = a.shoulder * np.array([-1.0, 1.0, 1.0])
+    c = np.array([sh[0] * 0.78, sh[1] + h * 0.088, sh[2] + h * 0.052])
+    knot = np.array([sh[0] * 0.74, sh[1] - h * 0.052, sh[2] + h * 0.006])
+    top = np.array([sh[0] * 0.70, sh[1] + h * 0.006, sh[2] + h * 0.060])
+    mat = "furoshiki_orange"
+    with mb.part("bag"):
+        mb.add_sphere(tuple(c), (h * 0.072, h * 0.062, h * 0.068), mat,
+                      nu=16, nv=10)
+        # 肩を越える布（結び目 -> 肩の上 -> 包み）
+        path = np.array([knot, top, c + np.array([0.0, -h * 0.045, h * 0.040])])
+        mb.add_tube(path, [(h * 0.034, h * 0.012), (h * 0.040, h * 0.013),
+                           (h * 0.050, h * 0.020)], mat, n=8,
+                    power=2.6, cap_start=False, cap_end=False)
+        mb.add_sphere(tuple(knot), (h * 0.030, h * 0.026, h * 0.024), mat,
+                      nu=10, nv=7)
+        # 結び目から垂れる端
+        for dx, dz in ((-0.6, -1.0), (0.5, -0.9)):
+            e = knot + np.array([dx * h * 0.030, -h * 0.010, dz * h * 0.055])
+            mb.add_tube(np.array([knot, (knot + e) * 0.5, e]),
+                        [(h * 0.016, h * 0.011), (h * 0.013, h * 0.009),
+                         (h * 0.004, h * 0.003)], mat, n=7)
+
+
 def _furoshiki(mb, p, a: B.Anatomy):
+    if p.get("bag_mount") == "shoulder":
+        _furoshiki_shoulder(mb, p, a)
+        return
     h = p["height"]
     g = grip_point(a)
     knot = np.array([g[0], g[1] + h * 0.004, g[2] - h * 0.010])

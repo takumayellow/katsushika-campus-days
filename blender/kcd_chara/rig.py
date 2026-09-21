@@ -298,4 +298,7 @@ def override_weights(obj, mb: M.MeshBuilder, p: dict, a: B.Anatomy) -> None:
         bone = "LeftFoot" if side == "l" else "RightFoot"
         _set_exclusive(obj, mb.part_indices(f"shoes_{side}", f"foot_{side}"),
                        {bone: 1.0})
-    _set_exclusive(obj, mb.part_indices("bag"), {"RightHand": 1.0})
+    if p.get("bag_mount") == "shoulder":
+        _set_exclusive(obj, mb.part_indices("bag"), {"UpperChest": 1.0})
+    else:
+        _set_exclusive(obj, mb.part_indices("bag"), {"RightHand": 1.0})

@@ -37,6 +37,11 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: collar_white
+    second: {fileID: 2100000, guid: deee0a2e55edf39408bf1ec193502188, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: eye_l
     second: {fileID: 2100000, guid: 4c3a67143c321ca4ca568e25d5e4c0f0, type: 2}
   - first:

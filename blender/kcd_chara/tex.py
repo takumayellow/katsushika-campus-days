@@ -259,6 +259,16 @@ def _draw_face_brows(arr: np.ndarray, p: dict) -> None:
                                      fl["eye_ry"])
     brow = p.get("brow_color", tuple(min(1.0, c * 0.78) for c in p["hair_color"]))
     bw = p.get("brow_width", 0.011)
+    if p.get("eye_style") == "dot":
+        # 太くて短い直線の眉。内側を下げて眉根を寄せる（坊っちゃん）。
+        by = eye_y + eye_ry * 2.9
+        for sgn in (-1, 1):
+            cx = 0.5 + sgn * eye_dx
+            polyline(arr,
+                     [(cx - sgn * eye_rx * 0.70, by - eye_ry * 0.25),
+                      (cx + sgn * eye_rx * 1.75, by + eye_ry * 0.70)],
+                     bw, brow, taper=(bw * 1.05, bw * 0.80))
+        return
     by = eye_y + eye_ry * 1.72
     for sgn in (-1, 1):
         cx = 0.5 + sgn * eye_dx
@@ -281,8 +291,11 @@ def _draw_face_features(arr: np.ndarray, p: dict) -> None:
 
     for sgn in (-1, 1):
         cx = 0.5 + sgn * eye_dx
-        _draw_eye(arr, cx, eye_y, eye_rx, eye_ry, sgn, iris, iris_dark,
-                  iris_light, lash, p)
+        if p.get("eye_style") == "dot":
+            _draw_dot_eye(arr, cx, eye_y, eye_rx, eye_ry, sgn, lash)
+        else:
+            _draw_eye(arr, cx, eye_y, eye_rx, eye_ry, sgn, iris, iris_dark,
+                      iris_light, lash, p)
 
     # body.build_face_parts の口メッシュと同じ高さ（eye_y * 0.46）に置く
     mouth_y = eye_y * 0.46
@@ -300,10 +313,23 @@ def _draw_face_features(arr: np.ndarray, p: dict) -> None:
         # 下唇のハイライト
         ellipse(arr, 0.5, mouth_y - mw * 0.52, mw * 0.34, mw * 0.13,
                 (1.0, 0.90, 0.88), power=2.0, alpha=0.40, feather=0.005)
-    else:  # 真一文字（坊っちゃん・教授）
+    elif p.get("mouth_style") == "frown":
+        # への字。両端を下げる（坊っちゃん）
+        arc(arr, (0.5 - mw, mouth_y - mw * 0.42), (0.5, mouth_y + mw * 0.30),
+            (0.5 + mw, mouth_y - mw * 0.42), 0.0050, mcol,
+            taper=(0.0026, 0.0026))
+    else:  # 真一文字（教授）
         arc(arr, (0.5 - mw, mouth_y + mw * 0.16), (0.5, mouth_y - mw * 0.06),
             (0.5 + mw, mouth_y + mw * 0.16), 0.0040, mcol,
             taper=(0.0022, 0.0022))
+
+
+def _draw_dot_eye(arr, cx, cy, rx, ry, sgn, lash):
+    """点目。白目も虹彩も無く、黒い楕円と小さなハイライトだけ。"""
+    ink = tuple(c * 0.55 for c in lash)
+    ellipse(arr, cx, cy, rx, ry, ink, power=2.2, feather=0.004)
+    ellipse(arr, cx - sgn * rx * 0.30, cy + ry * 0.34, rx * 0.26, ry * 0.22,
+            (1.0, 1.0, 1.0), power=2.0, alpha=0.85)
 
 
 def _draw_eye(arr, cx, cy, rx, ry, sgn, iris, iris_dark, iris_light, lash, p):

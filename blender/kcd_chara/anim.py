@@ -144,6 +144,20 @@ def _fcurves(act):
 D = math.radians
 
 
+#: レストポーズは A ポーズ（上腕が鉛直から 38° 開く）。動作中は腕を体側に下ろした姿勢を
+#: 基準にしたいので、全 Action の上腕にこの分の内転（ワールド Y 軸回り）を先に入れる。
+#: 残り約 12° が「気をつけ」で自然に見える開き。
+ARM_DROP = 26.0
+
+
+def _arms_down(spec: dict, drop: float = ARM_DROP) -> dict:
+    """上腕の回転リストの先頭に内転を足す（左は +Y、右は -Y が「下ろす」向き）。"""
+    out = dict(spec)
+    for bone, sgn in (("LeftUpperArm", 1.0), ("RightUpperArm", -1.0)):
+        out[bone] = [("Y", D(sgn * drop))] + list(spec.get(bone, []))
+    return out
+
+
 def _hair(lag: float, amp: float, t: float, *, freq: float = 1.0):
     """髪の揺れ。頭の動きから位相を遅らせて追従させる。"""
     ph = 2 * math.pi * (freq * t) - lag
@@ -242,8 +256,8 @@ def _jump(t):
         "RightLowerLeg": [("X", D(72.0) * crouch)],
         "LeftFoot": [("X", D(-26.0) * crouch)],
         "RightFoot": [("X", D(-26.0) * crouch)],
-        "LeftUpperArm": [("Y", D(-abs(arm) * 0.6)), ("X", D(-arm * 0.3))],
-        "RightUpperArm": [("Y", D(abs(arm) * 0.6)), ("X", D(-arm * 0.3))],
+        "LeftUpperArm": [("Y", D(-abs(arm) * 0.8)), ("X", D(-arm * 0.3))],
+        "RightUpperArm": [("Y", D(abs(arm) * 0.8)), ("X", D(-arm * 0.3))],
         "LeftLowerArm": [("X", D(-18.0))],
         "RightLowerArm": [("X", D(-18.0))],
     }
@@ -259,7 +273,7 @@ def _wave(t):
         "Spine": [("Z", D(3.0) * ramp)],
         "Head": [("Z", D(5.0) * ramp), ("Y", D(-4.0) * ramp),
                  ("X", D(-3.0) * ramp)],
-        "LeftUpperArm": [("Y", D(-104.0) * ramp), ("X", D(-8.0) * ramp)],
+        "LeftUpperArm": [("Y", D(-(104.0 + ARM_DROP)) * ramp), ("X", D(-8.0) * ramp)],
         "LeftLowerArm": [("Y", D(-26.0) * ramp), ("X", D(-24.0) * ramp * (0.5 + 0.5 * swing))],
         "LeftHand": [("Y", D(-18.0) * swing * ramp)],
         "RightUpperArm": [("Y", D(3.0)), ("X", D(4.0) * ramp)],
@@ -289,13 +303,18 @@ def _talk(t):
     }
 
 
+def _posed(fn):
+    """poser に腕下ろしを合成する。"""
+    return lambda t: _arms_down(fn(t))
+
+
 SPECS = (
-    ("Idle", 60, _idle, True, 9),
-    ("Walk", 30, _walk, True, 13),
-    ("Run", 20, _run, True, 13),
-    ("Jump", 30, _jump, False, 13),
-    ("Wave", 40, _wave, False, 17),
-    ("Talk", 60, _talk, True, 13),
+    ("Idle", 60, _posed(_idle), True, 9),
+    ("Walk", 30, _posed(_walk), True, 13),
+    ("Run", 20, _posed(_run), True, 13),
+    ("Jump", 30, _posed(_jump), False, 13),
+    ("Wave", 40, _posed(_wave), False, 17),
+    ("Talk", 60, _posed(_talk), True, 13),
 )
 
 
