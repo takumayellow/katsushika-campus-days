@@ -95,19 +95,8 @@ def build_ambient(entries: list) -> None:
 CATEGORIES = {"bgm": build_bgm, "se": build_se, "ambient": build_ambient}
 
 
-def main(argv: list) -> int:
-    wanted = [a.lower() for a in argv[1:]] or list(CATEGORIES)
-    unknown = [w for w in wanted if w not in CATEGORIES]
-    if unknown:
-        print(f"unknown category: {', '.join(unknown)} (choose from {', '.join(CATEGORIES)})")
-        return 2
-
-    t0 = time.time()
-    entries: list = []
-    for key in wanted:
-        CATEGORIES[key](entries)
-    elapsed = time.time() - t0
-
+def write_manifest(entries: list, elapsed: float) -> None:
+    """生成した entries を既存 manifest にマージして書き, Assets/Audio/README.md も更新する."""
     # 既存 manifest の他カテゴリ分は残す (部分生成しても壊れないように)
     merged = {}
     if os.path.exists(MANIFEST):
@@ -153,6 +142,20 @@ def main(argv: list) -> int:
 
     import make_readme
     make_readme.main()
+
+
+def main(argv: list) -> int:
+    wanted = [a.lower() for a in argv[1:]] or list(CATEGORIES)
+    unknown = [w for w in wanted if w not in CATEGORIES]
+    if unknown:
+        print(f"unknown category: {', '.join(unknown)} (choose from {', '.join(CATEGORIES)})")
+        return 2
+
+    t0 = time.time()
+    entries: list = []
+    for key in wanted:
+        CATEGORIES[key](entries)
+    write_manifest(entries, time.time() - t0)
     return 0
 
 

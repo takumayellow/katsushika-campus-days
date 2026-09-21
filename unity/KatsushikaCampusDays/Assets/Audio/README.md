@@ -19,7 +19,7 @@ python tools/audio/build_audio.py bgm ambient  # カテゴリを絞る
 | `tools/audio/analyze.py` | 波形統計とループ継ぎ目の計測 |
 | `tools/audio/build_audio.py` | 全体のエントリ。`manifest.json` と本 README を書き出す |
 
-出力は 44.1 kHz / 16 bit の WAV。合計 53 ファイル, 106.3 MiB, 音の長さ 637.4 秒。生成時間は 283 秒。
+出力は 44.1 kHz / 16 bit の WAV。合計 54 ファイル, 128.2 MiB, 音の長さ 767.9 秒。生成時間は 12 秒。
 
 ## Unity へ取り込むときの設定
 
@@ -47,19 +47,20 @@ README の表の「ループ継ぎ目」は `seam_step_ratio / seam_hf_ratio` �
 
 **`bgm_title` はこの 2 つが 1 前後になるが, 不連続ではない。** 同じ編曲を 2 周ぶん描画して内部の継ぎ目と比較したところ, 回り込みの段差 0.07121 と 2 周描画の内部の段差 0.07121 が完全に一致し, 2 周目の波形は 1 周ぶんの出力と最大誤差 0.0 で一致した。指標が拾っているのは小節頭のピアノのアタックそのもので, 継ぎ目の欠陥ではない。
 
-クリップしたサンプルは全 53 ファイルで 0 個。
+クリップしたサンプルは全 54 ファイルで 0 個。
 
-## BGM (9 ファイル)
+## BGM (10 ファイル)
 
 | ファイル | 長さ | ピーク | RMS | ループ継ぎ目 | 用途 |
 |---|---:|---:|---:|---:|---|
-| `bgm_anthem_original.wav` | 71.11 s | -1.0 dBFS | -12.5 dBFS | 0.733 / 0.158 | オリジナルの校歌風行進曲. 108 BPM / Bb major / A-B 形式 |
+| `bgm_anthem_original.wav` | 71.11 s | -1.0 dBFS | -12.5 dBFS | 0.733 / 0.158 | オリジナルの校歌風行進曲 (未使用). 108 BPM / Bb major / A-B 形式 |
 | `bgm_day.wav` | 64.00 s | -1.0 dBFS | -11.6 dBFS | 0.078 / 0.065 | 昼のキャンパス. 120 BPM / C major / 明るいポップ |
 | `bgm_evening.wav` | 68.57 s | -1.0 dBFS | -13.6 dBFS | 0.191 / 0.063 | 夕方. 84 BPM / F major / ノスタルジック |
 | `bgm_indoor.wav` | 80.00 s | -1.0 dBFS | -11.9 dBFS | 0.104 / 0.063 | 屋内. 96 BPM / C major / ジャズ 7th の lo-fi |
 | `bgm_night.wav` | 80.00 s | -1.0 dBFS | -15.4 dBFS | 0.028 / 1.052 | 夜の余韻. 72 BPM / D minor / 静かなピアノ + パッド |
 | `bgm_result.wav` | 30.00 s | -1.0 dBFS | -11.0 dBFS | 0.299 / 0.620 | リザルト画面. 128 BPM / C major / 明るく短い |
-| `bgm_title.wav` | 40.00 s | -1.0 dBFS | -13.7 dBFS | 0.999 / 1.484 | タイトル画面. 72 BPM / bgm_day のモチーフを遅く |
+| `bgm_school_song.wav` | 130.52 s | -1.0 dBFS | -14.9 dBFS | ループしない | タイトル画面. 東京理科大学校歌の吹奏楽風アレンジ. 104 BPM / F major / 前奏 + 2 コーラス |
+| `bgm_title.wav` | 40.00 s | -1.0 dBFS | -13.7 dBFS | 0.999 / 1.484 | 旧タイトル曲 (未使用). 72 BPM / bgm_day のモチーフを遅く |
 | `jingle_day_end.wav` | 4.00 s | -1.0 dBFS | -11.2 dBFS | ループしない | 1 日の終わり |
 | `jingle_quest.wav` | 2.00 s | -1.0 dBFS | -12.7 dBFS | ループしない | クエスト達成 |
 
@@ -119,6 +120,6 @@ README の表の「ループ継ぎ目」は `seam_step_ratio / seam_hf_ratio` �
 
 ## 校歌について
 
-東京理科大学の実際の校歌は **収録していない**。作曲者の没年が公開情報から確認できず, 著作権の保護期間が満了していることを立証できなかったため。代わりにオリジナルの校歌風行進曲 `bgm_anthem_original.wav` を合成した。調査の詳細と根拠は `tools/audio/README_school_song.md` を参照。
+タイトル画面の `bgm_school_song.wav` は東京理科大学校歌 (作曲 大和憲史) の吹奏楽風アレンジで, 管弦楽版スコアの歌の旋律を `tools/audio/school_song/build_school_song.py` に書き起こし, music21 で譜面 (MusicXML / MIDI) を組んで MuseScore 4 で演奏させたもの。テンポは公式音源の実測に合わせて 104 BPM。作曲者の没年が確認できず保護期間の満了は立証できていないので, 公開配布の前に権利確認が要る。経緯と出典は `tools/audio/README_school_song.md` を参照。`bgm_anthem_original.wav` は権利確認が取れなかった場合の差し替え用に残してある。
 
 時報チャイム `se_chime.wav` のウェストミンスターの鐘は 1793 年の伝承曲で, パブリックドメインであることを確認したうえで音高から合成している。

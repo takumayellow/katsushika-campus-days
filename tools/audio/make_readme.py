@@ -13,10 +13,11 @@ NOTES = {
     "bgm_day": "昼のキャンパス. 120 BPM / C major / 明るいポップ",
     "bgm_evening": "夕方. 84 BPM / F major / ノスタルジック",
     "bgm_indoor": "屋内. 96 BPM / C major / ジャズ 7th の lo-fi",
-    "bgm_title": "タイトル画面. 72 BPM / bgm_day のモチーフを遅く",
+    "bgm_school_song": "タイトル画面. 東京理科大学校歌の吹奏楽風アレンジ. 104 BPM / F major / 前奏 + 2 コーラス",
+    "bgm_title": "旧タイトル曲 (未使用). 72 BPM / bgm_day のモチーフを遅く",
     "bgm_night": "夜の余韻. 72 BPM / D minor / 静かなピアノ + パッド",
     "bgm_result": "リザルト画面. 128 BPM / C major / 明るく短い",
-    "bgm_anthem_original": "オリジナルの校歌風行進曲. 108 BPM / Bb major / A-B 形式",
+    "bgm_anthem_original": "オリジナルの校歌風行進曲 (未使用). 108 BPM / Bb major / A-B 形式",
     "jingle_quest": "クエスト達成",
     "jingle_day_end": "1 日の終わり",
     "se_chime": "時報チャイム (9:00 / 12:00 / 17:00). ウェストミンスターの鐘",
@@ -144,11 +145,13 @@ def main() -> int:
         A("")
     A("## 校歌について")
     A("")
-    A("東京理科大学の実際の校歌は **収録していない**。"
-      "作曲者の没年が公開情報から確認できず, 著作権の保護期間が満了していることを"
-      "立証できなかったため。代わりにオリジナルの校歌風行進曲 "
-      "`bgm_anthem_original.wav` を合成した。"
-      "調査の詳細と根拠は `tools/audio/README_school_song.md` を参照。")
+    A("タイトル画面の `bgm_school_song.wav` は東京理科大学校歌 (作曲 大和憲史) の吹奏楽風アレンジで, "
+      "管弦楽版スコアの歌の旋律を `tools/audio/school_song/build_school_song.py` に書き起こし, "
+      "music21 で譜面 (MusicXML / MIDI) を組んで MuseScore 4 で演奏させたもの。"
+      "テンポは公式音源の実測に合わせて 104 BPM。"
+      "作曲者の没年が確認できず保護期間の満了は立証できていないので, 公開配布の前に権利確認が要る。"
+      "経緯と出典は `tools/audio/README_school_song.md` を参照。"
+      "`bgm_anthem_original.wav` は権利確認が取れなかった場合の差し替え用に残してある。")
     A("")
     A("時報チャイム `se_chime.wav` のウェストミンスターの鐘は 1793 年の伝承曲で, "
       "パブリックドメインであることを確認したうえで音高から合成している。")
