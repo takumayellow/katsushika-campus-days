@@ -20,21 +20,21 @@
     </scaling>
   </defaults>
   <part-list>
-    <score-part id="Pe2da920acbc6d793f624c6ee58fa945a">
+    <score-part id="Paec4e21c1f8393268f16f06b01520cfd">
       <part-name>Voice</part-name>
       <part-abbreviation>S</part-abbreviation>
-      <score-instrument id="Id21db63d3684005f30dae191b18956df">
+      <score-instrument id="Ie460be7324e80c298b71e016d496bb06">
         <instrument-name>Soprano</instrument-name>
         <instrument-abbreviation>S</instrument-abbreviation>
       </score-instrument>
-      <midi-instrument id="Id21db63d3684005f30dae191b18956df">
+      <midi-instrument id="Ie460be7324e80c298b71e016d496bb06">
         <midi-channel>1</midi-channel>
         <midi-program>54</midi-program>
       </midi-instrument>
     </score-part>
   </part-list>
   <!--=========================== Part 1 ===========================-->
-  <part id="Pe2da920acbc6d793f624c6ee58fa945a">
+  <part id="Paec4e21c1f8393268f16f06b01520cfd">
     <!--========================= Measure 5 ==========================-->
     <measure implicit="no" number="5">
       <attributes>
@@ -52,10 +52,10 @@
         <direction-type>
           <metronome parentheses="no">
             <beat-unit>quarter</beat-unit>
-            <per-minute>104</per-minute>
+            <per-minute>100</per-minute>
           </metronome>
         </direction-type>
-        <sound tempo="104" />
+        <sound tempo="100" />
       </direction>
       <direction>
         <direction-type>
@@ -165,6 +165,10 @@
         <type>16th</type>
         <beam number="1">end</beam>
         <beam number="2">backward hook</beam>
+        <lyric name="1" number="1">
+          <syllabic>single</syllabic>
+          <text>い</text>
+        </lyric>
       </note>
     </measure>
     <!--========================= Measure 7 ==========================-->
@@ -267,8 +271,9 @@
           <step>D</step>
           <octave>5</octave>
         </pitch>
-        <duration>10080</duration>
+        <duration>15120</duration>
         <type>quarter</type>
+        <dot />
         <lyric name="1" number="1">
           <syllabic>single</syllabic>
           <text>こ</text>
@@ -279,8 +284,8 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <duration>10080</duration>
-        <type>quarter</type>
+        <duration>5040</duration>
+        <type>eighth</type>
         <lyric name="1" number="1">
           <syllabic>single</syllabic>
           <text>う</text>
@@ -445,14 +450,19 @@
         </pitch>
         <duration>5040</duration>
         <type>eighth</type>
+        <lyric name="1" number="1">
+          <syllabic>single</syllabic>
+          <text>い</text>
+        </lyric>
       </note>
       <note>
         <pitch>
-          <step>E</step>
+          <step>D</step>
           <octave>4</octave>
         </pitch>
-        <duration>10080</duration>
+        <duration>15120</duration>
         <type>quarter</type>
+        <dot />
         <lyric name="1" number="1">
           <syllabic>single</syllabic>
           <text>ず</text>
@@ -463,8 +473,8 @@
           <step>E</step>
           <octave>4</octave>
         </pitch>
-        <duration>10080</duration>
-        <type>quarter</type>
+        <duration>5040</duration>
+        <type>eighth</type>
         <lyric name="1" number="1">
           <syllabic>single</syllabic>
           <text>え</text>
@@ -617,6 +627,10 @@
         </pitch>
         <duration>5040</duration>
         <type>eighth</type>
+        <lyric name="1" number="1">
+          <syllabic>single</syllabic>
+          <text>あ</text>
+        </lyric>
       </note>
       <note>
         <pitch>
@@ -778,6 +792,10 @@
         <type>16th</type>
         <beam number="1">end</beam>
         <beam number="2">backward hook</beam>
+        <lyric name="1" number="1">
+          <syllabic>single</syllabic>
+          <text>あ</text>
+        </lyric>
       </note>
     </measure>
     <!--========================= Measure 20 =========================-->
@@ -1251,6 +1269,10 @@
         <duration>5040</duration>
         <type>eighth</type>
         <beam number="1">begin</beam>
+        <lyric name="1" number="1">
+          <syllabic>single</syllabic>
+          <text>あ</text>
+        </lyric>
       </note>
       <note>
         <pitch>
@@ -1279,6 +1301,10 @@
         <notations>
           <tied type="start" />
         </notations>
+        <lyric name="1" number="1">
+          <syllabic>single</syllabic>
+          <text>い</text>
+        </lyric>
       </note>
       <note>
         <pitch>
