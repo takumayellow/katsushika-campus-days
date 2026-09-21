@@ -13,7 +13,7 @@ DESIGN.md §2 / §2.1 / §2.2 / §3.3 が契約。ボーン名・Shape Key 名�
 出力:
   <out-dir>/<id>/<id>.fbx     リグ + Shape Key + Action 6 本
   <out-dir>/<id>/face.png     2048x2048 の顔アトラス
-  docs/previews/<id>_{front,side,back,turn,walk,face}.png
+  docs/previews/<id>_{front,side,back,turn,walk,idle,face}.png
 """
 
 from __future__ import annotations
@@ -325,9 +325,10 @@ def main():
 
         if args.preview:
             walk = bpy.data.actions.get("Walk")
+            idle = bpy.data.actions.get("Idle")
             made = render.render_previews(info["params"], args.preview_dir,
                                           arm=info["arm"], walk_action=walk,
-                                          obj=info["obj"])
+                                          obj=info["obj"], idle_action=idle)
             engines[cid] = made.get("engine", "?")
             print("   preview=%s" % ", ".join(
                 v for k, v in made.items() if k != "engine"))

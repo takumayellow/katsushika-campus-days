@@ -21,6 +21,10 @@
 
 すべて本リポジトリの Python スクリプト（Blender bpy / numpy）で手続き生成しています。外部アセットは使用していません。
 
+## フォント
+
+- Noto Sans JP（Google Fonts、SIL Open Font License 1.1）。`unity/KatsushikaCampusDays/Assets/Fonts/NotoSansJP-VF.ttf` として同梱し、TextMeshPro のフォントアセットを生成しています。
+
 ## ソフトウェア
 
 - Unity 6000.6.2f1（Unity Personal）、Universal Render Pipeline、Input System、Cinemachine、AI Navigation、TextMeshPro

@@ -1,0 +1,24 @@
+{
+  "id": "q_gym",
+  "title": "体育館まで 60 秒",
+  "title_en": "Sixty Seconds to the Gym",
+  "summary": "教授いわく、体育館の鍵を閉めるまであと 1 分。モールを北へ折れて、Shift でダッシュすれば間に合うはず。",
+  "summary_en": "According to the professor, the gym gets locked in one minute. Turn north off the mall and sprint with Shift and you should make it.",
+  "order": 5,
+  "autoStart": false,
+  "prerequisites": [
+    "q_orientation"
+  ],
+  "rewardText": "体育館のアリーナを覗かせてもらえた",
+  "rewardText_en": "You got a look inside the gymnasium arena",
+  "steps": [
+    {
+      "id": "s1",
+      "type": "enter",
+      "target": "gym",
+      "timeLimit": 60,
+      "text": "60 秒以内に体育館へ駆け込む",
+      "text_en": "Dash into the gymnasium within 60 seconds"
+    }
+  ]
+}

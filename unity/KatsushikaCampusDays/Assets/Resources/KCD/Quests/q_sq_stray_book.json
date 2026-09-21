@@ -1,0 +1,54 @@
+{
+  "id": "q_sq_stray_book",
+  "title": "迷子の本",
+  "title_en": "The Stray Book",
+  "summary": "いなりが借りた本が、返却したはずなのに書架に戻っていないらしい。開架書架のいちばん奥から個人閲覧ブースまで探して、カウンター係に伝える。",
+  "summary_en": "A book Inari returned never made it back to the shelf. Search from the far end of the open stacks to the study carrels, then tell the counter.",
+  "order": 14,
+  "autoStart": false,
+  "prerequisites": [
+    "q_park"
+  ],
+  "rewardText": "いなりから二枚目の押し花の栞をもらった",
+  "rewardText_en": "Inari gave you a second pressed-flower bookmark",
+  "rewardType": "collectible",
+  "rewardId": "c_inari_bookmark",
+  "side": true,
+  "steps": [
+    {
+      "id": "s1",
+      "type": "enter",
+      "target": "library",
+      "text": "図書館に入る",
+      "text_en": "Enter the library"
+    },
+    {
+      "id": "s2",
+      "type": "visit",
+      "target": "poi_library_stacks",
+      "text": "開架書架のいちばん奥を探す",
+      "text_en": "Search the far end of the open stacks"
+    },
+    {
+      "id": "s3",
+      "type": "visit",
+      "target": "poi_library_desk",
+      "text": "個人閲覧ブースを探す",
+      "text_en": "Search the study carrels"
+    },
+    {
+      "id": "s4",
+      "type": "visit",
+      "target": "poi_library_counter",
+      "text": "カウンターに本の場所を伝える",
+      "text_en": "Tell the counter where the book is"
+    },
+    {
+      "id": "s5",
+      "type": "talk",
+      "target": "inari",
+      "text": "水盤のほとりのいなりに報告する",
+      "text_en": "Report to Inari by the reflecting pool"
+    }
+  ]
+}

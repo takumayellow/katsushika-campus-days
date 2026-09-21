@@ -1,0 +1,24 @@
+{
+  "id": "q_sunset",
+  "title": "水盤に落ちる夕日",
+  "title_en": "Sunset on the Reflecting Pool",
+  "summary": "18 時を過ぎると、図書館の深い軒と水盤に夕日が差し込んで、キャンパスがいちどだけ橙色になる。その時間に水盤の前へ。",
+  "summary_en": "After 18:00, the sun slips under the library's deep eaves and across the pool, and for a moment the whole campus turns orange. Be in front of the pool at that hour.",
+  "order": 7,
+  "autoStart": true,
+  "prerequisites": [
+    "q_park"
+  ],
+  "rewardText": "今日いちばんの景色を見た",
+  "rewardText_en": "You saw the best view of the day",
+  "steps": [
+    {
+      "id": "s1",
+      "type": "visit",
+      "target": "library_pond",
+      "minHour": 18,
+      "text": "18:00 以降に図書館の水盤の前へ行く",
+      "text_en": "Go to the library's reflecting pool after 18:00"
+    }
+  ]
+}

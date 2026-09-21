@@ -222,6 +222,18 @@ def _brow_curve(cu: float, eye_y: float, rx: float, ry: float, sgn: int,
     return us, vs, np.maximum(ws, width * 0.16)
 
 
+def _brow_curve_flat(cu: float, eye_y: float, rx: float, ry: float, sgn: int,
+                     width: float):
+    """点目キャラの眉。太く短い直線で、内側を下げて眉根を寄せる。"""
+    n = 8
+    t = np.linspace(0.0, 1.0, n)
+    u_in, u_out = cu - sgn * rx * 0.70, cu + sgn * rx * 1.75
+    us = u_in + (u_out - u_in) * t
+    vs = eye_y + ry * 2.9 - ry * 0.25 + ry * 0.95 * t
+    ws = width * (1.05 - 0.25 * t)
+    return us, vs, ws
+
+
 def build_face_parts(mb: M.MeshBuilder, p: dict, fs: FaceSurface, uv_box):
     """白目板・虹彩ドーム・まつ毛・二重線・眉・鼻・口を頭表面の手前に貼る。"""
     fl = p["face_layout"]
@@ -288,16 +300,22 @@ def build_face_parts(mb: M.MeshBuilder, p: dict, fs: FaceSurface, uv_box):
               _disc(cu, eye_y - eye_ry * 0.04, eye_rx * 0.90, eye_ry * 0.93,
                     2.2, 3, 18),
               offset=off_iris, dome=hd * 0.020, power=2.2)
-        up, lo, dl = _eye_curves(cu, eye_y, eye_rx, eye_ry, sgn)
-        _ribbon(mb, name + "_lash_up", "lash", p, fs, uv_box, up[0], up[1], up[2],
-                offset=off_lash, thick=thick)
-        _ribbon(mb, name + "_lash_lo", "lash", p, fs, uv_box, lo[0], lo[1], lo[2],
-                offset=off_lash * 0.82, thick=thick * 0.62)
-        _ribbon(mb, name + "_crease", "eye_rim", p, fs, uv_box, dl[0], dl[1], dl[2],
-                offset=off_lash * 0.70, thick=thick * 0.46)
+        dot = p.get("eye_style") == "dot"
+        if not dot:
+            # 点目にはまつ毛も二重線も無い
+            up, lo, dl = _eye_curves(cu, eye_y, eye_rx, eye_ry, sgn)
+            _ribbon(mb, name + "_lash_up", "lash", p, fs, uv_box, up[0], up[1],
+                    up[2], offset=off_lash, thick=thick)
+            _ribbon(mb, name + "_lash_lo", "lash", p, fs, uv_box, lo[0], lo[1],
+                    lo[2], offset=off_lash * 0.82, thick=thick * 0.62)
+            _ribbon(mb, name + "_crease", "eye_rim", p, fs, uv_box, dl[0],
+                    dl[1], dl[2], offset=off_lash * 0.70, thick=thick * 0.46)
         bw = p.get("brow_width", 0.038)
         ba = p.get("brow_arch", 0.030)
-        bu, bv, bwid = _brow_curve(cu, eye_y, eye_rx, eye_ry, sgn, bw, ba)
+        if dot:
+            bu, bv, bwid = _brow_curve_flat(cu, eye_y, eye_rx, eye_ry, sgn, bw)
+        else:
+            bu, bv, bwid = _brow_curve(cu, eye_y, eye_rx, eye_ry, sgn, bw, ba)
         side = "l" if sgn > 0 else "r"
         _ribbon(mb, "brow_" + side, "brow", p, fs, uv_box,
                 bu, bv, bwid, offset=off_brow, thick=thick * 0.70)

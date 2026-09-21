@@ -1,0 +1,40 @@
+{
+  "id": "q_sq_greenhouse",
+  "title": "温室の水やり当番",
+  "title_en": "Greenhouse Watering Duty",
+  "summary": "教授が温室の当番を忘れていた。第2実験棟の東にある切妻ガラス屋根の温室で、栽培ベンチの鉢に水をやってくる。",
+  "summary_en": "The professor forgot greenhouse duty. Head to the gabled glass greenhouse east of Experiment Building 2 and water the pots on the growing benches.",
+  "order": 11,
+  "autoStart": false,
+  "prerequisites": [
+    "q_gym"
+  ],
+  "rewardText": "教授から温室の芽をひと鉢もらった",
+  "rewardText_en": "The professor gave you a sprout in a small pot",
+  "rewardType": "collectible",
+  "rewardId": "c_greenhouse_sprout",
+  "side": true,
+  "steps": [
+    {
+      "id": "s1",
+      "type": "enter",
+      "target": "greenhouse",
+      "text": "温室に入る",
+      "text_en": "Enter the greenhouse"
+    },
+    {
+      "id": "s2",
+      "type": "visit",
+      "target": "poi_greenhouse_plants",
+      "text": "栽培ベンチの鉢に水をやる",
+      "text_en": "Water the pots on the growing benches"
+    },
+    {
+      "id": "s3",
+      "type": "talk",
+      "target": "prof",
+      "text": "講義棟前の教授に報告する",
+      "text_en": "Report back to the professor in front of the lecture building"
+    }
+  ]
+}

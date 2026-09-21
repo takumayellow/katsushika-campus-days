@@ -1,0 +1,48 @@
+name: Deploy WebGL to GitHub Pages
+
+# Unity のビルドはライセンスの都合でローカルで行う。
+# tools/deploy_pages.py が build/WebGL を zip にして Release（タグ web-latest）へ置き、
+# このワークフローを起動する。ここでは zip を展開して Pages に載せるだけ。
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "WebGL ビルド zip を置いた Release のタグ"
+        required: false
+        default: "web-latest"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Download WebGL build from Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag || 'web-latest' }}
+        run: |
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern webgl.zip --dir .
+          mkdir -p site
+          unzip -q webgl.zip -d site
+          test -f site/index.html
+          du -sh site
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

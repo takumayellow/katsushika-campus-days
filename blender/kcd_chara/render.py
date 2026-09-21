@@ -189,9 +189,28 @@ def render_to(path: str) -> str:
     raise RuntimeError(f"レンダリングに失敗しました: {last}")
 
 
+def _render_action(arm, action, cam, p, span, frac: float, ang: float,
+                   path: str) -> str:
+    """Action の frac 位置のフレームを ang 方向から描く。描いたら Action を外す。"""
+    if arm.animation_data is None:
+        arm.animation_data_create()
+    arm.animation_data.action = action
+    try:
+        arm.animation_data.action_slot = arm.animation_data.action_suitable_slots[0]
+    except Exception:  # noqa: BLE001 - 4.3 以前はスロットが無い
+        pass
+    lo, hi = action.frame_range
+    bpy.context.scene.frame_set(int(lo + (hi - lo) * frac))
+    place_camera(cam, p, ang, span=span)
+    render_to(path)
+    arm.animation_data.action = None
+    bpy.context.scene.frame_set(1)
+    return path
+
+
 def render_previews(p: dict, out_dir: str, *, arm=None, walk_action=None,
-                    obj=None) -> dict:
-    """front / side / back / turn / face（＋あれば walk）を書き出す。"""
+                    obj=None, idle_action=None) -> dict:
+    """front / side / back / turn / face（＋あれば walk / idle）を書き出す。"""
     floor_z = 0.0
     if obj is not None:
         try:
@@ -225,21 +244,12 @@ def render_previews(p: dict, out_dir: str, *, arm=None, walk_action=None,
         made[tag] = path
 
     if arm is not None and walk_action is not None:
-        if arm.animation_data is None:
-            arm.animation_data_create()
-        arm.animation_data.action = walk_action
-        try:
-            arm.animation_data.action_slot = arm.animation_data.action_suitable_slots[0]
-        except Exception:  # noqa: BLE001 - 4.3 以前はスロットが無い
-            pass
-        lo, hi = walk_action.frame_range
-        bpy.context.scene.frame_set(int(lo + (hi - lo) * 0.28))
-        place_camera(cam, p, 22.0, span=span)
-        walk = os.path.join(out_dir, f"{cid}_walk.png")
-        render_to(walk)
-        made["walk"] = walk
-        arm.animation_data.action = None
-        bpy.context.scene.frame_set(1)
+        made["walk"] = _render_action(arm, walk_action, cam, p, span, 0.28, 22.0,
+                                      os.path.join(out_dir, f"{cid}_walk.png"))
+    if arm is not None and idle_action is not None:
+        # ゲーム中に一番長く見る姿勢。腕が体側に下りているかをここで確かめる。
+        made["idle"] = _render_action(arm, idle_action, cam, p, span, 0.0, 0.0,
+                                      os.path.join(out_dir, f"{cid}_idle.png"))
 
     # 顔アップ（正方形・望遠寄り）
     scene = bpy.context.scene

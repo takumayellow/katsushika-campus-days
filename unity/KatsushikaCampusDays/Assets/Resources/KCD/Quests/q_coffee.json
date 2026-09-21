@@ -1,0 +1,30 @@
+{
+  "id": "q_coffee",
+  "title": "モールでひと休み",
+  "title_en": "A Break on the Mall",
+  "summary": "共創棟 1 階のスターバックスの前で金町そらに捕まった。買ったラテが冷めないうちに、キャンパスモールのベンチまで一緒に行くことになった。",
+  "summary_en": "Kanamachi Sora caught you in front of the coffee shop on the first floor of Kyoso Hall. Before her latte goes cold, you're walking together to a bench on the campus mall.",
+  "order": 4,
+  "autoStart": false,
+  "prerequisites": [
+    "q_orientation"
+  ],
+  "rewardText": "そらと連絡先を交換した",
+  "rewardText_en": "You swapped contact details with Sora",
+  "steps": [
+    {
+      "id": "s1",
+      "type": "visit",
+      "target": "mall_bench",
+      "text": "キャンパスモールのベンチまで行く",
+      "text_en": "Go to the bench on the campus mall"
+    },
+    {
+      "id": "s2",
+      "type": "talk",
+      "target": "sora",
+      "text": "そらに追いついたことを伝える",
+      "text_en": "Tell Sora you've caught up"
+    }
+  ]
+}

@@ -1,0 +1,144 @@
+{
+  "id": "sora",
+  "speaker": "金町 そら",
+  "topics": [
+    {
+      "id": "t_done",
+      "requiresCompletedQuest": "q_coffee",
+      "once": true,
+      "lines": [
+        {
+          "text": "追いついた。えらい。",
+          "text_en": "You caught up. Well done."
+        },
+        {
+          "text": "……このベンチ、モールでいちばん日当たりがいいの。ケヤキの隙間が、ここだけ空いてるから。",
+          "text_en": "...This bench gets the best sun on the whole mall. There's a gap in the zelkova trees, right here."
+        },
+        {
+          "speaker": "自分",
+          "text": "そこまで調べてるんですか。",
+          "text_en": "You've researched it that far?"
+        },
+        {
+          "text": "薬学部だもん。だいたいのことは、条件を変えて何回も試すんだよ。",
+          "text_en": "I'm in pharmacy. Most things, you change one condition and try again, over and over."
+        }
+      ]
+    },
+    {
+      "id": "t_active",
+      "requiresActiveQuest": "q_coffee",
+      "lines": [
+        {
+          "text": "ベンチ、モールの真ん中あたり。石畳が市松になってるとこ。",
+          "text_en": "The bench is about halfway along the mall. Where the paving turns to checkerboard."
+        },
+        {
+          "text": "ラテが冷めるまであと、たぶん 7 分。わたしは先に行ってるね。",
+          "text_en": "The latte's got maybe seven minutes before it goes cold. I'll go on ahead."
+        }
+      ]
+    },
+    {
+      "id": "t_start",
+      "once": true,
+      "startsQuest": "q_coffee",
+      "lines": [
+        {
+          "text": "……ねえ、two things. ひとつ、このラテ熱い。ふたつ、わたし今そこの椅子に座れない。",
+          "text_en": "...Hey, two things. One, this latte is hot. Two, I can't sit in that chair over there right now."
+        },
+        {
+          "speaker": "自分",
+          "text": "なぜ。",
+          "text_en": "Why not?"
+        },
+        {
+          "text": "1 階のスタバ、ラーニングスクエアと繋がってて、みんなゼミの相談してるの。ひとりで座ってると混ざっちゃう。",
+          "text_en": "The first-floor coffee shop opens onto the learning square, and everyone's in there doing seminar consultations. Sit alone and you get pulled in."
+        },
+        {
+          "text": "だからモールのベンチまで付き合って。冷める前に。",
+          "text_en": "So come with me to the bench on the mall. Before it goes cold."
+        }
+      ]
+    },
+    {
+      "id": "t_sq_lab_notebook_start",
+      "requiresCompletedQuest": "q_coffee",
+      "once": true,
+      "startsQuest": "q_sq_lab_notebook",
+      "lines": [
+        {
+          "text": "……あのさ、one more thing. 第1実験棟にノート置いてきた。",
+          "text_en": "...So, um, one more thing. I left my notebook in Experiment Building 1."
+        },
+        {
+          "text": "奥の実験室、ドラフトの横。ゴーグルと一緒に置きっぱなし。",
+          "text_en": "The far lab, next to the fume hood. Left it there with my goggles."
+        },
+        {
+          "speaker": "自分",
+          "text": "自分で取りに行かないんですか。",
+          "text_en": "Why not get it yourself?"
+        },
+        {
+          "text": "今行くと、教授に捕まって次の実験の話になるの。三十分は帰れない。",
+          "text_en": "If I go now, the professor catches me and it turns into the next experiment. I wouldn't get away for half an hour."
+        }
+      ]
+    },
+    {
+      "id": "t_sq_lab_notebook_active",
+      "requiresActiveQuest": "q_sq_lab_notebook",
+      "lines": [
+        {
+          "text": "第1実験棟は温室の西どなり。廊下を進んで、実験室は奥のほう。",
+          "text_en": "Experiment Building 1 is just west of the greenhouse. Go down the corridor, the lab is at the far end."
+        },
+        {
+          "text": "ノートは表紙に何も書いてない。ゴーグルが目印。",
+          "text_en": "The notebook has nothing on the cover. Look for the goggles."
+        }
+      ]
+    },
+    {
+      "id": "t_sq_lab_notebook_done",
+      "requiresCompletedQuest": "q_sq_lab_notebook",
+      "once": true,
+      "lines": [
+        {
+          "text": "ありがと。……これ、あげる。",
+          "text_en": "Thanks. ...Here, this is for you."
+        },
+        {
+          "text": "試験管のチャーム。中の青いの、本物じゃないから安心して。",
+          "text_en": "A test-tube charm. The blue stuff inside isn't real, don't worry."
+        },
+        {
+          "speaker": "自分",
+          "text": "本物だったら、何が入ってたんですか。",
+          "text_en": "If it were real, what would be in it?"
+        },
+        {
+          "text": "……条件を変えて、何回も試した結果。",
+          "text_en": "...The result of changing one condition and trying, over and over."
+        }
+      ]
+    },
+    {
+      "id": "t_idle",
+      "lines": [
+        {
+          "text": "この建物、白いルーバーが縦に並んでるでしょ。あれ、日射を切るためのものなんだって。",
+          "text_en": "See the white louvres lined up vertically on this building? They're there to cut the sunlight, apparently."
+        },
+        {
+          "text": "おかげで中は一日じゅう同じ明るさ。時間の感覚がなくなるのが難点。",
+          "text_en": "So inside it's the same brightness all day. The downside is you lose all sense of time."
+        }
+      ]
+    }
+  ]
+}

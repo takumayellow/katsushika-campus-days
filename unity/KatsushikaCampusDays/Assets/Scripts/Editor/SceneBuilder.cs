@@ -1,0 +1,185 @@
+using System.Collections.Generic;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+namespace KCD.Editor
+{
+    /// <summary>
+    /// Campus と Title のシーンをコードだけで組み上げる。バッチから呼ぶ唯一の入口。
+    /// </summary>
+    public static class SceneBuilder
+    {
+        /// <summary>NPC の立ち位置。建物 id が空なら座標をそのまま使う。</summary>
+        private struct NpcSpot
+        {
+            public string Id;
+            public string Name;
+            public string BuildingId;
+            public float Distance;
+            public Vector2 Fallback;
+            public float WanderRadius;
+        }
+
+        private static readonly NpcSpot[] Npcs =
+        {
+            new NpcSpot
+            {
+                Id = "prof", Name = "教授", BuildingId = "lecture",
+                Distance = 3.6f, Fallback = new Vector2(108.5f, -52.5f), WanderRadius = 2f
+            },
+            new NpcSpot
+            {
+                Id = "kaname", Name = "中川 かなめ", BuildingId = "research2",
+                Distance = 3.2f, Fallback = new Vector2(-8.5f, -6.5f), WanderRadius = 4f
+            },
+            new NpcSpot
+            {
+                Id = "sora", Name = "金町 そら", BuildingId = "kyoso",
+                Distance = 7.5f, Fallback = new Vector2(108f, -76f), WanderRadius = 3f
+            },
+            new NpcSpot
+            {
+                Id = "inari", Name = "花之木 いなり", BuildingId = string.Empty,
+                Distance = 0f, Fallback = new Vector2(-44.97f, -14.2f), WanderRadius = 3f
+            }
+        };
+
+        /// <summary>両方のシーンを作り直し、ビルド設定に登録する。</summary>
+        [MenuItem("KCD/シーンを組み直す")]
+        public static void BuildAll()
+        {
+            EditorPaths.EnsureFolder(EditorPaths.ScenesFolder);
+            EditorPaths.EnsureFolder(EditorPaths.GeneratedFolder);
+
+            FontLibrary.Ensure();
+            EditorPaths.Report("データを同期しました: " + DataBundler.SyncAll() + " 件");
+            EditorPaths.Report("マテリアルを差し替えました: " + CharacterImporter.ResolveMaterials() + " 件");
+            EditorPaths.Report("顔テクスチャを貼り直しました: " + CharacterImporter.RefreshFaceTextures() + " 件");
+
+            BuildCampus();
+            BuildTitle();
+            Register();
+            FacingProbe.Report();
+            PoseProbe.Report();
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            EditorPaths.Report("SceneBuilder.BuildAll 完了");
+        }
+
+        /// <summary>キャンパス本体。地形 → NavMesh → 小物 → 人 → UI の順に積む。</summary>
+        private static void BuildCampus()
+        {
+            Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+            var world = new GameObject("World");
+            Transform root = world.transform;
+
+            CampusStage.Build(root);
+            Physics.SyncTransforms();
+            CampusStage.BakeNavMesh(root);
+
+            CampusProps.Build(root);
+
+            string characterId = GameManager.PlayableCharacterIds[0];
+            GameObject player = ActorFactory.CreatePlayer(
+                root, characterId, CampusProps.PlayerSpawn + Vector3.up * 0.15f, CampusProps.PlayerYaw);
+            ActorFactory.CreateCamera(root, player);
+
+            PlaceNpcs(root);
+            SeatFactory.PlaceCampus(root);
+            PlaceSystems(root);
+            InteriorStage.Build(root);
+            UIFactory.BuildCampusUI(root, player);
+
+            Save(scene, EditorPaths.CampusScene);
+        }
+
+        /// <summary>タイトルとキャラクター選択。</summary>
+        private static void BuildTitle()
+        {
+            Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+            var world = new GameObject("World");
+            TitleStage.Build(world.transform);
+
+            Save(scene, EditorPaths.TitleScene);
+        }
+
+        /// <summary>DESIGN §2 の 4 人。入口の少し外に立たせ、プレイヤーが来る向きを向く。</summary>
+        private static void PlaceNpcs(Transform root)
+        {
+            var group = new GameObject("NPCs");
+            group.transform.SetParent(root, false);
+
+            foreach (NpcSpot spot in Npcs)
+            {
+                Vector3 position = string.IsNullOrEmpty(spot.BuildingId)
+                    ? CampusProps.Ground(spot.Fallback)
+                    : CampusProps.Outward(spot.BuildingId, spot.Distance, spot.Fallback);
+
+                float yaw = YawTowardMall(position);
+                ActorFactory.CreateNpc(
+                    group.transform, spot.Id, spot.Name, position, yaw, spot.WanderRadius);
+            }
+
+            EditorPaths.Report("NPC を " + Npcs.Length + " 人置きました。");
+        }
+
+        /// <summary>キャンパスモールの中心を向く角度。だいたいプレイヤーが来る方角になる。</summary>
+        private static float YawTowardMall(Vector3 position)
+        {
+            var mall = new Vector3(53.7f, position.y, -50.92f);
+            Vector3 delta = mall - position;
+            delta.y = 0f;
+
+            if (delta.sqrMagnitude < 0.01f)
+            {
+                return 0f;
+            }
+
+            return Mathf.Atan2(delta.x, delta.z) * Mathf.Rad2Deg;
+        }
+
+        /// <summary>シーンに 1 つずつ必要な進行役。GameManager と QuestSystem は自動で生まれる。</summary>
+        private static void PlaceSystems(Transform root)
+        {
+            var systems = new GameObject("Systems");
+            systems.transform.SetParent(root, false);
+
+            systems.AddComponent<DialogueSystem>();
+            systems.AddComponent<CampusDirector>();
+            systems.AddComponent<InteriorLoader>();
+            systems.AddComponent<DayEndEvaluator>();
+            AudioFactory.Place(root);
+            PostProcessFactory.Place(root, true);
+        }
+
+        private static void Save(Scene scene, string path)
+        {
+            if (!EditorSceneManager.SaveScene(scene, path))
+            {
+                EditorPaths.Report("シーンの保存に失敗しました: " + path);
+                return;
+            }
+
+            EditorPaths.Report("Saved scene: " + path);
+            EditorPaths.AppendVerify("scene " + path);
+        }
+
+        /// <summary>Title を先頭にして両方をビルド対象へ入れる。</summary>
+        private static void Register()
+        {
+            var scenes = new List<EditorBuildSettingsScene>
+            {
+                new EditorBuildSettingsScene(EditorPaths.TitleScene, true),
+                new EditorBuildSettingsScene(EditorPaths.CampusScene, true)
+            };
+
+            EditorBuildSettings.scenes = scenes.ToArray();
+            EditorPaths.Report("ビルド対象シーン: " + scenes.Count + " 本");
+        }
+    }
+}
