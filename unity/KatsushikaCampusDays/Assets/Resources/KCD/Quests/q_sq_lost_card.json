@@ -1,0 +1,40 @@
+{
+  "id": "q_sq_lost_card",
+  "title": "食堂の落とし物",
+  "title_en": "Lost in the Cafeteria",
+  "summary": "食堂のピークが終わって、券売機のあたりで学生証の落とし物が出た。かなめに頼まれて、券売機から返却口まで持ち主の手がかりを追う。",
+  "summary_en": "The lunch rush is over and a student ID turned up near the ticket machines. Kaname asks you to trace the owner from the ticket machines to the tray return.",
+  "order": 12,
+  "autoStart": false,
+  "prerequisites": [
+    "q_lunch"
+  ],
+  "rewardText": "かなめが食堂の常連として顔を覚えてくれた",
+  "rewardText_en": "Kaname now knows you as a cafeteria regular",
+  "rewardType": "achievement",
+  "rewardId": "ach_cafeteria_regular",
+  "side": true,
+  "steps": [
+    {
+      "id": "s1",
+      "type": "visit",
+      "target": "poi_research2_ticket",
+      "text": "第2研究棟 1 階の券売機を調べる",
+      "text_en": "Check the ticket machines on the first floor of Research Building 2"
+    },
+    {
+      "id": "s2",
+      "type": "visit",
+      "target": "poi_research2_tray_return",
+      "text": "返却口で落とし主の手がかりを探す",
+      "text_en": "Look for a clue about the owner at the tray return"
+    },
+    {
+      "id": "s3",
+      "type": "talk",
+      "target": "kaname",
+      "text": "かなめに学生証を渡す",
+      "text_en": "Hand the student ID to Kaname"
+    }
+  ]
+}

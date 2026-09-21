@@ -1,0 +1,27 @@
+{
+  "id": "q_sq_night_walk",
+  "title": "帰り道",
+  "title_en": "The Way Home",
+  "summary": "夕日を見たあと、19 時を過ぎたら街灯のついたモールを正門まで戻る。一日の終わり。",
+  "summary_en": "After the sunset, once it's past 19:00, walk the lamplit mall back to the main gate. The end of the day.",
+  "order": 16,
+  "autoStart": true,
+  "prerequisites": [
+    "q_sunset"
+  ],
+  "rewardText": "一日を最後まで歩ききった",
+  "rewardText_en": "You walked the whole day through",
+  "rewardType": "achievement",
+  "rewardId": "ach_full_day",
+  "side": true,
+  "steps": [
+    {
+      "id": "s1",
+      "type": "visit",
+      "target": "gate_main",
+      "minHour": 19,
+      "text": "19:00 以降に正門まで戻る",
+      "text_en": "Return to the main gate after 19:00"
+    }
+  ]
+}

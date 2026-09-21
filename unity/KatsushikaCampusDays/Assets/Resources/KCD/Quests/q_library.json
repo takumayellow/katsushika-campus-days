@@ -1,0 +1,30 @@
+{
+  "id": "q_library",
+  "title": "いなり先輩の取り置き",
+  "title_en": "Inari-senpai's Reserved Book",
+  "summary": "図書館の南に広がる浅い水盤のほとりで、花之木いなりに取り置きの本を頼まれた。屋上に八角形の大ホール（600 席）を載せた、あのガラス張りの建物が図書館。",
+  "summary_en": "By the shallow reflecting pool south of the library, Hananoki Inari asked you to pick up a reserved book. The library is the glass building with the octagonal 600-seat hall on its roof.",
+  "order": 2,
+  "autoStart": false,
+  "prerequisites": [
+    "q_orientation"
+  ],
+  "rewardText": "いなりから押し花の栞をもらった",
+  "rewardText_en": "Inari gave you a pressed-flower bookmark",
+  "steps": [
+    {
+      "id": "s1",
+      "type": "enter",
+      "target": "library",
+      "text": "図書館に入って取り置きの本を受け取る",
+      "text_en": "Enter the library and pick up the reserved book"
+    },
+    {
+      "id": "s2",
+      "type": "talk",
+      "target": "inari",
+      "text": "水盤のほとりのいなりに本を届ける",
+      "text_en": "Deliver the book to Inari by the reflecting pool"
+    }
+  ]
+}

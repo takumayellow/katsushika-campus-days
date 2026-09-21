@@ -1,0 +1,34 @@
+{
+  "id": "q_orientation",
+  "title": "はじめての登校",
+  "title_en": "First Day on Campus",
+  "summary": "金町駅から理科大通りを歩いてきた。正門をくぐったら、南西から北東へ 250 m まっすぐ伸びるキャンパスモールを歩いてみよう。講義棟の前で教授が待っているはず。",
+  "summary_en": "You walked up Rikadai Street from Kanamachi Station. Once through the main gate, follow the campus mall, 250 metres straight from southwest to northeast. The professor should be waiting in front of the lecture building.",
+  "order": 1,
+  "autoStart": true,
+  "rewardText": "キャンパスの地図がだいたい頭に入った",
+  "rewardText_en": "You've more or less got the campus map in your head",
+  "steps": [
+    {
+      "id": "s1",
+      "type": "visit",
+      "target": "gate_main",
+      "text": "理科大通りの正門からキャンパスに入る",
+      "text_en": "Enter campus through the main gate on Rikadai Street"
+    },
+    {
+      "id": "s2",
+      "type": "visit",
+      "target": "campus_mall",
+      "text": "250 m のキャンパスモールを北東へ歩く",
+      "text_en": "Walk the 250-metre campus mall northeast"
+    },
+    {
+      "id": "s3",
+      "type": "talk",
+      "target": "prof",
+      "text": "講義棟の前で教授に挨拶する",
+      "text_en": "Greet the professor in front of the lecture building"
+    }
+  ]
+}

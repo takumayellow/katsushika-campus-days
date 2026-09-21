@@ -1,0 +1,524 @@
+{
+  "version": 1,
+  "coordinate_note": "屋外の position は campus.json と同じ (x=東 m, z=北 m)。屋内の position は Models/Interiors/<building>.json の empties にある poi_ 名。",
+  "rarities": [
+    "common",
+    "uncommon",
+    "rare",
+    "legendary"
+  ],
+  "collectibles": [
+    {
+      "id": "c_gate_keyring",
+      "name_ja": "正門のキーホルダー",
+      "name_en": "Main Gate Keyring",
+      "hint_ja": "理科大通りから正門をくぐってすぐ。植え込みの根元に光るものがある。",
+      "hint_en": "Just inside the main gate off Rikadai Street. Something glints at the base of the hedge.",
+      "building": null,
+      "position": {
+        "x": 153.6,
+        "z": -92.2
+      },
+      "rarity": "common",
+      "source": "hidden"
+    },
+    {
+      "id": "c_mall_pin",
+      "name_ja": "石畳のピンバッジ",
+      "name_en": "Cobblestone Pin Badge",
+      "hint_ja": "モールの石畳が市松になっているあたり。目地に挟まっている。",
+      "hint_en": "Where the mall's paving turns to a checkerboard. Wedged in a joint between stones.",
+      "building": null,
+      "position": {
+        "x": 96.7,
+        "z": -77.2
+      },
+      "rarity": "common",
+      "source": "hidden"
+    },
+    {
+      "id": "c_bench_coin",
+      "name_ja": "ベンチの下の記念コイン",
+      "name_en": "Coin Under the Bench",
+      "hint_ja": "モールでいちばん日当たりのいいベンチ。座らずに、のぞき込む。",
+      "hint_en": "The sunniest bench on the mall. Don't sit, look underneath.",
+      "building": null,
+      "position": {
+        "x": 48.8,
+        "z": -52.0
+      },
+      "rarity": "uncommon",
+      "source": "hidden"
+    },
+    {
+      "id": "c_pond_marble",
+      "name_ja": "水盤のガラス玉",
+      "name_en": "Reflecting Pool Marble",
+      "hint_ja": "図書館の水盤のふち。深さ 10 cm の水の底で、空と同じ色をしている。",
+      "hint_en": "The rim of the library's reflecting pool. Ten centimetres down, the same colour as the sky.",
+      "building": null,
+      "position": {
+        "x": -46.0,
+        "z": -10.0
+      },
+      "rarity": "uncommon",
+      "source": "hidden"
+    },
+    {
+      "id": "c_park_acorn",
+      "name_ja": "みらい公園のどんぐり",
+      "name_en": "Mirai Park Acorn",
+      "hint_ja": "にいじゅくみらい公園の芝生。理科大グリーンの葉が落ちていたあたりを、もう一度よく見る。",
+      "hint_en": "The lawn in Niijuku Mirai Park. Look again where the Rikadai-green leaves were lying.",
+      "building": null,
+      "position": {
+        "x": -60.0,
+        "z": -100.0
+      },
+      "rarity": "common",
+      "source": "hidden"
+    },
+    {
+      "id": "c_park_disc",
+      "name_ja": "理科大グリーンのフライングディスク",
+      "name_en": "Rikadai-Green Flying Disc",
+      "hint_ja": "公園の土のグラウンド寄り。誰かが投げて取りに来なかったらしい。",
+      "hint_en": "Toward the dirt field side of the park. Someone threw it and never came back for it.",
+      "building": null,
+      "position": {
+        "x": -112.0,
+        "z": -90.0
+      },
+      "rarity": "uncommon",
+      "source": "hidden"
+    },
+    {
+      "id": "c_shrine_bell",
+      "name_ja": "稲荷の小さな鈴",
+      "name_en": "Little Inari Bell",
+      "hint_ja": "キャンパスの東、道を渡った先の小さな稲荷神社。いなり先輩の名字と同じ。",
+      "hint_en": "East of campus, across the road, a tiny Inari shrine. It shares a name with Inari-senpai.",
+      "building": null,
+      "position": {
+        "x": 226.0,
+        "z": 64.0
+      },
+      "rarity": "rare",
+      "source": "hidden"
+    },
+    {
+      "id": "c_bike_bell",
+      "name_ja": "自転車のベル",
+      "name_en": "Bicycle Bell",
+      "hint_ja": "図書館の北にある駐車場。自転車置き場の端に転がっている。",
+      "hint_en": "The parking lot north of the library. Rolling around at the end of the bike racks.",
+      "building": null,
+      "position": {
+        "x": -62.0,
+        "z": 78.0
+      },
+      "rarity": "common",
+      "source": "hidden"
+    },
+    {
+      "id": "c_greenhouse_seed",
+      "name_ja": "温室のたね袋",
+      "name_en": "Greenhouse Seed Packet",
+      "hint_ja": "温室の栽培ベンチのあいだ。鉢植えの陰に、名前を書いていないたね袋。",
+      "hint_en": "Between the growing benches in the greenhouse. An unlabelled seed packet behind a pot.",
+      "building": "greenhouse",
+      "position": "poi_greenhouse_plants",
+      "rarity": "common",
+      "source": "hidden"
+    },
+    {
+      "id": "c_gym_whistle",
+      "name_ja": "体育館のホイッスル",
+      "name_en": "Gymnasium Whistle",
+      "hint_ja": "体育館のアリーナの奥、用具庫の跳び箱の上。",
+      "hint_en": "At the far end of the gym arena, on top of a vaulting box in the equipment store.",
+      "building": "gym",
+      "position": "poi_gym_storage",
+      "rarity": "uncommon",
+      "source": "hidden"
+    },
+    {
+      "id": "c_library_bookmark",
+      "name_ja": "閉架の栞",
+      "name_en": "Closed-Stacks Bookmark",
+      "hint_ja": "図書館の開架書架、14 連のいちばん奥。本と本のあいだにはさまっている。",
+      "hint_en": "The library's open shelves, the last of the fourteen rows. Slipped between two books.",
+      "building": "library",
+      "position": "poi_library_stacks",
+      "rarity": "uncommon",
+      "source": "hidden"
+    },
+    {
+      "id": "c_dome_key",
+      "name_ja": "八角ドームの鍵",
+      "name_en": "Octagonal Dome Key",
+      "hint_ja": "図書館 2 階の回廊。吹き抜けを見下ろす手すりの近く。屋上のホールに続く鍵らしい。",
+      "hint_en": "The library's second-floor gallery, by the railing over the atrium. It seems to open the rooftop hall.",
+      "building": "library",
+      "position": "poi_library_gallery",
+      "rarity": "legendary",
+      "source": "hidden"
+    },
+    {
+      "id": "c_kyoso_tumbler",
+      "name_ja": "共創棟のタンブラー",
+      "name_en": "Kyoso Hall Tumbler",
+      "hint_ja": "共創棟 2 階のラウンジ。忘れ物の棚に、白いルーバー柄のタンブラー。",
+      "hint_en": "The second-floor lounge of Kyoso Hall. On the lost-and-found shelf, a tumbler patterned like the white louvres.",
+      "building": "kyoso",
+      "position": "poi_kyoso_lounge",
+      "rarity": "rare",
+      "source": "hidden"
+    },
+    {
+      "id": "c_kyoso_sticker",
+      "name_ja": "売店のステッカー",
+      "name_en": "Campus Store Sticker",
+      "hint_ja": "共創棟 1 階の売店のレジ横。景品で余ったステッカーが一枚。",
+      "hint_en": "Beside the register of the Kyoso Hall store. One leftover promotional sticker.",
+      "building": "kyoso",
+      "position": "poi_kyoso_store",
+      "rarity": "common",
+      "source": "hidden"
+    },
+    {
+      "id": "c_lecture_chalk",
+      "name_ja": "大ホールのチョーク",
+      "name_en": "Great Hall Chalk",
+      "hint_ja": "講義棟の大ホール、上の調整ブース。誰も使わなくなったチョークが一本。",
+      "hint_en": "The control booth above the lecture building's great hall. One stick of chalk nobody uses any more.",
+      "building": "lecture",
+      "position": "poi_lecture_hall_booth",
+      "rarity": "uncommon",
+      "source": "hidden"
+    },
+    {
+      "id": "c_lecture_notebook",
+      "name_ja": "置き忘れの演習ノート",
+      "name_en": "Forgotten Seminar Notebook",
+      "hint_ja": "講義棟の演習室。机の中に、表紙に何も書いていないノート。",
+      "hint_en": "A seminar room in the lecture building. Inside a desk, a notebook with nothing on the cover.",
+      "building": "lecture",
+      "position": "poi_lecture_seminar",
+      "rarity": "common",
+      "source": "hidden"
+    },
+    {
+      "id": "c_tray_charm",
+      "name_ja": "返却口のトレーチャーム",
+      "name_en": "Tray-Return Charm",
+      "hint_ja": "第2研究棟の食堂、返却口。トレーの山のいちばん上に乗っている。",
+      "hint_en": "The tray return in the Research Building 2 cafeteria. Sitting on top of the stack of trays.",
+      "building": "research2",
+      "position": "poi_research2_tray_return",
+      "rarity": "common",
+      "source": "hidden"
+    },
+    {
+      "id": "c_notice_magnet",
+      "name_ja": "掲示板のマグネット",
+      "name_en": "Notice Board Magnet",
+      "hint_ja": "第1研究棟 1 階ロビーの掲示板。貼り紙を留めていないマグネットが一個。",
+      "hint_en": "The notice board in the Research Building 1 lobby. One magnet holding nothing up.",
+      "building": "research1",
+      "position": "poi_research1_notice",
+      "rarity": "common",
+      "source": "hidden"
+    },
+    {
+      "id": "c_lab_goggles",
+      "name_ja": "実験用ゴーグル",
+      "name_en": "Lab Goggles",
+      "hint_ja": "第1実験棟の実験室のうち、奥のほう。ドラフトの横に置きっぱなし。",
+      "hint_en": "The far lab in Experiment Building 1. Left next to the fume hood.",
+      "building": "lab1",
+      "position": "poi_lab1_lab_b",
+      "rarity": "uncommon",
+      "source": "hidden"
+    },
+    {
+      "id": "c_lab_beaker",
+      "name_ja": "目盛りの消えたビーカー",
+      "name_en": "Faded Beaker",
+      "hint_ja": "第2実験棟の実験室。薬品庫の前の実験台に、目盛りがほとんど消えたビーカー。",
+      "hint_en": "The lab in Experiment Building 2. On the bench by the chemical cabinet, a beaker with its markings almost gone.",
+      "building": "lab2",
+      "position": "poi_lab2_lab",
+      "rarity": "rare",
+      "source": "hidden"
+    },
+    {
+      "id": "c_greenhouse_sprout",
+      "name_ja": "温室の芽",
+      "name_en": "Greenhouse Sprout",
+      "hint_ja": "温室の当番を手伝ったしるし。小さな鉢に、まだ二枚しか葉がない。",
+      "hint_en": "Proof of helping with greenhouse duty. A tiny pot with only two leaves so far.",
+      "building": null,
+      "position": null,
+      "rarity": "rare",
+      "source": "quest"
+    },
+    {
+      "id": "c_sora_charm",
+      "name_ja": "そらの試験管チャーム",
+      "name_en": "Sora's Test-Tube Charm",
+      "hint_ja": "そらがくれた、試験管の形のチャーム。中に青い液体が入っているように見える。",
+      "hint_en": "A test-tube charm from Sora. It looks like there's blue liquid inside.",
+      "building": null,
+      "position": null,
+      "rarity": "rare",
+      "source": "quest"
+    },
+    {
+      "id": "c_inari_bookmark",
+      "name_ja": "いなりの二枚目の栞",
+      "name_en": "Inari's Second Bookmark",
+      "hint_ja": "いなり先輩の押し花の栞、二枚目。今度は水盤でなく公園の葉で作ってある。",
+      "hint_en": "Inari-senpai's second pressed-flower bookmark. This one is made from a park leaf, not a pool leaf.",
+      "building": null,
+      "position": null,
+      "rarity": "rare",
+      "source": "quest"
+    }
+  ],
+  "photo_spots": [
+    {
+      "id": "ps_mall_view",
+      "name_ja": "モールの見通し",
+      "name_en": "Down the Mall",
+      "building": null,
+      "position": {
+        "x": 96.7,
+        "z": -77.2
+      },
+      "look_dir": {
+        "x": -0.91,
+        "z": 0.42
+      },
+      "caption_ja": "正門側から図書館まで、250 m の石畳が一本に見える。",
+      "caption_en": "From the gate end, 250 metres of paving run straight to the library."
+    },
+    {
+      "id": "ps_pond_library",
+      "name_ja": "水盤に映る図書館",
+      "name_en": "Library in the Pool",
+      "building": null,
+      "position": {
+        "x": -40.4,
+        "z": -16.2
+      },
+      "look_dir": {
+        "x": -0.79,
+        "z": 0.62
+      },
+      "caption_ja": "風のない日だけ、深い軒と八角のドームが水面にまるごと映る。",
+      "caption_en": "Only on windless days do the deep eaves and the octagonal dome fit whole in the water."
+    },
+    {
+      "id": "ps_kyoso_facade",
+      "name_ja": "共創棟のルーバー",
+      "name_en": "Kyoso Hall Louvres",
+      "building": null,
+      "position": {
+        "x": 60.0,
+        "z": -58.0
+      },
+      "look_dir": {
+        "x": 0.81,
+        "z": -0.59
+      },
+      "caption_ja": "白い縦ルーバーが並ぶ 2025 年竣工の棟。午後は影が縞になる。",
+      "caption_en": "White vertical louvres on the building finished in 2025. In the afternoon the shadows turn to stripes."
+    },
+    {
+      "id": "ps_gym_catwalk",
+      "name_ja": "キャットウォークからのアリーナ",
+      "name_en": "Arena from the Catwalk",
+      "building": "gym",
+      "position": "poi_gym_catwalk",
+      "look_dir": {
+        "x": 0.0,
+        "z": 1.0
+      },
+      "caption_ja": "ハイサイドライトの光が、午後だけ床に長い帯をつくる。",
+      "caption_en": "Light from the high side windows lays long bands across the floor, afternoons only."
+    },
+    {
+      "id": "ps_library_gallery",
+      "name_ja": "回廊から見る閲覧室",
+      "name_en": "Reading Room from the Gallery",
+      "building": "library",
+      "position": "poi_library_gallery",
+      "look_dir": {
+        "x": 0.99,
+        "z": 0.09
+      },
+      "caption_ja": "2 階の回廊から吹き抜け越しに、閲覧長机が 7 列ならぶ。",
+      "caption_en": "From the second-floor gallery, seven rows of reading tables across the atrium."
+    },
+    {
+      "id": "ps_lecture_atrium",
+      "name_ja": "大階段ホール",
+      "name_en": "Grand Stair Hall",
+      "building": "lecture",
+      "position": "poi_lecture_atrium",
+      "look_dir": {
+        "x": 0.99,
+        "z": -0.1
+      },
+      "caption_ja": "外壁が弧を描く角の内側。3 層吹き抜けの大階段が動線をそのまま形にしている。",
+      "caption_en": "Inside the curved corner. A three-storey grand stair that is the flow of people made solid."
+    }
+  ],
+  "achievements": [
+    {
+      "id": "ach_first_find",
+      "name_ja": "はじめての落とし物",
+      "name_en": "First Find",
+      "desc_ja": "隠しアイテムを 1 個見つける。",
+      "desc_en": "Find one hidden item.",
+      "condition": {
+        "type": "collect_count",
+        "value": 1
+      }
+    },
+    {
+      "id": "ach_collector_5",
+      "name_ja": "キャンパスの目利き",
+      "name_en": "Campus Scavenger",
+      "desc_ja": "隠しアイテムを 5 個見つける。",
+      "desc_en": "Find five hidden items.",
+      "condition": {
+        "type": "collect_count",
+        "value": 5
+      }
+    },
+    {
+      "id": "ach_collector_all",
+      "name_ja": "葛飾コンプリート",
+      "name_en": "Katsushika Complete",
+      "desc_ja": "隠しアイテムを 20 個すべて見つける。",
+      "desc_en": "Find all twenty hidden items.",
+      "condition": {
+        "type": "collect_count",
+        "value": 20
+      }
+    },
+    {
+      "id": "ach_legendary",
+      "name_ja": "ドームの鍵の持ち主",
+      "name_en": "Keeper of the Dome Key",
+      "desc_ja": "レジェンダリーのアイテムを見つける。",
+      "desc_en": "Find a legendary item.",
+      "condition": {
+        "type": "rarity_count",
+        "rarity": "legendary",
+        "value": 1
+      }
+    },
+    {
+      "id": "ach_photographer",
+      "name_ja": "キャンパス写真部",
+      "name_en": "Campus Photo Club",
+      "desc_ja": "写真スポット 6 箇所すべてで撮影する。",
+      "desc_en": "Take a photo at all six photo spots.",
+      "condition": {
+        "type": "photo_count",
+        "value": 6
+      }
+    },
+    {
+      "id": "ach_all_buildings",
+      "name_ja": "全棟制覇",
+      "name_en": "Every Door",
+      "desc_ja": "9 つの建物すべてに入る。",
+      "desc_en": "Enter all nine buildings.",
+      "condition": {
+        "type": "building_count",
+        "value": 9
+      }
+    },
+    {
+      "id": "ach_friends",
+      "name_ja": "顔なじみ",
+      "name_en": "Familiar Faces",
+      "desc_ja": "4 人の NPC 全員と話す。",
+      "desc_en": "Talk to all four NPCs.",
+      "condition": {
+        "type": "npc_count",
+        "value": 4
+      }
+    },
+    {
+      "id": "ach_main_story",
+      "name_ja": "はじめての一日",
+      "name_en": "The First Day",
+      "desc_ja": "メインクエスト 7 本をすべて達成する。",
+      "desc_en": "Complete all seven main quests.",
+      "condition": {
+        "type": "quest_count",
+        "value": 7
+      }
+    },
+    {
+      "id": "ach_all_quests",
+      "name_ja": "頼まれごとの達人",
+      "name_en": "Errand Master",
+      "desc_ja": "サブクエストを含む 13 本すべてを達成する。",
+      "desc_en": "Complete all thirteen quests, side quests included.",
+      "condition": {
+        "type": "quest_count",
+        "value": 13
+      }
+    },
+    {
+      "id": "ach_sprinter",
+      "name_ja": "60 秒の脚",
+      "name_en": "Sixty-Second Legs",
+      "desc_ja": "体育館まで 60 秒で駆け込む。",
+      "desc_en": "Reach the gymnasium within sixty seconds.",
+      "condition": {
+        "type": "quest_complete",
+        "value": "q_gym"
+      }
+    },
+    {
+      "id": "ach_cafeteria_regular",
+      "name_ja": "食堂の常連",
+      "name_en": "Cafeteria Regular",
+      "desc_ja": "食堂の落とし物を届ける。",
+      "desc_en": "Return the lost item in the cafeteria.",
+      "condition": {
+        "type": "quest_complete",
+        "value": "q_sq_lost_card"
+      }
+    },
+    {
+      "id": "ach_photo_walk",
+      "name_ja": "写真部（仮）",
+      "name_en": "Photo Club (Provisional)",
+      "desc_ja": "キャンパス写真散歩を達成する。",
+      "desc_en": "Complete the campus photo walk.",
+      "condition": {
+        "type": "quest_complete",
+        "value": "q_sq_photo_walk"
+      }
+    },
+    {
+      "id": "ach_full_day",
+      "name_ja": "一日の終わり",
+      "name_en": "End of the Day",
+      "desc_ja": "帰り道を達成する。",
+      "desc_en": "Complete The Way Home.",
+      "condition": {
+        "type": "quest_complete",
+        "value": "q_sq_night_walk"
+      }
+    }
+  ]
+}

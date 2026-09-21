@@ -1,0 +1,31 @@
+{
+  "id": "q_lunch",
+  "title": "食堂のいちばん忙しい時間",
+  "title_en": "The Cafeteria's Busiest Hour",
+  "summary": "第2研究棟 1 階の食堂は 1,400 席。昼のピークに牛乳が切れたらしい。共創棟 1 階のファミリーマートで牛乳を買って、中川かなめのところへ持っていく。",
+  "summary_en": "The first-floor cafeteria in Research Building 2 has 1,400 seats. At the lunch peak, they've run out of milk. Buy milk at the convenience store on the first floor of Kyoso Hall and bring it to Nakagawa Kaname.",
+  "order": 3,
+  "autoStart": false,
+  "prerequisites": [
+    "q_orientation"
+  ],
+  "rewardText": "かなめが日替わりを一皿おまけしてくれた",
+  "rewardText_en": "Kaname threw in an extra plate of the daily special",
+  "steps": [
+    {
+      "id": "s1",
+      "type": "collect",
+      "target": "milk",
+      "count": 1,
+      "text": "共創棟 1 階のファミリーマートで牛乳を買う",
+      "text_en": "Buy milk at the convenience store on the first floor of Kyoso Hall"
+    },
+    {
+      "id": "s2",
+      "type": "talk",
+      "target": "kaname",
+      "text": "第2研究棟 1 階の食堂のかなめに届ける",
+      "text_en": "Deliver it to Kaname in the first-floor cafeteria of Research Building 2"
+    }
+  ]
+}

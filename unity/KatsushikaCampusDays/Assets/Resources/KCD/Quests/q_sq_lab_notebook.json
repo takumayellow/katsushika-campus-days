@@ -1,0 +1,41 @@
+{
+  "id": "q_sq_lab_notebook",
+  "title": "そらの実験ノート",
+  "title_en": "Sora's Lab Notebook",
+  "summary": "そらが第1実験棟にノートを置き忘れた。奥の実験室のドラフトの横にあるはず。ラテのお礼も兼ねて取りに行く。",
+  "summary_en": "Sora left a notebook in Experiment Building 1. It should be next to the fume hood in the far lab. Fetch it, and call it thanks for the latte.",
+  "order": 13,
+  "autoStart": false,
+  "prerequisites": [
+    "q_coffee"
+  ],
+  "rewardText": "そらから試験管のチャームをもらった",
+  "rewardText_en": "Sora gave you a test-tube charm",
+  "rewardType": "collectible",
+  "rewardId": "c_sora_charm",
+  "side": true,
+  "steps": [
+    {
+      "id": "s1",
+      "type": "enter",
+      "target": "lab1",
+      "text": "第1実験棟に入る",
+      "text_en": "Enter Experiment Building 1"
+    },
+    {
+      "id": "s2",
+      "type": "collect",
+      "target": "c_lab_goggles",
+      "count": 1,
+      "text": "奥の実験室でそらのゴーグルとノートを見つける",
+      "text_en": "Find Sora's goggles and notebook in the far lab"
+    },
+    {
+      "id": "s3",
+      "type": "talk",
+      "target": "sora",
+      "text": "共創棟前のそらに届ける",
+      "text_en": "Bring them to Sora in front of Kyoso Hall"
+    }
+  ]
+}

@@ -1,0 +1,172 @@
+{
+  "id": "prof",
+  "speaker": "教授",
+  "topics": [
+    {
+      "id": "t_gym_done",
+      "requiresCompletedQuest": "q_gym",
+      "once": true,
+      "lines": [
+        {
+          "text": "間に合ったか。いや、大したものだ。",
+          "text_en": "You made it. Well, I'm impressed."
+        },
+        {
+          "text": "アリーナは天井が高くてね。上のハイサイドライトから入る光が、午後だけ床に長い帯をつくる。",
+          "text_en": "The arena has a high ceiling, you know. Light from the high side windows lays long bands on the floor, but only in the afternoon."
+        },
+        {
+          "speaker": "自分",
+          "text": "……走ったせいで、それどころじゃなかったです。",
+          "text_en": "...I was too busy running to notice."
+        },
+        {
+          "text": "ふむ。では次は歩いて見にいきたまえ。",
+          "text_en": "Hm. Then next time, walk over and have a look."
+        }
+      ]
+    },
+    {
+      "id": "t_gym_active",
+      "requiresActiveQuest": "q_gym",
+      "lines": [
+        {
+          "text": "まだここにいるのか。鍵は待ってくれんよ。",
+          "text_en": "Still here? The key won't wait for you."
+        },
+        {
+          "text": "モールを北へ折れれば体育館だ。Shift を押しっぱなしで走りなさい。",
+          "text_en": "Turn north off the mall and you'll reach the gym. Hold Shift and run."
+        }
+      ]
+    },
+    {
+      "id": "t_gym_start",
+      "requiresCompletedQuest": "q_orientation",
+      "once": true,
+      "startsQuest": "q_gym",
+      "lines": [
+        {
+          "text": "ああ、ちょうどよかった。体育館の鍵当番が、あと 1 分で閉めると言っている。",
+          "text_en": "Ah, good timing. The gym key holder says they're locking up in one minute."
+        },
+        {
+          "text": "中を見ておきたまえ。設備は入学式でしか見られん。",
+          "text_en": "Go and see the inside. You only get to see the facilities at the entrance ceremony otherwise."
+        },
+        {
+          "speaker": "自分",
+          "text": "1 分！？",
+          "text_en": "One minute!?"
+        },
+        {
+          "text": "60 秒だ。まあ、君の脚なら足りるだろう。",
+          "text_en": "Sixty seconds. Well, with your legs it should be enough."
+        }
+      ]
+    },
+    {
+      "id": "t_welcome",
+      "once": true,
+      "lines": [
+        {
+          "text": "おはよう。情報工学科の子だね。名簿にあった。",
+          "text_en": "Good morning. You're one of the Information Engineering students. You were on the list."
+        },
+        {
+          "text": "このモールは全長 250 m ある。南西の金町駅側から、北東の図書館まで、まっすぐ一本。",
+          "text_en": "This mall is 250 metres long. From the Kanamachi Station end in the southwest to the library in the northeast, one straight line."
+        },
+        {
+          "text": "迷ったら、とにかくこの石畳の上を歩きなさい。だいたいどこかに着く。",
+          "text_en": "If you get lost, just walk on these paving stones. You'll end up somewhere."
+        },
+        {
+          "speaker": "自分",
+          "text": "はい、覚えました。",
+          "text_en": "Yes, I'll remember that."
+        },
+        {
+          "text": "よろしい。では、今日は好きに歩いてみることだ。",
+          "text_en": "Good. Then today, walk wherever you like."
+        }
+      ]
+    },
+    {
+      "id": "t_sq_greenhouse_start",
+      "requiresCompletedQuest": "q_gym",
+      "once": true,
+      "startsQuest": "q_sq_greenhouse",
+      "lines": [
+        {
+          "text": "ところで、今日は私が温室の水やり当番だった。すっかり忘れていた。",
+          "text_en": "Incidentally, I was on greenhouse watering duty today. It had entirely slipped my mind."
+        },
+        {
+          "text": "第2実験棟の東に、切妻のガラス屋根が見えるだろう。あれが温室だ。栽培ベンチの鉢に水をやってきてくれんか。",
+          "text_en": "East of Experiment Building 2 you'll see a gabled glass roof. That's the greenhouse. Would you water the pots on the growing benches for me?"
+        },
+        {
+          "speaker": "自分",
+          "text": "教授の当番なのでは。",
+          "text_en": "Isn't that your duty, professor?"
+        },
+        {
+          "text": "そうだ。だから礼はする。",
+          "text_en": "It is. Which is why you'll be rewarded."
+        }
+      ]
+    },
+    {
+      "id": "t_sq_greenhouse_active",
+      "requiresActiveQuest": "q_sq_greenhouse",
+      "lines": [
+        {
+          "text": "温室は第2実験棟の東だ。灌水パイプの元栓は入って右。",
+          "text_en": "The greenhouse is east of Experiment Building 2. The tap for the watering pipe is on the right as you go in."
+        },
+        {
+          "text": "鉢は 2 列。全部にやりなさい。ひとつでも忘れると、私が怒られる。",
+          "text_en": "Two rows of pots. Water every one. Miss a single pot and it's me who gets told off."
+        }
+      ]
+    },
+    {
+      "id": "t_sq_greenhouse_done",
+      "requiresCompletedQuest": "q_sq_greenhouse",
+      "once": true,
+      "lines": [
+        {
+          "text": "ご苦労だった。これは礼だ。",
+          "text_en": "Well done. Here's your thanks."
+        },
+        {
+          "text": "温室で芽が出たばかりの鉢だ。葉はまだ二枚。何の種かは、育ててみればわかる。",
+          "text_en": "A pot that's just sprouted in the greenhouse. Only two leaves so far. What seed it is, you'll find out by growing it."
+        },
+        {
+          "speaker": "自分",
+          "text": "……教えてくれないんですか。",
+          "text_en": "...You're not going to tell me?"
+        },
+        {
+          "text": "それでは実験にならんだろう。",
+          "text_en": "That wouldn't be much of an experiment, would it."
+        }
+      ]
+    },
+    {
+      "id": "t_idle",
+      "lines": [
+        {
+          "text": "講義棟の南西の角は、外壁が弧を描いているだろう。あの中が大階段のホールだ。",
+          "text_en": "The southwest corner of the lecture building, see how the wall curves? That's the grand stair hall inside."
+        },
+        {
+          "text": "設計というのは、歩く人の動線をそのまま形にしたものだよ。",
+          "text_en": "Design is simply the paths people walk, given a shape."
+        }
+      ]
+    }
+  ]
+}
