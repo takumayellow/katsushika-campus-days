@@ -26,3 +26,16 @@ data/osm/raw_overpass.json
 
 # Unity batch logs
 unity/logs/
+
+# 配布 zip (GitHub Release に置く。100 MB 超のため git には入れない)
+dist/
+
+# IDE / 一時ログ / デバッグ画像
+unity/*/.vscode/
+unity/*/*.slnx
+unity/verify.log
+docs/screenshots/_*.png
+docs/previews/_dbg/
+
+# WebGL ビルドの Burst 出力が Data/ に落ちる (ビルド生成物)
+unity/*/Data/

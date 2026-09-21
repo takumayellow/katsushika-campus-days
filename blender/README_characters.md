@@ -11,7 +11,7 @@ Blender 4.5 LTS を headless で回し、アニメ調の 3D キャラクター 7
 "/c/Program Files/Blender Foundation/Blender 4.5/blender.exe" -b \
   --python blender/build_characters.py -- \
   --ids mirai,botchan,madonna,inari,kaname,sora,prof \
-  --preview --preview-dir "C:/Users/takum/dev/katsushika-campus-days/docs/previews"
+  --preview --preview-dir "<repo>/docs/previews"
 ```
 
 | 引数 | 既定 | 説明 |
