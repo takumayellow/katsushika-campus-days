@@ -3,7 +3,7 @@
     python tools/audio/school_song/install_game_bgm.py
 
 ファイル名は既存の BGM と同じにして中身だけ差し替えるので, コードとシーンは触らない.
-差し替え先は MAP で決める (どこで使うかの検討は Issue #35).
+差し替え先は MAP で決める (どこで使うかの検討は Issue #28).
 入れた後は tools/audio/manifest.json と Assets/Audio/README.md も更新する.
 """
 from __future__ import annotations

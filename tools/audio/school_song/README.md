@@ -1,6 +1,6 @@
 # 東京理科大学校歌 — 音源と譜面
 
-経緯と権利のメモは `../README_school_song.md`, 作業の記録は Issue #34, ゲームのどこで流すかは Issue #35。
+経緯と権利のメモは `../README_school_song.md`, 作業の記録は Issue #34, ゲームのどこで流すかは Issue #28。
 
 ## ゲームに入っているもの
 
