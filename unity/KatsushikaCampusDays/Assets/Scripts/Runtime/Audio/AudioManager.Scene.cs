@@ -5,7 +5,7 @@ namespace KCD
 {
     /// <summary>
     /// 場面に応じた自動選曲。タイトルは校歌 bgm_school_song、キャンパスは時刻で昼 / 夕方 / 夜、
-    /// 建物の中は bgm_indoor と建物ごとの環境音。9 時・12 時・17 時にチャイム。
+    /// 建物の中は bgm_indoor と建物ごとの環境音。9 時・12 時・17 時にチャイム（鳴る間は BGM を下げる）。
     /// クエストの開始 / 進行 / 達成の音もここで拾う。
     /// </summary>
     public sealed partial class AudioManager
@@ -163,12 +163,18 @@ namespace KCD
             // 開始直後（前回未設定）は鳴らさず、時刻の切り替わりだけで鳴らす。
             bool first = _lastChimeHour < 0;
             _lastChimeHour = hour;
-            if (first || System.Array.IndexOf(ChimeHours, hour) < 0)
+            if (first || !IsChimeHour(hour))
             {
                 return;
             }
 
-            PlaySe("se_chime", 0.45f);
+            PlayChime();
+        }
+
+        /// <summary>この時刻の切り替わりでチャイムを鳴らすか（テストから呼ぶ純関数）。</summary>
+        public static bool IsChimeHour(int hour)
+        {
+            return System.Array.IndexOf(ChimeHours, hour) >= 0;
         }
 
         /// <summary>建物ごとの環境音。</summary>

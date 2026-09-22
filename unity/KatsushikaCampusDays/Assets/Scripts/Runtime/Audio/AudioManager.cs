@@ -225,8 +225,33 @@ namespace KCD
             }
 
             _se.PlayOneShot(clip, _bgmVolume);
-            _duckUntil = Time.unscaledTime + clip.length;
+            Duck(clip.length);
         }
+
+        /// <summary>時報チャイム。鳴っている間 BGM を下げる（校歌の上にそのまま重ねると濁る, #38）。</summary>
+        public void PlayChime()
+        {
+            AudioClip clip = Find("se_chime");
+            if (clip == null)
+            {
+                return;
+            }
+
+            _se.PlayOneShot(clip, _seVolume * ChimeScale);
+            Duck(clip.length * ChimeDuckFraction);
+        }
+
+        /// <summary>seconds の間 BGM を下げる。長い方を採る（重ねて呼んでも短くならない）。</summary>
+        public void Duck(float seconds)
+        {
+            _duckUntil = Mathf.Max(_duckUntil, Time.unscaledTime + Mathf.Max(0f, seconds));
+        }
+
+        /// <summary>チャイムの音量（SE 音量に掛ける）。</summary>
+        public const float ChimeScale = 0.4f;
+
+        /// <summary>チャイムの長さのうち BGM を下げる割合。残響の尾は BGM が戻る間に消える。</summary>
+        public const float ChimeDuckFraction = 0.8f;
 
         /// <summary>床の種類に合わせた足音。4 種類からランダム。</summary>
         public void PlayFootstep(string surface, bool running)

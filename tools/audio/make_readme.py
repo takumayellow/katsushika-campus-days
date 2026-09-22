@@ -18,9 +18,9 @@ NOTES = {
     "bgm_night": "夜の余韻. 72 BPM / D minor / 静かなピアノ + パッド",
     "bgm_result": "リザルト画面. 128 BPM / C major / 明るく短い",
     "bgm_anthem_original": "オリジナルの校歌風行進曲 (未使用). 108 BPM / Bb major / A-B 形式",
-    "jingle_quest": "クエスト達成",
-    "jingle_day_end": "1 日の終わり",
-    "se_chime": "時報チャイム (9:00 / 12:00 / 17:00). ウェストミンスターの鐘",
+    "jingle_quest": "クエスト達成. F major のアルペジオ (マリンバ + ピアノ)",
+    "jingle_day_end": "1 日の終わり (リザルト画面). F major の IV-V-I (ピアノ)",
+    "se_chime": "時報チャイム (9:00 / 12:00 / 17:00). ウェストミンスターの鐘を校歌に合わせて F major に移調, 前半 2 フレーズ. 鳴る間は BGM を下げる (#38)",
     "ui_move": "カーソル移動", "ui_confirm": "決定", "ui_cancel": "キャンセル",
     "ui_open": "ウィンドウを開く", "ui_close": "ウィンドウを閉じる",
     "ui_toast": "通知",
@@ -156,7 +156,9 @@ def main() -> int:
       "`bgm_anthem_original.wav` は権利確認が取れなかった場合の差し替え用に残してある。")
     A("")
     A("時報チャイム `se_chime.wav` のウェストミンスターの鐘は 1793 年の伝承曲で, "
-      "パブリックドメインであることを確認したうえで音高から合成している。")
+      "パブリックドメインであることを確認したうえで音高から合成している。"
+      "原曲は E major だが校歌の BGM (F major) と重なると濁るので F major に移調し, 前半の 2 フレーズ (約 10 秒) だけにした。"
+      "ゲーム側 (`AudioManager.PlayChime`) は鳴っている間 BGM を 0.35 倍に下げ, 音量も SE の 0.4 倍で鳴らす (#38)。")
     A("")
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, "w", encoding="utf-8") as fh:

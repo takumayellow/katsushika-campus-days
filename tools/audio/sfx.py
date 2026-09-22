@@ -117,10 +117,11 @@ def ui_move() -> np.ndarray:
 
 
 def ui_confirm() -> np.ndarray:
+    """決定: F - C の 2 音 (校歌の調). ベルはやめてマリンバ + 短いブリップ (#28)."""
     buf = np.zeros(S.n_samples(0.42))
-    for i, name in enumerate(("C6", "G6")):
-        add_at(buf, S.bell(nf(name), 0.36, 0.9) * 1.6, S.n_samples(i * 0.055))
-    add_at(buf, _blip(nf("C6"), 0.08, 0.02, "tri") * 0.5, 0)
+    for i, name in enumerate(("F5", "C6")):
+        add_at(buf, S.marimba(nf(name), 0.36, 0.9) * 1.3, S.n_samples(i * 0.055))
+    add_at(buf, _blip(nf("F5"), 0.08, 0.02, "tri") * 0.5, 0)
     return S.fade(buf, 0.001, 0.06)
 
 
@@ -136,8 +137,8 @@ def ui_open() -> np.ndarray:
     rng = np.random.default_rng(11)
     buf = _blip(420.0, dur, 0.1, "tri", sweep=3.2) * 0.55
     buf += burst(dur, 1800.0, 9000.0, 0.09, rng, attack=0.02) * 0.3
-    for i, name in enumerate(("E6", "B6")):
-        add_at(buf, S.bell(nf(name), 0.28, 0.35), S.n_samples(0.05 + i * 0.05))
+    for i, name in enumerate(("F5", "C6")):
+        add_at(buf, S.marimba(nf(name), 0.28, 0.4), S.n_samples(0.05 + i * 0.05))
     return S.fade(buf, 0.004, 0.05)
 
 
@@ -151,9 +152,9 @@ def ui_close() -> np.ndarray:
 
 def ui_toast() -> np.ndarray:
     buf = np.zeros(S.n_samples(0.5))
-    for i, name in enumerate(("E6", "A6")):
+    for i, name in enumerate(("A5", "F6")):
         add_at(buf, S.marimba(nf(name), 0.42, 0.8), S.n_samples(i * 0.085))
-        add_at(buf, S.bell(nf(name), 0.4, 0.25), S.n_samples(i * 0.085))
+        add_at(buf, S.pluck(nf(name), 0.4, 0.35), S.n_samples(i * 0.085))
     return S.fade(buf, 0.002, 0.07)
 
 
@@ -189,30 +190,31 @@ def door_close() -> np.ndarray:
 
 
 def item_get() -> np.ndarray:
+    """アイテム入手: 校歌の音型 F - A - C をマリンバで上行 (#28)."""
     buf = np.zeros(S.n_samples(0.75))
-    for i, name in enumerate(("G5", "C6", "E6")):
-        add_at(buf, S.bell(nf(name), 0.66, 0.95) * 1.5, S.n_samples(i * 0.065))
-        add_at(buf, S.marimba(nf(name), 0.3, 0.4), S.n_samples(i * 0.065))
-    add_at(buf, S.bell(nf("G6"), 0.5, 0.3), S.n_samples(0.2))
+    for i, name in enumerate(("F5", "A5", "C6")):
+        add_at(buf, S.marimba(nf(name), 0.66, 0.95) * 1.3, S.n_samples(i * 0.065))
+        add_at(buf, S.pluck(nf(name), 0.5, 0.35), S.n_samples(i * 0.065))
+    add_at(buf, S.marimba(nf("F6"), 0.5, 0.45), S.n_samples(0.2))
     return S.fade(buf, 0.002, 0.1)
 
 
 def quest_start() -> np.ndarray:
-    """短いファンファーレ (C - E - G - C)."""
+    """短いファンファーレ (F - A - C - F, 校歌の調). マリンバ + ピアノ, ベルは使わない (#28)."""
     buf = np.zeros(S.n_samples(1.15))
-    for name, t0 in (("C5", 0.0), ("E5", 0.10), ("G5", 0.20), ("C6", 0.30)):
+    for name, t0 in (("F5", 0.0), ("A5", 0.10), ("C6", 0.20), ("F6", 0.30)):
         add_at(buf, S.marimba(nf(name), 0.85, 0.9), S.n_samples(t0))
-        add_at(buf, S.bell(nf(name), 0.8, 0.45), S.n_samples(t0))
-    for f in S.chord("C", 5):
-        add_at(buf, S.bell(f, 0.7, 0.3), S.n_samples(0.42))
+        add_at(buf, S.pluck(nf(name), 0.8, 0.4), S.n_samples(t0))
+    for f in S.chord("F", 4):
+        add_at(buf, S.piano(f, 0.7, 0.4), S.n_samples(0.42))
     return S.fade(buf, 0.002, 0.15)
 
 
 def quest_update() -> np.ndarray:
     buf = np.zeros(S.n_samples(0.55))
-    for i, name in enumerate(("A5", "D6")):
+    for i, name in enumerate(("C6", "F6")):
         add_at(buf, S.marimba(nf(name), 0.45, 0.85), S.n_samples(i * 0.08))
-    add_at(buf, S.bell(nf("D6"), 0.45, 0.25), S.n_samples(0.08))
+    add_at(buf, S.pluck(nf("F6"), 0.45, 0.3), S.n_samples(0.08))
     return S.fade(buf, 0.002, 0.08)
 
 
@@ -257,7 +259,7 @@ def sit() -> np.ndarray:
 
 
 def wave() -> np.ndarray:
-    """手を振る: 柔らかい布の風切り + 小さなチャイム."""
+    """手を振る: 柔らかい布の風切り + 小さなマリンバ."""
     rng = np.random.default_rng(27)
     dur = 0.6
     t = S.tline(dur)
@@ -265,8 +267,8 @@ def wave() -> np.ndarray:
     air *= np.sin(np.pi * np.clip(t / (dur * 0.7), 0, 1)) ** 2
     air *= 0.55 + 0.45 * np.sin(2 * np.pi * 3.2 * t)
     buf = air * 0.3
-    add_at(buf, S.bell(nf("A6"), 0.45, 0.22), S.n_samples(0.12))
-    add_at(buf, S.bell(nf("E7"), 0.35, 0.14), S.n_samples(0.2))
+    add_at(buf, S.marimba(nf("A6"), 0.45, 0.3), S.n_samples(0.12))
+    add_at(buf, S.marimba(nf("F7"), 0.35, 0.2), S.n_samples(0.2))
     return S.fade(buf, 0.012, 0.1)
 
 
@@ -282,31 +284,31 @@ def talk_blip(freq: float, shape: str, cutoff: float, dur: float = 0.065) -> np.
 # ウェストミンスターの鐘 (Westminster Quarters).
 # 旋律は 1793 年にケンブリッジの Great St Mary 教会のために作られた伝承曲で,
 # ヘンデル『メサイア』(1741) の一節に由来するとされる. 作者の没後 200 年以上が
-# 経過しておりパブリックドメイン. E major の 4 音を 4 フレーズ並べた正時の形.
+# 経過しておりパブリックドメイン.
+# 原曲は E major だが, ゲーム内 BGM (校歌, F major) と半音違いでぶつかるので F major に移調し (#38),
+# 4 フレーズ 20 秒の正時の形ではなく前半 2 フレーズ (15 分の形) だけを鳴らす.
 CHIME_PHRASES = (
-    ("G#4", "F#4", "E4", "B3"),
-    ("E4", "G#4", "F#4", "B3"),
-    ("E4", "F#4", "G#4", "E4"),
-    ("G#4", "E4", "F#4", "B3"),
+    ("A4", "G4", "F4", "C4"),
+    ("F4", "A4", "G4", "C4"),
 )
 
 
-def se_chime(note_sec: float = 0.78, phrase_gap: float = 1.05) -> np.ndarray:
-    """学校のチャイム. 鐘を加算合成し, 長い残響を付けたステレオ素材."""
+def se_chime(note_sec: float = 0.72, phrase_gap: float = 0.9) -> np.ndarray:
+    """学校のチャイム. 鐘を加算合成し, 残響を付けたステレオ素材 (約 9 秒)."""
     span = 4 * note_sec + phrase_gap
-    total = len(CHIME_PHRASES) * span + 3.4
+    total = len(CHIME_PHRASES) * span + 2.4
     buf = np.zeros((S.n_samples(total), 2))
     t = 0.0
     for phrase in CHIME_PHRASES:
         for k, name in enumerate(phrase):
             ring = total - t          # 最後まで鳴らし切る
-            sig = S.chime_bell(nf(name), min(ring, 4.6), vel=0.92 - 0.04 * k)
+            sig = S.chime_bell(nf(name), min(ring, 3.2), vel=0.92 - 0.04 * k)
             add_at(buf, S.pan(sig, (k - 1.5) * 0.14), S.n_samples(t))
             t += note_sec
         t += phrase_gap
-    out = S.reverb(buf, room=0.9, damp=0.22, mix=0.34)
+    out = S.reverb(buf, room=0.86, damp=0.25, mix=0.28)
     out = S.soft_clip(out, 1.05)
-    return S.normalize(S.fade(out, 0.004, 1.2), -1.5)
+    return S.normalize(S.fade(out, 0.004, 1.0), -1.5)
 
 
 def build_ui_and_game() -> dict:

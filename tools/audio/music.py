@@ -351,29 +351,30 @@ def build_title() -> np.ndarray:
 # ジングル (ループしないワンショット)
 # --------------------------------------------------------------------------
 def build_jingle_quest() -> np.ndarray:
-    """クエスト達成 2 秒. 上行アルペジオ + きらめき."""
+    """クエスト達成 2 秒. 校歌の調 (F major) の上行アルペジオ. ベルは使わずマリンバ + ピアノ (#28)."""
     buf = np.zeros((S.n_samples(2.0), 2))
-    notes = [("C5", 0.00), ("E5", 0.09), ("G5", 0.18), ("C6", 0.27), ("G5", 0.40), ("E6", 0.50)]
+    notes = [("F5", 0.00), ("A5", 0.09), ("C6", 0.18), ("F6", 0.27), ("C6", 0.40), ("A6", 0.50)]
     for i, (name, t0) in enumerate(notes):
         f = nf(name)
-        sig = S.bell(f, 1.7, 0.9) + S.marimba(f, 1.7, 0.5)
+        sig = S.marimba(f, 1.7, 0.9) + S.piano(f, 1.7, 0.5)
         add_at(buf, pan(sig, (i - 2.5) * 0.12), S.n_samples(t0))
-    add_at(buf, pan(S.bell(nf("C7"), 1.2, 0.35), 0.3), S.n_samples(0.5))
+    for j, f in enumerate(chord("F", 4)):
+        add_at(buf, pan(S.piano(f, 1.5, 0.45), (j - 1) * 0.2), S.n_samples(0.5 + j * 0.01))
     out = S.reverb(buf, room=0.82, damp=0.3, mix=0.3)
     return S.normalize(S.fade(S.soft_clip(out, 1.1), 0.003, 0.25), -1.0)
 
 
 def build_jingle_day_end() -> np.ndarray:
-    """1 日の終わり 4 秒. 温かい終止形 (IV - V - I) と長い残響."""
+    """1 日の終わり 4 秒. 校歌の調 (F major) の温かい終止形 (IV - V - I) と長い残響. ピアノだけ (#28)."""
     buf = np.zeros((S.n_samples(4.0), 2))
-    plan = [("F", 0.0, 3), ("G", 0.7, 3), ("C", 1.5, 3), ("C", 1.5, 4)]
+    plan = [("Bb", 0.0, 3), ("C", 0.7, 3), ("F", 1.5, 3), ("F", 1.5, 4)]
     for sym, t0, octv in plan:
         for j, f in enumerate(chord(sym, octv)):
             add_at(buf, pan(S.piano(f, 3.4, 0.72), (j - 1) * 0.18),
                    S.n_samples(t0 + j * 0.012))
-    for j, f in enumerate(chord("C", 5)):
-        add_at(buf, pan(S.bell(f, 2.4, 0.3), (j - 1) * 0.3), S.n_samples(1.55 + j * 0.1))
-    add_at(buf, pan(S.bass(nf("C2"), 2.6, 0.9), 0.0), S.n_samples(1.5))
+    for j, f in enumerate(chord("F", 5)):
+        add_at(buf, pan(S.marimba(f, 2.4, 0.25), (j - 1) * 0.3), S.n_samples(1.55 + j * 0.1))
+    add_at(buf, pan(S.bass(nf("F2"), 2.6, 0.9), 0.0), S.n_samples(1.5))
     out = S.reverb(buf, room=0.9, damp=0.28, mix=0.34)
     out = S.compress(out, thresh_db=-20.0, ratio=2.4)
     return S.normalize(S.fade(S.soft_clip(out, 1.1), 0.004, 0.6), -1.0)

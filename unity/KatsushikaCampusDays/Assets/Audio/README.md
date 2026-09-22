@@ -19,7 +19,7 @@ python tools/audio/build_audio.py bgm ambient  # カテゴリを絞る
 | `tools/audio/analyze.py` | 波形統計とループ継ぎ目の計測 |
 | `tools/audio/build_audio.py` | 全体のエントリ。`manifest.json` と本 README を書き出す |
 
-出力は 44.1 kHz / 16 bit の WAV。合計 54 ファイル, 179.5 MiB, 音の長さ 1072.6 秒。生成時間は 18 秒。
+出力は 44.1 kHz / 16 bit の WAV。合計 54 ファイル, 177.8 MiB, 音の長さ 1062.5 秒。生成時間は 144 秒。
 
 ## Unity へ取り込むときの設定
 
@@ -61,8 +61,8 @@ README の表の「ループ継ぎ目」は `seam_step_ratio / seam_hf_ratio` �
 | `bgm_result.wav` | 30.00 s | -1.0 dBFS | -11.0 dBFS | 0.299 / 0.620 | リザルト画面. 128 BPM / C major / 明るく短い |
 | `bgm_school_song.wav` | 189.06 s | -1.0 dBFS | -15.4 dBFS | ループしない | タイトル画面. 東京理科大学校歌. 東北きりたん (NEUTRINO) 歌唱 1〜3 番 + ピアノ伴奏. 117 BPM / F major |
 | `bgm_title.wav` | 40.00 s | -1.0 dBFS | -13.7 dBFS | 0.999 / 1.484 | 旧タイトル曲 (未使用). 72 BPM / bgm_day のモチーフを遅く |
-| `jingle_day_end.wav` | 4.00 s | -1.0 dBFS | -11.2 dBFS | ループしない | 1 日の終わり |
-| `jingle_quest.wav` | 2.00 s | -1.0 dBFS | -12.7 dBFS | ループしない | クエスト達成 |
+| `jingle_day_end.wav` | 4.00 s | -1.0 dBFS | -11.7 dBFS | ループしない | 1 日の終わり (リザルト画面). F major の IV-V-I (ピアノ) |
+| `jingle_quest.wav` | 2.00 s | -1.0 dBFS | -13.8 dBFS | ループしない | クエスト達成. F major のアルペジオ (マリンバ + ピアノ) |
 
 ## SE (効果音) (37 ファイル)
 
@@ -71,12 +71,12 @@ README の表の「ループ継ぎ目」は `seam_step_ratio / seam_hf_ratio` �
 | `camera_shutter.wav` | 0.40 s | -1.5 dBFS | -28.5 dBFS | 撮影 |
 | `door_close.wav` | 0.55 s | -1.5 dBFS | -23.8 dBFS | 扉を閉める |
 | `door_open.wav` | 0.95 s | -1.5 dBFS | -22.4 dBFS | 扉を開ける |
-| `item_get.wav` | 0.75 s | -1.5 dBFS | -13.4 dBFS | アイテム入手 |
+| `item_get.wav` | 0.75 s | -1.5 dBFS | -14.1 dBFS | アイテム入手 |
 | `jump.wav` | 0.28 s | -1.5 dBFS | -13.8 dBFS | ジャンプ |
 | `land.wav` | 0.30 s | -1.5 dBFS | -21.8 dBFS | 着地 |
-| `quest_start.wav` | 1.15 s | -1.5 dBFS | -13.7 dBFS | クエスト開始 |
-| `quest_update.wav` | 0.55 s | -1.5 dBFS | -12.3 dBFS | クエスト進行 |
-| `se_chime.wav` | 20.08 s | -1.5 dBFS | -15.2 dBFS | 時報チャイム (9:00 / 12:00 / 17:00). ウェストミンスターの鐘 |
+| `quest_start.wav` | 1.15 s | -1.5 dBFS | -14.2 dBFS | クエスト開始 |
+| `quest_update.wav` | 0.55 s | -1.5 dBFS | -12.9 dBFS | クエスト進行 |
+| `se_chime.wav` | 9.96 s | -1.5 dBFS | -15.1 dBFS | 時報チャイム (9:00 / 12:00 / 17:00). ウェストミンスターの鐘を校歌に合わせて F major に移調, 前半 2 フレーズ. 鳴る間は BGM を下げる (#38) |
 | `sit.wav` | 0.55 s | -1.5 dBFS | -19.9 dBFS | 座る |
 | `step_concrete_1.wav` | 0.17 s | -1.5 dBFS | -19.5 dBFS | コンクリートの足音. 4 バリエーションをランダムに再生する |
 | `step_concrete_2.wav` | 0.16 s | -1.5 dBFS | -22.4 dBFS | コンクリートの足音. 4 バリエーションをランダムに再生する |
@@ -100,11 +100,11 @@ README の表の「ループ継ぎ目」は `seam_step_ratio / seam_hf_ratio` �
 | `talk_blip_prof.wav` | 0.08 s | -1.5 dBFS | -13.5 dBFS | 会話ブリップ (教員) |
 | `ui_cancel.wav` | 0.30 s | -1.5 dBFS | -13.1 dBFS | キャンセル |
 | `ui_close.wav` | 0.28 s | -1.5 dBFS | -15.8 dBFS | ウィンドウを閉じる |
-| `ui_confirm.wav` | 0.42 s | -1.5 dBFS | -12.1 dBFS | 決定 |
+| `ui_confirm.wav` | 0.42 s | -1.5 dBFS | -12.0 dBFS | 決定 |
 | `ui_move.wav` | 0.07 s | -1.5 dBFS | -14.0 dBFS | カーソル移動 |
-| `ui_open.wav` | 0.34 s | -1.5 dBFS | -15.0 dBFS | ウィンドウを開く |
-| `ui_toast.wav` | 0.50 s | -1.5 dBFS | -12.2 dBFS | 通知 |
-| `wave.wav` | 0.60 s | -1.5 dBFS | -17.1 dBFS | 手を振る |
+| `ui_open.wav` | 0.34 s | -1.5 dBFS | -14.3 dBFS | ウィンドウを開く |
+| `ui_toast.wav` | 0.50 s | -1.5 dBFS | -13.2 dBFS | 通知 |
+| `wave.wav` | 0.60 s | -1.5 dBFS | -16.5 dBFS | 手を振る |
 
 ## 環境音 (ループ) (7 ファイル)
 
@@ -122,4 +122,4 @@ README の表の「ループ継ぎ目」は `seam_step_ratio / seam_hf_ratio` �
 
 東京理科大学校歌 (作曲 大和憲史) を 3 つの BGM で使っている。タイトル画面の `bgm_school_song.wav` は東北きりたん (NEUTRINO) の歌唱 1〜3 番にピアノ伴奏を重ねたもの, 昼の `bgm_day.wav` と夕方の `bgm_evening.wav` は歌なしのピアノ伴奏 (ヤマハの自動採譜を修正したもの)。吹奏楽風アレンジ (`build_school_song.py`) は旋律・和音が公式譜とずれているので, 直すまでゲームに入れない (#28)。3 つとも `tools/audio/school_song/install_game_bgm.py` が書き込むので, `build_audio.py` はこの 2 曲 (`bgm_day`, `bgm_evening`) を生成しない。`music.py` の元の曲は `SCHOOL_SONG_BGM` から外すと戻る。作曲者の没年が確認できず保護期間の満了は立証できていないので, 公開配布の前に権利確認が要る。経緯と出典は `tools/audio/README_school_song.md`, ファイルの一覧は `tools/audio/school_song/README.md` を参照。`bgm_anthem_original.wav` は権利確認が取れなかった場合の差し替え用に残してある。
 
-時報チャイム `se_chime.wav` のウェストミンスターの鐘は 1793 年の伝承曲で, パブリックドメインであることを確認したうえで音高から合成している。
+時報チャイム `se_chime.wav` のウェストミンスターの鐘は 1793 年の伝承曲で, パブリックドメインであることを確認したうえで音高から合成している。原曲は E major だが校歌の BGM (F major) と重なると濁るので F major に移調し, 前半の 2 フレーズ (約 10 秒) だけにした。ゲーム側 (`AudioManager.PlayChime`) は鳴っている間 BGM を 0.35 倍に下げ, 音量も SE の 0.4 倍で鳴らす (#38)。
