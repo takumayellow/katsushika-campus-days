@@ -6,13 +6,14 @@
 
 | ファイル | 内容 |
 |----------|------|
-| `unity/.../Assets/Audio/BGM/bgm_school_song.wav` | タイトル画面の BGM。校歌の吹奏楽風アレンジ（前奏 + 1 番 + 2 番の器楽, 132 秒, 104 BPM, F major）。`AudioManager.Scene.cs` がタイトルで `bgm_school_song` を鳴らす |
+| `unity/.../Assets/Audio/BGM/bgm_day.wav` | 昼のキャンパスの BGM（2026-09-22 まではタイトル曲）。校歌の吹奏楽風アレンジ（前奏 + 1 番 + 2 番の器楽, 131 秒, 104 BPM, F major）。原本は `school_song/audio/bgm_band.wav` |
+| `unity/.../Assets/Audio/BGM/bgm_school_song.wav` | タイトル画面の BGM。きりたん歌唱の 1〜3 番 + ピアノ伴奏（189 秒, 117 BPM）。`AudioManager.Scene.cs` がタイトルで `bgm_school_song` を鳴らす |
 | `tools/audio/school_song/build_school_song.py` | 旋律・和音・編曲の定義と生成スクリプト。music21 で譜面を組み, MuseScore 4 CLI で OGG に演奏させ, ffmpeg で 44.1 kHz WAV にして -1 dBFS に正規化する |
-| `tools/audio/school_song/out/school_song_vocal.musicxml` | 歌の旋律 1 声部 + 1 番の歌詞。きりたん等の歌声合成に渡す用 |
-| `tools/audio/school_song/out/school_song_band.musicxml` / `.mid` | 器楽 5 声部（Flute / Trumpet / Horn / Piano / Tuba）の譜面 |
+| `tools/audio/school_song/score/school_song_vocal.musicxml` | 歌の旋律 1 声部 + 1〜3 番の歌詞。きりたん（NEUTRINO）に渡す正本。ファイルの一覧は `school_song/README.md` |
+| `tools/audio/school_song/score/school_song_band.musicxml` / `.mid` | 器楽 5 声部（Flute / Trumpet / Horn / Piano / Tuba）の譜面 |
 | `tools/audio/school_song/KIRITAN_HANDOFF.md` | 歌唱版を作るペインへの依頼文と歌詞 3 番分 |
 
-再生成: `python tools/audio/school_song/build_school_song.py`（MuseScore 4 と ffmpeg が要る。`--no-wav` で譜面だけ）。
+再生成: `python tools/audio/school_song/build_school_song.py`（MuseScore 4 と ffmpeg が要る。`--no-wav` で譜面だけ）。最後に `install_game_bgm.py` を呼んでゲームの BGM に入れる。
 
 `bgm_anthem_original.wav`（オリジナルの校歌風行進曲, `music.build_anthem_original()`）と `bgm_title.wav` は
 差し替え用に残してあり, コードからは参照していない。

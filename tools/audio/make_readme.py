@@ -10,10 +10,10 @@ OUT = os.path.join(ROOT, "unity", "KatsushikaCampusDays", "Assets", "Audio", "RE
 
 # 用途の説明 (manifest には持たせず, ここで人間向けに書く)
 NOTES = {
-    "bgm_day": "昼のキャンパス. 120 BPM / C major / 明るいポップ",
-    "bgm_evening": "夕方. 84 BPM / F major / ノスタルジック",
+    "bgm_day": "昼のキャンパス (ゲーム内の基本). 校歌の吹奏楽風アレンジ. 104 BPM / F major / 前奏 + 2 コーラス",
+    "bgm_evening": "夕方. 校歌のピアノ伴奏 (ヤマハ自動採譜, 歌なし). 117 BPM / F major / 1〜3 番",
     "bgm_indoor": "屋内. 96 BPM / C major / ジャズ 7th の lo-fi",
-    "bgm_school_song": "タイトル画面. 東京理科大学校歌の吹奏楽風アレンジ. 104 BPM / F major / 前奏 + 2 コーラス",
+    "bgm_school_song": "タイトル画面. 東京理科大学校歌. 東北きりたん (NEUTRINO) 歌唱 1〜3 番 + ピアノ伴奏. 117 BPM / F major",
     "bgm_title": "旧タイトル曲 (未使用). 72 BPM / bgm_day のモチーフを遅く",
     "bgm_night": "夜の余韻. 72 BPM / D minor / 静かなピアノ + パッド",
     "bgm_result": "リザルト画面. 128 BPM / C major / 明るく短い",
@@ -145,12 +145,14 @@ def main() -> int:
         A("")
     A("## 校歌について")
     A("")
-    A("タイトル画面の `bgm_school_song.wav` は東京理科大学校歌 (作曲 大和憲史) の吹奏楽風アレンジで, "
-      "管弦楽版スコアの歌の旋律を `tools/audio/school_song/build_school_song.py` に書き起こし, "
-      "music21 で譜面 (MusicXML / MIDI) を組んで MuseScore 4 で演奏させたもの。"
-      "テンポは公式音源の実測に合わせて 104 BPM。"
+    A("東京理科大学校歌 (作曲 大和憲史) を 3 つの BGM で使っている。"
+      "タイトル画面の `bgm_school_song.wav` は東北きりたん (NEUTRINO) の歌唱 1〜3 番にピアノ伴奏を重ねたもの, "
+      "昼の `bgm_day.wav` は管弦楽版スコアの旋律を `build_school_song.py` に書き起こして MuseScore 4 で演奏させた吹奏楽風アレンジ, "
+      "夕方の `bgm_evening.wav` は歌なしのピアノ伴奏 (ヤマハの自動採譜を修正したもの)。"
+      "3 つとも `tools/audio/school_song/install_game_bgm.py` が書き込むので, `build_audio.py` はこの 2 曲 "
+      "(`bgm_day`, `bgm_evening`) を生成しない。`music.py` の元の曲は `SCHOOL_SONG_BGM` から外すと戻る。"
       "作曲者の没年が確認できず保護期間の満了は立証できていないので, 公開配布の前に権利確認が要る。"
-      "経緯と出典は `tools/audio/README_school_song.md` を参照。"
+      "経緯と出典は `tools/audio/README_school_song.md`, ファイルの一覧は `tools/audio/school_song/README.md` を参照。"
       "`bgm_anthem_original.wav` は権利確認が取れなかった場合の差し替え用に残してある。")
     A("")
     A("時報チャイム `se_chime.wav` のウェストミンスターの鐘は 1793 年の伝承曲で, "

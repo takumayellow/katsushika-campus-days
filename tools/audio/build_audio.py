@@ -40,6 +40,9 @@ BGM_BUILDERS = {
     "bgm_result": music.build_result,
     "bgm_anthem_original": music.build_anthem_original,
 }
+# 校歌の音源で差し替え中の BGM. ここでは生成せず school_song/install_game_bgm.py が書く
+# (元の曲に戻すときはここから外す)
+SCHOOL_SONG_BGM = {"bgm_day", "bgm_evening"}
 JINGLE_BUILDERS = {
     "jingle_quest": music.build_jingle_quest,
     "jingle_day_end": music.build_jingle_day_end,
@@ -73,6 +76,9 @@ def _emit(category: str, name: str, signal, loop: bool, entries: list) -> None:
 def build_bgm(entries: list) -> None:
     print("[BGM]")
     for name, fn in BGM_BUILDERS.items():
+        if name in SCHOOL_SONG_BGM:
+            print(f"  BGM/{name}.wav  skip (school_song/install_game_bgm.py)")
+            continue
         _emit("BGM", name, fn(), True, entries)
     for name, fn in JINGLE_BUILDERS.items():
         _emit("BGM", name, fn(), False, entries)

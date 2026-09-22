@@ -39,3 +39,7 @@ docs/previews/_dbg/
 
 # WebGL ビルドの Burst 出力が Data/ に落ちる (ビルド生成物)
 unity/*/Data/
+
+# 校歌の作業用 WAV (mix.sh の中間, BGM の修正前原本など. 完成品は school_song/audio/)
+tools/audio/school_song/work/
+tools/audio/school_song/__pycache__/
