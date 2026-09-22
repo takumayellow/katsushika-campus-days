@@ -11,8 +11,10 @@
 | `bgm_school_song.wav` | タイトル画面 | `audio/school_song_kiritan_mix.mp3`（`work/mix.wav` があればそちら） |
 | `bgm_day.wav` | キャンパス昼（基本） | `work/bgm_yamaha.wav`（夕方と同じ。吹奏楽版は公式譜とずれているので直るまで外す, #28） |
 | `bgm_evening.wav` | キャンパス夕方 | `audio/bgm_yamaha.mp3`（`work/bgm_yamaha.wav` があればそちら）。+13 dB してリミッタをかける |
+| `bgm_night.wav` | キャンパス夜 | 同じピアノ伴奏を 0.8 倍のテンポ + 2.4 kHz ローパス + -4 dB（`make_variants.py`, #28） |
+| `bgm_indoor.wav` | 建物の中 | 同じピアノ伴奏を 0.92 倍のテンポ + 3.2 kHz ローパス + 短い残響 + -3 dB（`make_variants.py`, #28） |
 
-割り当ては `install_game_bgm.py` の `MAP`。`build_audio.py` はこの 2 曲（`SCHOOL_SONG_BGM`）を合成しない。
+割り当ては `install_game_bgm.py` の `MAP` と `make_variants.py` の `VARIANTS`。`build_audio.py` はこの 4 曲（`SCHOOL_SONG_BGM`）を合成しない。
 
 ## ファイル
 
@@ -20,6 +22,7 @@
 |---|---|
 | `score/school_song_vocal.musicxml` | **きりたん用メインボーカルの正本**。1〜3 番, 91 小節, F major 4/4, ♩=117。BGM と同じ拍に乗る |
 | `score/school_song_vocal_verse1.mscz` | 1 番だけの MuseScore 原本（手で仕上げたもの） |
+| `make_variants.py` | 夜 / 屋内の BGM をピアノ伴奏のテンポとフィルタで作る（`--render` で MuseScore から鳴らし直す） |
 | `score/bgm_yamaha.musicxml` | ピアノ伴奏の譜面。ヤマハの自動採譜で, 小節 29 の余分な 1 拍を削った |
 | `score/bgm_yamaha_raw.xml` | 同じ採譜の生の出力（Piano Sheet Converter） |
 | `score/school_song_band.musicxml` / `.mid` | 吹奏楽風 5 声部（`build_school_song.py` が生成） |

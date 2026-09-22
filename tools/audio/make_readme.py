@@ -12,10 +12,10 @@ OUT = os.path.join(ROOT, "unity", "KatsushikaCampusDays", "Assets", "Audio", "RE
 NOTES = {
     "bgm_day": "昼のキャンパス (ゲーム内の基本). 校歌のピアノ伴奏 (bgm_evening と同じ). 吹奏楽版が直ったら差し替える (#28)",
     "bgm_evening": "夕方. 校歌のピアノ伴奏 (ヤマハ自動採譜, 歌なし). 117 BPM / F major / 1〜3 番",
-    "bgm_indoor": "屋内. 96 BPM / C major / ジャズ 7th の lo-fi",
+    "bgm_indoor": "屋内. 校歌のピアノ伴奏を 0.92 倍のテンポにして 3.2 kHz 以上を落とし短い残響 (school_song/make_variants.py). music.py の lo-fi 版に戻すには SCHOOL_SONG_BGM から外す (#28)",
     "bgm_school_song": "タイトル画面. 東京理科大学校歌. 東北きりたん (NEUTRINO) 歌唱 1〜3 番 + ピアノ伴奏. 117 BPM / F major",
     "bgm_title": "旧タイトル曲 (未使用). 72 BPM / bgm_day のモチーフを遅く",
-    "bgm_night": "夜の余韻. 72 BPM / D minor / 静かなピアノ + パッド",
+    "bgm_night": "夜. 校歌のピアノ伴奏を 0.8 倍のテンポにして 2.4 kHz 以上を落とす (school_song/make_variants.py). music.py の D minor 版に戻すには SCHOOL_SONG_BGM から外す (#28)",
     "bgm_result": "リザルト画面. 128 BPM / C major / 明るく短い",
     "bgm_anthem_original": "オリジナルの校歌風行進曲 (未使用). 108 BPM / Bb major / A-B 形式",
     "jingle_quest": "クエスト達成. F major のアルペジオ (マリンバ + ピアノ)",
@@ -150,7 +150,8 @@ def main() -> int:
       "昼の `bgm_day.wav` と夕方の `bgm_evening.wav` は歌なしのピアノ伴奏 (ヤマハの自動採譜を修正したもの)。"
       "吹奏楽風アレンジ (`build_school_song.py`) は旋律・和音が公式譜とずれているので, 直すまでゲームに入れない (#28)。"
       "3 つとも `tools/audio/school_song/install_game_bgm.py` が書き込むので, `build_audio.py` はこの 2 曲 "
-      "(`bgm_day`, `bgm_evening`) を生成しない。`music.py` の元の曲は `SCHOOL_SONG_BGM` から外すと戻る。"
+      "(`bgm_day`, `bgm_evening`, `bgm_night`, `bgm_indoor`) を生成しない。`music.py` の元の曲は `SCHOOL_SONG_BGM` から外すと戻る。"
+      "夜の `bgm_night.wav` と屋内の `bgm_indoor.wav` も同じピアノ伴奏をテンポとフィルタで変えたもの (`school_song/make_variants.py`)。"
       "作曲者の没年が確認できず保護期間の満了は立証できていないので, 公開配布の前に権利確認が要る。"
       "経緯と出典は `tools/audio/README_school_song.md`, ファイルの一覧は `tools/audio/school_song/README.md` を参照。"
       "`bgm_anthem_original.wav` は権利確認が取れなかった場合の差し替え用に残してある。")

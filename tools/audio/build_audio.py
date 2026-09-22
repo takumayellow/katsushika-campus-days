@@ -42,7 +42,7 @@ BGM_BUILDERS = {
 }
 # 校歌の音源で差し替え中の BGM. ここでは生成せず school_song/install_game_bgm.py が書く
 # (元の曲に戻すときはここから外す)
-SCHOOL_SONG_BGM = {"bgm_day", "bgm_evening"}
+SCHOOL_SONG_BGM = {"bgm_day", "bgm_evening", "bgm_night", "bgm_indoor"}
 JINGLE_BUILDERS = {
     "jingle_quest": music.build_jingle_quest,
     "jingle_day_end": music.build_jingle_day_end,
