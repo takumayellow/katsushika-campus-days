@@ -63,8 +63,8 @@ namespace KCD
 
             hud.ShowToast(L.Pick("東京理科大学 葛飾キャンパス", "Tokyo University of Science, Katsushika Campus"));
             hud.ShowToast(L.Pick(
-                "WASD で移動　Shift でダッシュ　E で話す　Tab でクエスト",
-                "WASD Move   Shift Sprint   E Talk   Tab Quests"));
+                "WASD / 矢印キーで移動　Shift でダッシュ　E で話す　Tab でクエスト",
+                "WASD / Arrows Move   Shift Sprint   E Talk   Tab Quests"));
         }
 
         private void OnApplicationFocus(bool hasFocus)

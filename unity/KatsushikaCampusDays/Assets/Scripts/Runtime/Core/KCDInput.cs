@@ -6,7 +6,7 @@ namespace KCD
     /// <summary>
     /// Input System のデバイスを直接読む薄いファサード。
     /// .inputactions アセットへの GUID 参照を持たずに済むので、シーンをコードだけで組み立てられる。
-    /// 操作: WASD 移動 / Shift ダッシュ / Space ジャンプ / E 会話 / Tab クエストログ / Esc メニュー。
+    /// 操作: WASD または矢印キーで移動 / Shift ダッシュ / Space ジャンプ / E 会話 / Tab クエストログ / Esc メニュー。
     /// </summary>
     public static class KCDInput
     {
@@ -47,10 +47,11 @@ namespace KCD
                 Keyboard keyboard = Keyboard.current;
                 if (keyboard != null)
                 {
-                    if (keyboard.wKey.isPressed) { move.y += 1f; }
-                    if (keyboard.sKey.isPressed) { move.y -= 1f; }
-                    if (keyboard.dKey.isPressed) { move.x += 1f; }
-                    if (keyboard.aKey.isPressed) { move.x -= 1f; }
+                    // WASD と矢印キーのどちらでも動く（#36）。両方同時に押しても 1 軸 1 以内。
+                    if (keyboard.wKey.isPressed || keyboard.upArrowKey.isPressed) { move.y += 1f; }
+                    if (keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed) { move.y -= 1f; }
+                    if (keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed) { move.x += 1f; }
+                    if (keyboard.aKey.isPressed || keyboard.leftArrowKey.isPressed) { move.x -= 1f; }
                 }
 
                 Gamepad gamepad = Gamepad.current;
@@ -183,7 +184,9 @@ namespace KCD
                 Keyboard keyboard = Keyboard.current;
                 if (keyboard != null &&
                     (keyboard.wKey.isPressed || keyboard.sKey.isPressed ||
-                     keyboard.aKey.isPressed || keyboard.dKey.isPressed))
+                     keyboard.aKey.isPressed || keyboard.dKey.isPressed ||
+                     keyboard.upArrowKey.isPressed || keyboard.downArrowKey.isPressed ||
+                     keyboard.leftArrowKey.isPressed || keyboard.rightArrowKey.isPressed))
                 {
                     return true;
                 }

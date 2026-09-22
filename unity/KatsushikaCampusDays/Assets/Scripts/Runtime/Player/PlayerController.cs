@@ -3,7 +3,7 @@ using UnityEngine;
 namespace KCD
 {
     /// <summary>
-    /// 三人称の移動。カメラ相対の WASD、Shift ダッシュ、Space ジャンプ。
+    /// 三人称の移動。カメラ相対の WASD / 矢印キー、Shift ダッシュ、Space ジャンプ。
     /// 段差や斜面で引っかからないよう stepOffset / slopeLimit を明示し、
     /// 接地時にわずかに下向きの力を与えて浮きを防ぐ。
     /// </summary>

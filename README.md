@@ -20,7 +20,7 @@ WebGL 2 対応 GPU。初回は約 100 MB を読み込む。セーブはブラウ
 ## 遊ぶ（配布版）
 
 `dist/KatsushikaCampusDays_win64.zip` を展開して `KatsushikaCampusDays.exe` を起動する。
-Windows 10/11 64bit、インストール不要。操作は WASD 移動、マウス視点、Shift ダッシュ、Space ジャンプ、
+Windows 10/11 64bit、インストール不要。操作は WASD / 矢印キー移動、マウス視点、Shift ダッシュ、Space ジャンプ、
 E で話す/入る、Tab クエストログ、Esc メニュー。詳細は [docs/HOW_TO_PLAY.md](docs/HOW_TO_PLAY.md)。
 
 ## 自分でビルドする
