@@ -30,7 +30,8 @@ DESCRIPTION = """\
 歌唱: 東北きりたん (NEUTRINO Singer Character Library)
 音声合成: NEUTRINO https://studio-neutrino.com/
 伴奏: ピアノ (Yamaha の自動採譜を手で直したもの)
-楽譜表示: MuseScore
+楽譜表示: MuseScore (4 小節ずつの画面送り)
+歌詞の表示: 東京理科大学の公式サイトの校歌の歌詞 https://www.tus.ac.jp/about/university/symbol/
 
 立ち絵: A・Loveる さん「きりたん立ち絵素材」(制服差分)
 東北きりたん: 東北ずん子・ずんだもんプロジェクト (SSS LLC.) https://zunko.jp/
@@ -53,7 +54,7 @@ def main(argv: list) -> int:
     if args.dry_run:
         return 0
     if not MP4.exists():
-        raise SystemExit(f"{MP4} が無い. 先に replace_audio.py で作る")
+        raise SystemExit(f"{MP4} が無い. 先に make_video.py で作る")
 
     os.environ.setdefault("YT_CREDENTIALS_DIR", str(YP / "credentials"))
     sys.path.insert(0, str(YP / "src"))
