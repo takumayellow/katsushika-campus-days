@@ -1852,6 +1852,12 @@
           <system-distance>169</system-distance>
           </system-layout>
         </print>
+      <attributes>
+        <time>
+          <beats>5</beats>
+          <beat-type>4</beat-type>
+          </time>
+        </attributes>
       <note default-x="73.72" default-y="-35">
         <pitch>
           <step>F</step>
@@ -1886,6 +1892,13 @@
         <voice>1</voice>
         <type>eighth</type>
         </note>
+      <note default-x="424.88" default-y="-20">
+        <rest/>
+        <duration>4</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        </note>
+      
       <note default-x="100.73" default-y="-50">
         <pitch>
           <step>C</step>
@@ -1918,6 +1931,12 @@
         </note>
       </measure>
     <measure number="35" width="179.21">
+      <attributes>
+        <time>
+          <beats>4</beats>
+          <beat-type>4</beat-type>
+          </time>
+        </attributes>
       <note default-x="12.5" default-y="-35">
         <pitch>
           <step>F</step>
