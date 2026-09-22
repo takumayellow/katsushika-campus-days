@@ -138,12 +138,21 @@ namespace KCD
             }
 
             // 鳴っていない方に次の曲を入れ、フェードで入れ替える。
-            AudioSource next = _fade >= 0.5f ? _bgmB : _bgmA;
+            bool useB = NextBgmIsB(_fade);
+            AudioSource next = useB ? _bgmB : _bgmA;
             next.clip = clip;
             next.loop = true;
             next.volume = 0f;
             next.Play();
-            _fade = next == _bgmB ? 0f : 1f;
+            _fade = useB ? 1f : 0f;
+        }
+
+        /// <summary>
+        /// 次の曲を B に入れるか。_fade は 0 = A が鳴る, 1 = B が鳴る なので, いま鳴っていない側を返す。
+        /// </summary>
+        public static bool NextBgmIsB(float fade)
+        {
+            return fade < 0.5f;
         }
 
         /// <summary>BGM を止める（フェードアウト）。</summary>
