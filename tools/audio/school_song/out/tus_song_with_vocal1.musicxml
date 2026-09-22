@@ -454,24 +454,23 @@
           <step>D</step>
           <octave>5</octave>
           </pitch>
-        <duration>6</duration>
+        <duration>4</duration>
         <voice>1</voice>
         <type>quarter</type>
-        <dot default-x="135.58" default-y="-5"/>
         <stem>down</stem>
         <lyric number="1" default-y="-51.29" relative-y="-30">
           <syllabic>single</syllabic>
           <text>こ</text>
           </lyric>
         </note>
-      <note default-x="195.59" default-y="-10">
+      <note default-x="169.59" default-y="-10">
         <pitch>
           <step>D</step>
           <octave>5</octave>
           </pitch>
-        <duration>2</duration>
+        <duration>4</duration>
         <voice>1</voice>
-        <type>eighth</type>
+        <type>quarter</type>
         <stem>down</stem>
         <lyric number="1" default-y="-51.29" relative-y="-30">
           <syllabic>single</syllabic>
@@ -646,7 +645,7 @@
         <stem>up</stem>
         <lyric number="1" default-y="-48.1" relative-y="-30">
           <syllabic>single</syllabic>
-          <text>しい</text>
+          <text>い</text>
           </lyric>
         </note>
       </measure>

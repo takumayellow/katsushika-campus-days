@@ -369,7 +369,7 @@
           </lyric>
         </note>
       </measure>
-    <measure number="12" width="231.45">
+    <measure number="12" width="232.39">
       <print new-system="yes">
         <system-layout>
           <system-margins>
@@ -394,7 +394,7 @@
           <text>ら</text>
           </lyric>
         </note>
-      <note default-x="124.15" default-y="-35">
+      <note default-x="124.08" default-y="-35">
         <pitch>
           <step>F</step>
           <octave>4</octave>
@@ -408,29 +408,28 @@
           <text>わ</text>
           </lyric>
         </note>
-      <note default-x="151.21" default-y="-10">
+      <note default-x="151.14" default-y="-10">
         <pitch>
           <step>D</step>
           <octave>5</octave>
           </pitch>
-        <duration>6</duration>
+        <duration>4</duration>
         <voice>1</voice>
         <type>quarter</type>
-        <dot default-x="169.22" default-y="-5"/>
         <stem>down</stem>
         <lyric number="1" default-y="-51.77" relative-y="-30">
           <syllabic>single</syllabic>
           <text>こ</text>
           </lyric>
         </note>
-      <note default-x="201.64" default-y="-10">
+      <note default-x="190.87" default-y="-10">
         <pitch>
           <step>D</step>
           <octave>5</octave>
           </pitch>
-        <duration>2</duration>
+        <duration>4</duration>
         <voice>1</voice>
-        <type>eighth</type>
+        <type>quarter</type>
         <stem>down</stem>
         <lyric number="1" default-y="-51.77" relative-y="-30">
           <syllabic>single</syllabic>
@@ -438,7 +437,7 @@
           </lyric>
         </note>
       </measure>
-    <measure number="13" width="129.73">
+    <measure number="13" width="129.56">
       <note default-x="12.5" default-y="-15">
         <pitch>
           <step>C</step>
@@ -454,7 +453,7 @@
           <text>よ</text>
           </lyric>
         </note>
-      <note default-x="88.14" default-y="-15">
+      <note default-x="88.04" default-y="-15">
         <pitch>
           <step>C</step>
           <octave>5</octave>
@@ -469,7 +468,7 @@
           </lyric>
         </note>
       </measure>
-    <measure number="14" width="175.37">
+    <measure number="14" width="175.19">
       <note default-x="12.5" default-y="-10">
         <pitch>
           <step>D</step>
@@ -484,7 +483,7 @@
           <text>た</text>
           </lyric>
         </note>
-      <note default-x="72.17" default-y="-15">
+      <note default-x="72.09" default-y="-15">
         <pitch>
           <step>C</step>
           <octave>5</octave>
@@ -498,7 +497,7 @@
           <text>き</text>
           </lyric>
         </note>
-      <note default-x="111.95" default-y="-25">
+      <note default-x="111.81" default-y="-25">
         <pitch>
           <step>A</step>
           <octave>4</octave>
@@ -506,7 +505,7 @@
         <duration>3</duration>
         <voice>1</voice>
         <type>eighth</type>
-        <dot default-x="129.95" default-y="-25"/>
+        <dot default-x="129.81" default-y="-25"/>
         <stem>up</stem>
         <beam number="1">begin</beam>
         <lyric number="1" default-y="-51.77" relative-y="-30">
@@ -514,7 +513,7 @@
           <text>こ</text>
           </lyric>
         </note>
-      <note default-x="145.57" default-y="-20">
+      <note default-x="145.39" default-y="-20">
         <pitch>
           <step>B</step>
           <alter>-1</alter>
@@ -532,7 +531,7 @@
           </lyric>
         </note>
       </measure>
-    <measure number="15" width="170.81">
+    <measure number="15" width="170.59">
       <note default-x="12.5" default-y="-25">
         <pitch>
           <step>A</step>
@@ -548,7 +547,7 @@
           <text>しょ</text>
           </lyric>
         </note>
-      <note default-x="62.93" default-y="-30">
+      <note default-x="62.86" default-y="-30">
         <pitch>
           <step>G</step>
           <octave>4</octave>
@@ -562,7 +561,7 @@
           <text>お</text>
           </lyric>
         </note>
-      <note default-x="89.45" default-y="-35">
+      <note default-x="89.34" default-y="-35">
         <pitch>
           <step>F</step>
           <octave>4</octave>
@@ -576,7 +575,7 @@
           <text>の</text>
           </lyric>
         </note>
-      <note default-x="129.23" default-y="-35">
+      <note default-x="129.07" default-y="-35">
         <pitch>
           <step>F</step>
           <octave>4</octave>
@@ -591,7 +590,7 @@
           </lyric>
         </note>
       </measure>
-    <measure number="16" width="170.81">
+    <measure number="16" width="170.59">
       <note default-x="12.5" default-y="-25">
         <pitch>
           <step>A</step>
@@ -607,7 +606,7 @@
           <text>し</text>
           </lyric>
         </note>
-      <note default-x="62.93" default-y="-35">
+      <note default-x="62.86" default-y="-35">
         <pitch>
           <step>F</step>
           <octave>4</octave>
@@ -621,7 +620,7 @@
           <text>い</text>
           </lyric>
         </note>
-      <note default-x="89.45" default-y="-45">
+      <note default-x="89.34" default-y="-45">
         <pitch>
           <step>D</step>
           <octave>4</octave>
@@ -635,7 +634,7 @@
           <text>ず</text>
           </lyric>
         </note>
-      <note default-x="129.23" default-y="-40">
+      <note default-x="129.07" default-y="-40">
         <pitch>
           <step>E</step>
           <octave>4</octave>
@@ -650,7 +649,7 @@
           </lyric>
         </note>
       </measure>
-    <measure number="17" width="129.73">
+    <measure number="17" width="129.56">
       <note default-x="12.5" default-y="-50">
         <pitch>
           <step>C</step>
@@ -666,7 +665,7 @@
           <text>を</text>
           </lyric>
         </note>
-      <note default-x="88.14" default-y="-50">
+      <note default-x="88.04" default-y="-50">
         <pitch>
           <step>C</step>
           <octave>4</octave>
