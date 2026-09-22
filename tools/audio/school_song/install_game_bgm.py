@@ -27,8 +27,9 @@ BOOST = "volume=13dB,alimiter=limit=0.891:attack=5:release=80:level=false"
 MAP = {
     "bgm_school_song": (("work/mix.wav", "audio/school_song_kiritan_mix.mp3"),
                         "タイトル. きりたん歌唱 1〜3 番 + ヤマハ採譜の伴奏 (mix.sh)", None),
-    "bgm_day": (("audio/bgm_band.wav",),
-                "キャンパス昼 (ゲーム内の基本). 吹奏楽風アレンジ (build_school_song.py, 旧タイトル曲)", None),
+    # 吹奏楽版 (audio/bgm_band.wav) は旋律・和音が公式譜とずれていて, 直すまで使わない (#28)
+    "bgm_day": (("work/bgm_yamaha.wav", "audio/bgm_yamaha.mp3"),
+                "キャンパス昼 (ゲーム内の基本). ヤマハ採譜のピアノ伴奏 (歌なし). 吹奏楽版が直ったら差し替える", BOOST),
     "bgm_evening": (("work/bgm_yamaha.wav", "audio/bgm_yamaha.mp3"),
                     "キャンパス夕方. ヤマハ採譜のピアノ伴奏 (歌なし)", BOOST),
 }

@@ -9,7 +9,7 @@
 | ゲームの BGM | 場面 | 元のファイル |
 |---|---|---|
 | `bgm_school_song.wav` | タイトル画面 | `audio/school_song_kiritan_mix.mp3`（`work/mix.wav` があればそちら） |
-| `bgm_day.wav` | キャンパス昼（基本） | `audio/bgm_band.wav` |
+| `bgm_day.wav` | キャンパス昼（基本） | `work/bgm_yamaha.wav`（夕方と同じ。吹奏楽版は公式譜とずれているので直るまで外す, #28） |
 | `bgm_evening.wav` | キャンパス夕方 | `audio/bgm_yamaha.mp3`（`work/bgm_yamaha.wav` があればそちら）。+13 dB してリミッタをかける |
 
 割り当ては `install_game_bgm.py` の `MAP`。`build_audio.py` はこの 2 曲（`SCHOOL_SONG_BGM`）を合成しない。

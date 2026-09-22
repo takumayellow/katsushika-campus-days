@@ -10,7 +10,7 @@ OUT = os.path.join(ROOT, "unity", "KatsushikaCampusDays", "Assets", "Audio", "RE
 
 # 用途の説明 (manifest には持たせず, ここで人間向けに書く)
 NOTES = {
-    "bgm_day": "昼のキャンパス (ゲーム内の基本). 校歌の吹奏楽風アレンジ. 104 BPM / F major / 前奏 + 2 コーラス",
+    "bgm_day": "昼のキャンパス (ゲーム内の基本). 校歌のピアノ伴奏 (bgm_evening と同じ). 吹奏楽版が直ったら差し替える (#28)",
     "bgm_evening": "夕方. 校歌のピアノ伴奏 (ヤマハ自動採譜, 歌なし). 117 BPM / F major / 1〜3 番",
     "bgm_indoor": "屋内. 96 BPM / C major / ジャズ 7th の lo-fi",
     "bgm_school_song": "タイトル画面. 東京理科大学校歌. 東北きりたん (NEUTRINO) 歌唱 1〜3 番 + ピアノ伴奏. 117 BPM / F major",
@@ -147,8 +147,8 @@ def main() -> int:
     A("")
     A("東京理科大学校歌 (作曲 大和憲史) を 3 つの BGM で使っている。"
       "タイトル画面の `bgm_school_song.wav` は東北きりたん (NEUTRINO) の歌唱 1〜3 番にピアノ伴奏を重ねたもの, "
-      "昼の `bgm_day.wav` は管弦楽版スコアの旋律を `build_school_song.py` に書き起こして MuseScore 4 で演奏させた吹奏楽風アレンジ, "
-      "夕方の `bgm_evening.wav` は歌なしのピアノ伴奏 (ヤマハの自動採譜を修正したもの)。"
+      "昼の `bgm_day.wav` と夕方の `bgm_evening.wav` は歌なしのピアノ伴奏 (ヤマハの自動採譜を修正したもの)。"
+      "吹奏楽風アレンジ (`build_school_song.py`) は旋律・和音が公式譜とずれているので, 直すまでゲームに入れない (#28)。"
       "3 つとも `tools/audio/school_song/install_game_bgm.py` が書き込むので, `build_audio.py` はこの 2 曲 "
       "(`bgm_day`, `bgm_evening`) を生成しない。`music.py` の元の曲は `SCHOOL_SONG_BGM` から外すと戻る。"
       "作曲者の没年が確認できず保護期間の満了は立証できていないので, 公開配布の前に権利確認が要る。"
