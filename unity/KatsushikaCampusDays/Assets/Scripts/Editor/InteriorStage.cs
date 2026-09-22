@@ -117,13 +117,9 @@ namespace KCD.Editor
 
                 GameObject go = filter.gameObject;
                 string id = go.name.ToLowerInvariant();
-                MeshCollider collider = go.GetComponent<MeshCollider>();
-                if (collider == null)
-                {
-                    collider = go.AddComponent<MeshCollider>();
-                }
-
-                collider.sharedMesh = filter.sharedMesh;
+                // 観葉植物の葉は当たり判定から外す（#30）。
+                CampusStage.AttachMeshCollider(go, filter.sharedMesh,
+                    CampusStage.ColliderAssetPath(interior.name, go.name));
                 go.layer = id.StartsWith("floor") && groundLayer >= 0
                     ? groundLayer
                     : buildingLayer >= 0 ? buildingLayer : go.layer;

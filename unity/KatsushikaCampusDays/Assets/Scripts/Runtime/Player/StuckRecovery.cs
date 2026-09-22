@@ -14,8 +14,8 @@ namespace KCD
         /// <summary>空き場所を探す輪の間隔（m）。</summary>
         public const float RingStep = 0.35f;
 
-        /// <summary>空き場所を探す輪の数。RingStep * Rings が最大探索距離。</summary>
-        public const int Rings = 5;
+        /// <summary>空き場所を探す輪の数。RingStep * Rings が最大探索距離（2.8 m。プランターや家具の幅を越える, #30）。</summary>
+        public const int Rings = 8;
 
         /// <summary>輪 1 周あたりの方向数。</summary>
         public const int Directions = 8;

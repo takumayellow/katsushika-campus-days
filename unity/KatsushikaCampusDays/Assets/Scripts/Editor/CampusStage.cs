@@ -83,14 +83,10 @@ namespace KCD.Editor
 
                 if (!background)
                 {
-                    MeshCollider collider = go.GetComponent<MeshCollider>();
-                    if (collider == null)
+                    if (AttachMeshCollider(go, filter.sharedMesh, ColliderAssetPath("campus", go.name)))
                     {
-                        collider = go.AddComponent<MeshCollider>();
+                        colliders++;
                     }
-
-                    collider.sharedMesh = filter.sharedMesh;
-                    colliders++;
                 }
                 else
                 {
@@ -113,7 +109,117 @@ namespace KCD.Editor
             EditorPaths.Report("キャンパスに MeshCollider を " + colliders + " 個付けました。");
         }
 
-        /// <summary>樹木は幹だけ当たり判定を持たせ、NavMesh のベイクからは外す。</summary>
+        /// <summary>葉を落とした当たり判定メッシュの置き場。</summary>
+        public const string ColliderFolder = "Assets/Models/Colliders";
+
+        public static string ColliderAssetPath(string stage, string objectName)
+        {
+            return ColliderFolder + "/" + stage + "_" + objectName + ".asset";
+        }
+
+        /// <summary>
+        /// 当たり判定から外すマテリアル。観葉植物やプランターの葉のかたまりは非凸メッシュなので、
+        /// カプセルが入り込むと PhysX が押し出せず動けなくなる（#30）。鉢と幹は残す。
+        /// </summary>
+        public static bool IsFoliageMaterial(Material material)
+        {
+            if (material == null)
+            {
+                return false;
+            }
+
+            string name = material.name.ToLowerInvariant();
+            return name.StartsWith("plant_green") || name.StartsWith("leaf");
+        }
+
+        /// <summary>
+        /// MeshCollider を付ける。葉のサブメッシュがあればそれを落としたメッシュをアセットに保存して使う。
+        /// 全部が葉なら当たり判定を付けない。付けたら true。
+        /// </summary>
+        public static bool AttachMeshCollider(GameObject go, Mesh source, string assetPath)
+        {
+            Mesh mesh = ColliderMesh(source, go.GetComponent<Renderer>(), assetPath);
+            MeshCollider collider = go.GetComponent<MeshCollider>();
+            if (mesh == null)
+            {
+                if (collider != null)
+                {
+                    Object.DestroyImmediate(collider);
+                }
+
+                return false;
+            }
+
+            if (collider == null)
+            {
+                collider = go.AddComponent<MeshCollider>();
+            }
+
+            collider.sharedMesh = mesh;
+            return true;
+        }
+
+        /// <summary>葉のサブメッシュを落とした当たり判定用メッシュ。落とすものが無ければ元のまま、全部葉なら null。</summary>
+        public static Mesh ColliderMesh(Mesh source, Renderer renderer, string assetPath)
+        {
+            Material[] materials = renderer != null ? renderer.sharedMaterials : null;
+            if (source == null || materials == null)
+            {
+                return source;
+            }
+
+            var keep = new List<int>();
+            for (int i = 0; i < source.subMeshCount; i++)
+            {
+                if (i >= materials.Length || !IsFoliageMaterial(materials[i]))
+                {
+                    keep.Add(i);
+                }
+            }
+
+            if (keep.Count == source.subMeshCount)
+            {
+                return source;
+            }
+
+            if (keep.Count == 0)
+            {
+                return null;
+            }
+
+            var triangles = new List<int>();
+            foreach (int index in keep)
+            {
+                triangles.AddRange(source.GetTriangles(index));
+            }
+
+            var existing = AssetDatabase.LoadAssetAtPath<Mesh>(assetPath);
+            Mesh mesh = existing != null ? existing : new Mesh();
+            mesh.Clear();
+            mesh.name = System.IO.Path.GetFileNameWithoutExtension(assetPath);
+            mesh.indexFormat = source.indexFormat;
+            mesh.vertices = source.vertices;
+            mesh.SetTriangles(triangles, 0);
+            mesh.RecalculateBounds();
+
+            if (existing == null)
+            {
+                if (!AssetDatabase.IsValidFolder(ColliderFolder))
+                {
+                    AssetDatabase.CreateFolder("Assets/Models", "Colliders");
+                }
+
+                AssetDatabase.CreateAsset(mesh, assetPath);
+            }
+            else
+            {
+                EditorUtility.SetDirty(mesh);
+            }
+
+            return mesh;
+        }
+
+        /// <summary>樹木は幹だけ当たり判定を持たせ、NavMesh のベイクからは外す。半径は幹の見た目に合わせて細く（葉に引っかからない, #30）。</summary>
         private static void DressTrees(GameObject trees)
         {
             Ignore(trees);
@@ -132,7 +238,7 @@ namespace KCD.Editor
                     capsule = child.gameObject.AddComponent<CapsuleCollider>();
                 }
 
-                capsule.radius = 0.45f;
+                capsule.radius = 0.3f;
                 capsule.height = 6f;
                 capsule.center = new Vector3(0f, 3f, 0f);
                 count++;

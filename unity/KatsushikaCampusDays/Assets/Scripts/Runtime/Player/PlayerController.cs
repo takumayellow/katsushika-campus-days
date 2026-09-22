@@ -144,8 +144,20 @@ namespace KCD
             {
                 Relocate(free, yaw);
                 _stuckFrames = 0;
+                return;
+            }
+
+            // 周りに空きが無いまま半秒ほど経ったら、最後の手段として来た方向へ半歩戻して少し持ち上げる。
+            // 何度か繰り返せばいずれ空きに出るので、閉じ込められたままにはならない（#30）。
+            if (_stuckFrames >= LastResortFrames)
+            {
+                Relocate(transform.position - transform.forward * 0.5f + Vector3.up * 0.3f, yaw);
+                _stuckFrames = 0;
             }
         }
+
+        /// <summary>空き場所も見つからないとき、後ろへ戻すまでのフレーム数。</summary>
+        public const int LastResortFrames = 30;
 
         /// <summary>速度を保ったまま位置だけ直す。CharacterController は切らないと座標を戻す。</summary>
         private void Relocate(Vector3 position, float yawDegrees)
