@@ -60,6 +60,8 @@
     "ui.hud.saved": "Game saved",
     "ui.hud.quick_saved": "Quick-saved",
     "ui.hud.loaded": "Game loaded",
+    "ui.hud.chime_noon": "12:00 Lunch break",
+    "ui.hud.chime_evening": "17:00 Time to head home",
     "ui.hud.time_up": "Time's up. Run it again from the start",
     "ui.hud.requires": "Requires '{0}'.",
     "ui.hud.time_morning": "Morning",

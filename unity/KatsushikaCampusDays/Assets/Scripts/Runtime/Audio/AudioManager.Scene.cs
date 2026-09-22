@@ -5,7 +5,8 @@ namespace KCD
 {
     /// <summary>
     /// 場面に応じた自動選曲。タイトルは校歌 bgm_school_song、キャンパスは時刻で昼 / 夕方 / 夜、
-    /// 建物の中は bgm_indoor と建物ごとの環境音。9 時・12 時・17 時にチャイム（鳴る間は BGM を下げる）。
+    /// 建物の中は bgm_indoor と建物ごとの環境音。12 時（昼休み）と 17 時（下校）に時報チャイム。
+    /// チャイムの間は BGM を止め、HUD に時刻のトーストを出す（#38）。
     /// クエストの開始 / 進行 / 達成の音もここで拾う。
     /// </summary>
     public sealed partial class AudioManager
@@ -16,7 +17,8 @@ namespace KCD
         /// <summary>この時刻から夜の曲。</summary>
         private const float NightHour = 19.5f;
 
-        private static readonly int[] ChimeHours = { 9, 12, 17 };
+        /// <summary>時報を鳴らす正時。昼休みと下校だけ。9 時は始業前で、始まって 15 秒で鳴るのがうるさかった（#38）。</summary>
+        private static readonly int[] ChimeHours = { 12, 17 };
 
         private QuestSystem _quests;
         private int _lastChimeHour = -1;
@@ -169,12 +171,36 @@ namespace KCD
             }
 
             PlayChime();
+            string label = ChimeLabelKey(hour);
+            if (label != null)
+            {
+                HUD.Instance?.ShowToast(L.Get(label, ChimeLabelFallback(hour)));
+            }
         }
 
         /// <summary>この時刻の切り替わりでチャイムを鳴らすか（テストから呼ぶ純関数）。</summary>
         public static bool IsChimeHour(int hour)
         {
             return System.Array.IndexOf(ChimeHours, hour) >= 0;
+        }
+
+        /// <summary>時報のトーストの翻訳キー。鳴らさない時刻は null。</summary>
+        public static string ChimeLabelKey(int hour)
+        {
+            switch (hour)
+            {
+                case 12:
+                    return "ui.hud.chime_noon";
+                case 17:
+                    return "ui.hud.chime_evening";
+                default:
+                    return null;
+            }
+        }
+
+        private static string ChimeLabelFallback(int hour)
+        {
+            return hour == 12 ? "12:00 昼休み" : "17:00 下校の時刻";
         }
 
         /// <summary>建物ごとの環境音。</summary>

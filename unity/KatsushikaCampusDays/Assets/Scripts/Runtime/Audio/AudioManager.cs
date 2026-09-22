@@ -41,6 +41,7 @@ namespace KCD
         private float _fade = 1f;
         private float _duck = 1f;
         private float _duckUntil;
+        private float _duckLevel = JingleDuckLevel;
 
         /// <summary>いま鳴っている BGM の id。</summary>
         public string CurrentBgm => _currentBgm;
@@ -228,7 +229,10 @@ namespace KCD
             Duck(clip.length);
         }
 
-        /// <summary>時報チャイム。鳴っている間 BGM を下げる（校歌の上にそのまま重ねると濁る, #38）。</summary>
+        /// <summary>
+        /// 時報チャイム。鳴っている間は BGM を止める（校歌の上に鐘を重ねると調が合わず濁る, #38）。
+        /// 残響の尾が消えるころに BGM がフェードで戻る。
+        /// </summary>
         public void PlayChime()
         {
             AudioClip clip = Find("se_chime");
@@ -238,20 +242,31 @@ namespace KCD
             }
 
             _se.PlayOneShot(clip, _seVolume * ChimeScale);
-            Duck(clip.length * ChimeDuckFraction);
+            Duck(clip.length * ChimeDuckFraction, ChimeDuckLevel);
         }
 
-        /// <summary>seconds の間 BGM を下げる。長い方を採る（重ねて呼んでも短くならない）。</summary>
-        public void Duck(float seconds)
+        /// <summary>
+        /// seconds の間 BGM を level 倍に下げる。時間は長い方、レベルは低い方を採る（重ねて呼んでも弱くならない）。
+        /// </summary>
+        public void Duck(float seconds, float level = JingleDuckLevel)
         {
-            _duckUntil = Mathf.Max(_duckUntil, Time.unscaledTime + Mathf.Max(0f, seconds));
+            float until = Time.unscaledTime + Mathf.Max(0f, seconds);
+            bool active = Time.unscaledTime < _duckUntil;
+            _duckLevel = active ? Mathf.Min(_duckLevel, level) : Mathf.Clamp01(level);
+            _duckUntil = Mathf.Max(_duckUntil, until);
         }
 
-        /// <summary>チャイムの音量（SE 音量に掛ける）。</summary>
-        public const float ChimeScale = 0.4f;
+        /// <summary>ジングルの間の BGM 音量の倍率。</summary>
+        public const float JingleDuckLevel = 0.35f;
 
-        /// <summary>チャイムの長さのうち BGM を下げる割合。残響の尾は BGM が戻る間に消える。</summary>
-        public const float ChimeDuckFraction = 0.8f;
+        /// <summary>チャイムの間の BGM 音量の倍率。0 = 止める。</summary>
+        public const float ChimeDuckLevel = 0f;
+
+        /// <summary>チャイムの音量（SE 音量に掛ける）。校内放送のスピーカーから遠く聞こえる程度。</summary>
+        public const float ChimeScale = 0.45f;
+
+        /// <summary>チャイムの長さのうち BGM を止める割合。最後の 1 割ほどは残響の尾で、BGM が戻る間に消える。</summary>
+        public const float ChimeDuckFraction = 0.9f;
 
         /// <summary>床の種類に合わせた足音。4 種類からランダム。</summary>
         public void PlayFootstep(string surface, bool running)
@@ -279,18 +294,27 @@ namespace KCD
             // _fade: 0 = A が鳴る, 1 = B が鳴る。曲が無いときは両方 0 へ。
             float goalA = target * (1f - Mathf.Round(_fade));
             float goalB = target * Mathf.Round(_fade);
-            _duck = Mathf.MoveTowards(_duck, Time.unscaledTime < _duckUntil ? 0.35f : 1f, deltaTime * 2f);
+            _duck = Mathf.MoveTowards(_duck, Time.unscaledTime < _duckUntil ? _duckLevel : 1f, deltaTime * 2f);
 
             _bgmA.volume = Mathf.MoveTowards(_bgmA.volume, goalA * _bgmVolume * _duck, speed * _bgmVolume);
             _bgmB.volume = Mathf.MoveTowards(_bgmB.volume, goalB * _bgmVolume * _duck, speed * _bgmVolume);
-            StopIfSilent(_bgmA);
-            StopIfSilent(_bgmB);
+            StopIfSilent(_bgmA, goalA);
+            StopIfSilent(_bgmB, goalB);
             _ambient.volume = _ambientVolume;
         }
 
-        private static void StopIfSilent(AudioSource source)
+        /// <summary>
+        /// フェードアウトし切った側を止める。goal はダック前の目標なので、
+        /// チャイムで 0 まで下げている間も現在の曲は（無音のまま）流れ続け、戻るときに頭から始まらない。
+        /// </summary>
+        public static bool ShouldStopSilent(bool isPlaying, float volume, float goal)
         {
-            if (source.isPlaying && source.volume <= 0.0001f)
+            return isPlaying && goal <= 0f && volume <= 0.0001f;
+        }
+
+        private static void StopIfSilent(AudioSource source, float goal)
+        {
+            if (ShouldStopSilent(source.isPlaying, source.volume, goal))
             {
                 source.Stop();
             }

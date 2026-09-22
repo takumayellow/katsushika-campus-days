@@ -60,6 +60,8 @@
     "ui.hud.saved": "セーブしました",
     "ui.hud.quick_saved": "クイックセーブしました",
     "ui.hud.loaded": "ロードしました",
+    "ui.hud.chime_noon": "12:00 昼休み",
+    "ui.hud.chime_evening": "17:00 下校の時刻",
     "ui.hud.time_up": "時間切れ。もう一度はじめから走ろう",
     "ui.hud.requires": "'{0}' が必要です。",
     "ui.hud.time_morning": "朝",

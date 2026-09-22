@@ -287,28 +287,41 @@ def talk_blip(freq: float, shape: str, cutoff: float, dur: float = 0.065) -> np.
 # 経過しておりパブリックドメイン.
 # 原曲は E major だが, ゲーム内 BGM (校歌, F major) と半音違いでぶつかるので F major に移調し (#38),
 # 4 フレーズ 20 秒の正時の形ではなく前半 2 フレーズ (15 分の形) だけを鳴らす.
+# 日本の学校のチャイム = ウェストミンスターの鐘 (E major) の 4 フレーズ 16 音.
+# ドレミで「ドミレソ / ソレミド / ミドレソ / ソレミド」(ド = E). 原曲の第 2・5・4・5 節にあたる.
+# 各フレーズは 4 分音符 3 つ + 2 分音符 1 つ (最後の音を伸ばす). 移調や省略はしない (#38).
 CHIME_PHRASES = (
-    ("A4", "G4", "F4", "C4"),
-    ("F4", "A4", "G4", "C4"),
+    ("E4", "G#4", "F#4", "B3"),
+    ("B3", "F#4", "G#4", "E4"),
+    ("G#4", "E4", "F#4", "B3"),
+    ("B3", "F#4", "G#4", "E4"),
 )
 
+# 4 分音符の長さ (秒). フレーズは 3 拍 + 2 拍 (2 分音符) + 1 拍の間.
+CHIME_BEAT = 0.46
+CHIME_PHRASE_BEATS = 6
 
-def se_chime(note_sec: float = 0.72, phrase_gap: float = 0.9) -> np.ndarray:
-    """学校のチャイム. 鐘を加算合成し, 残響を付けたステレオ素材 (約 9 秒)."""
-    span = 4 * note_sec + phrase_gap
-    total = len(CHIME_PHRASES) * span + 2.4
-    buf = np.zeros((S.n_samples(total), 2))
-    t = 0.0
-    for phrase in CHIME_PHRASES:
+
+def se_chime(beat: float = CHIME_BEAT, tail: float = 1.8) -> np.ndarray:
+    """学校のチャイム. ウェストミンスターの鐘を校内放送のスピーカー越しに聞く音 (約 13 秒).
+    鐘は加算合成, スピーカーの帯域に絞ってから校舎の残響を付ける."""
+    span = CHIME_PHRASE_BEATS * beat
+    total = len(CHIME_PHRASES) * span + tail
+    buf = np.zeros(S.n_samples(total))
+    for p, phrase in enumerate(CHIME_PHRASES):
+        t = p * span
         for k, name in enumerate(phrase):
-            ring = total - t          # 最後まで鳴らし切る
-            sig = S.chime_bell(nf(name), min(ring, 3.2), vel=0.92 - 0.04 * k)
-            add_at(buf, S.pan(sig, (k - 1.5) * 0.14), S.n_samples(t))
-            t += note_sec
-        t += phrase_gap
-    out = S.reverb(buf, room=0.86, damp=0.25, mix=0.28)
+            ring = total - t                      # 最後まで鳴らし切る
+            sig = S.chime_bell(nf(name), min(ring, 3.0), vel=0.95 - 0.03 * k)
+            add_at(buf, sig, S.n_samples(t))
+            t += beat
+    # 校内放送のホーンスピーカー: 低音も高音も出ない, 少し鼻にかかった音.
+    out = S.highpass(buf, 240.0, order=2)
+    out = S.lowpass(out, 3800.0, order=2)
+    out = S.peaking(out, 1400.0, 1.2, 2.5)
+    out = S.reverb(S.to_stereo(out), room=0.80, damp=0.35, mix=0.24)
     out = S.soft_clip(out, 1.05)
-    return S.normalize(S.fade(out, 0.004, 1.0), -1.5)
+    return S.normalize(S.fade(out, 0.004, 1.2), -1.5)
 
 
 def build_ui_and_game() -> dict:
