@@ -4,7 +4,7 @@
 
 youtube-pipeline の integrations/kiritan_singing/scripts/upload.py と同じ関数 (yp.core.youtube.upload) で上げる.
 upload.py の説明文は立ち絵を公式素材, 譜面を NEUTRINO 同梱と決め打ちしているので, 今回の素材に合わせてここで書く.
-認証は youtube-pipeline の既定 (client_secret / token) をそのまま使う.
+認証は youtube-pipeline の既定 (credentials/client_secret.json と youtube_token.json, upload.py と同じチャンネル) を使う.
 """
 from __future__ import annotations
 
@@ -55,6 +55,7 @@ def main(argv: list) -> int:
     if not MP4.exists():
         raise SystemExit(f"{MP4} が無い. 先に replace_audio.py で作る")
 
+    os.environ.setdefault("YT_CREDENTIALS_DIR", str(YP / "credentials"))
     sys.path.insert(0, str(YP / "src"))
     from yp.core.youtube import upload  # type: ignore
 
