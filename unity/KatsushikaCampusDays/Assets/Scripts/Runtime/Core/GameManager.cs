@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 
 namespace KCD
@@ -153,6 +154,10 @@ namespace KCD
         private static void Bootstrap()
         {
             _ = Instance;
+            // Web 版は品質レベルの取り違えで描画が崩れたことがあるので、どの設定で起動したかを残す。
+            RenderPipelineAsset pipeline = GraphicsSettings.currentRenderPipeline;
+            Debug.Log("[KCD] quality=" + QualitySettings.names[QualitySettings.GetQualityLevel()]
+                      + " pipeline=" + (pipeline != null ? pipeline.name : "builtin"));
         }
     }
 }

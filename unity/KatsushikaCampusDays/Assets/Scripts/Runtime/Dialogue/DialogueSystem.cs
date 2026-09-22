@@ -231,6 +231,8 @@ namespace KCD
             _topicKey = string.Empty;
             _lineIndex = 0;
             KCDInput.GameplayBlocked = false;
+            // 最終行を送った Enter / E を、同じフレームで InteractionPrompt が拾って会話を再開しないようにする。
+            KCDInput.MarkModalClosed();
 
             if (finished != null)
             {

@@ -23,6 +23,13 @@ namespace KCD
         private float _nextDecisionAt;
         private bool _navMeshReady;
         private bool _paused;
+        private float _retryUntil;
+
+        /// <summary>NavMesh が後から登録される場合に備えて乗り直しを試みる秒数。</summary>
+        public const float NavMeshRetrySeconds = 5f;
+
+        /// <summary>配置位置から NavMesh を探す距離（m）。段差や縁石の上に置かれても拾えるように少し広め。</summary>
+        public const float NavMeshSnapDistance = 3f;
 
         /// <summary>会話中など、歩みを止めたいとき true にする。</summary>
         public bool Paused
@@ -65,17 +72,49 @@ namespace KCD
 
         private void Start()
         {
-            _navMeshReady = _agent.isOnNavMesh;
+            _retryUntil = Time.time + NavMeshRetrySeconds;
+            TryAttachToNavMesh();
+            _nextDecisionAt = Time.time + Random.Range(0f, _maxIdleSeconds);
+        }
+
+        /// <summary>
+        /// NavMesh に乗り直す。NavMeshSurface が OnEnable でデータを登録するより先に
+        /// NavMeshAgent の OnEnable が走ると agent が作られないので、作り直して足元へ Warp する。
+        /// </summary>
+        private void TryAttachToNavMesh()
+        {
+            if (_agent.enabled && _agent.isOnNavMesh)
+            {
+                _navMeshReady = true;
+                return;
+            }
+
+            if (!NavMesh.SamplePosition(transform.position, out NavMeshHit hit, NavMeshSnapDistance, NavMesh.AllAreas))
+            {
+                _agent.enabled = false;
+                return;
+            }
+
+            _agent.enabled = false;
+            _agent.enabled = true;
+            _navMeshReady = _agent.isOnNavMesh || _agent.Warp(hit.position);
             if (!_navMeshReady)
             {
                 _agent.enabled = false;
+                return;
             }
 
-            _nextDecisionAt = Time.time + Random.Range(0f, _maxIdleSeconds);
+            _home = transform.position;
+            _agent.isStopped = _paused;
         }
 
         private void Update()
         {
+            if (!_navMeshReady && Time.time < _retryUntil)
+            {
+                TryAttachToNavMesh();
+            }
+
             if (_animator != null && _animator.runtimeAnimatorController != null)
             {
                 float speed = _navMeshReady ? _agent.velocity.magnitude : 0f;

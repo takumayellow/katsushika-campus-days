@@ -38,7 +38,8 @@ namespace KCD
                 hud.ShowInteractionPrompt(_current);
             }
 
-            if (_current != null && KCDInput.InteractPressed && !KCDInput.GameplayBlocked)
+            if (_current != null && KCDInput.InteractPressed && !KCDInput.GameplayBlocked
+                && !KCDInput.ModalClosedThisFrame)
             {
                 _current.Interact(gameObject);
             }
