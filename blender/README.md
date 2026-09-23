@@ -134,6 +134,7 @@ x は完全一致、北方向は 1.4〜1.8 m だけ外側に出るが、これ�
 - 背景建物（`style == "background"`）は押し出し + 各階の窓（暗いガラスの四角。合計
   `BG_WINDOW_BUDGET` 枚以内になるよう間隔を自動調整）。1 メッシュにまとめている。
 - 外構小物: 水面は `site_water`（Unity で反射用に別マテリアル）、看板は `site_props_signs`
-  （`sign_<id>` Empty は板の位置・+X が板の正面）、駐輪場は `site_props_bikeshed`（講義棟北の
-  駐車場の縁と正門脇。学生寮は campus.json に無い）、自販機・ゴミ箱は `site_props_vending` /
+  （`sign_<id>` Empty は板の位置・+X が板の正面）、モール北側の花壇は `site_props_beds`
+  （縁石 + 土 + 花の株。歩道と北側の建物の入口の前は空ける。入口の駐輪場は実物に無いので置かない）、
+  自販機・ゴミ箱は `site_props_vending` /
   `site_props_trash`（第2研究棟の食堂前と共創棟のコンビニ前）。

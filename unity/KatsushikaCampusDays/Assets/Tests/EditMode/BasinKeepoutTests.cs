@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -7,7 +8,7 @@ using UnityEngine;
 namespace KCD.Tests
 {
     /// <summary>
-    /// 水盤（図書館南の池）に入れないこと (#46) と、背景ビルの当たり判定の約束ごと (#50) を守る。
+    /// 水盤（図書館を囲む堀、#46 / #56）に入れないことと、背景ビルの当たり判定の約束ごと (#50) を守る。
     ///
     /// 同じ数字が Blender 側（blender/kcd_lib/site.py）と Unity 側（Assets/Scripts/Editor の
     /// CampusStage.cs / SeatFactory.cs）の両方に書いてある。片方だけ直すと、見た目は変わらないのに
@@ -52,22 +53,45 @@ namespace KCD.Tests
             return Number(source, "^" + name + @"\s*=\s*(-?\d+(?:\.\d+)?)", name);
         }
 
-        /// <summary>site.py の「NAME = (1.0, 2.0)」。</summary>
-        private static Vector2 PyPair(string source, string name)
-        {
-            const string num = @"(-?\d+(?:\.\d+)?)";
-            Match m = Regex.Match(source, "^" + name + @"\s*=\s*\(\s*" + num + @"\s*,\s*" + num + @"\s*\)",
-                RegexOptions.Multiline);
-            Assert.IsTrue(m.Success, name + " を読み取れない");
-            return new Vector2(float.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture),
-                float.Parse(m.Groups[2].Value, CultureInfo.InvariantCulture));
-        }
-
         /// <summary>C# の「public const float Name = 1.23f;」。</summary>
         private static float CsConst(string source, string name)
         {
             return Number(source, @"public const float " + name + @"\s*=\s*(-?\d+(?:\.\d+)?)f?\s*;", name);
         }
+
+        private const string Num = @"(-?\d+(?:\.\d+)?)";
+
+        /// <summary>site.py の「BASINS = [(u0, v0, u1, v1), ...]」。</summary>
+        private static List<Vector4> PyBasins(string py)
+        {
+            Match list = Regex.Match(py, @"^BASINS\s*=\s*\[([\s\S]*?)\]", RegexOptions.Multiline);
+            Assert.IsTrue(list.Success, "site.py の BASINS を読み取れない");
+            return Rects(list.Groups[1].Value,
+                @"\(\s*" + Num + @"\s*,\s*" + Num + @"\s*,\s*" + Num + @"\s*,\s*" + Num + @"\s*\)");
+        }
+
+        /// <summary>CampusStage.cs の「Basins = { new Vector4(u0, v0, u1, v1), ... };」。</summary>
+        private static List<Vector4> CsBasins(string cs)
+        {
+            Match list = Regex.Match(cs, @"Vector4\[\]\s*Basins\s*=\s*\{([\s\S]*?)\};");
+            Assert.IsTrue(list.Success, "CampusStage.Basins を読み取れない");
+            return Rects(list.Groups[1].Value,
+                @"new Vector4\(\s*" + Num + @"f?\s*,\s*" + Num + @"f?\s*,\s*" + Num + @"f?\s*,\s*" + Num + @"f?\s*\)");
+        }
+
+        private static List<Vector4> Rects(string body, string pattern)
+        {
+            var rects = new List<Vector4>();
+            foreach (Match m in Regex.Matches(body, pattern))
+            {
+                rects.Add(new Vector4(F(m.Groups[1].Value), F(m.Groups[2].Value), F(m.Groups[3].Value), F(m.Groups[4].Value)));
+            }
+
+            Assert.Greater(rects.Count, 0, "水盤の矩形が 1 つも読めない");
+            return rects;
+        }
+
+        private static float F(string s) => float.Parse(s, CultureInfo.InvariantCulture);
 
         [Test]
         public void SitePyAndCampusStage_AgreeOnTheBasin()
@@ -75,18 +99,24 @@ namespace KCD.Tests
             string py = ReadRepo("blender/kcd_lib/site.py");
             string cs = CampusStageSource;
 
-            Vector2 u = PyPair(py, "BASIN_U");
-            Vector2 v = PyPair(py, "BASIN_V");
-            Assert.AreEqual(u.x, CsConst(cs, "BasinU0"), 1e-4f, "BASIN_U[0] と BasinU0 が違う");
-            Assert.AreEqual(u.y, CsConst(cs, "BasinU1"), 1e-4f, "BASIN_U[1] と BasinU1 が違う");
-            Assert.AreEqual(v.x, CsConst(cs, "BasinV0"), 1e-4f, "BASIN_V[0] と BasinV0 が違う");
-            Assert.AreEqual(v.y, CsConst(cs, "BasinV1"), 1e-4f, "BASIN_V[1] と BasinV1 が違う");
+            List<Vector4> blender = PyBasins(py);
+            List<Vector4> unity = CsBasins(cs);
+            Assert.AreEqual(blender.Count, unity.Count, "水盤の矩形の数が site.py と CampusStage.cs で違う");
+            for (int i = 0; i < blender.Count; i++)
+            {
+                for (int k = 0; k < 4; k++)
+                {
+                    Assert.AreEqual(blender[i][k], unity[i][k], 1e-4f,
+                        "BASINS[" + i + "][" + k + "] と Basins[" + i + "] が違う");
+                }
 
+                Assert.Less(blender[i].x, blender[i].z, "BASINS[" + i + "] の u0 < u1 になっていない");
+                Assert.Less(blender[i].y, blender[i].w, "BASINS[" + i + "] の v0 < v1 になっていない");
+            }
+
+            Assert.AreEqual(PyFloat(py, "BASIN_RIM"), CsConst(cs, "BasinRimWidth"), 1e-4f, "縁石の幅が違う");
             Assert.AreEqual(PyFloat(py, "Z_BASIN_RIM"), CsConst(cs, "BasinRimTopY"), 1e-4f, "縁石の天端が違う");
             Assert.AreEqual(PyFloat(py, "Z_WATER"), CsConst(cs, "BasinWaterY"), 1e-4f, "水面の高さが違う");
-
-            float rim = Number(py, @"outer\s*=\s*geom\.offset_polygon\(inner,\s*(-?\d+(?:\.\d+)?)\)", "縁石の幅");
-            Assert.AreEqual(rim, CsConst(cs, "BasinRimWidth"), 1e-4f, "縁石の幅が違う");
 
             // 水盤の底は水面より下、かつ一番高い地面（モールの舗装）より上（透けて見える底を石にする）。
             float floor = PyFloat(py, "Z_BASIN_FLOOR");
@@ -123,7 +153,7 @@ namespace KCD.Tests
         }
 
         [Test]
-        public void BasinNavVolume_CoversTheRim_ButLeavesTheDeckWalkable()
+        public void BasinNavVolume_CoversTheRim_ButLeavesTheMallWalkable()
         {
             string py = ReadRepo("blender/kcd_lib/site.py");
             string cs = CampusStageSource;
@@ -135,42 +165,56 @@ namespace KCD.Tests
             float navTop = CsConst(cs, "BasinWallBottomY") + CsConst(cs, "BasinNavHeight");
             Assert.Greater(navTop, CsConst(cs, "BasinRimTopY"), "除外する箱が縁石の天端より低い");
 
-            // 水盤の北の石張りデッキ（build_basin の deck）は歩けるまま残す。
-            Vector2 v = PyPair(py, "BASIN_V");
-            float deckStart = v.y + Number(py,
-                @"frame\.rect\(BASIN_U\[0\],\s*BASIN_V\[1\]\s*\+\s*(\d+(?:\.\d+)?)", "デッキの南端");
-            Assert.Greater(deckStart, v.y + margin,
-                "NavMesh の除外がデッキまで届くと、池の北側を NPC が通れなくなる");
+            // 東の堀はモールで途切れる。除外する箱がモールの舗装に深く掛かると、モールを NPC が通れなくなる。
+            float mallV = PyFloat(py, "MALL_V");
+            float mallHw = PyFloat(py, "MALL_HW");
+            float mall0 = mallV - mallHw;
+            float mall1 = mallV + mallHw;
+            float u0 = PyFloat(py, "MALL_U0");
+            float u1 = PyFloat(py, "MALL_U1");
+            foreach (Vector4 r in PyBasins(py))
+            {
+                bool acrossMall = r.x - margin < u1 && r.z + margin > u0;
+                if (!acrossMall)
+                {
+                    continue;
+                }
+
+                float overlap = Mathf.Min(r.w + margin, mall1) - Mathf.Max(r.y - margin, mall0);
+                Assert.LessOrEqual(overlap, 0.2f,
+                    "水盤 " + r + " の NavMesh の除外がモールに " + overlap + " m 掛かる");
+            }
         }
 
         [Test]
-        public void PondBenches_StandOnTheDeck_FacingTheWater()
+        public void PondBenches_StandOnTheEastBank_FacingTheWater()
         {
             string py = ReadRepo("blender/kcd_lib/site.py");
             string cs = CampusStageSource;
             string seats = ReadAsset("Scripts", "Editor", "SeatFactory.cs");
 
-            Vector2 u = PyPair(py, "BASIN_U");
-            Vector2 v = PyPair(py, "BASIN_V");
-            float deckStart = v.y + Number(py,
-                @"frame\.rect\(BASIN_U\[0\],\s*BASIN_V\[1\]\s*\+\s*(\d+(?:\.\d+)?)", "デッキの南端");
-            float deckEnd = PyFloat(py, "MALL_V") - PyFloat(py, "MALL_HW");
+            List<Vector4> basins = PyBasins(py);
+            float rimWidth = CsConst(cs, "BasinRimWidth");
 
-            const string num = @"(-?\d+(?:\.\d+)?)";
             MatchCollection spots = Regex.Matches(seats,
-                @"new BenchSpot\(""(\w+)"",\s*" + num + @"f,\s*" + num + @"f,\s*" + num + @"f,\s*" + num + @"f\)");
+                @"new BenchSpot\(""(\w+)"",\s*" + Num + @"f,\s*" + Num + @"f,\s*" + Num + @"f,\s*" + Num + @"f\)");
             Assert.Greater(spots.Count, 0, "SeatFactory の屋外ベンチ表を読み取れない");
 
             int pond = 0;
             foreach (Match spot in spots)
             {
                 string id = spot.Groups[1].Value;
-                float bu = float.Parse(spot.Groups[2].Value, CultureInfo.InvariantCulture);
-                float bv = float.Parse(spot.Groups[3].Value, CultureInfo.InvariantCulture);
-                float faceV = float.Parse(spot.Groups[5].Value, CultureInfo.InvariantCulture);
+                float bu = F(spot.Groups[2].Value);
+                float bv = F(spot.Groups[3].Value);
+                float faceU = F(spot.Groups[4].Value);
+                float faceV = F(spot.Groups[5].Value);
 
-                bool insideBasin = bu >= u.x && bu <= u.y && bv >= v.x && bv <= v.y;
-                Assert.IsFalse(insideBasin, "ベンチ " + id + " が水盤の内側（水の中）に立っている");
+                foreach (Vector4 r in basins)
+                {
+                    bool onWaterOrRim = bu >= r.x - rimWidth && bu <= r.z + rimWidth
+                        && bv >= r.y - rimWidth && bv <= r.w + rimWidth;
+                    Assert.IsFalse(onWaterOrRim, "ベンチ " + id + " が水盤 " + r + " の水か縁石の上に立っている");
+                }
 
                 if (!id.StartsWith("pond"))
                 {
@@ -178,15 +222,15 @@ namespace KCD.Tests
                 }
 
                 pond++;
-                Assert.GreaterOrEqual(bv, deckStart, "ベンチ " + id + " がデッキより南（＝縁石や水の上）にある");
-                Assert.LessOrEqual(bv, deckEnd, "ベンチ " + id + " がデッキより北（＝モールの上）にある");
-                Assert.GreaterOrEqual(bu, u.x, "ベンチ " + id + " が水盤より西にはみ出している");
-                Assert.LessOrEqual(bu, u.y, "ベンチ " + id + " が水盤より東にはみ出している");
-                Assert.Less(faceV, bv, "ベンチ " + id + " が水の方を向いていない");
 
-                // 背もたれから跳んでも壁を越えられない距離に置く（水際まで 3.4 m）。
-                Assert.Greater(bv - v.y, CsConst(cs, "BasinRimWidth"),
-                    "ベンチ " + id + " が縁石に近すぎる");
+                // 東岸の芝生から堀（-u）に正対する。
+                Assert.Less(faceU, bu, "ベンチ " + id + " が堀の方（-u）を向いていない");
+                Assert.AreEqual(bv, faceV, 1e-4f, "ベンチ " + id + " が堀に正対していない");
+                List<Vector4> ahead = basins.FindAll(r => bv >= r.y && bv <= r.w && r.z < bu);
+                Assert.AreEqual(1, ahead.Count, "ベンチ " + id + " の正面（-u）に堀が無い");
+
+                // 背もたれから跳んでも壁を越えられない距離に置く（水際まで 4 m）。
+                Assert.Greater(bu - ahead[0].z, rimWidth + 1f, "ベンチ " + id + " が縁石に近すぎる");
             }
 
             Assert.AreEqual(2, pond, "池のベンチは 2 脚");

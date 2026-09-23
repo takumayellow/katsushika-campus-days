@@ -68,7 +68,7 @@ namespace KCD.Editor
         /// 建物と地面に当たり判定とレイヤーを付ける。遠景と背景ビルは NavMesh から外す。
         ///
         /// メッシュの種別は名前で決める（build_campus.py が作るのは site_ground / site_water /
-        /// bld_&lt;id&gt; / bld_background / bld_entrances / site_furniture / site_props_* の 15 個）。
+        /// bld_&lt;id&gt; / bld_background / bld_entrances / site_furniture / site_props_* の 18 個）。
         ///   bg…            遠景の書き割り。当たり判定なし。今の FBX には無いが、足したときに備えて残す
         ///   …background…   背景ビル 230 棟をまとめた bld_background。当たり判定あり、NavMesh なし (#50)
         ///   …water…        水盤の水面 site_water。当たり判定なし、NavMesh なし (#46)
@@ -435,19 +435,22 @@ namespace KCD.Editor
             GameObjectUtility.SetStaticEditorFlags(ground, StaticEditorFlags.BatchingStatic);
         }
 
-        // --- 水盤（図書館南の浅い池）の当たり判定 (#46) ---
-        // 数値は blender/kcd_lib/site.py と合わせること（BASIN_U / BASIN_V / Z_BASIN_RIM / Z_WATER）。
+        // --- 図書館を囲む堀（水盤）の当たり判定 (#46, #56) ---
+        // 数値は blender/kcd_lib/site.py と合わせること（BASINS / BASIN_RIM / Z_BASIN_RIM / Z_WATER）。
         // ずれていないかは EditMode テスト BasinKeepoutTests が site.py を読んで確かめる。
 
-        /// <summary>水盤の内側矩形（水面の広さ）。site.py の BASIN_U。</summary>
-        public const float BasinU0 = -60f;
-        public const float BasinU1 = 0f;
+        /// <summary>
+        /// 水面の矩形 (x = u0, y = v0, z = u1, w = v1)。site.py の BASINS。図書館の東と南を L 字に囲む。
+        /// 1 枚目はモールの北、2・3 枚目はモールの南（東の帯と南の帯）。
+        /// </summary>
+        public static readonly Vector4[] Basins =
+        {
+            new Vector4(-59.5f, -16.4f, -50f, 24f),
+            new Vector4(-59.5f, -78f, -50f, -31.6f),
+            new Vector4(-100f, -78f, -59.5f, -66f),
+        };
 
-        /// <summary>水盤の内側矩形。site.py の BASIN_V。</summary>
-        public const float BasinV0 = -60f;
-        public const float BasinV1 = -35f;
-
-        /// <summary>縁石の幅（m）。site.py の build_basin が内側矩形を 1.6 m 外へオフセットして作る。</summary>
+        /// <summary>縁石の幅（m）。site.py の BASIN_RIM。水際の外へこの幅で縁石を回す。</summary>
         public const float BasinRimWidth = 1.6f;
 
         /// <summary>縁石の天端の高さ（m）。site.py の Z_BASIN_RIM。腰かけられる段差なので残す。</summary>
@@ -477,19 +480,109 @@ namespace KCD.Editor
         /// <summary>地面として拾ってはいけない当たり判定の名前の接頭辞（CampusProps.Ground が見る）。</summary>
         public const string KeepoutPrefix = "Keepout_";
 
+        /// <summary>水際の 1 辺。Axis が 'u' なら u = C の辺（T は v）、'v' なら v = C の辺（T は u）。</summary>
+        public struct BasinEdge
+        {
+            public char Axis;
+            public float C;
+            public float T0;
+            public float T1;
+
+            /// <summary>水の外へ向かう側（+1 / -1）。</summary>
+            public int Out;
+        }
+
         /// <summary>
-        /// 水盤に入れないようにする（#46）。池そのものは残す（クエスト q_library / q_sunset と
+        /// 水際の辺のうち、隣の水面と接していない部分（＝縁石と見えない壁を立てる所）。
+        /// site.py の basin_edges と同じ計算（端を延ばすかどうかは縁石の形の話なので持たない）。
+        /// </summary>
+        public static List<BasinEdge> BasinEdges(IList<Vector4> rects)
+        {
+            var edges = new List<BasinEdge>();
+            for (int i = 0; i < rects.Count; i++)
+            {
+                Vector4 r = rects[i];
+                var sides = new[]
+                {
+                    new BasinEdge { Axis = 'v', C = r.y, T0 = r.x, T1 = r.z, Out = -1 },
+                    new BasinEdge { Axis = 'v', C = r.w, T0 = r.x, T1 = r.z, Out = +1 },
+                    new BasinEdge { Axis = 'u', C = r.x, T0 = r.y, T1 = r.w, Out = -1 },
+                    new BasinEdge { Axis = 'u', C = r.z, T0 = r.y, T1 = r.w, Out = +1 },
+                };
+                foreach (BasinEdge side in sides)
+                {
+                    foreach (Vector2 span in UncoveredSpans(rects, i, side))
+                    {
+                        edges.Add(new BasinEdge { Axis = side.Axis, C = side.C, T0 = span.x, T1 = span.y, Out = side.Out });
+                    }
+                }
+            }
+
+            return edges;
+        }
+
+        /// <summary>辺 side のうち、外側に接する別の水面（rects[j], j != self）に覆われていない区間。</summary>
+        private static List<Vector2> UncoveredSpans(IList<Vector4> rects, int self, BasinEdge side)
+        {
+            var spans = new List<Vector2> { new Vector2(side.T0, side.T1) };
+            for (int j = 0; j < rects.Count; j++)
+            {
+                if (j == self)
+                {
+                    continue;
+                }
+
+                Vector4 o = rects[j];
+                bool alongU = side.Axis == 'v';
+                float face = alongU ? (side.Out > 0 ? o.y : o.w) : (side.Out > 0 ? o.x : o.z);
+                float a = alongU ? o.x : o.y;
+                float b = alongU ? o.z : o.w;
+                if (Mathf.Abs(face - side.C) > 1e-4f)
+                {
+                    continue;
+                }
+
+                var next = new List<Vector2>();
+                foreach (Vector2 sp in spans)
+                {
+                    if (b <= sp.x || a >= sp.y)
+                    {
+                        next.Add(sp);
+                        continue;
+                    }
+
+                    if (a > sp.x)
+                    {
+                        next.Add(new Vector2(sp.x, a));
+                    }
+
+                    if (b < sp.y)
+                    {
+                        next.Add(new Vector2(b, sp.y));
+                    }
+                }
+
+                spans = next;
+            }
+
+            spans.RemoveAll(sp => sp.y - sp.x <= 1e-4f);
+            return spans;
+        }
+
+        /// <summary>
+        /// 堀に入れないようにする（#46, #56）。水面そのものは残す（クエスト q_library / q_sunset と
         /// 撮影スポット ps_pond_library が使う）。
         ///
-        /// 柵で囲うと不自然なので、当たり判定だけの見えない壁（BoxCollider）を水際 ——
-        /// 内側矩形の 4 辺 —— に立てる。壁は Default レイヤーなので、カメラの遮蔽判定
+        /// 柵で囲うと不自然なので、当たり判定だけの見えない壁（BoxCollider）を水際に立てる。
+        /// 隣の水面と接する辺（L 字の継ぎ目）には立てない。壁は Default レイヤーなので、カメラの遮蔽判定
         /// （Ground|Building しか見ない ThirdPersonCamera / CinemachineDeoccluder）には
         /// 引っかからず、見た目も操作感も今までどおり。
         ///
         /// 縁石（天端 0.36 m・幅 1.6 m）は腰かけたまま。壁の中心線を水際に置き、厚み 0.5 m の
-        /// 半分 0.25 m だけ縁石側へ食い込ませるので、縁石は 1.35 m の幅が残る。
+        /// 半分 0.25 m だけ縁石側へ食い込ませるので、縁石は 1.35 m の幅が残る。壁は両端を
+        /// 厚みの半分ずつ延ばし、角で隣の壁と重ねて隙間を塞ぐ。
         ///
-        /// NPC は NavMeshModifierVolume（area = 1 = Not Walkable）で締め出す。NavMesh は
+        /// NPC は水面ごとの NavMeshModifierVolume（area = 1 = Not Walkable）で締め出す。NavMesh は
         /// RenderMeshes から焼くので、MeshRenderer を持たないこの見えない壁自体は NavMesh に
         /// 何も足さない（＝壁の上に歩ける面ができたりはしない）。
         /// </summary>
@@ -500,31 +593,38 @@ namespace KCD.Editor
             // 親をキャンパスの u/v 軸に向けておくと、子はローカル (u, y, v) をそのまま入れられる。
             group.transform.localRotation = CampusProps.LocalRotation;
 
-            float cu = (BasinU0 + BasinU1) * 0.5f;
-            float cv = (BasinV0 + BasinV1) * 0.5f;
-            float du = BasinU1 - BasinU0;
-            float dv = BasinV1 - BasinV0;
             float y = (BasinWallTopY + BasinWallBottomY) * 0.5f;
             float h = BasinWallTopY - BasinWallBottomY;
             float t = BasinWallThickness;
 
-            // 角は厚みぶん重ねて隙間を塞ぐ。
-            AddKeepoutWall(group.transform, "South", new Vector3(cu, y, BasinV0), new Vector3(du + t, h, t));
-            AddKeepoutWall(group.transform, "North", new Vector3(cu, y, BasinV1), new Vector3(du + t, h, t));
-            AddKeepoutWall(group.transform, "West", new Vector3(BasinU0, y, cv), new Vector3(t, h, dv + t));
-            AddKeepoutWall(group.transform, "East", new Vector3(BasinU1, y, cv), new Vector3(t, h, dv + t));
+            List<BasinEdge> edges = BasinEdges(Basins);
+            for (int i = 0; i < edges.Count; i++)
+            {
+                BasinEdge e = edges[i];
+                float mid = (e.T0 + e.T1) * 0.5f;
+                float len = e.T1 - e.T0 + t;
+                bool alongU = e.Axis == 'v';   // v = C の辺は u 方向に延びる
+                Vector3 local = alongU ? new Vector3(mid, y, e.C) : new Vector3(e.C, y, mid);
+                Vector3 size = alongU ? new Vector3(len, h, t) : new Vector3(t, h, len);
+                AddKeepoutWall(group.transform, i.ToString("00"), local, size);
+            }
 
-            var nav = new GameObject(KeepoutPrefix + "BasinNav");
-            nav.transform.SetParent(group.transform, false);
-            nav.transform.localPosition = new Vector3(cu, BasinWallBottomY + BasinNavHeight * 0.5f, cv);
-            NavMeshModifierVolume volume = nav.AddComponent<NavMeshModifierVolume>();
-            volume.center = Vector3.zero;
-            volume.size = new Vector3(du + BasinNavMargin * 2f, BasinNavHeight, dv + BasinNavMargin * 2f);
-            volume.area = 1;   // 1 = Not Walkable
+            for (int i = 0; i < Basins.Length; i++)
+            {
+                Vector4 r = Basins[i];
+                var nav = new GameObject(KeepoutPrefix + "BasinNav" + i);
+                nav.transform.SetParent(group.transform, false);
+                nav.transform.localPosition = new Vector3((r.x + r.z) * 0.5f,
+                    BasinWallBottomY + BasinNavHeight * 0.5f, (r.y + r.w) * 0.5f);
+                NavMeshModifierVolume volume = nav.AddComponent<NavMeshModifierVolume>();
+                volume.center = Vector3.zero;
+                volume.size = new Vector3(r.z - r.x + BasinNavMargin * 2f, BasinNavHeight,
+                    r.w - r.y + BasinNavMargin * 2f);
+                volume.area = 1;   // 1 = Not Walkable
+            }
 
-            EditorPaths.Report("水盤に見えない壁 4 枚と NavMesh の除外領域（"
-                + (du + BasinNavMargin * 2f).ToString("0.0") + " x "
-                + (dv + BasinNavMargin * 2f).ToString("0.0") + " m）を置きました。");
+            EditorPaths.Report("堀に見えない壁 " + edges.Count + " 枚と NavMesh の除外領域 "
+                + Basins.Length + " か所を置きました。");
         }
 
         private static void AddKeepoutWall(Transform parent, string name, Vector3 local, Vector3 size)

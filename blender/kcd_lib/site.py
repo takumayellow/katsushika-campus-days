@@ -35,9 +35,31 @@ MALL_HW = 6.0
 MALL_U0 = -57.0
 MALL_U1 = 197.0
 
-# 図書館前の水盤（DESIGN §3.2: 60 x 25 m）
-BASIN_U = (-60.0, 0.0)
-BASIN_V = (-60.0, -35.0)
+# モール北側の花壇（航空写真では舗装の北に幅 3〜4 m の植栽帯が u -10..170 で続く。#56）
+BED_V = (MALL_V + MALL_HW - 3.6, MALL_V + MALL_HW)   # v -21.6..-18.0
+BED_LEN = 9.0        # 1 基の長さ
+BED_GAP = 3.0        # 花壇どうしの間（モールから北へ抜けられる）
+BED_WALL = 0.2       # 縁石の厚み
+BED_TOP = 0.45       # 縁石の天端。stepOffset 0.40 より高いので、歩いては上がれない
+BED_SOIL = 0.38      # 土の面
+BED_KEEP = 1.5       # 通路・入口の脇に空ける幅
+FLOWERS = ("flower_red", "flower_yellow", "flower_white", "flower_pink")
+
+# 図書館を囲む堀のような水盤（水面の矩形 (u0, v0, u1, v1) のリスト）。
+# 実物は図書館の東面と南面に沿う幅 約 10 m の帯で、モール（v -30..-18）が橋になって
+# 入口へ渡る。航空写真（国土地理院 z18）に campus.json の外形を重ねて測った (#56)。
+# 以前は図書館の東 60 m の芝生に 60 x 25 m の池を 1 枚置いていたが、実物にそんな池は無い。
+# 縁石（BASIN_RIM）の外がモールの舗装・図書館の北東角・南の歩道に掛からないよう、
+# 矩形の端はそこから縁石の幅だけ引いてある。
+# Unity 側の CampusStage.Basins と同じ数値にすること（BasinKeepoutTests が突き合わせる）。
+BASINS = [
+    (-59.5, -16.4, -50.0, 24.0),    # 東の堀（モールの北）
+    (-59.5, -78.0, -50.0, -31.6),   # 東の堀（モールの南）
+    (-100.0, -78.0, -59.5, -66.0),  # 南の池（図書館の南面）
+]
+BASIN_RIM = 1.6     # 縁石の幅（腰かけられる）
+# 図書館の東の芝生広場 (u0, v0, u1, v1)。以前の池の跡。実物も木の無い芝生
+LIBRARY_LAWN = (-46.0, -100.0, 8.0, -32.0)
 
 
 class Occupancy:
@@ -186,31 +208,230 @@ def build_mall(mb, frame, occ):
     occ.stamp_poly(plaza)
 
 
-def build_basin(mb, frame, occ):
-    """図書館南の浅い水盤（石の縁石 + 水面）。
+def _overlaps(a, b):
+    """uv 矩形どうしが面積を持って重なるか（辺で接するだけなら False）。"""
+    return a[0] < b[2] and b[0] < a[2] and a[1] < b[3] and b[1] < a[3]
 
-    縁石は腰かけられる高さ（天端 Z_BASIN_RIM = 0.36、幅 1.6 m）のまま残す。水に入れないのは
-    Unity 側の CampusStage.BuildBasinKeepout が水際（内側矩形の 4 辺）に見えない壁を立てるから
+
+def basin_edges(rects=None, rim=BASIN_RIM):
+    """水際の辺のうち、隣の水面と接していない部分（＝縁石と見えない壁を立てる所）。
+
+    返り値は (axis, c, t0, t1, out, ext0, ext1) のリスト。
+      axis "u": u = c の辺（t は v）。axis "v": v = c の辺（t は u）
+      out  : 水の外へ向かう側（+1 / -1）
+      ext0 / ext1: 端を縁石の幅だけ延ばすか。出隅は延ばして角を埋める。入隅（L 字の内側）の
+                   ように、延ばした先が隣の水面に掛かる所は延ばさない。
+    矩形が 1 枚なら 4 辺そのまま。Unity 側の CampusStage.BasinEdges が同じ計算をする。"""
+    rects = list(BASINS if rects is None else rects)
+    edges = []
+    for i, r in enumerate(rects):
+        u0, v0, u1, v1 = r
+        for axis, c, t0, t1, out in (("v", v0, u0, u1, -1), ("v", v1, u0, u1, +1),
+                                     ("u", u0, v0, v1, -1), ("u", u1, v0, v1, +1)):
+            # 同じ直線上で、外側に接する別の水面が覆う区間を引く
+            spans = [(t0, t1)]
+            for j, o in enumerate(rects):
+                if j == i:
+                    continue
+                if axis == "v":
+                    face, a, b = (o[1] if out > 0 else o[3]), o[0], o[2]
+                else:
+                    face, a, b = (o[0] if out > 0 else o[2]), o[1], o[3]
+                if abs(face - c) > 1e-6:
+                    continue
+                nxt = []
+                for s0, s1 in spans:
+                    if b <= s0 or a >= s1:
+                        nxt.append((s0, s1))
+                        continue
+                    if a > s0:
+                        nxt.append((s0, a))
+                    if b < s1:
+                        nxt.append((b, s1))
+                spans = nxt
+            for s0, s1 in spans:
+                if s1 - s0 < 1e-6:
+                    continue
+                ext = []
+                for t, sgn in ((s0, -1), (s1, +1)):
+                    # 延ばした先の角（縁石の幅の正方形）が水に掛かるなら延ばさない
+                    ta, tb = sorted((t, t + sgn * rim))
+                    ca, cb = sorted((c, c + out * rim))
+                    sq = (ta, ca, tb, cb) if axis == "v" else (ca, ta, cb, tb)
+                    ext.append(not any(_overlaps(sq, o) for o in rects))
+                edges.append((axis, c, s0, s1, out, ext[0], ext[1]))
+    return edges
+
+
+def _edge_xy(frame, axis, c, t):
+    return frame.xy(c, t) if axis == "u" else frame.xy(t, c)
+
+
+def _mall_bed_gaps(data, frame, ctx):
+    """花壇を置かない u の区間。モール北縁を横切る歩道と、北側の建物の入口の前。"""
+    vc = sum(BED_V) * 0.5
+    gaps = []
+    for p in data.get("paths", []):
+        w = p.get("width") or 2.5
+        uv = [frame.uv(q) for q in p["points"]]
+        for a, b in zip(uv, uv[1:]):
+            if (a[1] - vc) * (b[1] - vc) >= 0:
+                continue
+            t = (vc - a[1]) / (b[1] - a[1])
+            u = a[0] + t * (b[0] - a[0])
+            gaps.append((u - w * 0.5 - BED_KEEP, u + w * 0.5 + BED_KEEP))
+    for dr in (ctx.get("door_frames") or {}).values():
+        u, v = frame.uv(dr["origin"])
+        if v < BED_V[1] or v > BED_V[1] + 12.0:
+            continue   # モールの北に面した入口だけ
+        half = dr["APRON_S"] + BED_KEEP
+        gaps.append((u - half, u + half))
+    return gaps
+
+
+def build_mall_beds(mb, frame, occ, data, ctx):
+    """モール北側の立ち上がり花壇（石の縁石 + 土 + 花のかたまり）。
+
+    長さ BED_LEN の花壇を BED_GAP おきに並べ、歩道と入口の前は空ける。縁石の天端 BED_TOP は
+    stepOffset より高いので、プレイヤーも NPC も花壇の上は歩かない（ジャンプなら乗れる）。
+    ctx["mall_beds"] に置いた花壇の (u0, u1) を返す。"""
+    gaps = _mall_bed_gaps(data, frame, ctx)
+    v0, v1 = BED_V
+    w = BED_WALL
+    placed = []
+    u = MALL_U0 + 4.0
+    k = 0
+    while u + BED_LEN <= MALL_U1 - 14.0:
+        u0, u1 = u, u + BED_LEN
+        hit = [g for g in gaps if g[0] < u1 and g[1] > u0]
+        if hit:
+            # 通り道の手前で切る。短すぎれば通り道の先から始め直す
+            cut = min(g[0] for g in hit)
+            if cut - u0 >= 3.0:
+                u1 = cut
+            else:
+                u = max(g[1] for g in hit)
+                continue
+        for r in ((u0, v0, u1, v0 + w), (u0, v1 - w, u1, v1),
+                  (u0, v0 + w, u0 + w, v1 - w), (u1 - w, v0 + w, u1, v1 - w)):
+            mb.add_prism(frame.rect(*r), Z_MALL, BED_TOP, "stone_dark", "stone_light")
+        mb.add_ngon_flat(frame.rect(u0 + w, v0 + w, u1 - w, v1 - w), BED_SOIL, "bed_soil")
+        _flowers(mb, frame, u0 + w, v0 + w, u1 - w, v1 - w, k)
+        occ.stamp_poly(frame.rect(u0, v0, u1, v1))
+        placed.append((u0, u1))
+        k += 1
+        u = u1 + BED_GAP
+    ctx["mall_beds"] = placed
+
+
+def _flowers(mb, frame, u0, v0, u1, v1, k):
+    """花壇の植え込み。葉の丸い株を隙間なく 3 列に並べ、株の上と肩に小さな花を散らす。
+
+    株は隣と少し重なる大きさにして土を隠す。花の色は株ごとに 1 色で、3 株ずつの塊にして
+    列と花壇でずらす（一色の帯にしない）。"""
+    rows = 3
+    n = max(1, int(round((u1 - u0) / 0.95)))
+    du = (u1 - u0) / n
+    dv = (v1 - v0) / rows
+    rad = 0.52 * max(du, dv)
+    for r in range(rows):
+        v = v0 + dv * (r + 0.5)
+        for i in range(n):
+            j = i * 7 + r * 13 + k * 5
+            x, y = frame.xy(u0 + du * (i + 0.5) + 0.1 * ((j % 3) - 1), v)
+            h = 0.20 + 0.05 * (j % 3)
+            _plant(mb, x, y, rad, h, j, FLOWERS[(k + r + i // 3) % len(FLOWERS)])
+
+
+# 株の断面（半径の割合, 高さの割合）。下から順に
+_PLANT_RINGS = ((1.0, 0.0), (0.8, 0.6), (0.4, 1.0))
+
+
+def _plant_z(t):
+    """株の中心から半径の割合 t の所の表面の高さ（高さの割合）。"""
+    for (ta, za), (tb, zb) in zip(_PLANT_RINGS[::-1], _PLANT_RINGS[-2::-1]):
+        if t <= tb:
+            return za if t <= ta else za + (zb - za) * (t - ta) / (tb - ta)
+    return 0.0
+
+
+def _plant(mb, x, y, rad, h, j, col, seg=7, blooms=7):
+    """葉の丸い株（7 角の 2 段）と、その表面に付く小さな 3 角錐の花。"""
+    rot = j * 0.9
+    rings = [[(x + rad * t * math.cos(rot + math.pi * 2 * q / seg),
+               y + rad * t * math.sin(rot + math.pi * 2 * q / seg),
+               BED_SOIL + h * zf) for q in range(seg)] for t, zf in _PLANT_RINGS]
+    for lo, hi in zip(rings, rings[1:]):
+        for q in range(seg):
+            q1 = (q + 1) % seg
+            mb.add_quad(lo[q], lo[q1], hi[q1], hi[q], "flower_leaf")
+    mb.add_face(rings[-1], "flower_leaf")
+    for q in range(blooms):
+        # 黄金角で散らし、半径は外ほど疎に（肩にも咲く）
+        a = rot + q * 2.39996
+        t = 0.82 * math.sqrt((q + 0.5) / blooms)
+        fx, fy = x + rad * t * math.cos(a), y + rad * t * math.sin(a)
+        fz = BED_SOIL + h * _plant_z(t) + 0.01
+        br = 0.09
+        base = [(fx + br * math.cos(a + math.pi * 2 * m / 3),
+                 fy + br * math.sin(a + math.pi * 2 * m / 3), fz) for m in range(3)]
+        top = (fx, fy, fz + 0.06)
+        for m in range(3):
+            mb.add_face([base[m], base[(m + 1) % 3], top], col)
+
+
+def build_basin(mb, frame, occ):
+    """図書館を囲む浅い水盤（石の底 + 縁石）。水面は build_water（site_water）。
+
+    縁石は腰かけられる高さ（天端 Z_BASIN_RIM = 0.36、幅 BASIN_RIM）のまま残す。水に入れないのは
+    Unity 側の CampusStage.BuildBasinKeepout が水際（basin_edges の辺）に見えない壁を立てるから
     であって、ここを柵で囲っているからではない（#46）。"""
-    inner = frame.rect(BASIN_U[0], BASIN_V[0], BASIN_U[1], BASIN_V[1])
-    outer = geom.offset_polygon(inner, 1.6)
-    mb.add_ngon_flat(inner, Z_BASIN_FLOOR, "stone_dark")   # 水面は build_water（site_water）
-    n = len(inner)
-    for i in range(n):
-        a, b = inner[i], inner[(i + 1) % n]
-        ao, bo = outer[i], outer[(i + 1) % n]
-        mb.add_quad((ao[0], ao[1], Z_BASIN_RIM), (bo[0], bo[1], Z_BASIN_RIM),
-                    (b[0], b[1], Z_BASIN_RIM), (a[0], a[1], Z_BASIN_RIM), "stone_dark")
-        mb.add_quad((a[0], a[1], Z_BASIN_RIM), (b[0], b[1], Z_BASIN_RIM),
-                    (b[0], b[1], Z_BASIN_FLOOR), (a[0], a[1], Z_BASIN_FLOOR), "stone_dark")
-        # 外側の立ち上がりは一番下の層から（どの層の上に載っても隙間を出さない）
-        mb.add_quad((ao[0], ao[1], Z_GROUND), (bo[0], bo[1], Z_GROUND),
-                    (bo[0], bo[1], Z_BASIN_RIM), (ao[0], ao[1], Z_BASIN_RIM), "stone_dark")
-    occ.stamp_poly(outer, margin=2.0)
-    # 水盤とモールの間の石張り
-    deck = frame.rect(BASIN_U[0], BASIN_V[1] + 1.8, BASIN_U[1], MALL_V - MALL_HW)
-    mb.add_ngon_flat(deck, Z_FOOT, "stone_light")
-    occ.stamp_poly(deck)
+    for u0, v0, u1, v1 in BASINS:
+        mb.add_ngon_flat(frame.rect(u0, v0, u1, v1), Z_BASIN_FLOOR, "stone_dark")
+    for axis, c, t0, t1, out, e0, e1 in basin_edges():
+        co = c + out * BASIN_RIM
+        s0 = t0 - (BASIN_RIM if e0 else 0.0)
+        s1 = t1 + (BASIN_RIM if e1 else 0.0)
+        # 縁石の天端（水際 c から外 co まで、s0..s1）
+        mb.add_ngon_flat(_rect_uv(frame, axis, c, co, s0, s1), Z_BASIN_RIM, "stone_dark")
+        # 内側（水の方）の立ち上がりは水際の区間だけ、外側は一番下の層から
+        # （どの層の上に載っても隙間を出さない）。面は外（out）の向きに見える
+        _wall(mb, frame, axis, c, t0, t1, -out, Z_BASIN_FLOOR, Z_BASIN_RIM)
+        _wall(mb, frame, axis, co, s0, s1, out, Z_GROUND, Z_BASIN_RIM)
+        # 延ばした端の小口
+        if e0:
+            _cap(mb, frame, axis, c, co, s0, -1)
+        if e1:
+            _cap(mb, frame, axis, c, co, s1, +1)
+    for u0, v0, u1, v1 in BASINS:
+        occ.stamp_poly(frame.rect(u0 - BASIN_RIM, v0 - BASIN_RIM, u1 + BASIN_RIM, v1 + BASIN_RIM),
+                       margin=2.0)
+    # 図書館の東、モールの南は木の無い芝生広場（航空写真）。散布の木を入れない
+    occ.stamp_poly(frame.rect(*LIBRARY_LAWN))
+
+
+def _rect_uv(frame, axis, c0, c1, t0, t1):
+    ca, cb = sorted((c0, c1))
+    return frame.rect(ca, t0, cb, t1) if axis == "u" else frame.rect(t0, ca, t1, cb)
+
+
+def _wall(mb, frame, axis, c, t0, t1, facing, z0, z1):
+    """u = c（axis "u"）または v = c の直線に立つ t0..t1 の壁。facing の側（+1 / -1）を表にする。"""
+    a = _edge_xy(frame, axis, c, t0)
+    b = _edge_xy(frame, axis, c, t1)
+    # frame.xy は右手系（u → v が反時計回り）。u 辺で t（= v）が増える向きに進むと +u は右手、
+    # v 辺で t（= u）が増える向きに進むと +v は左手。表は進行方向の右手に来る。
+    right = +1 if axis == "u" else -1
+    if facing != right:
+        a, b = b, a
+    mb.add_quad((a[0], a[1], z0), (b[0], b[1], z0), (b[0], b[1], z1), (a[0], a[1], z1), "stone_dark")
+
+
+def _cap(mb, frame, axis, c, co, t, sgn):
+    """縁石を延ばした端の小口（t の外側 sgn を表にする）。"""
+    other = "v" if axis == "u" else "u"
+    ca, cb = sorted((c, co))
+    _wall(mb, frame, other, t, ca, cb, sgn, Z_GROUND, Z_BASIN_RIM)
 
 
 def build_water(mb, frame):
@@ -218,8 +439,8 @@ def build_water(mb, frame):
 
     site_water は Unity 側で MeshCollider を付けない（CampusStage.DressCampus）。名前に water を
     含むメッシュは床にしないし、NavMesh にも焼かない（#46）。名前を変えるときは向こうも直すこと。"""
-    inner = frame.rect(BASIN_U[0], BASIN_V[0], BASIN_U[1], BASIN_V[1])
-    mb.add_ngon_flat(inner, Z_WATER, "water")
+    for u0, v0, u1, v1 in BASINS:
+        mb.add_ngon_flat(frame.rect(u0, v0, u1, v1), Z_WATER, "water")
 
 
 def build_signs(mb, frame, ctx):
@@ -248,42 +469,6 @@ def build_signs(mb, frame, ctx):
         props.add_pylon_sign(mb, p[0], p[1], yaw, z)
         placed.append((sid, p, z, yaw))
     ctx["sign_placed"] = placed
-
-
-def build_bike_sheds(mb, frame, occ, hard, ctx, roads=None):
-    """屋根付き駐輪場。講義棟の北側（駐車場の縁）と、正門（モール東端）の近く。
-    campus.json に学生寮は無いので、寮の分は正門側で代替する。
-    roads: 道路・歩道だけの占有。講義棟北は OSM の駐車場エリアなので occ では全面
-    ブロックされる。そこは建物 (hard) と道路 (roads) だけを避ける。"""
-    ang = math.atan2(frame.u[1], frame.u[0])
-    uvbb = ctx.get("uvbb", {})
-    cands = []
-    if "lecture" in uvbb:
-        u0, v0, u1, v1 = uvbb["lecture"]
-        cands.append(("lecture_north", (u0 + u1) * 0.5, v1 + 5.4, 14.0, ang,
-                      [hard] + ([roads] if roads else [])))
-    cands.append(("main_gate", MALL_U1 - 10.0, MALL_V + MALL_HW + 9.0, 12.0, ang, [occ]))
-    placed = []
-    for name, uc, vc, length, a, checks in cands:
-        done = False
-        for dv in (0.0, 3.0, 6.0, 9.0):
-            for du in (0.0, -6.0, 6.0, -12.0, 12.0, -18.0, 18.0):
-                u, v = uc + du, vc + dv
-                rect = frame.rect(u - length * 0.5 - 0.5, v - 1.7, u + length * 0.5 + 0.5, v + 1.7)
-                probe = list(rect) + [frame.xy(u, v), frame.xy(u - length * 0.25, v),
-                                      frame.xy(u + length * 0.25, v)]
-                if any(o.blocked(p[0], p[1]) for o in checks for p in probe):
-                    continue
-                p = frame.xy(u, v)
-                props.add_bike_shed(mb, p[0], p[1], a, length=length)
-                occ.stamp_poly(rect, margin=1.5)
-                hard.stamp_poly(rect, margin=1.0)
-                placed.append((name, u, v))
-                done = True
-                break
-            if done:
-                break
-    ctx["bike_sheds"] = placed
 
 
 def build_amenities(mb_vend, mb_trash, frame, ctx):
@@ -331,8 +516,8 @@ def build_amenities(mb_vend, mb_trash, frame, ctx):
 
 def build_basin_keepout(frame, hard):
     """水盤（と縁石）を「絶対に木を生やさない」側の占有に登録する。"""
-    inner = frame.rect(BASIN_U[0], BASIN_V[0], BASIN_U[1], BASIN_V[1])
-    hard.stamp_poly(geom.offset_polygon(inner, 2.4), margin=0.5)
+    for u0, v0, u1, v1 in BASINS:
+        hard.stamp_poly(frame.rect(u0 - 2.4, v0 - 2.4, u1 + 2.4, v1 + 2.4), margin=0.5)
 
 
 def build_street_furniture(mb, frame, hard):
@@ -341,7 +526,7 @@ def build_street_furniture(mb, frame, hard):
     u = MALL_U0 + 6.0
     while u < MALL_U1 - 6.0:
         for v, a in ((MALL_V - MALL_HW + 3.4, ang + math.pi),
-                     (MALL_V + MALL_HW - 3.4, ang)):
+                     (BED_V[0] - 1.6, ang)):          # 北は花壇の手前
             p = frame.xy(u, v)
             if not hard.blocked(p[0], p[1]):
                 props.add_bench(mb, p[0], p[1], a)

@@ -263,18 +263,20 @@ namespace KCD.Editor
         public static GameObject CreateCollectable(
             Transform root, string itemId, string displayName, Vector3 position, string materialName)
         {
-            GameObject item = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            item.name = "Item_" + itemId + "_" + Mathf.RoundToInt(position.x) + "_" + Mathf.RoundToInt(position.z);
+            var item = new GameObject("Item_" + itemId + "_" + Mathf.RoundToInt(position.x) + "_" + Mathf.RoundToInt(position.z));
             SetLayer(item, "Interactable");
             item.transform.SetParent(root, false);
             item.transform.position = position;
-            item.transform.localScale = Vector3.one * 0.32f;
 
-            var collider = item.GetComponent<SphereCollider>();
+            // 見た目は葉や紙パックの形（以前は直径 0.32 m の球, #56）。
+            CollectableMeshes.Model model = CollectableMeshes.For(itemId, materialName);
+            item.AddComponent<MeshFilter>().sharedMesh = model.Mesh;
+            item.AddComponent<MeshRenderer>().sharedMaterials = model.Materials;
+
+            // 当たり判定は以前と同じ半径 0.24 m の球（0.32 m の球に半径 0.75 を掛けていた）。
+            var collider = item.AddComponent<SphereCollider>();
             collider.isTrigger = true;
-            collider.radius = 0.75f;
-
-            item.GetComponent<Renderer>().sharedMaterial = MaterialLibrary.EnsureCampus(materialName);
+            collider.radius = 0.24f;
 
             CollectableItem collectable = item.AddComponent<CollectableItem>();
             collectable.ItemId = itemId;

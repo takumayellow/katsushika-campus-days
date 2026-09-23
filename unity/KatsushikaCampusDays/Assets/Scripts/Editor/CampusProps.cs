@@ -372,7 +372,8 @@ namespace KCD.Editor
             Zone(parent, "gate_main", "理科大通り 正門", Local(195f, -24f), new Vector3(24f, 8f, 18f));
             Zone(parent, "campus_mall", "キャンパスモール", Local(70f, -24f), new Vector3(60f, 8f, 14f));
             Zone(parent, "mall_bench", "モールのベンチ", Local(69f, -26.6f), new Vector3(10f, 6f, 10f));
-            Zone(parent, "library_pond", "図書館の水盤", Local(-30f, -31.6f), new Vector3(58f, 8f, 16f));
+            // 堀の東の縁石と芝生広場（u -54..-40, v -56..-28）。水面には入れないので岸側に取る。
+            Zone(parent, "library_pond", "図書館の水盤", Local(-47f, -42f), new Vector3(14f, 8f, 28f));
         }
 
         private static void Zone(Transform parent, string placeId, string displayName, Vector2 xz, Vector3 size)
@@ -380,7 +381,8 @@ namespace KCD.Editor
             var go = new GameObject("Zone_" + placeId);
             go.transform.SetParent(parent, false);
             go.transform.position = Ground(xz) + Vector3.up * (size.y * 0.5f);
-            go.transform.rotation = Quaternion.Euler(0f, Mathf.Atan2(AxisU.x, AxisU.y) * Mathf.Rad2Deg, 0f);
+            // size.x を u 方向、size.z を v 方向に取る（以前は Atan2(Ux, Uy) で x が v 方向を向いていた）。
+            go.transform.rotation = LocalRotation;
 
             BoxCollider box = go.AddComponent<BoxCollider>();
 

@@ -179,8 +179,6 @@ def build_campus(data, frame, rng, max_trees):
     site_mb = MeshBuilder("site_ground")
     site.build_ground(site_mb, data, frame, occ)
     site.build_paths(site_mb, data, occ)
-    roads = site.Occupancy()     # 道路・歩道だけ（駐輪場の配置判定に使う）
-    site.build_paths(MeshBuilder("_discard_roads"), data, roads)
     site.build_mall(site_mb, frame, occ)
     site.build_basin(site_mb, frame, occ)
     site.build_basin_keepout(frame, hard)
@@ -264,14 +262,16 @@ def build_campus(data, frame, rng, max_trees):
     site.build_street_furniture(fur_mb, frame, hard)
     objects.append(fur_mb.to_object(scene_coll))
 
-    # --- 看板・駐輪場・自販機・ゴミ箱 ---
+    # --- 看板・花壇・自販機・ゴミ箱 ---
     sign_mb = MeshBuilder("site_props_signs")
     site.build_signs(sign_mb, frame, ctx)
     objects.append(sign_mb.to_object(scene_coll))
-    shed_mb = MeshBuilder("site_props_bikeshed")
-    site.build_bike_sheds(shed_mb, frame, occ, hard, ctx, roads=roads)
-    objects.append(shed_mb.to_object(scene_coll))
-    print("[props] bike sheds: %s" % ", ".join("%s@(u%.0f,v%.0f)" % s for s in ctx["bike_sheds"]))
+    # 入口の駐輪場は実物に無いので置かない（#56）。代わりにモール北側の花壇
+    beds_mb = MeshBuilder("site_props_beds")
+    site.build_mall_beds(beds_mb, frame, occ, data, ctx)
+    objects.append(beds_mb.to_object(scene_coll))
+    print("[props] mall beds: %d (%s)" % (len(ctx["mall_beds"]),
+                                          ", ".join("u%.0f..%.0f" % b for b in ctx["mall_beds"])))
     vend_mb = MeshBuilder("site_props_vending")
     trash_mb = MeshBuilder("site_props_trash")
     site.build_amenities(vend_mb, trash_mb, frame, ctx)

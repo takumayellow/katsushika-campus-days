@@ -44,6 +44,13 @@ namespace KCD.Editor
             { "water", "8FB8C8" },
             { "white", "F5F5F2" },
             { "wood", "9A6B3F" },
+            // モール北側の花壇（#56。blender/kcd_lib/mats.py と同じ色）
+            { "bed_soil", "5A4331" },
+            { "flower_leaf", "3E7A2E" },
+            { "flower_red", "D9434E" },
+            { "flower_yellow", "F2C84B" },
+            { "flower_white", "F4F1EA" },
+            { "flower_pink", "E98FB0" },
             // 葉は理科大グリーン #00843D 基準の 4 段（blender/kcd_lib/mats.py と同じ）。
             // 名前が leaf* なので foliage 判定（KCD/Toon + _ShadeColor 0.62 + アウトライン 0）と
             // CampusStage.IsFoliageMaterial（コライダ除外）はそのまま効く。

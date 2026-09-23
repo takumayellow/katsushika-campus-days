@@ -54,12 +54,12 @@
       "id": "c_pond_marble",
       "name_ja": "水盤のガラス玉",
       "name_en": "Reflecting Pool Marble",
-      "hint_ja": "図書館の水盤のふち。深さ 10 cm の水の底で、空と同じ色をしている。",
-      "hint_en": "The rim of the library's reflecting pool. Ten centimetres down, the same colour as the sky.",
+      "hint_ja": "図書館の堀の東のふち。深さ 10 cm の水の底で、空と同じ色をしている。",
+      "hint_en": "The east rim of the moat around the library. Ten centimetres down, the same colour as the sky.",
       "building": null,
       "position": {
-        "x": -46.0,
-        "z": -10.0
+        "x": -70.51,
+        "z": -35.95
       },
       "rarity": "uncommon",
       "source": "hidden"
@@ -110,8 +110,8 @@
       "id": "c_bike_bell",
       "name_ja": "自転車のベル",
       "name_en": "Bicycle Bell",
-      "hint_ja": "図書館の北にある駐車場。自転車置き場の端に転がっている。",
-      "hint_en": "The parking lot north of the library. Rolling around at the end of the bike racks.",
+      "hint_ja": "図書館の北にある駐車場の隅に転がっている。",
+      "hint_en": "Lying in a corner of the parking lot north of the library.",
       "building": null,
       "position": {
         "x": -62.0,
@@ -309,12 +309,12 @@
       "name_en": "Library in the Pool",
       "building": null,
       "position": {
-        "x": -40.4,
-        "z": -16.2
+        "x": -55.08,
+        "z": -24.31
       },
       "look_dir": {
-        "x": -0.79,
-        "z": 0.62
+        "x": -0.91,
+        "z": 0.42
       },
       "caption_ja": "風のない日だけ、深い軒と八角のドームが水面にまるごと映る。",
       "caption_en": "Only on windless days do the deep eaves and the octagonal dome fit whole in the water."

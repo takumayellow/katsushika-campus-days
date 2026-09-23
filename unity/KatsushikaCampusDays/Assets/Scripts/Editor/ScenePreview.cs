@@ -182,6 +182,60 @@ namespace KCD.Editor
                 Fov = 46f,
                 Note = "中廊下（x ±1.60 の壁のあいだ）を奥へ。突き当たりは居室エリアの仕切り",
             },
+
+            // ここから下はキャンパス（#56）。site.py の (u, v) を CampusProps.Local で読み替えた値:
+            //   堀 BASINS = 東の帯 u -59.5..-50（モールで途切れる）+ 南の池 u -100..-59.5 / v -78..-66
+            //   モール MALL_V = -24、花壇はモールの北縁の内側 v -21.6..-18.0（BED_V）/ 牛乳 (u 94.9, v -29.7)、葉は公園の LeafSpots
+            new Shot
+            {
+                Name = "shot_campus_moat",
+                Space = Frame.World,
+                Eye = new Vector3(-54.81f, 30f, -95.90f),     // (u -10, v -110)
+                Look = new Vector3(-73.66f, 0f, -4.83f),      // (u -65, v -35)
+                Fov = 0f,
+                Sun = OutdoorSun,
+                Note = "図書館を囲む堀を南東の上から",
+            },
+            new Shot
+            {
+                Name = "shot_campus_moat_bank",
+                Space = Frame.World,
+                Eye = new Vector3(-59.55f, 1.7f, -24.47f),    // (u -44, v -47) 東岸の芝生
+                Look = new Vector3(-80.29f, 1f, -7.30f),      // (u -70, v -40)
+                Fov = 0f,
+                Sun = OutdoorSun,
+                Note = "堀の東岸（ベンチの並び）から図書館を見る。プレイヤーの目の高さ",
+            },
+            new Shot
+            {
+                Name = "shot_campus_mall_beds",
+                Space = Frame.World,
+                Eye = new Vector3(16.07f, 2.4f, -37.03f),     // (u 30, v -27)
+                Look = new Vector3(43.38f, 0.5f, -37.40f),    // (u 55, v -16)
+                Fov = 0f,
+                Sun = OutdoorSun,
+                Note = "モールの北縁の花壇（間は歩道と入口の前）",
+            },
+            new Shot
+            {
+                Name = "shot_item_leaf",
+                Space = Frame.World,
+                Eye = new Vector3(-82.9f, 1.25f, -113.1f),
+                Look = new Vector3(-84f, 0.45f, -112f),       // LeafSpots の 1 枚
+                Fov = 40f,
+                Sun = OutdoorSun,
+                Note = "理科大グリーンの葉（公園）を近くから",
+            },
+            new Shot
+            {
+                Name = "shot_item_milk",
+                Space = Frame.World,
+                Eye = new Vector3(75.19f, 1.35f, -65.24f),    // (u 95.5, v -28.1) モール側から
+                Look = new Vector3(73.97f, 0.42f, -66.49f),   // 共創棟の売店前
+                Fov = 40f,
+                Sun = OutdoorSun,
+                Note = "売店前の牛乳を近くから",
+            },
         };
 
         /// <summary>

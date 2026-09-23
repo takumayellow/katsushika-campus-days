@@ -42,7 +42,7 @@ namespace KCD.Editor
             new NpcSpot
             {
                 Id = "inari", Name = "花之木 いなり", BuildingId = string.Empty,
-                Distance = 0f, Fallback = new Vector2(-44.97f, -14.2f), WanderRadius = 3f
+                Distance = 0f, Fallback = new Vector2(-59.55f, -24.47f), WanderRadius = 3f
             }
         };
 

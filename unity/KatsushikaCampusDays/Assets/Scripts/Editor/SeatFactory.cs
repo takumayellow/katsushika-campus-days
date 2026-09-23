@@ -44,19 +44,17 @@ namespace KCD.Editor
         /// <summary>
         /// 屋外ベンチの置き場所と向く先（CampusProps のローカル座標 u, v）。
         ///
-        /// pond_a / pond_b は水盤の北の石張りデッキ —— site.py の build_basin が
-        /// v = BASIN_V[1] + 1.8 = -33.2 から MALL_V - MALL_HW = -30 まで敷いている幅 3.2 m ——
-        /// の真ん中（v = -31.6、天端 Z_FOOT = 0.018）に置き、水面の方（v = -35）を向ける。
-        /// 以前は v = -37 で、水盤の内側矩形（v = -60..-35）のなか、つまり水の中に立っていた（#46）。
-        /// 水際までは 3.4 m あるので、背もたれ（天端 0.90 m）に乗っても見えない壁
+        /// pond_a / pond_b は図書館を囲む堀の東岸の芝生（u = -46）に置き、堀と図書館の方（-u）を向ける。
+        /// 堀の東の帯は site.py の BASINS[1]（u -59.5..-50）で、縁石の外端は u = -48.4。
+        /// 水際までは 4 m あるので、背もたれ（天端 0.90 m）に乗っても見えない壁
         /// （天端 2.6 m）は越えられない。
         /// </summary>
         private static readonly BenchSpot[] CampusBenches =
         {
             new BenchSpot("mall_a", 65f, -27.6f, 65f, -24f),
             new BenchSpot("mall_b", 73f, -27.6f, 73f, -24f),
-            new BenchSpot("pond_a", -42f, -31.6f, -42f, -35f),
-            new BenchSpot("pond_b", -18f, -31.6f, -18f, -35f),
+            new BenchSpot("pond_a", -46f, -40f, -50f, -40f),
+            new BenchSpot("pond_b", -46f, -55f, -50f, -55f),
         };
 
         /// <summary>屋外ベンチ。位置は CampusProps のローカル座標系（u, v）。</summary>

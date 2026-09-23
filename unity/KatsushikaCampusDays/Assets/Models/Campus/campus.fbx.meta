@@ -12,6 +12,11 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: bed_soil
+    second: {fileID: 2100000, guid: 291ac3f37febf684eb0aad49cea3ebeb, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: bg_wall_0
     second: {fileID: 2100000, guid: f9a44f2d57ab314438c68627d80fc418, type: 2}
   - first:
@@ -74,6 +79,31 @@ ModelImporter:
       assembly: UnityEngine.CoreModule
       name: concrete_light
     second: {fileID: 2100000, guid: dc59bcce066d74e46bc6e5718a14cb1d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: flower_leaf
+    second: {fileID: 2100000, guid: d3f4c0a47b611e542bd825d240c341ef, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: flower_pink
+    second: {fileID: 2100000, guid: 3cc72ec806df38d45b037aa59a6ee86a, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: flower_red
+    second: {fileID: 2100000, guid: 8c297aa4df798324cb68e95c95194c6c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: flower_white
+    second: {fileID: 2100000, guid: 83e5e14fd60bf4247b4756b61f08d3aa, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: flower_yellow
+    second: {fileID: 2100000, guid: 20ace254e67b1a94fb0ead68cf3fd7c8, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
