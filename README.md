@@ -47,6 +47,7 @@ MSYS_NO_PATHCONV=1 "$UNITY" -batchmode -nographics -quit -projectPath "$KCD\unit
 python tools/check_unity_log.py unity/logs/import.log unity/logs/scene.log unity/logs/build.log
 
 # 4. テストとスモーク
+python -m pytest -q    # tools/ と blender/kcd_lib の純 Python 部分（bpy は差し替え。数秒。pip install -r requirements-test.txt）
 MSYS_NO_PATHCONV=1 "$UNITY" -batchmode -nographics -projectPath "$KCD\unity\KatsushikaCampusDays" -runTests -testPlatform EditMode -testResults "$KCD\unity\logs\tests_editmode.xml" -logFile "$KCD\unity\logs\tests.log"
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/smoke_run.ps1 -WaitSec 25 -Out docs/screenshots/smoke_title.png
 
