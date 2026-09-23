@@ -293,7 +293,9 @@ def build_indoor() -> np.ndarray:
         if p_ >= 1:
             lay_drums(seq, b0, 8, gain=0.6, rng=rng, style="lofi", fill_last=(p_ == 3))
         if p_ == 3:
-            lay_melody(seq, MEL_IN_A, S.marimba, b0, gain=0.18, p=0.45, tail=0.8)
+            # 木琴は S.marimba ではなく S.soft_mallet. 図書館など屋内で鳴らす曲なので,
+            # S.marimba の 3.93 倍・9.2 倍の非整数倍音が残響に乗って鐘のように響くのを避ける (#28).
+            lay_melody(seq, MEL_IN_A, S.soft_mallet, b0, gain=0.18, p=0.45, tail=0.8)
 
     out = S.preroll(seq.buf, lambda y: S.lowpass(y, 6200.0, order=2), pre=0.5)
     out = S.preroll(out, lambda y: S.highpass(y, 55.0, order=2), pre=0.5)
@@ -351,12 +353,14 @@ def build_title() -> np.ndarray:
 # ジングル (ループしないワンショット)
 # --------------------------------------------------------------------------
 def build_jingle_quest() -> np.ndarray:
-    """クエスト達成 2 秒. 校歌の調 (F major) の上行アルペジオ. ベルは使わずマリンバ + ピアノ (#28)."""
+    """クエスト達成 2 秒. 校歌の調 (F major) の上行アルペジオ. ベルは使わず木琴 + ピアノ (#28).
+    木琴は S.marimba ではなく S.soft_mallet. A6 まで上がるので, S.marimba の 3.93 倍・9.2 倍の
+    非整数倍音が 6.9 / 16.2 kHz に出て鈴のように鳴り, 屋内 (図書館以外) でも聞こえていた (#28)."""
     buf = np.zeros((S.n_samples(2.0), 2))
     notes = [("F5", 0.00), ("A5", 0.09), ("C6", 0.18), ("F6", 0.27), ("C6", 0.40), ("A6", 0.50)]
     for i, (name, t0) in enumerate(notes):
         f = nf(name)
-        sig = S.marimba(f, 1.7, 0.9) + S.piano(f, 1.7, 0.5)
+        sig = S.soft_mallet(f, 1.7, 0.9) + S.piano(f, 1.7, 0.5)
         add_at(buf, pan(sig, (i - 2.5) * 0.12), S.n_samples(t0))
     for j, f in enumerate(chord("F", 4)):
         add_at(buf, pan(S.piano(f, 1.5, 0.45), (j - 1) * 0.2), S.n_samples(0.5 + j * 0.01))

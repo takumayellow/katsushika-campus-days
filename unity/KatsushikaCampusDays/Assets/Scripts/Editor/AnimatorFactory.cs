@@ -13,7 +13,11 @@ namespace KCD.Editor
     {
         public const string AnimatorFolder = "Assets/Generated/Animators";
 
-        private const float WalkSpeed = 2.6f;
+        /// <summary>Locomotion の再生速度を掛けるパラメータ。PlayerAnimatorDriver / NPCWander が渡す（#43）。</summary>
+        public const string GaitRateParameter = "GaitRate";
+
+        // NPCWander もこの値を基準に Speed を決めるので、PlayerController の定数を共有する（#13）。
+        private const float WalkSpeed = PlayerController.DefaultWalkSpeed;
         private const float RunSpeed = 5.4f;
 
         /// <summary>FBX からコントローラを作る。クリップが 1 つも無ければ null。</summary>
@@ -36,6 +40,7 @@ namespace KCD.Editor
             EditorPaths.EnsureFolder(AnimatorFolder);
             AnimatorController controller = AnimatorController.CreateAnimatorControllerAtPath(path);
             controller.AddParameter("Speed", AnimatorControllerParameterType.Float);
+            AddGaitRate(controller);
             AddBool(controller, "Grounded", true);
             controller.AddParameter("Jump", AnimatorControllerParameterType.Trigger);
             AddBool(controller, "Talk", false);
@@ -47,7 +52,7 @@ namespace KCD.Editor
             AnimatorState locomotion = BuildLocomotion(controller, clips);
             machine.defaultState = locomotion;
 
-            AddOneShot(machine, locomotion, clips, "jump", "Jump", 0.85f);
+            AddOneShot(machine, locomotion, clips, "jump", "Jump", 0.92f, "Grounded");
             AddOneShot(machine, locomotion, clips, "wave", "Wave", 0.9f);
             AddTalk(machine, locomotion, clips);
 
@@ -61,6 +66,7 @@ namespace KCD.Editor
             AnimatorController controller, Dictionary<string, AnimationClip> clips)
         {
             AnimatorState state = controller.CreateBlendTreeInController("Locomotion", out BlendTree tree, 0);
+            ApplyGaitRate(state);
             tree.blendType = BlendTreeType.Simple1D;
             tree.blendParameter = "Speed";
             tree.useAutomaticThresholds = false;
@@ -96,14 +102,19 @@ namespace KCD.Editor
             return state;
         }
 
-        /// <summary>Jump / Wave のような 1 回きりの動作を、トリガーで抜き差しできる形で足す。</summary>
+        /// <summary>
+        /// Jump / Wave のような 1 回きりの動作を、トリガーで抜き差しできる形で足す。
+        /// landedCondition を渡すと「その bool が立ったら早めに戻る」抜け道を先に置く。
+        /// ジャンプが空中のポーズのまま固まって、着地しても歩きに戻らないのを防ぐ（#43）。
+        /// </summary>
         private static void AddOneShot(
             AnimatorStateMachine machine,
             AnimatorState locomotion,
             Dictionary<string, AnimationClip> clips,
             string clipKey,
             string trigger,
-            float exitTime)
+            float exitTime,
+            string landedCondition = null)
         {
             AnimationClip clip = Pick(clips, clipKey);
             if (clip == null)
@@ -119,11 +130,23 @@ namespace KCD.Editor
             enter.duration = 0.08f;
             enter.AddCondition(AnimatorConditionMode.If, 0f, trigger);
 
+            if (!string.IsNullOrEmpty(landedCondition))
+            {
+                AnimatorStateTransition landed = state.AddTransition(locomotion);
+                landed.hasExitTime = true;
+                landed.exitTime = LandedExitTime;
+                landed.duration = 0.12f;
+                landed.AddCondition(AnimatorConditionMode.If, 0f, landedCondition);
+            }
+
             AnimatorStateTransition exit = state.AddTransition(locomotion);
             exit.hasExitTime = true;
             exit.exitTime = exitTime;
             exit.duration = 0.16f;
         }
+
+        /// <summary>着地したときに Jump から抜ける位置（クリップの何割め）。</summary>
+        public const float LandedExitTime = 0.62f;
 
         /// <summary>会話中は Talk ステートに留まる。</summary>
         private static void AddTalk(
@@ -159,6 +182,17 @@ namespace KCD.Editor
                 changed = true;
             }
 
+            if (!HasParameter(controller, GaitRateParameter))
+            {
+                AddGaitRate(controller);
+                changed = true;
+            }
+
+            if (UpgradeStates(controller))
+            {
+                changed = true;
+            }
+
             if (EnableIkPass(controller))
             {
                 changed = true;
@@ -169,6 +203,99 @@ namespace KCD.Editor
                 EditorUtility.SetDirty(controller);
                 AssetDatabase.SaveAssets();
             }
+        }
+
+        /// <summary>既存のコントローラの Locomotion / Jump を、いまの組み方に合わせて直す。</summary>
+        private static bool UpgradeStates(AnimatorController controller)
+        {
+            if (controller.layers.Length == 0)
+            {
+                return false;
+            }
+
+            bool changed = false;
+            foreach (ChildAnimatorState child in controller.layers[0].stateMachine.states)
+            {
+                AnimatorState state = child.state;
+                if (state == null)
+                {
+                    continue;
+                }
+
+                if (state.name == "Locomotion" && !state.speedParameterActive)
+                {
+                    ApplyGaitRate(state);
+                    changed = true;
+                }
+
+                if (state.name == "Jump" && AddLandedExit(state))
+                {
+                    changed = true;
+                }
+            }
+
+            return changed;
+        }
+
+        /// <summary>Jump に「Grounded が立ったら戻る」抜け道を足し、先に評価されるよう先頭へ置く。</summary>
+        private static bool AddLandedExit(AnimatorState state)
+        {
+            AnimatorState back = null;
+            foreach (AnimatorStateTransition transition in state.transitions)
+            {
+                foreach (AnimatorCondition condition in transition.conditions)
+                {
+                    if (condition.parameter == "Grounded")
+                    {
+                        return false;
+                    }
+                }
+
+                if (back == null)
+                {
+                    back = transition.destinationState;
+                }
+            }
+
+            if (back == null)
+            {
+                return false;
+            }
+
+            AnimatorStateTransition landed = state.AddTransition(back);
+            landed.hasExitTime = true;
+            landed.exitTime = LandedExitTime;
+            landed.duration = 0.12f;
+            landed.AddCondition(AnimatorConditionMode.If, 0f, "Grounded");
+
+            var ordered = new List<AnimatorStateTransition> { landed };
+            foreach (AnimatorStateTransition transition in state.transitions)
+            {
+                if (transition != landed)
+                {
+                    ordered.Add(transition);
+                }
+            }
+
+            state.transitions = ordered.ToArray();
+            return true;
+        }
+
+        private static void AddGaitRate(AnimatorController controller)
+        {
+            controller.AddParameter(new AnimatorControllerParameter
+            {
+                name = GaitRateParameter,
+                type = AnimatorControllerParameterType.Float,
+                defaultFloat = 1f
+            });
+        }
+
+        /// <summary>クリップ本来の速さと実際の移動速度を合わせるため、再生速度をパラメータで掛ける。</summary>
+        private static void ApplyGaitRate(AnimatorState state)
+        {
+            state.speedParameter = GaitRateParameter;
+            state.speedParameterActive = true;
         }
 
         private static bool HasParameter(AnimatorController controller, string name)

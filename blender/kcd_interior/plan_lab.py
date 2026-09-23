@@ -116,7 +116,10 @@ def _lab_room(c, x0, y0, x1, y1, idx, pois=frozenset()):
         for sgn in (-1, 1):
             for i in range(5):
                 sx = cx - 0.4 - bw * 0.5 + 1.0 + i * (bw - 2.0) / 4.0
-                F.stool(mb, sx, by + sgn * 1.15, ang=0.0, mat="chair_grey",
+                # 実験台の向こう側（+Y 側）の丸椅子は台の方（-Y）へ向ける。
+                # 両側とも ang=0 で、北側 15 脚が台に背を向けていた（#42）
+                F.stool(mb, sx, by + sgn * 1.15,
+                        ang=0.0 if sgn < 0 else math.pi, mat="chair_grey",
                         h=0.66)
                 c.seats += 1
 
@@ -129,30 +132,37 @@ def _lab_room(c, x0, y0, x1, y1, idx, pois=frozenset()):
     F.gas_cylinders(mb, x1 - 0.9, y0 + 1.4, ang=math.pi * 0.5, n=3)
     # 側面の壁ぎわ: 器具棚と予備の流し
     for k in range(2):
-        F.bookshelf(mb, x1 - 0.55, y0 + 4.4 + k * 1.05, ang=-math.pi * 0.5,
+        F.bookshelf(mb, x1 - 0.55, y0 + 4.4 + k * 1.05, ang=math.pi * 0.5,
                     w=1.0, h=1.75, shelves=4, rng=rng, body="metal_gray",
                     books=False)
     F.lab_sink(mb, x1 - 0.85, y0 + 7.2, ang=-math.pi * 0.5, w=1.4)
-    F.whiteboard(mb, x0 + 0.65, y0 + 5.6, 1.05, ang=math.pi * 0.5, w=2.2,
+    F.whiteboard(mb, x0 + 0.65, y0 + 5.6, 1.05, ang=-math.pi * 0.5, w=2.2,
                  h=1.1)
 
-    # 前方: ホワイトボードと教員机
-    F.whiteboard(mb, cx, y0 + 0.16, 1.05, ang=0.0, w=3.0, h=1.2)
-    F.desk(mb, x0 + 1.6, y0 + 1.5, ang=0.0, w=1.4, d=0.7)
-    F.chair_min(mb, F.T(x0 + 1.6, y0 + 2.2, 0.0, math.pi), mat="chair_blue")
-    F.pc_tower(mb, x0 + 2.4, y0 + 1.5, ang=0.0)
-    F.monitor(mb, x0 + 1.6, y0 + 1.7, 0.72, ang=math.pi)
+    # 前方: ホワイトボードと教員机。ボードは廊下からのドア（部屋の中央 ±0.6 m）
+    # の真正面に幅 3.0 m・高さ 0.45〜1.65 m で立っていて、実験室に入れなかった
+    # ので、ドアの東どなりへずらす（#42）
+    F.whiteboard(mb, min(cx + 2.2, x1 - 1.8), y0 + 0.16, 1.05, ang=0.0,
+                 w=3.0, h=1.2)
+    F.desk(mb, x0 + 1.6, y0 + 1.1, ang=0.0, w=1.4, d=0.7)
+    F.chair_min(mb, F.T(x0 + 1.6, y0 + 1.8, 0.0, math.pi), mat="chair_blue")
+    F.pc_tower(mb, x0 + 2.4, y0 + 1.1, ang=0.0)
+    F.monitor(mb, x0 + 1.6, y0 + 1.3, 0.72, ang=math.pi)
 
     shell.fire_extinguisher(mb, x0 + 0.5, y0 + 0.8)
+    # 実験台の島は y0+3.0 と y0+7.2、丸椅子はその ±1.15 にあるので、POI と NPC は
+    # 島と島の間（y0+5.1）と 2 島目の奥の通路に置く。以前は実験台や丸椅子の中で、
+    # 体のまわりの空きが 0.02〜0.22 m しか無く、どこからも近づけなかった（#42）
+    aisle = y0 + 5.1
+    back = min(y0 + 9.2, y1 - 1.9)
     if "lab" in pois:
-        c.poi("lab", cx, y0 + 2.0, 0.0)
-        c.npc(cx - 1.8, y0 + 4.2, 0.0)
-        c.npc(cx + 2.0, y0 + 7.0, 0.0)
+        c.poi("lab", cx, aisle, 0.0)
+        c.npc(cx - 2.6, aisle, 0.0)
+        c.npc(cx + 2.6, aisle, 0.0)
     if "lab_b" in pois:
-        # lab と同室になったときは奥側（2 列目の実験台の脇）に離して置く
-        by = y0 + 2.0 if "lab" not in pois else min(y0 + 7.2, y1 - 2.0)
-        c.poi("lab_b", cx, by, 0.0)
-        c.npc(cx, y0 + 5.2, 0.0)
+        # lab と同室になったときは奥側（2 列目の実験台の奥）に離して置く
+        c.poi("lab_b", cx, aisle if "lab" not in pois else back, 0.0)
+        c.npc(cx - 1.4, back, 0.0)
 
 
 def _prep_room(c, x0, y0, x1, y1, idx, place_poi=False):
@@ -172,4 +182,5 @@ def _prep_room(c, x0, y0, x1, y1, idx, place_poi=False):
         F.bookshelf(mb, x0 + 1.0 + i * 1.0, y0 + 0.6, ang=0.0, w=0.9, h=1.90,
                     shelves=5, rng=rng)
     if place_poi:
-        c.poi("prep", (x0 + x1) * 0.5, y0 + 1.6, 0.0)
+        # 実験台（y0+1.9 から）と入口の間。y0+1.6 だと台まで 0.27 m だった（#42）
+        c.poi("prep", (x0 + x1) * 0.5, y0 + 1.35, 0.0)

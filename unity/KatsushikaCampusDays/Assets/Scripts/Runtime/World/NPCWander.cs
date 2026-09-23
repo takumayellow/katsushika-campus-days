@@ -16,9 +16,12 @@ namespace KCD
         [SerializeField] private float _walkSpeed = 1.1f;
 
         private static readonly int SpeedHash = Animator.StringToHash("Speed");
+        private static readonly int GaitRateHash = Animator.StringToHash("GaitRate");
 
         private NavMeshAgent _agent;
         private Animator _animator;
+        private RuntimeAnimatorController _knownController;
+        private bool _hasGaitRate;
         private Vector3 _home;
         private float _nextDecisionAt;
         private bool _navMeshReady;
@@ -117,8 +120,21 @@ namespace KCD
 
             if (_animator != null && _animator.runtimeAnimatorController != null)
             {
+                RefreshAnimatorParameters();
                 float speed = _navMeshReady ? _agent.velocity.magnitude : 0f;
-                _animator.SetFloat(SpeedHash, speed, 0.15f, Time.deltaTime);
+                PlayerAnimatorDriver.SolveGait(speed, out float blend, out float rate);
+                if (_hasGaitRate)
+                {
+                    _animator.SetFloat(GaitRateHash, rate, 0.15f, Time.deltaTime);
+                }
+                else
+                {
+                    // GaitRate の無い古いコントローラでは再生速度を掛けられないので、
+                    // 歩幅だけ伸ばすと足が前に滑る。素の速さに戻す。
+                    blend = speed;
+                }
+
+                _animator.SetFloat(SpeedHash, blend, 0.15f, Time.deltaTime);
             }
 
             if (!_navMeshReady || _paused || _radius <= 0.1f)
@@ -138,6 +154,38 @@ namespace KCD
             }
 
             _nextDecisionAt = Time.time + Random.Range(_minIdleSeconds, _maxIdleSeconds);
+        }
+
+        /// <summary>
+        /// Animator の Speed に渡す値。歩きのクリップは 2.6 m/s（PlayerController.DefaultWalkSpeed）に置いてある。
+        /// 1.1 m/s の NPC に 2.6 を渡すと脚は振り切れるが足が毎秒 1.5 m 滑るので（#13 の対処の副作用）、
+        /// 歩幅と歩調を同じ割合で落とす PlayerAnimatorDriver.SolveGait に一本化した（#43）。
+        /// </summary>
+        public static float AnimatorSpeed(float agentSpeed, float walkSpeed)
+        {
+            PlayerAnimatorDriver.SolveGait(agentSpeed, out float blend, out float _);
+            return blend;
+        }
+
+        /// <summary>コントローラが差し替わったときだけパラメータの有無を調べ直す。</summary>
+        private void RefreshAnimatorParameters()
+        {
+            RuntimeAnimatorController controller = _animator.runtimeAnimatorController;
+            if (ReferenceEquals(controller, _knownController))
+            {
+                return;
+            }
+
+            _knownController = controller;
+            _hasGaitRate = false;
+            foreach (AnimatorControllerParameter parameter in _animator.parameters)
+            {
+                if (parameter.name == "GaitRate")
+                {
+                    _hasGaitRate = true;
+                    break;
+                }
+            }
         }
 
         private bool TryPickDestination(out Vector3 destination)

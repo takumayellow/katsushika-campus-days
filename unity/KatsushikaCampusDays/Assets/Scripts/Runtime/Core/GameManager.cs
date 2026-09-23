@@ -88,6 +88,9 @@ namespace KCD
         /// <summary>タイトルからキャンパスへ入った回数。初回だけオリエンのクエストを自動開始する。</summary>
         public bool HasEnteredCampus { get; set; }
 
+        /// <summary>何日目か。「もう一日歩く」を選ぶたびに 1 つ進む（#16）。セーブには載せない。</summary>
+        public int DayNumber { get; set; } = DayRestart.FirstDay;
+
         private void Awake()
         {
             if (_instance != null && _instance != this)
@@ -137,14 +140,15 @@ namespace KCD
         /// <summary>キャンパスへ移動する。</summary>
         public void EnterCampus()
         {
-            KCDInput.GameplayBlocked = false;
+            // 封鎖を掛けた画面・演出はシーンごと消えるので、残った封鎖をまとめて外す (#40)。
+            KCDInput.ClearAllBlocks();
             SceneManager.LoadScene(CampusSceneName);
         }
 
         /// <summary>タイトルへ戻る。進行はメモリ上に残るのでそのまま再開できる。</summary>
         public void ReturnToTitle()
         {
-            KCDInput.GameplayBlocked = false;
+            KCDInput.ClearAllBlocks();
             Time.timeScale = 1f;
             SceneManager.LoadScene(TitleSceneName);
         }
@@ -153,6 +157,8 @@ namespace KCD
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Bootstrap()
         {
+            // ドメインの再読み込みを切った再生（Enter Play Mode Options）でも、前回の再生の封鎖を持ち越さない。
+            KCDInput.ClearAllBlocks();
             _ = Instance;
             // Web 版は品質レベルの取り違えで描画が崩れたことがあるので、どの設定で起動したかを残す。
             RenderPipelineAsset pipeline = GraphicsSettings.currentRenderPipeline;

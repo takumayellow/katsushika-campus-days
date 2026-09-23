@@ -105,6 +105,7 @@ Assets/Data/Ending       → Assets/Resources/KCD/Ending
 | `side` | bool | true = サブクエスト（クエストログで `ui.questlog.side` バッジ） |
 | `rewardType` | `"collectible"` \| `"achievement"` | 達成時に付与する報酬の種類 |
 | `rewardId` | string | `c_*` または `ach_*`。collectible なら `CollectibleCatalog` の `source: "quest"` の品をインベントリへ、achievement なら `AchievementSystem.Unlock(id)`（`quest_complete` 条件と同義）。 |
+| `giver` | string | 依頼主の NPC id（`prof` など）。`QuestData.FromJson` が全ステップの `QuestStep.Giver` に写す。`timeLimit > 0` のステップが時間切れで失敗したとき、この NPC に話しかけると計時がはじめから始まる（`QuestSystem.Report` の Talk 分岐）。セーブに計時は載らないので、ロード直後も同じく依頼主待ちになる。省略すると、時間切れのあと再挑戦する手段が無くなる。 |
 
 | id | order | 開始 | 前提 | ステップ | 報酬 |
 |----|-------|------|------|----------|------|

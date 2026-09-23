@@ -18,7 +18,7 @@ NOTES = {
     "bgm_night": "夜. 校歌のピアノ伴奏を 0.8 倍のテンポにして 2.4 kHz 以上を落とす (school_song/make_variants.py). music.py の D minor 版に戻すには SCHOOL_SONG_BGM から外す (#28)",
     "bgm_result": "リザルト画面. 128 BPM / C major / 明るく短い",
     "bgm_anthem_original": "オリジナルの校歌風行進曲 (未使用). 108 BPM / Bb major / A-B 形式",
-    "jingle_quest": "クエスト達成. F major のアルペジオ (マリンバ + ピアノ)",
+    "jingle_quest": "クエスト達成. F major のアルペジオ (木琴 soft_mallet + ピアノ)",
     "jingle_day_end": "1 日の終わり (リザルト画面). F major の IV-V-I (ピアノ)",
     "se_chime": "時報チャイム (12:00 昼休み / 17:00 下校). ウェストミンスターの鐘 E major 4 フレーズ 16 音を校内放送のスピーカー風に. 鳴る間 BGM は止まる (#38)",
     "ui_move": "カーソル移動", "ui_confirm": "決定", "ui_cancel": "キャンセル",
@@ -32,11 +32,11 @@ NOTES = {
     "talk_blip_m1": "会話ブリップ (男子)", "talk_blip_prof": "会話ブリップ (教員)",
     "amb_campus_day": "昼のキャンパス: 風 + 小鳥 + 遠くのざわめき",
     "amb_campus_evening": "夕暮れ: ヒグラシ + 風",
-    "amb_cafe": "カフェ: ざわめき + 食器",
-    "amb_library": "図書館: 空調のほぼ無音 + ページ",
-    "amb_gym": "体育館: 残響のあるボールのバウンド",
-    "amb_cafeteria": "食堂: 賑わい",
-    "amb_greenhouse": "温室: 換気扇 + 水滴",
+    "amb_cafe": "カフェ (共創棟): 静かな空調 + 離れた席の小さな話し声. 食器の金属音は入れない",
+    "amb_library": "図書館 (ほかの建物の既定): 空調のほぼ無音 + たまにページをめくる音",
+    "amb_gym": "体育館: 静かな空調 + ときどきボールをつく音とシューズのキュッ (広い残響)",
+    "amb_cafeteria": "食堂 (第 2 研究棟): 静かな空調 + あちこちの席の小さな話し声. トレイや食器の音は入れない",
+    "amb_greenhouse": "温室: 小さな換気扇のうなり + ときどき葉から落ちる水滴",
 }
 STEP_NOTE = "足音. 4 バリエーションをランダムに再生する"
 
@@ -46,7 +46,8 @@ def note_for(name: str) -> str:
         return NOTES[name]
     if name.startswith("step_"):
         kind = {"concrete": "コンクリート", "grass": "芝生",
-                "wood": "木の床", "tile": "タイル"}[name.split("_")[1]]
+                "wood": "木の床", "tile": "タイル・樹脂の床",
+                "carpet": "カーペット"}[name.split("_")[1]]
         return f"{kind}の{STEP_NOTE}"
     return ""
 
@@ -94,7 +95,7 @@ def main() -> int:
     A("|---|---|")
     A("| `tools/audio/synth.py` | 発振器・フィルタ・エンベロープ・楽器・ドラム・リバーブ |")
     A("| `tools/audio/music.py` | BGM とジングル (小節グリッドの簡易シーケンサ) |")
-    A("| `tools/audio/sfx.py` | SE 37 種 |")
+    A("| `tools/audio/sfx.py` | SE 41 種 |")
     A("| `tools/audio/ambient.py` | 環境音 7 種 |")
     A("| `tools/audio/analyze.py` | 波形統計とループ継ぎ目の計測 |")
     A("| `tools/audio/build_audio.py` | 全体のエントリ。`manifest.json` と本 README を書き出す |")
@@ -143,6 +144,13 @@ def main() -> int:
         A("")
         L.extend(table(by[cat], loop_cols=any(e.get("loop") for e in by[cat])))
         A("")
+    A("## 屋内の環境音について")
+    A("")
+    A("建物の中の 5 本 (図書館・体育館・温室・カフェ・食堂) は, 屋内で風の音と「チンカン」という金属音が聞こえると"
+      "指摘されたので作り直した。風のようにうねる帯域ノイズのベッドと食器の金属音 (`dish_clink`) はやめ, "
+      "150 Hz より上をほとんど含まない定常な空調音 (`room_tone`) に, 部屋に合った金属でない音をまばらに置くだけにしている。"
+      "書き出しのピークも `ambient.PEAK_DB` で -15〜-21 dBFS に下げ, 屋外の 2 本より RMS で 12〜28 dB 小さい。")
+    A("")
     A("## 校歌について")
     A("")
     A("東京理科大学校歌 (作曲 大和憲史) を 3 つの BGM で使っている。"

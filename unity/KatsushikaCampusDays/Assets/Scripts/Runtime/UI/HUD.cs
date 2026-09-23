@@ -77,10 +77,19 @@ namespace KCD
         /// <summary>画面下に短いメッセージを流す。</summary>
         public void ShowToast(string message)
         {
+            ShowToast(message, true);
+        }
+
+        /// <summary>画面下に短いメッセージを流す。ping が false なら通知音を鳴らさない（時報チャイムに重ねない, #38）。</summary>
+        public void ShowToast(string message, bool ping)
+        {
             if (_toastView != null)
             {
                 _toastView.Push(message);
-                AudioManager.Instance?.PlayUi("ui_toast", 0.6f);
+                if (ping)
+                {
+                    AudioManager.Instance?.PlayUi("ui_toast", 0.6f);
+                }
             }
         }
 

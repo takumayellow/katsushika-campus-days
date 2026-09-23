@@ -20,13 +20,28 @@ def build(c):
     common.entry_kit(c, CEIL, door_w=1.6, spawn_depth=1.2)
 
     w = c.wall
+
+    def pane(pts, inward):
+        """ガラスの 1 枚。屋内モデルは中からしか見ないので、面は室内を向かせる。
+
+        両面にすると屋根が「立てる面」になり、外周壁の上端（Z_TOP）を越えて
+        外へ出られる面ができてしまう。天井（shell.ceiling）と同じ扱いにそろえる (#45)。
+        inward は室内側の向き。巻き順がこれと逆なら裏返す。
+        """
+        a, b, c3 = pts[0], pts[1], pts[2]
+        nx = (b[1] - a[1]) * (c3[2] - a[2]) - (b[2] - a[2]) * (c3[1] - a[1])
+        ny = (b[2] - a[2]) * (c3[0] - a[0]) - (b[0] - a[0]) * (c3[2] - a[2])
+        nz = (b[0] - a[0]) * (c3[1] - a[1]) - (b[1] - a[1]) * (c3[0] - a[0])
+        if nx * inward[0] + ny * inward[1] + nz * inward[2] < 0.0:
+            pts = list(reversed(pts))
+        w.add_face(pts, "glass_clear")
+
     # ガラス屋根（切妻）
     ridge = (ix0 + ix1) * 0.5
-    for side in (0, 1):
-        ax = ix0 if side == 0 else ix1
-        w.add_quad((ax, iy0, CEIL), (ax, iy1, CEIL),
-                   (ridge, iy1, CEIL + 0.85), (ridge, iy0, CEIL + 0.85),
-                   "glass_clear")
+    for ax in (ix0, ix1):
+        pane([(ax, iy0, CEIL), (ax, iy1, CEIL),
+              (ridge, iy1, CEIL + 0.85), (ridge, iy0, CEIL + 0.85)],
+             (0.0, 0.0, -1.0))
     # 棟木と垂木
     kit.tube(w, (ridge, iy0, CEIL + 0.85), (ridge, iy1, CEIL + 0.85), 0.055,
              "metal_white", seg=5)
@@ -37,10 +52,10 @@ def build(c):
                  "metal_white", seg=4)
         kit.tube(w, (ix1, ty, CEIL), (ridge, ty, CEIL + 0.85), 0.04,
                  "metal_white", seg=4)
-    # 妻面の三角ガラス
-    for ty in (iy0, iy1):
-        w.add_face([(ix0, ty, CEIL), (ix1, ty, CEIL),
-                    (ridge, ty, CEIL + 0.85)], "glass_clear")
+    # 妻面の三角ガラス（手前は +Y、奥は -Y が室内）
+    for ty, inward in ((iy0, 1.0), (iy1, -1.0)):
+        pane([(ix0, ty, CEIL), (ix1, ty, CEIL), (ridge, ty, CEIL + 0.85)],
+             (0.0, inward, 0.0))
 
     # 栽培ベンチ（左右 2 列 + 中央通路）
     mb = c.furn("benches")
@@ -78,8 +93,18 @@ def build(c):
 
     # 作業用の道具棚と流し
     F.lab_sink(mb, ix0 + 1.2, iy0 + 1.0, ang=0.0, w=1.0)
-    F.bookshelf(mb, ix1 - 1.0, iy0 + 1.0, ang=0.0, w=0.9, h=1.60, shelves=4,
-                rng=rng)
+    # 道具棚は「扉つきの箱」にする。段板のある書架 (h=1.60) だと
+    # 栽培ベンチの天端 0.78 -> 本 1.16 -> 段板 1.37 -> 棚の天端 1.60 と
+    # よじ登れて、棚と東側の壁の隙間へ 1.6 m 落ちられた (#45)。
+    # 扉は南（入口）向き。足場になる段が外に出ないので登れない。
+    cx_, cy_ = ix1 - 1.0, iy0 + 0.75
+    kit.box(mb, cx_ - 0.45, cy_ - 0.17, 0.0, cx_ + 0.45, cy_ + 0.17, 1.85,
+            "desk_wood")
+    for sx in (-1, 1):
+        kit.box(mb, cx_ + sx * 0.02, cy_ - 0.19, 0.28,
+                cx_ + sx * 0.42, cy_ - 0.17, 1.76, "desk_white")
+        kit.box(mb, cx_ + sx * 0.07, cy_ - 0.21, 0.98,
+                cx_ + sx * 0.11, cy_ - 0.19, 1.12, "metal_gray")
 
     # 照明（育成灯）
     pts = shell.ceiling_lights(w, ix0 + 0.8, iy0 + 0.8, ix1 - 0.8, iy1 - 0.8,

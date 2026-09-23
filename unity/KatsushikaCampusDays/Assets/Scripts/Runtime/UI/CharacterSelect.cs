@@ -28,6 +28,9 @@ namespace KCD
         private int _index;
         private bool _active;
 
+        /// <summary>選択を受け付け始めたフレーム。そのフレームの入力は捨てる（#6）。</summary>
+        private int _activatedFrame = KCDInput.NoFrame;
+
         /// <summary>SceneBuilder から差し込む。stands は左から順の 3 体。</summary>
         public void Bind(Transform[] stands, TMP_Text nameLabel, TMP_Text taglineLabel, TMP_Text hintLabel)
         {
@@ -55,7 +58,8 @@ namespace KCD
         {
             if (_hintLabel != null)
             {
-                _hintLabel.text = L.Get("ui.select.hint", "← → で選択　Enter で決定");
+                _hintLabel.text = L.Get(
+                    "ui.select.hint", "← → でえらぶ　Enter で決定　（パッドは十字キーと A ボタン）");
             }
 
             Refresh();
@@ -65,6 +69,7 @@ namespace KCD
         public void SetActiveSelection(bool active)
         {
             _active = active;
+            _activatedFrame = active ? Time.frameCount : KCDInput.NoFrame;
             gameObject.SetActive(true);
         }
 
@@ -72,7 +77,9 @@ namespace KCD
         {
             AnimateStands();
 
-            if (!_active)
+            // タイトルで押した Enter を同じフレームでこちらも拾うと、その場で既定のキャラで決定してしまい、
+            // 選択画面が 1 フレームも操作できない（「キャラ選択が出ない」の正体, #6）。
+            if (!_active || KCDInput.IgnoresInput(_activatedFrame))
             {
                 return;
             }
@@ -138,7 +145,11 @@ namespace KCD
             string id = GameManager.PlayableCharacterIds[_index];
             if (_nameLabel != null)
             {
-                _nameLabel.text = L.Get("ui.select." + id + ".name", GameManager.PlayableCharacterNames[_index]);
+                // 左右に人がいることが名前だけでは分からないので、矢印と「2 / 3」を添える（#6）。
+                string name = L.Get("ui.select." + id + ".name", GameManager.PlayableCharacterNames[_index]);
+                _nameLabel.text = "<color=#FFD98A>◀</color>　" + name + "　<color=#FFD98A>▶</color>" +
+                                  "<size=45%>　" + (_index + 1) + " / " +
+                                  GameManager.PlayableCharacterIds.Length + "</size>";
             }
 
             if (_taglineLabel != null && _index < Taglines.Length)

@@ -29,7 +29,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import bpy  # noqa: E402
 
 from kcd_lib import mats, render  # noqa: E402
-from kcd_interior import imats, registry, spec as ispec  # noqa: E402
+from kcd_interior import closure, imats, registry, spec as ispec  # noqa: E402
 from kcd_interior.ctx import Ctx  # noqa: E402
 
 FBX_OPTS = dict(
@@ -148,6 +148,7 @@ def build_one(sp, plan, args, eng):
 
     c = Ctx(sp, seed=args.seed)
     plan.build(c)
+    c.flush_seats()       # 座れる家具 -> seat_ Empty（Unity の SeatFactory が読む）
 
     objects = []
     for mb in c.builders():
@@ -254,14 +255,28 @@ def _walk_strings(node):
         yield node
 
 
+def read_sidecar(out_dir, bid):
+    """書き出した <id>.json（外周・壁厚などの配置メタ）。無ければ None。"""
+    path = os.path.join(out_dir, "%s.json" % bid)
+    if not os.path.isfile(path):
+        return None
+    with open(path, encoding="utf-8") as fp:
+        return json.load(fp)
+
+
 def missing_contract(bid, empties, required):
     """棟 bid の Empty 一覧に、データが要求する POI が全部あるか。"""
     have = set(empties)
     return sorted(n for n in required.get(bid, ()) if n not in have)
 
 
-def verify_fbx(path, expect_empties):
-    """書き出した FBX を読み直して Empty がそろっているか確かめる。"""
+def verify_fbx(path, expect_empties, meta=None, max_gap=0.25):
+    """書き出した FBX を読み直して Empty がそろっているか確かめる。
+
+    meta（<id>.json の中身）を渡すと、外周が人の通れない壁で閉じているかも測る。
+    PhysX は三角形を片面でしか受け止めないので、外向きの面しか無いガラスは
+    室内から素通りになる。max_gap より広い穴があれば契約違反として返す (#45)。
+    """
     reset_scene()
     bpy.ops.import_scene.fbx(filepath=path)
     got = {o.name for o in bpy.context.scene.objects if o.type == "EMPTY"}
@@ -271,9 +286,12 @@ def verify_fbx(path, expect_empties):
         if name in got or any(g.startswith(name) for g in got):
             continue
         missing.append(name)
-    meshes = [o.name for o in bpy.context.scene.objects if o.type == "MESH"]
+    objs = [o for o in bpy.context.scene.objects if o.type == "MESH"]
+    holes = []
+    if meta:
+        holes = [g for g in closure.measure(objs, meta) if g["width"] > max_gap]
     return {"empties_found": len(got), "missing": missing,
-            "meshes": len(meshes)}
+            "meshes": len(objs), "holes": holes}
 
 
 # --------------------------------------------------------------------------- #
@@ -325,15 +343,23 @@ def main():
     for info in report:
         if not info.get("fbx"):
             continue
-        res = verify_fbx(info["fbx"], info["empties"])
+        meta = read_sidecar(args.out_dir, info["id"])
+        res = verify_fbx(info["fbx"], info["empties"], meta)
         lacking = missing_contract(info["id"], info["empties"], required)
-        bad = bool(res["missing"] or lacking)
+        holes = res["holes"]
+        bad = bool(res["missing"] or lacking or holes)
         mark = "OK " if not bad else "NG "
         if bad:
             ok = False
-        print("[verify] %s%-11s meshes=%3d empties=%3d/%3d 必須POI=%d %s%s"
+        print("[verify] %s%-11s meshes=%3d empties=%3d/%3d 必須POI=%d 外周=%s %s%s"
               % (mark, info["id"], res["meshes"], res["empties_found"],
                  len(info["empties"]), len(required.get(info["id"], ())),
+                 "閉" if not holes else
+                 "穴%d 計%.1fm 最大%.2fm(%s z=%.1f)"
+                 % (len(holes), sum(g["width"] for g in holes),
+                    max(g["width"] for g in holes),
+                    max(holes, key=lambda g: g["width"])["name"],
+                    max(holes, key=lambda g: g["width"])["z"]),
                  "" if not res["missing"] else "欠落: %s " % res["missing"][:5],
                  "" if not lacking else
                  "契約違反(データが参照するのに無い): %s" % lacking))
@@ -341,7 +367,7 @@ def main():
     total = sum(i["tris"] for i in report)
     print("\n[interiors] 合計 %d 三角形 / %d 棟 / %.1f s  (%s)"
           % (total, len(report), time.time() - t_all,
-             "OK" if ok else "Empty 欠落 / POI 契約違反あり"))
+             "OK" if ok else "Empty 欠落 / POI 契約違反 / 外周の穴あり"))
 
     # 集計を JSON で残す（README 生成の材料）。
     # 一部の棟だけを流したときに上書きすると全棟ぶんの集計が失われるので、
@@ -358,7 +384,8 @@ def main():
               % summary)
 
     if not ok:
-        # Empty が欠けた FBX は Unity 側の配置が壊れるので、失敗として終了する。
+        # Empty が欠けた FBX は Unity 側の配置が壊れる。外周に穴があると
+        # プレイヤーが建物の外の何も無い空間へ出られる。どちらも失敗として終了する。
         sys.exit(1)
 
 

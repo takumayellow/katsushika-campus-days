@@ -31,8 +31,8 @@
       "requiresActiveQuest": "q_gym",
       "lines": [
         {
-          "text": "まだここにいるのか。鍵は待ってくれんよ。",
-          "text_en": "Still here? The key won't wait for you."
+          "text": "鍵当番には、もう 1 分だけ待ってもらうよう頼んでおいた。ここから 60 秒だ。",
+          "text_en": "I've asked the key holder to wait one more minute. Sixty seconds, starting from here."
         },
         {
           "text": "モールを北へ折れれば体育館だ。Shift を押しっぱなしで走りなさい。",

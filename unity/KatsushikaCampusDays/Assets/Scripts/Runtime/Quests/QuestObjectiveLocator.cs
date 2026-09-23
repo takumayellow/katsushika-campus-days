@@ -28,18 +28,27 @@ namespace KCD
 
             Refresh();
 
-            switch (step.Kind)
+            // 制限時間つきで時間切れ（またはロード直後）なら、目的地ではなく再挑戦を受け付ける依頼主を指す。
+            QuestStepKind kind = step.Kind;
+            string target = step.Target;
+            if (step.AwaitingGiver)
+            {
+                kind = QuestStepKind.Talk;
+                target = step.Giver;
+            }
+
+            switch (kind)
             {
                 case QuestStepKind.Talk:
-                    return Nearest(_npcs, from, n => n.NpcId == step.Target, out position);
+                    return Nearest(_npcs, from, n => n.NpcId == target, out position);
                 case QuestStepKind.Enter:
-                    return Nearest(_entrances, from, e => e.BuildingId == step.Target, out position);
+                    return Nearest(_entrances, from, e => e.BuildingId == target, out position);
                 case QuestStepKind.Visit:
-                    return Nearest(_zones, from, z => z.PlaceId == step.Target, out position);
+                    return Nearest(_zones, from, z => z.PlaceId == target, out position);
                 case QuestStepKind.Collect:
-                    return Nearest(_items, from, i => i.ItemId == step.Target && i.CanInteract, out position);
+                    return Nearest(_items, from, i => i.ItemId == target && i.CanInteract, out position);
                 case QuestStepKind.Flag:
-                    return Nearest(_props, from, p => p.FlagId == step.Target, out position);
+                    return Nearest(_props, from, p => p.FlagId == target, out position);
                 default:
                     return false;
             }

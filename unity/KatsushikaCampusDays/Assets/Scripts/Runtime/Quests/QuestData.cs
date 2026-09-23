@@ -32,8 +32,14 @@ namespace KCD
         /// <summary>Collect のとき必要な個数。他の種類では 1。</summary>
         public int Count = 1;
 
-        /// <summary>制限時間（秒）。0 なら無制限。ステップが現在地になった瞬間から数える。</summary>
+        /// <summary>
+        /// 制限時間（秒）。0 なら無制限。受注した瞬間（途中のステップなら前のステップを終えた瞬間）から 1 回だけ数える。
+        /// 時間切れになったら失敗で止まり、Giver に話しかけるとはじめから数え直す。
+        /// </summary>
         public float TimeLimit;
+
+        /// <summary>時間切れのあと話しかけると再挑戦になる NPC の id。クエストの giver を写したもの。</summary>
+        public string Giver = string.Empty;
 
         /// <summary>この時刻（ゲーム内時）以降でないと達成できない。0 なら無条件。</summary>
         public float MinHour;
@@ -42,17 +48,42 @@ namespace KCD
         public int Progress;
 
         public bool Completed;
+
+        /// <summary>制限時間の計時。TimeLimit が 0 のステップでは Idle のまま使わない。</summary>
+        public readonly ChallengeTimer Timer = new ChallengeTimer();
+
+        /// <summary>制限時間つきか。</summary>
+        public bool IsTimed => TimeLimit > 0f;
+
+        /// <summary>達成を受け付けるか。制限時間つきは計時中だけ（時間切れのあとは再挑戦が要る）。</summary>
+        public bool AcceptsProgress => !IsTimed || Timer.IsRunning;
+
+        /// <summary>依頼主に話しかけて（もう一度）始めるのを待っているか。時間切れのあと、またはロード直後。</summary>
+        public bool AwaitingGiver => IsTimed && !Completed && !Timer.IsRunning && !string.IsNullOrEmpty(Giver);
     }
 
     /// <summary>クエスト 1 件。JSON 1 ファイルに 1 件対応する。</summary>
     public sealed class QuestData
     {
+        /// <summary>rewardType がこれなら、達成時に rewardId の称号を得る。</summary>
+        public const string RewardAchievement = "achievement";
+
         public string Id = string.Empty;
         public string Title = string.Empty;
         public string Summary = string.Empty;
         public int Order;
         public bool AutoStart;
         public string RewardText = string.Empty;
+
+        /// <summary>報酬の種類（collectible / achievement）。空なら RewardText だけ。</summary>
+        public string RewardType = string.Empty;
+
+        /// <summary>報酬の id（c_* / ach_*）。</summary>
+        public string RewardId = string.Empty;
+
+        /// <summary>依頼主の NPC id。制限時間つきのステップは、この NPC に話しかけると再挑戦できる。</summary>
+        public string Giver = string.Empty;
+
         public readonly List<string> Prerequisites = new List<string>();
         public readonly List<QuestStep> Steps = new List<QuestStep>();
 
@@ -97,7 +128,10 @@ namespace KCD
                 Summary = MiniJson.GetString(node, "summary"),
                 Order = MiniJson.GetInt(node, "order", 999),
                 AutoStart = MiniJson.GetBool(node, "autoStart"),
-                RewardText = MiniJson.GetString(node, "rewardText")
+                RewardText = MiniJson.GetString(node, "rewardText"),
+                RewardType = MiniJson.GetString(node, "rewardType"),
+                RewardId = MiniJson.GetString(node, "rewardId"),
+                Giver = MiniJson.GetString(node, "giver")
             };
 
             quest.Prerequisites.AddRange(MiniJson.ToStringList(MiniJson.GetArray(node, "prerequisites")));
@@ -115,6 +149,7 @@ namespace KCD
                         Target = MiniJson.GetString(stepNode, "target"),
                         Count = System.Math.Max(1, MiniJson.GetInt(stepNode, "count", 1)),
                         TimeLimit = MiniJson.GetFloat(stepNode, "timeLimit"),
+                        Giver = quest.Giver,
                         MinHour = MiniJson.GetFloat(stepNode, "minHour")
                     });
                 }

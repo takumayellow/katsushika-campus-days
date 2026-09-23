@@ -5,16 +5,29 @@ import random
 
 from . import geom, props
 
-# 高さレイヤ（z ファイティング回避のため段を付ける）
-Z_GROUND = -0.30
-Z_CAMPUS = 0.010
-Z_AREA = 0.020
-Z_ROAD = 0.040
-Z_FOOT = 0.055
-Z_LINE = 0.070
-Z_MALL = 0.085
-Z_WATER = 0.060
-Z_BASIN_FLOOR = Z_WATER - 0.45
+# 高さレイヤ（z ファイティング回避のため 3 mm ずつ段を付ける）
+# 歩ける面どうしの段差は最大でも モール 0.021 − 外周の地面 0.000 = 2.1 cm。
+# 半径 0.28 m のカプセルが 2 cm の段に当たる角度は約 22 度なので、坂と同じに越えられる。
+# 以前は 1.0〜7.5 cm の段と、敷地の縁に 31 cm の落差（外周 -0.30）があり、
+# 歩くだけでジャンプ・着地の判定が出ていた（#30）。
+# 意図した段差は 水盤の縁石（天端 0.36）だけ。入口の石張りは kcd_lib.entrances.APRON_Z。
+Z_GROUND = 0.000     # 外周の地面（敷地の外）
+Z_PARK = 0.003       # 公園・空地（敷地の芝より下。敷地の中では芝に隠れる）
+Z_CAMPUS = 0.006     # キャンパス敷地の芝
+Z_AREA = 0.009       # グラウンド・広場・駐車場
+Z_ROAD = 0.012       # 車道（帯の厚み 0.06 m は地面の下へ埋まる）
+Z_LINE = 0.015       # 車道の白線（厚みなし。車道から 3 mm）
+Z_FOOT = 0.018       # 歩道・水盤の前の石張り
+Z_MALL = 0.021       # キャンパスモールと正門前の広場
+Z_WATER = 0.060      # 水盤の水面（縁石 0.36 の内側だけ）
+# 水盤の底。水は半透明（mats.py の water: alpha 0.80、Unity 側も 0.58）なので底が透けて見える。
+# 以前は Z_WATER - 0.45 = -0.390 で、敷地の芝（Z_CAMPUS = 0.006）と歩道（Z_FOOT = 0.018）が
+# その上を覆っていた。実測では水面の下に見える面の 96.7% が grass、3.3% が stone_light で、
+# 底の stone_dark は 1 点も見えていなかった（#46）。どの地面レイヤーより上（Z_MALL = 0.021 の上）
+# かつ水面より下に置いて、石の底が水越しに見えるようにする。水深 3 cm の浅い水盤。
+Z_BASIN_FLOOR = 0.030
+Z_BASIN_RIM = 0.36   # 水盤の縁石の天端（意図した段差）
+PATH_THICKNESS = 0.06   # 道路・歩道の帯の厚み（縁の隙間を隠す）
 
 # キャンパスモール（OSM の直線 footway が v = -24 を u = -56..199 で走る）
 MALL_V = -24.0
@@ -114,7 +127,7 @@ def build_ground(mb, data, frame, occ=None):
             continue
         poly = geom.ensure_ccw(geom.dedup(a["polygon"]))
         hard_kind = a["kind"] in ("pitch", "playground", "parking")
-        z = Z_AREA if hard_kind else Z_CAMPUS - 0.004
+        z = Z_AREA if hard_kind else Z_PARK
         mb.add_ngon_flat(poly, z, mat)
         if hard_kind and occ is not None:
             # グラウンド・駐車場に木を生やさない
@@ -130,7 +143,7 @@ def build_paths(mb, data, occ):
         else:
             mat, z = "stone_light", Z_FOOT
         for chunk in _clip_polyline(p["points"], 348.0):
-            mb.add_ribbon(chunk, w, z, mat, thickness=0.06)
+            mb.add_ribbon(chunk, w, z, mat, thickness=PATH_THICKNESS)
             occ.stamp_polyline(chunk, w * 0.5 + 2.2)
             if kind == "tertiary":
                 # センターラインの破線
@@ -174,7 +187,11 @@ def build_mall(mb, frame, occ):
 
 
 def build_basin(mb, frame, occ):
-    """図書館南の浅い水盤（石の縁石 + 水面）。"""
+    """図書館南の浅い水盤（石の縁石 + 水面）。
+
+    縁石は腰かけられる高さ（天端 Z_BASIN_RIM = 0.36、幅 1.6 m）のまま残す。水に入れないのは
+    Unity 側の CampusStage.BuildBasinKeepout が水際（内側矩形の 4 辺）に見えない壁を立てるから
+    であって、ここを柵で囲っているからではない（#46）。"""
     inner = frame.rect(BASIN_U[0], BASIN_V[0], BASIN_U[1], BASIN_V[1])
     outer = geom.offset_polygon(inner, 1.6)
     mb.add_ngon_flat(inner, Z_BASIN_FLOOR, "stone_dark")   # 水面は build_water（site_water）
@@ -182,12 +199,13 @@ def build_basin(mb, frame, occ):
     for i in range(n):
         a, b = inner[i], inner[(i + 1) % n]
         ao, bo = outer[i], outer[(i + 1) % n]
-        mb.add_quad((ao[0], ao[1], 0.36), (bo[0], bo[1], 0.36),
-                    (b[0], b[1], 0.36), (a[0], a[1], 0.36), "stone_dark")
-        mb.add_quad((a[0], a[1], 0.36), (b[0], b[1], 0.36),
+        mb.add_quad((ao[0], ao[1], Z_BASIN_RIM), (bo[0], bo[1], Z_BASIN_RIM),
+                    (b[0], b[1], Z_BASIN_RIM), (a[0], a[1], Z_BASIN_RIM), "stone_dark")
+        mb.add_quad((a[0], a[1], Z_BASIN_RIM), (b[0], b[1], Z_BASIN_RIM),
                     (b[0], b[1], Z_BASIN_FLOOR), (a[0], a[1], Z_BASIN_FLOOR), "stone_dark")
-        mb.add_quad((ao[0], ao[1], Z_CAMPUS), (bo[0], bo[1], Z_CAMPUS),
-                    (bo[0], bo[1], 0.36), (ao[0], ao[1], 0.36), "stone_dark")
+        # 外側の立ち上がりは一番下の層から（どの層の上に載っても隙間を出さない）
+        mb.add_quad((ao[0], ao[1], Z_GROUND), (bo[0], bo[1], Z_GROUND),
+                    (bo[0], bo[1], Z_BASIN_RIM), (ao[0], ao[1], Z_BASIN_RIM), "stone_dark")
     occ.stamp_poly(outer, margin=2.0)
     # 水盤とモールの間の石張り
     deck = frame.rect(BASIN_U[0], BASIN_V[1] + 1.8, BASIN_U[1], MALL_V - MALL_HW)
@@ -196,17 +214,29 @@ def build_basin(mb, frame, occ):
 
 
 def build_water(mb, frame):
-    """水盤の水面だけを別メッシュ（site_water）にする。Unity 側で反射・屈折を付けるため。"""
+    """水盤の水面だけを別メッシュ（site_water）にする。Unity 側で反射・屈折を付けるため。
+
+    site_water は Unity 側で MeshCollider を付けない（CampusStage.DressCampus）。名前に water を
+    含むメッシュは床にしないし、NavMesh にも焼かない（#46）。名前を変えるときは向こうも直すこと。"""
     inner = frame.rect(BASIN_U[0], BASIN_V[0], BASIN_U[1], BASIN_V[1])
     mb.add_ngon_flat(inner, Z_WATER, "water")
 
 
 def build_signs(mb, frame, ctx):
     """各建物の入口脇に立て看板。ctx["sign_placed"] に (id, (x, y), z, yaw) を返す。
-    板の正面は建物の重心から入口へ向かう向き（＝建物から離れる向き）。"""
+
+    ctx["sign"] の要素が (id, (x, y), z, yaw) なら、その位置と向きにそのまま立てる
+    （kcd_lib.entrances が扉の脇に計画したもの）。(id, (x, y), z) なら、板の正面を
+    建物の重心から入口へ向かう向き（＝建物から離れる向き）にして 3.5 m 横へずらす。"""
     cents = {fid: geom.centroid(fp) for fid, fp, _h in ctx.get("footprints", [])}
     placed = []
-    for sid, pos, z in ctx["sign"]:
+    for item in ctx["sign"]:
+        if len(item) == 4:
+            sid, p, z, yaw = item
+            props.add_pylon_sign(mb, p[0], p[1], yaw, z)
+            placed.append((sid, p, z, yaw))
+            continue
+        sid, pos, z = item
         c = cents.get(sid)
         d = geom.sub(pos, c) if c else (0.0, -1.0)
         if geom.length(d) < 1e-6:
@@ -257,14 +287,37 @@ def build_bike_sheds(mb, frame, occ, hard, ctx, roads=None):
 
 
 def build_amenities(mb_vend, mb_trash, frame, ctx):
-    """食堂（第2研究棟）とコンビニ（共創棟）の入口脇に自販機 2 台とゴミ箱 1 個。"""
+    """食堂（第2研究棟）とコンビニ（共創棟）の入口脇に自販機 2 台とゴミ箱 1 個。
+
+    ctx["door_frames"]（kcd_lib.entrances）があれば、扉の脇（看板と反対側）の外壁に
+    背中を付けて並べる。無ければ従来どおり外接矩形から決める。"""
+    doors = ctx.get("door_frames") or {}
+    placed = set()
+    for bid in ("research2", "kyoso"):
+        dr = doors.get(bid)
+        if dr is None:
+            continue
+        o, n, t = dr["origin"], dr["n"], dr["t"]
+        side = -dr["sign_side"]
+        s0 = dr["APRON_S"] + 0.7          # 足元の石張りの外から
+
+        def at(s, d):
+            return (o[0] + t[0] * s + n[0] * d, o[1] + t[1] * s + n[1] * d)
+
+        for k, col in enumerate(("vending_red", "vending_blue")):
+            p = at(side * (s0 + k * 1.2), 0.45)
+            props.add_vending(mb_vend, p[0], p[1], dr["yaw"], col)
+        p = at(side * (s0 + 2.5), 0.45)
+        props.add_trash_can(mb_trash, p[0], p[1])
+        placed.add(bid)
+
     uvbb = ctx.get("uvbb", {})
     ang_u = math.atan2(frame.u[1], frame.u[0])
     spots = []
-    if "research2" in uvbb:
+    if "research2" in uvbb and "research2" not in placed:
         u0, v0, u1, v1 = uvbb["research2"]
         spots.append(((u0 + u1) * 0.5 + 7.0, v0 - 0.95, ang_u - math.pi * 0.5))   # 正面 -v
-    if "kyoso" in uvbb and "kyoso_mall_v" in ctx:
+    if "kyoso" in uvbb and "kyoso_mall_v" in ctx and "kyoso" not in placed:
         u0, v0, u1, v1 = uvbb["kyoso"]
         sb_u = u0 + (u1 - u0) * 0.30
         spots.append((sb_u - 3.0, ctx["kyoso_mall_v"] + 1.0, ang_u + math.pi * 0.5))  # 正面 +v

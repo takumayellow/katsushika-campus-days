@@ -23,20 +23,23 @@ namespace KCD.Editor
             return EditorPaths.CharactersFolder + "/" + characterId + "/" + characterId + ".fbx";
         }
 
-        /// <summary>見た目だけの体を作る。FBX があれば Humanoid、無ければカプセル。</summary>
-        public static GameObject CreateBody(string characterId, Transform parent)
+        /// <summary>
+        /// 見た目だけの体を作る。FBX があれば Humanoid、無ければカプセル。
+        /// bodyName を渡すと子オブジェクト名を変えられる（プレイヤーは 3 体並ぶので id を付ける, #6）。
+        /// </summary>
+        public static GameObject CreateBody(string characterId, Transform parent, string bodyName = "Body")
         {
             string fbxPath = FbxPathOf(characterId);
             var source = AssetDatabase.LoadAssetAtPath<GameObject>(fbxPath);
 
             if (source == null)
             {
-                return CreatePlaceholder(characterId, parent);
+                return CreatePlaceholder(characterId, parent, bodyName);
             }
 
             var body = (GameObject)PrefabUtility.InstantiatePrefab(source);
             PrefabUtility.UnpackPrefabInstance(body, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
-            body.name = "Body";
+            body.name = bodyName;
             body.transform.SetParent(parent, false);
             body.transform.localPosition = Vector3.zero;
             body.transform.localRotation = Quaternion.identity;
@@ -62,9 +65,9 @@ namespace KCD.Editor
         }
 
         /// <summary>FBX が来るまでの代役。髪色でキャラクターを見分けられるようにしておく。</summary>
-        private static GameObject CreatePlaceholder(string characterId, Transform parent)
+        private static GameObject CreatePlaceholder(string characterId, Transform parent, string bodyName = "Body")
         {
-            var body = new GameObject("Body");
+            var body = new GameObject(bodyName);
             body.transform.SetParent(parent, false);
 
             GameObject capsule = GameObject.CreatePrimitive(PrimitiveType.Capsule);
@@ -90,8 +93,12 @@ namespace KCD.Editor
             return body;
         }
 
-        /// <summary>操作キャラクター一式。移動・接地・拾う判定までここで完結させる。</summary>
-        public static GameObject CreatePlayer(Transform root, string characterId, Vector3 position, float yaw)
+        /// <summary>
+        /// 操作キャラクター一式。移動・接地・拾う判定までここで完結させる。
+        /// 体は GameManager.PlayableCharacterIds の全員分を焼き込み（Body_mirai / Body_botchan / Body_madonna）、
+        /// どれを出すかは実行時に PlayerAppearance が決める (#6)。
+        /// </summary>
+        public static GameObject CreatePlayer(Transform root, Vector3 position, float yaw)
         {
             var player = new GameObject("Player");
             player.tag = "Player";
@@ -108,12 +115,33 @@ namespace KCD.Editor
             controller.skinWidth = 0.028f;
             controller.minMoveDistance = 0f;
 
-            CreateBody(characterId, player.transform);
+            CreateSelectableBodies(player.transform);
 
             player.AddComponent<PlayerController>();
             player.AddComponent<PlayerAnimatorDriver>();
             player.AddComponent<InteractionPrompt>();
             return player;
+        }
+
+        /// <summary>
+        /// 選べる 3 人ぶんの体を並べて焼き込み、PlayerAppearance に対応表を渡す (#6)。
+        /// シーン上は既定のキャラだけを出しておく（3 体重なったまま保存すると Scene ビューで見分けが付かない）。
+        /// 実行時は PlayerAppearance.Awake が選択に合わせて出し直す。
+        /// </summary>
+        private static void CreateSelectableBodies(Transform player)
+        {
+            string[] ids = GameManager.PlayableCharacterIds;
+            var bodies = new GameObject[ids.Length];
+
+            for (int i = 0; i < ids.Length; i++)
+            {
+                bodies[i] = CreateBody(ids[i], player, "Body_" + ids[i]);
+                bodies[i].SetActive(i == 0);
+            }
+
+            PlayerAppearance appearance = player.gameObject.AddComponent<PlayerAppearance>();
+            appearance.Bind(ids, bodies);
+            EditorUtility.SetDirty(appearance);
         }
 
         /// <summary>肩越しカメラ。Cinemachine があればそちら、無ければ自前の追従カメラ。</summary>
@@ -177,15 +205,19 @@ namespace KCD.Editor
             CinemachineDeoccluder deoccluder = go.AddComponent<CinemachineDeoccluder>();
             deoccluder.CollideAgainst = LayerMaskFor("Ground", "Building");
             deoccluder.MinimumDistanceFromTarget = 0.8f;
-            deoccluder.AvoidObstacles = new CinemachineDeoccluder.ObstacleAvoidance
+            var avoid = new CinemachineDeoccluder.ObstacleAvoidance
             {
                 Enabled = true,
                 CameraRadius = 0.32f,
                 Strategy = CinemachineDeoccluder.ObstacleAvoidance.ResolutionStrategy.PullCameraForward,
                 MaximumEffort = 4,
-                Damping = 0.4f,
-                DampingWhenOccluded = 0.2f
+                Damping = 0.4f
             };
+
+            // 木や柱の脇でカメラが寄ったり戻ったりを細かく繰り返さないよう、平滑化を入れる (#30)。
+            // SmoothingTime 0.4 / MinimumOcclusionTime 0.1 / DampingWhenOccluded 0.2（値は CinemachineInputBridge）。
+            CinemachineInputBridge.ApplyDeoccluderSmoothing(ref avoid);
+            deoccluder.AvoidObstacles = avoid;
 
             go.AddComponent<CinemachineInputBridge>();
         }

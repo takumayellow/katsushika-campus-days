@@ -115,7 +115,7 @@ def build(c):
     for sy, ang in ((9.6, 0.0), (13.4, math.pi)):
         F.sofa(lob, 9.0, sy, ang=ang, w=2.2, d=0.88)
     F.table(lob, 9.0, 11.5, ang=0.0, w=1.3, d=0.7, h=0.42, top="desk_dark")
-    F.sofa(lob, 13.6, 11.5, ang=-math.pi * 0.5, w=2.2, d=0.88)
+    F.sofa(lob, 13.6, 11.5, ang=math.pi * 0.5, w=2.2, d=0.88)
     c.poi("lounge", 11.0, 11.5, 0.0)
     c.npc(11.4, 9.0, 0.0)
 
@@ -128,7 +128,9 @@ def build(c):
             F.stool(lob, px + math.sin(ang) * 1.05, 10.2 - math.cos(ang) * 1.05,
                     ang=ang, mat="chair_grey", h=0.76)
             c.seats += 1
-    common.sign_board(c, lob, 0.0, 8.4, 1.65, ang=0.0, w=1.6, h=1.10)
+    # 案内サインは spawn_research1 (0, 8.30) の 0.10 m 先にあり、入った瞬間に
+    # 板の中に立っていた。頭の上（板の下端 1.96 m）へ上げる（#42）
+    common.sign_board(c, lob, 0.0, 8.4, 2.55, ang=0.0, w=1.6, h=1.10)
     shell.planter(lob, -6.2, 8.2, r=0.50, h=0.54, leaf_h=2.2)
     shell.planter(lob, 6.2, 8.2, r=0.50, h=0.54, leaf_h=2.2)
     F.bench(lob, -3.4, 13.6, ang=0.0, w=2.2, back=True)
@@ -146,7 +148,12 @@ def build(c):
     # ---- 廊下 ----
     cor = c.furn("corridor")
     common.corridor_run(c, cor, ix0 + 6.0, ix1 - 6.0, Y_COR1 - 0.35, CEIL,
-                        pitch=11.0)
+                        pitch=11.0, both=False)
+    # ベンチは壁を背にして廊下側を向ける。corridor_run の自動配置だと廊下の
+    # 真ん中に出て壁（1.35 m 先）を向き、ロビーの開口 x=-12..12 もふさぐ（#42）
+    for bx in (-35.0, 35.0):
+        F.bench(cor, bx, Y_COR0 + 0.36, ang=0.0, w=1.8, back=True)
+    F.bench(cor, 0.0, Y_COR1 - 0.36, ang=math.pi, w=1.8, back=True)
     shell.light_strip(c.wall, ix0 + 2.0, (Y_COR0 + Y_COR1) * 0.5,
                       ix1 - 2.0, (Y_COR0 + Y_COR1) * 0.5, CEIL - 0.02, w=0.30)
 
@@ -185,25 +192,26 @@ def _lab(c, x0, x1, y1, kind):
             for sgn in (-1, 1):
                 F.desk(mb, px, yy + sgn * 0.36, ang=0.0 if sgn > 0 else math.pi,
                        w=1.45, d=0.70, h=0.72, drawers=(i % 2 == 0))
-                F.monitor(mb, px, yy + sgn * 0.62, 0.72,
+                F.monitor(mb, px, yy + sgn * 0.20, 0.72,
                           ang=math.pi if sgn > 0 else 0.0)
-                F.keyboard(mb, px, yy + sgn * 0.20, 0.72,
+                F.keyboard(mb, px, yy + sgn * 0.56, 0.72,
                            ang=0.0 if sgn > 0 else math.pi)
                 F.chair(mb, px, yy + sgn * 1.30,
                         ang=math.pi if sgn > 0 else 0.0, mat="chair_blue")
                 if i % 3 == 0:
-                    F.pc_tower(mb, px - 0.55, yy + sgn * 0.45)
+                    F.pc_tower(mb, px - sgn * 0.55, yy + sgn * 0.45)
     # 壁際の書架
     for i in range(int((x1 - x0 - 2.0) / 0.95)):
         px = x0 + 1.0 + 0.95 * i + 0.475
         F.bookshelf(mb, px, y1 - 0.45, ang=math.pi, w=0.92, h=1.95,
                     shelves=5, rng=rng)
-    F.whiteboard(mb, x0 + 0.14, y0 + 4.5, 1.62, ang=math.pi * 0.5, w=2.8, h=1.30)
+    F.whiteboard(mb, x0 + 0.14, y0 + 4.5, 1.62, ang=-math.pi * 0.5, w=2.8, h=1.30)
     F.locker_bank(mb, x1 - 4.4, x1 - 0.4, y0 + 0.35, ang=math.pi, h=1.80)
     shell.planter(mb, x1 - 1.2, y1 - 2.2, r=0.36, h=0.42, leaf_h=1.3)
     c.poi(kind, cx, y0 + 4.0, 0.0)
-    c.npc(cx - 2.0, y0 + 3.4, 0.0)
-    c.npc(cx + 2.4, y0 + 8.8, 0.0)
+    # NPC は机の島（椅子は yy ± 1.30）の外に置く。島の間と北側の通路（#42）
+    c.npc(cx - 2.0, y0 + 5.0, 0.0)
+    c.npc(cx + 2.4, y0 + 11.0, 0.0)
     common.sign_board(c, mb, cx + 1.1, Y_COR1 - 0.22, 2.20, ang=math.pi,
                       w=1.1, h=0.34)
 
@@ -216,12 +224,14 @@ def _professor(c, x0, x1, y1):
     y0 = Y_COR1 + 0.6
     kit.plate(c.floor, x0 + 0.1, y0 - 0.5, x1 - 0.1, y1 - 0.1, 0.018,
               "floor_carpet_blue")
-    F.desk(mb, cx + 1.4, y1 - 2.6, ang=math.pi, w=1.85, d=0.85, h=0.74,
+    F.desk(mb, cx + 1.4, y1 - 2.6, ang=0.0, w=1.85, d=0.85, h=0.74,
            top="desk_dark", drawers=True)
-    F.monitor(mb, cx + 1.4, y1 - 2.95, 0.74, ang=0.0, w=0.62, h=0.38)
+    F.monitor(mb, cx + 1.4, y1 - 2.95, 0.74, ang=math.pi, w=0.62, h=0.38)
     F.keyboard(mb, cx + 1.4, y1 - 2.30, 0.74, ang=math.pi)
-    F.chair(mb, cx + 1.4, y1 - 1.55, ang=0.0, mat="chair_grey")
-    F.desk_lamp(mb, cx + 2.35, y1 - 2.35, ang=math.pi * 0.75)
+    F.chair(mb, cx + 1.4, y1 - 1.55, ang=math.pi, mat="chair_grey")
+    base_lamp = len(mb.verts)
+    F.desk_lamp(mb, cx + 2.05, y1 - 2.85, ang=math.pi * 0.25)
+    kit.lift(mb, base_lamp, 0.74)
     for i in range(4):
         F.bookshelf(mb, x0 + 1.0 + 0.95 * i, y1 - 0.45, ang=math.pi, w=0.92,
                     h=2.05, shelves=6, rng=rng)
@@ -232,10 +242,11 @@ def _professor(c, x0, x1, y1):
     F.table(mb, cx + 0.6, y0 + 3.0, ang=0.0, w=1.1, d=0.62, h=0.44,
             top="desk_dark")
     F.lounge_chair(mb, cx + 0.6, y0 + 4.3, ang=math.pi)
-    F.whiteboard(mb, x1 - 0.16, y0 + 4.6, 1.62, ang=-math.pi * 0.5, w=2.2,
+    F.whiteboard(mb, x1 - 0.16, y0 + 4.6, 1.62, ang=math.pi * 0.5, w=2.2,
                  h=1.20)
     shell.planter(mb, x1 - 1.0, y1 - 1.3, r=0.38, h=0.44, leaf_h=1.5)
-    c.poi("professor", cx + 1.4, y1 - 1.6, 0.0)
-    c.npc(cx + 1.4, y1 - 1.75, 0.0)
+    # 机の手前（来客側）。y1-1.6 は教授の椅子（y1-1.55）の中で空き 0.18 m だった（#42）
+    c.poi("professor", cx + 1.4, y1 - 3.6, 0.0)
+    c.npc(cx + 2.6, y1 - 1.0, 0.0)   # 椅子（y1-1.55）の中に湧いていた
     common.sign_board(c, mb, cx + 1.05, Y_COR1 - 0.22, 2.20, ang=math.pi,
                       w=1.1, h=0.34)

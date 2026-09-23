@@ -52,13 +52,24 @@ HAIR_HIERARCHY: list[tuple[str, str]] = [
 HAIR_BONE_NAMES = [n for n, _ in HAIR_HIERARCHY]
 
 
+def spine_z(p: dict) -> dict[str, float]:
+    """背骨系ボーンの頭の高さ。ウェイト側からも同じ値を使う。"""
+    h = p["height"]
+    z = p["z"]
+    return {
+        "Hips": z["crotch"] + (z["hip"] - z["crotch"]) * 0.55,
+        "Spine": z["waist"] - h * 0.010,
+        "Chest": z["underbust"] + h * 0.006,
+        "UpperChest": z["bust"] + (z["shoulder"] - z["bust"]) * 0.42,
+    }
+
+
 def bone_positions(p: dict, a: B.Anatomy) -> dict[str, tuple[np.ndarray, np.ndarray]]:
     h = p["height"]
     z = p["z"]
-    z_hips = z["crotch"] + (z["hip"] - z["crotch"]) * 0.55
-    z_spine = z["waist"] - h * 0.010
-    z_chest = z["underbust"] + h * 0.006
-    z_uchest = z["bust"] + (z["shoulder"] - z["bust"]) * 0.42
+    sz = spine_z(p)
+    z_hips, z_spine = sz["Hips"], sz["Spine"]
+    z_chest, z_uchest = sz["Chest"], sz["UpperChest"]
     z_neck = z["shoulder"] + h * 0.012
     z_head = z["chin"] - h * 0.006
 
@@ -230,6 +241,148 @@ def _set_exclusive(obj, indices, weights: dict[str, float]) -> None:
         g.add(idx, float(w / total), "REPLACE")
 
 
+def _keep_leg_side(obj, mb: M.MeshBuilder) -> None:
+    """左右のある部位（leg_l, socks_r など）から反対側の脚ボーンのウェイトを外す。
+
+    距離ウェイトは脚を閉じた立ち姿だと内側の面が両脚からほぼ等距離になり、
+    靴下やズボンの内側が逆の脚へ 5 割近く乗る。歩くと衣装だけ脚の間に残って
+    素肌が突き抜けるので、外した分は同じ側の同じ部位のボーンへ移す。
+    """
+    legs = ("UpperLeg", "LowerLeg", "Foot", "Toes")
+    for part in mb.parts:
+        if part.endswith("_l"):
+            own, other = "Left", "Right"
+        elif part.endswith("_r"):
+            own, other = "Right", "Left"
+        else:
+            continue
+        for seg in legs:
+            src = obj.vertex_groups.get(other + seg)
+            if src is None:
+                continue
+            dst = (obj.vertex_groups.get(own + seg)
+                   or obj.vertex_groups.new(name=own + seg))
+            # src.weight() は入っていない頂点でコンソールにエラーを出すので、
+            # 頂点側の所属グループから重みを拾う
+            for i in mb.part_indices(part).tolist():
+                w = next((g.weight for g in obj.data.vertices[i].groups
+                          if g.group == src.index), None)
+                if w is None:
+                    continue
+                src.remove([i])
+                dst.add([i], w, "ADD")
+
+
+#: 衣装を Hips ＋ 脚ボーン 1 本だけで包むときの調整値。
+#:   reach      裾で脚に付いて回る割合（1.0 で脚と同じだけ動く）
+#:   hem_pow    腰から裾への立ち上がり（大きいほど裾の近くだけ動く）
+#:   band       前後の中央で脚寄せを 0 に落とす幅（横向き比 0..1、1.0 で真横）
+#:   knee_band  膝で UpperLeg と LowerLeg を切り替える帯の半幅（脚長比）
+#:   knee_keep  その切り替え面に残す脚寄せの割合（0 で完全に Hips へ戻す）
+#: 値は Walk / Run の腿がいちばん開くフレームで、素肌のはみ出し (cm) と横辺の
+#: 伸び (cm) を実測して決めた。band を広げると布は滑らかになるが裾が脚に付いて
+#: 行かなくなり、狭めると逆になる（mirai のスカートで band 0.30/0.45/0.80 のとき
+#: Run のはみ出しは 0.73/1.88/3.62 cm、横辺の伸びは 6.15/3.36/1.72 cm）。
+CLOTH_LEG: dict[str, dict[str, float]] = {
+    "skirt": dict(reach=1.00, hem_pow=0.85, band=0.40),
+    "apron": dict(reach=1.00, hem_pow=0.85, band=0.40),
+    "labcoat": dict(reach=0.72, hem_pow=1.40, band=0.85),
+    "pants_seat": dict(reach=0.55, hem_pow=1.00, band=0.45),
+    "hakama": dict(reach=1.00, hem_pow=0.40, band=0.40,
+                   knee_band=0.10, knee_keep=0.80),
+}
+
+
+def _cloth_leg_weights(obj, mb: M.MeshBuilder, pts: np.ndarray, a: B.Anatomy,
+                       part: str, *, parts=None, z_hi=None, z_lo=None,
+                       knee: bool = False, **over) -> None:
+    """スカート・袴・白衣・ズボンの尻を、裾ほど脚へ寄せて包む。
+
+    ウェイトは必ず **Hips ＋ 脚ボーン 1 本** だけにする。WebGL 版が使う品質
+    レベル (Mobile) は 1 頂点 2 ボーンでしかスキンしない（QualitySettings の
+    skinWeights）ので、3 本以上のウェイトはそこで上位 2 本へ切り詰められて
+    別の形に化ける。はじめから 2 本で成立する形にしておけば化けない。
+
+    左右は x=0 のハード分割にしない。中央では `band` の幅で脚寄せを 0 まで
+    落とし、どちらの脚を選んでも同じ位置（Hips 100%）になるようにする。
+    分割したままだと、前後の中央で隣り合う頂点が逆向きの脚に引かれ、走ると
+    布がギザギザに裂ける。袴は膝の上下で UpperLeg / LowerLeg を切り替え、
+    その面でも同じ理由で脚寄せを `knee_keep` まで落とす。
+    """
+    cfg = dict(CLOTH_LEG[part])
+    cfg.update(over)
+    idx = mb.part_indices(*(parts or (part,)))
+    if len(idx) == 0:
+        return
+    pp = pts[idx]
+    z = pp[:, 2]
+    if z_hi is None:
+        z_hi = float(z.max())
+    if z_lo is None:
+        z_lo = float(z.min())
+    t = np.clip((z_hi - z) / max(1e-6, z_hi - z_lo), 0.0, 1.0) ** cfg["hem_pow"]
+    # 左右寄せは x の生値ではなく「胴の中心から見た向き」で測る。ヒダは山と谷
+    # で x が行きつ戻りつするので、x で測ると隣り合う頂点のウェイトが階段状に
+    # 暴れ、走るとヒダ 1 枚ごとに裂ける。向きはヒダの凹凸では変わらない。
+    rx = max(1e-6, float(np.abs(pp[:, 0]).max()))
+    ry = max(1e-6, float(np.abs(pp[:, 1]).max()))
+    ux = np.abs(pp[:, 0]) / rx
+    nx = ux / np.maximum(np.hypot(ux, pp[:, 1] / ry), 1e-6)
+    w = cfg["reach"] * t * M.smoothstep(0.0, cfg["band"], nx)
+
+    side = np.where(pp[:, 0] >= 0.0, "Left", "Right")
+    seg = np.full(len(idx), "UpperLeg", dtype=object)
+    if knee:
+        span = abs(float(a.hip_joint[2]) - float(a.ankle[2]))
+        kb = max(1e-4, span * cfg["knee_band"])
+        su = M.smoothstep(float(a.knee[2]) - kb, float(a.knee[2]) + kb, z)
+        keep = cfg["knee_keep"]
+        w = w * (keep + (1.0 - keep) * np.abs(2.0 * su - 1.0))
+        seg = np.where(su >= 0.5, seg, "LowerLeg")
+    names = [str(s) + str(g) for s, g in zip(side, seg)]
+
+    vg_hips = obj.vertex_groups.get("Hips") or obj.vertex_groups.new(name="Hips")
+    for vg in obj.vertex_groups:
+        vg.remove([int(i) for i in idx])
+    cache: dict[str, object] = {}
+    for n, i in enumerate(idx.tolist()):
+        ww = float(np.clip(w[n], 0.0, 1.0))
+        vg_hips.add([i], 1.0 - ww, "REPLACE")
+        if ww <= 1e-4:
+            continue
+        vg = cache.get(names[n])
+        if vg is None:
+            vg = (obj.vertex_groups.get(names[n])
+                  or obj.vertex_groups.new(name=names[n]))
+            cache[names[n]] = vg
+        vg.add([i], ww, "REPLACE")
+
+
+def _prune_influences(obj, mb: M.MeshBuilder, parts, k: int = 2) -> None:
+    """指定した部位のウェイトを上位 k ボーンだけにして正規化する。
+
+    靴下・ズボン・ブーツの筒は距離ウェイトのまま 3 ボーン乗ることがある
+    （例: madonna のブーツは LowerLeg / Foot / Toes）。WebGL 版は 1 頂点
+    2 ボーンなので、3 本目はそこで勝手に落ちて PC 版と形が変わる
+    （madonna のブーツで Run 時 1.54 cm）。先に落としておけば両方同じになる。
+    """
+    idx = mb.part_indices(*parts)
+    if len(idx) == 0:
+        return
+    gname = {g.index: g.name for g in obj.vertex_groups}
+    for i in idx.tolist():
+        ws = sorted(((g.weight, gname[g.group]) for g in obj.data.vertices[i].groups
+                     if g.weight > 0.0), reverse=True)
+        if len(ws) <= k:
+            continue
+        keep = ws[:k]
+        tot = sum(w for w, _ in keep) or 1.0
+        for vg in obj.vertex_groups:
+            vg.remove([i])
+        for w, n in keep:
+            obj.vertex_groups[n].add([i], float(w / tot), "REPLACE")
+
+
 def override_weights(obj, mb: M.MeshBuilder, p: dict, a: B.Anatomy) -> None:
     """髪・小物・スカート類を親ボーンへ寄せる。"""
     me = obj.data
@@ -272,28 +425,25 @@ def override_weights(obj, mb: M.MeshBuilder, p: dict, a: B.Anatomy) -> None:
     _set_exclusive(obj, mb.part_indices("obi", "himo", "waistband"),
                    {"Hips": 0.7, "Spine": 0.3})
 
-    # スカート・袴・白衣の裾は Hips 主体で、下端だけ脚へ寄せる
-    for part, spread in (("skirt", 0.45), ("hakama", 0.40),
-                         ("labcoat", 0.25), ("apron", 0.30)):
-        idx = mb.part_indices(part)
-        if len(idx) == 0:
-            continue
-        z = pts[idx, 2]
-        z_hi, z_lo = float(z.max()), float(z.min())
-        t = np.clip((z_hi - z) / max(1e-6, z_hi - z_lo), 0.0, 1.0)
-        leg_w = spread * t
-        left = pts[idx, 0] >= 0.0
-        vg_hips = obj.vertex_groups.get("Hips") or obj.vertex_groups.new(name="Hips")
-        vg_l = obj.vertex_groups.get("LeftUpperLeg")
-        vg_r = obj.vertex_groups.get("RightUpperLeg")
-        for vg in obj.vertex_groups:
-            vg.remove([int(i) for i in idx])
-        for n, i in enumerate(idx.tolist()):
-            w = float(leg_w[n])
-            vg_hips.add([i], 1.0 - w, "REPLACE")
-            if w > 0.0:
-                (vg_l if left[n] else vg_r).add([i], w, "REPLACE")
+    # スカート・白衣・袴・ズボンの尻は Hips ＋ 脚 1 本で包む（_cloth_leg_weights）
+    skirt_z = pts[mb.part_indices("skirt"), 2]
+    _cloth_leg_weights(obj, mb, pts, a, "skirt")
+    _cloth_leg_weights(obj, mb, pts, a, "labcoat")
+    if len(skirt_z):
+        # エプロンは真下のスカートと同じ高さ・同じ割合で脚へ寄せる。
+        # 別の割合にすると、歩くたびにヒダの尾根がエプロンを突き抜ける。
+        _cloth_leg_weights(obj, mb, pts, a, "apron",
+                           z_hi=float(skirt_z.max()), z_lo=float(skirt_z.min()))
+    else:
+        _cloth_leg_weights(obj, mb, pts, a, "apron")
 
+    _keep_leg_side(obj, mb)
+    _cloth_leg_weights(obj, mb, pts, a, "hakama", knee=True)
+    _cloth_leg_weights(obj, mb, pts, a, "pants_seat")
+
+    # 靴下・ズボン・ブーツの筒も 2 ボーンに揃える（WebGL と PC で同じ形に）
+    _prune_influences(obj, mb, ("socks_l", "socks_r", "pants_l",
+                                "pants_r", "bootleg_l", "bootleg_r"))
     for side in ("l", "r"):
         bone = "LeftFoot" if side == "l" else "RightFoot"
         _set_exclusive(obj, mb.part_indices(f"shoes_{side}", f"foot_{side}"),

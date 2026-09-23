@@ -17,7 +17,7 @@ namespace KCD.Editor
         /// <summary>取り込み規則を変えたら上げる。既存の FBX が取り込み直される。</summary>
         public override uint GetVersion()
         {
-            return 3;
+            return 4;
         }
 
         /// <summary>
@@ -77,7 +77,15 @@ namespace KCD.Editor
             }
         }
 
-        /// <summary>FBX の take をクリップとして切り出し、待機・歩行・走行だけループさせる。</summary>
+        /// <summary>
+        /// FBX の take をクリップとして切り出し、待機・歩行・走行だけループさせる。
+        ///
+        /// Humanoid は既定で「root（骨盤）の回転と水平移動」をルートモーションとして取り出す。
+        /// こちらは CharacterController / NavMeshAgent で動かすのでルートモーションは捨てており、
+        /// 取り出された骨盤のヨーと左右の重心移動がまるごと消えて、腰から上が置き去りのまま
+        /// 脚だけが動いて見えていた（#43 のくねくね）。3 軸とも Bake Into Pose にして、
+        /// クリップに入れた重心移動をそのまま姿勢として再生させる。
+        /// </summary>
         private void OnPreprocessAnimation()
         {
             if (assetImporter is not ModelImporter importer || !IsCharacter(assetPath))
@@ -96,8 +104,13 @@ namespace KCD.Editor
                 string name = clip.name.ToLowerInvariant();
                 clip.loopTime = name.Contains("idle") || name.Contains("walk")
                     || name.Contains("run") || name.Contains("talk");
-                clip.lockRootHeightY = true;
+                clip.lockRootRotation = true;         // Root Transform Rotation: Bake Into Pose
+                clip.keepOriginalOrientation = true;  // Based Upon: Original
+                clip.lockRootHeightY = true;          // Root Transform Position (Y): Bake Into Pose
                 clip.keepOriginalPositionY = true;
+                clip.heightFromFeet = false;
+                clip.lockRootPositionXZ = true;       // Root Transform Position (XZ): Bake Into Pose
+                clip.keepOriginalPositionXZ = true;
             }
 
             importer.clipAnimations = clips;

@@ -1,0 +1,58 @@
+{
+  "id": "dorm_head",
+  "speaker": "寮長",
+  "topics": [
+    {
+      "id": "t_greet",
+      "once": true,
+      "lines": [
+        {
+          "text": "おや、見ない顔だ。ここは学生寮だよ。授業はもう始まっているんじゃないのかい。",
+          "text_en": "Well now, a face I don't know. This is the student dormitory. Shouldn't your class have started by now?"
+        },
+        {
+          "speaker": "自分",
+          "text": "……ちょっとだけ、休みたくて。",
+          "text_en": "...I just wanted to rest. Only for a little while."
+        },
+        {
+          "text": "布団はそこだ。ただし言っておくが、この時間に横になったら今日はもう終わりだぞ。",
+          "text_en": "The futon is over there. But I'll say this plainly: lie down at this hour and your day is finished."
+        },
+        {
+          "text": "それでもいいなら、もう一度わたしに声を掛けなさい。",
+          "text_en": "If that is still what you want, come and speak to me once more."
+        }
+      ]
+    },
+    {
+      "id": "t_skip",
+      "once": true,
+      "setsFlag": "dorm_skip_day",
+      "lines": [
+        {
+          "speaker": "自分",
+          "text": "……やっぱり、横になります。",
+          "text_en": "...I'll lie down after all."
+        },
+        {
+          "text": "そうか。毛布は畳んで返しておきなさい。",
+          "text_en": "So be it. Fold the blanket and put it back when you're done."
+        },
+        {
+          "text": "なに、一日くらいどうということはない。誰にも言わんよ。",
+          "text_en": "Never mind. One day is nothing at all. I won't tell a soul."
+        }
+      ]
+    },
+    {
+      "id": "t_idle",
+      "lines": [
+        {
+          "text": "門限は 23 時だ。それだけ守ってくれれば、わたしは何も言わん。",
+          "text_en": "Curfew is eleven at night. Keep to that and you'll hear nothing from me."
+        }
+      ]
+    }
+  ]
+}

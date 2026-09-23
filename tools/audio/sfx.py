@@ -10,7 +10,7 @@ import math
 import numpy as np
 
 import synth as S
-from synth import SR, add_at, nf
+from synth import SR, add_at, nf, soft_mallet
 
 
 def pitch_shift(x: np.ndarray, factor: float) -> np.ndarray:
@@ -67,19 +67,35 @@ def step_wood(rng, var: int) -> np.ndarray:
 
 
 def step_tile(rng, var: int) -> np.ndarray:
-    dur = 0.18
-    y = burst(dur, 800.0, 13000.0, 0.012, rng) * 1.0
-    y += modes([2430.0, 3980.0, 1260.0], [0.035, 0.022, 0.05], [0.3, 0.18, 0.22], dur)
-    y += burst(dur, 80.0, 260.0, 0.02, rng) * 0.25
+    """タイル・樹脂の床: 硬めの「コツ」. 金属のように鳴る高い共鳴モードは入れない.
+    以前は 1260 / 2430 / 3980 Hz のモードが 22〜50 ms 尾を引き, 歩くと「チンカン」と鳴っていた (#28)."""
+    dur = 0.16
+    y = burst(dur, 250.0, 3200.0, 0.009, rng) * 0.8
+    y += modes([190.0, 410.0], [0.03, 0.018], [0.22, 0.1], dur)
+    y += burst(dur, 80.0, 260.0, 0.02, rng) * 0.3
     return S.fade(pitch_shift(y, 1.0 + (var - 1.5) * 0.05), 0.0006, 0.02)
 
 
+def step_carpet(rng, var: int) -> np.ndarray:
+    """カーペットの床: こもった柔らかい「トッ」. 共鳴モードは入れず, 1.8 kHz より上はほとんど出さない.
+    立ち上がりも 4 ms とゆるくして, 靴底が当たるカツッという硬さを消す (#28)."""
+    dur = 0.16
+    y = burst(dur, 60.0, 520.0, 0.028, rng, attack=0.004) * 1.0
+    y += burst(dur, 500.0, 1800.0, 0.012, rng, attack=0.003) * 0.12   # 繊維の擦れ
+    return S.fade(pitch_shift(y, 1.0 + (var - 1.5) * 0.05), 0.002, 0.02)
+
+
+# 並び順で乱数の種が決まる (build_steps). 既存の音を変えないよう, 新しい種類は末尾に足す.
 STEP_KINDS = {
     "concrete": step_concrete,
     "grass": step_grass,
     "wood": step_wood,
     "tile": step_tile,
+    "carpet": step_carpet,
 }
+
+# 書き出しピーク (dBFS) を SE の既定 (-1.5) から変えるもの. カーペットは柔らかい床なので 4.5 dB 小さくする.
+PEAK_DB = {f"step_carpet_{v}": -6.0 for v in range(1, 5)}
 
 
 def build_steps() -> dict:
@@ -109,6 +125,14 @@ def _blip(freq: float, dur: float, tau: float, shape: str = "sine",
     return y * S.perc_env(dur, 0.0025, tau)
 
 
+# 木琴に重ねる撥弦の減衰 (S.pluck の damp 既定は 0.55). k 倍音の尾は
+# T20 = 0.9 * damp / k**0.8 * ln10 秒 で, 0.55 だと 4 倍音が 375 ms も残る.
+# ピーク正規化のせいで, マリンバの非整数倍音を外した分この整数倍音が相対的に持ち上がり,
+# 4〜8 kHz は下がったのに尾だけ伸びていた (ui_toast 5588 Hz が 239 → 347 ms).
+# 0.2 まで詰めると尾が 113 ms, 4〜8 kHz も -43.1 dBFS と, どちらも修正前より下になる (#28).
+SE_PLUCK_DAMP = 0.2
+
+
 def ui_move() -> np.ndarray:
     buf = np.zeros(S.n_samples(0.07))
     add_at(buf, _blip(1180.0, 0.07, 0.016, "tri", sweep=1.18) * 0.8, 0)
@@ -117,10 +141,10 @@ def ui_move() -> np.ndarray:
 
 
 def ui_confirm() -> np.ndarray:
-    """決定: F - C の 2 音 (校歌の調). ベルはやめてマリンバ + 短いブリップ (#28)."""
+    """決定: F - C の 2 音 (校歌の調). ベルはやめて木琴 (soft_mallet) + 短いブリップ (#28)."""
     buf = np.zeros(S.n_samples(0.42))
     for i, name in enumerate(("F5", "C6")):
-        add_at(buf, S.marimba(nf(name), 0.36, 0.9) * 1.3, S.n_samples(i * 0.055))
+        add_at(buf, soft_mallet(nf(name), 0.36, 0.9) * 1.3, S.n_samples(i * 0.055))
     add_at(buf, _blip(nf("F5"), 0.08, 0.02, "tri") * 0.5, 0)
     return S.fade(buf, 0.001, 0.06)
 
@@ -138,7 +162,7 @@ def ui_open() -> np.ndarray:
     buf = _blip(420.0, dur, 0.1, "tri", sweep=3.2) * 0.55
     buf += burst(dur, 1800.0, 9000.0, 0.09, rng, attack=0.02) * 0.3
     for i, name in enumerate(("F5", "C6")):
-        add_at(buf, S.marimba(nf(name), 0.28, 0.4), S.n_samples(0.05 + i * 0.05))
+        add_at(buf, soft_mallet(nf(name), 0.28, 0.4), S.n_samples(0.05 + i * 0.05))
     return S.fade(buf, 0.004, 0.05)
 
 
@@ -153,8 +177,8 @@ def ui_close() -> np.ndarray:
 def ui_toast() -> np.ndarray:
     buf = np.zeros(S.n_samples(0.5))
     for i, name in enumerate(("A5", "F6")):
-        add_at(buf, S.marimba(nf(name), 0.42, 0.8), S.n_samples(i * 0.085))
-        add_at(buf, S.pluck(nf(name), 0.4, 0.35), S.n_samples(i * 0.085))
+        add_at(buf, soft_mallet(nf(name), 0.42, 0.8), S.n_samples(i * 0.085))
+        add_at(buf, S.pluck(nf(name), 0.4, 0.35, damp=SE_PLUCK_DAMP), S.n_samples(i * 0.085))
     return S.fade(buf, 0.002, 0.07)
 
 
@@ -190,21 +214,21 @@ def door_close() -> np.ndarray:
 
 
 def item_get() -> np.ndarray:
-    """アイテム入手: 校歌の音型 F - A - C をマリンバで上行 (#28)."""
+    """アイテム入手: 校歌の音型 F - A - C を木琴 (soft_mallet) で上行 (#28)."""
     buf = np.zeros(S.n_samples(0.75))
     for i, name in enumerate(("F5", "A5", "C6")):
-        add_at(buf, S.marimba(nf(name), 0.66, 0.95) * 1.3, S.n_samples(i * 0.065))
-        add_at(buf, S.pluck(nf(name), 0.5, 0.35), S.n_samples(i * 0.065))
-    add_at(buf, S.marimba(nf("F6"), 0.5, 0.45), S.n_samples(0.2))
+        add_at(buf, soft_mallet(nf(name), 0.66, 0.95) * 1.3, S.n_samples(i * 0.065))
+        add_at(buf, S.pluck(nf(name), 0.5, 0.35, damp=SE_PLUCK_DAMP), S.n_samples(i * 0.065))
+    add_at(buf, soft_mallet(nf("F6"), 0.5, 0.45), S.n_samples(0.2))
     return S.fade(buf, 0.002, 0.1)
 
 
 def quest_start() -> np.ndarray:
-    """短いファンファーレ (F - A - C - F, 校歌の調). マリンバ + ピアノ, ベルは使わない (#28)."""
+    """短いファンファーレ (F - A - C - F, 校歌の調). 木琴 (soft_mallet) + ピアノ, ベルは使わない (#28)."""
     buf = np.zeros(S.n_samples(1.15))
     for name, t0 in (("F5", 0.0), ("A5", 0.10), ("C6", 0.20), ("F6", 0.30)):
-        add_at(buf, S.marimba(nf(name), 0.85, 0.9), S.n_samples(t0))
-        add_at(buf, S.pluck(nf(name), 0.8, 0.4), S.n_samples(t0))
+        add_at(buf, soft_mallet(nf(name), 0.85, 0.9), S.n_samples(t0))
+        add_at(buf, S.pluck(nf(name), 0.8, 0.4, damp=SE_PLUCK_DAMP), S.n_samples(t0))
     for f in S.chord("F", 4):
         add_at(buf, S.piano(f, 0.7, 0.4), S.n_samples(0.42))
     return S.fade(buf, 0.002, 0.15)
@@ -213,8 +237,8 @@ def quest_start() -> np.ndarray:
 def quest_update() -> np.ndarray:
     buf = np.zeros(S.n_samples(0.55))
     for i, name in enumerate(("C6", "F6")):
-        add_at(buf, S.marimba(nf(name), 0.45, 0.85), S.n_samples(i * 0.08))
-    add_at(buf, S.pluck(nf("F6"), 0.45, 0.3), S.n_samples(0.08))
+        add_at(buf, soft_mallet(nf(name), 0.45, 0.85), S.n_samples(i * 0.08))
+    add_at(buf, S.pluck(nf("F6"), 0.45, 0.3, damp=SE_PLUCK_DAMP), S.n_samples(0.08))
     return S.fade(buf, 0.002, 0.08)
 
 
@@ -249,9 +273,11 @@ def land() -> np.ndarray:
 
 
 def sit() -> np.ndarray:
+    """座る: 布と椅子のきしみ. 図書館には座席が 299 個あってここでいちばん明るい SE だったので,
+    擦れのノイズを 6.5 kHz までから 3 kHz までに狭める (2 kHz 超のエネルギー 37.7% → 数 %) (#28)."""
     rng = np.random.default_rng(26)
     buf = np.zeros(S.n_samples(0.55))
-    add_at(buf, burst(0.35, 800.0, 6500.0, 0.12, rng, attack=0.05) * 0.4, 0)
+    add_at(buf, burst(0.35, 420.0, 3000.0, 0.12, rng, attack=0.05) * 0.5, 0)
     add_at(buf, modes([164.0, 392.0], [0.12, 0.07], [0.35, 0.16], 0.35) * 0.6,
            S.n_samples(0.09))
     add_at(buf, burst(0.12, 60.0, 300.0, 0.035, rng) * 0.4, S.n_samples(0.09))
@@ -259,7 +285,8 @@ def sit() -> np.ndarray:
 
 
 def wave() -> np.ndarray:
-    """手を振る: 柔らかい布の風切り + 小さなマリンバ."""
+    """手を振る: 柔らかい布の風切り + 小さな木琴.
+    木琴は A6 / F7 だと基音まで 2 kHz を超えて「チリン」と鳴るので, 1 オクターブ下げる (#28)."""
     rng = np.random.default_rng(27)
     dur = 0.6
     t = S.tline(dur)
@@ -267,8 +294,8 @@ def wave() -> np.ndarray:
     air *= np.sin(np.pi * np.clip(t / (dur * 0.7), 0, 1)) ** 2
     air *= 0.55 + 0.45 * np.sin(2 * np.pi * 3.2 * t)
     buf = air * 0.3
-    add_at(buf, S.marimba(nf("A6"), 0.45, 0.3), S.n_samples(0.12))
-    add_at(buf, S.marimba(nf("F7"), 0.35, 0.2), S.n_samples(0.2))
+    add_at(buf, soft_mallet(nf("A5"), 0.45, 0.3), S.n_samples(0.12))
+    add_at(buf, soft_mallet(nf("F6"), 0.35, 0.2), S.n_samples(0.2))
     return S.fade(buf, 0.012, 0.1)
 
 

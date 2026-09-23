@@ -5,6 +5,10 @@
 キャンパスの建物フットプリント・通路・緑地は **OpenStreetMap** のデータを Overpass API 経由で取得し、
 `tools/osm_extract.py` で `data/osm/campus.json` に変換したものです。
 
+キャンパスの外に出て歩く道と沿道の建物（隠しエンドで行く学生寮までの経路）も同じく OpenStreetMap から取得し、
+`tools/osm_route.py` で `data/osm/route.json` に変換しています。建物の高さ・階数は OSM の `height` /
+`building:levels` タグ（国土交通省 PLATEAU 由来）をそのまま使っています。
+
 > © OpenStreetMap contributors — データは [Open Database License (ODbL) 1.0](https://opendatacommons.org/licenses/odbl/1-0/) の下で提供されています。
 > https://www.openstreetmap.org/copyright
 

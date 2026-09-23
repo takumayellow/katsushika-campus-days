@@ -41,6 +41,9 @@ def unity_build(unity: Path, build_dir: Path) -> None:
     run([
         str(unity), "-batchmode", "-nographics", "-quit",
         "-projectPath", str(PROJECT),
+        # URP は作業中のプラットフォームの品質レベルで Shader を絞る。WebGL で起動しないと
+        # PC 用の設定で絞られ, WebGL で建物が描かれなくなる。
+        "-buildTarget", "WebGL",
         "-executeMethod", "KCD.Editor.BuildPlayer.BuildWebGL",
         "-buildOutput", str(build_dir),
         "-logFile", str(log),

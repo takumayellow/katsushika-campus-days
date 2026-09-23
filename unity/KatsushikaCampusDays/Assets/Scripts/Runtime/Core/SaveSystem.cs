@@ -80,6 +80,25 @@ namespace KCD
             GameManager manager = GameManager.Instance;
             manager.SelectedCharacterId = data.CharacterId;
             manager.GameTimeHours = data.TimeHours;
+
+            // タイトルからのロード（TitleMenu）は Campus を読み込む前に id を立てるので
+            // PlayerAppearance.Awake が拾うが、こちらはキャンパスの中から呼ばれる
+            // （PauseMenu / CampusDirector）ので Awake はとっくに終わっている。体を今ここで入れ替える (#6)。
+            var appearance = UnityEngine.Object.FindAnyObjectByType<PlayerAppearance>();
+            if (appearance != null)
+            {
+                appearance.Apply(manager.SelectedCharacterId);
+            }
+
+            // DayNightCycle は自分の Hours を毎フレーム GameTimeHours へ書き戻すので、GameTimeHours だけ変えても
+            // 次のフレームで元の時刻に戻る（#38）。太陽と環境光もその場でロードした時刻に合わせる。
+            // チャイムは AudioManager.ShouldChime が大きな時刻の飛びでは鳴らさない。
+            var cycle = UnityEngine.Object.FindAnyObjectByType<DayNightCycle>();
+            if (cycle != null)
+            {
+                cycle.SetHours(data.TimeHours);
+            }
+
             manager.Quests?.Restore(data.Quests);
 
             var player = UnityEngine.Object.FindAnyObjectByType<PlayerController>();

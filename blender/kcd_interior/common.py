@@ -22,18 +22,26 @@ def envelope(c, z_ceil, floor_mat="floor_tile_white", door_w=6.0,
     shell.floor(c.floor, s.x0, s.y_face, s.x1, s.y_back, 0.0, floor_mat,
                 thickness=floor_thick, side_mat="concrete_grey")
     d0, d1 = -door_w * 0.5, door_w * 0.5
+    # 入口の開口はガラススクリーンの高さまで。以前は全高が開口で、スクリーンの
+    # 上が抜けたままだったので上階の床からそこへ出られた (#45)
+    z_screen = min(3.2, z1 - 0.2)
     shell.perimeter(c.wall, s, 0.0, z1, wall=wall, glass=glass, sill=sill,
                     header=header, seg=seg, door_gap=(d0, d1),
-                    solid_edges=solid_edges, extra_gaps=extra_gaps)
-    shell.glass_entrance(c.wall, d0, d1, 0.0, min(3.2, z1 - 0.2),
+                    door_top=z_screen, solid_edges=solid_edges,
+                    extra_gaps=extra_gaps)
+    shell.glass_entrance(c.wall, d0, d1, 0.0, z_screen,
                          s.y_face + shell.WALL * 0.5)
     if ceil:
         shell.ceiling(c.wall, ix0, iy0, ix1, iy1, z_ceil, ceil_mat, grid=grid)
     return (d0, d1)
 
 
-def entry_kit(c, z_ceil, door_w=6.0, spawn_depth=1.5):
-    """入口まわりの定番（spawn / exit Empty・誘導灯・消火器・ゴミ箱・マット）。"""
+def entry_kit(c, z_ceil, door_w=6.0, spawn_depth=1.5, bin_x=None):
+    """入口まわりの定番（spawn / exit Empty・誘導灯・消火器・ゴミ箱・マット）。
+
+    ゴミ箱は既定で扉の西どなりに置くが、そこに階段の上り口などが来る建物では
+    bin_x（入口中心からのローカル x）でずらす。
+    """
     s = c.spec
     y = s.y_face + shell.WALL
     c.spawn(0.0, y + spawn_depth, 0.0)
@@ -43,7 +51,8 @@ def entry_kit(c, z_ceil, door_w=6.0, spawn_depth=1.5):
     kit.plate(mb, -door_w * 0.5, y, door_w * 0.5, y + 2.2, 0.012,
               "floor_carpet_grey")
     shell.fire_extinguisher(mb, door_w * 0.5 + 1.2, y + 0.45)
-    shell.trash_bins(mb, -door_w * 0.5 - 2.4, y + 0.7, ang=math.pi, n=3)
+    bx = -door_w * 0.5 - 2.4 if bin_x is None else bin_x
+    shell.trash_bins(mb, bx, y + 0.7, ang=math.pi, n=3)
     return mb
 
 

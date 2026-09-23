@@ -48,6 +48,25 @@ namespace KCD.Tests
         }
 
         [Test]
+        public void ContactBand_WallContactWithinSkinWidthIsNotOverlap()
+        {
+            const float skin = 0.028f;
+            Assert.Greater(StuckRecovery.ContactBand(skin), skin, "skinWidth までの食い込みは接触として許す");
+            Assert.IsFalse(StuckRecovery.IsRealOverlap(skin, skin), "壁に押し付けて skinWidth 沈んだだけでは押し出さない");
+            Assert.IsFalse(StuckRecovery.IsRealOverlap(0.001f, skin), "床に立っているだけでは押し出さない");
+            Assert.IsTrue(StuckRecovery.IsRealOverlap(0.2f, skin), "本体が深く入り込んだら押し出す");
+        }
+
+        [Test]
+        public void ContactBand_StaysWellInsideTheBody()
+        {
+            // プレイヤーは半径 0.28 m・skinWidth 0.028 m。接触帯が半径の半分を超えると本当の食い込みを見逃す。
+            Assert.Less(StuckRecovery.ContactBand(0.028f), 0.28f * 0.5f);
+            Assert.AreEqual(0f, StuckRecovery.ContactBand(-1f), "負の skinWidth は 0 扱い");
+            Assert.IsTrue(StuckRecovery.IsRealOverlap(0.001f, 0f));
+        }
+
+        [Test]
         public void SolidMask_ExcludesOwnLayerAndKeepsOthers()
         {
             var go = new GameObject("player");
@@ -58,6 +77,34 @@ namespace KCD.Tests
                 Assert.AreEqual(0, mask & (1 << 8), "自分のレイヤーは除く");
                 Assert.AreNotEqual(0, mask & 1, "Default レイヤーは残す");
                 Assert.AreEqual(0, mask & (1 << 2), "Ignore Raycast は元から入らない");
+            }
+            finally
+            {
+                Object.DestroyImmediate(go);
+            }
+        }
+
+        [Test]
+        public void SolidMask_ExcludesNpcsButKeepsBuildingsAndGround()
+        {
+            int npc = LayerMask.NameToLayer("NPC");
+            int building = LayerMask.NameToLayer("Building");
+            int ground = LayerMask.NameToLayer("Ground");
+            int player = LayerMask.NameToLayer("Player");
+            Assert.GreaterOrEqual(npc, 0, "NPC レイヤーが TagManager に無い");
+            Assert.GreaterOrEqual(building, 0);
+            Assert.GreaterOrEqual(ground, 0);
+            Assert.GreaterOrEqual(player, 0);
+
+            var go = new GameObject("player");
+            try
+            {
+                go.layer = player;
+                int mask = StuckRecovery.SolidMask(go);
+                Assert.AreEqual(0, mask & (1 << npc), "歩いてくる NPC と重なっても埋まったことにしない");
+                Assert.AreEqual(0, mask & (1 << player));
+                Assert.AreNotEqual(0, mask & (1 << building), "建物には埋まる");
+                Assert.AreNotEqual(0, mask & (1 << ground), "地面には埋まる");
             }
             finally
             {

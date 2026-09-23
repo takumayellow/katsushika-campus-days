@@ -7,7 +7,8 @@ namespace KCD.Editor
     /// <summary>
     /// 建物の屋内。Assets/Models/Interiors/&lt;id&gt;.fbx をキャンパスの遠く（x = 1200 m 以降）に横一列に並べ、
     /// 当たり判定・照明・出口・到達判定を付けて InteriorLoader に登録する。
-    /// FBX の Empty: spawn_&lt;id&gt;（入った直後の立ち位置）, exit_&lt;id&gt;（出口）, poi_&lt;id&gt;_*（クエストの visit 先）。
+    /// FBX の Empty: spawn_&lt;id&gt;（入った直後の立ち位置）, exit_&lt;id&gt;（出口）, poi_&lt;id&gt;_*（クエストの visit 先）,
+    /// seat_&lt;id&gt;_*（座れる家具。SeatFactory.PlaceInterior が読む）。
     /// </summary>
     public static class InteriorStage
     {

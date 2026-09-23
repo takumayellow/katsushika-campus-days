@@ -8,20 +8,28 @@
   x = 東 (m), z = 北 (m)   … Unity の左手系 (x 右, z 前) にそのまま載る
   Blender 側では (x, y=z_north, z=up) に読み替える
 
+原点・投影・幾何のヘルパは tools/osm_common.py にある (寮への道を出す tools/osm_route.py と共通)。
+
 使い方:
   python tools/osm_extract.py
 """
 from __future__ import annotations
 
 import json
-import math
+import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from osm_common import CAMPUS_WAY_ID, ROOT, origin_from  # noqa: E402
+from osm_common import ccw as _ccw  # noqa: E402
+from osm_common import centroid as _centroid  # noqa: E402
+from osm_common import geom as _geom  # noqa: E402
+from osm_common import make_projector as _make_projector  # noqa: E402
+from osm_common import point_in_poly as _point_in_poly  # noqa: E402
+
 RAW = ROOT / "data" / "osm" / "raw_overpass.json"
 OUT = ROOT / "data" / "osm" / "campus.json"
-
-CAMPUS_WAY_ID = 175463006  # 東京理科大学 葛飾キャンパス (amenity=university)
 
 # OSM 上の名称 → ゲーム内の正準 ID と、公式資料で裏取りした階数・高さ・用途。
 # (階数は TUS LIFE / Wikipedia、高さは OSM 実測値優先。無ければ 階数×3.9m で補完)
@@ -110,58 +118,12 @@ def _load() -> list[dict]:
         return json.load(f)["elements"]
 
 
-def _centroid(points: list[tuple[float, float]]) -> tuple[float, float]:
-    return (sum(p[0] for p in points) / len(points), sum(p[1] for p in points) / len(points))
-
-
-def _make_projector(lat0: float, lon0: float):
-    """等距円筒近似。キャンパス規模 (数百 m) なら誤差 < 1cm。"""
-    m_per_deg_lat = 111_132.954 - 559.822 * math.cos(2 * math.radians(lat0)) + 1.175 * math.cos(4 * math.radians(lat0))
-    m_per_deg_lon = 111_412.84 * math.cos(math.radians(lat0)) - 93.5 * math.cos(3 * math.radians(lat0))
-
-    def project(lon: float, lat: float) -> tuple[float, float]:
-        return (round((lon - lon0) * m_per_deg_lon, 3), round((lat - lat0) * m_per_deg_lat, 3))
-
-    return project
-
-
-def _point_in_poly(x: float, y: float, poly: list[tuple[float, float]]) -> bool:
-    inside = False
-    j = len(poly) - 1
-    for i, (xi, yi) in enumerate(poly):
-        xj, yj = poly[j]
-        if (yi > y) != (yj > y) and x < (xj - xi) * (y - yi) / (yj - yi) + xi:
-            inside = not inside
-        j = i
-    return inside
-
-
-def _geom(e: dict) -> list[tuple[float, float]]:
-    return [(p["lon"], p["lat"]) for p in e.get("geometry", [])]
-
-
-def _ring_area(pts: list[tuple[float, float]]) -> float:
-    """符号付き面積 (shoelace)。正なら反時計回り。"""
-    a = 0.0
-    for i in range(len(pts)):
-        x1, y1 = pts[i]
-        x2, y2 = pts[(i + 1) % len(pts)]
-        a += x1 * y2 - x2 * y1
-    return a / 2
-
-
-def _ccw(pts: list[tuple[float, float]]) -> list[tuple[float, float]]:
-    if pts and pts[0] == pts[-1]:
-        pts = pts[:-1]
-    return pts if _ring_area(pts) > 0 else list(reversed(pts))
-
-
 def extract() -> dict:
     elements = _load()
     by_key = {(e["type"], e["id"]): e for e in elements}
     campus = by_key[("way", CAMPUS_WAY_ID)]
     campus_ll = _geom(campus)
-    lon0, lat0 = _centroid(campus_ll[:-1])
+    lat0, lon0 = origin_from(elements)
     project = _make_projector(lat0, lon0)
     campus_xy = _ccw([project(*p) for p in campus_ll])
 

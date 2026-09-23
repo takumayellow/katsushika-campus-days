@@ -69,5 +69,71 @@ namespace KCD.Tests
             Assert.GreaterOrEqual(AudioManager.ChimeDuckFraction, 0.85f);
             Assert.LessOrEqual(AudioManager.ChimeDuckFraction, 1f);
         }
+
+        [Test]
+        public void ShouldChime_RingsOnlyRightAfterCrossingNoonOrFive()
+        {
+            // 毎フレーム少しずつ進んで 12 時・17 時をまたいだフレームだけ鳴る (#38)
+            Assert.IsTrue(AudioManager.ShouldChime(11.99f, 12.01f), "12 時をまたいだ直後");
+            Assert.IsTrue(AudioManager.ShouldChime(16.999f, 17f), "ちょうど 17 時になったフレーム");
+            Assert.IsFalse(AudioManager.ShouldChime(12.01f, 12.02f), "またいだ次のフレームでは鳴らさない (1 回だけ)");
+            Assert.IsFalse(AudioManager.ShouldChime(8.99f, 9.01f), "9 時は鳴らさない");
+            Assert.IsFalse(AudioManager.ShouldChime(12.99f, 13.01f), "13 時は鳴らさない");
+        }
+
+        [Test]
+        public void ShouldChime_OnlyRecordsFirstFrameBackwardAndStaleJumps()
+        {
+            // 開始直後・時刻の巻き戻し・ロードなどで飛んだときは鳴らさず, 時刻を覚えるだけ (#38)
+            Assert.IsFalse(AudioManager.ShouldChime(-1f, 12.01f), "シーンに入った最初のフレーム");
+            Assert.IsFalse(AudioManager.ShouldChime(12.3f, 11.95f), "時刻が戻った (ロードの次のフレーム)");
+            Assert.IsFalse(AudioManager.ShouldChime(10.5f, 12.03f), "ロードで 12 時過ぎへ飛んだ");
+            Assert.IsFalse(AudioManager.ShouldChime(20f, 8.5f), "翌日の 8:30 に戻った");
+            Assert.IsFalse(AudioManager.ShouldChime(11.9f, 12f + AudioManager.ChimeWindowHours), "またいでから時間が経っている");
+        }
+
+        [Test]
+        public void ChimeWindow_CoversTheLongestFrame()
+        {
+            // 1 日 = 実時間 720 秒 (DayNightCycle)。Unity の deltaTime の上限 0.333 秒のフレームでも窓に収まる
+            float perFrame = 0.3333f * 24f / 720f;
+            Assert.Less(perFrame, AudioManager.ChimeWindowHours);
+            Assert.IsTrue(AudioManager.ShouldChime(12f - perFrame * 0.5f, 12f + perFrame * 0.5f));
+        }
+
+        [Test]
+        public void StepDuck_SilencesBgmBeforeTheFirstBell()
+        {
+            // チャイムは ChimeLeadSeconds 遅れて鳴る。60 fps ならその前に BGM の倍率が 0 まで下がり切る (#38)
+            Assert.Greater(AudioManager.ChimeLeadSeconds, AudioManager.DuckAttackSeconds);
+            const float dt = 1f / 60f;
+            float duck = 1f;
+            for (float t = dt; t <= AudioManager.ChimeLeadSeconds; t += dt)
+            {
+                duck = AudioManager.StepDuck(duck, AudioManager.ChimeDuckLevel, dt);
+            }
+
+            Assert.AreEqual(0f, duck, "最初の鐘の前に無音");
+        }
+
+        [Test]
+        public void StepDuck_BringsBgmBackGradually()
+        {
+            // 戻りはクロスフェードと同じくらいゆっくり。1 フレームで跳ね上がらない (#38)
+            Assert.Greater(AudioManager.DuckReleaseSeconds, AudioManager.DuckAttackSeconds);
+            const float dt = 1f / 60f;
+            Assert.Less(AudioManager.StepDuck(0f, 1f, dt), 0.05f, "1 フレームでは少ししか戻らない");
+
+            float duck = 0f;
+            float seconds = 0f;
+            while (duck < 1f && seconds < 10f)
+            {
+                duck = AudioManager.StepDuck(duck, 1f, dt);
+                seconds += dt;
+            }
+
+            Assert.AreEqual(1f, duck, "最後は元の音量に戻る");
+            Assert.GreaterOrEqual(seconds, 1f, "1 秒以上かけて戻る");
+        }
     }
 }

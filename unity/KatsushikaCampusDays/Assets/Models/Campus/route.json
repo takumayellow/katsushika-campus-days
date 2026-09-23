@@ -1,0 +1,364 @@
+{
+ "door": [
+  -455.83,
+  183.24
+ ],
+ "door_bearing": 159.5,
+ "centroid": [
+  -464.52,
+  202.0
+ ],
+ "gate_z": 239.83,
+ "gate_half_width": 12.0,
+ "annex": [
+  -490.0,
+  156.0,
+  -340.0,
+  262.0
+ ],
+ "notes": {
+  "source": "blender/build_route.py",
+  "issue": 41,
+  "band": {
+   "x0": -560.0,
+   "z0": -350.0,
+   "x1": -350.0,
+   "z1": 350.0,
+   "note": "x1 は既存の site_ground の西端ちょうど。地面は重ねていない。"
+  },
+  "gate_pillars_z": [
+   227.83,
+   251.83
+  ],
+  "dormitory": {
+   "id": "bld_community_house",
+   "osm_id": 1552203022,
+   "display": "葛飾コミュニティハウス",
+   "height": 17.8,
+   "levels": 5,
+   "footprint": [
+    [
+     -462.82,
+     225.43
+    ],
+    [
+     -474.92,
+     220.91
+    ],
+    [
+     -467.17,
+     200.22
+    ],
+    [
+     -470.52,
+     198.98
+    ],
+    [
+     -463.54,
+     180.35
+    ],
+    [
+     -448.11,
+     186.13
+    ]
+   ],
+   "note": "外観は bld_dorm / bld_dorm_trim としてこの FBX に入っている。屋内だけ Assets/Models/Interiors/dorm.fbx（build_dorm.py）。"
+  },
+  "route_nw_gate": [
+   [
+    -124.6,
+    83.78
+   ],
+   [
+    -130.16,
+    92.73
+   ],
+   [
+    -132.69,
+    91.01
+   ],
+   [
+    -134.39,
+    89.92
+   ],
+   [
+    -146.88,
+    111.42
+   ],
+   [
+    -190.46,
+    180.57
+   ],
+   [
+    -213.75,
+    218.37
+   ],
+   [
+    -222.35,
+    234.18
+   ],
+   [
+    -228.9,
+    248.54
+   ],
+   [
+    -230.96,
+    254.34
+   ],
+   [
+    -232.66,
+    255.55
+   ],
+   [
+    -236.66,
+    256.03
+   ],
+   [
+    -236.9,
+    257.23
+   ],
+   [
+    -237.18,
+    260.59
+   ],
+   [
+    -242.89,
+    260.56
+   ],
+   [
+    -260.24,
+    260.84
+   ],
+   [
+    -271.63,
+    260.22
+   ],
+   [
+    -288.02,
+    258.0
+   ],
+   [
+    -301.49,
+    254.9
+   ],
+   [
+    -311.82,
+    251.55
+   ],
+   [
+    -333.67,
+    243.02
+   ],
+   [
+    -344.02,
+    237.8
+   ],
+   [
+    -396.94,
+    211.12
+   ],
+   [
+    -423.32,
+    197.65
+   ],
+   [
+    -438.24,
+    186.62
+   ],
+   [
+    -451.79,
+    175.57
+   ]
+  ],
+  "objects": [
+   "bld_route_background",
+   "bld_dorm",
+   "route_ground",
+   "bld_dorm_trim",
+   "bld_route_fence",
+   "route_props_lamp"
+  ],
+  "stats": {
+   "band_area_m2": 147000.0,
+   "roads": {
+    "laid": 24,
+    "length_m": 1553.8,
+    "kinds": {
+     "tertiary": 1,
+     "footway": 20,
+     "unclassified": 1,
+     "residential": 2
+    },
+    "center_dashes": 34,
+    "edge_lines": 2
+   },
+   "window_edges": {
+    "total": 356,
+    "facing_road": 216
+   },
+   "houses": {
+    "houses": 46,
+    "windows": 656,
+    "window_spacing": 3.6
+   },
+   "fence": {
+    "segments": 5,
+    "ring_m": 422.0,
+    "wall_m": 351.3,
+    "guardrails": 3,
+    "road_gap_m": 36.0,
+    "house_gap_m": 34.7,
+    "road_gaps": 3,
+    "house_gaps": 3,
+    "pieces": 19,
+    "house_gap_max_m": 23.1,
+    "gate_pillars": 2
+   },
+   "enclosure": {
+    "worst_open_m": 0.15,
+    "worst_open_at": "east_n @ t=0.0..0.2 m",
+    "open_total_m": 0.65,
+    "player_diameter_m": 0.56
+   },
+   "dorm": {
+    "levels": 5,
+    "gf": 4.0,
+    "up": 3.45,
+    "height": 17.8,
+    "balcony_edge": 5,
+    "balcony_floors": 4,
+    "door": {
+     "W": 1.6,
+     "H": 2.6,
+     "D": 2.0,
+     "WO": 2.4,
+     "HT": 3.3,
+     "CAN_S": 3.0,
+     "CAN_D": 3.8,
+     "CAN_T": 0.3,
+     "APRON_S": 3.4,
+     "APRON_D": 2.8,
+     "id": "dorm",
+     "origin": [
+      -455.83,
+      183.24
+     ],
+     "n": [
+      0.35020738125946754,
+      -0.9366721892483976
+     ],
+     "t": [
+      0.9366721892483976,
+      0.35020738125946754
+     ],
+     "yaw": -1.213003830136059,
+     "sign_side": -1,
+     "sign_z": 3.4,
+     "bearing": 159.5
+    }
+   },
+   "dorm_objects": [
+    "bld_dorm",
+    "bld_dorm_trim"
+   ],
+   "apron": {
+    "apron_d_m": 2.8,
+    "apron_s_m": 3.4,
+    "road_bite_m": 0.0,
+    "road": null
+   },
+   "lamps": 8,
+   "window_spacing_m": 3.6,
+   "window_estimate": 656,
+   "tris": 15098,
+   "budget": 16000,
+   "per_object": {
+    "bld_route_background": {
+     "verts": 5960,
+     "faces": 4790,
+     "tris": 9112
+    },
+    "bld_dorm": {
+     "verts": 1566,
+     "faces": 1206,
+     "tris": 2400
+    },
+    "route_ground": {
+     "verts": 1347,
+     "faces": 910,
+     "tris": 1820
+    },
+    "bld_dorm_trim": {
+     "verts": 540,
+     "faces": 427,
+     "tris": 810
+    },
+    "bld_route_fence": {
+     "verts": 344,
+     "faces": 302,
+     "tris": 604
+    },
+    "route_props_lamp": {
+     "verts": 224,
+     "faces": 208,
+     "tris": 352
+    }
+   },
+   "checks": {
+    "seam_x": -350.0,
+    "band_west_x": -560.0,
+    "seam_verts": 25,
+    "seam_step_m": 0.0,
+    "ground_longest_edge_m": 42.43,
+    "closure": {
+     "bld_route_background": {
+      "open_edges": 0,
+      "open_edge_m": 0.0,
+      "checked": true
+     },
+     "bld_route_fence": {
+      "open_edges": 0,
+      "open_edge_m": 0.0,
+      "checked": true
+     },
+     "bld_dorm": {
+      "open_edges": 852,
+      "open_edge_m": 2569.777,
+      "checked": false
+     },
+     "bld_dorm_trim": {
+      "open_edges": 146,
+      "open_edge_m": 172.56,
+      "checked": false
+     },
+     "route_props_lamp": {
+      "open_edges": 0,
+      "open_edge_m": 0.0,
+      "checked": true
+     }
+    }
+   },
+   "fbx_bytes": 212236,
+   "select": {
+    "roads_total": 64,
+    "roads_kept": 24,
+    "roads_dropped": 40,
+    "dropped_in_campus_json": 24,
+    "dropped_shared_ge2": 16,
+    "road_vertices": 142,
+    "road_length_m": 1553.8,
+    "houses": 46,
+    "house_vertices": 356,
+    "content_bbox": [
+     -520.73,
+     111.42,
+     -132.71,
+     328.81
+    ],
+    "gate_crossing_z": 239.83,
+    "dorm_clearance_road_m": 1.36,
+    "dorm_clearance_house_m": 0.96
+   }
+  }
+ }
+}

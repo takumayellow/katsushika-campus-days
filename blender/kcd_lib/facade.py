@@ -80,11 +80,18 @@ def add_facade(mb, loop, z0, floor_h, f0, f1, *,
 
 def add_curtain_wall(mb, loop, z0, floor_h, f0, f1, *,
                      frame="metal_white", glass="glass_clear",
-                     seg=2.2, edges=None, inset=0.14):
-    """全面ガラスのカーテンウォール（図書館・講義棟の階段ホール・共創棟 1F）。"""
-    add_facade(mb, loop, z0, floor_h, f0, f1,
-               wall=frame, glass=glass, seg=seg, sill=0.22, header=0.22,
-               inset=inset, mullion=0.18, edges=edges, side_reveals=False)
+                     seg=2.2, edges=None, inset=0.14, ground_sill=None):
+    """全面ガラスのカーテンウォール（図書館・講義棟の階段ホール・共創棟 1F）。
+
+    ground_sill: 地上階（f == 0）だけ腰壁の高さを変える。足元までのガラスは扉に見えるので、
+    入口（kcd_lib.entrances）以外の 1F は腰壁を立てて「窓」に見せる（#39）。"""
+    kw = dict(wall=frame, glass=glass, seg=seg, header=0.22,
+              inset=inset, mullion=0.18, edges=edges, side_reveals=False)
+    if ground_sill is not None and f0 == 0 and f1 > 0:
+        add_facade(mb, loop, z0, floor_h, 0, 1, sill=ground_sill, **kw)
+        f0 = 1
+    if f1 > f0:
+        add_facade(mb, loop, z0, floor_h, f0, f1, sill=0.22, **kw)
 
 
 def add_solid(mb, loop, z0, z1, mat, edges=None):
@@ -167,6 +174,6 @@ def add_glass_tower(mb, base_uv_rect, z0, z1, frame_h, *, glass="glass_clear",
     """ガラスのエレベータ塔（薄い庇つき）。base_uv_rect は XY ポリゴン。"""
     add_curtain_wall(mb, base_uv_rect, z0, frame_h,
                      0, max(1, int(round((z1 - z0) / frame_h))),
-                     frame=frame, glass=glass, seg=2.4, inset=0.10)
+                     frame=frame, glass=glass, seg=2.4, inset=0.10, ground_sill=0.9)
     top = geom.offset_polygon(base_uv_rect, canopy)
     mb.add_slab(top, z1, z1 + 0.45, frame)

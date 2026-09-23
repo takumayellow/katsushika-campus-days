@@ -7,8 +7,23 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: leaf
+    second: {fileID: 2100000, guid: 4e51a538c4ec1d047a64f57e61fe06eb, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: leaf_dark
+    second: {fileID: 2100000, guid: e9800aa84cee631dd7697c62e4001f89, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: leaf_light
     second: {fileID: 2100000, guid: 6fea48079566d9140890c7c8ea675562, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: leaf_top
+    second: {fileID: 2100000, guid: 8b08e44ed20719daa17ec206b6e83bba, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule

@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -6,12 +8,71 @@ namespace KCD
     /// <summary>
     /// Input System のデバイスを直接読む薄いファサード。
     /// .inputactions アセットへの GUID 参照を持たずに済むので、シーンをコードだけで組み立てられる。
-    /// 操作: WASD または矢印キーで移動 / Shift ダッシュ / Space ジャンプ / E 会話 / Tab クエストログ / Esc メニュー。
+    /// 操作: WASD または矢印キーで移動 / Shift（左右とも）ダッシュ / Space ジャンプ / E 会話 / Tab クエストログ / F 全画面 / Esc メニュー。
     /// </summary>
     public static class KCDInput
     {
-        /// <summary>UI がモーダル表示中は移動入力を殺す。DialogueSystem などが立てる。</summary>
-        public static bool GameplayBlocked { get; set; }
+        /// <summary>
+        /// Block(owner) で掛けられている封鎖。オーナーごとに持つので、ほかのシステムの封鎖を外してしまわない (#40)。
+        /// 以前は 1 本の bool だけで、建物の出入り（InteriorLoader.Travel）が暗転の終わりに無条件で false に戻し、
+        /// その間に開いた会話・ポーズ・落下からの復帰などの封鎖まで外していた。
+        /// </summary>
+        private static readonly HashSet<object> Blockers = new HashSet<object>(ReferenceComparer.Instance);
+
+        /// <summary>GameplayBlocked への代入で立てる、オーナーを持たない封鎖（ポーズ・クエストログ・写真モードなど旧来の書き方）。</summary>
+        private static bool _sharedBlock;
+
+        /// <summary>
+        /// UI がモーダル表示中などで、移動・視点・操作を止めているか。どれか 1 つでも封鎖があれば true。
+        /// 代入はオーナーを持たない 1 枚の封鎖を立てる / 外すだけで、<see cref="Block"/> で掛けた封鎖は外さない。
+        /// 新しく封鎖するシステムは代入ではなく Block(this) / Unblock(this) を使う。
+        /// </summary>
+        public static bool GameplayBlocked
+        {
+            get => _sharedBlock || Blockers.Count > 0;
+            set => _sharedBlock = value;
+        }
+
+        /// <summary>owner の名前で操作を封鎖する。同じ owner が何度掛けても 1 枚として数え、Unblock 1 回で外れる。</summary>
+        public static void Block(object owner)
+        {
+            if (owner != null)
+            {
+                Blockers.Add(owner);
+            }
+        }
+
+        /// <summary>owner が掛けた封鎖だけを外す。ほかのオーナーの封鎖と GameplayBlocked への代入で立てた封鎖はそのまま。</summary>
+        public static void Unblock(object owner)
+        {
+            if (owner != null)
+            {
+                Blockers.Remove(owner);
+            }
+        }
+
+        /// <summary>owner が封鎖を掛けているか。</summary>
+        public static bool IsBlockedBy(object owner) => owner != null && Blockers.Contains(owner);
+
+        /// <summary>封鎖をすべて外す。シーンを切り替えるとき（封鎖を掛けた側がまとめて消えるとき）だけ使う。</summary>
+        public static void ClearAllBlocks()
+        {
+            Blockers.Clear();
+            _sharedBlock = false;
+        }
+
+        /// <summary>
+        /// 参照の同一性だけで比べる。UnityEngine.Object は破棄後に == null と等しく見えるので、
+        /// 既定の比較だと破棄済みのオーナー同士を取り違えるおそれがある。
+        /// </summary>
+        private sealed class ReferenceComparer : IEqualityComparer<object>
+        {
+            public static readonly ReferenceComparer Instance = new ReferenceComparer();
+
+            public new bool Equals(object x, object y) => ReferenceEquals(x, y);
+
+            public int GetHashCode(object obj) => RuntimeHelpers.GetHashCode(obj);
+        }
 
         /// <summary>座っている間など、UI は生きているが移動だけ止めたいときに立てる。</summary>
         public static bool MovementLocked { get; set; }
@@ -32,6 +93,25 @@ namespace KCD
 
         /// <summary>このフレームでモーダルが閉じられたか。</summary>
         public static bool ModalClosedThisFrame => _modalClosedFrame == Time.frameCount;
+
+        /// <summary>画面をまだ出していないことを表すフレーム番号。</summary>
+        public const int NoFrame = -1;
+
+        /// <summary>
+        /// 画面を出したフレームの入力を捨てるか。出した側と出された側が同じ Enter を同じフレームで拾うと、
+        /// 出た画面がその場で決定されてしまう（タイトル → キャラクター選択が 1 フレームも操作できなかった, #6）。
+        /// activatedFrame が負（まだ出していない）なら常に捨てる。
+        /// </summary>
+        public static bool IgnoresInput(int activatedFrame, int currentFrame)
+        {
+            return activatedFrame < 0 || currentFrame <= activatedFrame;
+        }
+
+        /// <summary>今のフレームで見る版。</summary>
+        public static bool IgnoresInput(int activatedFrame)
+        {
+            return IgnoresInput(activatedFrame, Time.frameCount);
+        }
 
         /// <summary>移動入力（x = 左右、y = 前後）。カメラ相対に変換するのは PlayerController 側。</summary>
         public static Vector2 Move
@@ -96,11 +176,16 @@ namespace KCD
             }
         }
 
-        /// <summary>ダッシュ（押しっぱなし）。</summary>
+        /// <summary>
+        /// ダッシュ（押しっぱなし）。Shift は左右どちらでも効く。
+        /// 操作説明の「Shift / L トリガー」に合わせ、ゲームパッドは L ボタンと L トリガーの両方を受け付ける。
+        /// </summary>
         public static bool Sprint =>
             !GameplayBlocked && !MovementLocked &&
-            ((Keyboard.current != null && Keyboard.current.leftShiftKey.isPressed) ||
-             (Gamepad.current != null && Gamepad.current.leftShoulder.isPressed));
+            ((Keyboard.current != null &&
+              (Keyboard.current.leftShiftKey.isPressed || Keyboard.current.rightShiftKey.isPressed)) ||
+             (Gamepad.current != null &&
+              (Gamepad.current.leftShoulder.isPressed || Gamepad.current.leftTrigger.isPressed)));
 
         /// <summary>ジャンプ（押した瞬間）。</summary>
         public static bool JumpPressed =>
@@ -225,6 +310,13 @@ namespace KCD
         public static bool SettingsPressed =>
             (Keyboard.current != null && Keyboard.current.oKey.wasPressedThisFrame) ||
             (Gamepad.current != null && Gamepad.current.selectButton.wasPressedThisFrame);
+
+        /// <summary>
+        /// 全画面の切り替え（F）。メニューやポーズ中でも効かせたいので封鎖を見ない。
+        /// ゲームパッドは割り当てない（ブラウザがゲームパッド入力をユーザー操作と見なさず、全画面要求が通らない, #48）。
+        /// </summary>
+        public static bool FullscreenPressed =>
+            Keyboard.current != null && Keyboard.current.fKey.wasPressedThisFrame;
 
         /// <summary>クイックセーブ（F5）。</summary>
         public static bool QuickSavePressed =>

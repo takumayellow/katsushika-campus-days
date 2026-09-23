@@ -59,6 +59,7 @@ namespace KCD
 
         private void OnDestroy()
         {
+            KCDInput.Unblock(this);
             if (_instance == this)
             {
                 _instance = null;
@@ -146,14 +147,29 @@ namespace KCD
             _topicKey = data.Id + "/" + chosen.Id;
             _lineIndex = 0;
             _lineStartedAt = Time.unscaledTime;
-            KCDInput.GameplayBlocked = true;
+
+            // 会話の封鎖は会話のもの。建物の出入りや落下からの復帰の暗転が終わっても外れない (#40)。
+            KCDInput.Block(this);
             LineChanged?.Invoke(CurrentLine);
             return true;
         }
 
         private DialogueTopic SelectTopic(DialogueData data)
         {
-            QuestSystem quests = GameManager.Instance.Quests;
+            return SelectTopic(data, GameManager.Instance.Quests, _spentTopics);
+        }
+
+        /// <summary>
+        /// 条件に合う話題を選ぶ（テストから呼ぶ純関数）。条件つきの話題を上から優先し、無条件のものは最後の受け皿。
+        /// spentTopics は「NPC id/話題 id」の集合で、once の話題を二度出さないために使う。
+        /// </summary>
+        public static DialogueTopic SelectTopic(DialogueData data, QuestSystem quests, ICollection<string> spentTopics)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
             DialogueTopic fallback = null;
 
             for (int i = 0; i < data.Topics.Count; i++)
@@ -161,7 +177,15 @@ namespace KCD
                 DialogueTopic topic = data.Topics[i];
                 string key = data.Id + "/" + topic.Id;
 
-                if (topic.Once && _spentTopics.Contains(key))
+                if (topic.Once && spentTopics != null && spentTopics.Contains(key))
+                {
+                    continue;
+                }
+
+                // クエストを頼む話題は、そのクエストを受注中・完了済みなら出さない。
+                // 使い終えた話題（_spentTopics）はセーブに載らないので、ロード直後に同じ依頼をもう一度されるのを防ぐ。
+                if (!string.IsNullOrEmpty(topic.StartsQuest) && quests != null &&
+                    (quests.IsActive(topic.StartsQuest) || quests.IsCompleted(topic.StartsQuest)))
                 {
                     continue;
                 }
@@ -230,7 +254,7 @@ namespace KCD
             _topic = null;
             _topicKey = string.Empty;
             _lineIndex = 0;
-            KCDInput.GameplayBlocked = false;
+            KCDInput.Unblock(this);
             // 最終行を送った Enter / E を、同じフレームで InteractionPrompt が拾って会話を再開しないようにする。
             KCDInput.MarkModalClosed();
 

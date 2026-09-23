@@ -44,9 +44,23 @@ namespace KCD.Editor
             { "water", "8FB8C8" },
             { "white", "F5F5F2" },
             { "wood", "9A6B3F" },
-            { "leaf", "6FA84A" },
-            { "leaf_light", "8FC663" },
-            { "trunk", "6B4A2F" }
+            // 葉は理科大グリーン #00843D 基準の 4 段（blender/kcd_lib/mats.py と同じ）。
+            // 名前が leaf* なので foliage 判定（KCD/Toon + _ShadeColor 0.62 + アウトライン 0）と
+            // CampusStage.IsFoliageMaterial（コライダ除外）はそのまま効く。
+            { "leaf_dark", "0A6B38" },
+            { "leaf", "0C8C45" },
+            { "leaf_light", "4CAE5B" },
+            { "leaf_top", "8ECB63" },
+            { "trunk", "6B4A2F" },
+            // 入口の看板・外構小物（blender/kcd_lib/mats.py の PALETTE と同じ色）。
+            // 以前はここに無く、B0B0AC の灰色で .mat が作られていた。
+            { "tus_green", "00843D" },
+            { "sign_plate", "DEDEDB" },
+            { "vending_red", "C21A17" },
+            { "vending_blue", "0F54B8" },
+            { "bin_green", "296638" },
+            { "bike_frame", "2E2E33" },
+            { "bike_tire", "0F0F0F" }
         };
 
         /// <summary>服・髪などの名前に含まれる色語 → 色。キャラ差分はここで吸収する。</summary>

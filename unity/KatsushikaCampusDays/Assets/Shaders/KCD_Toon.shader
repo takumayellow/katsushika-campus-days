@@ -19,6 +19,9 @@ Shader "KCD/Toon"
         _SpecularIntensity("Specular Intensity", Range(0, 2)) = 0
         _OutlineColor("Outline Color", Color) = (0.12, 0.10, 0.14, 1)
         _OutlineWidth("Outline Width (m)", Range(0, 0.05)) = 0.006
+        _OutlineNearDistance("Outline Near Distance (m)", Range(0.5, 30)) = 5
+        _OutlineFadeStart("Outline Fade Start (m)", Range(0, 200)) = 30
+        _OutlineFadeEnd("Outline Fade End (m)", Range(0, 200)) = 60
         _EmissionColor("Emission Color", Color) = (0,0,0,1)
         _Cutoff("Alpha Cutoff", Range(0,1)) = 0.5
 
@@ -50,6 +53,9 @@ Shader "KCD/Toon"
         half   _SpecularPower;
         half   _SpecularIntensity;
         half   _OutlineWidth;
+        half   _OutlineNearDistance;
+        half   _OutlineFadeStart;
+        half   _OutlineFadeEnd;
         half   _Cutoff;
         half   _Surface;
         half   _SrcBlend;
@@ -113,10 +119,13 @@ Shader "KCD/Toon"
                 VertexPositionInputs positionInputs = GetVertexPositionInputs(input.positionOS.xyz);
                 VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS);
 
-                // カメラ距離に比例させて、遠景でも線幅が破綻しないようにする。
-                float distanceScale = length(GetCameraPositionWS() - positionInputs.positionWS);
-                distanceScale = clamp(distanceScale, 0.5, 60.0);
-                float3 offsetWS = normalInputs.normalWS * (_OutlineWidth * distanceScale);
+                // _OutlineNearDistance までは距離に比例させて画面上の太さを一定にし、それより遠くでは
+                // ワールド上の太さを固定して、遠くの人ほど細く描く（画面上で一定のままだと、遠くの小さな人物が
+                // 輪郭で太って見えた）。さらに _OutlineFadeStart〜_OutlineFadeEnd で消す。
+                float cameraDistance = length(GetCameraPositionWS() - positionInputs.positionWS);
+                float distanceScale = clamp(cameraDistance, 0.5, _OutlineNearDistance);
+                float fade = 1.0 - smoothstep(_OutlineFadeStart, _OutlineFadeEnd, cameraDistance);
+                float3 offsetWS = normalInputs.normalWS * (_OutlineWidth * distanceScale * fade);
 
                 output.positionCS = TransformWorldToHClip(positionInputs.positionWS + offsetWS);
                 output.fogFactor = ComputeFogFactor(output.positionCS.z);
@@ -159,7 +168,7 @@ Shader "KCD/Toon"
             #pragma multi_compile _ LIGHTMAP_ON
             #pragma multi_compile _ DIRLIGHTMAP_COMBINED
             #pragma multi_compile_fragment _ _LIGHT_COOKIES
-            #pragma multi_compile _ _FORWARD_PLUS
+            #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 

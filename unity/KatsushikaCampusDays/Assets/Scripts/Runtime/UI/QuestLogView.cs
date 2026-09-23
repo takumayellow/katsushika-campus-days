@@ -39,7 +39,8 @@ namespace KCD
 
         private void Update()
         {
-            if (ResultScreen.IsAnyOpen)
+            // DormEnding.IsAnyShowing: 裏エンド (#41) の最中は Tab でログを開かせない。
+            if (ResultScreen.IsAnyOpen || DormEnding.IsAnyShowing)
             {
                 return;
             }

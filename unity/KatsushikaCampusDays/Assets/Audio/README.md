@@ -14,12 +14,12 @@ python tools/audio/build_audio.py bgm ambient  # カテゴリを絞る
 |---|---|
 | `tools/audio/synth.py` | 発振器・フィルタ・エンベロープ・楽器・ドラム・リバーブ |
 | `tools/audio/music.py` | BGM とジングル (小節グリッドの簡易シーケンサ) |
-| `tools/audio/sfx.py` | SE 37 種 |
+| `tools/audio/sfx.py` | SE 41 種 |
 | `tools/audio/ambient.py` | 環境音 7 種 |
 | `tools/audio/analyze.py` | 波形統計とループ継ぎ目の計測 |
 | `tools/audio/build_audio.py` | 全体のエントリ。`manifest.json` と本 README を書き出す |
 
-出力は 44.1 kHz / 16 bit の WAV。合計 54 ファイル, 225.6 MiB, 音の長さ 1346.6 秒。生成時間は 4 秒。
+出力は 44.1 kHz / 16 bit の WAV。合計 58 ファイル, 225.6 MiB, 音の長さ 1347.2 秒。生成時間は 4 秒。
 
 ## Unity へ取り込むときの設定
 
@@ -47,7 +47,7 @@ README の表の「ループ継ぎ目」は `seam_step_ratio / seam_hf_ratio` �
 
 **`bgm_title` はこの 2 つが 1 前後になるが, 不連続ではない。** 同じ編曲を 2 周ぶん描画して内部の継ぎ目と比較したところ, 回り込みの段差 0.07121 と 2 周描画の内部の段差 0.07121 が完全に一致し, 2 周目の波形は 1 周ぶんの出力と最大誤差 0.0 で一致した。指標が拾っているのは小節頭のピアノのアタックそのもので, 継ぎ目の欠陥ではない。
 
-クリップしたサンプルは全 54 ファイルで 0 個。
+クリップしたサンプルは全 58 ファイルで 0 個。
 
 ## BGM (10 ファイル)
 
@@ -62,22 +62,26 @@ README の表の「ループ継ぎ目」は `seam_step_ratio / seam_hf_ratio` �
 | `bgm_school_song.wav` | 189.06 s | -1.0 dBFS | -15.4 dBFS | ループしない | タイトル画面. 東京理科大学校歌. 東北きりたん (NEUTRINO) 歌唱 1〜3 番 + ピアノ伴奏. 117 BPM / F major |
 | `bgm_title.wav` | 40.00 s | -1.0 dBFS | -13.7 dBFS | 0.999 / 1.484 | 旧タイトル曲 (未使用). 72 BPM / bgm_day のモチーフを遅く |
 | `jingle_day_end.wav` | 4.00 s | -1.0 dBFS | -11.7 dBFS | ループしない | 1 日の終わり (リザルト画面). F major の IV-V-I (ピアノ) |
-| `jingle_quest.wav` | 2.00 s | -1.0 dBFS | -13.8 dBFS | ループしない | クエスト達成. F major のアルペジオ (マリンバ + ピアノ) |
+| `jingle_quest.wav` | 2.00 s | -1.0 dBFS | -13.5 dBFS | ループしない | クエスト達成. F major のアルペジオ (木琴 soft_mallet + ピアノ) |
 
-## SE (効果音) (37 ファイル)
+## SE (効果音) (41 ファイル)
 
 | ファイル | 長さ | ピーク | RMS | 用途 |
 |---|---:|---:|---:|---|
 | `camera_shutter.wav` | 0.40 s | -1.5 dBFS | -28.5 dBFS | 撮影 |
 | `door_close.wav` | 0.55 s | -1.5 dBFS | -23.8 dBFS | 扉を閉める |
 | `door_open.wav` | 0.95 s | -1.5 dBFS | -22.4 dBFS | 扉を開ける |
-| `item_get.wav` | 0.75 s | -1.5 dBFS | -14.1 dBFS | アイテム入手 |
+| `item_get.wav` | 0.75 s | -1.5 dBFS | -13.0 dBFS | アイテム入手 |
 | `jump.wav` | 0.28 s | -1.5 dBFS | -13.8 dBFS | ジャンプ |
 | `land.wav` | 0.30 s | -1.5 dBFS | -21.8 dBFS | 着地 |
 | `quest_start.wav` | 1.15 s | -1.5 dBFS | -14.2 dBFS | クエスト開始 |
-| `quest_update.wav` | 0.55 s | -1.5 dBFS | -12.9 dBFS | クエスト進行 |
+| `quest_update.wav` | 0.55 s | -1.5 dBFS | -12.3 dBFS | クエスト進行 |
 | `se_chime.wav` | 12.84 s | -1.5 dBFS | -14.1 dBFS | 時報チャイム (12:00 昼休み / 17:00 下校). ウェストミンスターの鐘 E major 4 フレーズ 16 音を校内放送のスピーカー風に. 鳴る間 BGM は止まる (#38) |
-| `sit.wav` | 0.55 s | -1.5 dBFS | -19.9 dBFS | 座る |
+| `sit.wav` | 0.55 s | -1.5 dBFS | -17.8 dBFS | 座る |
+| `step_carpet_1.wav` | 0.17 s | -6.0 dBFS | -22.9 dBFS | カーペットの足音. 4 バリエーションをランダムに再生する |
+| `step_carpet_2.wav` | 0.16 s | -6.0 dBFS | -21.6 dBFS | カーペットの足音. 4 バリエーションをランダムに再生する |
+| `step_carpet_3.wav` | 0.16 s | -6.0 dBFS | -22.8 dBFS | カーペットの足音. 4 バリエーションをランダムに再生する |
+| `step_carpet_4.wav` | 0.15 s | -6.0 dBFS | -21.4 dBFS | カーペットの足音. 4 バリエーションをランダムに再生する |
 | `step_concrete_1.wav` | 0.17 s | -1.5 dBFS | -19.5 dBFS | コンクリートの足音. 4 バリエーションをランダムに再生する |
 | `step_concrete_2.wav` | 0.16 s | -1.5 dBFS | -22.4 dBFS | コンクリートの足音. 4 バリエーションをランダムに再生する |
 | `step_concrete_3.wav` | 0.16 s | -1.5 dBFS | -19.9 dBFS | コンクリートの足音. 4 バリエーションをランダムに再生する |
@@ -86,10 +90,10 @@ README の表の「ループ継ぎ目」は `seam_step_ratio / seam_hf_ratio` �
 | `step_grass_2.wav` | 0.23 s | -1.5 dBFS | -21.5 dBFS | 芝生の足音. 4 バリエーションをランダムに再生する |
 | `step_grass_3.wav` | 0.21 s | -1.5 dBFS | -21.9 dBFS | 芝生の足音. 4 バリエーションをランダムに再生する |
 | `step_grass_4.wav` | 0.20 s | -1.5 dBFS | -22.7 dBFS | 芝生の足音. 4 バリエーションをランダムに再生する |
-| `step_tile_1.wav` | 0.20 s | -1.5 dBFS | -23.8 dBFS | タイルの足音. 4 バリエーションをランダムに再生する |
-| `step_tile_2.wav` | 0.18 s | -1.5 dBFS | -21.7 dBFS | タイルの足音. 4 バリエーションをランダムに再生する |
-| `step_tile_3.wav` | 0.18 s | -1.5 dBFS | -23.4 dBFS | タイルの足音. 4 バリエーションをランダムに再生する |
-| `step_tile_4.wav` | 0.17 s | -1.5 dBFS | -23.2 dBFS | タイルの足音. 4 バリエーションをランダムに再生する |
+| `step_tile_1.wav` | 0.17 s | -1.5 dBFS | -22.2 dBFS | タイル・樹脂の床の足音. 4 バリエーションをランダムに再生する |
+| `step_tile_2.wav` | 0.16 s | -1.5 dBFS | -21.6 dBFS | タイル・樹脂の床の足音. 4 バリエーションをランダムに再生する |
+| `step_tile_3.wav` | 0.16 s | -1.5 dBFS | -22.3 dBFS | タイル・樹脂の床の足音. 4 バリエーションをランダムに再生する |
+| `step_tile_4.wav` | 0.15 s | -1.5 dBFS | -20.2 dBFS | タイル・樹脂の床の足音. 4 バリエーションをランダムに再生する |
 | `step_wood_1.wav` | 0.30 s | -1.5 dBFS | -17.0 dBFS | 木の床の足音. 4 バリエーションをランダムに再生する |
 | `step_wood_2.wav` | 0.29 s | -1.5 dBFS | -19.4 dBFS | 木の床の足音. 4 バリエーションをランダムに再生する |
 | `step_wood_3.wav` | 0.27 s | -1.5 dBFS | -19.2 dBFS | 木の床の足音. 4 バリエーションをランダムに再生する |
@@ -100,23 +104,27 @@ README の表の「ループ継ぎ目」は `seam_step_ratio / seam_hf_ratio` �
 | `talk_blip_prof.wav` | 0.08 s | -1.5 dBFS | -13.5 dBFS | 会話ブリップ (教員) |
 | `ui_cancel.wav` | 0.30 s | -1.5 dBFS | -13.1 dBFS | キャンセル |
 | `ui_close.wav` | 0.28 s | -1.5 dBFS | -15.8 dBFS | ウィンドウを閉じる |
-| `ui_confirm.wav` | 0.42 s | -1.5 dBFS | -12.0 dBFS | 決定 |
+| `ui_confirm.wav` | 0.42 s | -1.5 dBFS | -11.0 dBFS | 決定 |
 | `ui_move.wav` | 0.07 s | -1.5 dBFS | -14.0 dBFS | カーソル移動 |
 | `ui_open.wav` | 0.34 s | -1.5 dBFS | -14.3 dBFS | ウィンドウを開く |
-| `ui_toast.wav` | 0.50 s | -1.5 dBFS | -13.2 dBFS | 通知 |
-| `wave.wav` | 0.60 s | -1.5 dBFS | -16.5 dBFS | 手を振る |
+| `ui_toast.wav` | 0.50 s | -1.5 dBFS | -12.3 dBFS | 通知 |
+| `wave.wav` | 0.60 s | -1.5 dBFS | -15.6 dBFS | 手を振る |
 
 ## 環境音 (ループ) (7 ファイル)
 
 | ファイル | 長さ | ピーク | RMS | ループ継ぎ目 | 用途 |
 |---|---:|---:|---:|---:|---|
-| `amb_cafe.wav` | 22.00 s | -3.0 dBFS | -20.2 dBFS | 0.055 / 0.001 | カフェ: ざわめき + 食器 |
-| `amb_cafeteria.wav` | 22.00 s | -3.0 dBFS | -19.7 dBFS | 0.227 / 0.001 | 食堂: 賑わい |
+| `amb_cafe.wav` | 22.00 s | -21.0 dBFS | -40.4 dBFS | 0.009 / 0.920 | カフェ (共創棟): 静かな空調 + 離れた席の小さな話し声. 食器の金属音は入れない |
+| `amb_cafeteria.wav` | 22.00 s | -19.0 dBFS | -37.3 dBFS | 0.133 / 0.897 | 食堂 (第 2 研究棟): 静かな空調 + あちこちの席の小さな話し声. トレイや食器の音は入れない |
 | `amb_campus_day.wav` | 24.00 s | -3.0 dBFS | -22.6 dBFS | 0.057 / 0.012 | 昼のキャンパス: 風 + 小鳥 + 遠くのざわめき |
 | `amb_campus_evening.wav` | 24.00 s | -3.0 dBFS | -24.8 dBFS | 0.048 / 0.071 | 夕暮れ: ヒグラシ + 風 |
-| `amb_greenhouse.wav` | 24.00 s | -3.0 dBFS | -19.6 dBFS | 0.020 / 0.329 | 温室: 換気扇 + 水滴 |
-| `amb_gym.wav` | 24.00 s | -3.0 dBFS | -20.9 dBFS | 0.008 / 0.973 | 体育館: 残響のあるボールのバウンド |
-| `amb_library.wav` | 26.00 s | -3.0 dBFS | -19.1 dBFS | 0.004 / 0.005 | 図書館: 空調のほぼ無音 + ページ |
+| `amb_greenhouse.wav` | 24.00 s | -20.0 dBFS | -47.5 dBFS | 0.008 / 0.976 | 温室: 小さな換気扇のうなり + ときどき葉から落ちる水滴 |
+| `amb_gym.wav` | 24.00 s | -15.0 dBFS | -39.7 dBFS | 0.006 / 0.000 | 体育館: 静かな空調 + ときどきボールをつく音とシューズのキュッ (広い残響) |
+| `amb_library.wav` | 26.00 s | -21.0 dBFS | -50.2 dBFS | 0.000 / 0.000 | 図書館 (ほかの建物の既定): 空調のほぼ無音 + たまにページをめくる音 |
+
+## 屋内の環境音について
+
+建物の中の 5 本 (図書館・体育館・温室・カフェ・食堂) は, 屋内で風の音と「チンカン」という金属音が聞こえると指摘されたので作り直した。風のようにうねる帯域ノイズのベッドと食器の金属音 (`dish_clink`) はやめ, 150 Hz より上をほとんど含まない定常な空調音 (`room_tone`) に, 部屋に合った金属でない音をまばらに置くだけにしている。書き出しのピークも `ambient.PEAK_DB` で -15〜-21 dBFS に下げ, 屋外の 2 本より RMS で 12〜28 dB 小さい。
 
 ## 校歌について
 

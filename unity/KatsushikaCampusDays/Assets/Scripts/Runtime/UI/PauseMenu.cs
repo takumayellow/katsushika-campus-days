@@ -52,8 +52,11 @@ namespace KCD
 
         private void Update()
         {
+            // DormEnding.IsAnyShowing: 裏エンド (#41) の暗転中と結果表示中は Esc を食わせない。
+            // 食わせると暗転の裏でポーズが開き、閉じたときの SetOpen(false) が
+            // Time.timeScale = 1 に戻してしまう（裏エンドの最中に時間が動き出す）。
             if (KCDInput.PhotoMode || KCDInput.ModalClosedThisFrame || ResultScreen.IsAnyOpen ||
-                (_settings != null && _settings.IsOpen))
+                DormEnding.IsAnyShowing || (_settings != null && _settings.IsOpen))
             {
                 return;
             }

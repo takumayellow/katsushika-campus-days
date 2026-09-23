@@ -19,6 +19,7 @@ __pycache__/
 *.pyc
 # large raw data
 data/osm/raw_overpass.json
+data/osm/raw_route.json
 
 # Unity 公式 agent skills (npx skills experimental_install で復元。ライセンスが Other のため vendoring しない)
 .agents/skills/
