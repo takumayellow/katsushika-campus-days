@@ -83,7 +83,7 @@ namespace KCD
         public QuestSystem Quests { get; private set; }
 
         /// <summary>ゲーム内時刻（時間単位の実数、0-24）。DayNightCycle が毎フレーム更新する。</summary>
-        public float GameTimeHours { get; set; } = 8.5f;
+        public float GameTimeHours { get; set; } = DayRestart.DayStartHour;
 
         /// <summary>タイトルからキャンパスへ入った回数。初回だけオリエンのクエストを自動開始する。</summary>
         public bool HasEnteredCampus { get; set; }
@@ -185,7 +185,11 @@ namespace KCD
             SceneManager.LoadScene(CampusSceneName);
         }
 
-        /// <summary>タイトルへ戻る。進行はメモリ上に残るのでそのまま再開できる。</summary>
+        /// <summary>
+        /// タイトルへ戻る。封鎖と時間停止を解いてから Title を読む。
+        /// メモリ上の進行はタイトルでは使わない。「つづきから」はセーブを読み直し、「はじめから」は
+        /// <see cref="BeginNewGame"/> で初期値に戻すので、セーブしていない進行はここで失われる。
+        /// </summary>
         public void ReturnToTitle()
         {
             KCDInput.ClearAllBlocks();

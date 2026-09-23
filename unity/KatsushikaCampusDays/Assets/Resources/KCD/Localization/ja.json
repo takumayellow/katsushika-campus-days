@@ -5,7 +5,7 @@
     "ui.title.name": "葛飾キャンパスデイズ",
     "ui.title.subtitle": "東京理科大学 葛飾キャンパス 探索記",
     "ui.title.press_start": "Enter ではじめる",
-    "ui.title.continue_hint": "Enter でつづきから　/　F9 でセーブを読み込む",
+    "ui.title.continue_hint": "← → でえらぶ　Enter で決定　（F9 でもつづきから）",
     "ui.title.new_game": "はじめから",
     "ui.title.continue": "つづきから",
     "ui.title.settings": "設定",

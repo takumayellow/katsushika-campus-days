@@ -5,7 +5,7 @@
     "ui.title.name": "Katsushika Campus Days",
     "ui.title.subtitle": "A Walk Through Tokyo University of Science, Katsushika Campus",
     "ui.title.press_start": "Press Enter to start",
-    "ui.title.continue_hint": "Enter to continue / F9 to load a save",
+    "ui.title.continue_hint": "← → to choose, Enter to confirm (F9 also continues)",
     "ui.title.new_game": "New Game",
     "ui.title.continue": "Continue",
     "ui.title.settings": "Settings",

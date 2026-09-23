@@ -52,7 +52,7 @@ namespace KCD.Tests
         [Test]
         public void StartingHours_KeepsTheClockWhenComingBackIntoCampus()
         {
-            // 「つづきから」(TitleMenu の F9) はセーブの時刻を入れて入場済みにしてから入る (#38)。
+            // 「つづきから」(SaveSystem.PrepareContinue) はセーブの時刻を入れて入場済みにしてから入る (#38)。
             // 建物から出入りして Campus を読み直すときも同じ道を通る。ここが壊れると時刻が朝に飛ぶ。
             var data = new SaveData { TimeHours = 17.25f };
             Assert.AreEqual(17.25f,
@@ -263,6 +263,29 @@ namespace KCD.Tests
             // 新規開始の値と食い違っていないことを見ておく（SaveDataTests と同じ約束）。
             SaveData fresh = JsonUtility.FromJson<SaveData>("{}");
             Assert.AreEqual(DayRestart.DayStartHour, fresh.TimeHours, 1e-6f);
+        }
+
+        [Test]
+        public void GameManager_FirstLaunch_StartsAtTheSameMorningAsANewGame()
+        {
+            // 起動直後（BeginNewGame を通る前）の時計も、はじめからの朝と同じ定数から取る (#53)。
+            bool ignoring = LogAssert.ignoreFailingMessages;
+            LogAssert.ignoreFailingMessages = true;
+            var go = new GameObject("GameManagerForTest");
+
+            try
+            {
+                GameManager manager = go.AddComponent<GameManager>();
+
+                Assert.AreEqual(DayRestart.DayStartHour, manager.GameTimeHours, 1e-6f);
+                Assert.AreEqual(DayRestart.FirstDay, manager.DayNumber);
+                Assert.IsFalse(manager.HasEnteredCampus);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(go);
+                LogAssert.ignoreFailingMessages = ignoring;
+            }
         }
     }
 }

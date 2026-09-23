@@ -52,7 +52,7 @@ namespace KCD
         /// キャンパスに入ったときの時計の始まり。別シーンから戻ってきた（＝入場済みの）ときは
         /// GameManager が覚えている時刻を引き継ぎ、そうでなければ朝から始める。
         ///
-        /// 「つづきから」(#38) は <c>TitleMenu</c> が入場済みにしてからキャンパスへ入るのでセーブの時刻を継ぎ、
+        /// 「つづきから」(#38) は <c>SaveSystem.PrepareContinue</c> が入場済みにしてからキャンパスへ入るのでセーブの時刻を継ぎ、
         /// 「はじめから」(#53) は <c>GameManager.BeginNewGame</c> が入場済みを落とすので必ず朝になる。
         /// </summary>
         public static float StartingHours(bool hasEnteredCampus, float rememberedHours, float startHour)
