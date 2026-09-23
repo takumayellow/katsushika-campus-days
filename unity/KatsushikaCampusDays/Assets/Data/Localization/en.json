@@ -69,6 +69,7 @@
     "ui.hud.chime_noon": "12:00 Lunch break",
     "ui.hud.chime_evening": "17:00 Time to head home",
     "ui.hud.time_up": "Time's up! Challenge failed",
+    "ui.hud.too_early": "Come back around {0}:00",
     "ui.hud.returned_to_campus": "You got lost, so you headed back to campus",
     "ui.hud.new_day": "Morning of day {0}. Start again from the main gate",
     "ui.hud.requires": "Requires '{0}'.",

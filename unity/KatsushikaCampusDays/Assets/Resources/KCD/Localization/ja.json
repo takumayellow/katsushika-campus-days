@@ -69,6 +69,7 @@
     "ui.hud.chime_noon": "12:00 昼休み",
     "ui.hud.chime_evening": "17:00 下校の時刻",
     "ui.hud.time_up": "時間切れ！ 挑戦失敗",
+    "ui.hud.too_early": "{0}時ごろにまた来よう",
     "ui.hud.returned_to_campus": "道に迷ったので、キャンパスに戻ってきた",
     "ui.hud.new_day": "{0} 日目の朝。正門から歩き直そう",
     "ui.hud.requires": "'{0}' が必要です。",

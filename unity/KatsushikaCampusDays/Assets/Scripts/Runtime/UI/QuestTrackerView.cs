@@ -50,6 +50,7 @@ namespace KCD
             _quests.StepTimedOut += OnStepTimedOut;
             _quests.TimerStarted += OnTimerStarted;
             _quests.ChallengeRetryNeeded += OnChallengeRetryNeeded;
+            _quests.StepTooEarly += OnStepTooEarly;
             L.LocaleChanged += Refresh;
             Refresh();
         }
@@ -64,6 +65,7 @@ namespace KCD
                 _quests.StepTimedOut -= OnStepTimedOut;
                 _quests.TimerStarted -= OnTimerStarted;
                 _quests.ChallengeRetryNeeded -= OnChallengeRetryNeeded;
+                _quests.StepTooEarly -= OnStepTooEarly;
             }
         }
 
@@ -206,6 +208,26 @@ namespace KCD
             }
 
             HUD.Instance?.ShowToast(L.Format("ui.hud.challenge_retry", GiverName(step)));
+        }
+
+        /// <summary>
+        /// 時刻の条件より前に目的地へ着いた (#66)。進まない理由と、いつ来ればよいかを出す。
+        /// QuestSystem は入った瞬間にだけ知らせるので、留まっていても繰り返し出ない。
+        /// </summary>
+        private static void OnStepTooEarly(QuestData quest, QuestStep step)
+        {
+            if (step == null)
+            {
+                return;
+            }
+
+            HUD.Instance?.ShowToast(TooEarlyMessage(step));
+        }
+
+        /// <summary>「◯時ごろにまた来よう」。18.5 時のような半端な時刻も、時の単位で切り捨てて出す。</summary>
+        public static string TooEarlyMessage(QuestStep step)
+        {
+            return L.Format("ui.hud.too_early", Mathf.FloorToInt(step.MinHour));
         }
 
         private static string GiverName(QuestStep step)
