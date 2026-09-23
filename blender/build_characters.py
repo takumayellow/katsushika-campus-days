@@ -162,9 +162,9 @@ def build_textures(p: dict, cdir: str, face_size: int):
         patterns["kasuri"] = tex.array_to_image(
             f"{cid}_kasuri", arr, filepath=os.path.join(cdir, "kasuri.png"))
     elif outfit == "kimono_madonna":
-        arr = pattern_arrays["yagasuri"] = tex.draw_yagasuri(256)
-        patterns["yagasuri"] = tex.array_to_image(
-            f"{cid}_yagasuri", arr, filepath=os.path.join(cdir, "yagasuri.png"))
+        arr = pattern_arrays["heart"] = tex.draw_hearts(256)
+        patterns["heart"] = tex.array_to_image(
+            f"{cid}_heart", arr, filepath=os.path.join(cdir, "heart.png"))
     return face_img, patterns, face_png, pattern_arrays
 
 

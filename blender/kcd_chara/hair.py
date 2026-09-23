@@ -203,7 +203,7 @@ def _sheet(mb, part: str, ctrl_fn, us, *, seg: int = 11, frac: float = 0.82,
 
 def _bang_ctrl(p, head, u: float, *, span: float, el: float, z_end: float,
                parted: float, sweep: float, jag: float, phase: float,
-               lift: float, tuck: float = 0.0):
+               lift: float, tuck: float = 0.0, droop: float = 1.0):
     hw, hd, hh = p["head_w"], p["head_d"], p["head_h"]
     az = FRONT + u * span
     s = scalp_pt(head, az, el, hw * lift)[0]
@@ -217,7 +217,7 @@ def _bang_ctrl(p, head, u: float, *, span: float, el: float, z_end: float,
     jz = hh * 0.040 * jag * wob - hh * 0.010 * abs(u)
     # 中央を短く、こめかみへ向かって長くする（額の中央から眉が出る）
     e = np.array([x_end, y_end + hd * 0.040 * tuck,
-                  z_end - hh * 0.085 * abs(u) ** 1.6 + jz])
+                  z_end - hh * 0.085 * droop * abs(u) ** 1.6 + jz])
     c1 = s + np.array([0.0, -hd * 0.14, hh * 0.02])
     # 毛先の手前で一度前へ出してから内へ戻すと、房が額に沿って丸く
     # 内巻きになる（板を貼り付けたようにならない）
@@ -230,44 +230,70 @@ def _bang_ctrl(p, head, u: float, *, span: float, el: float, z_end: float,
 
 def _bangs(mb, p, head, *, span: float, count: int, el: float,
            end_v: float, width: float, parted: float = 0.0, sweep: float = 0.0,
-           jag: float = 1.0):
+           jag: float = 1.0, blunt: float = 0.0):
     """前髪。5〜7 房の独立した房で構成する。
 
     - 房は毛先へ向かって細り、先端が尖る（taper）。
     - 房は頭皮から浮かせて（lift）空気層を作る。
     - 房の裏に薄いシェルを張り、房の隙間から地肌が見えないようにする。
+
+    `blunt`（0..1）は「ぱっつん」の度合い。1 に近づけるほど房の長さの散らばり
+    (jag) と中央→こめかみの下がり (droop) を殺し、毛先の半径を残して房どうしを
+    重ねるので、下端が 1 本の水平線になる。公式 tus_chara02.jpg の
+    マドンナちゃんの前髪は真横一文字なので、0 のままだと鋸歯が 9 枚並ぶ。
     """
     hw, hh = p["head_w"], p["head_h"]
     z0 = p["z"]["chin"] - hh * 0.015
     z1 = p["z"]["top"]
     z_end = z0 + (z1 - z0) * end_v
-    n = int(min(7, max(5, round(count * 0.42))))
+    # ぱっつんは「細い房をたくさん並べて下端を揃える」。房を太らせて数を
+    # 据え置くと 1 本が直径 0.59 頭幅の腸詰めになり、6 本が額の上で融合して
+    # 「積み重ねた饅頭」の冠になる（実際そう見えた）。数で埋める。
+    n = int(min(16, max(5, round(count * (0.42 + 0.58 * blunt)))))
+    jag = jag * (1.0 - 0.92 * blunt)
+    droop = 1.0 - 0.72 * blunt
 
     # 裏当て。房より少し長くしておかないと房の隙間から地肌が覗く。
     _sheet(mb, "hair_front",
            lambda u: _bang_ctrl(p, head, u, span=span * 1.02, el=el + 0.03,
                                 z_end=z_end - hh * 0.030, parted=parted,
-                                sweep=sweep, jag=0.0, phase=0.0, lift=0.026),
-           np.linspace(-1.0, 1.0, 23), seg=11, frac=0.90, thick=hw * 0.018)
+                                sweep=sweep, jag=0.0, phase=0.0, lift=0.026,
+                                droop=droop),
+           np.linspace(-1.0, 1.0, 23), seg=11, frac=0.90,
+           thick=hw * (0.018 + 0.022 * blunt))
 
-    r0 = hw * (span / n) * 0.98
+    # ぱっつんでは裏当てのシェルが前髪の本体で、房はその上に乗る細い畝。
+    # 房を太いままにすると側面から額の前へ 0.19 頭高も突き出した庇になる。
+    r0 = hw * (span / n) * (0.98 - 0.30 * blunt)
+    tip = 0.05 + 0.45 * blunt
+    flat_b = 0.74 - 0.45 * blunt
+    # ぱっつんでは房の毛先を裏当てシェルの下端より上で止める。房の丸い
+    # 毛先がシェルより下に出ると、輪郭シェーダが房 1 本ずつを縁取るので
+    # 前髪の下端が「櫛の歯」に見える（レンダ拡大で 9 枚の歯を確認）。
+    z_tip = z_end + hh * 0.060 * blunt
     for i in range(n):
         u = (i + 0.5) / n * 2.0 - 1.0
         # 房ごとに頭皮からの浮きを変える。全部同じだと 1 枚の板に見える。
-        lift = 0.070 + 0.030 * math.sin(i * 2.399 + 0.6)
-        ctrl = _bang_ctrl(p, head, u, span=span, el=el, z_end=z_end,
+        lift = (0.070 - 0.038 * blunt
+                + 0.030 * math.sin(i * 2.399 + 0.6) * (1.0 - blunt))
+        ctrl = _bang_ctrl(p, head, u, span=span, el=el, z_end=z_tip,
                           parted=parted, sweep=sweep, jag=jag, phase=i,
-                          lift=lift, tuck=0.9)
-        strand(mb, "hair_front", ctrl, r0, r0 * 0.05, n=10, flat=0.74,
-               power=2.0, seg=14, taper=2.0, root=0.30)
-        if i < n - 1:
+                          lift=lift, tuck=0.9, droop=droop)
+        strand(mb, "hair_front", ctrl, r0, r0 * tip, n=10, flat=flat_b,
+               power=2.0, seg=14, taper=2.0 - 1.3 * blunt, root=0.30)
+        # ぱっつんでは本数で埋めるので、房の間に差し込む半房は要らない
+        # （入れると房が 2 枚重なって額が団子で埋まる）。
+        if i < n - 1 and blunt < 0.5:
             u2 = u + 1.0 / n
-            ctrl2 = _bang_ctrl(p, head, u2, span=span, el=el - 0.055,
-                               z_end=z_end - hh * 0.048, parted=parted,
-                               sweep=sweep, jag=jag * 1.5, phase=i + 0.5,
-                               lift=0.046, tuck=0.6)
-            strand(mb, "hair_front", ctrl2, r0 * 0.52, r0 * 0.06, n=8,
-                   flat=0.66, power=2.0, seg=12, taper=1.9, root=0.30)
+            ctrl2 = _bang_ctrl(p, head, u2, span=span,
+                               el=el - 0.055 * (1.0 - 0.6 * blunt),
+                               z_end=z_end - hh * 0.048 * (1.0 - 0.85 * blunt),
+                               parted=parted, sweep=sweep, jag=jag * 1.5,
+                               phase=i + 0.5, lift=0.046, tuck=0.6,
+                               droop=droop)
+            strand(mb, "hair_front", ctrl2, r0 * (0.52 + 0.34 * blunt),
+                   r0 * (0.06 + 0.40 * blunt), n=8, flat=0.66, power=2.0,
+                   seg=12, taper=1.9 - 1.2 * blunt, root=0.30)
 
 
 def _side(mb, p, head, *, count: int, az_lo: float, az_hi: float, el: float,
@@ -463,11 +489,19 @@ def _hairpin(mb, p, head):
 
 
 def _bow(mb, p, head, mat: str = "ribbon_red", scale: float | None = None):
-    """頭頂の大きなリボン。`bow_scale` で原作の大きさに合わせて拡大する。"""
+    """頭頂のリボン。`bow_scale` で原作の大きさに合わせる。
+
+    公式 tus_chara02.jpg の実測は 65x32px = 頭の輪郭幅の 0.66 x 見えている
+    頭の高さの 0.39（縦横比 2.03）。羽の端は結び目から左右へ 0.33*head_w*bs、
+    羽そのものの半径が 0.185*head_w*bs なので、全幅はほぼ head_w*bs になる。
+    頭の輪郭は head_w の 1.21 倍まで髪で広がるので bs = 0.66*1.21 = 0.80 前後。
+    結び目の el は 0.46 だと額寄りに落ちて「頭に刺した羽根」に見えたので、
+    公式どおり頭頂へ上げる。
+    """
     hw, hd, hh = p["head_w"], p["head_d"], p["head_h"]
     bs = float(p.get("bow_scale", 1.0) if scale is None else scale)
     az = FRONT + math.radians(10.0)
-    knot = scalp_pt(head, az, 0.46, hw * 0.14)[0]
+    knot = scalp_pt(head, az, 0.26, hw * 0.11)[0]
     with mb.part("hair_acc"):
         mb.add_sphere(tuple(knot), (hw * 0.100 * bs, hw * 0.088 * bs,
                                     hh * 0.082 * bs), mat, nu=12, nv=8)
@@ -483,14 +517,17 @@ def _bow(mb, p, head, mat: str = "ribbon_red", scale: float | None = None):
         c1 = knot + d * hw * 0.16 * bs + up * hh * 0.036 * bs
         c2 = knot + d * hw * 0.28 * bs + up * hh * 0.020 * bs
         c3 = knot + d * hw * 0.33 * bs - up * hh * 0.026 * bs
+        # flat=0.78 だと羽が薄すぎて縦横比 3.5 の「潰れた帯」になる。
+        # 公式の 2.03 に合わせて厚みを残す。
         strand(mb, "hair_acc", (c0, c1, c2, c3),
-               hw * 0.055 * bs, hw * 0.185 * bs, flat=0.78, power=2.2,
+               hw * 0.055 * bs, hw * 0.185 * bs, flat=1.00, power=2.2,
                taper=1.0, mat=mat)
     # 垂れ
     for sgn in (-1, 1):
         st = knot + side * sgn * hw * 0.05 * bs
+        # 垂れは公式では短く、リボンの下にわずかに覗くだけ
         e = st + np.array([side[0] * sgn * hw * 0.10 * bs, hd * 0.04,
-                           -hh * 0.42 * bs])
+                           -hh * 0.26 * bs])
         strand(mb, "hair_acc", (st, st + np.array([0.0, 0.0, -hh * 0.16 * bs]),
                                 e + np.array([0.0, 0.0, hh * 0.14 * bs]), e),
                hw * 0.055 * bs, hw * 0.045 * bs, flat=0.30, power=3.0, mat=mat)
@@ -606,12 +643,16 @@ def build_hair(mb: M.MeshBuilder, p: dict, head, a, fs, uv_box) -> None:
                end_v=0.614, width=0.152)
 
     elif style == "long_blunt":
+        # 公式 tus_chara02.jpg の頭頂はつるりとした 1 枚のドームで、畝も瘤も
+        # 無い。ridge_amp=0.34 / ridges=16 だと正面から団子が 6 個並んで
+        # 「積み重ねた饅頭」に見えたので、畝を細かく・浅くして艶だけ残す。
+        # 毛先の jag も、公式のストレートロングに合わせてほぼ平らにする。
         build_helmet(mb, p, head, front_el=0.70, back_el=1.70, thickness=0.104,
                      z_end_side=z["bust"], z_end_back=z["waist"] - 0.02,
-                     puff=1.25, ridges=16, ridge_amp=0.34, jag=0.028,
+                     puff=1.25, ridges=34, ridge_amp=0.026, jag=0.011,
                      inward=0.74, depth=0.12)
         _bangs(mb, p, head, span=math.radians(80.0), count=15, el=0.62,
-               end_v=0.655, width=0.116)
+               end_v=0.655, width=0.116, blunt=0.88)
 
     elif style == "twintail":
         build_helmet(mb, p, head, front_el=0.64, back_el=1.62, thickness=0.082,

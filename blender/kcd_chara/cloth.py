@@ -587,7 +587,8 @@ def _apron(mb, p, a: B.Anatomy, skirt_rings=None):
 # --------------------------------------------------------------------------
 
 
-def _kimono_collar(mb, p, a: B.Anatomy, mat, z_top, z_cross, rim_mat=None):
+def _kimono_collar(mb, p, a: B.Anatomy, mat, z_top, z_cross, rim_mat=None,
+                   plain: bool = False, piping: str | None = None):
     """V 字に合わせた衿。左前（着る人の左が上）で重ねる。
 
     無地の白 1 本だと、明るい絣地の上で幅の広い白帯が 2 本走るので
@@ -603,6 +604,11 @@ def _kimono_collar(mb, p, a: B.Anatomy, mat, z_top, z_cross, rim_mat=None):
     # 衿の断面を横切る位置 u（+1 = 外縁、-0.30 = 内縁）と、そこに貼る材質。
     # 外縁と内縁を濃紺、間を絣地にする。
     bands = ((1.00, 0.64, rim_mat), (0.64, 0.02, mat), (0.02, -0.30, rim_mat))
+    if plain:
+        # マドンナちゃん。公式 tus_chara02.jpg の衿は無地の白で、柄地は
+        # 通っていない（内側に細い赤の縁取りが 1 本入るだけ）。柄地を
+        # 挟んだままだと白い帯が 2 本になって、サスペンダーに見える。
+        bands = ((1.00, 0.16, rim_mat), (0.16, -0.30, piping or rim_mat))
     for sgn in (1, -1):
         n = 9
         rows = []
@@ -697,7 +703,10 @@ def _furi_sleeve(mb, p, a: B.Anatomy, mat, *, drop=1.0, style="furi"):
                 p1 = p0.copy()
                 z_top = float(p0[2])
                 z_bot = z_top - p["head_h"] * (0.52 * drop)
-                r_lo, r_gain, r_dep, d_gain, knee = 1.20, 0.34, 1.12, 0.22, 0.80
+                # 公式の袂は「平たい長方形の布」。奥行き（r_dep/d_gain）を
+                # 筒より太らせると側面で腕の前に貼った提灯になり、手が
+                # 袖の途中から生えて見える。横だけ大きく開いて薄くする。
+                r_lo, r_gain, r_dep, d_gain, knee = 1.30, 0.62, 0.92, 0.10, 0.82
             rings = []
             k = 9
             for i in range(k):
@@ -723,6 +732,37 @@ def _obi(mb, p, a: B.Anatomy, mat, z_c, width):
     # 袴と同色なので、外へ出す量が足りないと輪郭線が出ず、袴の上端が
     # のっぺりした一枚の面になる。公式は横一文字の紐がはっきり分かれて見える。
     band(mb, p, a, mat, "obi", z_c - width * 0.5, z_c + width * 0.5, h * 0.026)
+
+
+def _hakama_himo_bow(mb, p, a: B.Anatomy, mat, z_c, front_y):
+    """前紐を蝶結びにした版（マドンナちゃん）。
+
+    公式 `docs/ref/tus_chara02.jpg` の腰元を実測すると、坊っちゃんの四角い
+    結びではなく、左右に輪が張り出した蝶結びで、そこから 2 本の垂れが
+    全高の 0.16 ぶん（34px / 211px）下がっている。四角い結び + 短い垂れの
+    ままだと、正面から「紫の箱に脚が 2 本生えた」ようにしか見えなかった。
+    """
+    h = p["height"]
+    zz, rx, _ry = _profile(p, a)
+    rxi = float(np.interp(z_c, zz, rx))
+    knot_w = rxi * 0.34
+    wing_w = rxi * 0.52
+    y_c = -(front_y(z_c) + h * 0.004)
+    z_tare = z_c - h * 0.020 - h * 0.150 * 0.5
+    with mb.part("himo"):
+        # 中央の結び目。輪より前に出して、輪が結びの後ろから出るようにする。
+        mb.add_box((0.0, y_c - h * 0.006, z_c),
+                   (knot_w, h * 0.034, h * 0.044), mat)
+        # 左右の輪。公式は結びの 1.5 倍ほど横へ張り出す。
+        for sgn in (-1, 1):
+            mb.add_box((sgn * (knot_w + wing_w) * 0.5, y_c,
+                        z_c + h * 0.002),
+                       (wing_w, h * 0.028, h * 0.038), mat)
+        # 垂れ 2 本。公式は結びの真下から、輪より内側に落ちる。
+        for sgn in (-1, 1):
+            mb.add_box((sgn * h * 0.026,
+                        -(front_y(z_tare) + h * 0.003), z_tare),
+                       (h * 0.042, h * 0.026, h * 0.150), mat)
 
 
 def _hakama_himo(mb, p, a: B.Anatomy, mat, z_c, front_y):
@@ -911,7 +951,9 @@ def _furoshiki(mb, p, a: B.Anatomy):
 
 
 def build_kimono(mb, p, a: B.Anatomy, *, kimono_mat, hakama_mat, shoes,
-                 hakama_high=True, hakama_pleats=26, sleeve="furi"):
+                 hakama_high=True, hakama_pleats=26, sleeve="furi",
+                 collar_rim="cloth_skirt_navy", sleeve_drop=1.0,
+                 collar_plain=False, collar_piping=None, himo="knot"):
     h = p["height"]
     z = p["z"]
     hak_z = z["underbust"] if hakama_high else z["waist"]
@@ -922,8 +964,9 @@ def build_kimono(mb, p, a: B.Anatomy, *, kimono_mat, hakama_mat, shoes,
     yoke(mb, p, a, kimono_mat, "kimono_yoke", k_rings[-1],
          z["shoulder"] + h * 0.014, h * 0.012, rise=h * 0.030, bust=0.55)
     _kimono_collar(mb, p, a, kimono_mat, z["shoulder"] + h * 0.010,
-                   hak_z + h * 0.012, rim_mat="cloth_skirt_navy")
-    _furi_sleeve(mb, p, a, kimono_mat, style=sleeve)
+                   hak_z + h * 0.012, rim_mat=collar_rim,
+                   plain=collar_plain, piping=collar_piping)
+    _furi_sleeve(mb, p, a, kimono_mat, style=sleeve, drop=sleeve_drop)
     _obi(mb, p, a, hakama_mat, hak_z + h * 0.012, h * 0.036)
     # 高下駄のときは公式イラストどおり、裾を足の甲の上で止めて素足と歯を
     # 見せる。足首まで落とすと下駄が袴に飲み込まれて、脛も足も出ない筒に
@@ -963,7 +1006,10 @@ def build_kimono(mb, p, a: B.Anatomy, *, kimono_mat, hakama_mat, shoes,
         aa = hak_amp * M.smoothstep(0.0, 0.30, t)
         return a.hip_ry * k * (1.0 + aa * 0.375)
 
-    _hakama_himo(mb, p, a, hakama_mat, hak_z + h * 0.014, hakama_front)
+    if himo == "bow":
+        _hakama_himo_bow(mb, p, a, hakama_mat, hak_z + h * 0.014, hakama_front)
+    else:
+        _hakama_himo(mb, p, a, hakama_mat, hak_z + h * 0.014, hakama_front)
     if shoes == "geta":
         _geta(mb, p, a)
     else:
@@ -1022,9 +1068,16 @@ def build_outfit(mb: M.MeshBuilder, p: dict, a: B.Anatomy) -> None:
                      hakama_mat="cloth_hakama_blue", shoes="geta",
                      hakama_high=False, hakama_pleats=10, sleeve="boy")
     elif outfit == "kimono_madonna":
-        build_kimono(mb, p, a, kimono_mat="cloth_kimono_yagasuri_red",
+        # 公式 tus_chara02.jpg の衿は白（坊っちゃんの紺の衿とは別）。
+        # 袂は袴の裾のすぐ上（全高の 0.82）まで垂れる大きな振り袖なので、
+        # drop=1.0 のままだと帯の高さで切れて七分袖に見える。
+        # ヒダは正面に 5〜6 本しか見えないので 28 本から減らす。
+        build_kimono(mb, p, a, kimono_mat="cloth_kimono_heart_pink",
                      hakama_mat="cloth_hakama_purple", shoes="boots",
-                     hakama_high=True, hakama_pleats=28)
+                     hakama_high=True, hakama_pleats=16,
+                     collar_rim="collar_white", sleeve_drop=1.60,
+                     collar_plain=True, collar_piping="ribbon_red",
+                     himo="bow")
     elif outfit == "labcoat":
         build_labcoat(mb, p, a)
     else:

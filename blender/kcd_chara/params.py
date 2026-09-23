@@ -131,7 +131,13 @@ BUILDS = {
         arm_r=(0.108, 0.098, 0.080), hand=0.125,
         leg_r=(0.205, 0.168, 0.128), foot=(0.180, 0.470, 0.140),
         arm_len=(0.112, 0.098, 0.062),
-        head_w=0.862, head_d=0.880,
+        # chibi_f はマドンナちゃん専用。公式 tus_chara02.jpg を実測すると
+        # 頭の輪郭（髪込み）98px x 見えている頭の高さ 82px で、**横のほうが
+        # 広い**（W/H = 1.195）。髪のかぶさるぶんは横 1.21 倍・縦 1.21 倍なので
+        # 素の頭蓋は 81 x 68px = W/H 1.19。0.862 のままだと縦長の卵形になり、
+        # シルエットの中で頭だけが 31% 小さく見えていた（輪郭幅/全高が
+        # 公式 0.465 に対し 0.328）。
+        head_w=1.180, head_d=0.985,
     ),
     # ちび（男子・3 頭身）
     "chibi_m": dict(
@@ -244,23 +250,53 @@ CHARACTERS: dict[str, dict] = {
     "madonna": dict(
         id="madonna",
         jp="マドンナちゃん",
-        height=1.14, heads=2.95, build="chibi_f", chibi=True,
+        # 公式 tus_chara02.jpg (332x240) の実測。髪の天端 y=24 / 顎 y=106 /
+        # ブーツの底 y=235 → 全高 211px、見えている頭 82px = 2.57 頭身。
+        # 髪を除いた頭蓋は 68px なので 211/68 = 3.10 …だが heads は
+        # 「素体の頭高」に対する比なので、髪のはみ出しは silhouette_pad で
+        # 別に引く。3.10 のままだと胴が長く見えるので 2.98 に留める。
+        height=1.14, heads=2.98, silhouette_pad=(0.210, 0.018),
+        build="chibi_f", chibi=True,
         skin=_c("#F5CDBA"),
-        hair_color=_c("#8B5A2B"),
-        eye_color=_c("#7E4620"),
-        lash_color=_c("#3A2018"),
-        brow_color=_c("#6E4520"),
-        blush_color=_c("#FF8F9C"), blush_strength=0.58,
-        mouth_color=_c("#C4394A"), mouth_style="smile", mouth_w=0.036,
-        eye_style="round", eye_tilt=2.0, star_eyes=True,
+        # 公式の髪は明るい黄土色 #AA6D26。#8B5A2B は暗くて赤黒い。
+        hair_color=_c("#AA6D26"),
+        # 公式の目は白目も虹彩も無い真っ黒な縦長楕円 12x22px に、
+        # 4 方向の白いキラ星が 1 個だけ。茶色の虹彩は描かれていない。
+        eye_color=_c("#15110F"),
+        lash_color=_c("#15110F"),
+        brow_color=_c("#6E4520"), brow_style="none",  # 公式は眉が 1 本も無い
+        nose=False,                                    # 公式は鼻も無い
+        # 公式の頬紅は実測 (250,196,168)。#FF8F9C を 0.58 で乗せると
+        # (250,169,169) になり、赤すぎるうえに位置が目の真下ではなく
+        # 目の下端に食い込んでいた（レンダを拡大して確認）。
+        blush_color=_c("#FFAF8E"), blush_strength=0.55,
+        # 公式 332x240 実測: 頬紅は幅 15px x 高さ 8px、中心 x は目の中心と
+        # 同じ、中心 y は顎から 12.5px 上。アトラス UV は u 1.0 = 117px /
+        # v 1.0 = 67px なので dx=0.184 / y=0.187 / rx,ry はぼかしぶん 1.12 倍。
+        blush_layout=dict(dx=0.184, y=0.187, rx=0.072, ry=0.066),
+        # 公式の口は唇でも塗りでもなく、黒い弧 1 本（幅 20px = 頭蓋の 0.29）。
+        mouth_color=_c("#241A16"), mouth_style="ink_smile", mouth_w=0.064,
+        eye_style="ink", eye_tilt=2.0, star_eyes=True,
         hair="long_blunt", hair_accessory="bow_red",
         outfit="kimono_madonna",
-        face_layout=dict(eye_y=0.380, eye_dx=0.192, eye_rx=0.090, eye_ry=0.126),
-        mat_colors={"hair": "#8B5A2B", "eye_l": "#8A4B22", "eye_r": "#8A4B22"},
-        bow_scale=1.55,
-        pattern_scale=11.0,
+        # 頭蓋 81x68px 基準。目の中心は顎から 30.8px(0.45 頭高)で、
+        # 0.380 のままでは目鼻が顔の下 1/3 に寄って額だけ広く見えていた。
+        # u の 1 単位は uv_box の都合でワールド 1.44*head_w、v は 1.015*head_h。
+        face_layout=dict(eye_y=0.460, eye_dx=0.184, eye_rx=0.051, eye_ry=0.159),
+        # 公式から色を抜いた実測値（袴 #9066A8 / リボン #E4475B /
+        # ブーツ #AE7D25）。既定の #4C2A70 / #D8222F / #7A4A28 は
+        # どれも 2 段暗く、並べると別人の配色に見えた。
+        mat_colors={"hair": "#AA6D26", "eye_l": "#15110F", "eye_r": "#15110F",
+                    "cloth_hakama_purple": "#9066A8",
+                    "ribbon_red": "#E4475B",
+                    "boots_brown": "#AE7D25", "metal": "#8A6218"},
+        # リボンは公式で 65x32px = 頭幅の 0.66。1.55 では 1.12 頭幅あった。
+        bow_scale=0.80,
+        # 矢羽根 1 個の間隔は公式で胴幅の 1/5.4。11.0 では 1/15 で
+        # 遠目にピンストライプだった。
+        pattern_scale=5.0,
         accessories=("boots",),
-        sign_items=("矢絣の振袖", "頭頂の大きな赤リボン", "編み上げブーツ"),
+        sign_items=("ハート柄の振袖", "頭頂の赤リボン", "編み上げブーツ"),
     ),
     # ----------------------------------------------------------------- inari
     "inari": dict(

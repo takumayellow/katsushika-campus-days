@@ -311,7 +311,8 @@ def build_face_parts(mb: M.MeshBuilder, p: dict, fs: FaceSurface, uv_box):
     # 丸い点目にならない（tus_chara01.jpg の目は 8x13px のほぼ楕円）。
     # sharp 目（教授）はこれまでどおり角を立てる。
     _es = p.get("eye_style", "round")
-    power_eye = 2.7 if _es == "round" else (2.2 if _es == "dot" else 3.1)
+    power_eye = 2.7 if _es == "round" else (2.2 if _es in ("dot", "ink")
+                                            else 3.1)
     # 輪郭シェル（身長 x outline.THICKNESS）より必ず手前に出す。ここが
     # 内側に入ると頭の膨張シェルが目を黒く覆ってしまう。
     grow = p["height"] * 0.0022
@@ -335,7 +336,9 @@ def build_face_parts(mb: M.MeshBuilder, p: dict, fs: FaceSurface, uv_box):
               _disc(cu, eye_y - eye_ry * 0.04, eye_rx * 0.90, eye_ry * 0.93,
                     2.2, 3, 18),
               offset=off_iris, dome=hd * 0.020, power=2.2)
-        dot = p.get("eye_style") == "dot"
+        # 点目（坊っちゃん）と墨目（マドンナちゃん）はどちらも「黒い楕円
+        # 1 枚」で、まつ毛の帯も二重線も持たない。睫毛は tex 側で描く。
+        dot = p.get("eye_style") in ("dot", "ink")
         if not dot:
             # 点目にはまつ毛も二重線も無い
             up, lo, dl = _eye_curves(cu, eye_y, eye_rx, eye_ry, sgn)
@@ -347,6 +350,10 @@ def build_face_parts(mb: M.MeshBuilder, p: dict, fs: FaceSurface, uv_box):
                     dl[1], dl[2], offset=off_lash * 0.70, thick=thick * 0.46)
         bw = p.get("brow_width", 0.038)
         ba = p.get("brow_arch", 0.030)
+        if p.get("brow_style") == "none":
+            # 公式に眉が無いキャラ（前髪に完全に隠れるマドンナちゃん）。
+            # tex._draw_face_brows も同じ条件で描かない。
+            continue
         if dot:
             bu, bv, bwid = _brow_curve_flat(cu, eye_y, eye_rx, eye_ry, sgn, bw)
         else:
@@ -361,20 +368,22 @@ def build_face_parts(mb: M.MeshBuilder, p: dict, fs: FaceSurface, uv_box):
 
     # 鼻は「あるのが分かる程度」。アニメ顔では点か影で十分なので、
     # 表面からほとんど出さない小さなふくらみにする。
-    nose_v = eye_y * 0.66
-    nx_, nz_ = _uv_to_xz(p, uv_box, np.array([0.5]), np.array([nose_v]))
-    ny = fs.y_at(float(nx_[0]), float(nz_[0]))
-    with mb.part("nose"):
-        mb.add_sphere((0.0, ny + hd * 0.012, float(nz_[0])),
-                      (p["head_w"] * 0.017, hd * 0.014, p["head_h"] * 0.013),
-                      "face", nu=10, nv=6)
-    lo_i, hi_i = mb.parts["nose"][0]
-    for i in range(lo_i, hi_i):
-        x, _y, z = mb.verts[i]
-        u = (x - uv_box[0]) / (uv_box[1] - uv_box[0])
-        v = (z - uv_box[2]) / (uv_box[3] - uv_box[2])
-        uvs[i] = tile_uv(TILE_FEATURE, float(np.clip(u, 0.0, 1.0)),
-                         float(np.clip(v, 0.0, 1.0)))
+    # nose=False のキャラ（公式に鼻が描かれていないマドンナちゃん）は省く。
+    if p.get("nose", True):
+        nose_v = eye_y * 0.66
+        nx_, nz_ = _uv_to_xz(p, uv_box, np.array([0.5]), np.array([nose_v]))
+        ny = fs.y_at(float(nx_[0]), float(nz_[0]))
+        with mb.part("nose"):
+            mb.add_sphere((0.0, ny + hd * 0.012, float(nz_[0])),
+                          (p["head_w"] * 0.017, hd * 0.014,
+                           p["head_h"] * 0.013), "face", nu=10, nv=6)
+        lo_i, hi_i = mb.parts["nose"][0]
+        for i in range(lo_i, hi_i):
+            x, _y, z = mb.verts[i]
+            u = (x - uv_box[0]) / (uv_box[1] - uv_box[0])
+            v = (z - uv_box[2]) / (uv_box[3] - uv_box[2])
+            uvs[i] = tile_uv(TILE_FEATURE, float(np.clip(u, 0.0, 1.0)),
+                             float(np.clip(v, 0.0, 1.0)))
 
     mw = p.get("mouth_w", 0.030)
     # 目線と顎の間の約 45% に置く。眼の半径に紐づけると個体差で顎まで下がる。

@@ -114,7 +114,7 @@ BASE_COLORS: dict[str, str] = {
     "shoes_loafer": "#4A2F22",
     "cloth_kimono_kasuri_blue": "#F4F2EC",
     "cloth_hakama_blue": "#1F4C8F",
-    "cloth_kimono_yagasuri_red": "#FCF6F3",
+    "cloth_kimono_heart_pink": "#FCF9F7",
     "cloth_hakama_purple": "#4C2A70",
     "ribbon_red": "#D8222F",
     "collar_white": "#F6F1E6",
@@ -161,7 +161,7 @@ def color_of(p: dict, name: str) -> tuple[float, float, float]:
 
 #: 和柄のテクスチャを貼るマテリアル → build_textures() の patterns のキー
 PATTERN_OF = {"cloth_kimono_kasuri_blue": "kasuri",
-              "cloth_kimono_yagasuri_red": "yagasuri"}
+              "cloth_kimono_heart_pink": "heart"}
 
 
 def _hex8(rgb) -> str:
@@ -235,10 +235,10 @@ def build_materials(p: dict, face_image, pattern_images: dict) -> dict:
             "cloth_kimono_kasuri_blue", col("cloth_kimono_kasuri_blue"),
             roughness=0.7, image=pattern_images["kasuri"], uv=False,
             tex_scale=p.get("pattern_scale", 7.0))
-    if "yagasuri" in pattern_images:
-        out["cloth_kimono_yagasuri_red"] = make_material(
-            "cloth_kimono_yagasuri_red", col("cloth_kimono_yagasuri_red"),
-            roughness=0.7, image=pattern_images["yagasuri"], uv=False,
+    if "heart" in pattern_images:
+        out["cloth_kimono_heart_pink"] = make_material(
+            "cloth_kimono_heart_pink", col("cloth_kimono_heart_pink"),
+            roughness=0.7, image=pattern_images["heart"], uv=False,
             tex_scale=p.get("pattern_scale", 6.0))
 
     return out
