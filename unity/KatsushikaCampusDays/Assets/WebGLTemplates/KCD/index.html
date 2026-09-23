@@ -23,10 +23,11 @@
           </div>
         </div>
 
-        <!-- マウスがゲームに取られていない間だけ出す案内。全画面ボタンは画面の中に置くので、
-             ブラウザの全画面表示（キャンバスだけが映る）でも隠れない (#48)。 -->
+        <!-- マウスが解放された直後と、解放中にマウスを動かしたときだけ数秒出す案内。
+             全画面ボタンは画面の中に置くので、ブラウザの全画面表示（キャンバスだけが
+             映る）でも隠れない (#48)。キーボードはクリックしなくても最初から効く。 -->
         <div id="kcd-overlay" class="kcd-hidden">
-          <span id="kcd-overlay-text">クリックで操作開始　·　Esc でマウスを解放　·　F で全画面</span>
+          <span id="kcd-overlay-text">クリックでマウス視点　·　Esc でマウスを解放　·　F で全画面</span>
           <button type="button" class="kcd-fullscreen">⛶ 全画面</button>
         </div>
       </div>
@@ -34,7 +35,7 @@
       <div id="unity-warning"> </div>
 
       <div id="kcd-guide">
-        <p class="kcd-line">クリックで操作開始　·　<b>Esc</b> でマウスを解放　·　<b>F</b> で全画面</p>
+        <p class="kcd-line">クリックでマウス視点　·　<b>Esc</b> でマウスを解放　·　<b>F</b> で全画面</p>
         <p class="kcd-line kcd-sub"><b>WASD</b> 移動　·　<b>Shift</b> ダッシュ　·　<b>E</b> 話す　·　<b>Tab</b> クエスト</p>
         <button type="button" class="kcd-fullscreen">⛶ 全画面</button>
       </div>
@@ -106,14 +107,40 @@
       canvas.style.background = "url('" + buildUrl + "/{{{ BACKGROUND_FILENAME.replace(/'/g, '%27') }}}') center / cover";
 #endif
 
-      // マウスがゲームに取られている（ポインターロック）間は案内を消し、外れたら必ず出す。
-      // ブラウザが Esc でロックを外したときにも呼ばれるので、全画面ボタンが押せる状態に戻る。
+      // キャンバスの中の案内は出しっぱなしにしない。以前は「ロックされていない間はずっと」
+      // 出していたので、キーボードだけで遊んでいる間やタイトル・メニュー（ゲームが自分で
+      // ロックを外す）のあいだ、いつまでも「クリックで操作開始」が画面に被っていた。
+      // いまは、ロックが外れた直後と、外れている間にマウスを動かしたときだけ数秒出す。
+      const OVERLAY_MS = 3500;
+      let overlayTimer = 0;
+      function isLocked() { return document.pointerLockElement === canvas; }
+      function showOverlayBriefly() {
+        if (isLocked()) return;
+        overlay.classList.remove("kcd-hidden");
+        clearTimeout(overlayTimer);
+        overlayTimer = setTimeout(() => overlay.classList.add("kcd-hidden"), OVERLAY_MS);
+      }
+      function hideOverlay() {
+        clearTimeout(overlayTimer);
+        overlay.classList.add("kcd-hidden");
+      }
       function updateLockUi() {
-        var locked = document.pointerLockElement === canvas;
-        overlay.classList.toggle("kcd-hidden", locked);
+        var locked = isLocked();
         guide.classList.toggle("kcd-dim", locked);
+        if (locked) hideOverlay(); else showOverlayBriefly();
       }
       document.addEventListener("pointerlockchange", updateLockUi);
+      // 全画面ボタンに手を伸ばすときに出るよう、解放中のマウス移動で出し直す。
+      fullscreenContainer.addEventListener("mousemove", showOverlayBriefly);
+      // キーを押して遊び始めたら邪魔しない。
+      document.addEventListener("keydown", hideOverlay);
+
+      // キーボードはキャンバスにフォーカスがあるときだけゲームに届く。読み込みが終わったら
+      // こちらでフォーカスを入れ、クリックしなくても WASD で動けるようにする。ページの余白や
+      // 全画面ボタンを押してフォーカスが外れても、次のキー入力でキャンバスへ戻す。
+      function focusCanvas() {
+        if (document.activeElement !== canvas) canvas.focus({ preventScroll: true });
+      }
 
       var script = document.createElement("script");
       script.src = loaderUrl;
@@ -130,9 +157,14 @@
           }
         }).then((unityInstance) => {
           document.querySelectorAll(".kcd-fullscreen").forEach((button) => {
-            button.onclick = () => { unityInstance.SetFullscreen(1); };
+            button.onclick = () => { unityInstance.SetFullscreen(1); focusCanvas(); };
           });
-          updateLockUi();
+          focusCanvas();
+          document.addEventListener("keydown", (e) => {
+            if (e.target === document.body || e.target === document.documentElement) {
+              focusCanvas();
+            }
+          }, true);
         }).catch((message) => {
           unityShowBanner(message, 'error');
         });
