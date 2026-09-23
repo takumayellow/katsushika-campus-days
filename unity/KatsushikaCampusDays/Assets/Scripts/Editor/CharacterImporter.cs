@@ -18,7 +18,7 @@ namespace KCD.Editor
         /// <summary>取り込み規則を変えたら上げる。既存の FBX が取り込み直される。</summary>
         public override uint GetVersion()
         {
-            return 4;
+            return 6;
         }
 
         /// <summary>
@@ -32,13 +32,96 @@ namespace KCD.Editor
                 return;
             }
 
+            // 柄の有無は palette.json で決まるので、書き換わったら FBX も取り込み直す。
+            string palette = Path.GetDirectoryName(assetPath).Replace('\\', '/') + "/palette.json";
+            context.DependsOnSourceAsset(palette);
+            bool patterned = File.Exists(palette) && File.ReadAllText(palette).Contains("\"pattern\"");
+            int bodies = 0;
+            foreach (SkinnedMeshRenderer renderer in root.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+            {
+                bodies += renderer.name.EndsWith("_outline", System.StringComparison.Ordinal) ? 0 : 1;
+            }
+
+            if (patterned && bodies > 1)
+            {
+                // Generated は Blender の 1 オブジェクトの箱が基準。メッシュが分かれると箱が変わり柄の大きさがずれる。
+                Debug.LogWarning("[KCD] " + assetPath + " は体のメッシュが " + bodies
+                    + " 枚ある。和柄の Generated 座標はメッシュごとの箱で焼くので、Blender と柄の大きさがずれる");
+            }
+
             foreach (SkinnedMeshRenderer renderer in root.GetComponentsInChildren<SkinnedMeshRenderer>(true))
             {
                 if (renderer.name.EndsWith("_outline", System.StringComparison.Ordinal))
                 {
                     renderer.enabled = false;
                 }
+                else if (patterned)
+                {
+                    BakeGeneratedCoordinates(root.transform, renderer);
+                }
             }
+        }
+
+        /// <summary>和柄の座標を焼くチャンネル。KCD/Toon の TEXCOORD2 / TEXCOORD3。</summary>
+        public const int GeneratedUvChannel = 2;
+        public const int BindNormalUvChannel = 3;
+
+        /// <summary>
+        /// Blender の Generated 座標と bind 時の法線を UV2 / UV3 に焼く (#55)。
+        ///
+        /// Blender は絣・矢絣を「Generated 座標 × 倍率 → 画像のボックス投影」で貼っている（kcd_chara/mats.py の
+        /// make_material, uv=False）。Generated はオブジェクト（体 1 枚のメッシュ）の元の形の外接箱を
+        /// 軸ごとに 0..1 にした座標で、FBX には入らない。そこで取り込み時に同じ箱で計算して頂点に持たせる。
+        /// 動いても柄が服に付いてくるよう、座標も法線も bind 姿勢のものを焼く。
+        /// 頂点ごとに 24 バイト増えるので（WebGL のダウンロードに効く）、palette.json に柄のあるキャラだけにする。
+        ///
+        /// 軸は Blender のオブジェクト軸（Z が上）に戻す。Blender の -Y（正面）が Unity の +Z、
+        /// Blender の +X（キャラの左）が Unity の -X になる（axis_forward=-Z, axis_up=Y の書き出し）。
+        /// </summary>
+        private static void BakeGeneratedCoordinates(Transform root, SkinnedMeshRenderer renderer)
+        {
+            Mesh mesh = renderer.sharedMesh;
+            if (mesh == null || mesh.vertexCount == 0)
+            {
+                return;
+            }
+
+            Matrix4x4 toRoot = root.worldToLocalMatrix * renderer.transform.localToWorldMatrix;
+            Vector3[] vertices = mesh.vertices;
+            Vector3[] normals = mesh.normals;
+            var generated = new List<Vector3>(vertices.Length);
+            var bindNormals = new List<Vector3>(vertices.Length);
+            Vector3 min = Vector3.positiveInfinity;
+            Vector3 max = Vector3.negativeInfinity;
+
+            for (int i = 0; i < vertices.Length; i++)
+            {
+                Vector3 p = ToBlenderAxes(toRoot.MultiplyPoint3x4(vertices[i]));
+                generated.Add(p);
+                min = Vector3.Min(min, p);
+                max = Vector3.Max(max, p);
+                Vector3 n = normals.Length == vertices.Length ? toRoot.MultiplyVector(normals[i]) : Vector3.up;
+                bindNormals.Add(ToBlenderAxes(n).normalized);
+            }
+
+            Vector3 size = max - min;
+            for (int i = 0; i < generated.Count; i++)
+            {
+                Vector3 p = generated[i] - min;
+                generated[i] = new Vector3(
+                    size.x > 1e-6f ? p.x / size.x : 0.5f,
+                    size.y > 1e-6f ? p.y / size.y : 0.5f,
+                    size.z > 1e-6f ? p.z / size.z : 0.5f);
+            }
+
+            mesh.SetUVs(GeneratedUvChannel, generated);
+            mesh.SetUVs(BindNormalUvChannel, bindNormals);
+        }
+
+        /// <summary>Unity のモデル空間（Y 上, +Z 正面）→ Blender のオブジェクト空間（Z 上, -Y 正面）。</summary>
+        public static Vector3 ToBlenderAxes(Vector3 unity)
+        {
+            return new Vector3(-unity.x, -unity.z, unity.y);
         }
 
         private void OnPreprocessModel()

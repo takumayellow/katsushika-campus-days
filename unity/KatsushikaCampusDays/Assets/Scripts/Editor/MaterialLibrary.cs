@@ -222,9 +222,10 @@ namespace KCD.Editor
             string path = CharacterFolder + "/" + characterId + "_" + name + ".mat";
             Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
             Dictionary<string, Color> palette = LoadCharacterPalette(characterId);
+            Dictionary<string, Pattern> patterns = LoadCharacterPatterns(characterId);
             if (material != null)
             {
-                RepaintCharacter(material, name, palette);
+                RepaintCharacter(material, name, palette, patterns);
                 return material;
             }
 
@@ -233,6 +234,7 @@ namespace KCD.Editor
             Color color = palette.TryGetValue(name, out Color declared) ? declared : CharacterColor(name, tones);
 
             SetCharacterColor(material, color);
+            ApplyPattern(material, patterns.TryGetValue(name, out Pattern pattern) ? pattern : null, color);
             material.SetFloat("_OutlineWidth", 0.005f);
 
             // 顔・目・スカートの面は内向きに出力されているので、両面描画にする（シェーダ側で法線を裏返す）。
@@ -266,10 +268,15 @@ namespace KCD.Editor
             return material;
         }
 
+        private static Color ShadeOf(Color color)
+        {
+            return Color.Lerp(color, new Color(0.45f, 0.42f, 0.58f), 0.42f);
+        }
+
         private static void SetCharacterColor(Material material, Color color)
         {
             material.SetColor("_BaseColor", color);
-            material.SetColor("_ShadeColor", Color.Lerp(color, new Color(0.45f, 0.42f, 0.58f), 0.42f));
+            material.SetColor("_ShadeColor", ShadeOf(color));
             material.SetColor("_ShadeColor2", Color.Lerp(color, new Color(0.30f, 0.28f, 0.44f), 0.55f));
         }
 
@@ -283,21 +290,153 @@ namespace KCD.Editor
         ///
         /// 顔テクスチャの 4 枚と輪郭は palette.json に載らない（載っていても触らない）。
         /// </summary>
-        private static bool RepaintCharacter(Material material, string name, Dictionary<string, Color> palette)
+        private static bool RepaintCharacter(
+            Material material, string name, Dictionary<string, Color> palette, Dictionary<string, Pattern> patterns)
         {
             if (IsFaceTextured(name) || name == "outline" || !palette.TryGetValue(name, out Color declared))
             {
                 return false;
             }
 
-            if (!material.HasProperty(BaseColorId) || Same(material.GetColor(BaseColorId), declared))
+            if (!material.HasProperty(BaseColorId))
             {
                 return false;
             }
 
-            SetCharacterColor(material, declared);
-            EditorUtility.SetDirty(material);
+            patterns.TryGetValue(name, out Pattern pattern);
+            bool changed = false;
+            if (pattern == null && !Same(material.GetColor(BaseColorId), declared))
+            {
+                SetCharacterColor(material, declared);
+                changed = true;
+            }
+
+            changed |= ApplyPattern(material, pattern, declared);
+            if (changed)
+            {
+                EditorUtility.SetDirty(material);
+            }
+
+            return changed;
+        }
+
+        /// <summary>
+        /// 絣・矢絣などの和柄 (#55)。Blender は Generated 座標 × <see cref="Scale"/> で <see cref="Texture"/> を
+        /// ボックス投影し、画像の色をそのまま服の色にしている（kcd_chara/mats.py の make_material, uv=False）。
+        /// </summary>
+        public sealed class Pattern
+        {
+            public Texture2D Texture;
+            public float Scale;
+        }
+
+        private static readonly int PatternId = Shader.PropertyToID("_Pattern");
+        private static readonly int PatternMapId = Shader.PropertyToID("_PatternMap");
+        private static readonly int PatternScaleId = Shader.PropertyToID("_PatternScale");
+        private const string PatternKeyword = "_PATTERN_ON";
+
+        /// <summary>
+        /// 柄を貼る（pattern が null なら外す）。変えたら true。
+        /// 画像の色がそのまま出るように _BaseColor は白にし、陰の色は柄の平均色（palette.json の hex）から作る。
+        /// </summary>
+        private static bool ApplyPattern(Material material, Pattern pattern, Color mean)
+        {
+            if (!material.HasProperty(PatternId))
+            {
+                return false;
+            }
+
+            if (pattern == null)
+            {
+                if (material.GetFloat(PatternId) == 0f && !material.IsKeywordEnabled(PatternKeyword)
+                    && material.GetTexture(PatternMapId) == null)
+                {
+                    return false;
+                }
+
+                material.SetFloat(PatternId, 0f);
+                material.DisableKeyword(PatternKeyword);
+                material.SetTexture(PatternMapId, null);
+                SetCharacterColor(material, mean);
+                return true;
+            }
+
+            bool same = material.GetFloat(PatternId) == 1f
+                && material.IsKeywordEnabled(PatternKeyword)
+                && material.GetTexture(PatternMapId) == pattern.Texture
+                && Mathf.Approximately(material.GetFloat(PatternScaleId), pattern.Scale)
+                && Same(material.GetColor(BaseColorId), Color.white)
+                && Same(material.GetColor(ShadeColorId), ShadeOf(mean));
+            if (same)
+            {
+                return false;
+            }
+
+            SetCharacterColor(material, mean);
+            material.SetColor(BaseColorId, Color.white);
+            material.SetFloat(PatternId, 1f);
+            material.EnableKeyword(PatternKeyword);
+            material.SetTexture(PatternMapId, pattern.Texture);
+            material.SetFloat(PatternScaleId, pattern.Scale);
             return true;
+        }
+
+        /// <summary>
+        /// palette.json から和柄を引く。{マテリアル名: 柄}。
+        ///
+        /// 柄の画像は Blender が FBX の隣に &lt;柄&gt;.png で書く（kasuri.png など）。palette.json に
+        /// "pattern" があればその名前で、無ければマテリアル名の語（cloth_kimono_kasuri_blue なら kasuri）で
+        /// 同じフォルダの png を探す。倍率は "pattern_scale"（Blender の params の pattern_scale と同じ値）。
+        /// 倍率の無い柄は、でたらめな大きさで貼るより平均色のままにしておく。
+        /// </summary>
+        public static Dictionary<string, Pattern> LoadCharacterPatterns(string characterId)
+        {
+            var patterns = new Dictionary<string, Pattern>();
+            string folder = EditorPaths.CharactersFolder + "/" + characterId;
+            foreach (PaletteEntry entry in LoadPaletteEntries(characterId))
+            {
+                if (string.IsNullOrEmpty(entry.name))
+                {
+                    continue;
+                }
+
+                Texture2D texture = null;
+                if (!string.IsNullOrEmpty(entry.pattern))
+                {
+                    texture = AssetDatabase.LoadAssetAtPath<Texture2D>(folder + "/" + entry.pattern + ".png");
+                }
+                else
+                {
+                    foreach (string word in Normalize(entry.name).Split('_'))
+                    {
+                        if (word != "face")
+                        {
+                            texture = AssetDatabase.LoadAssetAtPath<Texture2D>(folder + "/" + word + ".png");
+                        }
+
+                        if (texture != null)
+                        {
+                            break;
+                        }
+                    }
+                }
+
+                if (texture == null)
+                {
+                    continue;
+                }
+
+                if (entry.pattern_scale <= 0f)
+                {
+                    Debug.LogWarning("[KCD] " + characterId + "/palette.json の " + entry.name
+                        + " に pattern_scale が無いので、柄を貼らずに平均色で塗る");
+                    continue;
+                }
+
+                patterns[Normalize(entry.name)] = new Pattern { Texture = texture, Scale = entry.pattern_scale };
+            }
+
+            return patterns;
         }
 
         /// <summary>
@@ -320,11 +459,12 @@ namespace KCD.Editor
             {
                 string characterId = Path.GetFileName(folder);
                 Dictionary<string, Color> palette = LoadCharacterPalette(characterId);
+                Dictionary<string, Pattern> patterns = LoadCharacterPatterns(characterId);
                 foreach (string name in palette.Keys)
                 {
                     string path = CharacterFolder + "/" + characterId + "_" + name + ".mat";
                     Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
-                    if (material != null && RepaintCharacter(material, name, palette))
+                    if (material != null && RepaintCharacter(material, name, palette, patterns))
                     {
                         repainted++;
                     }
@@ -344,6 +484,8 @@ namespace KCD.Editor
         {
             public string name;
             public string hex;
+            public string pattern;
+            public float pattern_scale;
         }
 
         [System.Serializable]
@@ -356,22 +498,23 @@ namespace KCD.Editor
         /// Blender（build_characters.write_palette）が FBX の隣に書く色表を読む。無ければ空。
         /// FBX が運ぶのはマテリアル名だけなので、色はこのファイルで受け取る。
         /// </summary>
-        public static Dictionary<string, Color> LoadCharacterPalette(string characterId)
+        private static PaletteEntry[] LoadPaletteEntries(string characterId)
         {
-            var palette = new Dictionary<string, Color>();
             string path = Path.Combine(EditorPaths.CharactersFolder, characterId, "palette.json");
             if (!File.Exists(path))
             {
-                return palette;
+                return new PaletteEntry[0];
             }
 
             PaletteFile file = JsonUtility.FromJson<PaletteFile>(File.ReadAllText(path));
-            if (file?.materials == null)
-            {
-                return palette;
-            }
+            return file?.materials ?? new PaletteEntry[0];
+        }
 
-            foreach (PaletteEntry entry in file.materials)
+        /// <summary>palette.json の色 {マテリアル名: 色}。和柄の色は柄の平均色。</summary>
+        public static Dictionary<string, Color> LoadCharacterPalette(string characterId)
+        {
+            var palette = new Dictionary<string, Color>();
+            foreach (PaletteEntry entry in LoadPaletteEntries(characterId))
             {
                 if (!string.IsNullOrEmpty(entry.name) && ColorUtility.TryParseHtmlString("#" + entry.hex, out Color color))
                 {

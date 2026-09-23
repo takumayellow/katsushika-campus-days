@@ -25,6 +25,13 @@ Shader "KCD/Toon"
         _EmissionColor("Emission Color", Color) = (0,0,0,1)
         _Cutoff("Alpha Cutoff", Range(0,1)) = 0.5
 
+        // 和柄（絣・矢絣）。Blender の「Generated 座標 × 倍率 → 画像のボックス投影」と同じ貼り方 (#55)。
+        // Generated 座標と bind 時の法線は CharacterImporter が UV2 / UV3 に焼く。
+        [Toggle(_PATTERN_ON)] _Pattern("Pattern", Float) = 0
+        [NoScaleOffset] _PatternMap("Pattern Map", 2D) = "white" {}
+        _PatternScale("Pattern Scale", Float) = 1
+        _PatternBlend("Pattern Box Blend", Range(0, 1)) = 0.25
+
         // Surface / blending state（マテリアル側から差し替える）
         [HideInInspector] _Surface("__surface", Float) = 0.0
         [HideInInspector] _SrcBlend("__src", Float) = 1.0
@@ -57,6 +64,9 @@ Shader "KCD/Toon"
         half   _OutlineFadeStart;
         half   _OutlineFadeEnd;
         half   _Cutoff;
+        half   _Pattern;
+        float  _PatternScale;
+        half   _PatternBlend;
         half   _Surface;
         half   _SrcBlend;
         half   _DstBlend;
@@ -160,6 +170,7 @@ Shader "KCD/Toon"
             #pragma multi_compile_instancing
             #pragma multi_compile_fog
             #pragma shader_feature_local_fragment _ALPHATEST_ON
+            #pragma shader_feature_local _PATTERN_ON
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
             #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
@@ -174,12 +185,18 @@ Shader "KCD/Toon"
 
             TEXTURE2D(_BaseMap);
             SAMPLER(sampler_BaseMap);
+            TEXTURE2D(_PatternMap);
+            SAMPLER(sampler_PatternMap);
 
             struct Attributes
             {
                 float4 positionOS : POSITION;
                 float3 normalOS   : NORMAL;
                 float2 uv         : TEXCOORD0;
+                #if defined(_PATTERN_ON)
+                    float3 generated  : TEXCOORD2;
+                    float3 bindNormal : TEXCOORD3;
+                #endif
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
@@ -191,6 +208,10 @@ Shader "KCD/Toon"
                 half3  normalWS   : TEXCOORD2;
                 half3  vertexSH   : TEXCOORD3;
                 half   fogFactor  : TEXCOORD4;
+                #if defined(_PATTERN_ON)
+                    float3 generated  : TEXCOORD5;
+                    half3  bindNormal : TEXCOORD6;
+                #endif
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
@@ -209,7 +230,56 @@ Shader "KCD/Toon"
                 output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
                 output.vertexSH = SampleSHVertex(normalInputs.normalWS);
                 output.fogFactor = ComputeFogFactor(positionInputs.positionCS.z);
+                #if defined(_PATTERN_ON)
+                    output.generated = input.generated * _PatternScale;
+                    output.bindNormal = input.bindNormal;
+                #endif
                 return output;
+            }
+
+            // Blender の画像テクスチャ「ボックス」投影（Cycles の svm_image_texture の BOX と同じ重み）。
+            // co と n は Blender のオブジェクト軸（Z が上）。X を向く面は (y, z)、Y は (x, z)、Z は (y, x) で引く。
+            half3 SamplePatternBox(float3 co, half3 n, half blend)
+            {
+                n = abs(n);
+                n /= max(n.x + n.y + n.z, 1e-5h);
+                half limit = 0.5h * (1.0h + blend);
+                half3 w = half3(0.0h, 0.0h, 0.0h);
+                if (n.x > limit * (n.x + n.y) && n.x > limit * (n.x + n.z)) { w.x = 1.0h; }
+                else if (n.y > limit * (n.x + n.y) && n.y > limit * (n.y + n.z)) { w.y = 1.0h; }
+                else if (n.z > limit * (n.x + n.z) && n.z > limit * (n.y + n.z)) { w.z = 1.0h; }
+                else if (blend > 0.0h)
+                {
+                    if (n.z < (1.0h - limit) * (n.y + n.x))
+                    {
+                        w.x = saturate((n.x / (n.x + n.y) - 0.5h * (1.0h - blend)) / blend);
+                        w.y = 1.0h - w.x;
+                    }
+                    else if (n.x < (1.0h - limit) * (n.y + n.z))
+                    {
+                        w.y = saturate((n.y / (n.y + n.z) - 0.5h * (1.0h - blend)) / blend);
+                        w.z = 1.0h - w.y;
+                    }
+                    else if (n.y < (1.0h - limit) * (n.x + n.z))
+                    {
+                        w.x = saturate((n.x / (n.x + n.z) - 0.5h * (1.0h - blend)) / blend);
+                        w.z = 1.0h - w.x;
+                    }
+                    else
+                    {
+                        w = ((2.0h - limit) * n + (limit - 1.0h)) / (2.0h * limit - 1.0h);
+                    }
+                }
+                else
+                {
+                    w.x = 1.0h;
+                }
+
+                half3 color = 0.0h;
+                if (w.x > 0.0h) { color += w.x * SAMPLE_TEXTURE2D(_PatternMap, sampler_PatternMap, co.yz).rgb; }
+                if (w.y > 0.0h) { color += w.y * SAMPLE_TEXTURE2D(_PatternMap, sampler_PatternMap, co.xz).rgb; }
+                if (w.z > 0.0h) { color += w.z * SAMPLE_TEXTURE2D(_PatternMap, sampler_PatternMap, co.yx).rgb; }
+                return color;
             }
 
             // 2 段階のトゥーンランプ。1.0 = 明部, 中間, 0.0 = 最暗部。
@@ -237,6 +307,10 @@ Shader "KCD/Toon"
                 half4 baseSample = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv) * _BaseColor;
                 half3 albedo = baseSample.rgb;
                 half alpha = baseSample.a;
+
+                #if defined(_PATTERN_ON)
+                    albedo *= SamplePatternBox(input.generated, input.bindNormal, _PatternBlend);
+                #endif
 
                 #if defined(_ALPHATEST_ON)
                     clip(alpha - _Cutoff);

@@ -10,7 +10,9 @@
     },
     {
       "name": "cloth_kimono_kasuri_blue",
-      "hex": "DADDE3"
+      "hex": "DADDE3",
+      "pattern": "kasuri",
+      "pattern_scale": 16.0
     },
     {
       "name": "cloth_skirt_navy",
