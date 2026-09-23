@@ -7,154 +7,203 @@ from . import geom
 from .mesh import MeshBuilder
 
 
-def add_blob(mb, cx, cy, cz, rx, ry, rz, mat, seg=8, rings=4, noise=0.0, seed=0):
-    """低ポリの楕円体（葉のかたまり）。
+# --------------------------------------------------------------------------- #
+#  樹木（#51）
+# --------------------------------------------------------------------------- #
+# 以前は「低ポリ楕円体（add_blob）を核 1 個 + 枝先 5〜9 個ぶんだけ積む」作りだった。
+# それを全部やめて、幹の根元から樹冠の天辺までを閉じた回転体 1 枚で引くことにした。
+# やめた理由は 4 つとも実測で出ている:
+#   - かたまり同士が交差したまま結合されておらず、独立シェルが keyaki 17 / round 7 /
+#     pine 5 個あった。中に潜りこんだ面はカメラに裏を向けるので、Cull Front の
+#     アウトライン殻（KCD_Toon、幅は最大 0.03 m）が面まるごと黒紫で塗りつぶす。
+#     実測では keyaki が 30 m から最大 1.377%、pine は真下で 29.494% の裏面が出ていた。
+#   - 幹が cap_top=False の開いた筒で z=3.4 止まり。樹冠の底まで 2.37 m 空いていた。
+#   - seg=6 / rings=3 の楕円体は上下の半径が同じ（sin60 = sin120）樽で、遠景では
+#     六角形の宝石に見えた。
+#   - 4 段ランプの明るい 2 段がかたまりの「上面キャップ」に載っていて、目線 1.6 m の
+#     プレイヤーには 1 段も見えていなかった（leaf_top 0.0% / leaf_light 0.0%）。
+_LEAF_RAMP = ("leaf_dark", "leaf", "leaf_light", "leaf_top")
 
-    mat は文字列、または上→下に並べたマテリアル名のリスト（リングごとに切り替える）。
-    noise > 0 なら各リング頂点の半径を ±noise 倍だけ揺らし、輪郭をギザギザにする。
+
+def _leaf_at(z, crown):
+    """crown = (樹冠の下端 z, 上端 z, 切れ目 3 つ) から 4 段ランプを選ぶ。
+
+    4 段は「樹冠の中の高さ」で横向きの面に割り当てる。上面キャップに置く以前の作りは
+    目線 1.6 m から 1 段も見えなかった（見えていたのは keyaki で leaf_dark 90.5%、
+    round で leaf 85.6% の 1 段だけ）。横を向いた面に上から順に並べれば、そのまま
+    立っている人の目に入る。
+    切れ目は下端 0.0 〜 上端 1.0 の割合。段の数は樹種ごとに違う（松は 10 段、丸木は
+    6 段）ので樹種ごとに決める。真上を向いた面は目線 1.6 m からは見えないので、
+    等分（0.25/0.50/0.75）ではなく明るい側を下へ寄せてある。
     """
-    bands = [mat] if isinstance(mat, str) else list(mat)
-    bands += [bands[-1]] * max(0, rings - len(bands))
+    z0, z1, cuts = crown
+    t = 0.0 if z1 <= z0 else (z - z0) / (z1 - z0)
+    return _LEAF_RAMP[sum(1 for c in cuts if t >= c)]
+
+
+def add_lathe(mb, cx, cy, levels, crown=None, seg=12, arms=0, phase=0.0,
+              noise=0.0, lean=0.0, lean_z=2.0, seed=0):
+    """回転体（ロクロ）。levels は下から上へ並べた (半径, z, 腕, マテリアル)。
+
+    幹から樹冠までを 1 枚の閉じた面で作る。独立したかたまりを積まないので
+    シェル同士の交差が原理的に起きず、裏面も出ない。r = 0 の段は極（扇）。
+
+    arm > 0 の段は半径を r + arm * ((1 + cos(arms*(theta - phase))) / 2) ** 1.5 にして、
+    arms 本の腕を張り出させる。ケヤキの三又も、丸木と松の樹冠の崩しもこれで作る。
+    かたまりを別に足すのに比べて三角形が 1 枚も増えないのが利点で、試作段階で
+    置いていた「埋めこみこぶ 8 個」はこれに置き換えた。こぶは 85,248 tri
+    （キャンパス全体の 43%）を食うのに、輪郭へ足していた画素は実測で
+    keyaki 2.99% / round 1.28% / pine 0.00% しかなかった。
+
+    lean は z = lean_z から上だけを +x 方向へ寄せる剪断（天辺で lean m）。
+    完全な回転体だと「インスタンスを Z 回転させる」ことと「別の方位から見る」ことが
+    同値になり、site.py が 1 本ごとに渡せる唯一の形の差（Z 回転）が効かなくなる。
+    実測では 24 通りに回した 276 ペアのシルエット XOR が round 3.83% / pine 3.00% で、
+    588 本のうち 384 本が「回しても同じ絵」の判子になっていた。lean=0.35 で
+    round 11.18% / pine 13.29% と現行（13.90%）並みまで戻る。三角形は増えない。
+    lean_z=2.0 は下げてはいけない。根元から傾けると身長 1.8 m での最大半径が
+    0.292 → 0.357 m になり、Unity 側の幹カプセル（半径 0.3 m）を突き抜ける。
+
+    mat が None の段は crown=(z0, z1, cuts) の高さから 4 段ランプで決める。
+    noise は半径の ±倍率。乱数は random.Random(seed) 固定なので、同じコードなら
+    同じ FBX になる。
+    """
     rng = random.Random(seed)
-    jitter = [[1.0 + rng.uniform(-noise, noise) for _ in range(seg)]
-              for _ in range(rings + 1)]
-    prev = None
-    for k in range(rings + 1):
-        phi = math.pi * k / rings
-        r = math.sin(phi)
-        z = cz + rz * math.cos(phi)
-        if k == 0 or k == rings:
-            ring = [(cx, cy, z)] * seg
+    ztop = max(l[1] for l in levels)
+    rings = []
+    for r, z, arm, _m in levels:
+        lx = lean * max(0.0, (z - lean_z) / (ztop - lean_z)) if ztop > lean_z else 0.0
+        if r <= 1e-6 and arm <= 1e-6:
+            rings.append((None, lx))    # 極
+            continue
+        pts = []
+        for i in range(seg):
+            th = 2.0 * math.pi * i / seg
+            w = (0.5 * (1.0 + math.cos(arms * (th - phase)))) ** 1.5 if arm > 0 else 0.0
+            rr = (r + arm * w) * (1.0 + rng.uniform(-noise, noise))
+            pts.append((cx + lx + rr * math.cos(th), cy + rr * math.sin(th), z))
+        rings.append((pts, lx))
+    for k in range(len(levels) - 1):
+        (lo, lo_x), (hi, hi_x) = rings[k], rings[k + 1]
+        mat = levels[k][3]
+        if mat is None:
+            mat = _leaf_at(0.5 * (levels[k][1] + levels[k + 1][1]), crown)
+        if lo is None and hi is None:
+            continue
+        if lo is None:                  # 下端の極
+            apex = (cx + lo_x, cy, levels[k][1])
+            for i in range(seg):
+                mb.add_face([hi[(i + 1) % seg], hi[i], apex], mat)
+        elif hi is None:                # 上端の極
+            apex = (cx + hi_x, cy, levels[k + 1][1])
+            for i in range(seg):
+                mb.add_face([lo[i], lo[(i + 1) % seg], apex], mat)
         else:
-            ring = [(cx + rx * r * jitter[k][i] * math.cos(2 * math.pi * i / seg),
-                     cy + ry * r * jitter[k][i] * math.sin(2 * math.pi * i / seg), z)
-                    for i in range(seg)]
-        if prev is not None:
-            m = bands[min(k - 1, len(bands) - 1)]
             for i in range(seg):
                 j = (i + 1) % seg
-                a, b, c, d = prev[i], prev[j], ring[j], ring[i]
-                # 巻き方向。以前は逆で法線が内向きになっており、Cull Back のトゥーン
-                # シェーダが手前の面を捨てて奥側の面を描いていた。そのせいで幹の枝が
-                # 樹冠を突き抜けて見え、陰影も裏返っていた（#51）。
-                if k == rings:
-                    mb.add_face([c, b, a], m)
-                elif k == 1:
-                    mb.add_face([d, c, a], m)
-                else:
-                    mb.add_quad(d, c, b, a, m)
-        prev = ring
+                mb.add_quad(lo[i], lo[j], hi[j], hi[i], mat)
 
 
-def add_cone(mb, cx, cy, z0, z1, r, mat, seg=8, noise=0.0, seed=0):
-    """円錐（針葉樹の段）。noise > 0 で裾の半径と高さを少し乱す。"""
-    rng = random.Random(seed)
-    ring = []
-    for i in range(seg):
-        a = 2 * math.pi * i / seg
-        j = 1.0 + rng.uniform(-noise, noise)
-        dz = rng.uniform(-0.12, 0.12) * r if noise else 0.0
-        ring.append((cx + r * j * math.cos(a), cy + r * j * math.sin(a), z0 + dz))
-    tip = (cx, cy, z1)
-    for i in range(seg):
-        j = (i + 1) % seg
-        mb.add_face([ring[i], ring[j], tip], mat)
-    mb.add_face(list(reversed(ring)), mat)
+# ケヤキ: 幹 → 三又 → 杯状の樹冠までを 1 枚の回転体で作る。
+# (半径, z, 腕の張り出し, マテリアル) を下から。mat=None は高さから 4 段で決める。
+# 幹のテーパー 0.280 → 0.215 は、身長 1.8 m 以下の最大半径が 0.292 m に収まるように
+# 決めてある（Unity の幹カプセルは半径 0.3 m）。以前の round 0.837 / pine 2.758 は
+# プレイヤーが葉の中を歩ける値だった。
+# 腕は z=3.50 から樹冠の上まで残す。途中で 0 に落とすと 30 m でキノコに見える。
+_KEYAKI_LEVELS = [
+    (0.280, 0.00, 0.00, "trunk"),
+    (0.270, 2.60, 0.00, "trunk"),
+    (0.245, 3.50, 0.20, "trunk"),   # ここから三又が開きはじめる
+    (0.215, 4.50, 0.50, "trunk"),
+    (0.260, 5.35, 0.85, None),      # 樹冠の下端。腕はまだ 3 本に割れている
+    (1.050, 6.30, 1.00, None),
+    (1.900, 7.30, 0.85, None),
+    (2.450, 8.20, 0.55, None),      # いちばん広いのは上寄り = 杯状
+    (2.400, 9.05, 0.30, None),
+    (1.350, 9.60, 0.12, None),
+    (0.000, 9.95, 0.00, None),
+]
+_KEYAKI_CROWN = (5.35, 9.95, (0.22, 0.46, 0.68))
 
+# 丸木: 幹から球へ。arms=5 / phase=0.6 は seg=10 の頂点と 1 つおきに噛み合うので、
+# 平均半径をほとんど変えずに輪郭だけが五角星に崩れる（方位ごとのシルエット面積の
+# ばらつきが 1.84% → 4.07%）。
+_ROUND_LEVELS = [
+    (0.230, 0.00, 0.00, "trunk"),
+    (0.210, 1.95, 0.00, "trunk"),
+    (0.340, 2.55, 0.05, None),      # 樹冠の下端。目線 1.6 m より上にある
+    (1.100, 3.05, 0.16, None),
+    (1.720, 3.62, 0.22, None),
+    (1.950, 4.28, 0.24, None),
+    (1.800, 4.92, 0.20, None),
+    (1.240, 5.58, 0.12, None),
+    (0.000, 6.20, 0.00, None),
+]
+_ROUND_CROWN = (2.55, 6.20, (0.15, 0.30, 0.66))
 
-# 樹冠の塗り分け（#51）。トゥーンは 2 段ランプしか持たないので、明暗はメッシュ側の
-# マテリアルで作る。上面 leaf_top → leaf_light → leaf → 内側・底面 leaf_dark。
-_CROWN_CORE_BANDS = ["leaf", "leaf", "leaf_dark"]
+# 松: 4 段の傘を 1 本の折れ線で表して、丸ごと 1 枚の回転体にする。段ごとに
+# 「外へ出て少し下がる」→「すぼみながら上がる」を繰り返す。傘の裏と表が別の段に
+# なるので、4 段ランプがそのまま横向きの面に乗る。
+# いちばん下の裾は z=2.80。目線 1.6 m の頭上 1.2 m にあり、中に入らないし、
+# 真下に立っても傘のふちの外に空が見える。以前は裾が z=1.35 / 半径 2.45 で、
+# 目線のカメラが傘の内側に入って裏面画素率が 29.494% 出ていた。
+# 裾の半径は「細くしすぎない」こと。アウトライン殻の幅は 0.03 m 固定なので、木を
+# 細くすると木の画素が減る一方で線の画素は増える。1.20 倍する前の裾 2.300 では
+# 30 m のアウトライン占有が現行 4.24% に対して 6.28% と、かえって悪化していた。
+_PINE_LEVELS = [
+    (0.270, 0.00, 0.00, "trunk"),
+    # 裾の裏は真下に立つと視界いっぱいになる。高さで色を決めるとぜんぶ 1 段
+    # （leaf_dark）で塗りつぶされるので、ここだけ内側と外側で 2 段に割る。
+    # 実物でも傘のふちのほうが光が回りこんで明るい。割れ目は 1.050 m。裾を 1.20 倍に
+    # 太らせたときに 1.500 のままにしたら、真下のカメラ（垂直画角 55 度・幹から
+    # 0.45 m）の画面にはまだ内側しか入らず leaf_dark 98.4% だった。1.050 なら 64.3%。
+    (0.250, 2.95, 0.00, "leaf_dark"),
+    (1.050, 2.88, 0.00, "leaf"),
+    (2.760, 2.80, 0.20, None),
+    (0.600, 4.45, 0.00, None),
+    (2.256, 4.30, 0.16, None),
+    (0.500, 5.70, 0.00, None),
+    (1.656, 5.55, 0.13, None),
+    (0.400, 6.70, 0.00, None),
+    (1.116, 6.58, 0.09, None),
+    (0.255, 7.70, 0.00, None),      # 先端は数学的な 1 点ではなく、鈍い円錐にする
+    (0.000, 8.10, 0.00, None),
+]
+# 松だけ切れ目がはっきり低い。円錐なので面積が下の段に集中していて、等分に近い
+# 切れ目（0.22/0.46/0.72）だといちばん大きい第 1 段の上面が丸ごと leaf_dark になり、
+# 明るい 2 段が可視 23.3% と基準 25% に届かなかった。0.14/0.28/0.55 にすると
+# 第 1 段の上面が leaf、第 2 段が leaf_light、第 3 段から上が leaf_top に回り、
+# 3〜30 m 等重みで leaf_light+leaf_top 38.8% / leaf_dark 3.1% になる。
+# leaf_dark が遠景でほぼ消えるのは意図どおり。松の leaf_dark は「傘の裏」担当で、
+# 木の下に立ったとき（真下 0 m）に 64.3% と支配的になる。
+_PINE_CROWN = (2.80, 8.10, (0.14, 0.28, 0.55))
 
-
-def _crown_bands(w):
-    """w は樹冠内の上下位置（+1 が天、-1 が底）。上ほど明るく、底ほど濃く。"""
-    if w > 0.40:
-        return ["leaf_top", "leaf_light", "leaf"]
-    if w > -0.40:
-        return ["leaf_light", "leaf", "leaf"]
-    return ["leaf", "leaf", "leaf_dark"]
-
-
-def add_crown(mb, core, env, n, r_range, shell, seed, noise=0.14):
-    """核の楕円体 1 個 + 枝先のかたまり n 個。
-
-    core / env は (cx, cy, cz, rx, ry, rz)。かたまりは env の楕円殻の上に
-    フィボナッチ球で配り、shell 倍だけ中心寄りに引き込む。乱数は seed 固定なので
-    再ビルドしても同じ FBX になる。
-    """
-    cx, cy, cz, rx, ry, rz = core
-    add_blob(mb, cx, cy, cz, rx, ry, rz, _CROWN_CORE_BANDS,
-             seg=8, rings=3, noise=noise * 0.6, seed=seed * 7)
-    ex, ey, ez, ax, ay, az = env
-    rng = random.Random(seed)
-    made = []
-    for i in range(n):
-        w = 2.0 * ((i + 0.5) / n) - 1.0
-        rad = math.sqrt(max(0.0, 1.0 - w * w))
-        a = math.pi * (3.0 - math.sqrt(5.0)) * i + rng.uniform(-0.35, 0.35)
-        s = rng.uniform(*shell)
-        made.append((ex + ax * rad * math.cos(a) * s,
-                     ey + ay * rad * math.sin(a) * s,
-                     ez + az * w * s, rng.uniform(*r_range), w))
-    for i, (px, py, pz, rr, w) in enumerate(made):
-        add_blob(mb, px, py, pz, rr, rr, rr * rng.uniform(0.74, 0.92),
-                 _crown_bands(w), seg=6, rings=3, noise=noise, seed=seed * 131 + i)
-
-
-# 樹冠の寸法。外形（幅・高さ）は現行の blob 配置とほぼ同じに合わせてあるので、
-# 並木の見え方と Unity 側の幹カプセル（半径 0.3 m / 高さ 6 m）は変わらない。
-_KEYAKI_CROWN = dict(core=(0.0, 0.0, 8.05, 2.45, 2.45, 1.67),
-                     env=(0.0, 0.0, 8.10, 2.88, 2.88, 1.72),
-                     n=9, r_range=(1.21, 1.67), shell=(0.45, 0.80), seed=11)
-# 丸木は枝先を核より外へ出すのが肝。核 1.95 に対し、いちばん内寄り・いちばん小さい
-# かたまりでも 1.42 * 0.66 + 1.30 = 2.24 > 1.95 で必ず顔を出す。ここを核より内側にすると
-# 輪郭が核の八角形そのものになり、遠景で「緑の六角形」に見えてしまう（#51 の実測）。
-_ROUND_CROWN = dict(core=(0.0, 0.0, 4.15, 1.95, 1.95, 1.88),
-                    env=(0.0, 0.0, 4.22, 1.42, 1.42, 1.55),
-                    n=5, r_range=(1.30, 1.62), shell=(0.66, 1.00), seed=23)
+# 幹から上を +x へ寄せる量。回転体のままだと site.py の Z 回転が輪郭を変えられず、
+# 588 本中 384 本（round 252 + pine 132）が「回しても同じ絵」の判子になる。
+_LEAN = 0.35
 
 
 def tree_keyaki(name="tree_mesh_keyaki"):
-    """ケヤキ風。杯状に枝分かれし、上が広い。高さ 9.5 m。"""
+    """ケヤキ風。杯状に枝分かれし、上が広い。高さ 9.95 m。"""
     mb = MeshBuilder(name)
-    mb.add_cylinder(0, 0, 0.0, 3.4, 0.26, "trunk", seg=8, cap_top=False)
-    for i in range(3):
-        a = 2 * math.pi * i / 3 + 0.4
-        dx, dy = math.cos(a) * 1.3, math.sin(a) * 1.3
-        tri = [(0.20 * math.cos(a), 0.20 * math.sin(a), 3.0),
-               (dx, dy, 6.2), (dx * 0.5, dy * 0.5, 3.1)]
-        # 枝は板 1 枚で、法線は (-sin a, cos a, 0) の片面だけ。Cull Back の
-        # トゥーンでは反対側から見たときに枝が丸ごと消える（#51）。表裏 2 枚にする。
-        # ただし同じ位置に重ねると MeshBuilder.to_object の remove_doubles
-        # （しきい値 1e-4）が片方を消すので、法線方向に半分ずつずらして厚み 0.03 m の
-        # 板にする。+1 tri / 枝（= +3 tri / 本）。
-        ox, oy = -math.sin(a) * 0.015, math.cos(a) * 0.015
-        mb.add_face([(p[0] + ox, p[1] + oy, p[2]) for p in tri], "trunk")
-        mb.add_face([(p[0] - ox, p[1] - oy, p[2]) for p in reversed(tri)], "trunk")
-    add_crown(mb, **_KEYAKI_CROWN)
+    add_lathe(mb, 0, 0, _KEYAKI_LEVELS, crown=_KEYAKI_CROWN, seg=12, arms=3,
+              phase=0.4, noise=0.05, lean=_LEAN, seed=11)
     return mb
 
 
 def tree_round(name="tree_mesh_round"):
-    """丸い樹冠の中木。高さ 6.5 m。"""
+    """丸い樹冠の中木。高さ 6.2 m。"""
     mb = MeshBuilder(name)
-    mb.add_cylinder(0, 0, 0.0, 2.4, 0.20, "trunk", seg=8, cap_top=False)
-    add_crown(mb, **_ROUND_CROWN)
+    add_lathe(mb, 0, 0, _ROUND_LEVELS, crown=_ROUND_CROWN, seg=10, arms=5,
+              phase=0.6, noise=0.06, lean=_LEAN, seed=23)
     return mb
 
 
-# (z0, z1, 裾半径, マテリアル)。段を 3 → 4 に増やして輪郭を階段状にする。
-_PINE_TIERS = [(1.35, 4.55, 2.40, "leaf_dark"), (3.10, 6.10, 1.92, "leaf"),
-               (4.60, 7.25, 1.42, "leaf_light"), (5.80, 8.05, 0.90, "leaf_top")]
-
-
 def tree_pine(name="tree_mesh_pine"):
-    """常緑の円錐樹。高さ 8 m。"""
+    """常緑の円錐樹。高さ 8.1 m。"""
     mb = MeshBuilder(name)
-    mb.add_cylinder(0, 0, 0.0, 1.6, 0.25, "trunk", seg=8, cap_top=False)
-    for i, (z0, z1, r, mat) in enumerate(_PINE_TIERS):
-        add_cone(mb, 0, 0, z0, z1, r, mat, seg=8, noise=0.22, seed=41 + i)
+    add_lathe(mb, 0, 0, _PINE_LEVELS, crown=_PINE_CROWN, seg=10, arms=5,
+              phase=0.25, noise=0.05, lean=_LEAN, seed=41)
     return mb
 
 
