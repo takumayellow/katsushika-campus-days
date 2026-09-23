@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>葛飾キャンパスデイズ — 3D モデルビューア</title>
+<meta name="description" content="東京理科大学 葛飾キャンパスを再現した 3D モデル（キャンパス全景・建物内部 9 棟・キャラクター 7 体）をブラウザで閲覧する。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23134e2f'/%3E%3Cpath d='M6 22h20M10 22V12l6-4 6 4v10' stroke='%23a9e6c3' stroke-width='2.2' fill='none' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="viewer.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<header class="topbar">
+  <h1>葛飾キャンパスデイズ <span>3D モデルビューア</span></h1>
+  <p class="meta" id="build-meta">読み込み中…</p>
+</header>
+
+<main class="layout">
+  <nav class="sidebar" id="sidebar" aria-label="モデル一覧">
+    <div class="sidebar-inner" id="model-list"></div>
+  </nav>
+
+  <section class="stage">
+    <div class="canvas-wrap" id="canvas-wrap">
+      <div class="hud" id="hud">
+        <h2 id="hud-name">—</h2>
+        <p id="hud-note"></p>
+        <dl id="hud-stats"></dl>
+      </div>
+
+      <div class="controls" id="controls">
+        <label class="ctl" id="anim-ctl" hidden>
+          <span>アニメーション</span>
+          <select id="anim-select"></select>
+        </label>
+        <label class="ctl check" id="wall-ctl" hidden>
+          <input type="checkbox" id="wall-toggle" checked>
+          <span>壁と天井を隠す</span>
+        </label>
+        <button type="button" class="ctl btn" id="reset-view">視点をリセット</button>
+      </div>
+
+      <div class="overlay" id="loading" hidden>
+        <div class="spinner" aria-hidden="true"></div>
+        <p id="loading-text">読み込み中…</p>
+      </div>
+
+      <div class="overlay error" id="error" hidden>
+        <p id="error-text"></p>
+        <button type="button" id="error-retry">再試行</button>
+      </div>
+    </div>
+
+    <p class="hint">ドラッグで回転 / ホイールとピンチで拡大縮小 / 右ドラッグと 2 本指で平行移動</p>
+  </section>
+</main>
+
+<section class="gallery" aria-label="プレビュー画像">
+  <div class="gallery-head">
+    <h2>プレビュー</h2>
+    <div class="chips" id="gallery-chips"></div>
+  </div>
+  <div class="thumbs" id="thumbs"></div>
+</section>
+
+<div class="lightbox" id="lightbox" hidden>
+  <button type="button" class="lightbox-close" id="lightbox-close" aria-label="閉じる">×</button>
+  <figure>
+    <img id="lightbox-img" alt="">
+    <figcaption id="lightbox-cap"></figcaption>
+  </figure>
+</div>
+
+<footer class="foot">
+  モデルは Blender 4.5 で手続き的に生成。地形データは OpenStreetMap (ODbL)。
+</footer>
+
+<script type="module" src="viewer.js"></script>
+</body>
+</html>
