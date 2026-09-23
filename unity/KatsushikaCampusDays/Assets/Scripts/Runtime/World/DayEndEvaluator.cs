@@ -361,18 +361,37 @@ namespace KCD
                 _wBuildings * Ratio(data.Buildings, data.BuildingTotal));
             data.Percent = Mathf.Clamp(Mathf.RoundToInt(percent), 0, 100);
 
-            foreach (RankEntry entry in _ranks)
+            RankEntry entry = FindRank(data.Percent);
+            if (entry != null)
             {
-                if (data.Percent >= entry.MinPercent)
-                {
-                    data.Rank = entry.Rank;
-                    data.Title = L.Pick(entry.TitleJa, entry.TitleEn);
-                    data.Comment = L.Pick(entry.CommentJa, entry.CommentEn);
-                    break;
-                }
+                data.Rank = entry.Rank;
+                data.Title = L.Pick(entry.TitleJa, entry.TitleEn);
+                data.Comment = L.Pick(entry.CommentJa, entry.CommentEn);
             }
 
             return data;
+        }
+
+        /// <summary>達成率 percent（0〜100）で付くランク。どの min_percent にも届かなければ ResultData の既定（C）。</summary>
+        public string RankFor(int percent)
+        {
+            EnsureLoaded();
+            RankEntry entry = FindRank(percent);
+            return entry != null ? entry.Rank : new ResultData().Rank;
+        }
+
+        /// <summary>ranks は min_percent の高い順なので、上から見て最初に届いたものを採る。</summary>
+        private RankEntry FindRank(int percent)
+        {
+            foreach (RankEntry entry in _ranks)
+            {
+                if (percent >= entry.MinPercent)
+                {
+                    return entry;
+                }
+            }
+
+            return null;
         }
 
         private static float Ratio(int value, int total) => total <= 0 ? 0f : (float)value / total;
@@ -392,7 +411,17 @@ namespace KCD
                 return;
             }
 
-            var root = MiniJson.Deserialize(asset.text) as Dictionary<string, object>;
+            LoadRules(asset.text);
+        }
+
+        /// <summary>
+        /// Ending/result.json と同じ形の JSON から、一日の終わりの時刻・重み・総数・ランクを読む。
+        /// ふだんは EnsureLoaded が Resources の result.json を渡す。読んだあとは Resources を見に行かない。
+        /// </summary>
+        public void LoadRules(string json)
+        {
+            _loaded = true;
+            var root = MiniJson.Deserialize(json) as Dictionary<string, object>;
             if (root == null)
             {
                 return;
