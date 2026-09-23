@@ -62,6 +62,8 @@ python tools/deploy_pages.py --build
 `--skip-unity`（pytest だけ）が使える。batchmode が書き換える URP GlobalSettings・`ProjectSettings.asset`・
 `.mat` は、実行前に変更が無かったものだけ元に戻す。終了コードは 0 = 全部通った、1 = 失敗かスキップか
 ログのエラーがある、2 = 走らせられなかった、3 = 別の Unity が動いている。
+PlayMode のテスト（`Assets/Tests/PlayMode`）は Title と Campus を読み込んで動かすので、
+`SceneBuilder.BuildAll` でシーンを作り直したあとに回す。
 
 Unity のライセンスは Hub でサインインしてから batchmode を使う。Unity 公式の agent skills は
 `skills-lock.json` で固定してあり、`npx skills experimental_install` で `.agents/skills/` に復元できる。

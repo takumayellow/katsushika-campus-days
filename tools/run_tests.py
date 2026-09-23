@@ -4,7 +4,7 @@
     python tools/run_tests.py                     # EditMode → PlayMode → pytest
     python tools/run_tests.py --platform editmode # EditMode だけ
     python tools/run_tests.py --wait              # Unity が動いていたら終わるまで待つ
-    python tools/run_tests.py --filter KCD.Tests.PlayMode.CampusSmokeTests
+    python tools/run_tests.py --filter KCD.Tests.CampusSmokeTests
     python tools/run_tests.py --skip-unity        # pytest だけ（Unity を使えないとき）
     python tools/run_tests.py --dry-run           # 何を実行するかだけ出す
 
