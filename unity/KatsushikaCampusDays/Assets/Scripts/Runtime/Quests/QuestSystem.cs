@@ -130,6 +130,7 @@ namespace KCD
                 _all.Clear();
                 _active.Clear();
                 _completed.Clear();
+                _held.Clear();
 
                 if (quests != null)
                 {
@@ -144,13 +145,11 @@ namespace KCD
 
                 _all.Sort((a, b) => a.Order.CompareTo(b.Order));
 
-                for (int i = 0; i < _all.Count; i++)
-                {
-                    if (_all[i].AutoStart)
-                    {
-                        Activate(_all[i]);
-                    }
-                }
+                // autoStart でも前提（prerequisites）がそろうまでは受注しない (#65)。以前はここで前提を見ておらず、
+                // q_park・q_sunset・q_sq_night_walk・q_sq_photo_walk が最初から受注中になっていた。
+                // そのため 19 時に正門へ行くだけで、夕暮れも見ずに「一日を歩き切った」(ach_full_day) になった。
+                // 前提がそろったあとは AutoStartUnlocked が受注する。
+                AutoStartUnlocked();
 
                 if (!_silent)
                 {
@@ -246,6 +245,14 @@ namespace KCD
 
             // 制限時間は受注した瞬間から 1 回だけ数え始める。
             StartTimerIfTimed(quest);
+
+            if (_reportDepth > 0)
+            {
+                _activatedDuringReport.Add(quest.Id);
+            }
+
+            // 受注する前に拾っていた物を数える (#65)。
+            CatchUpHeld(quest);
         }
 
         /// <summary>
@@ -305,8 +312,12 @@ namespace KCD
         /// </summary>
         public void ReportVisit(string placeId, bool arriving) => Report(QuestStepKind.Visit, placeId, arriving);
 
-        /// <summary>落とし物を拾った。</summary>
-        public void ReportCollect(string itemId) => Report(QuestStepKind.Collect, itemId);
+        /// <summary>落とし物を拾った。受注していないクエストのぶんも、拾った数として覚えておく (#65)。</summary>
+        public void ReportCollect(string itemId)
+        {
+            NoteHeld(itemId);
+            Report(QuestStepKind.Collect, itemId);
+        }
 
         /// <summary>任意のフラグが立った。</summary>
         public void ReportFlag(string flagId) => Report(QuestStepKind.Flag, flagId);
@@ -333,10 +344,57 @@ namespace KCD
             List<QuestData> retryNeeded = null;
             List<QuestData> tooEarly = null;
 
+            _reportDepth++;
+            try
+            {
+                dirty = ReportToActive(kind, target, arriving, ref retryNeeded, ref tooEarly);
+            }
+            finally
+            {
+                if (--_reportDepth == 0)
+                {
+                    _activatedDuringReport.Clear();
+                }
+            }
+
+            if (retryNeeded != null)
+            {
+                for (int i = 0; i < retryNeeded.Count; i++)
+                {
+                    ChallengeRetryNeeded?.Invoke(retryNeeded[i]);
+                }
+            }
+
+            if (tooEarly != null)
+            {
+                for (int i = 0; i < tooEarly.Count; i++)
+                {
+                    StepTooEarly?.Invoke(tooEarly[i], tooEarly[i].CurrentStep);
+                }
+            }
+
+            if (dirty)
+            {
+                Changed?.Invoke();
+            }
+        }
+
+        /// <summary>受注中のクエストに報告を配る。何か進んだら true。案内のイベントは呼び出し側でまとめて出す。</summary>
+        private bool ReportToActive(QuestStepKind kind, string target, bool arriving,
+            ref List<QuestData> retryNeeded, ref List<QuestData> tooEarly)
+        {
+            bool dirty = false;
             for (int i = 0; i < _all.Count; i++)
             {
                 QuestData quest = _all[i];
                 if (!_active.Contains(quest.Id))
+                {
+                    continue;
+                }
+
+                // この報告の途中で受注したクエストは、受注のときの追いつき（CatchUpHeld）で
+                // 今回拾った分をもう数えている。ここで足すと 1 個を 2 個に数える。
+                if (kind == QuestStepKind.Collect && _activatedDuringReport.Contains(quest.Id))
                 {
                     continue;
                 }
@@ -400,42 +458,33 @@ namespace KCD
                     continue;
                 }
 
-                step.Completed = true;
-                step.Timer.Clear();
-
-                if (quest.IsComplete)
-                {
-                    _active.Remove(quest.Id);
-                    _completed.Add(quest.Id);
-                    QuestCompleted?.Invoke(quest);
-                    AutoStartUnlocked();
-                }
-                else
-                {
-                    // 次のステップが制限時間つきなら、ここから数える。
-                    StartTimerIfTimed(quest);
-                }
+                CompleteStep(quest, step);
             }
 
-            if (retryNeeded != null)
-            {
-                for (int i = 0; i < retryNeeded.Count; i++)
-                {
-                    ChallengeRetryNeeded?.Invoke(retryNeeded[i]);
-                }
-            }
+            return dirty;
+        }
 
-            if (tooEarly != null)
-            {
-                for (int i = 0; i < tooEarly.Count; i++)
-                {
-                    StepTooEarly?.Invoke(tooEarly[i], tooEarly[i].CurrentStep);
-                }
-            }
+        /// <summary>
+        /// ステップを達成にする。クエストが終われば完了にして、前提のそろった autoStart を受注する。
+        /// 続きがあれば、次のステップの計時を始め、次が collect なら持っている数まで進める。
+        /// </summary>
+        private void CompleteStep(QuestData quest, QuestStep step)
+        {
+            step.Completed = true;
+            step.Timer.Clear();
 
-            if (dirty)
+            if (quest.IsComplete)
             {
-                Changed?.Invoke();
+                _active.Remove(quest.Id);
+                _completed.Add(quest.Id);
+                QuestCompleted?.Invoke(quest);
+                AutoStartUnlocked();
+            }
+            else
+            {
+                // 次のステップが制限時間つきなら、ここから数える。
+                StartTimerIfTimed(quest);
+                CatchUpHeld(quest);
             }
         }
 
