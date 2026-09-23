@@ -88,7 +88,7 @@ namespace KCD
         /// <summary>タイトルからキャンパスへ入った回数。初回だけオリエンのクエストを自動開始する。</summary>
         public bool HasEnteredCampus { get; set; }
 
-        /// <summary>何日目か。「もう一日歩く」を選ぶたびに 1 つ進む（#16）。セーブには載せない。</summary>
+        /// <summary>何日目か。「もう一日歩く」を選ぶたびに 1 つ進む（#16）。セーブにも載せる (#61)。</summary>
         public int DayNumber { get; set; } = DayRestart.FirstDay;
 
         private void Awake()
@@ -134,6 +134,9 @@ namespace KCD
 
             // 探索率のもと。static なのでアプリを起動している間ずっと残る（シーンでは消えない）。
             DayStats.Reset();
+
+            // 「つづきから」を選びかけて読んだセーブが残っていたら、キャンパスで当てないよう捨てる。
+            SaveSystem.DiscardPending();
 
             // クエストも GameManager と寿命を共にするので読み直す。タイトルで受注音を鳴らさない口を使う。
             if (Quests == null)

@@ -133,15 +133,9 @@ namespace KCD
             }
             else if (KCDInput.QuickLoadPressed && SaveSystem.HasSave)
             {
-                SaveData data = SaveSystem.Read();
-                if (data != null)
+                // キャラ・時刻・日数・クエスト・一日の記録はここで、位置と屋内はキャンパスの最初のフレームで戻す (#61)。
+                if (SaveSystem.PrepareContinue())
                 {
-                    GameManager.Instance.SelectedCharacterId = data.CharacterId;
-                    GameManager.Instance.GameTimeHours = data.TimeHours;
-                    // DayNightCycle.Start は初めてキャンパスに入るとき 8:30 から始め、GameTimeHours を見ない。
-                    // セーブはキャンパスに入ったあとのものなので入場済みにして、ロードした時刻を引き継がせる（#38）。
-                    GameManager.Instance.HasEnteredCampus = true;
-                    GameManager.Instance.Quests?.Restore(data.Quests);
                     _moved = true;
                     AudioManager.Instance?.PlayUi("ui_confirm");
                     GameManager.Instance.EnterCampus();

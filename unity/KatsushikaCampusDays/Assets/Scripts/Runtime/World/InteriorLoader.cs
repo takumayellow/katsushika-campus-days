@@ -42,6 +42,12 @@ namespace KCD
         /// <summary>最後に外へ出た時刻。入口の再発火を抑えるのに使う。</summary>
         public float LastExitAt { get; private set; } = -999f;
 
+        /// <summary>入ったときに覚えた戻り先。建物の中でセーブするとき一緒に書く (#61)。</summary>
+        public Vector3 ReturnPosition => _returnPosition;
+
+        /// <summary>戻り先で向く向き。</summary>
+        public float ReturnYaw => _returnYaw;
+
         /// <summary>SceneBuilder から。</summary>
         public void Register(Entry entry)
         {
@@ -109,9 +115,7 @@ namespace KCD
 
             StartCoroutine(Travel(player, entry.Spawn.position, entry.Spawn.eulerAngles.y, () =>
             {
-                CurrentId = entry.Id;
-                Minimap.Instance?.SetIndoor(entry.DisplayName, entry.EntranceWorld);
-                QuestObjectiveLocator.Invalidate();
+                MarkInside(entry);
                 string name = L.Get("ui.building." + entry.Id, entry.DisplayName);
                 HUD.Instance?.ShowToast(L.Pick(
                     name + " の中に入った。出口は入ってきた扉。",
@@ -135,11 +139,79 @@ namespace KCD
 
             StartCoroutine(Travel(player, _returnPosition, _returnYaw, () =>
             {
-                CurrentId = string.Empty;
-                LastExitAt = Time.time;
-                Minimap.Instance?.ClearIndoor();
-                QuestObjectiveLocator.Invalidate();
+                MarkOutside();
             }));
+        }
+
+        /// <summary>
+        /// セーブを読んで建物の中に戻すとき (#61)。プレイヤーを動かすのは呼び出し側で、ここは
+        /// 「どの建物の中にいて、出たらどこへ戻るか」とミニマップ・目的地の表示だけをそろえる。
+        /// 暗転の途中なら打ち切る。その建物の屋内がこのシーンに無ければ何もせず false。
+        /// </summary>
+        public bool RestoreInside(string buildingId, Vector3 returnPosition, float returnYaw)
+        {
+            Entry entry = Find(buildingId);
+            if (entry == null)
+            {
+                return false;
+            }
+
+            CancelTravel();
+            _returnPosition = returnPosition;
+            _returnYaw = returnYaw;
+            MarkInside(entry);
+            return true;
+        }
+
+        /// <summary>
+        /// セーブを読んで外に立たせるとき。建物の中にいたら、中にいる扱いをやめる（ワープはしない）。
+        /// これをしないと、外に立っているのに屋内の照明・ミニマップ・BGM のまま残る。
+        /// 出た直後の自動セーブは入口の 2 m 手前に立っているので、出たときと同じく 3 秒は入口を閉じておく。
+        /// </summary>
+        public void RestoreOutside()
+        {
+            CancelTravel();
+            if (IsInside)
+            {
+                MarkOutside();
+            }
+            else
+            {
+                LastExitAt = Time.time;
+            }
+        }
+
+        private void MarkInside(Entry entry)
+        {
+            CurrentId = entry.Id;
+            Minimap.Instance?.SetIndoor(entry.DisplayName, entry.EntranceWorld);
+            QuestObjectiveLocator.Invalidate();
+        }
+
+        private void MarkOutside()
+        {
+            CurrentId = string.Empty;
+            LastExitAt = Time.time;
+            Minimap.Instance?.ClearIndoor();
+            QuestObjectiveLocator.Invalidate();
+        }
+
+        /// <summary>出入りの暗転を途中で打ち切る。封鎖と暗転を外す（OnDisable と同じ後始末）。</summary>
+        private void CancelTravel()
+        {
+            if (!_busy)
+            {
+                return;
+            }
+
+            StopAllCoroutines();
+            KCDInput.Unblock(this);
+            if (_fade != null)
+            {
+                _fade.alpha = 0f;
+            }
+
+            _busy = false;
         }
 
         private Entry Find(string buildingId)

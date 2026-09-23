@@ -66,6 +66,8 @@
     "ui.hud.quick_saved": "Quick-saved",
     "ui.hud.web_controls": "Esc: Release the mouse   F: Fullscreen",
     "ui.hud.loaded": "Game loaded",
+    "ui.hud.load_failed": "Could not load the save",
+    "ui.hud.save_failed": "Could not save the game",
     "ui.hud.chime_noon": "12:00 Lunch break",
     "ui.hud.chime_evening": "17:00 Time to head home",
     "ui.hud.time_up": "Time's up! Challenge failed",

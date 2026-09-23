@@ -66,6 +66,8 @@
     "ui.hud.quick_saved": "クイックセーブしました",
     "ui.hud.web_controls": "Esc でマウスを解放　F で全画面",
     "ui.hud.loaded": "ロードしました",
+    "ui.hud.load_failed": "セーブを読み込めませんでした",
+    "ui.hud.save_failed": "セーブできませんでした",
     "ui.hud.chime_noon": "12:00 昼休み",
     "ui.hud.chime_evening": "17:00 下校の時刻",
     "ui.hud.time_up": "時間切れ！ 挑戦失敗",

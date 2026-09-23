@@ -4,22 +4,10 @@ using UnityEngine;
 
 namespace KCD
 {
-    /// <summary>セーブファイルの中身。JsonUtility で直列化する。</summary>
-    [Serializable]
-    public sealed class SaveData
-    {
-        public string CharacterId = "mirai";
-        public float TimeHours = 8.5f;
-        public float PlayerX;
-        public float PlayerY;
-        public float PlayerZ;
-        public float PlayerYaw;
-        public QuestProgress Quests = new QuestProgress();
-    }
-
     /// <summary>
-    /// 1 スロットだけの素朴なセーブ。Application.persistentDataPath に JSON で置く。
-    /// F5 でセーブ、F9 でロード。ポーズメニューからも呼ぶ。
+    /// 1 スロットだけの素朴なセーブ。Application.persistentDataPath に JSON で置く（Web 版は PlayerPrefs、SaveStore 参照）。
+    /// F5 でセーブ、F9 でロード。ポーズメニューとタイトルの「つづきから」からも呼ぶ。
+    /// 中身の形と、壊れた入力の読み方は <see cref="SaveData"/> / <see cref="SaveDataRules"/>。
     /// </summary>
     public static class SaveSystem
     {
@@ -27,33 +15,82 @@ namespace KCD
 
         private static string FilePath => Path.Combine(Application.persistentDataPath, FileName);
 
-        /// <summary>セーブが存在するか。</summary>
+        /// <summary>タイトルの「つづきから」で読んだセーブ。位置と屋内はキャンパスの最初のフレームで当てる。</summary>
+        private static SaveData _pending;
+
+        /// <summary>セーブが存在するか（読めるかどうかは見ない。見るなら <see cref="Read"/>）。</summary>
         public static bool HasSave => SaveStore.Exists(FilePath);
+
+        /// <summary>今の状態をセーブの形にする（書かない）。</summary>
+        public static SaveData Capture()
+        {
+            var data = new SaveData { SaveVersion = SaveData.CurrentVersion };
+
+            GameManager manager = GameManager.Instance;
+            data.CharacterId = manager.SelectedCharacterId;
+            data.TimeHours = manager.GameTimeHours;
+            data.DayNumber = manager.DayNumber;
+            data.Quests = manager.Quests != null ? manager.Quests.Capture() : new QuestProgress();
+
+            data.Buildings = DayStats.BuildingIds();
+            data.Collected = DayStats.CollectedIds();
+            data.PhotoSpots = DayStats.PhotoSpotIds();
+
+            var player = UnityEngine.Object.FindAnyObjectByType<PlayerController>();
+            if (player != null)
+            {
+                Vector3 position = player.transform.position;
+                data.HasPosition = true;
+                data.PlayerX = position.x;
+                data.PlayerY = position.y;
+                data.PlayerZ = position.z;
+                data.PlayerYaw = player.transform.eulerAngles.y;
+            }
+
+            // 屋内モデルはキャンパスの遠く（x ≥ 1200 m）にあるので、位置だけ書くと読むときに
+            // 「キャンパスの外」に見える。どの建物にいて、出たらどこへ戻るかも書く (#61)。
+            InteriorLoader loader = InteriorLoader.Instance;
+            if (loader != null && loader.IsInside)
+            {
+                Vector3 back = loader.ReturnPosition;
+                data.InteriorId = loader.CurrentId;
+                data.ReturnX = back.x;
+                data.ReturnY = back.y;
+                data.ReturnZ = back.z;
+                data.ReturnYaw = loader.ReturnYaw;
+            }
+
+            return data;
+        }
 
         /// <summary>現在の状態を書き出す。失敗しても例外は投げない。</summary>
         public static bool Save()
         {
+            SaveData data;
             try
             {
-                GameManager manager = GameManager.Instance;
-                var data = new SaveData
-                {
-                    CharacterId = manager.SelectedCharacterId,
-                    TimeHours = manager.GameTimeHours,
-                    Quests = manager.Quests != null ? manager.Quests.Capture() : new QuestProgress()
-                };
+                data = Capture();
+            }
+            catch (Exception error)
+            {
+                Debug.LogError("[KCD] セーブする状態を集められません: " + error.Message);
+                return false;
+            }
 
-                var player = UnityEngine.Object.FindAnyObjectByType<PlayerController>();
-                if (player != null)
-                {
-                    Vector3 position = player.transform.position;
-                    data.PlayerX = position.x;
-                    data.PlayerY = position.y;
-                    data.PlayerZ = position.z;
-                    data.PlayerYaw = player.transform.eulerAngles.y;
-                }
+            return Write(data);
+        }
 
-                SaveStore.Write(FilePath, JsonUtility.ToJson(data, true));
+        /// <summary>組み立て済みのセーブを書く。失敗しても例外は投げない。</summary>
+        public static bool Write(SaveData data)
+        {
+            if (data == null)
+            {
+                return false;
+            }
+
+            try
+            {
+                SaveStore.Write(FilePath, SaveDataRules.ToJson(data));
                 return true;
             }
             catch (IOException error)
@@ -66,10 +103,41 @@ namespace KCD
                 Debug.LogError("[KCD] セーブ先に書き込めません: " + error.Message);
                 return false;
             }
+            catch (PlayerPrefsException error)
+            {
+                // Web 版は PlayerPrefs（ブラウザのストレージ）に書く。容量を超えるとここに来る。
+                Debug.LogError("[KCD] セーブをブラウザに保存できません: " + error.Message);
+                return false;
+            }
         }
 
-        /// <summary>セーブを読み込んで現在のシーンに適用する。</summary>
+        /// <summary>
+        /// セーブを読み込んで現在のシーン（キャンパス）に適用する。F9 とポーズの「ロード」。
+        /// 読めなければ何も変えずに知らせる。
+        /// </summary>
         public static bool Load()
+        {
+            SaveData data = Read();
+            if (data == null)
+            {
+                HUD.Instance?.ShowToast(L.Get("ui.hud.load_failed", "セーブを読み込めませんでした"));
+                return false;
+            }
+
+            _pending = null;
+            ApplyToManager(data);
+            ApplyToScene(data);
+            HUD.Instance?.ShowToast(L.Get("ui.hud.loaded", "ロードしました"));
+            return true;
+        }
+
+        /// <summary>
+        /// タイトルの「つづきから」。キャンパスを読み込む前に、シーンに依らない分（キャラ・時刻・日数・
+        /// クエスト・一日の記録）を入れる。体の見た目（PlayerAppearance.Awake）と時計（DayNightCycle.Start）は
+        /// キャンパスの読み込みでこれを拾う。位置と屋内は <see cref="ApplyPending"/> で当てる。
+        /// 読めなければ何も変えずに false。
+        /// </summary>
+        public static bool PrepareContinue()
         {
             SaveData data = Read();
             if (data == null)
@@ -77,17 +145,81 @@ namespace KCD
                 return false;
             }
 
+            ApplyToManager(data);
+            _pending = data;
+            return true;
+        }
+
+        /// <summary>「つづきから」の残り（位置・向き・屋内）を当てる。CampusDirector が最初のフレームで呼ぶ。</summary>
+        public static void ApplyPending()
+        {
+            SaveData data = _pending;
+            _pending = null;
+            if (data != null)
+            {
+                ApplyToScene(data);
+            }
+        }
+
+        /// <summary>「はじめから」で、読みかけの「つづきから」を捨てる。</summary>
+        public static void DiscardPending()
+        {
+            _pending = null;
+        }
+
+        /// <summary>セーブファイルを読むだけ。無い・読めない・壊れているときは null（どれも例外は出さない）。</summary>
+        public static SaveData Read()
+        {
+            string json;
+            try
+            {
+                if (!HasSave)
+                {
+                    return null;
+                }
+
+                json = SaveStore.Read(FilePath);
+            }
+            catch (Exception error)
+            {
+                Debug.LogError("[KCD] セーブを読み込めません: " + error.Message);
+                return null;
+            }
+
+            SaveData data = SaveDataRules.Parse(json);
+            if (data == null)
+            {
+                Debug.LogWarning("[KCD] セーブの形式が壊れているので、無いものとして扱います。");
+            }
+
+            return data;
+        }
+
+        /// <summary>シーンに依らない分を GameManager と DayStats に入れる。</summary>
+        private static void ApplyToManager(SaveData data)
+        {
             GameManager manager = GameManager.Instance;
             manager.SelectedCharacterId = data.CharacterId;
             manager.GameTimeHours = data.TimeHours;
 
-            // タイトルからのロード（TitleMenu）は Campus を読み込む前に id を立てるので
-            // PlayerAppearance.Awake が拾うが、こちらはキャンパスの中から呼ばれる
-            // （PauseMenu / CampusDirector）ので Awake はとっくに終わっている。体を今ここで入れ替える (#6)。
+            // DayNightCycle.Start は初めてキャンパスに入るとき朝から始め、GameTimeHours を見ない。
+            // セーブはキャンパスに入ったあとのものなので入場済みにして、ロードした時刻を引き継がせる（#38）。
+            manager.HasEnteredCampus = true;
+            manager.DayNumber = data.DayNumber;
+
+            DayStats.Restore(data.Buildings, data.Collected, data.PhotoSpots);
+            manager.Quests?.Restore(data.Quests);
+        }
+
+        /// <summary>見た目・時計・位置・屋内を今のシーンに当てる。</summary>
+        private static void ApplyToScene(SaveData data)
+        {
+            // キャンパスの中からのロード（F9 / ポーズ）では PlayerAppearance.Awake はとっくに終わっている。
+            // 体を今ここで入れ替える (#6)。
             var appearance = UnityEngine.Object.FindAnyObjectByType<PlayerAppearance>();
             if (appearance != null)
             {
-                appearance.Apply(manager.SelectedCharacterId);
+                appearance.Apply(data.CharacterId);
             }
 
             // DayNightCycle は自分の Hours を毎フレーム GameTimeHours へ書き戻すので、GameTimeHours だけ変えても
@@ -99,41 +231,57 @@ namespace KCD
                 cycle.SetHours(data.TimeHours);
             }
 
-            manager.Quests?.Restore(data.Quests);
-
-            var player = UnityEngine.Object.FindAnyObjectByType<PlayerController>();
-            if (player != null)
-            {
-                player.Teleport(new Vector3(data.PlayerX, data.PlayerY, data.PlayerZ), data.PlayerYaw);
-                CameraRig.SnapBehind(player.transform);
-            }
-
-            HUD.Instance?.ShowToast(L.Get("ui.hud.loaded", "ロードしました"));
-            return true;
+            Place(data);
+            QuestObjectiveLocator.Invalidate();
         }
 
-        /// <summary>セーブファイルを読むだけ。壊れていれば null。</summary>
-        public static SaveData Read()
+        /// <summary>プレイヤーを立たせ、出入り係の「中にいるか」をそろえる。</summary>
+        private static void Place(SaveData data)
         {
-            if (!HasSave)
+            var player = UnityEngine.Object.FindAnyObjectByType<PlayerController>();
+            InteriorLoader loader = InteriorLoader.Instance;
+            bool known = loader != null && data.IsInside && loader.HasInterior(data.InteriorId);
+
+            switch (SaveDataRules.Placement(data, known))
             {
-                return null;
+                case SavePlacement.Inside:
+                    loader.RestoreInside(data.InteriorId, data.ReturnPosition, data.ReturnYaw);
+                    Teleport(player, data.PlayerPosition, data.PlayerYaw);
+                    break;
+
+                case SavePlacement.ReturnPoint:
+                    loader?.RestoreOutside();
+                    Teleport(player, data.ReturnPosition, data.ReturnYaw);
+                    break;
+
+                case SavePlacement.Outside:
+                    loader?.RestoreOutside();
+                    Teleport(player, data.PlayerPosition, data.PlayerYaw);
+                    break;
+
+                default:
+                    // 位置の使えないセーブ（版番号の無い古いセーブを建物の中で書いたもの）。
+                    // タイトルからならシーンのスポーンのまま。キャンパスで建物の中から読んだなら、入口の手前へ出す。
+                    if (loader != null && loader.IsInside)
+                    {
+                        Teleport(player, loader.ReturnPosition, loader.ReturnYaw);
+                    }
+
+                    loader?.RestoreOutside();
+                    break;
+            }
+        }
+
+        private static void Teleport(PlayerController player, Vector3 position, float yaw)
+        {
+            if (player == null)
+            {
+                return;
             }
 
-            try
-            {
-                return JsonUtility.FromJson<SaveData>(SaveStore.Read(FilePath));
-            }
-            catch (IOException error)
-            {
-                Debug.LogError("[KCD] セーブを読み込めません: " + error.Message);
-                return null;
-            }
-            catch (ArgumentException error)
-            {
-                Debug.LogError("[KCD] セーブの形式が壊れています: " + error.Message);
-                return null;
-            }
+            player.Teleport(position, yaw);
+            Physics.SyncTransforms();
+            CameraRig.SnapBehind(player.transform);
         }
     }
 }

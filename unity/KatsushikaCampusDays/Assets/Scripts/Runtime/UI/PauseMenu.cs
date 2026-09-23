@@ -145,10 +145,15 @@ namespace KCD
                     SetOpen(false);
                     break;
                 case 1:
-                    SaveSystem.Save();
-                    HUD.Instance?.ShowToast(L.Get("ui.hud.saved", "セーブしました"));
+                {
+                    // 書けなかったのに「セーブしました」と出すと、次に遊ぶときまで気づけない (#61)。
+                    bool saved = SaveSystem.Save();
+                    HUD.Instance?.ShowToast(saved
+                        ? L.Get("ui.hud.saved", "セーブしました")
+                        : L.Get("ui.hud.save_failed", "セーブできませんでした"));
                     SetOpen(false);
                     break;
+                }
                 case 2:
                     SetOpen(false);
                     SaveSystem.Load();
