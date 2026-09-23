@@ -328,36 +328,112 @@ namespace KCD.Editor
             return mesh;
         }
 
-        /// <summary>樹木は幹だけ当たり判定を持たせ、NavMesh のベイクからは外す。半径は幹の見た目に合わせて細く（葉に引っかからない, #30）。</summary>
+        /// <summary>trees.fbx の原型メッシュの名前（原点にモデリングされた 1 本, build_campus.py）。</summary>
+        public const string TreeMeshPrefix = "tree_mesh_";
+
+        /// <summary>trees.fbx の種ごとのまとめ。子に位置だけの Empty（tree_&lt;n&gt;）が並ぶ。</summary>
+        public const string TreeGroupPrefix = "trees_";
+
+        /// <summary>Empty の下に作る、メッシュを描く子の名前。</summary>
+        public const string TreeBodyName = "body";
+
+        /// <summary>Empty の下に作る、幹の当たり判定の子の名前。</summary>
+        public const string TreeTrunkName = "trunk";
+
+        /// <summary>幹の当たり判定の半径と高さ（木の scale を掛ける前）。</summary>
+        public const float TreeTrunkRadius = 0.3f;
+        public const float TreeTrunkHeight = 6f;
+
+        /// <summary>幹の外側に空ける NavMesh の余白 [m]。NPC の当たり判定の半径（0.34 m）を覆う。</summary>
+        public const float TreeTrunkNavClearance = 0.35f;
+
+        /// <summary>
+        /// trees.fbx の tree_&lt;n&gt; は位置・向き・大きさだけの Empty で、メッシュを持たない。
+        /// 原点にある tree_mesh_&lt;種&gt; のメッシュを各 Empty に載せて植え、原型は隠す（#57）。
+        /// 幹だけ当たり判定を持たせる。半径は幹の見た目に合わせて細く（葉に引っかからない, #30）。
+        /// 木のメッシュは NavMesh のベイクから外し（樹冠の下を歩けなくしない）、幹の足もとだけを
+        /// NavMeshModifierVolume（Not Walkable）で抜いて、NPC が幹をすり抜けないようにする。
+        /// </summary>
         private static void DressTrees(GameObject trees)
         {
             Ignore(trees);
-            int count = 0;
 
+            var prototypes = new Dictionary<string, Transform>();
+            var groups = new List<Transform>();
             foreach (Transform child in trees.transform)
             {
-                if (child.GetComponentInChildren<MeshFilter>(true) == null)
+                if (child.name.StartsWith(TreeMeshPrefix, System.StringComparison.Ordinal))
                 {
+                    prototypes[child.name.Substring(TreeMeshPrefix.Length)] = child;
+                }
+                else if (child.name.StartsWith(TreeGroupPrefix, System.StringComparison.Ordinal))
+                {
+                    groups.Add(child);
+                }
+            }
+
+            int count = 0;
+            foreach (Transform group in groups)
+            {
+                string species = group.name.Substring(TreeGroupPrefix.Length);
+                if (!prototypes.TryGetValue(species, out Transform prototype)
+                    || !prototype.TryGetComponent(out MeshFilter filter)
+                    || !prototype.TryGetComponent(out MeshRenderer renderer))
+                {
+                    EditorPaths.Report("樹木の原型が見つかりません: " + TreeMeshPrefix + species);
                     continue;
                 }
 
-                CapsuleCollider capsule = child.gameObject.GetComponent<CapsuleCollider>();
-                if (capsule == null)
+                // 原型も trees_<種> も Blender の原点に単位の変換で置かれている。
+                // FBX の軸の変換がどう入っていても、Empty から見た本体の変換は「trees_<種> から見た原型」と同じになる。
+                Matrix4x4 relative = group.worldToLocalMatrix * prototype.localToWorldMatrix;
+                foreach (Transform spot in group)
                 {
-                    capsule = child.gameObject.AddComponent<CapsuleCollider>();
+                    PlantTree(spot, relative, filter.sharedMesh, renderer.sharedMaterials);
+                    count++;
                 }
+            }
 
-                capsule.radius = 0.3f;
-                capsule.height = 6f;
-                capsule.center = new Vector3(0f, 3f, 0f);
-                count++;
-
-                GameObjectUtility.SetStaticEditorFlags(child.gameObject,
-                    StaticEditorFlags.BatchingStatic | StaticEditorFlags.OccludeeStatic);
+            foreach (Transform prototype in prototypes.Values)
+            {
+                prototype.gameObject.SetActive(false);
             }
 
             EnableInstancing(trees);
-            EditorPaths.Report("樹木 " + count + " 本に幹の当たり判定を付けました。");
+            EditorPaths.Report("樹木を " + count + " 本植えました（原型 " + prototypes.Count + " 種）。");
+        }
+
+        /// <summary>Empty 1 つに本体のメッシュと幹の当たり判定を付ける。</summary>
+        private static void PlantTree(Transform spot, Matrix4x4 relative, Mesh mesh, Material[] materials)
+        {
+            var body = new GameObject(TreeBodyName);
+            body.transform.SetParent(spot, false);
+            body.transform.localPosition = relative.GetPosition();
+            body.transform.localRotation = relative.rotation;
+            body.transform.localScale = relative.lossyScale;
+            body.AddComponent<MeshFilter>().sharedMesh = mesh;
+            body.AddComponent<MeshRenderer>().sharedMaterials = materials;
+            GameObjectUtility.SetStaticEditorFlags(body,
+                StaticEditorFlags.BatchingStatic | StaticEditorFlags.OccludeeStatic);
+
+            // Empty の軸は Blender の Z-up のまま来ることがあるので、幹はワールドの上向きにそろえる。
+            // 大きさは Empty の拡大（木の scale）をそのまま受け、太い木ほど幹も太くなる。
+            var trunk = new GameObject(TreeTrunkName);
+            trunk.transform.SetParent(spot, false);
+            trunk.transform.rotation = Quaternion.identity;
+            CapsuleCollider capsule = trunk.AddComponent<CapsuleCollider>();
+            capsule.direction = 1;
+            capsule.radius = TreeTrunkRadius;
+            capsule.height = TreeTrunkHeight;
+            capsule.center = new Vector3(0f, TreeTrunkHeight * 0.5f, 0f);
+            GameObjectUtility.SetStaticEditorFlags(trunk, StaticEditorFlags.BatchingStatic);
+
+            // 余白は木の scale によらずワールドで一定にしたいので、ローカルでは scale で割る。
+            float half = TreeTrunkRadius + TreeTrunkNavClearance / Mathf.Max(trunk.transform.lossyScale.x, 0.01f);
+            NavMeshModifierVolume volume = trunk.AddComponent<NavMeshModifierVolume>();
+            volume.center = new Vector3(0f, 1f, 0f);
+            volume.size = new Vector3(half * 2f, 2f, half * 2f);
+            volume.area = 1;   // 1 = Not Walkable
         }
 
         /// <summary>同じマテリアルの木を GPU インスタンシングでまとめて描く。</summary>
