@@ -223,6 +223,13 @@ namespace KCD.Tests
                         float.Parse(scale.Groups["v"].Value, CultureInfo.InvariantCulture),
                         1e-4f,
                         matName + " の柄の倍率が palette.json と違う");
+                    Match blend = Regex.Match(mat, @"- _PatternBlend: (?<v>[-\d.eE]+)");
+                    Assert.IsTrue(blend.Success, matName + " に _PatternBlend が無い");
+                    Assert.AreEqual(
+                        0.25f,
+                        float.Parse(blend.Groups["v"].Value, CultureInfo.InvariantCulture),
+                        1e-4f,
+                        matName + " の継ぎ目のぼかしが Blender の projection_blend (0.25) と違う");
 
                     var texture = new Texture2D(2, 2);
                     Assert.IsTrue(texture.LoadImage(File.ReadAllBytes(png)), png + " を読めない");

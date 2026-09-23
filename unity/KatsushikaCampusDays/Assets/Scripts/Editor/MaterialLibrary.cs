@@ -333,6 +333,10 @@ namespace KCD.Editor
         private static readonly int PatternId = Shader.PropertyToID("_Pattern");
         private static readonly int PatternMapId = Shader.PropertyToID("_PatternMap");
         private static readonly int PatternScaleId = Shader.PropertyToID("_PatternScale");
+        private static readonly int PatternBlendId = Shader.PropertyToID("_PatternBlend");
+
+        /// <summary>ボックス投影の継ぎ目のぼかし。Blender の projection_blend（kcd_chara/mats.py）と同じ値。</summary>
+        private const float PatternBlend = 0.25f;
         private const string PatternKeyword = "_PATTERN_ON";
 
         /// <summary>
@@ -365,6 +369,7 @@ namespace KCD.Editor
                 && material.IsKeywordEnabled(PatternKeyword)
                 && material.GetTexture(PatternMapId) == pattern.Texture
                 && Mathf.Approximately(material.GetFloat(PatternScaleId), pattern.Scale)
+                && Mathf.Approximately(material.GetFloat(PatternBlendId), PatternBlend)
                 && Same(material.GetColor(BaseColorId), Color.white)
                 && Same(material.GetColor(ShadeColorId), ShadeOf(mean));
             if (same)
@@ -378,6 +383,7 @@ namespace KCD.Editor
             material.EnableKeyword(PatternKeyword);
             material.SetTexture(PatternMapId, pattern.Texture);
             material.SetFloat(PatternScaleId, pattern.Scale);
+            material.SetFloat(PatternBlendId, PatternBlend);
             return true;
         }
 
@@ -423,6 +429,12 @@ namespace KCD.Editor
 
                 if (texture == null)
                 {
+                    if (!string.IsNullOrEmpty(entry.pattern))
+                    {
+                        Debug.LogWarning("[KCD] " + characterId + "/palette.json の " + entry.name + " の柄 "
+                            + entry.pattern + ".png が " + folder + " に無いので、柄を貼らずに平均色で塗る");
+                    }
+
                     continue;
                 }
 
