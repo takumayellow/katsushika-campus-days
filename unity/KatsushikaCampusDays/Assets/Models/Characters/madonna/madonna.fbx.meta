@@ -17,6 +17,11 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: cloth_hakama_himo_purple
+    second: {fileID: 2100000, guid: 25bb8cdb4b31ad24c85db5e8a70ed04e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: cloth_hakama_purple
     second: {fileID: 2100000, guid: ca8d5c8e36ef4c24280c5a337b6de842, type: 2}
   - first:

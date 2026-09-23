@@ -116,6 +116,7 @@ BASE_COLORS: dict[str, str] = {
     "cloth_hakama_blue": "#1F4C8F",
     "cloth_kimono_heart_pink": "#FCF9F7",
     "cloth_hakama_purple": "#4C2A70",
+    "cloth_hakama_himo_purple": "#3A1F58",
     "ribbon_red": "#D8222F",
     "collar_white": "#F6F1E6",
     "boots_brown": "#7A4A28",

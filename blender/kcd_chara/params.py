@@ -288,6 +288,8 @@ CHARACTERS: dict[str, dict] = {
         # どれも 2 段暗く、並べると別人の配色に見えた。
         mat_colors={"hair": "#AA6D26", "eye_l": "#15110F", "eye_r": "#15110F",
                     "cloth_hakama_purple": "#9066A8",
+                    # 前紐の蝶結び。袴と同じ色だとゲームで袴に溶けるので 0.77 倍に落とす
+                    "cloth_hakama_himo_purple": "#6F4E81",
                     "ribbon_red": "#E4475B",
                     "boots_brown": "#AE7D25", "metal": "#8A6218"},
         # リボンは公式で 65x32px = 頭幅の 0.66。1.55 では 1.12 頭幅あった。

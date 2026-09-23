@@ -741,6 +741,10 @@ def _hakama_himo_bow(mb, p, a: B.Anatomy, mat, z_c, front_y):
     結びではなく、左右に輪が張り出した蝶結びで、そこから 2 本の垂れが
     全高の 0.16 ぶん（34px / 211px）下がっている。四角い結び + 短い垂れの
     ままだと、正面から「紫の箱に脚が 2 本生えた」ようにしか見えなかった。
+
+    公式は袴と同じ紫を黒の線で描き分けているが、ゲームのトゥーン陰影では
+    シルエットの内側に線が出ないので、同じ色だと結びが袴に溶けて消える
+    （#47, Unity の実機撮影で確認）。mat には袴より一段暗い色を渡す。
     """
     h = p["height"]
     zz, rx, _ry = _profile(p, a)
@@ -953,7 +957,8 @@ def _furoshiki(mb, p, a: B.Anatomy):
 def build_kimono(mb, p, a: B.Anatomy, *, kimono_mat, hakama_mat, shoes,
                  hakama_high=True, hakama_pleats=26, sleeve="furi",
                  collar_rim="cloth_skirt_navy", sleeve_drop=1.0,
-                 collar_plain=False, collar_piping=None, himo="knot"):
+                 collar_plain=False, collar_piping=None, himo="knot",
+                 himo_mat=None):
     h = p["height"]
     z = p["z"]
     hak_z = z["underbust"] if hakama_high else z["waist"]
@@ -1007,7 +1012,8 @@ def build_kimono(mb, p, a: B.Anatomy, *, kimono_mat, hakama_mat, shoes,
         return a.hip_ry * k * (1.0 + aa * 0.375)
 
     if himo == "bow":
-        _hakama_himo_bow(mb, p, a, hakama_mat, hak_z + h * 0.014, hakama_front)
+        _hakama_himo_bow(mb, p, a, himo_mat or hakama_mat, hak_z + h * 0.014,
+                         hakama_front)
     else:
         _hakama_himo(mb, p, a, hakama_mat, hak_z + h * 0.014, hakama_front)
     if shoes == "geta":
@@ -1077,7 +1083,7 @@ def build_outfit(mb: M.MeshBuilder, p: dict, a: B.Anatomy) -> None:
                      hakama_high=True, hakama_pleats=16,
                      collar_rim="collar_white", sleeve_drop=1.60,
                      collar_plain=True, collar_piping="ribbon_red",
-                     himo="bow")
+                     himo="bow", himo_mat="cloth_hakama_himo_purple")
     elif outfit == "labcoat":
         build_labcoat(mb, p, a)
     else:
