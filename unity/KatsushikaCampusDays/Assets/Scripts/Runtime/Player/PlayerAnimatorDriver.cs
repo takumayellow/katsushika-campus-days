@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace KCD
@@ -31,6 +32,8 @@ namespace KCD
         private float _leftGroundAt = -1f;
         private bool _jumpTriggered;
         private SitPose _sitPose;
+        private QuestSystem _quests;
+        private readonly List<Vector3> _npcPositions = new List<Vector3>();
 
         private void Awake()
         {
@@ -86,6 +89,61 @@ namespace KCD
             {
                 _player.SittingChanged -= OnSittingChanged;
                 _player.Jumped -= OnJumped;
+            }
+
+            AttachQuests(null);
+        }
+
+        /// <summary>クエストを達成したら手を振る。「はじめから」で QuestSystem が作り直されるので毎フレーム確かめる。</summary>
+        private void AttachQuests(QuestSystem quests)
+        {
+            if (quests == _quests)
+            {
+                return;
+            }
+
+            if (_quests != null)
+            {
+                _quests.QuestCompleted -= OnQuestCompleted;
+            }
+
+            _quests = quests;
+            if (_quests != null)
+            {
+                _quests.QuestCompleted += OnQuestCompleted;
+            }
+        }
+
+        private void OnQuestCompleted(QuestData quest)
+        {
+            // 「〜と話す」クエストは会話の始まりと同じフレームで達成になる。Talk 中に積んだ
+            // トリガーは会話が終わった瞬間に遅れて出るので、会話・メニュー中は振らない。
+            if (_player != null && !KCDInput.GameplayBlocked && !_player.IsSitting && _player.IsGrounded)
+            {
+                PlayWave();
+            }
+        }
+
+        /// <summary>
+        /// Q で手を振る。前にいる近くの人（NPCWander）は立ち止まってこちらを向き、振り返してくれる。
+        /// 以前は手を振るだけで、誰も何も反応しなかった。
+        /// </summary>
+        public void WaveHello()
+        {
+            PlayWave();
+            AudioManager.Instance?.PlaySe("wave");
+            NPCWander[] npcs = FindObjectsByType<NPCWander>(FindObjectsSortMode.None);
+            _npcPositions.Clear();
+            foreach (NPCWander npc in npcs)
+            {
+                _npcPositions.Add(npc.transform.position);
+            }
+
+            int pick = NPCWander.PickWaveTarget(
+                transform.position, transform.forward, _npcPositions, NPCWander.WaveReach);
+            if (pick >= 0)
+            {
+                npcs[pick].WaveBack(transform.position);
             }
         }
 
@@ -151,12 +209,12 @@ namespace KCD
             _animator.SetFloat(SpeedHash, blend, _damping, Time.deltaTime);
 
             _animator.SetBool(GroundedHash, _player.IsGrounded);
+            AttachQuests(GameManager.Instance != null ? GameManager.Instance.Quests : null);
             UpdateAirborne();
 
             if (KCDInput.WavePressed && !KCDInput.GameplayBlocked && !_player.IsSitting && _player.IsGrounded)
             {
-                PlayWave();
-                AudioManager.Instance?.PlaySe("wave");
+                WaveHello();
             }
         }
 
@@ -216,7 +274,7 @@ namespace KCD
             }
         }
 
-        /// <summary>手を振る。クエスト達成時の小さな演出に使う。</summary>
+        /// <summary>手を振る。Q と、クエスト達成時の小さな演出に使う。</summary>
         public void PlayWave()
         {
             if (_hasParameters)

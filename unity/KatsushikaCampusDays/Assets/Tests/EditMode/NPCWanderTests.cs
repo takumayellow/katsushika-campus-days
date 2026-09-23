@@ -73,5 +73,34 @@ namespace KCD.Tests
 
             Assert.AreEqual(blend, NPCWander.AnimatorSpeed(1.1f, 1.1f), 1e-5f);
         }
+
+        [Test]
+        public void PickWaveTarget_ChoosesTheNearestPersonInFrontWithinReach()
+        {
+            var others = new System.Collections.Generic.List<Vector3>
+            {
+                new Vector3(0f, 0f, -2f),   // 真後ろ（近いが振り返さない）
+                new Vector3(1f, 0f, 5f),    // 前・5.1 m
+                new Vector3(-2f, 0.5f, 3f), // 前・3.6 m（段差の上でも水平距離で測る）
+                new Vector3(0f, 0f, 9f),    // 前だが遠すぎる
+            };
+
+            Assert.AreEqual(2, NPCWander.PickWaveTarget(Vector3.zero, Vector3.forward, others, NPCWander.WaveReach));
+        }
+
+        [Test]
+        public void PickWaveTarget_ReturnsMinusOneWhenNobodyIsInFront()
+        {
+            var others = new System.Collections.Generic.List<Vector3>
+            {
+                new Vector3(0f, 0f, -3f),
+                new Vector3(4f, 0f, 0f),
+                new Vector3(0f, 0f, 20f),
+            };
+
+            Assert.AreEqual(-1, NPCWander.PickWaveTarget(Vector3.zero, Vector3.forward, others, NPCWander.WaveReach));
+            Assert.AreEqual(-1, NPCWander.PickWaveTarget(Vector3.zero, Vector3.forward,
+                new System.Collections.Generic.List<Vector3>(), NPCWander.WaveReach));
+        }
     }
 }
