@@ -1,0 +1,40 @@
+{
+  "materials": [
+    {
+      "name": "brow",
+      "hex": "14141C"
+    },
+    {
+      "name": "cloth_hakama_blue",
+      "hex": "1F4C8F"
+    },
+    {
+      "name": "cloth_kimono_kasuri_blue",
+      "hex": "DADDE3"
+    },
+    {
+      "name": "cloth_skirt_navy",
+      "hex": "26304E"
+    },
+    {
+      "name": "collar_white",
+      "hex": "F6F1E6"
+    },
+    {
+      "name": "furoshiki_orange",
+      "hex": "D2782E"
+    },
+    {
+      "name": "geta_wood",
+      "hex": "C8A063"
+    },
+    {
+      "name": "hair",
+      "hex": "1A1A22"
+    },
+    {
+      "name": "skin",
+      "hex": "EBBE9C"
+    }
+  ]
+}

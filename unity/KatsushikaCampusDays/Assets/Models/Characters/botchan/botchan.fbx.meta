@@ -22,6 +22,11 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: cloth_skirt_navy
+    second: {fileID: 2100000, guid: 96bca2be810c66243abf76cae007fa30, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: collar_white
     second: {fileID: 2100000, guid: 7980f2efa01a7524e9495d2248e0d27b, type: 2}
   - first:

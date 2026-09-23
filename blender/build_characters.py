@@ -19,6 +19,7 @@ DESIGN.md §2 / §2.1 / §2.2 / §3.3 が契約。ボーン名・Shape Key 名�
 from __future__ import annotations
 
 import argparse
+import json
 import math
 import os
 import sys
@@ -154,16 +155,28 @@ def build_textures(p: dict, cdir: str, face_size: int):
     face_img = tex.array_to_image(f"{cid}_face", face_arr, filepath=face_png)
 
     patterns: dict = {}
+    pattern_arrays: dict = {}
     outfit = p["outfit"]
     if outfit == "kimono_botchan":
-        arr = tex.draw_kasuri(256)
+        arr = pattern_arrays["kasuri"] = tex.draw_kasuri(256)
         patterns["kasuri"] = tex.array_to_image(
             f"{cid}_kasuri", arr, filepath=os.path.join(cdir, "kasuri.png"))
     elif outfit == "kimono_madonna":
-        arr = tex.draw_yagasuri(256)
+        arr = pattern_arrays["yagasuri"] = tex.draw_yagasuri(256)
         patterns["yagasuri"] = tex.array_to_image(
             f"{cid}_yagasuri", arr, filepath=os.path.join(cdir, "yagasuri.png"))
-    return face_img, patterns, face_png
+    return face_img, patterns, face_png, pattern_arrays
+
+
+def write_palette(p: dict, cdir: str, names, pattern_arrays: dict) -> str:
+    """<cdir>/palette.json に Unity 用の色表を書く（#55, MaterialLibrary が読む）。"""
+    pal = kmats.palette(p, names, pattern_arrays)
+    path = os.path.join(cdir, "palette.json")
+    doc = {"materials": [{"name": n, "hex": h} for n, h in sorted(pal.items())]}
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        json.dump(doc, f, ensure_ascii=False, indent=2)
+        f.write("\n")
+    return path
 
 
 def build_character(cid: str, out_root: str, face_size: int, fbx_opts: dict,
@@ -174,7 +187,7 @@ def build_character(cid: str, out_root: str, face_size: int, fbx_opts: dict,
     os.makedirs(cdir, exist_ok=True)
 
     reset_scene()
-    face_img, patterns, face_png = build_textures(p, cdir, face_size)
+    face_img, patterns, face_png, pattern_arrays = build_textures(p, cdir, face_size)
     materials = kmats.build_materials(p, face_img, patterns)
 
     mb = MeshBuilder()
@@ -208,6 +221,7 @@ def build_character(cid: str, out_root: str, face_size: int, fbx_opts: dict,
     size = os.path.getsize(fbx)
 
     mats_used = sorted({m for m in mb.face_mat})
+    write_palette(p, cdir, mats_used, pattern_arrays)
     bones = [b.name for b in arm.data.bones]
 
     info = dict(id=cid, jp=p["jp"], fbx=fbx, face=face_png, size=size,

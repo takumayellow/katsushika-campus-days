@@ -1,0 +1,48 @@
+{
+  "materials": [
+    {
+      "name": "boots_brown",
+      "hex": "7A4A28"
+    },
+    {
+      "name": "brow",
+      "hex": "6E4520"
+    },
+    {
+      "name": "cloth_hakama_purple",
+      "hex": "4C2A70"
+    },
+    {
+      "name": "cloth_kimono_yagasuri_red",
+      "hex": "EEC0C1"
+    },
+    {
+      "name": "cloth_skirt_navy",
+      "hex": "26304E"
+    },
+    {
+      "name": "eye_rim",
+      "hex": "6C5E5A"
+    },
+    {
+      "name": "hair",
+      "hex": "8B5A2B"
+    },
+    {
+      "name": "lash",
+      "hex": "3A2018"
+    },
+    {
+      "name": "metal",
+      "hex": "B9BCC4"
+    },
+    {
+      "name": "ribbon_red",
+      "hex": "D8222F"
+    },
+    {
+      "name": "skin",
+      "hex": "F5CDBA"
+    }
+  ]
+}

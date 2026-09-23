@@ -63,7 +63,10 @@ namespace KCD.Editor
             { "bike_tire", "0F0F0F" }
         };
 
-        /// <summary>服・髪などの名前に含まれる色語 → 色。キャラ差分はここで吸収する。</summary>
+        /// <summary>
+        /// 服・髪などの名前に含まれる色語 → 色。palette.json が無いキャラだけの予備 (#55)。
+        /// 色の正は Blender の kcd_chara/mats.py で、ふだんは palette.json 経由で届く。
+        /// </summary>
         private static readonly Dictionary<string, string> ClothColors = new Dictionary<string, string>
         {
             { "green", "00843D" },
@@ -218,18 +221,18 @@ namespace KCD.Editor
             string name = Normalize(rawName);
             string path = CharacterFolder + "/" + characterId + "_" + name + ".mat";
             Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            Dictionary<string, Color> palette = LoadCharacterPalette(characterId);
             if (material != null)
             {
+                RepaintCharacter(material, name, palette);
                 return material;
             }
 
             material = new Material(Shader.Find(ToonShader));
             CharacterTones.TryGetValue(characterId, out string[] tones);
-            Color color = CharacterColor(name, tones);
+            Color color = palette.TryGetValue(name, out Color declared) ? declared : CharacterColor(name, tones);
 
-            material.SetColor("_BaseColor", color);
-            material.SetColor("_ShadeColor", Color.Lerp(color, new Color(0.45f, 0.42f, 0.58f), 0.42f));
-            material.SetColor("_ShadeColor2", Color.Lerp(color, new Color(0.30f, 0.28f, 0.44f), 0.55f));
+            SetCharacterColor(material, color);
             material.SetFloat("_OutlineWidth", 0.005f);
 
             // 顔・目・スカートの面は内向きに出力されているので、両面描画にする（シェーダ側で法線を裏返す）。
@@ -261,6 +264,122 @@ namespace KCD.Editor
 
             Save(material, path);
             return material;
+        }
+
+        private static void SetCharacterColor(Material material, Color color)
+        {
+            material.SetColor("_BaseColor", color);
+            material.SetColor("_ShadeColor", Color.Lerp(color, new Color(0.45f, 0.42f, 0.58f), 0.42f));
+            material.SetColor("_ShadeColor2", Color.Lerp(color, new Color(0.30f, 0.28f, 0.44f), 0.55f));
+        }
+
+        /// <summary>
+        /// すでにある .mat の色を Blender の palette.json に合わせ直す (#55)。
+        ///
+        /// 以前は .mat があれば中身を見ずに返していたうえ、色は名前の部分一致で決めていた
+        /// （cloth_kimono_kasuri_blue は "blue" が入るのでベタの #2E5FA3、まつ毛・眉は辞書に
+        /// 無いので既定のベージュ）。Blender のプレビューを見て色を決めても、ゲームには
+        /// 別の色が出ていた。campus 側の <see cref="Repaint"/> (#51) のキャラ版。
+        ///
+        /// 顔テクスチャの 4 枚と輪郭は palette.json に載らない（載っていても触らない）。
+        /// </summary>
+        private static bool RepaintCharacter(Material material, string name, Dictionary<string, Color> palette)
+        {
+            if (IsFaceTextured(name) || name == "outline" || !palette.TryGetValue(name, out Color declared))
+            {
+                return false;
+            }
+
+            if (!material.HasProperty(BaseColorId) || Same(material.GetColor(BaseColorId), declared))
+            {
+                return false;
+            }
+
+            SetCharacterColor(material, declared);
+            EditorUtility.SetDirty(material);
+            return true;
+        }
+
+        /// <summary>
+        /// 全キャラの .mat を palette.json の色に塗り直し、塗り直した数を返す (#55)。
+        ///
+        /// 一度差し替えた FBX は、埋め込みのマテリアルを LoadAllAssetsAtPath で返さなくなる
+        /// （外部の .mat に置き換わっている）。そのため ResolveMaterials 経由の
+        /// <see cref="EnsureCharacter"/> には既存の .mat がほとんど来ない。
+        /// ここでは FBX を通さず、palette.json の名前から .mat を直接引く。
+        /// </summary>
+        public static int RepaintCharacters()
+        {
+            if (!AssetDatabase.IsValidFolder(EditorPaths.CharactersFolder))
+            {
+                return 0;
+            }
+
+            int repainted = 0;
+            foreach (string folder in AssetDatabase.GetSubFolders(EditorPaths.CharactersFolder))
+            {
+                string characterId = Path.GetFileName(folder);
+                Dictionary<string, Color> palette = LoadCharacterPalette(characterId);
+                foreach (string name in palette.Keys)
+                {
+                    string path = CharacterFolder + "/" + characterId + "_" + name + ".mat";
+                    Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
+                    if (material != null && RepaintCharacter(material, name, palette))
+                    {
+                        repainted++;
+                    }
+                }
+            }
+
+            if (repainted > 0)
+            {
+                AssetDatabase.SaveAssets();
+            }
+
+            return repainted;
+        }
+
+        [System.Serializable]
+        private sealed class PaletteEntry
+        {
+            public string name;
+            public string hex;
+        }
+
+        [System.Serializable]
+        private sealed class PaletteFile
+        {
+            public PaletteEntry[] materials;
+        }
+
+        /// <summary>
+        /// Blender（build_characters.write_palette）が FBX の隣に書く色表を読む。無ければ空。
+        /// FBX が運ぶのはマテリアル名だけなので、色はこのファイルで受け取る。
+        /// </summary>
+        public static Dictionary<string, Color> LoadCharacterPalette(string characterId)
+        {
+            var palette = new Dictionary<string, Color>();
+            string path = Path.Combine(EditorPaths.CharactersFolder, characterId, "palette.json");
+            if (!File.Exists(path))
+            {
+                return palette;
+            }
+
+            PaletteFile file = JsonUtility.FromJson<PaletteFile>(File.ReadAllText(path));
+            if (file?.materials == null)
+            {
+                return palette;
+            }
+
+            foreach (PaletteEntry entry in file.materials)
+            {
+                if (!string.IsNullOrEmpty(entry.name) && ColorUtility.TryParseHtmlString("#" + entry.hex, out Color color))
+                {
+                    palette[Normalize(entry.name)] = color;
+                }
+            }
+
+            return palette;
         }
 
         /// <summary>顔テクスチャ（face.png）を共有する Blender 側のマテリアル名。</summary>
