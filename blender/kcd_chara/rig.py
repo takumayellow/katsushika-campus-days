@@ -241,6 +241,40 @@ def _set_exclusive(obj, indices, weights: dict[str, float]) -> None:
         g.add(idx, float(w / total), "REPLACE")
 
 
+def _spine_only(obj, mb: M.MeshBuilder, pts: np.ndarray, p: dict,
+                a: B.Anatomy, parts, *, k: int = 2, power: float = 3.0) -> None:
+    """胴の衣（着物の身頃・肩ヨーク）から腕ボーンのウェイトを外す。
+
+    自動ウェイトだと脇の頂点に LeftUpperArm / RightUpperArm が混ざる。腕は
+    Walk で 30 度以上振れるので、隣り合う頂点が胴と腕に引き裂かれ、脇の布が
+    針のように伸びて素肌が縞になって覗いていた（botchan / Walk のプレビューで
+    右脇に幅 60px・高さ 150px のささくれ）。着物の身頃は腕を振っても動かない
+    ものなので、背骨の 4 本だけに預ける。袖（`sleeve_*`）は別部位なので
+    これまでどおり腕について行く。
+    """
+    idx = mb.part_indices(*parts)
+    if len(idx) == 0:
+        return
+    pos = bone_positions(p, a)
+    names = ["Hips", "Spine", "Chest", "UpperChest"]
+    sub = pts[idx]
+    dist = np.stack([_seg_distance(sub, pos[n][0], pos[n][1]) for n in names],
+                    axis=1)
+    order = np.argsort(dist, axis=1)[:, :k]
+    rows = np.arange(len(sub))[:, None]
+    w = 1.0 / (dist[rows, order] + 0.008) ** power
+    w /= w.sum(axis=1, keepdims=True)
+    for vg in obj.vertex_groups:
+        vg.remove([int(i) for i in idx])
+    groups = {n: (obj.vertex_groups.get(n) or obj.vertex_groups.new(name=n))
+              for n in names}
+    for n_, i in enumerate(idx.tolist()):
+        for j in range(k):
+            ww = float(w[n_, j])
+            if ww > 1e-4:
+                groups[names[int(order[n_, j])]].add([i], ww, "REPLACE")
+
+
 def _keep_leg_side(obj, mb: M.MeshBuilder) -> None:
     """左右のある部位（leg_l, socks_r など）から反対側の脚ボーンのウェイトを外す。
 
@@ -279,17 +313,30 @@ def _keep_leg_side(obj, mb: M.MeshBuilder) -> None:
 #:   band       前後の中央で脚寄せを 0 に落とす幅（横向き比 0..1、1.0 で真横）
 #:   knee_band  膝で UpperLeg と LowerLeg を切り替える帯の半幅（脚長比）
 #:   knee_keep  その切り替え面に残す脚寄せの割合（0 で完全に Hips へ戻す）
+#:   mix        前の中央で左右の脚を混ぜる割合（0.5 でちょうど等分。0 で無効）
+#:   mix_t      その「左右等分で包む」帯の境目（t。小さいほど腰まで伸びる）
+#:   mix_band   mix_t の境目をならす帯の半幅（t）。0 に近づけるほど硬い折り目になる
+#:   mix_front  前後の境目をならす帯の半幅（胴の奥行き比）
 #: 値は Walk / Run の腿がいちばん開くフレームで、素肌のはみ出し (cm) と横辺の
 #: 伸び (cm) を実測して決めた。band を広げると布は滑らかになるが裾が脚に付いて
 #: 行かなくなり、狭めると逆になる（mirai のスカートで band 0.30/0.45/0.80 のとき
 #: Run のはみ出しは 0.73/1.88/3.62 cm、横辺の伸びは 6.15/3.36/1.72 cm）。
+#: mix を入れたあとの mirai / Run は band 0.40/0.45/0.50/0.55 で
+#: はみ出し 1.01/1.23/1.43/1.61 cm、全辺の伸び 4.52/3.83/3.35/2.93 cm。
 CLOTH_LEG: dict[str, dict[str, float]] = {
-    "skirt": dict(reach=1.00, hem_pow=0.85, band=0.40),
-    "apron": dict(reach=1.00, hem_pow=0.85, band=0.40),
+    "skirt": dict(reach=1.00, hem_pow=0.85, band=0.45,
+                  mix=0.50, mix_t=0.60, mix_band=0.30, mix_front=0.35),
+    "apron": dict(reach=1.00, hem_pow=0.85, band=0.45,
+                  mix=0.50, mix_t=0.60, mix_band=0.30, mix_front=0.35),
     "labcoat": dict(reach=0.72, hem_pow=1.40, band=0.85),
     "pants_seat": dict(reach=0.55, hem_pow=1.00, band=0.45),
+    # 袴もスカートと同じ理由で前中央に mix が要る。入れる前は botchan の
+    # Idle / Walk で前中央の裾が Hips に貼り付いたままになり、前へ出した膝が
+    # 布を突き抜けて 40x50px の穴が空いていた。mix_t はスカート (0.60) より
+    # 少し上から効かせる（袴のほうが丈が長く、膝が当たるのが上のため）。
     "hakama": dict(reach=1.00, hem_pow=0.40, band=0.40,
-                   knee_band=0.10, knee_keep=0.80),
+                   knee_band=0.10, knee_keep=0.80,
+                   mix=0.50, mix_t=0.55, mix_band=0.30, mix_front=0.35),
 }
 
 
@@ -298,16 +345,33 @@ def _cloth_leg_weights(obj, mb: M.MeshBuilder, pts: np.ndarray, a: B.Anatomy,
                        knee: bool = False, **over) -> None:
     """スカート・袴・白衣・ズボンの尻を、裾ほど脚へ寄せて包む。
 
-    ウェイトは必ず **Hips ＋ 脚ボーン 1 本** だけにする。WebGL 版が使う品質
-    レベル (Mobile) は 1 頂点 2 ボーンでしかスキンしない（QualitySettings の
-    skinWeights）ので、3 本以上のウェイトはそこで上位 2 本へ切り詰められて
-    別の形に化ける。はじめから 2 本で成立する形にしておけば化けない。
+    ウェイトは **Hips ＋ 左右の UpperLeg** の 3 本までに収める。
 
-    左右は x=0 のハード分割にしない。中央では `band` の幅で脚寄せを 0 まで
-    落とし、どちらの脚を選んでも同じ位置（Hips 100%）になるようにする。
-    分割したままだと、前後の中央で隣り合う頂点が逆向きの脚に引かれ、走ると
-    布がギザギザに裂ける。袴は膝の上下で UpperLeg / LowerLeg を切り替え、
-    その面でも同じ理由で脚寄せを `knee_keep` まで落とす。
+    以前は「2 本まで」だった。WebGL が使う品質レベル (Mobile) の
+    skinWeights が 2 で、3 本以上は上位 2 本へ切り詰められて形が化けたため。
+    だが前中央を「Hips 100%」と「左右 50:50」の 2 択にすると、その境目が
+    1 本の線になり、布のたわみが全部そこへ集まって棚ができる（#49 で実測。
+    41.9 mm の辺が 4.0 mm まで潰れ、折れ角が 25.2° → 165.3° になっていた）。
+    境目をなめらかに繋ぐと、途中に必ず 3 本乗る帯ができる（幾何的に避けられない。
+    実測で 3 本目は最大 0.327）。そこで Mobile 側の skinWeights を PC と同じ 4 に
+    上げた（`Assets/Tests/EditMode/SkinWeightsTests.cs` が見張っている）。
+
+    左右は x=0 のハード分割にしない。裂けない条件は「x=0 で左脚と右脚の
+    ウェイトが等しいこと」。上位 2 本に切られると、x=0 をまたぐ隣り合った
+    頂点が「Hips ＋ 右脚」と「Hips ＋ 左脚」に分かれる。走ると左右の脚は
+    逆位相なので、そこで布が裂ける。
+
+    * 後ろと腰       … `band` の幅で脚寄せを 0 まで落として Hips 100% にする。
+    * 前の裾 (`mix`) … 左右の脚を 50:50 で混ぜる。Hips を使わない代わりに、
+      中央でも脚について行く。走りで腿が前へ出たとき、前の中央が Hips に
+      貼り付いたままだと腿がそこを突き抜ける（mirai の Run で実測 11.1 cm）。
+
+    50:50 は「左右の脚の平均」なので、股関節の軸へ cos(振り角) だけ縮む。
+    それが効きすぎると腰がスカートから外へ出るので、混ぜるのは `mix_t` より
+    下（裾側）の、`mix_front` より前だけ。腰は Hips に任せる。
+
+    袴は膝の上下で UpperLeg / LowerLeg を切り替え、その面でも同じ理由で
+    脚寄せを `knee_keep` まで落とす。
     """
     cfg = dict(CLOTH_LEG[part])
     cfg.update(over)
@@ -328,43 +392,88 @@ def _cloth_leg_weights(obj, mb: M.MeshBuilder, pts: np.ndarray, a: B.Anatomy,
     ry = max(1e-6, float(np.abs(pp[:, 1]).max()))
     ux = np.abs(pp[:, 0]) / rx
     nx = ux / np.maximum(np.hypot(ux, pp[:, 1] / ry), 1e-6)
-    w = cfg["reach"] * t * M.smoothstep(0.0, cfg["band"], nx)
+    band = max(cfg["band"], 1e-6)
+    s = M.smoothstep(0.0, 1.0, nx / band)
+    w = cfg["reach"] * t * s
+    mix = cfg.get("mix", 0.0)
+    if mix > 0.0:
+        # 前の中央（s→0）だけは、Hips へ戻す代わりに **左右の脚を等分** で
+        # 混ぜる。x=0 の両側で Left と Right が入れ替わっても値が同じなので、
+        # 中央でも脚について行きながら布は左右に裂けない。
+        k = mix * (1.0 - s)
+        # 「前の裾かどうか」は真偽値で切ってはいけない。以前は
+        # `(t >= mix_t) & (y < 0)` という段差で、その 1 本の線に布のたわみが
+        # 全部集まり、41.9 mm の辺が 4.0 mm まで潰れて水平の棚ができていた
+        # （mirai / Run。折れ角は t=mix_t のリングで 25.2° → 165.3°、
+        # その下のリングは逆に 11.5° → 0.5° の硬いコーンになっていた）。
+        # 上下 (mix_band) と前後 (mix_front) の両方をなめらかに繋ぐ。
+        gt = M.smoothstep(cfg["mix_t"] - cfg["mix_band"],
+                          cfg["mix_t"] + cfg["mix_band"], t)
+        fw = max(1e-6, cfg["mix_front"])
+        gy = 1.0 - M.smoothstep(-fw, fw, pp[:, 1] / ry)
+        g = gt * gy
+        # g=0 では素の w（= reach * t * s）に完全に戻る。ここを s*u で置き換えて
+        # いたせいで、「前の裾だけ」のはずが後ろ上部まで 78.5% の頂点で値が動いていた。
+        own = cfg["reach"] * (t * s * (1.0 - g) + (1.0 - k) * g)
+        oth = cfg["reach"] * k * g
+    else:
+        own, oth = w, np.zeros_like(w)
 
     side = np.where(pp[:, 0] >= 0.0, "Left", "Right")
+    flip = np.where(pp[:, 0] >= 0.0, "Right", "Left")
     seg = np.full(len(idx), "UpperLeg", dtype=object)
     if knee:
         span = abs(float(a.hip_joint[2]) - float(a.ankle[2]))
         kb = max(1e-4, span * cfg["knee_band"])
         su = M.smoothstep(float(a.knee[2]) - kb, float(a.knee[2]) + kb, z)
         keep = cfg["knee_keep"]
-        w = w * (keep + (1.0 - keep) * np.abs(2.0 * su - 1.0))
+        damp = keep + (1.0 - keep) * np.abs(2.0 * su - 1.0)
+        own = own * damp
+        oth = oth * damp
         seg = np.where(su >= 0.5, seg, "LowerLeg")
-    names = [str(s) + str(g) for s, g in zip(side, seg)]
+    names = [str(a_) + str(g) for a_, g in zip(side, seg)]
+    others = [str(a_) + str(g) for a_, g in zip(flip, seg)]
+
+    own = np.clip(own, 0.0, 1.0)
+    oth = np.clip(oth, 0.0, 1.0)
+    hips = np.clip(1.0 - own - oth, 0.0, 1.0)
 
     vg_hips = obj.vertex_groups.get("Hips") or obj.vertex_groups.new(name="Hips")
     for vg in obj.vertex_groups:
         vg.remove([int(i) for i in idx])
     cache: dict[str, object] = {}
-    for n, i in enumerate(idx.tolist()):
-        ww = float(np.clip(w[n], 0.0, 1.0))
-        vg_hips.add([i], 1.0 - ww, "REPLACE")
-        if ww <= 1e-4:
-            continue
-        vg = cache.get(names[n])
+
+    def _vg(name):
+        vg = cache.get(name)
         if vg is None:
-            vg = (obj.vertex_groups.get(names[n])
-                  or obj.vertex_groups.new(name=names[n]))
-            cache[names[n]] = vg
-        vg.add([i], ww, "REPLACE")
+            vg = (obj.vertex_groups.get(name) or obj.vertex_groups.new(name=name))
+            cache[name] = vg
+        return vg
+
+    for n, i in enumerate(idx.tolist()):
+        # Hips も own / oth と同じしきい値で切る。無条件に書いていたせいで、
+        # 前中央の「Hips は 0 のはず」の頂点に 1.0 - own - oth の丸め残り
+        # 5.55e-17 が乗り、意味のないウェイトが 1 本増えていた。
+        if hips[n] > 1e-4:
+            vg_hips.add([i], float(hips[n]), "REPLACE")
+        if own[n] > 1e-4:
+            _vg(names[n]).add([i], float(own[n]), "REPLACE")
+        if oth[n] > 1e-4:
+            _vg(others[n]).add([i], float(oth[n]), "REPLACE")
 
 
 def _prune_influences(obj, mb: M.MeshBuilder, parts, k: int = 2) -> None:
     """指定した部位のウェイトを上位 k ボーンだけにして正規化する。
 
     靴下・ズボン・ブーツの筒は距離ウェイトのまま 3 ボーン乗ることがある
-    （例: madonna のブーツは LowerLeg / Foot / Toes）。WebGL 版は 1 頂点
-    2 ボーンなので、3 本目はそこで勝手に落ちて PC 版と形が変わる
-    （madonna のブーツで Run 時 1.54 cm）。先に落としておけば両方同じになる。
+    （例: madonna のブーツは LowerLeg / Foot / Toes）。3 本目は距離の裾野が
+    たまたま届いただけで、形に効くというより PC と WebGL で食い違う種だった
+    （madonna のブーツで Run 時 1.54 cm）。ここで落として両方同じにする。
+
+    以前は「WebGL は 1 頂点 2 ボーンだから」が理由だったが、その前提は #49 で
+    なくなった。スカート前中央は Hips ＋ 左右 UpperLeg の 3 本が要る場所で、
+    2 本に切ると左右どちらの脚を残すかが x=0 をまたいで入れ替わり、布が裂ける。
+    そのため QualitySettings の Mobile（＝WebGL）も PC と同じ 4 本にした。
     """
     idx = mb.part_indices(*parts)
     if len(idx) == 0:
@@ -422,6 +531,7 @@ def override_weights(obj, mb: M.MeshBuilder, p: dict, a: B.Anatomy) -> None:
     _set_exclusive(obj, mb.part_indices("collar"),
                    {"Neck": 0.35, "UpperChest": 0.65})
     _set_exclusive(obj, mb.part_indices("ribbon"), {"UpperChest": 1.0})
+    _spine_only(obj, mb, pts, p, a, ("kimono", "kimono_yoke"))
     _set_exclusive(obj, mb.part_indices("obi", "himo", "waistband"),
                    {"Hips": 0.7, "Spine": 0.3})
 

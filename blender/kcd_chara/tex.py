@@ -314,10 +314,19 @@ def _draw_face_features(arr: np.ndarray, p: dict) -> None:
         ellipse(arr, 0.5, mouth_y - mw * 0.52, mw * 0.34, mw * 0.13,
                 (1.0, 0.90, 0.88), power=2.0, alpha=0.40, feather=0.005)
     elif p.get("mouth_style") == "frown":
-        # への字。両端を下げる（坊っちゃん）
-        arc(arr, (0.5 - mw, mouth_y - mw * 0.42), (0.5, mouth_y + mw * 0.30),
-            (0.5 + mw, mouth_y - mw * 0.42), 0.0050, mcol,
-            taper=(0.0026, 0.0026))
+        # への字。両端を下げる（坊っちゃん）。公式の口は唇でなく 1 本の濃い線
+        # （実測 RGB 38,26,15）なので、mouth_color をそのまま使わず暗く落とす。
+        ink = tuple(c * 0.52 for c in mcol)
+        # 幅は口の円盤（_disc の rx = mw*1.35）いっぱいまで使う。mw のままだと
+        # 円盤の 74% しか塗らず、公式の横長な口にならない。
+        hx = mw * 1.15
+        # 反りは公式の「幅の 0.26 だけ持ち上がる」に合わせる。u と v で
+        # uv_box のスケールが 1.25 違うので、v 側はその分だけ大きく取る。
+        # 線の太さも mw 基準にしておく。絶対値で持つと mouth_w を広げたときに
+        # 口だけ細い線になって、公式の「太い 1 本線」から外れる。
+        arc(arr, (0.5 - hx, mouth_y - mw * 0.36), (0.5, mouth_y + mw * 1.08),
+            (0.5 + hx, mouth_y - mw * 0.36), mw * 0.26, ink,
+            taper=(mw * 0.14, mw * 0.14))
     else:  # 真一文字（教授）
         arc(arr, (0.5 - mw, mouth_y + mw * 0.16), (0.5, mouth_y - mw * 0.06),
             (0.5 + mw, mouth_y + mw * 0.16), 0.0040, mcol,
@@ -325,11 +334,24 @@ def _draw_face_features(arr: np.ndarray, p: dict) -> None:
 
 
 def _draw_dot_eye(arr, cx, cy, rx, ry, sgn, lash):
-    """点目。白目も虹彩も無く、黒い楕円と小さなハイライトだけ。"""
+    """点目。白目も虹彩も無く、黒い楕円と小さなハイライトだけ。
+
+    `feather` は「中心 1.0 → 外周 0.0」の放射グラデーションを作る指定なので、
+    点目に使うと黒目全体が半透明になり、灰色の球に見えてしまう。公式イラストの
+    目は輪郭のはっきりした真っ黒な楕円なので、ここは feather を使わず
+    `soft`（アンチエイリアス幅だけのぼかし）で縁を締める。
+    """
     ink = tuple(c * 0.55 for c in lash)
-    ellipse(arr, cx, cy, rx, ry, ink, power=2.2, feather=0.004)
-    ellipse(arr, cx - sgn * rx * 0.30, cy + ry * 0.34, rx * 0.26, ry * 0.22,
-            (1.0, 1.0, 1.0), power=2.0, alpha=0.85)
+    # メッシュの白目円盤は rx*0.985 x ry*0.965。これより内側に描くと、はみ出た
+    # 円盤の縁が肌色のまま明るく光り、黒目の外周に三日月形のフチが出る。
+    # 円盤より一回り大きく塗って、縁まで黒で埋める。
+    # power は 2.0（真の楕円）。uv_box の縦横比の都合で u と v の 1 単位は
+    # ワールドで 1.26 倍ちがうので、2.3 にすると角の立った四角に見える。
+    ellipse(arr, cx, cy, rx * 1.02, ry * 1.00, ink, power=2.0, soft=0.0012)
+    # 公式にハイライトは無い。ただし黒目はドーム（dome=hd*0.012）なので
+    # 真っ黒だと穴に見える。上外側に 2px 相当だけ置いて艶を残す。
+    ellipse(arr, cx - sgn * rx * 0.36, cy + ry * 0.42, rx * 0.12, ry * 0.10,
+            (1.0, 1.0, 1.0), power=2.0, alpha=0.85, soft=0.0010)
 
 
 def _draw_eye(arr, cx, cy, rx, ry, sgn, iris, iris_dark, iris_light, lash, p):
@@ -419,21 +441,36 @@ def _star(arr, cx, cy, r, rgb, alpha=1.0):
 # --------------------------------------------------------------------------
 
 
-def draw_kasuri(size: int = 256, base=(0.97, 0.96, 0.93),
-                ink=(0.16, 0.34, 0.62)) -> np.ndarray:
-    """十字絣（坊っちゃんの着物）。白地に青の小さな十字。"""
+def draw_kasuri(size: int = 256, base=(0.89, 0.895, 0.905),
+                ink=(0.32, 0.47, 0.73)) -> np.ndarray:
+    """十字絣（坊っちゃんの着物）。薄い灰白地に青の十字。
+
+    公式イラストの十字は一辺 13px・周期 24px（胴幅 130px に 5〜6 個）の大きな
+    柄で、腕の太さは十字の一辺の 0.38 もある。1 タイルに 4x4 で敷くと 1 個が
+    1/6 の細かさになり、遠目にはただの点々になる。タイルの繰り返し回数
+    （params の pattern_scale）はこのファイルからは触れないので、
+    「1 タイル = 十字 1 個」にして大きさを稼ぐ。
+
+    色はレンダ結果を公式の実測値（地 RGB 213,214,217 / 十字 80,117,179）に
+    合わせ込んだもの。テクスチャの値をそのまま置くとライティングで 6% ほど
+    暗く青が浅く出るので、その分だけ明るく・青く振ってある。旧値の
+    地 #F7F5ED は白く黄色すぎ、十字 #29579E は袴の濃紺で、着物の柄としては
+    暗すぎた。
+    """
     arr = canvas(size, base)
-    n = 4
-    for iy in range(n):
-        for ix in range(n):
-            cx = (ix + 0.5) / n
-            cy = (iy + 0.5) / n
-            if (ix + iy) % 2:
-                cx += 0.5 / n
-            w, h = 0.036, 0.0165
-            ellipse(arr, cx, cy, w, h, ink, power=3.4)
-            ellipse(arr, cx, cy, h, w, ink, power=3.4)
-            ellipse(arr, cx, cy, 0.006, 0.006, base, power=2.0, alpha=0.5)
+    # このタイルは Generated 座標（mats.py, uv=False）で貼るので、正方形の
+    # タイルがオブジェクトのバウンディングボックス（身長 1.15m x 肩幅）の
+    # 縦横比のぶんだけ縦に伸びる。前面レンダで柄の周期を実測すると
+    # 横 46.7px に対して縦 78px = 1.67 倍だった。縦向きの辺をこれで割って置き、
+    # レンダ上で公式どおりの正方形の十字になるようにする。
+    # ※ バウンディングボックス依存なので、髪や下駄でシルエットが大きく
+    #    変わったら周期を測り直すこと。
+    aniso = 1.67
+    # 十字の一辺 0.54 タイル / 腕の太さ 0.104*2 = 0.21 タイル。公式実測の
+    # 十字 13px・周期 24px（0.54）、腕 5px（十字の 0.38）に合わせてある。
+    arm, th = 0.27, 0.104
+    ellipse(arr, 0.5, 0.5, arm, th / aniso, ink, power=3.4)
+    ellipse(arr, 0.5, 0.5, th, arm / aniso, ink, power=3.4)
     return arr
 
 

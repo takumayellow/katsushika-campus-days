@@ -72,7 +72,15 @@ def make_material(name: str, rgb, *, roughness: float = 0.62,
             mp = nt.nodes.new("ShaderNodeMapping")
             mp.location = (-780, 200)
             mp.inputs["Scale"].default_value = (tex_scale, tex_scale, tex_scale)
-            mp.inputs["Rotation"].default_value = (math.pi * 0.5, 0.0, 0.0)
+            # 和柄を 1 枚の平面投影（Rotation=(pi/2,0,0) の Y 軸投影）で貼ると、
+            # 法線が ±X を向く面（袖の外側・肩・胴の真横）はテクスチャの 1 本の
+            # 線を引き伸ばすだけになり、絣の十字が消えて縦縞になる。側面の
+            # プレビューで袖が「白い板」に見えていたのはこれ。
+            # ボックス投影なら面の向きに応じて XZ / YZ / XY の 3 面から選ぶので、
+            # どちらを向いた面にも十字が乗る。FBX には materialのノードは
+            # 入らないので、Unity 側の見え方はこの変更では変わらない。
+            tex.projection = "BOX"
+            tex.projection_blend = 0.25
             nt.links.new(src.outputs["Generated"], mp.inputs[0])
             nt.links.new(mp.outputs[0], tex.inputs[0])
         nt.links.new(tex.outputs["Color"], bsdf.inputs["Base Color"])

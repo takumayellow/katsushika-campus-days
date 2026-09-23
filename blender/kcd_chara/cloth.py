@@ -74,8 +74,19 @@ def garment_rings(p: dict, a: B.Anatomy, z_list, inflate, *, seg: int = 28,
 
 def shell(mb: M.MeshBuilder, p, a, mat, part, z0, z1, inflate, *, levels=8,
           seg=28, span=None, bust=1.0, smooth=True, cap_end=False,
-          shoulder=False):
+          shoulder=False, follow_body=False):
     zs = np.linspace(z0, z1, levels)
+    if follow_body:
+        # 素体の胴は 24 段の輪で出来ていて、肩の高さに稜線がある。服の輪を
+        # 等間隔に置くと稜線を弦で横切ってしまい、服が素体の内側へ入り込む。
+        # 肩のすぐ下で素肌が三角に覗いていたのはこれ（実測で z=0.518..0.532、
+        # 中心から 0.074..0.150m の左右 2 か所）。素体と同じ高さの輪を
+        # 混ぜて、必ず外側を通らせる。
+        # 胴全体に混ぜると 1 体あたり 2240 三角形増えるので、稜線のある
+        # 上端 7%（身長比）だけにして 900 に抑える。
+        zb = _profile(p, a)[0]
+        lo = max(z0, z1 - p["height"] * 0.07)
+        zs = np.unique(np.concatenate([zs, zb[(zb > lo) & (zb < z1)]]))
     infl = inflate if np.isscalar(inflate) else np.interp(
         zs, np.linspace(z0, z1, len(inflate)), inflate)
     rings, closed = garment_rings(p, a, zs, infl, seg=seg, span=span,
@@ -116,7 +127,7 @@ def band(mb: M.MeshBuilder, p, a, mat, part, z0, z1, inflate, *, seg=28):
 def pleated_skirt(mb: M.MeshBuilder, p, a, mat, part, *, z_top, z_bot,
                   r_top, r_bot, pleats=16, amp=0.16, flare=1.25,
                   ry_ratio=0.72, levels=9, smooth=False, power=2.25,
-                  clear=0.0060):
+                  clear=0.0060, notch=0.0):
     """実ジオメトリのプリーツを持つスカート/袴。r_* は腰幅に対する比率。
 
     断面は素体の胴と同じスーパー楕円（power=2.25）にする。真円/楕円で作ると
@@ -156,6 +167,13 @@ def pleated_skirt(mb: M.MeshBuilder, p, a, mat, part, *, z_top, z_bot,
     last[:, 1] *= 0.94
     last[:, 2] += (z_top - z_bot) * 0.020
     rings.append(last)
+    if notch > 0.0:
+        # 馬乗り袴は股下で前後に割れていて、裾の中央が V 字に切れ上がる
+        # （`docs/ref/tus_chara01.jpg` の足元）。裾を水平に切った筒のままだと、
+        # ヒダをいくら深くしてもスカートにしか見えなかった。中央だけ持ち上げる。
+        lift = notch * np.clip(1.0 - (np.abs(ca) / 0.45) ** 2, 0.0, 1.0)
+        rings[-1][:, 2] += lift
+        rings[-2][:, 2] += lift
     with mb.part(part):
         mb.add_grid(rings, mat, smooth=smooth)
     return rings
@@ -569,14 +587,25 @@ def _apron(mb, p, a: B.Anatomy, skirt_rings=None):
 # --------------------------------------------------------------------------
 
 
-def _kimono_collar(mb, p, a: B.Anatomy, mat, z_top, z_cross):
-    """衿は半衿の無地。着物と同じ柄地だと V が消えて船底襟に見える。"""
-    """V 字に合わせた衿。左前（着る人の左が上）で重ねる。"""
+def _kimono_collar(mb, p, a: B.Anatomy, mat, z_top, z_cross, rim_mat=None):
+    """V 字に合わせた衿。左前（着る人の左が上）で重ねる。
+
+    無地の白 1 本だと、明るい絣地の上で幅の広い白帯が 2 本走るので
+    サスペンダーにしか見えなかった。公式イラストの衿は着物と同じ絣地で、
+    両縁の太い黒線だけで衿だと分からせている（`docs/ref/tus_chara01.jpg`
+    の襟元を 9 倍に拡大して確認した）。線を引けないので、縁を濃紺の細帯に
+    置き換えて同じ役をさせる。「白ではなく濃紺の衿に」という指示は、この
+    縁取りで満たす。喉元の白は公式にもある半衿の三角。
+    """
     h = p["height"]
     zz, rx, ry = _profile(p, a)
+    rim_mat = rim_mat or mat
+    # 衿の断面を横切る位置 u（+1 = 外縁、-0.30 = 内縁）と、そこに貼る材質。
+    # 外縁と内縁を濃紺、間を絣地にする。
+    bands = ((1.00, 0.64, rim_mat), (0.64, 0.02, mat), (0.02, -0.30, rim_mat))
     for sgn in (1, -1):
-        pts_out, pts_in = [], []
         n = 9
+        rows = []
         for i in range(n):
             t = i / (n - 1)
             zi = z_top + (z_cross - z_top) * t
@@ -588,14 +617,29 @@ def _kimono_collar(mb, p, a: B.Anatomy, mat, z_top, z_cross):
             k = max(0.0, 1.0 - (x / max(rxi, 1e-6)) ** 2) ** 0.5
             y = -(ryi * (0.40 + 0.60 * k) + h * 0.024)
             w = h * 0.026
-            pts_out.append([x + sgn * w, y - h * 0.004, zi])
-            pts_in.append([x - sgn * w * 0.30, y - h * 0.011, zi])
+
+            def pt(u, x=x, y=y, w=w, zi=zi):
+                # 内側ほど胸に沈める。外縁だけ浮かせると衿が板に見える。
+                d = (1.0 - u) / 1.30
+                return [x + sgn * w * u, y - h * (0.004 + 0.007 * d), zi]
+
+            rows.append(pt)
         with mb.part("collar"):
-            mb.add_quad_strip(np.array(pts_out), np.array(pts_in), mat)
+            for u0, u1, m in bands:
+                mb.add_quad_strip(np.array([f(u0) for f in rows]),
+                                  np.array([f(u1) for f in rows]), m)
+    # 半衿（喉元の白）は公式では 2〜3px しかなく、この頭身で作ると胸に
+    # 白い名札を貼ったようにしか見えなかったので置かない。
 
 
-def _furi_sleeve(mb, p, a: B.Anatomy, mat, *, drop=1.0):
-    """振り袖（袂が垂れる袖）。"""
+def _furi_sleeve(mb, p, a: B.Anatomy, mat, *, drop=1.0, style="furi"):
+    """着物の袖。
+
+    style="furi"  振り袖（マドンナちゃん）。肘から袂が長く垂れる。
+    style="boy"   坊っちゃんの元禄袖。公式 tus_chara01.jpg では肩から
+                  肘の少し下までが一続きの丸い箱で、そこから素の前腕と
+                  手が出ている。袂は垂れない。
+    """
     h = p["height"]
     r0, r1, r2 = a.arm_r
     for sgn in (-1, 1):
@@ -605,74 +649,159 @@ def _furi_sleeve(mb, p, a: B.Anatomy, mat, *, drop=1.0):
         # 筒のリング法線は腕に垂直なので、太らせると袂が前後（Y）へ
         # 膨らんで凧のようになる。筒は腕に沿わせるだけにして、
         # 袂は肘から真下へ垂らす別パーツにする。
-        path = np.array([sh + (el - sh) * 0.02, sh + (el - sh) * 0.45, el,
-                         el + (wr - el) * 0.72])
         # 袖は「腕の太さ基準」で細く作る。身長基準だと低頭身で寸胴になる。
         sr = max(float(r0), float(r1))
-        radii = [(sr * 1.14, sr * 1.06), (sr * 1.20, sr * 1.12),
-                 (sr * 1.26, sr * 1.17), (sr * 1.18, sr * 1.10)]
+        if style == "boy":
+            # 筒を肘の先 0.30 で止める。従来の 0.72 だと筒の先端が袋の
+            # すぼまった底（sr*0.41）を突き破って、袖の真ん中に斜めの
+            # 継ぎ目が走り、そこだけ真っ白に飛んで「白い矩形パッチ」に
+            # 見えていた。止めた先は袋の中に隠れる。
+            path = np.array([sh + (el - sh) * 0.02, sh + (el - sh) * 0.45, el,
+                             el + (wr - el) * 0.30])
+            radii = [(sr * 1.14, sr * 1.06), (sr * 1.20, sr * 1.12),
+                     (sr * 1.26, sr * 1.17), (sr * 1.24, sr * 1.15)]
+        else:
+            path = np.array([sh + (el - sh) * 0.02, sh + (el - sh) * 0.45, el,
+                             el + (wr - el) * 0.72])
+            radii = [(sr * 1.14, sr * 1.06), (sr * 1.20, sr * 1.12),
+                     (sr * 1.26, sr * 1.17), (sr * 1.18, sr * 1.10)]
         part = f"sleeve_{'l' if sgn > 0 else 'r'}"
         with mb.part(part):
-            # 肩。着物シェルの上端からはみ出す肩の丸みを覆う。
-            cap = sr * 1.16
-            mb.add_sphere((float(sh[0]), float(sh[1]), float(sh[2])),
-                          (cap, cap, cap), mat, nu=16, nv=10)
+            # 肩。着物シェルの上端からはみ出す肩の丸みを覆う。腕の太さだけで
+            # 決めると肩関節と胴の間が埋まらず、正面から素肌が横一文字に
+            # 覗く（実測で幅 0.047m ほどの裂け目になっていた）。内側へ寄せて
+            # 肩幅方向に伸ばし、身頃と重ねて閉じる。
+            mb.add_sphere((float(sh[0]) * 0.93, float(sh[1]),
+                           float(sh[2]) + h * 0.006),
+                          (sr * 1.55, sr * 1.95, sr * 1.28), mat,
+                          nu=16, nv=10)
             mb.add_tube(path, radii, mat, n=14, power=2.4, cap_start=False,
                         cap_end=True)
-            top = el + (wr - el) * 0.06
-            cx = float(top[0]) + sgn * h * 0.006
-            cy = float(top[1])
-            z_top = float(top[2]) + h * 0.026
-            z_bot = z_top - p["head_h"] * (0.52 * drop)
+            if style == "boy":
+                # 坊っちゃん。公式 tus_chara01.jpg の袖は「肩から帯の高さまで
+                # 一続きの丸い箱」で、袂だけが別に垂れてはいない。肘から
+                # 真下に円筒を下げると (1) 筒（肘で sr*1.26）が袂を突き破って
+                # 斜めの継ぎ目が走り、そこだけ真っ白に飛んで「白い矩形パッチ」
+                # に見え、(2) 裾が切り落とした円筒になる。
+                # 上端を肩寄りへ上げ、中心を肩→手首の線に沿って傾け、
+                # 帯の少し下で丸く閉じる。
+                p0 = sh + (el - sh) * 0.30
+                p1 = el + (wr - el) * 0.55
+                z_top = float(p0[2])
+                z_bot = float(p1[2]) - p["head_h"] * 0.045
+                r_lo, r_gain, r_dep, d_gain, knee = 1.30, 0.26, 1.14, 0.10, 0.60
+            else:
+                # 振り袖（マドンナちゃん）。従来どおり肘から垂らす。
+                p0 = el + (wr - el) * 0.06 + np.array([sgn * h * 0.006, 0.0,
+                                                       h * 0.030])
+                p1 = p0.copy()
+                z_top = float(p0[2])
+                z_bot = z_top - p["head_h"] * (0.52 * drop)
+                r_lo, r_gain, r_dep, d_gain, knee = 1.20, 0.34, 1.12, 0.22, 0.80
             rings = []
             k = 9
             for i in range(k):
                 t = i / (k - 1)
-                rx = sr * (1.20 + 0.34 * t)
-                ry = sr * (1.12 + 0.22 * t)
-                if t > 0.80:
-                    s2 = math.sqrt(max(0.0, 1.0 - ((t - 0.80) / 0.20) ** 2))
-                    rx *= 0.30 + 0.70 * s2
-                    ry *= 0.30 + 0.70 * s2
-                rings.append(M.ring(16, rx, ry, power=2.1, cx=cx, cy=cy,
-                                    z=z_top + (z_bot - z_top) * t))
+                zz = z_top + (z_bot - z_top) * t
+                c = p0 + (p1 - p0) * min(1.0, t * 1.12)
+                cx, cy = float(c[0]), float(c[1])
+                # 奥行き（ry）まで太らせると側面プレビューで袖が胴の前に
+                # 貼った白い板になる。横幅だけ筒より太くして、奥行きは
+                # 筒なりに保つ。
+                rx = sr * (r_lo + r_gain * t)
+                ry = sr * (r_dep + d_gain * t)
+                if t > knee:
+                    s2 = math.sqrt(max(0.0, 1.0 - ((t - knee) / (1.0 - knee)) ** 2))
+                    rx *= 0.26 + 0.74 * s2
+                    ry *= 0.26 + 0.74 * s2
+                rings.append(M.ring(16, rx, ry, power=2.1, cx=cx, cy=cy, z=zz))
             mb.add_grid(rings, mat, smooth=True, cap_start=True, cap_end=True)
 
 
 def _obi(mb, p, a: B.Anatomy, mat, z_c, width):
     h = p["height"]
-    band(mb, p, a, mat, "obi", z_c - width * 0.5, z_c + width * 0.5, h * 0.016)
+    # 袴と同色なので、外へ出す量が足りないと輪郭線が出ず、袴の上端が
+    # のっぺりした一枚の面になる。公式は横一文字の紐がはっきり分かれて見える。
+    band(mb, p, a, mat, "obi", z_c - width * 0.5, z_c + width * 0.5, h * 0.026)
 
 
-def _hakama_himo(mb, p, a: B.Anatomy, mat, z_c):
+def _hakama_himo(mb, p, a: B.Anatomy, mat, z_c, front_y):
+    """前紐の上に乗る十文字の結び目と、そこから下がる垂れ。
+
+    以前は中央の平たい箱の両脇に楕円球を 1 個ずつ置いていたので、正面からは
+    腰に輪が嵌まっているようにしか見えなかった。公式イラスト
+    （`docs/ref/tus_chara01.jpg` の腰元）にあるのは、横一文字の紐の上に袴幅の
+    0.23 ほどの四角い結びが 1 つ乗るだけ。垂れはその下から短く落ちる。
+
+    `front_y(z)` はその高さで袴の前面がどこまで出ているかを返す。胴の
+    プロファイルを基準に置くと、袴は腰幅基準でもっと前に出ているので
+    垂れが布に飲み込まれ、水滴が 2 つ浮いているようにしか見えなかった。
+    """
     h = p["height"]
-    zz, rx, ry = _profile(p, a)
-    ryi = float(np.interp(z_c, zz, ry)) + h * 0.022
+    zz, rx, _ry = _profile(p, a)
+    rxi = float(np.interp(z_c, zz, rx))
+    # 公式の結びは前紐の幅の 0.20、高さは紐とほぼ同じ（18x11px を実測）。
+    # 紐の幅は概ね 2*rxi*1.08 なので、結びの幅は 0.54*rxi になる。細長くすると
+    # 袴の真ん中にネクタイを下げたように見え、幅を取りすぎると腹当てに見える。
+    kw = rxi * 0.54
+    z_tare = z_c - h * 0.052
     with mb.part("himo"):
-        mb.add_box((0.0, -ryi, z_c), (h * 0.075, h * 0.012, h * 0.016), mat)
+        # 角を丸めると（add_rounded_box は seg 段の回転体なので）菱形になる。
+        # 公式の結びは四角いので素の箱で置く。
+        # 袴の面より奥から出す。前へ寄せただけだと、真横から見たとき箱が
+        # 腹の前に浮いているのが丸わかりになる。
+        mb.add_box((0.0, -(front_y(z_c) + h * 0.004), z_c),
+                   (kw, h * 0.036, h * 0.042), mat)
+        # 垂れ。結びの両端から 2 本、同じ太さのまま短く落とす。先細りにすると
+        # 2 本がくっついて 1 枚の三角に見え、やはりネクタイになる。袴と同色
+        # なので、しっかり前へ出さないと布に沈んで陰影だけの縞になる。
         for sgn in (-1, 1):
-            mb.add_sphere((sgn * h * 0.030, -ryi - h * 0.006, z_c),
-                          (h * 0.032, h * 0.012, h * 0.020), mat, nu=10, nv=6)
+            mb.add_box((sgn * kw * 0.42,
+                        -(front_y(z_tare - h * 0.036) + h * 0.002), z_tare),
+                       (h * 0.028, h * 0.034, h * 0.072), mat)
+
+
+#: 素足の底の z（fh 倍）。body.build_legs は足を add_rounded_box で
+#: 中心 fh*0.52・サイズ fh（= 全長。半径ではない）に置くので、底は fh*0.02。
+#: 高下駄はここを基準に「足の下」へ積む。
+_SOLE_Z = 0.02
 
 
 def _geta(mb, p, a: B.Anatomy):
-    h = p["height"]
+    """二枚歯の高下駄。台を素足の底に付け、歯はそこから下へ伸ばす。
+
+    以前は台の厚み 0.48fh の中に歯 0.59fh を重ねて置いていたので、歯が台に
+    埋まって正面からは 1 枚の板にしか見えず、はみ出した分は床下にあった。
+    プレビューの床は render.setup_scene がメッシュの最下点に敷くから、
+    歯を下へ伸ばしても浮かずに接地する。公式イラスト（台 6px : 歯 12px、
+    歯間 = 台長の 0.39）の比率をそのまま使う。
+    """
     fw, fl_, fh = a.foot
+    top = fh * (_SOLE_Z + 0.06)      # 台の上面。素足に 0.06fh だけ食い込ませる
+    dai_t = fh * 0.58                # 台の厚み
+    ha_t = fh * 1.25                 # 歯の高さ。台の 2 倍強で「高下駄」に見せる
+    dai_z = top - dai_t * 0.5
+    ha_z = top - dai_t - ha_t * 0.5
     for sgn in (-1, 1):
         cx = a.ankle[0] * sgn
         with mb.part(f"shoes_{'l' if sgn > 0 else 'r'}"):
-            mb.add_box((cx, -fl_ * 0.18, fh * 0.035),
-                       (fw * 1.52, fl_ * 1.40, fh * 0.48), "geta_wood")
-            for dy in (-fl_ * 0.42, fl_ * 0.34):
-                mb.add_box((cx, dy, fh * -0.435),
-                           (fw * 1.34, fl_ * 0.26, fh * 0.59), "geta_wood")
-            # 鼻緒
-            tip = np.array([cx, -fl_ * 0.62, fh * 0.275])
+            mb.add_box((cx, -fl_ * 0.20, dai_z),
+                       (fw * 1.50, fl_ * 1.30, dai_t), "geta_wood")
+            # 前歯は爪先寄り、後歯は踵寄り。間を空けないと横から見て
+            # 台の下にもう 1 枚板が付いているようにしか見えない。
+            for dy in (-fl_ * 0.555, fl_ * 0.181):
+                mb.add_box((cx, dy, ha_z),
+                           (fw * 1.36, fl_ * 0.20, ha_t), "geta_wood")
+            # 鼻緒。公式は生成りの白。前緒を指の股から立て、甲の上を通して
+            # 台の縁へ落とす。台の上面だけを這わせると足に掛からず、
+            # 白い V の紙を台に貼ったようにしか見えない。
+            tip = np.array([cx, -fl_ * 0.68, fh * 0.16])
             for s2 in (-1, 1):
-                anchor = np.array([cx + s2 * fw * 0.55, -fl_ * 0.02, fh * 0.275])
-                mb.add_tube(np.array([tip, (tip + anchor) * 0.5 + np.array([0, 0, h * 0.010]),
-                                      anchor]),
-                            [(h * 0.004, h * 0.008)] * 3, "furoshiki_red", n=5)
+                mid = np.array([cx + s2 * fw * 0.32, -fl_ * 0.52, fh * 0.88])
+                end = np.array([cx + s2 * fw * 0.70, -fl_ * 0.12,
+                                top + fh * 0.06])
+                mb.add_tube(np.array([tip, mid, end]),
+                            [(fh * 0.045, fh * 0.085)] * 3, "collar_white", n=5)
 
 
 def _boots(mb, p, a: B.Anatomy):
@@ -697,29 +826,62 @@ def _boots(mb, p, a: B.Anatomy):
 
 
 def _furoshiki_shoulder(mb, p, a: B.Anatomy):
-    """右肩に担いだ風呂敷包み。包みは肩の後ろ、結び目は肩の前。"""
-    h = p["height"]
+    """右肩に担いだ風呂敷包み。結び目は包みの上。
+
+    以前は中心を肩幅の 0.78 倍・背中側 0.216 頭幅に置いていたので、包みの
+    大半が胴の中に埋まり、正面からは首の横にオレンジの欠片が覗くだけだった。
+    公式イラスト（`docs/ref/tus_chara01.jpg`）を色で抜いて測ると、包みは
+    36x52px = 0.35 頭幅 x 0.49 頭高、中心は体の中心から 0.51 頭幅 外、
+    肩より 0.28 頭高 上、頭の後ろへ回り込んでいる。身長基準ではなく
+    頭のサイズ基準で置く（低頭身の素体でも比率が崩れないように）。
+    """
+    hw, hh = p["head_w"], p["head_h"]
     sh = a.shoulder * np.array([-1.0, 1.0, 1.0])
-    c = np.array([sh[0] * 0.78, sh[1] + h * 0.088, sh[2] + h * 0.052])
-    knot = np.array([sh[0] * 0.74, sh[1] - h * 0.052, sh[2] + h * 0.006])
-    top = np.array([sh[0] * 0.70, sh[1] + h * 0.006, sh[2] + h * 0.060])
+    rx, ry, rz = hw * 0.205, hw * 0.178, hh * 0.255
+    # 公式は 2.1 頭身でこの素体より頭が大きい。肩より 0.28 頭高 上、を
+    # そのまま当てると包みが耳の高さまで上がって、後ろ髪の束に見える。
+    # 「肩に乗っている」ことを優先して、包みの底を肩の高さに合わせる。
+    # 背中側へ hw*0.22 逃がすと、正面プレビューでは肩の陰に隠れて
+    # オレンジの欠片が覗くだけになる（公式は正面で頭の横にまるごと見える）。
+    # 肩の面とほぼ同じ奥行きに置く。
+    # 高さは公式どおり肩の 0.30 頭高 上。底を肩に合わせる（+rz*0.92 =
+    # 0.22 頭高）と、包みの天端が顎より下に沈んで袖の陰に入り、
+    # 正面からオレンジの三日月しか見えなかった。公式では包みは頬の横に
+    # あって目の高さまで届く。外へも少し出して袖に隠れないようにする。
+    c = np.array([sh[0] * 1.06, sh[1] + hw * 0.03, sh[2] + hh * 0.30])
     mat = "furoshiki_orange"
     with mb.part("bag"):
-        mb.add_sphere(tuple(c), (h * 0.072, h * 0.062, h * 0.068), mat,
-                      nu=16, nv=10)
-        # 肩を越える布（結び目 -> 肩の上 -> 包み）
-        path = np.array([knot, top, c + np.array([0.0, -h * 0.045, h * 0.040])])
-        mb.add_tube(path, [(h * 0.034, h * 0.012), (h * 0.040, h * 0.013),
-                           (h * 0.050, h * 0.020)], mat, n=8,
-                    power=2.6, cap_start=False, cap_end=False)
-        mb.add_sphere(tuple(knot), (h * 0.030, h * 0.026, h * 0.024), mat,
-                      nu=10, nv=7)
-        # 結び目から垂れる端
-        for dx, dz in ((-0.6, -1.0), (0.5, -0.9)):
-            e = knot + np.array([dx * h * 0.030, -h * 0.010, dz * h * 0.055])
+        mb.add_sphere(tuple(c), (rx, ry, rz), mat, nu=14, nv=10)
+        # 結び目は包みの上。肩の前に付けると、担いでいるのか抱えているのか
+        # 分からなくなる。
+        knot = c + np.array([0.0, -ry * 0.10, rz * 0.84])
+        mb.add_sphere(tuple(knot), (rx * 0.46, ry * 0.46, rz * 0.30), mat,
+                      nu=12, nv=7)
+        # 結び目から跳ねる布の角。下へ垂らすと布がだらんと下がって見えるので、
+        # 全部上向きに出す。長く伸ばすと頭の横で角が立ち、髪の毛に見える。
+        for dx, dy in ((-0.9, -0.5), (0.9, -0.3), (0.0, 0.9)):
+            e = knot + np.array([dx * rx * 0.58, dy * ry * 0.58, rz * 0.22])
             mb.add_tube(np.array([knot, (knot + e) * 0.5, e]),
-                        [(h * 0.016, h * 0.011), (h * 0.013, h * 0.009),
-                         (h * 0.004, h * 0.003)], mat, n=7)
+                        [(rx * 0.24, ry * 0.20), (rx * 0.18, ry * 0.15),
+                         (rx * 0.05, ry * 0.04)], mat, n=6)
+        # 肩に載る布。包みの下端から肩の前へ短く回すだけ。長く垂らすと
+        # 肩から布がぶら下がっているようにしか見えない。
+        # 包みを肩の 0.30 頭高 上へ上げたぶん、布の端を肩の前下（-0.08 頭高）
+        # から出すと袖の肩の球を斜めに貫いて、Run/Walk で鎖骨の上に
+        # オレンジの破片が出ていた。肩の面より上だけを通す。
+        # 始端は袖の付かない首寄り（肩幅の 0.62 倍）から出す。肩の球の真上
+        # （0.90 倍）だと腕といっしょに動く袖の外側へ布が掛かり、Walk で
+        # 腕を振ったとき袖と布が別々に動いて境目が割れる。
+        # なお肩の上にオレンジの布が短く乗って見えるのは包みの下端で、
+        # 破綻ではない（walk プレビューの肩 170x80px にオレンジ 804px。
+        # 包みからつながった 1 つの塊）。
+        o = np.array([sh[0] * 0.62, sh[1] - hw * 0.06, sh[2] + hh * 0.07])
+        m = np.array([sh[0] * 0.88, sh[1] + hw * 0.00, sh[2] + hh * 0.13])
+        b = c + np.array([0.0, 0.0, -rz * 0.70])
+        mb.add_tube(np.array([o, m, b]),
+                    [(rx * 0.34, ry * 0.26), (rx * 0.48, ry * 0.32),
+                     (rx * 0.64, ry * 0.42)], mat, n=8,
+                    power=2.4, cap_start=True, cap_end=False)
 
 
 def _furoshiki(mb, p, a: B.Anatomy):
@@ -749,32 +911,59 @@ def _furoshiki(mb, p, a: B.Anatomy):
 
 
 def build_kimono(mb, p, a: B.Anatomy, *, kimono_mat, hakama_mat, shoes,
-                 hakama_high=True, hakama_pleats=26):
+                 hakama_high=True, hakama_pleats=26, sleeve="furi"):
     h = p["height"]
     z = p["z"]
     hak_z = z["underbust"] if hakama_high else z["waist"]
     body_bot = z["crotch"] + (z["hip"] - z["crotch"]) * 0.3
     k_rings = shell(mb, p, a, kimono_mat, "kimono", body_bot,
                     z["shoulder"] + h * 0.014, h * 0.012, levels=9,
-                    bust=0.55, shoulder=True)
+                    bust=0.55, shoulder=True, follow_body=True)
     yoke(mb, p, a, kimono_mat, "kimono_yoke", k_rings[-1],
          z["shoulder"] + h * 0.014, h * 0.012, rise=h * 0.030, bust=0.55)
-    _kimono_collar(mb, p, a, "collar_white", z["shoulder"] + h * 0.010,
-                   hak_z + h * 0.012)
-    _furi_sleeve(mb, p, a, kimono_mat)
+    _kimono_collar(mb, p, a, kimono_mat, z["shoulder"] + h * 0.010,
+                   hak_z + h * 0.012, rim_mat="cloth_skirt_navy")
+    _furi_sleeve(mb, p, a, kimono_mat, style=sleeve)
     _obi(mb, p, a, hakama_mat, hak_z + h * 0.012, h * 0.036)
-    # 明治の袴は足首まで落ちる。ブーツのときは編み上げの口をわずかに隠す丈に
-    # して、裾と履物のあいだに素足が出ないようにする。
+    # 高下駄のときは公式イラストどおり、裾を足の甲の上で止めて素足と歯を
+    # 見せる。足首まで落とすと下駄が袴に飲み込まれて、脛も足も出ない筒に
+    # なる。ブーツのときは編み上げの口をわずかに隠す丈のままにする。
     if shoes == "geta":
-        hem = z["ankle"] + h * 0.022
+        hem = z["ankle"] + (z["knee"] - z["ankle"]) * 0.32
     else:
         boot_top = a.ankle[2] + (a.knee[2] - a.ankle[2]) * 0.52
         hem = boot_top + h * 0.016
+    # 公式の袴は裾幅が頭幅の 1.3 倍ある釣鐘で、ヒダは正面に 4〜5 本しか
+    # 見えない。ヒダを細かく刻むと布のドレープではなく縦縞のテクスチャに
+    # 見えるので、数を減らして 1 本あたりを深くする。
+    hak_top, hak_amp = hak_z + h * 0.004, 0.26
+    # 公式の袴は「釣鐘」というより台形で、裾幅 102px / 帯幅 81px = 1.26 倍
+    # しか広がらない（頭幅 89px に対して裾は 1.15 倍）。r_bot=1.68 だと
+    # 裾/帯 = 1.87・裾幅 = 頭幅の 1.39 倍まで開いて、スカートに見えていた。
+    hak_r0, hak_r1 = 1.08, 1.36
     pleated_skirt(mb, p, a, hakama_mat, "hakama",
-                  z_top=hak_z + h * 0.004, z_bot=hem,
-                  r_top=1.06, r_bot=1.30, pleats=hakama_pleats, amp=0.20,
-                  flare=1.05, levels=16, clear=0.0235)
-    _hakama_himo(mb, p, a, hakama_mat, hak_z + h * 0.014)
+                  z_top=hak_top, z_bot=hem,
+                  r_top=hak_r0, r_bot=hak_r1, pleats=hakama_pleats,
+                  amp=hak_amp, flare=1.00, levels=16, clear=0.0235,
+                  # 馬乗り袴の切れ上がりは高下駄の坊っちゃんだけ。行灯袴の
+                  # マドンナちゃんに掛けると、前中央の裾が持ち上がって
+                  # 裾とブーツの口のあいだに素肌が幅 380px 出てしまう。
+                  notch=(hak_top - hem) * (0.08 if shoes == "geta" else 0.0))
+
+    def hakama_front(zv):
+        """その高さで袴の前面（ヒダの山）がどこまで出ているか。
+
+        `pleated_skirt` と同じ式をそのまま使う。flare=1.0 なので t の 1 乗、
+        ヒダの振幅は上端で 0 から立ち上がるので smoothstep も同じに掛ける。
+        ここで振幅を一律 amp で見積もると、上端（実際は振幅 0）で 1 割ほど
+        外に出た値を返し、結び目が袴から浮いて宙に浮いた箱になる。
+        """
+        t = float(np.clip((zv - hak_top) / (hem - hak_top), 0.0, 1.0))
+        k = hak_r0 + (hak_r1 - hak_r0) * t
+        aa = hak_amp * M.smoothstep(0.0, 0.30, t)
+        return a.hip_ry * k * (1.0 + aa * 0.375)
+
+    _hakama_himo(mb, p, a, hakama_mat, hak_z + h * 0.014, hakama_front)
     if shoes == "geta":
         _geta(mb, p, a)
     else:
@@ -831,7 +1020,7 @@ def build_outfit(mb: M.MeshBuilder, p: dict, a: B.Anatomy) -> None:
     elif outfit == "kimono_botchan":
         build_kimono(mb, p, a, kimono_mat="cloth_kimono_kasuri_blue",
                      hakama_mat="cloth_hakama_blue", shoes="geta",
-                     hakama_high=False, hakama_pleats=24)
+                     hakama_high=False, hakama_pleats=10, sleeve="boy")
     elif outfit == "kimono_madonna":
         build_kimono(mb, p, a, kimono_mat="cloth_kimono_yagasuri_red",
                      hakama_mat="cloth_hakama_purple", shoes="boots",
