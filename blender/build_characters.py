@@ -238,7 +238,7 @@ def build_character(cid: str, out_root: str, face_size: int, fbx_opts: dict,
 
     keys = shapes.build_shape_keys(obj, mb, p)
     face_actions = anim.setup_shape_drivers(obj, arm)
-    actions = anim.build_actions(arm)
+    actions = anim.build_actions(arm, p.get("arm_drop", anim.ARM_DROP))
     lift = lift_to_ground(obj, arm)
 
     out_obj = (outline.build_outline(obj, mb, p, materials)

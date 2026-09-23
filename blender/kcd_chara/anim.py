@@ -609,7 +609,9 @@ class Jump(_Legs):
         return spec
 
 
-def _wave(t):
+def _wave(t, drop=ARM_DROP):
+    # 振る腕の Y は -(104 + drop)。_posed が先頭に足す +drop と打ち消し合い、
+    # 腕をどれだけ下ろすキャラでも振る手の高さは同じ -104° になる。
     swing = math.sin(2 * math.pi * 3.0 * t)
     ramp = min(1.0, t / 0.18) * min(1.0, (1.0 - t) / 0.18 + 0.0 if t > 0.82 else 1.0)
     ramp = max(0.0, min(1.0, ramp))
@@ -619,7 +621,7 @@ def _wave(t):
         "Spine": [("Z", D(3.0) * ramp)],
         "Head": [("Z", D(5.0) * ramp), ("Y", D(-4.0) * ramp),
                  ("X", D(-3.0) * ramp)],
-        "LeftUpperArm": [("Y", D(-(104.0 + ARM_DROP)) * ramp), ("X", D(-8.0) * ramp)],
+        "LeftUpperArm": [("Y", D(-(104.0 + drop)) * ramp), ("X", D(-8.0) * ramp)],
         "LeftLowerArm": [("Y", D(-26.0) * ramp), ("X", D(-24.0) * ramp * (0.5 + 0.5 * swing))],
         "LeftHand": [("Y", D(-18.0) * swing * ramp)],
         "RightUpperArm": [("Y", D(3.0)), ("X", D(4.0) * ramp)],
@@ -649,26 +651,28 @@ def _talk(t):
     }
 
 
-def _posed(fn):
+def _posed(fn, drop=ARM_DROP):
     """poser に腕下ろしを合成する。"""
-    return lambda t: _arms_down(fn(t))
+    return lambda t: _arms_down(fn(t), drop)
 
 
-def action_specs(arm):
+def action_specs(arm, arm_drop=ARM_DROP):
     """(名前, フレーム数, poser, ループ, キー数) の一覧。
 
     歩き・走りの長さはキャラの脚長から決まる（速度を合わせるため人によって違う）。
+    arm_drop は A ポーズから上腕を下ろす角度（params の "arm_drop"。既定 ARM_DROP）。
     """
+    d = arm_drop
     walk = Gait(arm, "Walk")
     run = Gait(arm, "Run")
     jump = Jump(arm)
     return (
-        ("Idle", 60, _posed(_idle), True, 9),
-        ("Walk", walk.nframes, _posed(walk.pose), True, walk.nframes + 1),
-        ("Run", run.nframes, _posed(run.pose), True, run.nframes + 1),
-        ("Jump", jump.nframes, _posed(jump.pose), False, jump.nframes),
-        ("Wave", 40, _posed(_wave), False, 17),
-        ("Talk", 60, _posed(_talk), True, 13),
+        ("Idle", 60, _posed(_idle, d), True, 9),
+        ("Walk", walk.nframes, _posed(walk.pose, d), True, walk.nframes + 1),
+        ("Run", run.nframes, _posed(run.pose, d), True, run.nframes + 1),
+        ("Jump", jump.nframes, _posed(jump.pose, d), False, jump.nframes),
+        ("Wave", 40, _posed(lambda t: _wave(t, d), d), False, 17),
+        ("Talk", 60, _posed(_talk, d), True, 13),
     )
 
 
@@ -735,9 +739,9 @@ def setup_shape_drivers(obj, arm) -> list[str]:
     return made
 
 
-def build_actions(arm) -> list[str]:
+def build_actions(arm, arm_drop=ARM_DROP) -> list[str]:
     names = []
-    for name, nf, fn, loop, keys in action_specs(arm):
+    for name, nf, fn, loop, keys in action_specs(arm, arm_drop):
         act = make_action(arm, name, nf, fn, loop=loop, keys=keys)
         names.append(act.name)
     return names

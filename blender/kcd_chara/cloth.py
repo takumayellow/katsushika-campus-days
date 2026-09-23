@@ -734,7 +734,7 @@ def _obi(mb, p, a: B.Anatomy, mat, z_c, width):
     band(mb, p, a, mat, "obi", z_c - width * 0.5, z_c + width * 0.5, h * 0.026)
 
 
-def _ribbon(mb, path, half_in, half_y, mat, *, power=3.2, n=10):
+def _flat_band(mb, path, half_in, half_y, mat, *, power=3.2, n=10):
     """芯線に沿って平たい帯（断面が角の丸い長方形）を押し出す。
 
     断面の片方の軸は「正面（XZ 平面）内で芯線に直交する向き」、もう片方は
@@ -815,7 +815,7 @@ def _hakama_himo_bow(mb, p, a: B.Anatomy, mat, z_c, front_y):
                 # 外側ほど少し上へ反らせる（公式の輪は水平よりやや上向き）
                 zz = z_c + math.sin(ti) * pi_ * loop_h * 0.5 + xi * h * 0.006
                 path.append((x, surf_y(x, zz, h * 0.004 + band_y), zz))
-            _ribbon(mb, path, band_in, band_y, mat)
+            _flat_band(mb, path, band_in, band_y, mat)
         # 中央の結び目。輪の付け根を覆い、輪より前へ少しだけ出す。
         kz = z_c + h * 0.001
         mb.add_sphere((0.0, surf_y(0.0, kz, h * 0.004 + band_y * 1.3), kz),
@@ -831,7 +831,7 @@ def _hakama_himo_bow(mb, p, a: B.Anatomy, mat, z_c, front_y):
                 x = sgn * (h * 0.006 + h * 0.022 * s ** 0.9)
                 path.append((x, surf_y(x, zz, h * 0.004), zz))
             half_w = h * (0.0135 + 0.0025 * np.linspace(0.0, 1.0, 9))
-            _ribbon(mb, path, half_w, h * 0.0045, mat, power=4.0)
+            _flat_band(mb, path, half_w, h * 0.0045, mat, power=4.0)
 
 
 def _hakama_himo(mb, p, a: B.Anatomy, mat, z_c, front_y):
