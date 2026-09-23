@@ -176,6 +176,41 @@ body {
   border-radius: 0;
 }
 
+/* 指だけの端末に読み込み前に出す案内 (#73)。出している間はキャンバスと操作の案内を隠す。 */
+#kcd-pc-only {
+  box-sizing: border-box;
+  width: min(100%, 560px);
+  padding: 22px 22px 24px;
+  border-radius: 10px;
+  background: var(--kcd-panel);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+  text-align: center;
+}
+
+#kcd-pc-only[hidden] { display: none; }
+#kcd-pc-only h2 { margin: 0 0 12px; font-size: 20px; font-weight: 700; color: var(--kcd-ink); }
+#kcd-pc-only p { margin: 0 0 12px; font-size: 14px; line-height: 1.8; }
+#kcd-pc-only .kcd-sub { color: var(--kcd-muted); font-size: 13px; }
+#kcd-pc-only-url { color: var(--kcd-accent); font-weight: 700; word-break: break-all; user-select: all; }
+
+/* 勧めたいのは PC で開くことなので、読み込むボタンは控えめにする。 */
+#kcd-pc-only-continue {
+  margin-top: 4px;
+  padding: 10px 20px;
+  border: 1px solid var(--kcd-muted);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--kcd-ink);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+#kcd-pc-only-continue:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+#unity-container.kcd-gated #unity-fullscreen-container,
+#unity-container.kcd-gated #kcd-guide { display: none; }
+
 @media (max-width: 560px) {
   #kcd-guide { font-size: 12px; }
   /* 狭い画面ではキャンバスの中の文字が場所を取りすぎる。すぐ下に同じ案内が出ているので、ボタンだけ残す。 */
