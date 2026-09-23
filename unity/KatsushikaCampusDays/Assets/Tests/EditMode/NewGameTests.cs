@@ -233,6 +233,9 @@ namespace KCD.Tests
             LogAssert.ignoreFailingMessages = true;
             var go = new GameObject("GameManagerForTest");
 
+            // SelectedCharacterId の setter は PlayerPrefs に書く。テストで開発機の設定を書き換えない。
+            string saved = PlayerPrefs.GetString(GameManager.CharacterPrefKey, "mirai");
+
             try
             {
                 GameManager manager = go.AddComponent<GameManager>();
@@ -247,6 +250,8 @@ namespace KCD.Tests
             finally
             {
                 UnityEngine.Object.DestroyImmediate(go);
+                PlayerPrefs.SetString(GameManager.CharacterPrefKey, saved);
+                PlayerPrefs.Save();
                 LogAssert.ignoreFailingMessages = ignoring;
             }
         }
