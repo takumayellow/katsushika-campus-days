@@ -20,7 +20,7 @@ namespace KCD.Tests
     ///
     /// 顔のテクスチャを貼るもの（face, eye_white, eye_l, eye_r）と輪郭線は palette.json に無い。
     ///
-    /// 和柄（絣・矢絣）の服は、palette.json の hex が柄の平均色で、ゲームでは柄の画像を貼って
+    /// 和柄（絣・ハート）の服は、palette.json の hex が柄の平均色で、ゲームでは柄の画像を貼って
     /// _BaseColor を白にする。こちらは画像の平均色と hex を突き合わせる。
     /// </summary>
     public sealed class CharacterPaletteAgreementTests

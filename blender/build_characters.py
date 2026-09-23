@@ -29,6 +29,7 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import bpy  # noqa: E402
+from mathutils import Matrix  # noqa: E402
 import numpy as np  # noqa: E402
 
 from kcd_chara import (anim, body, cloth, hair, outline, params, render, rig,  # noqa: E402
@@ -172,11 +173,43 @@ def write_palette(p: dict, cdir: str, names, pattern_arrays: dict) -> str:
     """<cdir>/palette.json に Unity 用の色表を書く（#55, MaterialLibrary が読む）。"""
     pal = kmats.palette(p, names, pattern_arrays)
     path = os.path.join(cdir, "palette.json")
-    doc = {"materials": [{"name": n, "hex": h} for n, h in sorted(pal.items())]}
+    pats = kmats.pattern_entries(p, names, pattern_arrays)
+    doc = {"materials": [{"name": n, "hex": h, **pats.get(n, {})}
+                         for n, h in sorted(pal.items())]}
     with open(path, "w", encoding="utf-8", newline="\n") as f:
         json.dump(doc, f, ensure_ascii=False, indent=2)
         f.write("\n")
     return path
+
+
+def lift_to_ground(obj, arm) -> float:
+    """メッシュの最下点が z=0 に来るよう, 頂点・全 Shape Key・ボーンの静止位置を同じだけ動かす。
+
+    Unity の Humanoid は原点を地面として足を置く。高下駄のように素足の底より
+    下へ伸びる履物は, そのままだと原点より下に出てゲームで地面にめり込む
+    （坊っちゃんは 10.45 cm, #47）。Blender のプレビューは床をメッシュの最下点に
+    敷くので, この差はプレビューでは見えない。静止位置ごと動かすので
+    Armature の変形は恒等のままで, アクション（ボーン局所の値）も変わらない。
+    戻り値は持ち上げた量 [m]。
+    """
+    n = len(obj.data.vertices)
+    co = np.empty(n * 3, dtype=np.float64)
+    obj.data.vertices.foreach_get("co", co)
+    dz = -float(co.reshape(-1, 3)[:, 2].min())
+    if abs(dz) < 1e-6:
+        return 0.0
+    shift = np.tile([0.0, 0.0, dz], n)
+    obj.data.vertices.foreach_set("co", co + shift)
+    if obj.data.shape_keys is not None:
+        for kb in obj.data.shape_keys.key_blocks:
+            kco = np.empty(n * 3, dtype=np.float64)
+            kb.data.foreach_get("co", kco)
+            kb.data.foreach_set("co", kco + shift)
+    obj.data.update()
+    # EditBone の head/tail を 1 本ずつ動かすと, 親の tail に繋がった子の head が
+    # 親と自分とで 2 回動いて 2 倍上がる。Armature.transform は全ボーンを一度に動かす。
+    arm.data.transform(Matrix.Translation((0.0, 0.0, dz)))
+    return dz
 
 
 def build_character(cid: str, out_root: str, face_size: int, fbx_opts: dict,
@@ -206,6 +239,7 @@ def build_character(cid: str, out_root: str, face_size: int, fbx_opts: dict,
     keys = shapes.build_shape_keys(obj, mb, p)
     face_actions = anim.setup_shape_drivers(obj, arm)
     actions = anim.build_actions(arm)
+    lift = lift_to_ground(obj, arm)
 
     out_obj = (outline.build_outline(obj, mb, p, materials)
                if with_outline else None)
@@ -226,7 +260,7 @@ def build_character(cid: str, out_root: str, face_size: int, fbx_opts: dict,
 
     info = dict(id=cid, jp=p["jp"], fbx=fbx, face=face_png, size=size,
                 verts=nverts, tris=ntris, bones=bones, actions=actions,
-                keys=keys, weight_method=method, z_lo=z_lo, z_hi=z_hi,
+                keys=keys, weight_method=method, z_lo=z_lo, z_hi=z_hi, lift=lift,
                 height=p["height"], heads=p["heads"], materials=mats_used,
                 seconds=time.time() - t0, obj=obj, arm=arm, params=p,
                 face_actions=face_actions, outline_tris=out_tris,
@@ -306,6 +340,10 @@ def main():
     for cid in ids:
         if cid not in params.CHARACTERS:
             raise SystemExit(f"未知の id: {cid}（有効: {', '.join(params.ALL_IDS)}）")
+    # Blender の Image.save() は相対パスをドライブの直下から解決するので,
+    # 相対のままだと face.png やプレビューが C:\unity\... や C:\docs\... に落ちる
+    args.out_dir = os.path.abspath(args.out_dir)
+    args.preview_dir = os.path.abspath(args.preview_dir)
     os.makedirs(args.out_dir, exist_ok=True)
 
     fbx_opts = dict(FBX_OPTS)
@@ -327,8 +365,9 @@ def main():
               % (info["verts"], info["tris"], info["outline_tris"],
                  info["total_tris"], info["size"] / 1048576.0,
                  info["weight_method"]))
-        print("   height=%.3fm (mesh z %.3f..%.3f)  heads=%.1f"
-              % (info["height"], info["z_lo"], info["z_hi"], info["heads"]))
+        print("   height=%.3fm (mesh z %.3f..%.3f, 接地のため %+.4fm)  heads=%.1f"
+              % (info["height"], info["z_lo"], info["z_hi"], info["lift"],
+                 info["heads"]))
         print("   actions=%s" % ", ".join(info["actions"]))
         print("   shapekeys=%s" % ", ".join(info["keys"]))
         print("   表情ドライバ=%s" % (", ".join(info["face_actions"]) or "なし"))

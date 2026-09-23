@@ -321,7 +321,7 @@ namespace KCD.Editor
         }
 
         /// <summary>
-        /// 絣・矢絣などの和柄 (#55)。Blender は Generated 座標 × <see cref="Scale"/> で <see cref="Texture"/> を
+        /// 絣・ハート柄などの和柄 (#55)。Blender は Generated 座標 × <see cref="Scale"/> で <see cref="Texture"/> を
         /// ボックス投影し、画像の色をそのまま服の色にしている（kcd_chara/mats.py の make_material, uv=False）。
         /// </summary>
         public sealed class Pattern

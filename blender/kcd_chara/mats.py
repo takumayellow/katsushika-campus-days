@@ -163,6 +163,14 @@ def color_of(p: dict, name: str) -> tuple[float, float, float]:
 PATTERN_OF = {"cloth_kimono_kasuri_blue": "kasuri",
               "cloth_kimono_heart_pink": "heart"}
 
+#: params に pattern_scale が無いときの柄の倍率
+PATTERN_SCALE_DEFAULT = {"kasuri": 7.0, "heart": 6.0}
+
+
+def pattern_scale(p: dict, key: str) -> float:
+    """柄の Generated 座標に掛ける倍率。Blender と Unity (palette.json) で同じ値を使う。"""
+    return float(p.get("pattern_scale", PATTERN_SCALE_DEFAULT[key]))
+
 
 def _hex8(rgb) -> str:
     return "".join(f"{min(255, max(0, round(v * 255))):02X}" for v in rgb[:3])
@@ -176,7 +184,8 @@ def palette(p: dict, names, pattern_arrays: dict) -> dict[str, str]:
     Blender の色とは 31 色中 22 色がずれていた（まつ毛・眉は既定のベージュ）。
 
     - 顔テクスチャを貼る 4 枚（face / eye_*）は Unity でも face.png を貼るので載せない
-    - 和柄は Unity ではまだテクスチャを貼らないので、柄の平均色（リニアで平均）を載せる
+    - 和柄は柄の平均色（リニアで平均）を載せる。Unity は柄の画像を貼り、
+      この平均色は影色の元にだけ使う（柄の名前と倍率は pattern_entries() が渡す）
     """
     out: dict[str, str] = {}
     for name in names:
@@ -192,6 +201,16 @@ def palette(p: dict, names, pattern_arrays: dict) -> dict[str, str]:
             out[name] = _hex8(rgb)
         else:
             out[name] = _hex8(color_of(p, name))
+    return out
+
+
+def pattern_entries(p: dict, names, pattern_arrays: dict) -> dict[str, dict]:
+    """柄を貼るマテリアル → {"pattern": 画像名, "pattern_scale": 倍率}（Unity の KCD/Toon 用）。"""
+    out: dict[str, dict] = {}
+    for name in names:
+        key = PATTERN_OF.get(name)
+        if key in pattern_arrays:
+            out[name] = {"pattern": key, "pattern_scale": pattern_scale(p, key)}
     return out
 
 
@@ -234,11 +253,11 @@ def build_materials(p: dict, face_image, pattern_images: dict) -> dict:
         out["cloth_kimono_kasuri_blue"] = make_material(
             "cloth_kimono_kasuri_blue", col("cloth_kimono_kasuri_blue"),
             roughness=0.7, image=pattern_images["kasuri"], uv=False,
-            tex_scale=p.get("pattern_scale", 7.0))
+            tex_scale=pattern_scale(p, "kasuri"))
     if "heart" in pattern_images:
         out["cloth_kimono_heart_pink"] = make_material(
             "cloth_kimono_heart_pink", col("cloth_kimono_heart_pink"),
             roughness=0.7, image=pattern_images["heart"], uv=False,
-            tex_scale=p.get("pattern_scale", 6.0))
+            tex_scale=pattern_scale(p, "heart"))
 
     return out

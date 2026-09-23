@@ -69,7 +69,7 @@ namespace KCD.Editor
         /// <summary>
         /// Blender の Generated 座標と bind 時の法線を UV2 / UV3 に焼く (#55)。
         ///
-        /// Blender は絣・矢絣を「Generated 座標 × 倍率 → 画像のボックス投影」で貼っている（kcd_chara/mats.py の
+        /// Blender は絣・ハート柄を「Generated 座標 × 倍率 → 画像のボックス投影」で貼っている（kcd_chara/mats.py の
         /// make_material, uv=False）。Generated はオブジェクト（体 1 枚のメッシュ）の元の形の外接箱を
         /// 軸ごとに 0..1 にした座標で、FBX には入らない。そこで取り込み時に同じ箱で計算して頂点に持たせる。
         /// 動いても柄が服に付いてくるよう、座標も法線も bind 姿勢のものを焼く。

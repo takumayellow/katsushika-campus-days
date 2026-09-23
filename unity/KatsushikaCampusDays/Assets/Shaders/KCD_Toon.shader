@@ -25,7 +25,7 @@ Shader "KCD/Toon"
         _EmissionColor("Emission Color", Color) = (0,0,0,1)
         _Cutoff("Alpha Cutoff", Range(0,1)) = 0.5
 
-        // 和柄（絣・矢絣）。Blender の「Generated 座標 × 倍率 → 画像のボックス投影」と同じ貼り方 (#55)。
+        // 和柄（絣・ハート柄）。Blender の「Generated 座標 × 倍率 → 画像のボックス投影」と同じ貼り方 (#55)。
         // Generated 座標と bind 時の法線は CharacterImporter が UV2 / UV3 に焼く。
         [Toggle(_PATTERN_ON)] _Pattern("Pattern", Float) = 0
         [NoScaleOffset] _PatternMap("Pattern Map", 2D) = "white" {}
