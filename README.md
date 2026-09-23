@@ -47,7 +47,7 @@ MSYS_NO_PATHCONV=1 "$UNITY" -batchmode -nographics -quit -projectPath "$KCD\unit
 python tools/check_unity_log.py unity/logs/import.log unity/logs/scene.log unity/logs/build.log
 
 # 4. テストとスモーク
-MSYS_NO_PATHCONV=1 "$UNITY" -batchmode -nographics -projectPath "$KCD\unity\KatsushikaCampusDays" -runTests -testPlatform EditMode -testResults "$KCD\unity\logs\tests_editmode.xml" -logFile "$KCD\unity\logs\tests.log"
+python tools/run_tests.py   # EditMode → PlayMode → pytest。Unity が動いていたら止まる（--wait で待つ）
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/smoke_run.ps1 -WaitSec 25 -Out docs/screenshots/smoke_title.png
 
 # 5. 配布 zip
@@ -56,6 +56,12 @@ python tools/package_zip.py
 # 6. ブラウザ版を GitHub Pages に載せる（WebGL ビルド → Release web-latest → pages.yml）
 python tools/deploy_pages.py --build
 ```
+
+`tools/run_tests.py` は結果を `unity/logs/tests_{editmode,playmode}.xml` と `.log` に書き、失敗とスキップの
+名前・メッセージだけを抜き出して表示する。`--platform playmode`、`--filter <テスト名の正規表現>`、
+`--skip-unity`（pytest だけ）が使える。batchmode が書き換える URP GlobalSettings・`ProjectSettings.asset`・
+`.mat` は、実行前に変更が無かったものだけ元に戻す。終了コードは 0 = 全部通った、1 = 失敗かスキップか
+ログのエラーがある、2 = 走らせられなかった、3 = 別の Unity が動いている。
 
 Unity のライセンスは Hub でサインインしてから batchmode を使う。Unity 公式の agent skills は
 `skills-lock.json` で固定してあり、`npx skills experimental_install` で `.agents/skills/` に復元できる。
