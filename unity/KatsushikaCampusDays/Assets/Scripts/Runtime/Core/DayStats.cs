@@ -22,6 +22,30 @@ namespace KCD
         /// <summary>撮影した写真スポットの種類数。</summary>
         public static int PhotoSpotCount => _photoSpots.Count;
 
+        /// <summary>入った建物の id。</summary>
+        public static IReadOnlyCollection<string> BuildingIds => _buildings;
+
+        /// <summary>拾った物の id。牛乳や葉のようなクエストの拾い物も入る。</summary>
+        public static IReadOnlyCollection<string> CollectedIds => _collected;
+
+        /// <summary>撮影した写真スポットの id（ps_ で始まるもの）。</summary>
+        public static IReadOnlyCollection<string> PhotoSpotIds => _photoSpots;
+
+        /// <summary>
+        /// 拾った隠しアイテムの種類数。結果画面と称号はこれを使う (#65)。
+        /// 一覧に無い牛乳・葉と、クエストの報酬は数えない。
+        /// </summary>
+        public static int HiddenCollectedCount(CollectibleCatalog catalog)
+        {
+            return catalog != null ? catalog.CountHidden(_collected) : 0;
+        }
+
+        /// <summary>撮影した写真スポットのうち、一覧に載っているものの種類数。</summary>
+        public static int CatalogPhotoCount(CollectibleCatalog catalog)
+        {
+            return catalog != null ? catalog.CountPhotoSpots(_photoSpots) : 0;
+        }
+
         /// <summary>建物に入った。同じ建物は 1 回だけ数える。</summary>
         public static void NoteEnter(string buildingId)
         {
