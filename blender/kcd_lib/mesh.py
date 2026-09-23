@@ -45,12 +45,15 @@ class MeshBuilder:
         self.add_face([a, b, c, d], mat)
 
     def add_ngon_flat(self, poly2d, z, mat, flip=False):
-        """凹みうる 2D ポリゴンを水平面として三角形分割して追加する。"""
-        poly2d = geom.dedup(poly2d)
+        """凹みうる 2D ポリゴンを水平面として三角形分割して追加する。
+
+        面は上（+z）を向く（flip=True なら下）。入力の巻き方向には依らない: tessellate_polygon は
+        入力と同じ巻き方向で三角形を返すので、時計回りのまま渡すと 5 角以上の面だけ下を向く。"""
+        poly2d = geom.ensure_ccw(geom.dedup(poly2d))
         if len(poly2d) < 3:
             return
         if len(poly2d) <= 4:
-            pts = [(p[0], p[1], z) for p in geom.ensure_ccw(poly2d)]
+            pts = [(p[0], p[1], z) for p in poly2d]
             if flip:
                 pts.reverse()
             self.add_face(pts, mat)

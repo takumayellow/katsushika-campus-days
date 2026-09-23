@@ -58,6 +58,9 @@ BASINS = [
     (-100.0, -78.0, -59.5, -66.0),  # 南の池（図書館の南面）
 ]
 BASIN_RIM = 1.6     # 縁石の幅（腰かけられる）
+# basin_edges の許容差（m）。辺が同じ直線上にあるとみなす差と、捨てる切れ端の長さ。
+# CampusStage.UncoveredSpans と同じ値にする（blender/tests/fixtures/basin_edges.json で突き合わせる）
+BASIN_EDGE_EPS = 1e-4
 # 図書館の東の芝生広場 (u0, v0, u1, v1)。以前の池の跡。実物も木の無い芝生
 LIBRARY_LAWN = (-46.0, -100.0, 8.0, -32.0)
 
@@ -221,7 +224,9 @@ def basin_edges(rects=None, rim=BASIN_RIM):
       out  : 水の外へ向かう側（+1 / -1）
       ext0 / ext1: 端を縁石の幅だけ延ばすか。出隅は延ばして角を埋める。入隅（L 字の内側）の
                    ように、延ばした先が隣の水面に掛かる所は延ばさない。
-    矩形が 1 枚なら 4 辺そのまま。Unity 側の CampusStage.BasinEdges が同じ計算をする。"""
+    矩形が 1 枚なら 4 辺そのまま。Unity 側の CampusStage.BasinEdges が同じ計算をする
+    （ext0 / ext1 を除く）。両者の一致は blender/tests/fixtures/basin_edges.json を介して
+    pytest（test_site.py）と EditMode テスト（BasinEdgeAgreementTests）が確かめる。"""
     rects = list(BASINS if rects is None else rects)
     edges = []
     for i, r in enumerate(rects):
@@ -237,7 +242,7 @@ def basin_edges(rects=None, rim=BASIN_RIM):
                     face, a, b = (o[1] if out > 0 else o[3]), o[0], o[2]
                 else:
                     face, a, b = (o[0] if out > 0 else o[2]), o[1], o[3]
-                if abs(face - c) > 1e-6:
+                if abs(face - c) > BASIN_EDGE_EPS:
                     continue
                 nxt = []
                 for s0, s1 in spans:
@@ -250,7 +255,7 @@ def basin_edges(rects=None, rim=BASIN_RIM):
                         nxt.append((b, s1))
                 spans = nxt
             for s0, s1 in spans:
-                if s1 - s0 < 1e-6:
+                if s1 - s0 <= BASIN_EDGE_EPS:
                     continue
                 ext = []
                 for t, sgn in ((s0, -1), (s1, +1)):
