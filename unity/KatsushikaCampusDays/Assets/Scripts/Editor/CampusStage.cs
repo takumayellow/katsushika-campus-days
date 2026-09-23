@@ -344,7 +344,10 @@ namespace KCD.Editor
         public const float TreeTrunkRadius = 0.3f;
         public const float TreeTrunkHeight = 6f;
 
-        /// <summary>幹の外側に空ける NavMesh の余白 [m]。NPC の当たり判定の半径（0.34 m）を覆う。</summary>
+        /// <summary>
+        /// 幹の外側に空ける NavMesh の余白 [m]。NPC の NavMeshAgent の半径（0.32 m）と当たり判定の半径（0.34 m）の
+        /// 大きい方を覆う。NavMeshModifierVolume の範囲はエージェントの半径ぶん削られないので、余白を箱の大きさに含める。
+        /// </summary>
         public const float TreeTrunkNavClearance = 0.35f;
 
         /// <summary>
