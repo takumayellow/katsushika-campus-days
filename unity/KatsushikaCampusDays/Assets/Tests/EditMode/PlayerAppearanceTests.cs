@@ -1,5 +1,6 @@
 using System;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEngine;
 
 namespace KCD.Tests
@@ -188,6 +189,65 @@ namespace KCD.Tests
                 typeof(PlayerAnimatorDriver), typeof(DefaultExecutionOrder)) as DefaultExecutionOrder;
             int driver = driverOrder != null ? driverOrder.order : 0;
             Assert.Less(order.order, driver, "PlayerAnimatorDriver より先に走らないと体を掴み違える");
+        }
+
+        [Test]
+        public void Framing_KeepsTheBakedCameraForAHumanAndClosesInOnTheMascots()
+        {
+            PlayerAppearance.Framing(PlayerAppearance.ReferenceHeight, out float aim, out float scale);
+            Assert.AreEqual(1.472f, aim, 1e-3f, "1.6 m の人は焼いた注視点 (BodyHeight * 0.92) のまま");
+            Assert.AreEqual(1f, scale, 1e-4f);
+
+            // 坊っちゃん・マドンナちゃん (1.15 m)。注視点は頭の高さへ下り、カメラは 0.8 倍まで寄る。
+            PlayerAppearance.Framing(1.15f, out aim, out scale);
+            Assert.AreEqual(1.058f, aim, 1e-3f);
+            Assert.AreEqual(0.803f, scale, 1e-3f);
+
+            // 測れなかったときは既定のまま。
+            PlayerAppearance.Framing(0f, out aim, out scale);
+            Assert.AreEqual(1f, scale, 1e-4f);
+            PlayerAppearance.Framing(float.NaN, out aim, out scale);
+            Assert.AreEqual(1f, scale, 1e-4f);
+        }
+
+        [Test]
+        public void MeasureHeight_MatchesTheMeshTopOfEveryPlayableModel()
+        {
+            // 実行時は Renderer.bounds で背丈を測る。スキンメッシュの箱が実際のメッシュの
+            // 天辺から大きくずれていないか（輪郭シェルを数えていないか）を実物の FBX で確かめる。
+            foreach (string id in Ids)
+            {
+                string path = "Assets/Models/Characters/" + id + "/" + id + ".fbx";
+                var model = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                Assert.IsNotNull(model, path + " を読めない");
+
+                float top = float.NegativeInfinity;
+                foreach (SkinnedMeshRenderer r in model.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+                {
+                    if (r.name.EndsWith("_outline", StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+
+                    Matrix4x4 toRoot = model.transform.worldToLocalMatrix * r.transform.localToWorldMatrix;
+                    foreach (Vector3 v in r.sharedMesh.vertices)
+                    {
+                        top = Mathf.Max(top, toRoot.MultiplyPoint3x4(v).y);
+                    }
+                }
+
+                var go = UnityEngine.Object.Instantiate(model);
+                try
+                {
+                    float measured = PlayerAppearance.MeasureHeight(go, go.transform.position.y);
+                    Assert.AreEqual(top, measured, top * 0.08f,
+                        id + ": Renderer.bounds の背丈 " + measured + " m がメッシュの天辺 " + top + " m と合わない");
+                }
+                finally
+                {
+                    UnityEngine.Object.DestroyImmediate(go);
+                }
+            }
         }
     }
 }
