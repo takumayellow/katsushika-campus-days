@@ -167,6 +167,12 @@ namespace KCD
 
             _active = false;
             AudioManager.Instance?.PlayUi("ui_confirm");
+
+            // ここが「はじめから」の唯一の入口（「つづきから」は F9 でキャラ選択を通らない）。
+            // 前の周回の時刻・日付・探索の記録・クエストをここで捨てる (#53)。
+            // タイトルではなく決定の瞬間に呼ぶので、あとから「キャラ選択を Esc で取りやめる」を足しても、
+            // 取りやめた時点では進行がまだ消えていない。
+            GameManager.Instance.BeginNewGame();
             GameManager.Instance.SelectedCharacterId = GameManager.PlayableCharacterIds[_index];
             GameManager.Instance.EnterCampus();
         }

@@ -53,8 +53,32 @@ namespace KCD
             Changed?.Invoke();
         }
 
+        /// <summary>
+        /// 読み込みの最中にイベントを出さないか。「はじめから」(#53) はタイトル画面で進行を作り直すが、
+        /// AudioManager は同じ QuestSystem を購読したまま（AudioManager.Scene の AttachQuests は
+        /// インスタンスが同じなら付け替えない）なので、黙らせないとタイトルで quest_start が鳴る。
+        /// </summary>
+        private bool _silent;
+
         /// <summary>Resources から全クエストを読み込み、autoStart のものを開始する。</summary>
         public void LoadFromResources()
+        {
+            LoadFromResources(false);
+        }
+
+        /// <summary>
+        /// 「はじめから」で進行を初期状態に戻す (#53)。QuestSystem は GameManager と寿命を共にするので、
+        /// シーンを読み直しても達成済みクエストも途中のステップも残る。読み込み直すのが確実。
+        /// このとき知らせる相手はいない（HUD は次のシーンで作られ、作られたときに読み直す）ので、
+        /// イベントは出さずに黙って入れ替える。
+        /// </summary>
+        public void ResetForNewGame()
+        {
+            LoadFromResources(true);
+        }
+
+        /// <summary>読み込みの本体。silent ならイベントを出さない。</summary>
+        private void LoadFromResources(bool silent)
         {
             var parsed = new List<QuestData>();
             TextAsset[] assets = Resources.LoadAll<TextAsset>(ResourceFolder);
@@ -72,38 +96,59 @@ namespace KCD
                 Debug.LogError("[KCD] クエストデータが見つかりません: Resources/" + ResourceFolder);
             }
 
-            Load(parsed);
+            Load(parsed, silent);
         }
 
         /// <summary>組み立て済みのクエストで中身を置き換え、autoStart のものを開始する。テストからも使う。</summary>
         public void Load(IEnumerable<QuestData> quests)
         {
-            _all.Clear();
-            _active.Clear();
-            _completed.Clear();
+            Load(quests, false);
+        }
 
-            if (quests != null)
+        /// <summary>
+        /// 中身の置き換えの本体。silent なら受注・計時開始・変化のどのイベントも出さない。
+        /// 「はじめから」の作り直しでタイトル画面に音や通知を漏らさないため (#53)。
+        /// </summary>
+        public void Load(IEnumerable<QuestData> quests, bool silent)
+        {
+            _silent = silent;
+            try
             {
-                foreach (QuestData quest in quests)
+                _all.Clear();
+                _active.Clear();
+                _completed.Clear();
+
+                if (quests != null)
                 {
-                    if (quest != null)
+                    foreach (QuestData quest in quests)
                     {
-                        _all.Add(quest);
+                        if (quest != null)
+                        {
+                            _all.Add(quest);
+                        }
                     }
                 }
-            }
 
-            _all.Sort((a, b) => a.Order.CompareTo(b.Order));
+                _all.Sort((a, b) => a.Order.CompareTo(b.Order));
 
-            for (int i = 0; i < _all.Count; i++)
-            {
-                if (_all[i].AutoStart)
+                for (int i = 0; i < _all.Count; i++)
                 {
-                    Activate(_all[i]);
+                    if (_all[i].AutoStart)
+                    {
+                        Activate(_all[i]);
+                    }
+                }
+
+                if (!_silent)
+                {
+                    Changed?.Invoke();
                 }
             }
-
-            Changed?.Invoke();
+            finally
+            {
+                // 途中で例外が出ても黙ったままにしない（以後の受注音が消えてしまう）。
+                _silent = false;
+            }
         }
 
         private static QuestData ParseQuest(TextAsset asset)
@@ -181,7 +226,10 @@ namespace KCD
         private void Activate(QuestData quest)
         {
             _active.Add(quest.Id);
-            QuestStarted?.Invoke(quest);
+            if (!_silent)
+            {
+                QuestStarted?.Invoke(quest);
+            }
 
             // 制限時間は受注した瞬間から 1 回だけ数え始める。
             StartTimerIfTimed(quest);
@@ -406,7 +454,10 @@ namespace KCD
         {
             step.Progress = 0;
             step.Timer.Start(step.TimeLimit);
-            TimerStarted?.Invoke(quest);
+            if (!_silent)
+            {
+                TimerStarted?.Invoke(quest);
+            }
         }
 
         private void AutoStartUnlocked()

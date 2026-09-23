@@ -140,8 +140,13 @@ namespace KCD
         {
             var box = GetComponent<BoxCollider>();
             box.isTrigger = true;
-            box.center = BoxCenter;
-            box.size = BoxSize;
+            // AddComponent した直後にも Reset() は呼ばれる。すでに入っている大きさは巻き戻さない（#54）。
+            if (VisitZone.ShouldApplyDefaultSize(box.size))
+            {
+                box.center = BoxCenter;
+                box.size = BoxSize;
+            }
+
             InteractionRange = DefaultRange;
         }
 

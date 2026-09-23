@@ -236,10 +236,6 @@ namespace KCD.Editor
                 }
 
                 BoxCollider box = go.AddComponent<BoxCollider>();
-                box.isTrigger = true;
-                box.center = EntranceTrigger.BoxCenter;
-                // 温室の入口は開口 1.8 m と狭いので、箱と歩き入りの幅を入口ごとに変える（ふつうは幅 4 m / 半幅 1.2 m）。
-                box.size = EntranceTrigger.BoxSizeFor(id);
 
                 EntranceTrigger trigger = go.AddComponent<EntranceTrigger>();
                 trigger.BuildingId = id;
@@ -247,6 +243,13 @@ namespace KCD.Editor
                 trigger.InteractionRange = EntranceTrigger.DefaultRange;
                 trigger.WalkInHalfWidth = EntranceTrigger.WalkInHalfWidthFor(id);
                 trigger.RefreshLabel();
+
+                // 箱は EntranceTrigger を足したあとに入れる。AddComponent は Reset() を呼ぶので、
+                // 先に入れると既定の 4x3x2 に巻き戻る（#54）。
+                // 温室の入口は開口 1.8 m と狭いので、箱と歩き入りの幅を入口ごとに変える（ふつうは幅 4 m / 半幅 1.2 m）。
+                box.isTrigger = true;
+                box.center = EntranceTrigger.BoxCenter;
+                box.size = EntranceTrigger.BoxSizeFor(id);
                 count++;
                 if (CampusStage.FindChild("door_" + id) == null)
                 {
@@ -380,12 +383,15 @@ namespace KCD.Editor
             go.transform.rotation = Quaternion.Euler(0f, Mathf.Atan2(AxisU.x, AxisU.y) * Mathf.Rad2Deg, 0f);
 
             BoxCollider box = go.AddComponent<BoxCollider>();
-            box.isTrigger = true;
-            box.size = size;
 
             VisitZone zone = go.AddComponent<VisitZone>();
             zone.PlaceId = placeId;
             zone.DisplayName = displayName;
+
+            // 大きさは VisitZone を足したあとに入れる。AddComponent は Reset() を呼ぶので、
+            // 先に入れると既定値に巻き戻る（#54）。
+            box.isTrigger = true;
+            box.size = size;
         }
 
         /// <summary>拾い物。牛乳は共創棟の売店前、葉は公園に 5 枚。</summary>

@@ -7,14 +7,19 @@ namespace KCD
 {
     /// <summary>
     /// 裏エンド「寮でぐーたら」(#41)。寮長との会話が <see cref="DormRoute.FlagId"/> を立てたら、
-    /// 暗転して結果を出し、Enter でタイトルへ戻る。
+    /// 暗転して結果を出し、Enter で <c>GameManager.ReturnToTitle</c> を呼んでタイトルへ戻る
+    /// （下段の案内「Enter でタイトルへ」と実装が食い違っていた, #53）。
     ///
     /// 本編のリザルト（<see cref="ResultScreen"/>）とは別物で、ランクも達成率も出さない。
     /// 出すのは時刻だけ。日付（<c>GameManager.DayNumber</c>）も進めない。サボった一日は数えない。
+    /// タイトルへ戻るだけなので進行はメモリに残り、そこから「つづきから」も「はじめから」も選べる
+    /// （「はじめから」は <c>GameManager.BeginNewGame</c> が時刻も日付も初期値に戻す, #53）。
     ///
     /// 時間を止める順番に気をつけること。<c>KCDInput.Block(this)</c> を掛けると
     /// <c>KCDInput.GameplayBlocked</c> が true になり、<see cref="DayEndEvaluator"/> の Update が
     /// 先頭で戻るので、裏エンドの最中に一日の終わりのリザルトが割り込むことはない。
+    /// 戻す順番は <see cref="Close"/> のコメントを参照。封鎖と timeScale は <c>ReturnToTitle</c> に任せ、
+    /// 自分では外さない（外すと、シーンが切り替わるまでのフレームの残りが「封鎖なし」で回ってしまう）。
     /// </summary>
     public sealed class DormEnding : MonoBehaviour
     {
@@ -108,10 +113,28 @@ namespace KCD
                   + "<size=85%>この一日は数えない。</size>";
         }
 
-        /// <summary>下段の案内。</summary>
+        /// <summary>下段の案内。<see cref="ShouldReturnToTitle"/> が示すとおり Enter でタイトルへ戻る。</summary>
         public static string ChoiceText(bool english)
         {
             return english ? "Enter — back to the title" : "Enter でタイトルへ";
+        }
+
+        /// <summary>
+        /// いまの入力でタイトルへ戻してよいか（<see cref="Close"/> を呼ぶ条件）。
+        ///
+        /// 結果を出している最中（showing）の決定だけがタイトルへ戻る。
+        /// 暗転の 0.9 秒の途中と、シーン破棄の片付け（<c>OnDisable</c>）は showing が false なので
+        /// ここで止まり、シーンを読み直さない。片付けのついでにタイトルへ飛ぶと事故になる (#53)。
+        ///
+        /// 出した直後の <see cref="InputGuardSeconds"/> 秒を捨てるのは、会話を送った Enter が
+        /// そのまま結果画面を閉じてしまうため（押した覚えの無いうちにタイトルへ飛ぶ）。
+        /// </summary>
+        /// <param name="showing">結果パネルを出しているか。</param>
+        /// <param name="shownSeconds">出してからの実時間の秒数（timeScale 0 でも進む unscaled）。</param>
+        /// <param name="submitPressed">決定（Enter / 調べる）が押されたか。</param>
+        public static bool ShouldReturnToTitle(bool showing, float shownSeconds, bool submitPressed)
+        {
+            return showing && submitPressed && shownSeconds >= InputGuardSeconds;
         }
 
         // ---- MonoBehaviour ----
@@ -150,6 +173,9 @@ namespace KCD
                 _fade.alpha = 0f;
             }
 
+            // ポーズ（Esc）とクエストログ（Tab）を止める掛け金を落とすのはここだけ。
+            // Close では落とさない（落とすと、シーンが切り替わるまでの残りのフレームで
+            // ポーズが開き、timeScale 0 のままタイトルへ持ち越される, #53）。
             _showing = false;
             if (_active)
             {
@@ -176,12 +202,8 @@ namespace KCD
                 TrySubscribe();
             }
 
-            if (!_showing || Time.unscaledTime - _openedAt < InputGuardSeconds)
-            {
-                return;
-            }
-
-            if (KCDInput.SubmitPressed || KCDInput.InteractPressed)
+            if (ShouldReturnToTitle(_showing, Time.unscaledTime - _openedAt,
+                    KCDInput.SubmitPressed || KCDInput.InteractPressed))
             {
                 Close();
             }
@@ -257,29 +279,46 @@ namespace KCD
             AudioManager.Instance?.PlayJingle("jingle_day_end");
         }
 
+        /// <summary>
+        /// 結果を閉じてタイトルへ戻る。呼ぶのは <see cref="Update"/> だけで、
+        /// <c>OnDisable</c> の片付けはここを通さない（通すとシーン破棄のたびにタイトルを読み直す）。
+        ///
+        /// 後始末の順番には理由がある。
+        /// ・暗転（_fade）は 1 のまま残す。<c>LoadScene</c> が効くのはフレームの終わりなので、
+        ///   ここで 0 に戻すと寮の屋内が 1 フレーム映ってから飛ぶ。結果パネル（102）を消せば
+        ///   暗転（101）だけが残り、真っ黒のままタイトルに切り替わる。
+        /// ・_active / <see cref="IsAnyShowing"/> は落とさない。落とすと同じフレームの残りで
+        ///   PauseMenu（Esc）とクエストログ（Tab）の門が開いてしまう。PauseMenu は開くと
+        ///   timeScale = 0 と封鎖を掛け、自分で戻す OnDisable を持たないので、
+        ///   タイトルが止まったまま始まる。シーンが消えるときに OnDisable が落とす。
+        /// ・封鎖（KCDInput）も自分では外さない。ReturnToTitle の ClearAllBlocks に任せる。
+        ///   先に外すと、シーンが切り替わるまでの間に DayEndEvaluator が動ける隙ができる
+        ///   （20 時を過ぎていると本編のリザルトが割り込む）。
+        /// ・_frozen を落とすのは ReturnToTitle のあと。前に落とすと、LoadScene で例外が出たときに
+        ///   OnDisable の保険が効かず timeScale = 0 のまま取り残される。
+        /// </summary>
         private void Close()
         {
+            // 同じフレームで二度入らない。暗転の途中（_showing はまだ false）から呼ばれても、
+            // 片付けのついでに呼ばれても、ここで止まってシーンを読み直さない。
+            if (!_showing)
+            {
+                return;
+            }
+
             _showing = false;
-            _active = false;
-            IsAnyShowing = false;
             if (_root != null)
             {
                 _root.SetActive(false);
             }
 
-            if (_fade != null)
-            {
-                _fade.alpha = 0f;
-            }
-
             AudioManager.Instance?.PlayUi("ui_confirm");
-            KCDInput.Unblock(this);
             KCDInput.MarkModalClosed();
             // 座っている途中で裏エンドに入った場合に備えて、シーンをまたぐ移動ロックも外しておく。
+            // ReturnToTitle はここを触らないので、この 1 行だけは自分で外す。
             KCDInput.MovementLocked = false;
 
-            // 日付は進めない。ReturnToTitle が timeScale と封鎖を戻す。
-            // _frozen を落とすのはそのあと。ここへ来る前に落ちた場合は OnDisable が戻す。
+            // 日付は進めない。ReturnToTitle が封鎖（ClearAllBlocks）と timeScale を戻してシーンを読み直す。
             GameManager.Instance.ReturnToTitle();
             _frozen = false;
         }

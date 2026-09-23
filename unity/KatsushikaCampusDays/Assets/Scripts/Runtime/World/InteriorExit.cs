@@ -19,7 +19,11 @@ namespace KCD
         {
             var box = GetComponent<BoxCollider>();
             box.isTrigger = true;
-            box.size = new Vector3(2.5f, 2.5f, 1.5f);
+            // AddComponent した直後にも Reset() は呼ばれる。すでに入っている大きさは巻き戻さない（#54）。
+            if (VisitZone.ShouldApplyDefaultSize(box.size))
+            {
+                box.size = new Vector3(2.5f, 2.5f, 1.5f);
+            }
         }
 
         private void OnTriggerEnter(Collider other)

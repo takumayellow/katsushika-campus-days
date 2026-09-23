@@ -284,11 +284,14 @@ namespace KCD.Editor
                 go.transform.position = child.position + Vector3.up * 1.2f;
                 go.transform.rotation = Quaternion.identity;
                 BoxCollider box = go.AddComponent<BoxCollider>();
-                box.isTrigger = true;
-                box.size = new Vector3(4f, 3f, 4f);
                 VisitZone zone = go.AddComponent<VisitZone>();
                 zone.PlaceId = child.name;
                 zone.DisplayName = string.Empty;
+
+                // 大きさは VisitZone を足したあとに入れる。AddComponent は Reset() を呼ぶので、
+                // 先に入れると既定の 10x6x10 に巻き戻る（#54）。
+                box.isTrigger = true;
+                box.size = new Vector3(4f, 3f, 4f);
                 count++;
             }
 

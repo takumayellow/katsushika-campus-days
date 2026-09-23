@@ -147,8 +147,15 @@ namespace KCD
         {
             var box = GetComponent<BoxCollider>();
             box.isTrigger = true;
-            box.center = BoxCenter;
-            box.size = BoxSize;
+            // すでに大きさが入っている箱は触らない。Reset() は AddComponent した瞬間にも呼ばれるので、
+            // 無条件に代入すると CampusProps が入口ごとに入れた幅（温室は開口 1.8 m ぶんに狭めている）を
+            // 巻き戻してしまう（#54）。
+            if (VisitZone.ShouldApplyDefaultSize(box.size))
+            {
+                box.center = BoxCenter;
+                box.size = BoxSize;
+            }
+
             InteractionRange = DefaultRange;
         }
 

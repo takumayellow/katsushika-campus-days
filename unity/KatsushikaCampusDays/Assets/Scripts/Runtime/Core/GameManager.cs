@@ -110,6 +110,43 @@ namespace KCD
             }
         }
 
+        /// <summary>
+        /// タイトルの「はじめから」。前の周回の残りを初期値に戻す (#53)。
+        ///
+        /// GameManager は DontDestroyOnLoad でシーンをまたいで生き続けるので、ここで戻さないと
+        /// 裏エンド（<see cref="DormEnding"/>）やリザルトの「タイトルへ」でタイトルに帰ったあとの新規開始が、
+        /// サボった時刻・2 日目・達成済みのクエストのまま始まる。
+        ///
+        /// セーブファイルは消さない。消すと「つづきから」(F9) の戻り先を潰すし、
+        /// 戻すべきものはすべてメモリ上の値なのでファイルとは独立している（次のセーブで上書きされる）。
+        /// </summary>
+        public void BeginNewGame()
+        {
+            // 時計は DayNightCycle が持つが、キャンパスに入るまで（HUD の時刻表示など）はここの値が使われる。
+            GameTimeHours = DayRestart.DayStartHour;
+
+            // 入場済みを落とすのが肝。DayNightCycle.Start はこれが true のときだけ
+            // GameTimeHours を引き継ぐので、false に戻すと自分の _startHour（= DayRestart.DayStartHour）
+            // から始め直す。時計の初期値をここでもう一つ持たないための書き方。
+            HasEnteredCampus = false;
+
+            DayNumber = DayRestart.FirstDay;
+
+            // 探索率のもと。static なのでアプリを起動している間ずっと残る（シーンでは消えない）。
+            DayStats.Reset();
+
+            // クエストも GameManager と寿命を共にするので読み直す。タイトルで受注音を鳴らさない口を使う。
+            if (Quests == null)
+            {
+                Quests = new QuestSystem();
+            }
+
+            Quests.ResetForNewGame();
+
+            // 選択キャラクター（SelectedCharacterId / PlayerPrefs）はここでは触らない。
+            // 「はじめから」はこのあとキャラ選択で決まるし、次回の既定値として覚えておいてよい。
+        }
+
         private void Update()
         {
             Quests?.Tick(Time.deltaTime);

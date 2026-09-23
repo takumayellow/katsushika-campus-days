@@ -376,6 +376,43 @@ namespace KCD.Tests
         }
 
         [Test]
+        public void ShouldReturnToTitle_OnlyOnTheEnterThatClosesTheResult()
+        {
+            // 結果を出している最中の決定だけがタイトルへ戻る。
+            Assert.IsTrue(DormEnding.ShouldReturnToTitle(true, DormEnding.InputGuardSeconds, true));
+
+            // 出していないのに戻ると、暗転の途中やシーン破棄の片付け（OnDisable）で
+            // タイトルを読み直してしまう (#53)。
+            Assert.IsFalse(DormEnding.ShouldReturnToTitle(false, 99f, true), "出していないのに戻る");
+
+            // 押していないフレームでは何も起きない。
+            Assert.IsFalse(DormEnding.ShouldReturnToTitle(true, 99f, false), "押していないのに戻る");
+        }
+
+        [Test]
+        public void ShouldReturnToTitle_ThrowsAwayTheEnterThatEndedTheConversation()
+        {
+            // 会話を送った Enter がそのまま結果画面を閉じると、読む間もなくタイトルへ飛ぶ。
+            Assert.IsFalse(DormEnding.ShouldReturnToTitle(true, 0f, true), "出した瞬間");
+            Assert.IsFalse(DormEnding.ShouldReturnToTitle(true, DormEnding.InputGuardSeconds - 0.01f, true));
+            Assert.IsTrue(DormEnding.ShouldReturnToTitle(true, DormEnding.InputGuardSeconds, true), "境目は受け付ける");
+
+            // 入力よけは時間を止めていても進む秒数（unscaledTime）で数える。
+            // timeScale 0 のまま scaled で数えると永遠に閉じられない。
+            Assert.Greater(DormEnding.InputGuardSeconds, 0f);
+        }
+
+        [Test]
+        public void ChoiceText_PromisesWhatCloseActuallyDoes()
+        {
+            // 案内は「Enter でタイトルへ」。Close が GameManager.ReturnToTitle を呼ぶのと食い違わないこと。
+            // 食い違っていたのが #53 の入口（案内だけタイトル、実装はその場に留まる）。
+            Assert.IsTrue(DormEnding.ChoiceText(false).Contains("タイトル"), DormEnding.ChoiceText(false));
+            Assert.IsTrue(DormEnding.ChoiceText(true).ToLowerInvariant().Contains("title"),
+                DormEnding.ChoiceText(true));
+        }
+
+        [Test]
         public void FormatClock_ShowsTwoDigitsAndWrapsAtMidnight()
         {
             Assert.AreEqual("08:30", DormEnding.FormatClock(8.5f));
