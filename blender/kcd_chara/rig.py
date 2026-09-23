@@ -370,8 +370,9 @@ def _cloth_leg_weights(obj, mb: M.MeshBuilder, pts: np.ndarray, a: B.Anatomy,
     それが効きすぎると腰がスカートから外へ出るので、混ぜるのは `mix_t` より
     下（裾側）の、`mix_front` より前だけ。腰は Hips に任せる。
 
-    袴は膝の上下で UpperLeg / LowerLeg を切り替え、その面でも同じ理由で
-    脚寄せを `knee_keep` まで落とす。
+    `knee=True`（裾が脚ごとに割れる馬乗り袴）のときは膝の上下で UpperLeg /
+    LowerLeg を切り替え、その面でも同じ理由で脚寄せを `knee_keep` まで落とす。
+    筒の行灯袴は切り替えない（膝の境目で段になって裂けるため。#49）。
     """
     cfg = dict(CLOTH_LEG[part])
     cfg.update(over)
@@ -548,7 +549,12 @@ def override_weights(obj, mb: M.MeshBuilder, p: dict, a: B.Anatomy) -> None:
         _cloth_leg_weights(obj, mb, pts, a, "apron")
 
     _keep_leg_side(obj, mb)
-    _cloth_leg_weights(obj, mb, pts, a, "hakama", knee=True)
+    # 膝で UpperLeg / LowerLeg を切り替えるのは、裾が脛まで割れて脚ごとに
+    # 分かれる馬乗り袴（高下駄の坊っちゃん）だけ。筒の行灯袴（ブーツのマドンナ
+    # ちゃん）に掛けると、走りで膝を曲げたとき膝より上は腿へ、下は脛へ
+    # 付いていき、その境目で袴が段になって裂け、素肌が見えていた (#49)。
+    _cloth_leg_weights(obj, mb, pts, a, "hakama",
+                       knee="boots" not in p.get("accessories", ()))
     _cloth_leg_weights(obj, mb, pts, a, "pants_seat")
 
     # 靴下・ズボン・ブーツの筒も 2 ボーンに揃える（WebGL と PC で同じ形に）

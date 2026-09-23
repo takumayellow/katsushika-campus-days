@@ -734,39 +734,104 @@ def _obi(mb, p, a: B.Anatomy, mat, z_c, width):
     band(mb, p, a, mat, "obi", z_c - width * 0.5, z_c + width * 0.5, h * 0.026)
 
 
+def _ribbon(mb, path, half_in, half_y, mat, *, power=3.2, n=10):
+    """芯線に沿って平たい帯（断面が角の丸い長方形）を押し出す。
+
+    断面の片方の軸は「正面（XZ 平面）内で芯線に直交する向き」、もう片方は
+    奥行き Y に固定する。平行移動フレームに任せると、しずく形に曲げた輪で
+    帯がねじれて、正面から見た太さが場所ごとに変わってしまう。
+    half_in / half_y は芯線の点ごとの半幅（スカラーか列）。
+    """
+    p = np.asarray(path, dtype=float)
+    k = len(p)
+    t = np.zeros_like(p)
+    t[1:-1] = p[2:] - p[:-2]
+    t[0] = p[1] - p[0]
+    t[-1] = p[-1] - p[-2]
+    hi = np.broadcast_to(np.asarray(half_in, dtype=float), (k,))
+    hy = np.broadcast_to(np.asarray(half_y, dtype=float), (k,))
+    ang = np.linspace(0.0, 2.0 * math.pi, n, endpoint=False)
+    ca, sa = np.cos(ang), np.sin(ang)
+    e = 2.0 / power
+    u = np.sign(ca) * np.abs(ca) ** e
+    v = np.sign(sa) * np.abs(sa) ** e
+    yv = np.array([0.0, 1.0, 0.0])
+    rings = []
+    for i in range(k):
+        tx = np.array([t[i][0], 0.0, t[i][2]])
+        nrm = np.cross(yv, tx)
+        nrm /= np.linalg.norm(nrm) + 1e-12
+        rings.append(p[i][None, :] + (u * hi[i])[:, None] * nrm[None, :]
+                     + (v * hy[i])[:, None] * yv[None, :])
+    mb.add_grid(rings, mat, smooth=True, cap_start=True, cap_end=True)
+
+
 def _hakama_himo_bow(mb, p, a: B.Anatomy, mat, z_c, front_y):
     """前紐を蝶結びにした版（マドンナちゃん）。
 
-    公式 `docs/ref/tus_chara02.jpg` の腰元を実測すると、坊っちゃんの四角い
-    結びではなく、左右に輪が張り出した蝶結びで、そこから 2 本の垂れが
-    全高の 0.16 ぶん（34px / 211px）下がっている。四角い結び + 短い垂れの
-    ままだと、正面から「紫の箱に脚が 2 本生えた」ようにしか見えなかった。
+    公式 `docs/ref/tus_chara02.jpg` の腰元（全高 211px）を実測すると、
+    結び目の左右に輪が張り出し（結び全体で幅 ≈ 0.14h）、結び目の下から
+    2 本の垂れが少し開きながら ≈ 0.14h 下がっている。
 
-    公式は袴と同じ紫を黒の線で描き分けているが、ゲームのトゥーン陰影では
-    シルエットの内側に線が出ないので、同じ色だと結びが袴に溶けて消える
-    （#47, Unity の実機撮影で確認）。mat には袴より一段暗い色を渡す。
+    以前は輪も中身の詰まった箱だったので、正面からは横棒と縦棒の
+    「T の字」にしか見えなかった（#47）。トゥーン陰影ではシルエットの
+    内側に線が出ないから、蝶結びと読めるかどうかは形の抜けで決まる。
+    そこで輪は薄い帯をしずく形に曲げたループにして、中心を抜く。
+    帯の幅は奥行き（Y）にとるので、正面からは輪郭の太い「輪」に見え、
+    穴から後ろの袴が覗く。
+
+    公式は袴と同じ紫を黒の線で描き分けているが、ゲームでは同色だと結びが
+    袴に溶けて消える（#47, Unity の実機撮影で確認）。mat には袴より
+    一段暗い色を渡す。部位名 `himo` は rig.py で Hips/Spine に固定される。
     """
     h = p["height"]
-    zz, rx, _ry = _profile(p, a)
-    rxi = float(np.interp(z_c, zz, rx))
-    knot_w = rxi * 0.34
-    wing_w = rxi * 0.52
-    y_c = -(front_y(z_c) + h * 0.004)
-    z_tare = z_c - h * 0.020 - h * 0.150 * 0.5
+    # 呼び出し側の z_c は坊っちゃんの結びと同じ紐の中心やや上。輪を同じ高さに
+    # 置くと上半分が紐の上へはみ出し、輪の穴から衿の白が覗く。少し下げて
+    # 穴が紐の紫に重なるようにする。
+    z_c = z_c - h * 0.006
+    rx_hak = a.hip_rx * 1.08          # 袴上端の横半径（pleated_skirt の r_top）
+
+    def surf_y(x, zv, lift):
+        """袴の前面に沿う y。横へ行くほど胴が奥へ回り込むぶん下げる。"""
+        fy = front_y(zv)
+        s = min(0.95, abs(x) / rx_hak)
+        return -(fy * math.sqrt(1.0 - s * s) + lift)
+
+    # 輪: 片側の張り出し 0.064h・高さ 0.050h（結び全体の幅は、輪の芯 2 × 0.064h に帯の厚みが乗って実測 ≈ 0.14h）。
+    # 帯の正面の太さは 0.011h なので、穴は 0.028h 四方ほど開く。帯の幅
+    # （奥行き）は 0.018h。
+    loop_w, loop_h = h * 0.064, h * 0.050
+    band_in, band_y = h * 0.0055, h * 0.009
+    knot_hw = h * 0.012               # 結び目の半幅。輪の付け根はこの中に隠す
     with mb.part("himo"):
-        # 中央の結び目。輪より前に出して、輪が結びの後ろから出るようにする。
-        mb.add_box((0.0, y_c - h * 0.006, z_c),
-                   (knot_w, h * 0.034, h * 0.044), mat)
-        # 左右の輪。公式は結びの 1.5 倍ほど横へ張り出す。
         for sgn in (-1, 1):
-            mb.add_box((sgn * (knot_w + wing_w) * 0.5, y_c,
-                        z_c + h * 0.002),
-                       (wing_w, h * 0.028, h * 0.038), mat)
-        # 垂れ 2 本。公式は結びの真下から、輪より内側に落ちる。
+            th = np.linspace(0.18, 2.0 * math.pi - 0.18, 25)
+            # しずく形: 付け根（θ=0）ですぼまり、外側（θ=π）で最も膨らむ。
+            xs = (1.0 - np.cos(th)) * 0.5
+            pinch = xs ** 0.45
+            path = []
+            for xi, ti, pi_ in zip(xs, th, pinch):
+                x = sgn * (knot_hw * 0.4 + xi * (loop_w - knot_hw * 0.4))
+                # 外側ほど少し上へ反らせる（公式の輪は水平よりやや上向き）
+                zz = z_c + math.sin(ti) * pi_ * loop_h * 0.5 + xi * h * 0.006
+                path.append((x, surf_y(x, zz, h * 0.004 + band_y), zz))
+            _ribbon(mb, path, band_in, band_y, mat)
+        # 中央の結び目。輪の付け根を覆い、輪より前へ少しだけ出す。
+        kz = z_c + h * 0.001
+        mb.add_sphere((0.0, surf_y(0.0, kz, h * 0.004 + band_y * 1.3), kz),
+                      (knot_hw * 1.05, h * 0.013, h * 0.016), mat,
+                      nu=14, nv=9)
+        # 垂れ 2 本。結び目の下から、左右へ少し開いて斜め下へ落とす。
+        # 袴の前面に沿わせないと、下へ行くほど布に沈むか、宙に浮く。
+        tare_len = h * 0.140
         for sgn in (-1, 1):
-            mb.add_box((sgn * h * 0.026,
-                        -(front_y(z_tare) + h * 0.003), z_tare),
-                       (h * 0.042, h * 0.026, h * 0.150), mat)
+            path = []
+            for s in np.linspace(0.0, 1.0, 9):
+                zz = kz - h * 0.008 - tare_len * s
+                x = sgn * (h * 0.006 + h * 0.022 * s ** 0.9)
+                path.append((x, surf_y(x, zz, h * 0.004), zz))
+            half_w = h * (0.0135 + 0.0025 * np.linspace(0.0, 1.0, 9))
+            _ribbon(mb, path, half_w, h * 0.0045, mat, power=4.0)
 
 
 def _hakama_himo(mb, p, a: B.Anatomy, mat, z_c, front_y):
@@ -848,10 +913,18 @@ def _geta(mb, p, a: B.Anatomy):
                             [(fh * 0.045, fh * 0.085)] * 3, "collar_white", n=5)
 
 
+#: ブーツの筒の口の高さ（足首 0 〜 膝 1）
+BOOT_TOP = 0.90
+
+
 def _boots(mb, p, a: B.Anatomy):
     h = p["height"]
     shoe(mb, p, a, "boots_brown", heel=True, scale=1.14)
-    top = a.ankle[2] + (a.knee[2] - a.ankle[2]) * 0.52
+    # 編み上げの筒は膝のすぐ下まで。袴の裾（足首〜膝の 0.52 の少し上）より
+    # ずっと高くして、走りで脚が袴の裾から前後へ出たとき脛の素肌ではなく
+    # ブーツが見えるようにする (#49)。0.52 だと madonna / Run で裾と
+    # ブーツの口のあいだから脛が 12.6 cm はみ出していた（0.90 で 6.2 cm）。
+    top = a.ankle[2] + (a.knee[2] - a.ankle[2]) * BOOT_TOP
     leg_sleeve(mb, p, a, "boots_brown", "bootleg", a.ankle[2] + h * 0.006,
                top, h * 0.0075, levels=5)
     # 編み上げ
@@ -979,6 +1052,7 @@ def build_kimono(mb, p, a: B.Anatomy, *, kimono_mat, hakama_mat, shoes,
     if shoes == "geta":
         hem = z["ankle"] + (z["knee"] - z["ankle"]) * 0.32
     else:
+        # 裾の高さはブーツの口とは切り離し、公式イラストの丈に固定する。
         boot_top = a.ankle[2] + (a.knee[2] - a.ankle[2]) * 0.52
         hem = boot_top + h * 0.016
     # 公式の袴は裾幅が頭幅の 1.3 倍ある釣鐘で、ヒダは正面に 4〜5 本しか
