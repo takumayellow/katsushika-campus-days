@@ -917,6 +917,35 @@ def _geta(mb, p, a: B.Anatomy):
 BOOT_TOP = 0.90
 
 
+def _dress_under_hakama(mb, a: B.Anatomy, mat, z_top, *, leg_from: float):
+    """袴の中に隠れる面を袴の布にする。
+
+    行灯袴は 1 本の筒なので、歩き・走りで前へ出た膝や腿が前の中央を内側から
+    突き抜ける。袴のウェイトをいじっても、見える素肌は madonna / Walk で
+    53 → 44、歩幅を縮めても 38 までしか減らなかった（頂点 x 方向の数, #49）。
+    立っていれば全部ブーツか袴に隠れる面を袴と同じ布にしておけば、
+    突き抜けても膝で布が押し出されたふくらみに見える。
+
+    * 胴の肌と着物の身頃のうち、袴の上端 z_top より下の面（袴が割れると
+      白地の振袖が覗いていた）。袖は別の部位なので触らない。
+    * 足首〜膝の比 leg_from より上の脚の肌。境目をまたぐ面も含める。
+      ブーツ（madonna）はブーツの口 BOOT_TOP から上（下半分は筒の中）。
+      高下駄の坊っちゃんは脛を見せるので、裾（0.32）より上の 0.6 から上だけ。
+      馬乗り袴でも歩きで膝が前の中央を突き抜けて肌色が出ていた。
+    """
+    z_leg = a.ankle[2] + (a.knee[2] - a.ankle[2]) * leg_from
+    leg_v = set(mb.part_indices("leg_l", "leg_r").tolist())
+    body_v = set(mb.part_indices("torso", "kimono").tolist())
+    for fi, face in enumerate(mb.faces):
+        if mb.face_mat[fi] == mat:
+            continue
+        zs = [mb.verts[v][2] for v in face]
+        if ((mb.face_mat[fi] == "skin" and all(v in leg_v for v in face)
+             and max(zs) > z_leg)
+                or (all(v in body_v for v in face) and max(zs) < z_top)):
+            mb.face_mat[fi] = mat
+
+
 def _boots(mb, p, a: B.Anatomy):
     h = p["height"]
     shoe(mb, p, a, "boots_brown", heel=True, scale=1.14)
@@ -1094,6 +1123,8 @@ def build_kimono(mb, p, a: B.Anatomy, *, kimono_mat, hakama_mat, shoes,
         _geta(mb, p, a)
     else:
         _boots(mb, p, a)
+    _dress_under_hakama(mb, a, hakama_mat, hak_top,
+                        leg_from=0.6 if shoes == "geta" else BOOT_TOP)
     if "furoshiki" in p.get("accessories", ()):
         _furoshiki(mb, p, a)
 

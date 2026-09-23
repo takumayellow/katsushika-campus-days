@@ -342,9 +342,12 @@ class Gait(_Legs):
     ようにフレーム数を決めるので、等速で移動しているあいだ足は滑らない。
     """
 
-    def __init__(self, arm, kind: str = "Walk"):
+    def __init__(self, arm, kind: str = "Walk", **over):
         super().__init__(arm)
-        g = GAIT_TARGET[kind]
+        unknown = set(over) - set(GAIT_TARGET[kind])
+        if unknown:
+            raise KeyError("%s の歩容に無い項目: %s" % (kind, ", ".join(sorted(unknown))))
+        g = {**GAIT_TARGET[kind], **over}
         run = kind == "Run"
         self.kind = kind
 
@@ -656,15 +659,18 @@ def _posed(fn, drop=ARM_DROP):
     return lambda t: _arms_down(fn(t), drop)
 
 
-def action_specs(arm, arm_drop=ARM_DROP):
+def action_specs(arm, arm_drop=ARM_DROP, gait=None):
     """(名前, フレーム数, poser, ループ, キー数) の一覧。
 
     歩き・走りの長さはキャラの脚長から決まる（速度を合わせるため人によって違う）。
     arm_drop は A ポーズから上腕を下ろす角度（params の "arm_drop"。既定 ARM_DROP）。
+    gait は {"Walk": {...}, "Run": {...}} で GAIT_TARGET をキャラごとに上書きする
+    （params の "gait"。v はゲーム側の閾値なので変えないこと）。
     """
     d = arm_drop
-    walk = Gait(arm, "Walk")
-    run = Gait(arm, "Run")
+    gait = gait or {}
+    walk = Gait(arm, "Walk", **gait.get("Walk", {}))
+    run = Gait(arm, "Run", **gait.get("Run", {}))
     jump = Jump(arm)
     return (
         ("Idle", 60, _posed(_idle, d), True, 9),
@@ -739,9 +745,9 @@ def setup_shape_drivers(obj, arm) -> list[str]:
     return made
 
 
-def build_actions(arm, arm_drop=ARM_DROP) -> list[str]:
+def build_actions(arm, arm_drop=ARM_DROP, gait=None) -> list[str]:
     names = []
-    for name, nf, fn, loop, keys in action_specs(arm, arm_drop):
+    for name, nf, fn, loop, keys in action_specs(arm, arm_drop, gait):
         act = make_action(arm, name, nf, fn, loop=loop, keys=keys)
         names.append(act.name)
     return names
