@@ -4,6 +4,7 @@
     python tools/deploy_pages.py            # build/WebGL を zip → Release web-latest → Pages ワークフロー起動
     python tools/deploy_pages.py --build    # 先に Unity で WebGL ビルドしてから同じことをする
     python tools/deploy_pages.py --no-deploy   # zip を作るだけ
+    python tools/deploy_pages.py --smoke    # 載せる前に build/WebGL をローカル配信して E2E スモーク (#69)
 
 Unity のビルドは CI ではライセンスの都合で回せないので、ここでローカルにビルドし、
 成果物 zip を Release（タグ web-latest、prerelease）に置き換えて置き、
@@ -28,11 +29,12 @@ DEFAULT_UNITY = Path(r"C:\Program Files\Unity\Hub\Editor\6000.6.2f1\Editor\Unity
 TAG = "web-latest"
 ASSET_NAME = "webgl.zip"
 SITE_URL = "https://takumayellow.github.io/katsushika-campus-days/"
+SMOKE = ROOT / "e2e" / "run_webgl_smoke.py"
 
 
 def run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
     print("$", " ".join(str(c) for c in cmd), flush=True)
-    return subprocess.run(cmd, check=True, **kwargs)
+    return subprocess.run(cmd, **{"check": True, **kwargs})
 
 
 def unity_build(unity: Path, build_dir: Path) -> None:
@@ -84,6 +86,11 @@ def upload_release(zip_path: Path, tag: str, stamp: str) -> None:
     run(["gh", "release", "upload", tag, f"{zip_path}#{ASSET_NAME}", "--clobber"])
 
 
+def local_smoke(build_dir: Path) -> int:
+    """載せる前に、同じビルドを Pages と同じ条件（Content-Encoding なし）で配信してスモークを回す。"""
+    return run([sys.executable, str(SMOKE), "--serve", str(build_dir)], check=False).returncode
+
+
 def dispatch_workflow(tag: str) -> None:
     run(["gh", "workflow", "run", "pages.yml", "-f", f"tag={tag}"])
 
@@ -97,11 +104,17 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--unity", default=os.environ.get("UNITY_EXE", str(DEFAULT_UNITY)))
     parser.add_argument("--tag", default=TAG)
     parser.add_argument("--no-deploy", action="store_true", help="zip を作るだけ")
+    parser.add_argument("--smoke", action="store_true",
+                        help="載せる前にローカル配信で E2E スモークを回し、落ちたら載せない")
     args = parser.parse_args(argv[1:])
 
     build_dir = Path(args.build_dir)
     if args.build:
         unity_build(Path(args.unity), build_dir)
+
+    if args.smoke and local_smoke(build_dir) != 0:
+        print("E2E スモークが落ちたので載せない（結果は build/e2e/ の下）", file=sys.stderr)
+        return 1
 
     zip_path = Path(args.zip)
     zip_path.parent.mkdir(parents=True, exist_ok=True)
@@ -116,6 +129,8 @@ def main(argv: list[str]) -> int:
     dispatch_workflow(args.tag)
     print(f"Pages ワークフローを起動した。数分後に {SITE_URL} が更新される。")
     print("進捗: gh run list --workflow pages.yml")
+    print("配信後の E2E は e2e-pages.yml が自動で走る（GPU なし）。実 GPU で確かめるなら:")
+    print(f"    python {SMOKE.relative_to(ROOT).as_posix()}")
     return 0
 
 
