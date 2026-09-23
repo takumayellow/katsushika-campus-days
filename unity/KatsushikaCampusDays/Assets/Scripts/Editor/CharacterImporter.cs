@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -191,6 +192,118 @@ namespace KCD.Editor
             }
 
             return remapped;
+        }
+
+        /// <summary>
+        /// .fbx.meta に残っている Humanoid の骨格（humanDescription.skeleton）を、取り込んだモデルの骨に合わせる。
+        /// 直した FBX の数を返す。SceneBuilder.BuildAll から呼ぶ。
+        ///
+        /// Humanoid はポーズを付けるとき、骨の長さを FBX ではなくこの骨格から取る。骨格は最初に取り込んだときに
+        /// meta へ書かれたきり更新されないので、Blender で等身を変えると古い骨の長さで組まれる。
+        /// 坊っちゃん（2.8 頭身）は腰の高さが FBX で 0.23 m なのに meta では 0.80 m のままで、
+        /// Idle にすると全高が 1.15 m から 1.86 m に伸び、足が地面から 0.64 m 沈んでいた。
+        ///
+        /// 骨格を空にして Unity に作り直させると、骨の割り当て（human）まで自動で付け直され、
+        /// 髪の揺れのボーン（HairFront / HairBack）が目にされてしまう。なので骨格だけを書き換える。
+        /// </summary>
+        public static int SyncSkeletons()
+        {
+            int fixedCount = 0;
+            foreach (string guid in AssetDatabase.FindAssets("t:Model", new[] { "Assets/Models/Characters" }))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                if (!IsCharacter(path)
+                    || AssetImporter.GetAtPath(path) is not ModelImporter importer
+                    || importer.animationType != ModelImporterAnimationType.Human)
+                {
+                    continue;
+                }
+
+                var model = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                HumanDescription human = importer.humanDescription;
+                if (model == null || SkeletonMatches(human.skeleton, model))
+                {
+                    continue;
+                }
+
+                human.skeleton = SkeletonOf(model, human.skeleton);
+                importer.humanDescription = human;
+                importer.SaveAndReimport();
+                fixedCount++;
+            }
+
+            return fixedCount;
+        }
+
+        /// <summary>モデルの骨（根元以外のすべての Transform）が、骨格に同じ名前・同じ位置と向きで載っているか。</summary>
+        private static bool SkeletonMatches(SkeletonBone[] skeleton, GameObject model)
+        {
+            if (skeleton == null || skeleton.Length == 0)
+            {
+                return false;
+            }
+
+            var byName = new Dictionary<string, SkeletonBone>();
+            foreach (SkeletonBone bone in skeleton)
+            {
+                byName[bone.name] = bone;
+            }
+
+            foreach (Transform t in model.GetComponentsInChildren<Transform>(true))
+            {
+                if (t == model.transform)
+                {
+                    continue;
+                }
+
+                if (!byName.TryGetValue(t.name, out SkeletonBone bone)
+                    || (bone.position - t.localPosition).sqrMagnitude > 1e-8f
+                    || Quaternion.Angle(bone.rotation, t.localRotation) > 0.05f)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>SkeletonBone.parentName は public でないので、Unity が書く meta と同じ形にするためだけに使う。</summary>
+        private static readonly System.Reflection.FieldInfo ParentNameField = typeof(SkeletonBone).GetField(
+            "parentName",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
+
+        /// <summary>モデルの今の骨から骨格を作る。先頭（モデルの根元）は元の骨格のものを残す。</summary>
+        private static SkeletonBone[] SkeletonOf(GameObject model, SkeletonBone[] previous)
+        {
+            var bones = new List<SkeletonBone>();
+            bones.Add(previous != null && previous.Length > 0
+                ? previous[0]
+                : new SkeletonBone
+                {
+                    name = model.name + "(Clone)",
+                    rotation = Quaternion.identity,
+                    scale = Vector3.one,
+                });
+
+            foreach (Transform t in model.GetComponentsInChildren<Transform>(true))
+            {
+                if (t == model.transform)
+                {
+                    continue;
+                }
+
+                object bone = new SkeletonBone
+                {
+                    name = t.name,
+                    position = t.localPosition,
+                    rotation = t.localRotation,
+                    scale = t.localScale,
+                };
+                ParentNameField?.SetValue(bone, t.parent == model.transform ? bones[0].name : t.parent.name);
+                bones.Add((SkeletonBone)bone);
+            }
+
+            return bones.ToArray();
         }
 
         /// <summary>

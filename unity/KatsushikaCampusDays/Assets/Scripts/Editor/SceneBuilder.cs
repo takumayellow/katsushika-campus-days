@@ -57,6 +57,7 @@ namespace KCD.Editor
             EditorPaths.Report("データを同期しました: " + DataBundler.SyncAll() + " 件");
             EditorPaths.Report("マテリアルを差し替えました: " + CharacterImporter.ResolveMaterials() + " 件");
             EditorPaths.Report("顔テクスチャを貼り直しました: " + CharacterImporter.RefreshFaceTextures() + " 件");
+            EditorPaths.Report("Humanoid の骨格を FBX に合わせました: " + CharacterImporter.SyncSkeletons() + " 体");
             EditorPaths.Report("キャラの色を palette.json に合わせました: " + MaterialLibrary.RepaintCharacters() + " 件");
 
             BuildCampus();
