@@ -114,6 +114,7 @@ namespace KCD.Editor
             Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (material != null)
             {
+                Repaint(material, name);
                 return material;
             }
 
@@ -165,6 +166,50 @@ namespace KCD.Editor
 
             Save(material, path);
             return material;
+        }
+
+        /// <summary>
+        /// すでにある .mat の色を <see cref="CampusColors"/> の宣言へ合わせ直す (#51)。
+        ///
+        /// 以前はここで「あれば、そのまま返す」で終わっていた。そのため CampusColors を直しても
+        /// 一度でも .mat が出来ていれば二度と反映されず、木の葉と幹の色は 2026-09-22 に焼かれた
+        /// 古い値のまま固まっていた（leaf は芝と見分けが付かない #6FA84A 系、幹は明るい灰褐色 #A09385）。
+        /// 「葉の色を直した」はずの変更がゲームに一度も届いていなかった。
+        ///
+        /// CampusColors に載っていない名前（屋内のパレット由来など）は、手で調整した値を
+        /// 上書きしてしまわないよう触らない。
+        /// </summary>
+        private static void Repaint(Material material, string name)
+        {
+            if (!CampusColors.TryGetValue(name, out string hex))
+            {
+                return;
+            }
+
+            Color declared = Parse(hex);
+            if (!material.HasProperty(BaseColorId) || Same(material.GetColor(BaseColorId), declared))
+            {
+                return;
+            }
+
+            material.SetColor(BaseColorId, declared);
+            if (material.HasProperty(ShadeColorId))
+            {
+                material.SetColor(ShadeColorId, declared * 0.62f);
+            }
+
+            EditorUtility.SetDirty(material);
+        }
+
+        private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+        private static readonly int ShadeColorId = Shader.PropertyToID("_ShadeColor");
+
+        /// <summary>色が実質同じか。8 bit に戻したとき同じ値なら同じとみなす。</summary>
+        private static bool Same(Color a, Color b)
+        {
+            return Mathf.Abs(a.r - b.r) < 0.002f
+                && Mathf.Abs(a.g - b.g) < 0.002f
+                && Mathf.Abs(a.b - b.b) < 0.002f;
         }
 
         /// <summary>キャラクター FBX のマテリアルを 1 つ用意する。顔だけテクスチャを貼る。</summary>
