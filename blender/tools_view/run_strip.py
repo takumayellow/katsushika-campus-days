@@ -11,6 +11,9 @@ docs/previews の他の PNG と同じ画づくりになる。
 
 出力: <out-dir>/<id>_run_{front,side,back}.png（横に nframes コマ並べた 1 枚）
 
+--action Jump のように渡すと Run 以外の Action も描ける（#49 のスカート・袴の確認用）。
+出力名の run はその Action 名の小文字になる（例: <id>_jump_side.png）。
+
 --arm / --elbow を渡すと Run の腕の振り幅だけ差し替えて描ける（修正前後の比較用）。
   --arm 52 --elbow 66,34   # #43 を直す前の値
 """
@@ -43,6 +46,7 @@ def parse_args(argv):
     ap = argparse.ArgumentParser(prog="run_strip.py")
     ap.add_argument("--id", default="mirai")
     ap.add_argument("--out-dir", default=os.path.join(ROOT, "docs", "previews"))
+    ap.add_argument("--action", default="Run", help="描く Action（Run / Walk / Jump など）")
     ap.add_argument("--tag", default="", help="ファイル名に付ける接尾辞（比較用）")
     ap.add_argument("--cell", type=int, default=420, help="1 コマの横幅 px")
     ap.add_argument("--arm", type=float, default=None,
@@ -112,9 +116,10 @@ def main():
     info = BC.build_character(args.id, tmp, 1024, dict(BC.FBX_OPTS),
                               with_outline=True)
     p, armature, obj = info["params"], info["arm"], info["obj"]
-    act = bpy.data.actions.get("Run")
+    act = bpy.data.actions.get(args.action)
     if act is None:
-        raise SystemExit("Run の Action が無い")
+        raise SystemExit("%s の Action が無い" % args.action)
+    stem = args.action.lower()
 
     floor_z = min(float((obj.matrix_world @ Vector(c))[2])
                   for c in obj.bound_box) - p["height"] * 0.004
@@ -146,11 +151,11 @@ def main():
         for f in frames:
             scene.frame_set(f)
             render.place_camera(cam, p, ang, span=span)
-            q = os.path.join(tmp, f"{args.id}_run_{tag}_{f:02d}.png")
+            q = os.path.join(tmp, f"{args.id}_{stem}_{tag}_{f:02d}.png")
             render.render_to(q)
             cells.append(q)
         made.append(make_strip(
-            cells, os.path.join(out_dir, f"{args.id}_run_{tag}{suffix}.png")))
+            cells, os.path.join(out_dir, f"{args.id}_{stem}_{tag}{suffix}.png")))
     armature.animation_data.action = None
     shutil.rmtree(tmp, ignore_errors=True)   # コマ単位の PNG と仮 FBX は残さない
 

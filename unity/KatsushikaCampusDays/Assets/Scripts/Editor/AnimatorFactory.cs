@@ -17,8 +17,8 @@ namespace KCD.Editor
         public const string GaitRateParameter = "GaitRate";
 
         // NPCWander もこの値を基準に Speed を決めるので、PlayerController の定数を共有する（#13）。
-        private const float WalkSpeed = PlayerController.DefaultWalkSpeed;
-        private const float RunSpeed = 5.4f;
+        public const float WalkSpeed = PlayerController.DefaultWalkSpeed;
+        public const float RunSpeed = 5.4f;
 
         /// <summary>FBX からコントローラを作る。クリップが 1 つも無ければ null。</summary>
         public static AnimatorController EnsureForCharacter(string characterId, string fbxPath)

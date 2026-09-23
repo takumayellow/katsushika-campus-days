@@ -20,6 +20,11 @@ namespace KCD.Editor
     /// 足せる引数:
     ///   -charaIds mirai,botchan   撮るキャラ（既定は Assets/Models/Characters にいる全員）
     ///   -charaOut &lt;dir&gt;          出力先（既定は docs/previews/characters）
+    ///   -charaPose run            動きの途中を撮る（idle / walk / run / jump。既定は idle）(#49)
+    ///   -charaPoseTimes 0.1,0.3   動き出してから何秒後を撮るか（既定は 0.1,0.2,0.3,0.4）
+    ///
+    /// 動きを撮るときは顔を撮らず、全身を正面・35 度・真横から撮る。スカートや袴から脚が
+    /// 突き抜けていないかを見るため。ファイル名は &lt;id&gt;_&lt;pose&gt;&lt;ミリ秒&gt;_body_f90.png のようになる。
     ///
     /// 1 キャラにつき 顔（正面・35 度・真横）と全身（正面・35 度）を撮る。
     ///
@@ -56,6 +61,24 @@ namespace KCD.Editor
             new Shot { Suffix = "body_f0", Yaw = 0f, Face = false },
             new Shot { Suffix = "body_f35", Yaw = 35f, Face = false },
         };
+
+        private static readonly Shot[] MotionShots =
+        {
+            new Shot { Suffix = "body_f0", Yaw = 0f, Face = false },
+            new Shot { Suffix = "body_f35", Yaw = 35f, Face = false },
+            new Shot { Suffix = "body_f90", Yaw = 90f, Face = false },
+        };
+
+        private struct Frame
+        {
+            public string Pose;
+            public float Time;
+
+            /// <summary>ファイル名に挟む印。Idle は今までどおり何も挟まない。</summary>
+            public string Label => Pose == "idle"
+                ? string.Empty
+                : "_" + Pose + Mathf.RoundToInt(Time * 1000f).ToString("D4", CultureInfo.InvariantCulture);
+        }
 
         [MenuItem("KCD/キャラクターを撮る")]
         public static void Capture()
@@ -107,86 +130,89 @@ namespace KCD.Editor
                         continue;
                     }
 
-                    // Humanoid のクリップを当てると体の位置がクリップのルート（原点）へ戻されるので、
-                    // 空中に置いた親の下に入れる。
-                    body = new GameObject("__CharacterPreviewStand") { hideFlags = HideFlags.DontSave };
-                    body.transform.SetPositionAndRotation(new Vector3(0f, Altitude, 0f), Quaternion.identity);
-                    var model = (GameObject)PrefabUtility.InstantiatePrefab(source);
-                    model.hideFlags = HideFlags.DontSave;
-                    model.transform.SetParent(body.transform, false);
-                    float bindHeight = BoundsOf(body).size.y;
-                    PoseAsInGame(model, id);
-
-                    Bounds bounds = BoundsOf(body);
-                    Vector3 forward = body.transform.forward;
-                    Vector3 head = HeadCenter(model, bounds, out float headSpan);
-
-                    // 光はカメラ（正面）の左上から。保存された太陽の向きだと顔が逆光になることがある。
-                    if (sun != null)
+                    foreach (Frame frame in Frames())
                     {
-                        Vector3 toward = -forward + Quaternion.AngleAxis(90f, Vector3.up) * forward * 0.6f;
-                        sun.transform.rotation = Quaternion.LookRotation(
-                            (toward.normalized * 0.8f + Vector3.down * 0.6f).normalized, Vector3.up);
-                    }
+                        // Humanoid のクリップを当てると体の位置がクリップのルート（原点）へ戻されるので、
+                        // 空中に置いた親の下に入れる。
+                        body = new GameObject("__CharacterPreviewStand") { hideFlags = HideFlags.DontSave };
+                        body.transform.SetPositionAndRotation(new Vector3(0f, Altitude, 0f), Quaternion.identity);
+                        var model = (GameObject)PrefabUtility.InstantiatePrefab(source);
+                        model.hideFlags = HideFlags.DontSave;
+                        model.transform.SetParent(body.transform, false);
+                        float bindHeight = BoundsOf(body).size.y;
+                        PoseAsInGame(model, id, frame);
 
-                    int shellsDrawn = 0;
-                    foreach (Renderer shell in Shells(body))
-                    {
-                        if (shell.enabled)
-                        {
-                            shellsDrawn++;
-                        }
-                    }
+                        Bounds bounds = BoundsOf(body);
+                        Vector3 forward = body.transform.forward;
+                        Vector3 head = HeadCenter(model, bounds, out float headSpan);
 
-                    foreach (Shot shot in Shots)
-                    {
-                        Vector3 dir = Quaternion.AngleAxis(shot.Yaw, Vector3.up) * forward;
-                        Vector3 look;
-                        float distance;
-                        if (shot.Face)
+                        // 光はカメラ（正面）の左上から。保存された太陽の向きだと顔が逆光になることがある。
+                        if (sun != null)
                         {
-                            // 頭（首の付け根〜頭頂）の 2.2 倍が縦に入る距離。等身の違うキャラでも顔の大きさが揃う。
-                            look = head;
-                            camera.fieldOfView = 20f;
-                            distance = headSpan * 1.1f / Mathf.Tan(10f * Mathf.Deg2Rad);
-                        }
-                        else
-                        {
-                            look = bounds.center;
-                            camera.fieldOfView = 30f;
-                            distance = bounds.size.y * 0.5f / Mathf.Tan(15f * Mathf.Deg2Rad) * 1.12f;
+                            Vector3 toward = -forward + Quaternion.AngleAxis(90f, Vector3.up) * forward * 0.6f;
+                            sun.transform.rotation = Quaternion.LookRotation(
+                                (toward.normalized * 0.8f + Vector3.down * 0.6f).normalized, Vector3.up);
                         }
 
-                        Vector3 eye = look + dir * distance;
-                        camera.transform.SetPositionAndRotation(eye, Quaternion.LookRotation(look - eye, Vector3.up));
-                        if (Draw(camera, target, buffer))
+                        int shellsDrawn = 0;
+                        foreach (Renderer shell in Shells(body))
                         {
-                            File.WriteAllBytes(Path.Combine(folder, id + "_" + shot.Suffix + ".png"), buffer.EncodeToPNG());
-                            taken++;
+                            if (shell.enabled)
+                            {
+                                shellsDrawn++;
+                            }
                         }
-                        else
+
+                        foreach (Shot shot in frame.Pose == "idle" ? Shots : MotionShots)
                         {
-                            EditorPaths.Report("描けませんでした: " + id + "_" + shot.Suffix + "（-nographics を付けていないか）");
+                            Vector3 dir = Quaternion.AngleAxis(shot.Yaw, Vector3.up) * forward;
+                            Vector3 look;
+                            float distance;
+                            if (shot.Face)
+                            {
+                                // 頭（首の付け根〜頭頂）の 2.2 倍が縦に入る距離。等身の違うキャラでも顔の大きさが揃う。
+                                look = head;
+                                camera.fieldOfView = 20f;
+                                distance = headSpan * 1.1f / Mathf.Tan(10f * Mathf.Deg2Rad);
+                            }
+                            else
+                            {
+                                look = bounds.center;
+                                camera.fieldOfView = 30f;
+                                distance = bounds.size.y * 0.5f / Mathf.Tan(15f * Mathf.Deg2Rad) * 1.12f;
+                            }
+
+                            Vector3 eye = look + dir * distance;
+                            camera.transform.SetPositionAndRotation(eye, Quaternion.LookRotation(look - eye, Vector3.up));
+                            if (Draw(camera, target, buffer))
+                            {
+                                File.WriteAllBytes(Path.Combine(folder, id + frame.Label + "_" + shot.Suffix + ".png"), buffer.EncodeToPNG());
+                                taken++;
+                            }
+                            else
+                            {
+                                EditorPaths.Report("描けませんでした: " + id + frame.Label + "_" + shot.Suffix + "（-nographics を付けていないか）");
+                            }
                         }
-                    }
 
-                    EditorPaths.Report(string.Format(
-                        CultureInfo.InvariantCulture,
-                        "{0}: 高さ {1:F3} m（ポーズ前 {2:F3} m）, 足の下端 {3:F3} m, 頭の中心 {4:F3} m, 頭の縦 {5:F3} m, 描かれている輪郭シェル {6} 個",
-                        id, bounds.size.y, bindHeight, bounds.min.y - Altitude, head.y - bounds.min.y, headSpan, shellsDrawn));
-                    if (Mathf.Abs(bounds.size.y - bindHeight) > bindHeight * 0.05f)
-                    {
-                        EditorPaths.Report(id + ": ポーズを付けると高さが変わります。meta の Humanoid の骨格が古い"
-                            + "（KCD/シーンを組み直す で CharacterImporter.SyncSkeletons を通す）");
-                    }
+                        EditorPaths.Report(string.Format(
+                            CultureInfo.InvariantCulture,
+                            "{0}{7}: 高さ {1:F3} m（ポーズ前 {2:F3} m）, 足の下端 {3:F3} m, 頭の中心 {4:F3} m, 頭の縦 {5:F3} m, 描かれている輪郭シェル {6} 個",
+                            id, bounds.size.y, bindHeight, bounds.min.y - Altitude, head.y - bounds.min.y, headSpan, shellsDrawn, frame.Label));
+                        if (frame.Pose == "idle" && Mathf.Abs(bounds.size.y - bindHeight) > bindHeight * 0.05f)
+                        {
+                            EditorPaths.Report(id + ": ポーズを付けると高さが変わります。meta の Humanoid の骨格が古い"
+                                + "（KCD/シーンを組み直す で CharacterImporter.SyncSkeletons を通す）");
+                        }
 
-                    if (shellsDrawn > 0)
-                    {
-                        EditorPaths.Report(id + ": 輪郭シェルが描かれています。服や髪が黒く潰れます（CharacterImporter を確認）");
-                    }
+                        if (shellsDrawn > 0 && frame.Pose == "idle")
+                        {
+                            EditorPaths.Report(id + ": 輪郭シェルが描かれています。服や髪が黒く潰れます（CharacterImporter を確認）");
+                        }
 
-                    Object.DestroyImmediate(body);
-                    body = null;
+                        Object.DestroyImmediate(body);
+                        body = null;
+                    }
                 }
 
                 EditorPaths.Report("キャラクターを " + taken + " 枚撮りました: " + folder);
@@ -224,6 +250,160 @@ namespace KCD.Editor
             }
         }
 
+        /// <summary>
+        /// 遠くの人物の輪郭線の太さを確かめる (#44)。ゲームのカメラと同じ画角 55°・1920x1080 で、
+        /// 1 人のキャラを <see cref="LineupDistances"/> の距離に並べて 1 枚に撮る。各人物の周りを
+        /// 4 倍に拡大した切り抜きも書き出す（輪郭が何 px あるかを数えるため）。
+        ///   Unity.exe -batchmode -quit -projectPath &lt;...&gt; -executeMethod KCD.Editor.CharacterPreview.CaptureDistances
+        ///   -charaIds mirai  -charaOut &lt;dir&gt;  は Capture と同じ。出力は &lt;id&gt;_distances.png と &lt;id&gt;_d&lt;m&gt;.png。
+        /// </summary>
+        public static void CaptureDistances()
+        {
+            Scene scene = EditorSceneManager.OpenScene(EditorPaths.CampusScene, OpenSceneMode.Single);
+            if (!scene.IsValid())
+            {
+                EditorPaths.Report("シーンを開けません: " + EditorPaths.CampusScene);
+                return;
+            }
+
+            string folder = EditorPaths.ReadArgument("-charaOut", string.Empty);
+            folder = string.IsNullOrEmpty(folder) ? EditorPaths.ProjectRelative(OutputFolder) : Path.GetFullPath(folder);
+            Directory.CreateDirectory(folder);
+
+            DynamicGI.UpdateEnvironment();
+            bool wasAsync = ShaderUtil.allowAsyncCompilation;
+            ShaderUtil.allowAsyncCompilation = false;
+
+            const int w = 1920;
+            const int h = 1080;
+            var placed = new List<GameObject>();
+            GameObject rig = null;
+            RenderTexture target = null;
+            Texture2D buffer = null;
+            try
+            {
+                rig = new GameObject("__CharacterPreviewCamera") { hideFlags = HideFlags.DontSave };
+                Camera camera = Setup(rig);
+                camera.fieldOfView = 55f;
+                target = new RenderTexture(w, h, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
+                target.Create();
+                camera.targetTexture = target;
+                buffer = new Texture2D(w, h, TextureFormat.RGB24, false, false);
+
+                // 肩越しカメラの高さ（目の高さ少し上）から、奥へ向かって見る。
+                Vector3 eye = new Vector3(0f, Altitude + 1.6f, 0f);
+                camera.transform.SetPositionAndRotation(eye, Quaternion.Euler(4f, 0f, 0f));
+
+                foreach (string id in Ids())
+                {
+                    var source = AssetDatabase.LoadAssetAtPath<GameObject>(ActorFactory.FbxPathOf(id));
+                    if (source == null)
+                    {
+                        EditorPaths.Report("FBX が無いので飛ばします: " + id);
+                        continue;
+                    }
+
+                    var rects = new List<KeyValuePair<float, Rect>>();
+                    for (int k = 0; k < LineupDistances.Length; k++)
+                    {
+                        float d = LineupDistances[k];
+                        // 手前の人物に隠れないよう、画面の横位置を 1 人ずつずらす（左端 -0.8 〜 右端 +0.7）。
+                        float across = -0.8f + 1.5f * k / Mathf.Max(1, LineupDistances.Length - 1);
+                        float x = across * d * Mathf.Tan(27.5f * Mathf.Deg2Rad) * (w / (float)h);
+                        var stand = new GameObject("__CharacterPreviewStand") { hideFlags = HideFlags.DontSave };
+                        stand.transform.SetPositionAndRotation(new Vector3(x, Altitude, d), Quaternion.Euler(0f, 180f, 0f));
+                        var model = (GameObject)PrefabUtility.InstantiatePrefab(source);
+                        model.hideFlags = HideFlags.DontSave;
+                        model.transform.SetParent(stand.transform, false);
+                        PoseAsInGame(model, id, new Frame { Pose = "idle", Time = 0f });
+                        placed.Add(stand);
+
+                        Bounds b = BoundsOf(stand);
+                        Vector3 lo = camera.WorldToScreenPoint(new Vector3(b.center.x, b.min.y, b.center.z));
+                        Vector3 hi = camera.WorldToScreenPoint(new Vector3(b.center.x, b.max.y, b.center.z));
+                        float tall = Mathf.Max(8f, hi.y - lo.y);
+                        float side = tall * 1.3f;
+                        rects.Add(new KeyValuePair<float, Rect>(d, new Rect(lo.x - side * 0.5f, lo.y - tall * 0.15f, side, side)));
+                        EditorPaths.Report(string.Format(CultureInfo.InvariantCulture,
+                            "{0} {1:F0} m: 画面上の身長 {2:F1} px", id, d, hi.y - lo.y));
+                    }
+
+                    if (!Draw(camera, target, buffer))
+                    {
+                        EditorPaths.Report("描けませんでした: " + id + "（-nographics を付けていないか）");
+                        continue;
+                    }
+
+                    File.WriteAllBytes(Path.Combine(folder, id + "_distances.png"), buffer.EncodeToPNG());
+                    foreach (KeyValuePair<float, Rect> r in rects)
+                    {
+                        Texture2D crop = Enlarge(buffer, r.Value, 4);
+                        File.WriteAllBytes(Path.Combine(folder, id + "_d" + r.Key.ToString("00", CultureInfo.InvariantCulture) + ".png"), crop.EncodeToPNG());
+                        Object.DestroyImmediate(crop);
+                    }
+
+                    foreach (GameObject go in placed)
+                    {
+                        Object.DestroyImmediate(go);
+                    }
+
+                    placed.Clear();
+                }
+            }
+            finally
+            {
+                RenderTexture.active = null;
+                foreach (GameObject go in placed)
+                {
+                    Object.DestroyImmediate(go);
+                }
+
+                if (rig != null)
+                {
+                    Object.DestroyImmediate(rig);
+                }
+
+                if (target != null)
+                {
+                    target.Release();
+                    Object.DestroyImmediate(target);
+                }
+
+                if (buffer != null)
+                {
+                    Object.DestroyImmediate(buffer);
+                }
+
+                ShaderUtil.allowAsyncCompilation = wasAsync;
+            }
+        }
+
+        /// <summary>遠近の確認で並べる距離 (m)。輪郭は 5 m から細くなり、30〜60 m で消える。</summary>
+        private static readonly float[] LineupDistances = { 3f, 5f, 10f, 20f, 30f, 45f };
+
+        /// <summary>rect（画面の画素座標、左下原点）を切り抜いて scale 倍に最近傍で拡大する。</summary>
+        private static Texture2D Enlarge(Texture2D source, Rect rect, int scale)
+        {
+            int x0 = Mathf.Clamp(Mathf.RoundToInt(rect.x), 0, source.width - 1);
+            int y0 = Mathf.Clamp(Mathf.RoundToInt(rect.y), 0, source.height - 1);
+            int cw = Mathf.Clamp(Mathf.RoundToInt(rect.width), 1, source.width - x0);
+            int ch = Mathf.Clamp(Mathf.RoundToInt(rect.height), 1, source.height - y0);
+            Color[] src = source.GetPixels(x0, y0, cw, ch);
+            var dst = new Color[cw * scale * ch * scale];
+            for (int y = 0; y < ch * scale; y++)
+            {
+                for (int x = 0; x < cw * scale; x++)
+                {
+                    dst[y * cw * scale + x] = src[(y / scale) * cw + x / scale];
+                }
+            }
+
+            var result = new Texture2D(cw * scale, ch * scale, TextureFormat.RGB24, false, false);
+            result.SetPixels(dst);
+            result.Apply(false);
+            return result;
+        }
+
         private static IEnumerable<string> Ids()
         {
             string filter = EditorPaths.ReadArgument("-charaIds", string.Empty);
@@ -246,11 +426,37 @@ namespace KCD.Editor
             }
         }
 
+        private static IEnumerable<Frame> Frames()
+        {
+            string pose = EditorPaths.ReadArgument("-charaPose", "idle").Trim().ToLowerInvariant();
+            if (pose != "walk" && pose != "run" && pose != "jump")
+            {
+                yield return new Frame { Pose = "idle", Time = 0f };
+                yield break;
+            }
+
+            string times = EditorPaths.ReadArgument("-charaPoseTimes", "0.1,0.2,0.3,0.4");
+            int parsed = 0;
+            foreach (string t in times.Split(','))
+            {
+                if (float.TryParse(t.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out float seconds))
+                {
+                    yield return new Frame { Pose = pose, Time = Mathf.Max(0f, seconds) };
+                    parsed++;
+                }
+            }
+
+            if (parsed == 0)
+            {
+                EditorPaths.Report("-charaPoseTimes を数として読めませんでした: " + times);
+            }
+        }
+
         /// <summary>
         /// T ポーズのままだと腕が画面を横切るので、ゲームと同じ Animator Controller で最初の姿勢（Idle）にする。
         /// AnimationMode.SampleAnimationClip で Humanoid のクリップを当てるとゲームと違う姿勢になることがあるので使わない。
         /// </summary>
-        private static void PoseAsInGame(GameObject body, string id)
+        private static void PoseAsInGame(GameObject body, string id, Frame frame)
         {
             AnimatorController controller = AnimatorFactory.EnsureForCharacter(id, ActorFactory.FbxPathOf(id));
             Animator animator = body.GetComponent<Animator>();
@@ -265,6 +471,46 @@ namespace KCD.Editor
             animator.Rebind();
             animator.Update(0f);
             animator.Update(0.02f);
+            if (frame.Pose == "idle")
+            {
+                return;
+            }
+
+            // ゲームと同じパラメータ名で動かす。ただし GaitRate は既定の 1 のままなので、クリップは
+            // 本来の速さで進む（ゲームでは PlayerAnimatorDriver が移動速度に合わせて変える）。
+            // 歩き・走りは Locomotion ブレンドツリーの中の切り替えなので遷移は無い。Speed を入れてから
+            // 十分に回して周期の頭をそろえ、そこから Time 秒進める。
+            if (frame.Pose == "jump")
+            {
+                animator.SetBool("Grounded", false);
+                animator.SetTrigger("Jump");
+                // Time が 0 でもトリガーを受け付けさせる（下の while は Time > 0 のときしか回らない）。
+                animator.Update(0f);
+            }
+            else
+            {
+                animator.SetFloat("Speed", frame.Pose == "run" ? AnimatorFactory.RunSpeed : AnimatorFactory.WalkSpeed);
+                for (int i = 0; i < 30; i++)
+                {
+                    animator.Update(1f / 30f);
+                }
+
+                float length = animator.GetCurrentAnimatorStateInfo(0).length;
+                float into = animator.GetCurrentAnimatorStateInfo(0).normalizedTime % 1f;
+                if (length > 0f)
+                {
+                    animator.Update((1f - into) * length);
+                }
+            }
+
+            const float step = 1f / 60f;
+            float left = frame.Time;
+            while (left > 0f)
+            {
+                float dt = Mathf.Min(step, left);
+                animator.Update(dt);
+                left -= dt;
+            }
         }
 
         private static Bounds BoundsOf(GameObject body)
