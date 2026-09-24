@@ -70,7 +70,7 @@ TERRACE_T0 = 4.60   # 屋上テラス（玄関面の上）の西端の t。こ�
 TERRACE_U = 13.50   # 同: 北端の u。ここに縦格子の手すり
 
 # 玄関面 1 階の割り付け（E からの t）。茶色いパネル → 小窓のある凹んだ壁 → 割肌の石 →
-# 黒いタイル → 玄関 → 目隠しルーバー → 階段室。玄関の扉は route.json の entrance.point
+# 黒いタイル → 玄関 → つるの這う濃いタイルの壁 → 階段室。玄関の扉は route.json の entrance.point
 # （玄関面の中点）に置く。実物の扉はもう少し東寄りにある。
 FRONT_BROWN = 0.90
 FRONT_RECESS = 2.60
@@ -82,6 +82,10 @@ FRONT_STONE = 4.60
 # 乗り上げ、天端 0.12 m の段差が車道を横切る。実測した「車道に触れない上限」は 3.069 m。
 # キャンパス 9 棟は entrances.STANDARD を共有しているので、そちらは触らず寮だけ上書きする。
 DOOR_APRON_D = 2.80
+# 風除室の張り出し。実物の扉は 1 階の壁の面に納まり、張り出した箱も独立した庇も無い
+# （面全体に続く濃いグレーの帯が庇を兼ねる）。紺の袖壁（#39）は残し、出を 0.5 m にとどめる。
+# door_ Empty（local(0, D)）と Unity が扉とみなす壁の線（D=0）の差もこの値になる。
+DOOR_D = 0.50
 
 
 # --------------------------------------------------------------------------- #
@@ -121,7 +125,7 @@ def door_frame(dorm):
     dr = dict(entrances.STANDARD)
     dr.update(id=ID, origin=origin, n=n, t=(-n[1], n[0]),
               yaw=math.atan2(n[1], n[0]), sign_side=-1, sign_z=3.4,
-              bearing=bearing, APRON_D=DOOR_APRON_D)
+              bearing=bearing, APRON_D=DOOR_APRON_D, D=DOOR_D, CANOPY=False)
     return dr
 
 
@@ -257,25 +261,25 @@ def _front_ground(shell, trim, ff, t_door, dr, core_t, top):
          1.10, 2.30, "metal_charcoal")
     _pane(trim, ff, FRONT_BROWN + 0.42, FRONT_RECESS - 0.42, -CORE_IN + 0.045,
           1.17, 2.23, "glass_dark")
-    # 玄関の風除室の上（庇から 2 階の床まで）
+    # 玄関の風除室の上（風除室の天端から 2 階の床まで）。壁の帯が風除室の出までかぶさって庇を兼ねる
     _box(shell, ff, s0, s1, -0.30, 0.0, dr["HT"], top, "concrete_grey")
-    # 目隠しルーバーと、それに絡むつる植物
+    _box(trim, ff, s0, s1, 0.0, dr["D"], dr["HT"], top, "concrete_grey")
+    # 扉の東: 濃いタイル張りの壁と、それを這うつる植物
     r0, r1 = s1 + 0.20, core_t
-    _pane(trim, ff, r0, r1, -CORE_IN + 0.02, 0.0, top, "metal_charcoal")
-    _box(trim, ff, r0, r1, -0.14, -0.02, 0.0, 0.15, "metal_charcoal")
-    _box(trim, ff, r0, r1, -0.14, -0.02, top - 0.15, top, "metal_charcoal")
-    n_slat = int((r1 - r0) / 0.20)
-    for j in range(n_slat):
-        ts = r0 + 0.10 + 0.20 * j
-        _box(trim, ff, ts - 0.025, ts + 0.025, -0.12, -0.04, 0.15, top - 0.15, "metal_charcoal")
+    _box(shell, ff, r0, r1, -0.30, 0.0, 0.0, top, "plastic_black")
     for a, b, z0, z1 in ((r0 + 0.3, r0 + 1.1, 0.4, 2.6), (r1 - 1.3, r1 - 0.4, 1.0, 3.2)):
         _box(trim, ff, a, b, -0.03, 0.05, z0, z1, "leaf_light", "leaf_top")
     return s0, s1
 
 
 def _street_planters(trim, ff, t_door):
-    """玄関の左右、歩道側の植え込み（黒いプランターに低木と赤い花）。"""
-    for a, b in ((t_door - 7.6, t_door - 3.6), (t_door + 3.6, t_door + 5.6)):
+    """玄関の左右、歩道側の植え込み（黒いプランターに低木と赤い花）。
+
+    左は凹んだ壁の前から風除室の脇まで（石と黒い壁の前）、右は風除室の脇から階段室の手前まで。
+    """
+    wo = entrances.STANDARD["WO"]
+    core_t = ff[3] - CORE_S
+    for a, b in ((FRONT_BROWN, t_door - wo - 0.1), (t_door + wo + 0.1, core_t)):
         a = max(0.05, a)
         if b - a < 0.8:
             continue
@@ -336,27 +340,15 @@ def _roof_terrace(trim, ff, core_t, h):
         _box(trim, ff, a, b, d0, d1, h + 0.10, h + 0.45, "deck_wood")
 
 
-def _nameplate(mb, dr):
-    """銘板「葛飾コミュニティハウス」。道路際の自立サイン（台座 + 白い板 + 濃色の帯）。
+def _nameplate(mb, ff):
+    """銘板「葛飾コミュニティハウス」。左の植え込みの中、割肌の石の前に立つ白い角柱と、
+    その上部の濃い小さな板。位置は玄関面の割り付け（FRONT_*）に付く。
 
     大学名も大学色（tus_green）も使わない。運営は共立メンテナンスであって大学ではない。
     """
-    def box(s0, s1, d0, d1, z0, z1, mat, top=None, bottom=None):
-        poly = [entrances.local(dr, s0, d0), entrances.local(dr, s1, d0),
-                entrances.local(dr, s1, d1), entrances.local(dr, s0, d1)]
-        mb.add_prism(poly, z0, z1, mat, top, bottom)
-
-    s = -(dr["WO"] + entrances.SIGN_S)
-    d = dr["D"] + entrances.SIGN_D
-    box(s - 1.10, s + 1.10, d - 0.30, d + 0.30, 0.0, 0.42,
-        "stone_dark", "stone_light", None)
-    for sg in (-1.0, 1.0):
-        box(s + sg * 0.95, s + sg * 1.05, d - 0.10, d + 0.10, 0.42, 2.30,
-            "concrete_light", "concrete_light", "concrete_light")
-    box(s - 1.05, s + 1.05, d - 0.07, d + 0.07, 1.00, 2.30,
-        "sign_plate", "sign_plate", "sign_plate")
-    box(s - 1.05, s + 1.05, d - 0.09, d + 0.09, 1.00, 1.32,
-        "metal_charcoal", "metal_charcoal", "metal_charcoal")
+    tc = 0.5 * (FRONT_RECESS + FRONT_STONE) + 0.10
+    _box(mb, ff, tc - 0.21, tc + 0.21, 0.25, 0.75, 0.0, 1.20, "sign_plate")
+    _box(mb, ff, tc - 0.15, tc + 0.15, 0.75, 0.78, 0.96, 1.14, "metal_charcoal")
 
 
 def build_exterior(dorm, shell=None, trim=None):
@@ -446,9 +438,9 @@ def build_exterior(dorm, shell=None, trim=None):
                    h, PARAPET_H, "dorm_white")
     _roof_terrace(trim, ff, core_t, h)
 
-    # --- 玄関（キャンパスの他の棟と同じ「入れる扉」。紺の風除室 + ガラス両開き + 庇） ---
+    # --- 玄関（キャンパスの他の棟と同じ「入れる扉」。紺の浅い風除室 + ガラス両開き。庇は壁の帯） ---
     entrances.build_one(trim, dr)
-    _nameplate(trim, dr)
+    _nameplate(trim, ff)
     _street_planters(trim, ff, t_door)
 
     return shell, trim, dict(levels=lv, gf=gf, up=up, height=h,

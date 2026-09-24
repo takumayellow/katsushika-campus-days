@@ -205,7 +205,9 @@ def build_one(mb, dr):
     _box(mb, dr, -W, W, df - 0.07, df + 0.02, fz1 - 0.12, fz1, "metal_white")
     _box(mb, dr, -W, W, df - 0.07, df + 0.02, fz0, fz0 + 0.20, "metal_white")
 
-    # 庇: 白い板に紺の鼻先。庇裏の手前側に照明の帯
+    # 庇: 白い板に紺の鼻先。庇裏の手前側に照明の帯。CANOPY=False の扉は壁の帯が庇を兼ねる
+    if not dr.get("CANOPY", True):
+        return
     _box(mb, dr, -dr["CAN_S"], dr["CAN_S"], -BURY, dr["CAN_D"], HT, HT + dr["CAN_T"],
          "wall_accent_navy", top="metal_white", bottom="metal_white")
     _ceiling(mb, dr, -(W + 0.4), W + 0.4, D + 0.25, dr["CAN_D"] - 0.35, HT - 0.005,
