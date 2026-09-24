@@ -49,7 +49,7 @@ namespace KCD.Tests
         };
 
         /// <summary>言語を切り替えて本文を作り、PlayerPrefs の言語設定を元に戻す。</summary>
-        private static string TextIn(string locale)
+        internal static string TextIn(string locale)
         {
             bool hadKey = PlayerPrefs.HasKey(L.PrefKey);
             string savedPref = hadKey ? PlayerPrefs.GetString(L.PrefKey) : null;
