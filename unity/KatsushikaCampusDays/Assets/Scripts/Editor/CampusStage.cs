@@ -31,6 +31,8 @@ namespace KCD.Editor
             {
                 DressCampus(_campus);
                 BuildBasinKeepout(root);
+                // 照明柱の夜の明かり (#8)。光だまりを地面へ落とすので、当たり判定を付けたあとに置く。
+                StreetLampStage.Build(root, _campus);
             }
 
             GameObject trees = PlaceModel(EditorPaths.TreesFbx, "Trees", root);
