@@ -151,7 +151,7 @@ namespace KCD
             if (Time.unscaledTime - _npcRefreshedAt > 1.5f)
             {
                 _npcRefreshedAt = Time.unscaledTime;
-                _npcs = FindObjectsByType<NPCTalker>(FindObjectsSortMode.None);
+                _npcs = FindObjectsByType<NPCTalker>(FindObjectsInactive.Exclude);
             }
 
             int used = 0;

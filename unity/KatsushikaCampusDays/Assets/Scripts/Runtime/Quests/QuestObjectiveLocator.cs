@@ -175,11 +175,11 @@ namespace KCD
             }
 
             _refreshedAt = Time.unscaledTime;
-            _npcs = Object.FindObjectsByType<NPCTalker>(FindObjectsSortMode.None);
-            _entrances = Object.FindObjectsByType<EntranceTrigger>(FindObjectsSortMode.None);
-            _zones = Object.FindObjectsByType<VisitZone>(FindObjectsSortMode.None);
-            _items = Object.FindObjectsByType<CollectableItem>(FindObjectsSortMode.None);
-            _props = Object.FindObjectsByType<PropInteractable>(FindObjectsSortMode.None);
+            _npcs = Object.FindObjectsByType<NPCTalker>(FindObjectsInactive.Exclude);
+            _entrances = Object.FindObjectsByType<EntranceTrigger>(FindObjectsInactive.Exclude);
+            _zones = Object.FindObjectsByType<VisitZone>(FindObjectsInactive.Exclude);
+            _items = Object.FindObjectsByType<CollectableItem>(FindObjectsInactive.Exclude);
+            _props = Object.FindObjectsByType<PropInteractable>(FindObjectsInactive.Exclude);
         }
 
         private static bool Nearest<T>(

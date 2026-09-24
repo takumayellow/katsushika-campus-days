@@ -132,7 +132,7 @@ namespace KCD
         {
             PlayWave();
             AudioManager.Instance?.PlaySe("wave");
-            NPCWander[] npcs = FindObjectsByType<NPCWander>(FindObjectsSortMode.None);
+            NPCWander[] npcs = FindObjectsByType<NPCWander>(FindObjectsInactive.Exclude);
             _npcPositions.Clear();
             foreach (NPCWander npc in npcs)
             {

@@ -25,7 +25,7 @@ namespace KCD
             Animator target = null;
             Transform head = null;
             float bestScore = float.MaxValue;
-            foreach (Animator animator in Object.FindObjectsByType<Animator>(FindObjectsSortMode.None))
+            foreach (Animator animator in Object.FindObjectsByType<Animator>(FindObjectsInactive.Exclude))
             {
                 if (!animator.isHuman || !animator.gameObject.activeInHierarchy)
                 {

@@ -163,7 +163,7 @@ namespace KCD
 
             if (!float.IsNaN(_titleYaw))
             {
-                foreach (Transform t in FindObjectsByType<Transform>(FindObjectsSortMode.None))
+                foreach (Transform t in FindObjectsByType<Transform>(FindObjectsInactive.Exclude))
                 {
                     if (t.name == "Facing")
                     {
@@ -270,7 +270,7 @@ namespace KCD
             if (hide != null)
             {
                 int hidden = 0;
-                foreach (Renderer renderer in FindObjectsByType<Renderer>(FindObjectsSortMode.None))
+                foreach (Renderer renderer in FindObjectsByType<Renderer>(FindObjectsInactive.Exclude))
                 {
                     if (SmokeProbe.Path(renderer.transform).Contains(hide))
                     {
@@ -288,7 +288,7 @@ namespace KCD
             }
 
             int count = 0;
-            foreach (SkinnedMeshRenderer renderer in FindObjectsByType<SkinnedMeshRenderer>(FindObjectsSortMode.None))
+            foreach (SkinnedMeshRenderer renderer in FindObjectsByType<SkinnedMeshRenderer>(FindObjectsInactive.Exclude))
             {
                 if (renderer.name.EndsWith("_outline", StringComparison.Ordinal))
                 {
@@ -308,7 +308,7 @@ namespace KCD
         {
             PlayerController player = FindAnyObjectByType<PlayerController>();
             NPCTalker target = null;
-            foreach (NPCTalker talker in FindObjectsByType<NPCTalker>(FindObjectsSortMode.None))
+            foreach (NPCTalker talker in FindObjectsByType<NPCTalker>(FindObjectsInactive.Exclude))
             {
                 if (talker.NpcId == npcId)
                 {
@@ -381,7 +381,7 @@ namespace KCD
         {
             Transform best = null;
             matches = 0;
-            foreach (Transform t in FindObjectsByType<Transform>(FindObjectsSortMode.None))
+            foreach (Transform t in FindObjectsByType<Transform>(FindObjectsInactive.Exclude))
             {
                 if (!t.name.StartsWith(prefix, StringComparison.Ordinal))
                 {
@@ -447,7 +447,7 @@ namespace KCD
         {
             PlayerController player = FindAnyObjectByType<PlayerController>();
             NPCTalker target = null;
-            foreach (NPCTalker talker in FindObjectsByType<NPCTalker>(FindObjectsSortMode.None))
+            foreach (NPCTalker talker in FindObjectsByType<NPCTalker>(FindObjectsInactive.Exclude))
             {
                 if (talker.NpcId == npcId)
                 {
