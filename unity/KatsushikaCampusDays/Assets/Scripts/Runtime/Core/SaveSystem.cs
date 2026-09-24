@@ -247,7 +247,7 @@ namespace KCD
             manager.SyncAchievementsQuietly();
         }
 
-        /// <summary>見た目・時計・位置・屋内を今のシーンに当てる。</summary>
+        /// <summary>見た目・時計・位置・屋内・拾い物を今のシーンに当てる。</summary>
         private static void ApplyToScene(SaveData data)
         {
             // キャンパスの中からのロード（F9 / ポーズ）では PlayerAppearance.Awake はとっくに終わっている。
@@ -268,6 +268,11 @@ namespace KCD
             }
 
             Place(data);
+
+            // キャンパスの中からのロードはシーンを読み直さないので、拾い物の Start は走らない。
+            // DayStats は拾う前に戻っているので、セーブのあとに拾った隠しアイテムをワールドに出し直す (#106)。
+            // 案内の矢印が出し直した物を見つけられるよう、Invalidate より先にそろえる。
+            CollectableItem.SyncAllWithDayStats();
             QuestObjectiveLocator.Invalidate();
         }
 
