@@ -68,11 +68,18 @@ namespace KCD
         /// <summary>rewardType がこれなら、達成時に rewardId の称号を得る。</summary>
         public const string RewardAchievement = "achievement";
 
+        /// <summary>rewardType がこれなら、達成時に rewardId の収集物（collectibles.json の source = quest）をもらう。</summary>
+        public const string RewardCollectible = "collectible";
+
         public string Id = string.Empty;
         public string Title = string.Empty;
         public string Summary = string.Empty;
         public int Order;
         public bool AutoStart;
+
+        /// <summary>サブクエストか（JSON の side）。称号「本編を歩き切った」(ach_main_story) は本編だけを数える。</summary>
+        public bool Side;
+
         public string RewardText = string.Empty;
 
         /// <summary>報酬の種類（collectible / achievement）。空なら RewardText だけ。</summary>
@@ -128,6 +135,7 @@ namespace KCD
                 Summary = MiniJson.GetString(node, "summary"),
                 Order = MiniJson.GetInt(node, "order", 999),
                 AutoStart = MiniJson.GetBool(node, "autoStart"),
+                Side = MiniJson.GetBool(node, "side"),
                 RewardText = MiniJson.GetString(node, "rewardText"),
                 RewardType = MiniJson.GetString(node, "rewardType"),
                 RewardId = MiniJson.GetString(node, "rewardId"),

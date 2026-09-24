@@ -101,6 +101,9 @@ namespace KCD
 
             manager.Quests?.Restore(data.Quests);
 
+            // 読み込んだ進行で取れている称号は、ロードの時点で黙って獲得済みにする（トーストを並べない）。
+            manager.SyncAchievementsQuietly();
+
             var player = UnityEngine.Object.FindAnyObjectByType<PlayerController>();
             if (player != null)
             {

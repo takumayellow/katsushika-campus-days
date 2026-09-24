@@ -309,11 +309,8 @@ namespace KCD
                 hud.ShowToast(quest.RewardText);
             }
 
-            if (quest.RewardType == QuestData.RewardAchievement && !string.IsNullOrEmpty(quest.RewardId))
-            {
-                hud.ShowToast(L.Format("ui.hud.achievement_unlocked",
-                    L.Get("ach." + quest.RewardId + ".name", quest.RewardId)));
-            }
+            // 報酬の称号（rewardType = achievement）のトーストは GameManager が AchievementBook の判定で出す。
+            // ここでも出すと、同じ称号が 2 回流れる。
         }
 
         private void Refresh()

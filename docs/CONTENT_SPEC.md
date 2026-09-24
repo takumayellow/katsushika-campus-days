@@ -78,19 +78,21 @@ Assets/Data/Ending       → Assets/Resources/KCD/Ending
 | `condition.type` | 追加キー | 達成判定 |
 |------------------|----------|----------|
 | `collect_count` | `value` | `source == "hidden"` の入手数 ≥ value |
-| `rarity_count` | `rarity`, `value` | 指定レア度の入手数 ≥ value |
-| `photo_count` | `value` | 撮影済み写真スポット数 ≥ value |
-| `building_count` | `value` | `ReportEnter` を受けた建物の種類数 ≥ value |
-| `npc_count` | `value` | `ReportTalk` を受けた NPC の種類数 ≥ value |
-| `quest_count` | `value` | 達成クエスト数 ≥ value（メイン 7 + サブ 6 = 13） |
+| `rarity_count` | `rarity`, `value` | 指定レア度の入手数 ≥ value（クエストの報酬も数える） |
+| `photo_count` | `value` | 撮影済み写真スポット数 ≥ value（`photo_spots` に載った `ps_*` だけ） |
+| `building_count` | `value` | 入った建物の種類数 ≥ value（寮は数えない） |
+| `npc_count` | `value`, `npcs` | 話しかけた NPC のうち `npcs` に載った者の種類数 ≥ value。`npcs` を省くと全員を数える |
+| `quest_count` | `value`, `scope` | 達成クエスト数 ≥ value（メイン 7 + サブ 6 = 13）。`scope: "main"` なら `side: true` のクエストを数えない |
 | `quest_complete` | `value`(quest id) | そのクエストが達成済み |
+
+`value` は 1 以上にする（0 以下は満たさない扱い）。数の条件は、集められる数（`Ending/result.json` の `totals`）を超えない（`ResultTotalsTests`）。
 
 ### Unity 側
 
 - **`CollectibleCatalog`**（static / ScriptableObject 不要）: `Resources.Load<TextAsset>("KCD/Collectibles/collectibles")` を parse。`Get(id)`, `Hidden`, `PhotoSpots`, `Achievements`。
 - **`CollectibleSpawner`**（シーン内 MonoBehaviour、`CampusProps` の後に実行）: `source == "hidden"` ごとに `CollectableItem` プレハブを生成し `ItemId = id`。屋外は `(x, NavMesh y, z)`、屋内は `Interiors` ルート配下の `poi_*` Transform の position。既に入手済み（セーブ）の id は生成しない。写真スポットは `VisitZone` を生成し `PlaceId = ps_*`（半径 2.5 m）、地面に三脚マークの Decal/Quad を置く。
 - **`PhotoSystem`**: 写真スポット VisitZone 内で `E`（`ui.interact.photo`）を押すと `look_dir` へカメラ補間 → 撮影 SE → `ui.hud.photo_taken` トースト → `AchievementSystem.NotifyPhoto(id)`。`ReportVisit(ps_*)` は入っただけで発火させる（サブクエ用）。
-- **`AchievementSystem`**: `QuestSystem` / `CollectableItem` / `EntranceTrigger` / `NPCTalker` / `PhotoSystem` からの通知を集計し、`condition` を満たしたら `ui.hud.achievement_unlocked` トースト。状態は `SaveSystem` に `collected[]`, `photos[]`, `achievements[]`, `enteredBuildings[]`, `talkedNpcs[]` を追加して保存。
+- **`AchievementBook`**（`GameManager.Achievements`）: `DayStats`（`CollectableItem` / `EntranceTrigger` / `NPCTalker` / `PhotoSystem` が記録する）と `QuestSystem` の達成から `condition` を判定し、新しく満たしたものを `ui.hud.achievement_unlocked` トーストで知らせる。`GameManager` はクエストの `Changed` か `DayStats.Version` が変わったフレームだけ数え直す。報酬が収集物のクエスト（`rewardType: "collectible"`）の `rewardId` は、達成したときに `QuestRewards` が `DayStats` に拾った物として記録する。称号と `DayStats` はまだセーブに載らない（起動中のみ。ロード直後は読み込んだ進行で取れている称号をトーストを出さずに獲得済みにする）。
 
 ---
 
@@ -104,7 +106,7 @@ Assets/Data/Ending       → Assets/Resources/KCD/Ending
 | `steps[].text_en` | string | 英語 |
 | `side` | bool | true = サブクエスト（クエストログで `ui.questlog.side` バッジ） |
 | `rewardType` | `"collectible"` \| `"achievement"` | 達成時に付与する報酬の種類 |
-| `rewardId` | string | `c_*` または `ach_*`。collectible なら `CollectibleCatalog` の `source: "quest"` の品をインベントリへ、achievement なら `AchievementSystem.Unlock(id)`（`quest_complete` 条件と同義）。 |
+| `rewardId` | string | `c_*` または `ach_*`。collectible なら `CollectibleCatalog` の `source: "quest"` の品を `DayStats` に記録（`QuestRewards`）、achievement ならその称号の `condition` が `quest_complete` = このクエストになっている（`AchievementBook` が判定してトーストを出す）。 |
 | `giver` | string | 依頼主の NPC id（`prof` など）。`QuestData.FromJson` が全ステップの `QuestStep.Giver` に写す。`timeLimit > 0` のステップが時間切れで失敗したとき、この NPC に話しかけると計時がはじめから始まる（`QuestSystem.Report` の Talk 分岐）。セーブに計時は載らないので、ロード直後も同じく依頼主待ちになる。省略すると、時間切れのあと再挑戦する手段が無くなる。 |
 
 | id | order | 開始 | 前提 | ステップ | 報酬 |

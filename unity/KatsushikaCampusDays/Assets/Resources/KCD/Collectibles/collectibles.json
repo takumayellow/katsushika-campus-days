@@ -451,7 +451,13 @@
       "desc_en": "Talk to all four NPCs.",
       "condition": {
         "type": "npc_count",
-        "value": 4
+        "value": 4,
+        "npcs": [
+          "inari",
+          "kaname",
+          "sora",
+          "prof"
+        ]
       }
     },
     {
@@ -462,7 +468,8 @@
       "desc_en": "Complete all seven main quests.",
       "condition": {
         "type": "quest_count",
-        "value": 7
+        "value": 7,
+        "scope": "main"
       }
     },
     {
