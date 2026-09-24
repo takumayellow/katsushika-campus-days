@@ -25,6 +25,7 @@ namespace KCD
 
         private readonly List<GameObject> _chunks = new List<GameObject>();
         private readonly List<Mesh> _meshes = new List<Mesh>();
+        private bool _combined;
 
         public float CellSize
         {
@@ -57,11 +58,12 @@ namespace KCD
         /// <returns>まとめたメッシュの数。</returns>
         public int Combine()
         {
-            if (_chunks.Count > 0)
+            if (_combined)
             {
                 return _chunks.Count;
             }
 
+            _combined = true;
             var groups = new Dictionary<string, List<MeshRenderer>>();
             var order = new List<string>();
             var unmerged = new List<string>();
@@ -153,7 +155,20 @@ namespace KCD
             chunk.layer = first.gameObject.layer;
             chunk.transform.SetParent(transform, false);
 
-            Mesh mesh = MergeMeshes(members, chunk.transform.worldToLocalMatrix);
+            Mesh mesh;
+            try
+            {
+                mesh = MergeMeshes(members, chunk.transform.worldToLocalMatrix);
+            }
+            catch (System.Exception e)
+            {
+                // まとめ損ねたマスは元の木を 1 本ずつ描いたままにする。ほかのマスはまとめ続ける。
+                DestroyObject(chunk);
+                Debug.LogWarning(string.Format(
+                    "TreeChunkCombiner: {0} をまとめられず、{1} 本を 1 本ずつ描く: {2}", name, members.Count, e.Message), this);
+                return;
+            }
+
             mesh.name = chunk.name;
             _meshes.Add(mesh);
 
@@ -162,6 +177,8 @@ namespace KCD
             target.sharedMaterials = first.sharedMaterials;
             target.shadowCastingMode = first.shadowCastingMode;
             target.receiveShadows = first.receiveShadows;
+            target.lightProbeUsage = first.lightProbeUsage;
+            target.reflectionProbeUsage = first.reflectionProbeUsage;
             _chunks.Add(chunk);
 
             foreach (MeshRenderer renderer in members)

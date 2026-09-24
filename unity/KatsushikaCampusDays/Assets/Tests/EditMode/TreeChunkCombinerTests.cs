@@ -128,6 +128,19 @@ namespace KCD.Tests
             Assert.AreEqual(2, _root.transform.childCount, "まとめたメッシュが増えた（木 1 本とまとめたメッシュ 1 つのはず）");
         }
 
+        [Test]
+        public void まとめられる木が無くても二度目は警告を繰り返さない()
+        {
+            MeshRenderer odd = AddTree("odd", Triangles(1), Vector3.zero, Vector3.one);
+            odd.sharedMaterials = new Material[2];
+
+            TreeChunkCombiner combiner = _root.AddComponent<TreeChunkCombiner>();
+            LogAssert.Expect(LogType.Warning, new Regex("TreeChunkCombiner: 1 個"));
+            Assert.AreEqual(0, combiner.Combine());
+            Assert.AreEqual(0, combiner.Combine());
+            LogAssert.NoUnexpectedReceived();
+        }
+
         private MeshRenderer AddTree(string name, Mesh mesh, Vector3 position, Vector3 scale)
         {
             var tree = new GameObject(name);
