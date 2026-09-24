@@ -13,10 +13,11 @@ footprint・高さ・階数・玄関はすべて ``data/osm/route.json`` の ``d
 
 外観の構成（下から）
 --------------------
-* 1 階: 基壇。玄関面は素材を切り替えた壁、東北東面は茶色いパネルの壁。
+* 1 階: 基壇。玄関面は素材を切り替えた壁、東北東面は階段室の脇の茶色い付属棟と暗い灰色の壁。
 * 2〜5 階: 玄関面（南南東）と東北東面は奥行き BALC_D のバルコニー。2 階は濃いタイルの
   腰壁、3〜5 階は型板ガラスの手すり、各階の床スラブの白い小口が横しまになる。
-  裏側（西南西・北北西）は白い壁に小さな窓。
+  裏側（西南西・北北西）は白い壁に居室ごとの縦長の窓。北北西面の奥の階段・エレベーターの
+  区間と屋上の塔屋は、屋内（dorm_interior.py）の間取りにそろえる。
 * 角 F: 屋上より少し高い、小口タイル張りの階段室。
 * 屋上: 陸屋根。玄関面の上はウッドデッキのテラス（ガラス手すり・塔屋・ベンチ・植栽）。
 
@@ -82,6 +83,23 @@ FRONT_STONE = 4.60
 # 乗り上げ、天端 0.12 m の段差が車道を横切る。実測した「車道に触れない上限」は 3.069 m。
 # キャンパス 9 棟は entrances.STANDARD を共有しているので、そちらは触らず寮だけ上書きする。
 DOOR_APRON_D = 2.80
+
+# 東北東面 1 階: 階段室の脇の茶色い付属棟（写真で本体の前へ張り出した別の箱）。その先は
+# 暗い灰色の基壇。付属棟の長さは写真の遠近から読めないので推定。
+ANNEX_L = 6.00
+ANNEX_D = 1.50
+
+# 屋内（kcd_route/dorm_interior.py）の間取りに外壁をそろえる位置。建物ローカル
+# （原点 = 玄関の点、x = 玄関から奥を見て右、y = 奥）で持ち、_t_of で辺の t に直す。
+STAIR_X = (4.60, 6.80)      # 奥の階段（鉄扉 x 5.60）
+EV_X = (-2.90, 2.70)        # エレベーター 2 基とその機械
+EV_Y = 38.00                # 屋上の塔屋の手前の端（奥の辺からおよそ 4 m）
+BATH_Y = (27.00, 34.40)     # 1 階の大浴場（西）
+KITCHEN_Y = (24.60, 28.80)  # 1 階の厨房（東）
+
+# 裏の 2〜5 階の居室の窓（1 室に 1 つ、縦長）
+ROOM_WIN = dict(wall="dorm_white", glass="glass_dark",
+                seg=3.0, sill=0.90, header=0.55, inset=0.20, mullion=1.70)
 
 
 # --------------------------------------------------------------------------- #
@@ -218,6 +236,97 @@ def _run(mb, loop, i, t0, t1, z0, floor_h, f0, f1, **kw):
     fr = _edge_frame(loop, i)
     rect = [_pt(fr, t0, 0.0), _pt(fr, t1, 0.0), _pt(fr, t1, -1.0), _pt(fr, t0, -1.0)]
     facade.add_facade(mb, rect, z0, floor_h, f0, f1, edges=[0], **kw)
+
+
+def _t_of(dorm, fr, x, y):
+    """建物ローカル (x, y)（屋内と同じ座標）が辺 fr のどの t に当たるか。"""
+    origin, n, _ = entrance_of(dorm)
+    p = (origin[0] - n[1] * x - n[0] * y, origin[1] + n[0] * x - n[1] * y)
+    return geom.dot(geom.sub(p, fr[0]), fr[1])
+
+
+def _span(dorm, fr, x0, y0, x1, y1):
+    """建物ローカルの 2 点を辺 fr の t に直し、小さい順に返す。"""
+    return tuple(sorted((_t_of(dorm, fr, x0, y0), _t_of(dorm, fr, x1, y1))))
+
+
+def _downpipe(mb, fr, t, z1):
+    """外壁に沿って下りる竪樋（上下の抜けた角パイプ。背面は壁に付くので張らない）。"""
+    def v(tt, d, z):
+        x, y = _pt(fr, tt, d)
+        return (x, y, z)
+    t0, t1, d0, d1 = t - 0.06, t + 0.06, 0.03, 0.15
+    mb.add_quad(v(t0, d1, 0.0), v(t1, d1, 0.0), v(t1, d1, z1), v(t0, d1, z1), "metal_grey")
+    mb.add_quad(v(t1, d1, 0.0), v(t1, d0, 0.0), v(t1, d0, z1), v(t1, d1, z1), "metal_grey")
+    mb.add_quad(v(t0, d0, 0.0), v(t0, d1, 0.0), v(t0, d1, z1), v(t0, d0, z1), "metal_grey")
+
+
+def _side_ground(shell, trim, fs, dorm, top1):
+    """東北東面の 1 階: 階段室の脇の茶色い付属棟、その先の暗い灰色の基壇と厨房の勝手口。"""
+    a1 = CORE_U + ANNEX_L
+    # 付属棟。階段室に当たる端は抜く
+    _box_open(shell, fs, CORE_U, a1, -ANNEX_D, 0.0, 0.0, top1, "panel_brown", "t0")
+    # その先は基壇（footprint から CORE_IN 内側）に暗い灰色の石調を貼る。角 A の柱は
+    # 裏の辺の 1 階の外壁と同じ平面なので、その端を抜く
+    _pane(trim, fs, a1, fs[3] - CORE_IN, -CORE_IN + 0.01, 0.0, top1, "stone_dark")
+    _box_open(shell, fs, fs[3] - CORE_IN, fs[3], -CORE_IN, 0.0, 0.0, top1, "stone_dark", "t1")
+    # 厨房の勝手口（鉄扉）と換気ガラリ
+    k0, k1 = _span(dorm, fs, 8.0, KITCHEN_Y[0], 8.0, KITCHEN_Y[1])
+    _pane(trim, fs, k0 + 0.60, k0 + 1.50, -CORE_IN + 0.02, 0.0, 2.10, "metal_charcoal")
+    _pane(trim, fs, k1 - 1.60, k1 - 0.60, -CORE_IN + 0.02, 1.60, 2.40, "metal_grey")
+    # 付属棟の前の自販機（銘柄・ロゴは入れない）
+    _box(trim, fs, CORE_U + 1.00, CORE_U + 2.00, 0.10, 0.85, 0.0, 1.83, "vending_blue",
+         "metal_white")
+
+
+def _rear_walls(shell, trim, loop, dorm, rear, side, front, gf, up, lv, h):
+    """裏の 4 辺（西南西・北北西）の 1 階と 2 階以上、竪樋、北北西端の屋上の塔屋。
+
+    * 2 階以上は居室ごとに縦長の窓 1 つ（ROOM_WIN）。
+    * 北北西面は屋内の奥の階段に当たる区間を縦長のスリット窓、エレベーターの区間を窓の無い
+      壁、残りを廊下の突き当たりの窓にする。
+    * 西南西面の 1 階の大浴場に当たる区間は腰の高い型板ガラスの高窓。
+    """
+    n = len(loop)
+    nnw = (side + 1) % n                                    # 角 A から始まる北北西面
+    for i in rear:
+        fr = _edge_frame(loop, i)
+        L = fr[3]
+        # 1 階
+        cuts = [0.0, L]
+        if i != nnw:
+            b0, b1 = _span(dorm, fr, -8.0, BATH_Y[0], -8.0, BATH_Y[1])
+            if b1 - b0 > 1.0 and b1 > 0.5 and b0 < L - 0.5:
+                cuts = [0.0, max(0.0, b0), min(L, b1), L]
+        for k in range(len(cuts) - 1):
+            bath = len(cuts) == 4 and k == 1
+            _run(shell, loop, i, cuts[k], cuts[k + 1], 0.0, gf, 0, 1,
+                 wall="dorm_white", glass="glass_frosted" if bath else "glass_dark",
+                 seg=3.2, sill=1.80 if bath else 1.20, header=1.20, inset=0.20,
+                 mullion=2.00)
+        # 2 階以上
+        t0 = BALC_D if i == nnw else 0.0                    # 東北東面のバルコニーの妻
+        t1 = L - BALC_D if (i + 1) % n == front else L      # 玄関面のバルコニーの妻
+        if i != nnw:
+            _run(shell, loop, i, t0, t1, gf, up, 0, lv - 1, **ROOM_WIN)
+            continue
+        c = sum(_span(dorm, fr, STAIR_X[0], 40.0, STAIR_X[1], 40.0)) * 0.5
+        e1 = _span(dorm, fr, EV_X[0], 40.0, EV_X[1], 40.0)[1]
+        _pane(shell, fr, t0, c - 0.60, 0.0, gf, h, "dorm_white")
+        _run(shell, loop, i, c - 0.60, c + 0.60, gf, up, 0, lv - 1, wall="dorm_white",
+             glass="glass_dark", seg=9.0, sill=0.30, header=0.30, inset=0.20, mullion=0.60)
+        _pane(shell, fr, c + 0.60, e1, 0.0, gf, h, "dorm_white")
+        _run(shell, loop, i, e1, t1, gf, up, 0, lv - 1, **ROOM_WIN)
+        # 屋上の塔屋（エレベーターの機械と階段の出口）。奥の辺から EV_Y まで
+        p = geom.sub(_pt(_edge_frame(loop, side), _t_of(dorm, _edge_frame(loop, side),
+                                                         8.0, EV_Y), 0.0), fr[0])
+        _box(trim, fr, t0 - 0.10, e1, geom.dot(p, fr[2]), -0.60, h, h + 2.90,
+             "dorm_white", "concrete_light")
+    # 竪樋: 北北西面の西の角と、西南西面の南の端
+    _downpipe(trim, _edge_frame(loop, (nnw + 1) % n), 0.40, h + PARAPET_H - 0.10)
+    last = [i for i in rear if (i + 1) % n == front][0]
+    fr = _edge_frame(loop, last)
+    _downpipe(trim, fr, fr[3] - BALC_D - 0.40, h + PARAPET_H - 0.10)
 
 
 def _balconies(mb, fr, t0, t1, z_floors):
@@ -401,27 +510,11 @@ def build_exterior(dorm, shell=None, trim=None):
 
     # --- 1 階 ---
     _front_ground(shell, trim, ff, t_door, dr, core_t, top1)
-    # 角 A の端は裏の辺の外壁と同じ平面なので、パネルは端を抜き、幅木は 2 cm 手前で止める
-    _box_open(shell, fs, CORE_U, fs[3], -0.30, 0.0, 0.0, top1, "panel_brown", "t1")
-    _box(trim, fs, CORE_U, fs[3] - 0.02, -0.30, 0.02, 0.0, 0.25, "concrete_dark")
-    t = CORE_U + 3.6
-    while t < fs[3] - 0.5:
-        _box(trim, fs, t - 0.015, t + 0.015, -0.02, 0.015, 0.25, top1 - 0.10, "concrete_dark")
-        t += 3.6
-    for i in rear:
-        _run(shell, loop, i, 0.0, _edge_frame(loop, i)[3], 0.0, gf, 0, 1,
-             wall="dorm_white", glass="glass_dark",
-             seg=3.2, sill=1.20, header=1.20, inset=0.20, mullion=2.00)
+    _side_ground(shell, trim, fs, dorm, top1)
 
-    # --- 2 階以上 ---
+    # --- 裏の 4 辺（1 階・2 階以上・竪樋・北北西端の塔屋） ---
     z_floors = [gf + up * k for k in range(lv - 1)]
-    for i in rear:
-        L = _edge_frame(loop, i)[3]
-        t0 = BALC_D if i == (side + 1) % n else 0.0         # 東北東面のバルコニーの妻
-        t1 = L - BALC_D if (i + 1) % n == front else L      # 玄関面のバルコニーの妻
-        _run(shell, loop, i, t0, t1, gf, up, 0, lv - 1,
-             wall="dorm_white", glass="glass_dark",
-             seg=3.0, sill=1.00, header=0.95, inset=0.20, mullion=1.85)
+    _rear_walls(shell, trim, loop, dorm, rear, side, front, gf, up, lv, h)
     # バルコニーの妻壁（両端。footprint の角 E・A にかかる）。幅は裏の本体の下げ CORE_IN と
     # そろえ、本体との間にすき間を作らない。1 階の天端〜2 階の床は裏の辺の 1 階の外壁と
     # 同じ平面に乗るので、その端を抜く
