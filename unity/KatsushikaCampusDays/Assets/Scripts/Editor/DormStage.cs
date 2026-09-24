@@ -180,6 +180,7 @@ namespace KCD.Editor
             AddSafetyFloor(interior.transform, bounds);
             AddLights(interior.transform, bounds);
             SeatFactory.PlaceInterior(interior.transform, DormRoute.Id);
+            InteriorBackdropStage.Build(interior.transform, DormRoute.Id, bounds);
 
             Transform spawn = Find(interior.transform, SpawnEmpty);
             Transform exit = Find(interior.transform, ExitEmpty);
@@ -221,17 +222,22 @@ namespace KCD.Editor
 
                 GameObject go = filter.gameObject;
                 string id = go.name.ToLowerInvariant();
-                // 観葉植物の葉は当たり判定から外す（#30）。
-                CampusStage.AttachMeshCollider(go, filter.sharedMesh,
-                    CampusStage.ColliderAssetPath(interior.name, go.name));
+                // 観葉植物の葉は当たり判定から外す（#30）。窓の外の近景 ext_* は描くだけ（#60）。
+                if (!InteriorStage.IsExteriorDressing(go.name))
+                {
+                    CampusStage.AttachMeshCollider(go, filter.sharedMesh,
+                        CampusStage.ColliderAssetPath(interior.name, go.name));
+                }
+
                 go.layer = id.StartsWith("floor") && groundLayer >= 0
                     ? groundLayer
                     : buildingLayer >= 0 ? buildingLayer : go.layer;
                 GameObjectUtility.SetStaticEditorFlags(go, StaticEditorFlags.BatchingStatic
                     | StaticEditorFlags.OccluderStatic | StaticEditorFlags.OccludeeStatic);
 
+                // 窓の外の近景 ext_* は AABB に入れない（InteriorStage.Dress と同じ, #60）。
                 Renderer renderer = go.GetComponent<Renderer>();
-                if (renderer == null)
+                if (renderer == null || !InteriorStage.CountsAsBuilding(renderer))
                 {
                     continue;
                 }
