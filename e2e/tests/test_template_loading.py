@@ -127,6 +127,20 @@ def test_loader_404_shows_the_reload_notice(page, site):
     assert page.page_errors == []
 
 
+def test_loader_without_create_unity_instance_shows_the_reload_notice(page, site):
+    # 途中の機器（公衆無線 LAN のログイン画面など）が JavaScript の代わりに HTML を返すと、
+    # <script> の onload は来るのに createUnityInstance が無く、ReferenceError で黙って止まる。
+    page.route(f"**/Build/{LOADER_FILENAME}", lambda route: route.fulfill(
+        status=200, content_type="application/javascript",
+        body="<!DOCTYPE html><title>Wi-Fi にログイン</title>"))
+    page.goto(site, wait_until="domcontentloaded")
+    shown = wait_for_failure_notice(page)
+    assert_failure_shown(shown)
+    assert any(LOADER_FILENAME in b["text"] for b in shown["banners"]), shown["banners"]
+    # ローダーの中身の構文エラーはブラウザが出す。テンプレートからは例外を出さない。
+    assert [e for e in page.page_errors if not e.startswith("SyntaxError")] == []
+
+
 def test_rejected_load_hides_the_overlay_and_shows_the_reload_notice(page, site):
     # 以前の .catch は帯を出すだけで、「読み込み中…」の覆いがキャンバスを覆ったまま残っていた。
     open_page(page, site, "reject")

@@ -95,6 +95,25 @@
         updateBannerVisibility();
       }
 
+      // 読み込みに失敗したら「読み込み中…」の覆いを畳み、再読み込みの案内を赤い帯で出す (#102)。
+      // 覆いが残るとまだ読み込んでいるように見え、英語のエラーの帯だけでは何をすればよいか分からない。
+      // 失敗は次の 3 つの経路で届く。重なって届いても案内は 1 度だけ出す。
+      //   - ローダー（Build/*.loader.js）が取れない（404・通信断）: その <script> の onerror
+      //   - 途中で止まった（data / wasm の取得失敗、メモリ不足）: createUnityInstance の reject
+      //   - framework.js が取れない・壊れている: ローダーは showBanner(msg, 'error') を出すだけで
+      //     reject しないことがある（Unity 6000.6 の UnityLoader.js）
+      const loadingContainer = document.querySelector("#unity-loading-container");
+      let gameStarted = false;
+      let loadFailed = false;
+      function showLoadFailure(detail) {
+        loadingContainer.style.display = "none";
+        if (!loadFailed) {
+          loadFailed = true;
+          unityShowBanner("ゲームの読み込みに失敗しました。ページを再読み込みしてください。", 'error');
+        }
+        if (detail) unityShowBanner(detail, 'error');
+      }
+
       var buildUrl = "Build";
       var loaderUrl = buildUrl + "/{{{ LOADER_FILENAME }}}";
       // 各ファイル名は圧縮の設定（Gzip + 復元フォールバック）を含んだものがそのまま入る。
@@ -122,7 +141,11 @@
         companyName: {{{ JSON.stringify(COMPANY_NAME) }}},
         productName: {{{ JSON.stringify(PRODUCT_NAME) }}},
         productVersion: {{{ JSON.stringify(PRODUCT_VERSION) }}},
-        showBanner: unityShowBanner,
+        // 起動するまでに届いた 'error' の帯は読み込みの失敗として扱う。
+        showBanner: (msg, type) => {
+          if (type == 'error' && !gameStarted) showLoadFailure(msg);
+          else unityShowBanner(msg, type);
+        },
 
         // persistentDataPath に書いたら、その場で IndexedDB へ同期させる (#61)。
         // 指定しないと、エンジンが書き込みのあとに呼ぶ手動同期 JS_FileSystem_Sync が
@@ -194,11 +217,20 @@
         applyMobileLayout();
         var script = document.createElement("script");
         script.src = loaderUrl;
+        // ローダーが取れないと onload が来ず、進み具合もエラーも出ないまま止まる。
+        script.onerror = () => showLoadFailure(loaderUrl + " を取得できませんでした。");
         script.onload = () => {
-          const loadingContainer = document.querySelector("#unity-loading-container");
+          // 途中の機器が JavaScript の代わりに HTML（ログイン画面など）を返すと、onload は来るのに
+          // createUnityInstance が無い。そのまま呼ぶと ReferenceError で黙って止まる。
+          if (typeof createUnityInstance !== "function") {
+            showLoadFailure(loaderUrl + " を読み込めませんでした。");
+            return;
+          }
           const progressBarFull = document.querySelector("#unity-progress-bar-full");
 
           createUnityInstance(canvas, config, (progress) => {
+            // 失敗を知らせたあとも、ほかのファイルの取得は進み具合を届けてくる。覆いを出し直さない。
+            if (loadFailed) return;
             if (progress < 1) {
               loadingContainer.style.display = "flex";
               progressBarFull.style.width = 100 * progress + "%";
@@ -206,6 +238,7 @@
               loadingContainer.style.display = "none";
             }
           }).then((unityInstance) => {
+            gameStarted = true;
             document.querySelectorAll(".kcd-fullscreen").forEach((button) => {
               button.onclick = () => { unityInstance.SetFullscreen(1); focusCanvas(); };
             });
@@ -216,7 +249,7 @@
               }
             }, true);
           }).catch((message) => {
-            unityShowBanner(message, 'error');
+            showLoadFailure(message);
           });
         };
 
