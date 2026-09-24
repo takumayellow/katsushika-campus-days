@@ -6,6 +6,8 @@ from . import common, furniture as F, kit, shell
 
 CEIL = 3.30
 Z_TOP = 3.60
+# 中央通路の両わきのベンチの中心の x（中央から）。通路幅 = 2 * (INNER_X - 1.15 / 2) = 1.95 m
+INNER_X = 1.55
 
 
 def build(c):
@@ -57,16 +59,15 @@ def build(c):
         pane([(ix0, ty, CEIL), (ix1, ty, CEIL), (ridge, ty, CEIL + 0.85)],
              (0.0, inward, 0.0))
 
-    # 栽培ベンチ（左右 2 列 + 中央通路）
+    # 栽培ベンチ（外周に沿う 2 列 + 入口から奥への中央通路の両わきに 2 列）
     mb = c.furn("benches")
     length = (iy1 - iy0) - 2.2
-    for sgn in (-1, 1):
-        bx = (ix0 + ix1) * 0.5 + sgn * ((ix1 - ix0) * 0.5 - 1.15)
+    mid = (ix0 + ix1) * 0.5
+    outer = (ix1 - ix0) * 0.5 - 1.15
+    rows = [mid + d for d in (-outer, -INNER_X, INNER_X, outer)]
+    for bx in rows:
         F.greenhouse_bench(mb, bx, (iy0 + iy1) * 0.5, ang=math.pi * 0.5,
                            w=length, d=1.15, h=0.78, rng=rng)
-    # 中央の低い育苗トレー
-    F.greenhouse_bench(mb, (ix0 + ix1) * 0.5, iy1 - 2.4, ang=math.pi * 0.5,
-                       w=3.2, d=0.9, h=0.45, rng=rng)
 
     # 床置きの大鉢
     for i in range(5):
@@ -82,8 +83,7 @@ def build(c):
         ty = iy0 + 0.8 + k * ((iy1 - iy0) - 1.6) / 6.0
         kit.tube(mb, (ridge, ty, CEIL + 0.45), (ridge, ty, CEIL + 0.10),
                  0.016, "pipe_grey", seg=4)
-    for sgn in (-1, 1):
-        bx = (ix0 + ix1) * 0.5 + sgn * ((ix1 - ix0) * 0.5 - 1.15)
+    for bx in rows:
         kit.tube(mb, (bx, iy0 + 0.6, 2.10), (bx, iy1 - 0.6, 2.10), 0.03,
                  "pipe_grey", seg=5)
         for k in range(6):
@@ -120,4 +120,4 @@ def build(c):
 
     c.cam("", ((ix0 + ix1) * 0.5, iy0 + 0.9, 1.60),
           ((ix0 + ix1) * 0.5, iy1 - 1.0, 1.10), lens=16.0)
-    c.note("切妻ガラス屋根の温室（栽培ベンチ 2 列・鉢植え・灌水パイプ）")
+    c.note("切妻ガラス屋根の温室（棟木は入口の妻面から奥へ・栽培ベンチ 4 列・鉢植え・灌水パイプ）")
