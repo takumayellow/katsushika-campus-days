@@ -351,8 +351,8 @@ namespace KCD.Editor
         /// <summary>Empty の下に作る、メッシュを描く子の名前。</summary>
         public const string TreeBodyName = "body";
 
-        /// <summary>Empty の下に作る、幹の当たり判定の子の名前。</summary>
-        public const string TreeTrunkName = "trunk";
+        /// <summary>Empty の下に作る、幹の当たり判定の子の名前。カメラはこの名前の当たり判定の手前で寄る（#12）。</summary>
+        public const string TreeTrunkName = CameraObstacleFilter.TreeTrunkName;
 
         /// <summary>幹の当たり判定の半径と高さ（木の scale を掛ける前）。</summary>
         public const float TreeTrunkRadius = 0.3f;
@@ -658,7 +658,7 @@ namespace KCD.Editor
         ///
         /// 柵で囲うと不自然なので、当たり判定だけの見えない壁（BoxCollider）を水際に立てる。
         /// 隣の水面と接する辺（L 字の継ぎ目）には立てない。壁は Default レイヤーなので、カメラの遮蔽判定
-        /// （Ground|Building しか見ない ThirdPersonCamera / CinemachineDeoccluder）には
+        /// （Ground|Building と Default の幹だけを見る CinemachineCameraGuard / CameraObstacleFilter）には
         /// 引っかからず、見た目も操作感も今までどおり。
         ///
         /// 縁石（天端 0.36 m・幅 1.6 m）は腰かけたまま。壁の中心線を水際に置き、厚み 0.5 m の

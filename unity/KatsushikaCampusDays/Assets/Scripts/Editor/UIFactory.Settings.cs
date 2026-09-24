@@ -62,10 +62,16 @@ namespace KCD.Editor
             Image flash = Backdrop(flashRect, new Color(1f, 1f, 1f, 0f));
             flash.raycastTarget = false;
 
+            // 自由カメラの操作を 2 行で出す (#12)。ゲームパッドの日本語がいちばん長いので、
+            // 収まらなければ文字を小さくし、最後は … で切る（枠の外に出さない）。
             RectTransform hintRect = Rect(parent, "PhotoHint", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
-                new Vector2(0f, 56f), new Vector2(760f, 56f));
+                new Vector2(0f, 56f), new Vector2(1180f, 96f));
             Backdrop(hintRect, Panel);
-            TMP_Text hint = Label(hintRect, "Label", string.Empty, 28f, TextAlignmentOptions.Center);
+            TMP_Text hint = Label(hintRect, "Label", string.Empty, 26f, TextAlignmentOptions.Center);
+            hint.enableAutoSizing = true;
+            hint.fontSizeMin = 18f;
+            hint.fontSizeMax = 26f;
+            hint.overflowMode = TextOverflowModes.Ellipsis;
             hintRect.gameObject.SetActive(false);
 
             PhotoSystem photo = host.AddComponent<PhotoSystem>();

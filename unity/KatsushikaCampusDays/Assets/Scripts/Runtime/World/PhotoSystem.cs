@@ -21,8 +21,14 @@ namespace KCD
         [SerializeField] private Image _flash;
         [SerializeField] private float _flashTime = 0.35f;
 
+        // 入っている間は時間を止め、カメラはプレイヤーの近くを自由に動かせる（PhotoFreeCamera, #12）。
+        // E は自由カメラの上昇に使うので、撮影は Enter / Space / A / X。
+        private readonly PhotoModeState _mode = new PhotoModeState();
+
         private bool _capturing;
         private int _count;
+        private PhotoFreeCamera _freeCamera;
+        private bool _hintsForGamepad;
 
         public static PhotoSystem Instance { get; private set; }
 
@@ -45,6 +51,11 @@ namespace KCD
         private void Awake()
         {
             Instance = this;
+            _freeCamera = GetComponent<PhotoFreeCamera>();
+            if (_freeCamera == null)
+            {
+                _freeCamera = gameObject.AddComponent<PhotoFreeCamera>();
+            }
         }
 
         private void Start()
@@ -55,6 +66,17 @@ namespace KCD
                 _flash.color = new Color(1f, 1f, 1f, 0f);
                 _flash.raycastTarget = false;
             }
+        }
+
+        private void OnDisable()
+        {
+            // シーンを閉じるときなど。止めた時間と肩越しカメラを戻す（UI と PhotoMode は OnDestroy の後始末に任せる）。
+            if (_freeCamera != null)
+            {
+                _freeCamera.End();
+            }
+
+            _mode.Release();
         }
 
         private void OnDestroy()
@@ -83,7 +105,13 @@ namespace KCD
             {
                 if (KCDInput.PhotoPressed && CanEnter())
                 {
+                    _hintsForGamepad = KCDInput.PhotoPressedOnGamepad;
+                    _mode.Enter(HUD.Instance != null ? HUD.Instance.GameplayRoot : null);
                     SetActive(true);
+                    if (_freeCamera != null)
+                    {
+                        _freeCamera.Begin();
+                    }
                 }
 
                 return;
@@ -91,12 +119,23 @@ namespace KCD
 
             if (KCDInput.PhotoPressed || KCDInput.MenuPressed || KCDInput.CancelPressed)
             {
+                if (_freeCamera != null)
+                {
+                    _freeCamera.End();
+                }
+
                 SetActive(false);
+                _mode.Exit();
                 KCDInput.MarkModalClosed();
                 return;
             }
 
-            if (KCDInput.SubmitPressed || KCDInput.InteractPressed)
+            if (KCDInput.PhotoHintTogglePressed)
+            {
+                SetOverlay(_overlayRoot != null && !_overlayRoot.activeSelf);
+            }
+
+            if (KCDInput.PhotoShutterPressed)
             {
                 StartCoroutine(Capture(null));
             }
@@ -167,7 +206,7 @@ namespace KCD
 
             if (visible && _hintLabel != null)
             {
-                _hintLabel.text = L.Pick("Enter で撮影　/　P で戻る", "Enter: shoot   P: back");
+                _hintLabel.text = PhotoModeHints.Text(L.IsEnglish, _hintsForGamepad);
             }
         }
 

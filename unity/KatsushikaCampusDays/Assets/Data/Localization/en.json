@@ -138,6 +138,8 @@
     "ui.controls.quickload.key": "F9",
     "ui.controls.fullscreen": "Fullscreen",
     "ui.controls.fullscreen.key": "F",
+    "ui.controls.photo": "Photo mode",
+    "ui.controls.photo.key": "P / Y button",
     "ui.credits.heading": "Credits",
     "ui.credits.map": "Map data © OpenStreetMap contributors (ODbL)",
     "ui.credits.setting": "Setting: Tokyo University of Science, Katsushika Campus (6-3-1 Niijuku, Katsushika, Tokyo)",
