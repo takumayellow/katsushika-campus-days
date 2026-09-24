@@ -419,3 +419,156 @@ def test_no_deploy_makes_zip_even_without_stamp(fake, tmp_path):
     assert dp.main(fake.argv + ["--no-deploy"]) == 0
     assert (tmp_path / "dist" / "webgl.zip").is_file()
     assert fake.uploads == []
+
+
+# --- 配信サイズ (#70) -----------------------------------------------------
+
+# 2026-09-24 に Release web-latest の webgl.zip を展開して測った値。
+MEASURED_TOTAL = 66_468_279   # 配信する 6 ファイルの合計 = 63.39 MiB
+MEASURED_DATA = 55_476_397    # そのうち data = 52.91 MiB
+MEASURED_BUILD_DIR = 64_500_000  # #54 で build/WebGL をまるごと測った 64.5 MB
+
+
+def clean_build(tmp_path: Path, data: str = "url") -> Path:
+    return make_build(tmp_path, html=dp.stamp_html(built_index(data=data), SHA, "clean", "t"))
+
+
+def test_measured_build_is_within_limits():
+    size = dp.PayloadSize(total=MEASURED_TOTAL, data=MEASURED_DATA, files=6)
+    assert dp.size_refusal(size) is None
+    assert dp.size_refusal(dp.PayloadSize(total=MEASURED_BUILD_DIR, data=MEASURED_DATA, files=6)) is None
+
+
+def test_limits_keep_headroom_but_stay_tight():
+    # 実測より上に幅を持たせる。ただし 5 割を超えて緩めると, ふくらみに気付けない。
+    assert 1.1 * MEASURED_TOTAL <= dp.MAX_TOTAL_BYTES <= 1.5 * MEASURED_TOTAL
+    assert 1.1 * MEASURED_DATA <= dp.MAX_DATA_BYTES <= 1.5 * MEASURED_DATA
+    # data は合計より先に止まる（data の幅の方が狭い）
+    assert dp.MAX_DATA_BYTES / MEASURED_DATA < dp.MAX_TOTAL_BYTES / MEASURED_TOTAL
+
+
+def test_size_at_limit_passes():
+    size = dp.PayloadSize(total=dp.MAX_TOTAL_BYTES, data=dp.MAX_DATA_BYTES, files=6)
+    assert dp.size_refusal(size) is None
+
+
+def test_total_one_byte_over_limit_stops():
+    reason = dp.size_refusal(dp.PayloadSize(total=dp.MAX_TOTAL_BYTES + 1, data=MEASURED_DATA, files=6))
+    assert reason is not None
+    assert "合計" in reason and "data " not in reason and "--allow-oversize" in reason
+
+
+def test_data_one_byte_over_limit_stops():
+    reason = dp.size_refusal(dp.PayloadSize(total=MEASURED_TOTAL, data=dp.MAX_DATA_BYTES + 1, files=6))
+    assert reason is not None
+    assert "data " in reason and "合計" not in reason
+
+
+def test_size_refusal_reports_both_limits():
+    size = dp.PayloadSize(total=dp.MAX_TOTAL_BYTES + 1, data=dp.MAX_DATA_BYTES + 1, files=6)
+    reason = dp.size_refusal(size)
+    assert "合計" in reason and "data " in reason
+
+
+def test_size_refusal_takes_explicit_limits():
+    size = dp.PayloadSize(total=100, data=40, files=3)
+    assert dp.size_refusal(size, max_total=100, max_data=40) is None
+    assert "data " in dp.size_refusal(size, max_total=100, max_data=39)
+    assert "合計" in dp.size_refusal(size, max_total=99, max_data=40)
+
+
+def test_data_paths_read_both_forms():
+    assert dp.data_paths(built_index()) == [f"Build/{HASHES['data']}"]
+    assert dp.data_paths(built_index(data="arrays")) == PRIMARY + SECONDARY
+    assert dp.data_paths(built_index(data="none")) == []
+
+
+def test_payload_size_counts_only_zipped_files(tmp_path):
+    build = make_build(tmp_path)  # 前のビルドの残りも置く
+    (build / "Build" / HASHES["data"]).write_bytes(b"x" * 1000)
+    out = tmp_path / "webgl.zip"
+    assert dp.make_zip(build, out) == 0
+    others = (build / "index.html").stat().st_size + (build / "TemplateData" / "style.css").stat().st_size
+    size = dp.payload_size(out)
+    # zip に入らない前のビルドの残りは数えない
+    assert size == dp.PayloadSize(total=others + 1000 + 16 * 3, data=1000, files=6)
+
+
+def test_payload_size_counts_progressive_data_arrays(tmp_path):
+    build = make_build(tmp_path, html=built_index(data="arrays"))
+    out = tmp_path / "webgl.zip"
+    assert dp.make_zip(build, out) == 0
+    size = dp.payload_size(out)
+    assert size.data == 16 * len(PRIMARY + SECONDARY)
+    assert size.files == 2 + 3 + len(PRIMARY + SECONDARY)
+
+
+def test_deploy_stops_when_data_over_limit(monkeypatch, fake, tmp_path, capsys):
+    clean_build(tmp_path)
+    monkeypatch.setattr(dp, "MAX_DATA_BYTES", 15)  # テストの data は 16 バイト
+    assert dp.main(fake.argv) == 1
+    assert fake.uploads == [] and fake.dispatched == []
+    assert "data " in capsys.readouterr().err
+    # 何が大きいか調べられるよう, zip は残す
+    assert (tmp_path / "dist" / "webgl.zip").is_file()
+
+
+def test_deploy_stops_when_total_over_limit(monkeypatch, fake, tmp_path, capsys):
+    clean_build(tmp_path)
+    monkeypatch.setattr(dp, "MAX_TOTAL_BYTES", 100)
+    assert dp.main(fake.argv) == 1
+    assert fake.uploads == [] and fake.dispatched == []
+    assert "合計" in capsys.readouterr().err
+
+
+def test_deploy_stops_when_progressive_data_over_limit(monkeypatch, fake, tmp_path):
+    clean_build(tmp_path, data="arrays")
+    monkeypatch.setattr(dp, "MAX_DATA_BYTES", 16 * len(PRIMARY + SECONDARY) - 1)
+    assert dp.main(fake.argv) == 1
+    assert fake.uploads == []
+
+
+def test_deploy_passes_at_exact_limit(monkeypatch, fake, tmp_path):
+    clean_build(tmp_path)
+    monkeypatch.setattr(dp, "MAX_DATA_BYTES", 16)
+    assert dp.main(fake.argv) == 0
+    assert len(fake.uploads) == 1 and fake.dispatched == [dp.TAG]
+
+
+def test_allow_oversize_deploys_with_warning(monkeypatch, fake, tmp_path, capsys):
+    clean_build(tmp_path)
+    monkeypatch.setattr(dp, "MAX_DATA_BYTES", 15)
+    assert dp.main(fake.argv + ["--allow-oversize"]) == 0
+    assert len(fake.uploads) == 1
+    assert "--allow-oversize なので配信する" in capsys.readouterr().err
+
+
+def test_allow_dirty_does_not_let_oversize_through(monkeypatch, fake, tmp_path):
+    make_build(tmp_path, html=dp.stamp_html(built_index(), SHA, "dirty", "t"))
+    monkeypatch.setattr(dp, "MAX_DATA_BYTES", 15)
+    assert dp.main(fake.argv + ["--allow-dirty"]) == 1
+    assert fake.uploads == []
+
+
+def test_allow_oversize_does_not_let_dirty_through(monkeypatch, fake, tmp_path):
+    make_build(tmp_path, html=dp.stamp_html(built_index(), SHA, "dirty", "t"))
+    monkeypatch.setattr(dp, "MAX_DATA_BYTES", 15)
+    assert dp.main(fake.argv + ["--allow-oversize"]) == 1
+    assert fake.uploads == []
+
+
+def test_deploy_reports_every_refusal(monkeypatch, fake, tmp_path, capsys):
+    make_build(tmp_path)  # ビルド元の記録なし
+    monkeypatch.setattr(dp, "MAX_DATA_BYTES", 15)
+    assert dp.main(fake.argv) == 1
+    err = capsys.readouterr().err
+    assert "ビルド元のコミットの記録が無い" in err and "data " in err
+
+
+def test_no_deploy_warns_about_oversize_and_keeps_zip(monkeypatch, fake, tmp_path, capsys):
+    clean_build(tmp_path)
+    monkeypatch.setattr(dp, "MAX_DATA_BYTES", 15)
+    assert dp.main(fake.argv + ["--no-deploy"]) == 0
+    assert (tmp_path / "dist" / "webgl.zip").is_file()
+    assert fake.uploads == []
+    assert "配信するなら止まる" in capsys.readouterr().err

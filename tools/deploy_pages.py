@@ -6,6 +6,7 @@
     python tools/deploy_pages.py --no-deploy   # zip を作るだけ
     python tools/deploy_pages.py --build --allow-dirty   # 未コミットの変更があってもビルド・配信する
     python tools/deploy_pages.py --smoke    # 載せる前に build/WebGL をローカル配信して E2E スモーク (#69)
+    python tools/deploy_pages.py --allow-oversize   # 配信サイズの上限を超えていても配信する (#70)
 
 Unity のビルドは CI ではライセンスの都合で回せないので、ここでローカルにビルドし、
 成果物 zip を Release（タグ web-latest、prerelease）に置き換えて置き、
@@ -24,6 +25,11 @@ Pages に載せるだけなので、git のサイズ制限（1 ファイル 100 
     zip には index.html が参照する Build/ のファイルだけを入れ、前のビルドの残りを載せない。
     参照は buildUrl + "/<名前>" と, 段階読み込みのときの primaryDataUrls / secondaryDataUrls の
     配列から読む。loader・framework・wasm・data のどれかの参照を読み取れなければ zip を作らない。
+
+配信サイズ (#70):
+    zip を作った後, 中のファイルの合計と data の大きさを測り, 上限（MAX_TOTAL_BYTES /
+    MAX_DATA_BYTES, 決め方は定数のコメント）を超えていれば配信しない。--allow-oversize で通す。
+    --no-deploy のときは超えていても zip を残し, 超えたことだけを知らせる。
 """
 
 from __future__ import annotations
@@ -67,6 +73,33 @@ LOADER_PART_RES = (
     ("codeUrl", re.compile(r'\bcodeUrl\s*:\s*buildUrl \+ "/')),
 )
 DATA_URL_RE = re.compile(r'\bdataUrl\s*:\s*buildUrl \+ "/')
+DATA_NAME_RE = re.compile(r'\bdataUrl\s*:\s*buildUrl \+ "/([^"\'\s)]+)')
+
+MIB = 1024 * 1024
+# 配信サイズの上限 (#70)。zip に入れた後の, 配信する各ファイルの大きさで測る。
+# 基にした実測（2026-09-24 に Release web-latest の webgl.zip を展開して測った値）:
+#   配信する 6 ファイルの合計   66,468,279 B = 63.39 MiB（#70 の公開版の記録 63.4 MiB と同じ）
+#   そのうち data（gzip 済み）  55,476,397 B = 52.91 MiB。gzip を解くと 72,399,237 B = 69.05 MiB
+#   build/WebGL をまるごと測ったとき 64.5 MB（#54。前のビルドの残りを含む）
+# 合計の上限は 80 MiB。実測より 26%（16.6 MiB）上。音声（#28 #29 #34 #38）と室内（#45 ほか）が
+#   まだ載っていないので, それが入る分の幅を残す。初めての読み込みの時間は合計にほぼ比例する
+#   （2 回目からはブラウザのキャッシュが効く）。20 Mbps の回線で計算すると 63.4 MiB で約 27 秒,
+#   80 MiB で約 34 秒かかる。これより長くは待たせない。
+# data の上限は 64 MiB。実測より 21%（11.1 MiB）上。data は gzip を解いた中身がまるごとメモリに
+#   載る（実測の比 1.31 なら 64 MiB で約 84 MiB）ので, ヒープの予算（docs/WEBGL_BUDGET.md）に響く。
+#   wasm・framework・loader の大きさは Unity の版とコードの量で決まり, ほとんど変わらない。
+#   ふくらむのは data なので, 合計より先に data で止まるよう, data の幅を狭くしてある。
+MAX_TOTAL_BYTES = 80 * MIB
+MAX_DATA_BYTES = 64 * MIB
+
+
+@dataclass(frozen=True)
+class PayloadSize:
+    """配信する zip の中身の大きさ（バイト）。data は index.html が data として読むファイルの合計。"""
+
+    total: int
+    data: int
+    files: int
 
 
 @dataclass(frozen=True)
@@ -262,6 +295,43 @@ def make_zip(build_dir: Path, out: Path) -> int:
     return 0
 
 
+def data_paths(html: str) -> list[str]:
+    """index.html が data として読むファイルの, サイトの根からのパス（重複なし, 出てきた順）。"""
+    paths = [f"Build/{name}" for name in DATA_NAME_RE.findall(html)]
+    for urls in data_url_arrays(html).values():
+        paths.extend(site_path(url) for url in urls)
+    return list(dict.fromkeys(paths))
+
+
+def payload_size(zip_path: Path) -> PayloadSize:
+    """zip に入れたファイルの合計と, そのうち data の合計。"""
+    with zipfile.ZipFile(zip_path) as zf:
+        sizes = {info.filename: info.file_size for info in zf.infolist() if not info.is_dir()}
+        html = zf.read("index.html").decode("utf-8")
+    data = sum(sizes.get(path, 0) for path in data_paths(html))
+    return PayloadSize(total=sum(sizes.values()), data=data, files=len(sizes))
+
+
+def to_mib(size: int) -> str:
+    return f"{size / MIB:.1f} MiB"
+
+
+def size_refusal(size: PayloadSize, max_total: int | None = None,
+                 max_data: int | None = None) -> str | None:
+    """配信サイズが上限を超えていれば, その理由。超えていなければ None。上限ちょうどは通す。"""
+    max_total = MAX_TOTAL_BYTES if max_total is None else max_total
+    max_data = MAX_DATA_BYTES if max_data is None else max_data
+    over = []
+    if size.total > max_total:
+        over.append(f"配信するファイルの合計 {to_mib(size.total)} が上限 {to_mib(max_total)} を超えた")
+    if size.data > max_data:
+        over.append(f"data {to_mib(size.data)} が上限 {to_mib(max_data)} を超えた")
+    if not over:
+        return None
+    return ("。".join(over) + "。docs/WEBGL_BUDGET.md を見て減らすか, "
+            "承知の上なら --allow-oversize を付ける。")
+
+
 def unity_build(unity: Path, build_dir: Path) -> None:
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     log = LOG_DIR / "webgl.log"
@@ -334,6 +404,9 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
                         help="載せる前にローカル配信で E2E スモークを回し、落ちたら載せない")
     parser.add_argument("--allow-dirty", action="store_true",
                         help=f"{PROJECT_PATHSPEC} の下に未コミットの変更があってもビルド・配信する")
+    parser.add_argument("--allow-oversize", action="store_true",
+                        help=f"配信サイズの上限（合計 {to_mib(MAX_TOTAL_BYTES)}, "
+                             f"data {to_mib(MAX_DATA_BYTES)}）を超えていても配信する")
     return parser.parse_args(argv[1:])
 
 
@@ -373,15 +446,31 @@ def main(argv: list[str]) -> int:
     if zip_path.exists():
         zip_path.unlink()
     rc = make_zip(build_dir, zip_path)
-    if rc != 0 or args.no_deploy:
+    if rc != 0:
         return rc
 
-    refusal = deploy_refusal(stamp)
-    if refusal is not None:
-        if not args.allow_dirty:
-            print(refusal, file=sys.stderr)
-            return 1
-        print("--allow-dirty なので配信する: " + refusal, file=sys.stderr)
+    size = payload_size(zip_path)
+    print(f"配信サイズ: 合計 {to_mib(size.total)}（上限 {to_mib(MAX_TOTAL_BYTES)}）, "
+          f"data {to_mib(size.data)}（上限 {to_mib(MAX_DATA_BYTES)}）")
+    oversize = size_refusal(size)
+    if args.no_deploy:
+        if oversize is not None:
+            print("配信するなら止まる: " + oversize, file=sys.stderr)
+        return 0
+
+    refusals = []
+    for reason, allowed, flag in ((deploy_refusal(stamp), args.allow_dirty, "--allow-dirty"),
+                                  (oversize, args.allow_oversize, "--allow-oversize")):
+        if reason is None:
+            continue
+        if allowed:
+            print(f"{flag} なので配信する: {reason}", file=sys.stderr)
+        else:
+            refusals.append(reason)
+    if refusals:
+        for reason in refusals:
+            print(reason, file=sys.stderr)
+        return 1
 
     upload_release(zip_path, args.tag, release_notes(stamp))
     dispatch_workflow(args.tag)
