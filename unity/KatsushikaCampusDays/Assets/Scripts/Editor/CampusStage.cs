@@ -31,6 +31,8 @@ namespace KCD.Editor
             {
                 DressCampus(_campus);
                 BuildBasinKeepout(root);
+                // 照明柱の夜の明かり (#8)。光だまりを地面へ落とすので、当たり判定を付けたあとに置く。
+                StreetLampStage.Build(root, _campus);
             }
 
             GameObject trees = PlaceModel(EditorPaths.TreesFbx, "Trees", root);
@@ -454,7 +456,10 @@ namespace KCD.Editor
             modifier.AffectsAgentType(0);
         }
 
-        /// <summary>OuterGround の半径（m）。カメラの far clip（900 m）＋ 歩ける範囲（±340 m）より広く取る。</summary>
+        /// <summary>
+        /// OuterGround の半径（m）。歩ける範囲（西の増築区画まで入れて最大 490 m）の端に立っても、霧で見えなくなる
+        /// 距離（FogEndDistance）とカメラの far clip（900 m）の先まで地面が続く広さにする。
+        /// </summary>
         public const float OuterGroundHalfExtent = 2000f;
 
         /// <summary>OuterGround の高さ（m）。site_ground の芝（Blender の Z_GROUND = 0.0）のすぐ下。</summary>
@@ -464,9 +469,10 @@ namespace KCD.Editor
         public const float OuterGroundThickness = 0.5f;
 
         /// <summary>
-        /// キャンパスの外側まで続く大きな地面。境界の外に落ちないようにし、遠くに地面の端（その先の
-        /// 茶色い skybox の地面色）を見せない。以前は ±350 m で終わっていて、site_ground と同じ広さしか
-        /// 無かったので、遠景に茶色い縁が出ていた（#40, #30）。
+        /// キャンパスの外側まで続く大きな地面。境界の外に落ちないようにし、遠くに地面の端を見せない。
+        /// 以前は ±350 m で終わっていて、site_ground と同じ広さしか無かったので、遠景に茶色い縁が出ていた（#40, #30）。
+        /// 地面は霧の終わりより先では霧の色一色になり、その先（far clip の外）に見える空の下半分も
+        /// KCD/Sky が同じ霧の色で塗るので、上空から見ても地面と空のあいだに帯が出ない（SkyFactory, #40）。
         /// 当たり判定は Plane の MeshCollider ではなく薄い BoxCollider にする。4 km の Plane を
         /// そのまま当たり判定にすると 1 枚 400 m の三角形になり、PhysX が「2 頂点の距離が 500 を超える」と
         /// 警告して接地も不安定になる。
@@ -700,17 +706,23 @@ namespace KCD.Editor
             go.AddComponent<BoxCollider>().size = size;
         }
 
-        /// <summary>太陽と時間の流れ。色や強さは DayNightCycle が自前の既定値で埋める。</summary>
+        /// <summary>霧が濃くなりはじめる距離（m）。</summary>
+        public const float FogStartDistance = 220f;
+
+        /// <summary>霧で見えなくなる距離（m）。OuterGround はここより先まで敷く（#40）。</summary>
+        public const float FogEndDistance = 620f;
+
+        /// <summary>
+        /// 太陽・時間の流れ・空・霧・環境光。空は KCD/Sky（SkyFactory）で、霧の色と環境光はその地平線と空の色に
+        /// そろえる。角度・色・強さはゲーム開始の朝の値で置き、実行中は DayNightCycle が SkyPalette から動かす。
+        /// </summary>
         private static void BuildLighting(Transform root)
         {
             var sun = new GameObject("Sun");
             sun.transform.SetParent(root, false);
-            sun.transform.rotation = Quaternion.Euler(52f, 150f, 0f);
 
             Light light = sun.AddComponent<Light>();
             light.type = LightType.Directional;
-            light.color = new Color(1f, 0.96f, 0.88f);
-            light.intensity = 1.15f;
             light.shadows = LightShadows.Soft;
             light.shadowStrength = 0.72f;
 
@@ -719,9 +731,9 @@ namespace KCD.Editor
             RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Trilight;
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.Linear;
-            RenderSettings.fogStartDistance = 220f;
-            RenderSettings.fogEndDistance = 620f;
-            RenderSettings.fogColor = new Color(0.72f, 0.79f, 0.86f);
+            RenderSettings.fogStartDistance = FogStartDistance;
+            RenderSettings.fogEndDistance = FogEndDistance;
+            SkyFactory.Apply(light);
         }
 
         /// <summary>NavMesh を焼いてアセットとして保存する。焼けた面積を返す。</summary>

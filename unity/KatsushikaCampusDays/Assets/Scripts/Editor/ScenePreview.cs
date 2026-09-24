@@ -788,7 +788,7 @@ namespace KCD.Editor
         /// <summary>
         /// どんなライティングで撮っているかをログに出す。
         /// DayNightCycle は実行時にしか動かないので、エディタの画は Sun に保存された姿勢
-        /// （CampusStage.BuildLighting の Euler(52, 150, 0)）のままになる。
+        /// （SkyFactory が置くゲーム開始 8:30 の向き。空のマテリアルも同じ時刻の色）のままになる。
         /// 画が想像と違ったときは、まずここの値を疑う。
         /// </summary>
         private static void ReportEnvironment(string folder)
