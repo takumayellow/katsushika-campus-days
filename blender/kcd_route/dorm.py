@@ -1,4 +1,4 @@
-"""葛飾コミュニティハウス（学生寮）— 外観と屋内。
+"""葛飾コミュニティハウス（学生寮）— 外観。屋内は kcd_route/dorm_interior.py。
 
 裏エンド「寮でぐーたら」(#41) の舞台。キャンパスの外、水戸街道ぞいの実在の寮で、
 運営は **共立メンテナンス（学生会館ドーミー）**。東京理科大学の直営ではないので、
@@ -8,24 +8,26 @@
 ----
 外観は **ワールド XY**（x = 東[m], y = 北[m]、build_campus / build_route と同じ）。
 footprint・高さ・階数・玄関はすべて ``data/osm/route.json`` の ``dormitory`` から読む。
-勝手な数字は 1 つも持たない。
+外壁の割り付け（角の階段室の幅・1 階の素材の切り替え位置・屋上テラスの位置）は、実物の
+写真と航空写真から辺ローカルの座標で測った値で、下の定数にまとめてある。
 
-屋内は **建物ローカル**（原点 = entrance_dorm の真下の床、+Y = 入口から奥、+X = 右、+Z = 上）。
-kcd_interior の Ctx / InteriorSpec 契約にそのまま乗るので、Unity 側は既存 9 棟と同じ
-``spawn_<id>`` / ``exit_<id>`` / ``npc_<id>_<n>`` / ``poi_<id>_<name>`` を読めばよい。
+外観の構成（下から）
+--------------------
+* 1 階: 基壇。玄関面は素材を切り替えた壁、東北東面は茶色いパネルの壁。
+* 2〜5 階: 玄関面（南南東）と東北東面は奥行き BALC_D のバルコニー。2 階は濃いタイルの
+  腰壁、3〜5 階は型板ガラスの手すり、各階の床スラブの白い小口が横しまになる。
+  裏側（西南西・北北西）は白い壁に小さな窓。
+* 角 F: 屋上より少し高い、小口タイル張りの階段室。
+* 屋上: 陸屋根。玄関面の上はウッドデッキのテラス（ガラス手すり・塔屋・ベンチ・植栽）。
 
 使い方
 ------
     from kcd_route import dorm
 
     # route.fbx に外観を混ぜる（build_route.py から）
-    shell, trim = dorm.build_exterior(route["dormitory"])
+    shell, trim, info = dorm.build_exterior(route["dormitory"])   # info は階高・住戸数・扉など
     shell.to_object(); trim.to_object()
     doors = [dorm.door_frame(route["dormitory"])]   # door_/entrance_ Empty 用
-
-    # 屋内 FBX（build_dorm.py から）
-    sp = dorm.make_spec(route["dormitory"])
-    c = Ctx(sp); dorm.build(c)
 """
 
 import math
@@ -36,10 +38,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from kcd_lib import entrances, facade, geom          # noqa: E402
 from kcd_lib.mesh import MeshBuilder                 # noqa: E402
-from kcd_interior import common, kit                 # noqa: E402
-from kcd_interior import furniture as F              # noqa: E402
-from kcd_interior import shell as sh                 # noqa: E402
-from kcd_interior.spec import InteriorSpec           # noqa: E402
 
 # --------------------------------------------------------------------------- #
 #  契約（Unity / build_route と共有する名前）
@@ -50,17 +48,33 @@ OPERATOR = "共立メンテナンス（学生会館ドーミー）"
 NOT_UNIVERSITY = "大学直営ではない（ゲーム内で『大学の寮』と断定しない）"
 
 SHELL_OBJ = "bld_dorm"        # footprint ぴったりの躯体（検証はこれを測る）
-TRIM_OBJ = "bld_dorm_trim"    # バルコニー・塔屋・玄関・銘板（footprint から出る部分）
+TRIM_OBJ = "bld_dorm_trim"    # 手すり・デッキ・ルーバー・玄関・銘板などの細部（footprint の検査の外）
 
-# 外観の寸法
-CORE_IN = 0.45      # 閉じた躯体コアを footprint からどれだけ内側に置くか
+# 外観の寸法。実物の写真と航空写真から測った値で、t は辺に沿う距離、u は辺から建物の
+# 内側への奥行き（どちらも玄関面なら西南西の端の角 E から、東北東面なら角 F から測る）。
+CORE_IN = 0.45      # 閉じた躯体（1 階の基壇・2 階以上の本体の背面）を footprint からどれだけ内側に置くか
 GF_MAX = 4.00       # 1 階の階高の上限
-BAND_OUT = 0.12     # 各階の床見切り（水平ライン）の出
-BAND_H = 0.14       # その厚み
-BALC_D = 1.40       # バルコニーの出
-BALC_RAIL = 1.06    # 手すりの高さ（床から）
-PARAPET_H = 0.95
-PENT_H = 2.80       # 屋上の塔屋（階段室）
+BALC_D = 1.50       # バルコニーの奥行き。footprint（屋上スラブの外形）の内側に取る
+SLAB_T = 0.20       # バルコニーの床スラブの厚み。白い小口が各階の横しまになる
+RAIL_H = 1.10       # 3〜5 階の型板ガラスの手すりの高さ（床から）
+BAND_LO = 0.40      # 2 階のタイル張りの腰壁: 床から下へ
+BAND_HI = 1.20      # 同: 床から上へ
+UNIT_W = 2.80       # 住戸の幅（バルコニーの隔て板の間隔）
+ROOF_T = 0.30       # 屋上スラブの厚み。5 階のバルコニーの屋根を兼ねる
+PARAPET_H = 0.60
+PARAPET_T = 0.25    # パラペットの厚み
+CORE_S = 2.40       # 角（玄関面と東北東面の出会う角 F）の階段室: 玄関面に沿う幅
+CORE_U = 5.00       # 同: 東北東面に沿う幅
+CORE_TOP = 1.10     # 階段室の屋上からの立ち上がり（屋上のガラス手すりの天端とそろう）
+TERRACE_T0 = 4.60   # 屋上テラス（玄関面の上）の西端の t。ここに背の高いメッシュフェンス
+TERRACE_U = 13.50   # 同: 北端の u。ここに縦格子の手すり
+
+# 玄関面 1 階の割り付け（E からの t）。茶色いパネル → 小窓のある凹んだ壁 → 割肌の石 →
+# 黒いタイル → 玄関 → 目隠しルーバー → 階段室。玄関の扉は route.json の entrance.point
+# （玄関面の中点）に置く。実物の扉はもう少し東寄りにある。
+FRONT_BROWN = 0.90
+FRONT_RECESS = 2.60
+FRONT_STONE = 4.60
 
 # 玄関の足元の石張り（エプロン）の奥行き。entrances.STANDARD は 7.0 m だが、この玄関は
 # 目の前が前面道路（osm 58360717, tertiary, 幅 9.0 m）で、扉から車道の縁まで 4.00 m
@@ -68,20 +82,6 @@ PENT_H = 2.80       # 屋上の塔屋（階段室）
 # 乗り上げ、天端 0.12 m の段差が車道を横切る。実測した「車道に触れない上限」は 3.069 m。
 # キャンパス 9 棟は entrances.STANDARD を共有しているので、そちらは触らず寮だけ上書きする。
 DOOR_APRON_D = 2.80
-
-# 屋内の寸法
-X0, X1 = -8.00, 8.00
-Y_FACE, Y_BACK = 2.80, 40.80      # 2.80 = 玄関の風除室 D 2.0 + 0.8（entrances と同じ）
-Z_CEIL = 2.70
-Z_PART = 3.20                     # 間仕切りの天端（天井 2.70 より上まで立てる）
-# 外周壁の天端。間仕切りの天端 + ジャンプ 1.10 m より高くしておく。ここが低いと
-# 「天井裏の間仕切り天端に立って外へ出られる」判定が残る（kcd_interior/closure.py）
-Z_TOP = 4.45
-Z_WIN_TOP = 2.55                  # 窓の上端（天井より下。header = Z_TOP - これ）
-DOOR_W = 3.20                     # 入口の開口（= entrances.STANDARD の W * 2）
-CORR_X = 1.60                     # 中廊下の壁の芯（廊下の有効幅 = 3.04 m）
-Y_CROSS = 12.60                   # 玄関ホールとラウンジ／食堂の境
-Y_NORTH = 23.00                   # ラウンジ／食堂と居室エリアの境
 
 
 # --------------------------------------------------------------------------- #
@@ -138,46 +138,206 @@ def _edge_frame(loop, i):
     return p, e, (e[1], -e[0]), L
 
 
-def _quad(p, e, n, t0, t1, d0, d1):
-    """辺ローカル (t = 辺に沿う距離, d = 外向きの出) の矩形を XY ポリゴンにする。"""
-    def P(t, d):
-        return (p[0] + e[0] * t + n[0] * d, p[1] + e[1] * t + n[1] * d)
-    return [P(t0, d0), P(t1, d0), P(t1, d1), P(t0, d1)]
+def _pt(fr, t, d):
+    """辺ローカル (t = 辺に沿う距離, d = 外向きの出。内側は負) を XY にする。"""
+    p, e, n, _ = fr
+    return (p[0] + e[0] * t + n[0] * d, p[1] + e[1] * t + n[1] * d)
 
 
-def _balconies(mb, loop, ei, z_list):
-    """辺 ei にバルコニー（閉じた床スラブ + 手すり + 袖壁 + 隔て板）を並べる。"""
-    p, e, n, L = _edge_frame(loop, ei)
-    t0, t1 = 2.0, L - 2.0
-    if t1 - t0 < 4.0:
-        return 0
-    ndiv = max(2, int(round((t1 - t0) / 6.5)))
-    made = 0
-    for z in z_list:
-        # 床スラブ
-        mb.add_prism(_quad(p, e, n, t0, t1, 0.0, BALC_D), z, z + 0.14,
-                     "concrete_light", "concrete_light", "concrete_light")
-        # 手すり壁（外側）
-        mb.add_prism(_quad(p, e, n, t0, t1, BALC_D - 0.10, BALC_D),
-                     z + 0.14, z + BALC_RAIL,
-                     "concrete_light", "concrete_light", "concrete_light")
-        # 袖壁（両端）
-        for ts in (t0, t1 - 0.12):
-            mb.add_prism(_quad(p, e, n, ts, ts + 0.12, 0.0, BALC_D),
-                         z + 0.14, z + BALC_RAIL,
-                         "concrete_light", "concrete_light", "concrete_light")
-        # 隔て板（住戸の境。ここが「集合住宅」に見える決め手）
-        for k in range(1, ndiv):
-            ts = t0 + (t1 - t0) * k / ndiv
-            mb.add_prism(_quad(p, e, n, ts - 0.05, ts + 0.05, 0.0, BALC_D - 0.10),
-                         z + 0.14, z + 1.90,
-                         "metal_white", "metal_white", "metal_white")
-        made += 1
-    return made
+def _box(mb, fr, t0, t1, d0, d1, z0, z1, mat, top=None, bottom=None):
+    """辺ローカルの直方体（閉じた add_prism）。top / bottom を省くと側面と同じ材質で塞ぐ。"""
+    poly = [_pt(fr, t0, d0), _pt(fr, t1, d0), _pt(fr, t1, d1), _pt(fr, t0, d1)]
+    mb.add_prism(poly, z0, z1, mat, top or mat, bottom or mat)
+
+
+def _box_open(mb, fr, t0, t1, d0, d1, z0, z1, mat, open_end):
+    """_box から t0 側（open_end="t0"）か t1 側の端の面を抜いたもの。
+
+    その端が隣の辺の外壁と同じ平面に乗るとき、面を 2 枚重ねるとちらつく（z-fighting）ので、
+    隣の辺の外壁に塞がせる。"""
+    def v(t, d, z):
+        x, y = _pt(fr, t, d)
+        return (x, y, z)
+    mb.add_quad(v(t0, d1, z0), v(t1, d1, z0), v(t1, d1, z1), v(t0, d1, z1), mat)   # 外
+    mb.add_quad(v(t1, d0, z0), v(t0, d0, z0), v(t0, d0, z1), v(t1, d0, z1), mat)   # 内
+    mb.add_quad(v(t0, d1, z1), v(t1, d1, z1), v(t1, d0, z1), v(t0, d0, z1), mat)   # 上
+    mb.add_quad(v(t0, d0, z0), v(t1, d0, z0), v(t1, d1, z0), v(t0, d1, z0), mat)   # 下
+    if open_end != "t1":
+        mb.add_quad(v(t1, d1, z0), v(t1, d0, z0), v(t1, d0, z1), v(t1, d1, z1), mat)
+    if open_end != "t0":
+        mb.add_quad(v(t0, d0, z0), v(t0, d1, z0), v(t0, d1, z1), v(t0, d0, z1), mat)
+
+
+def _parapet_chain(mb, outer, inner, z, h, mat):
+    """facade.add_parapet と同じ断面の笠木壁を、折れ線 outer / inner に沿って立てる。
+
+    ループを一周せず途中で終わるときに使う。終点の端は塞ぐ（始点は階段室に突き当てる）。"""
+    zt = z + h
+    for k in range(len(outer) - 1):
+        a, b = outer[k], outer[k + 1]
+        ai, bi = inner[k], inner[k + 1]
+        mb.add_quad((a[0], a[1], z), (b[0], b[1], z), (b[0], b[1], zt), (a[0], a[1], zt), mat)
+        if geom.length(geom.sub(bi, ai)) < 1e-3:       # 直角の角の留めで内側が点になる
+            mb.add_face([(a[0], a[1], zt), (b[0], b[1], zt), (bi[0], bi[1], zt)], mat)
+            continue
+        mb.add_quad((a[0], a[1], zt), (b[0], b[1], zt), (bi[0], bi[1], zt), (ai[0], ai[1], zt), mat)
+        mb.add_quad((ai[0], ai[1], zt), (bi[0], bi[1], zt), (bi[0], bi[1], z), (ai[0], ai[1], z), mat)
+    p, pi = outer[-1], inner[-1]
+    mb.add_quad((p[0], p[1], z), (pi[0], pi[1], z), (pi[0], pi[1], zt), (p[0], p[1], zt), mat)
+
+
+def _pane(mb, fr, t0, t1, d, z0, z1, mat):
+    """辺ローカルの d に外向きの板を 1 枚貼る。閉じた立体のすぐ手前に置く窓・扉用。"""
+    a, b = _pt(fr, t0, d), _pt(fr, t1, d)
+    mb.add_quad((a[0], a[1], z0), (b[0], b[1], z0),
+                (b[0], b[1], z1), (a[0], a[1], z1), mat)
+
+
+def _inset(loop, offs):
+    """辺 i を offs[i] だけ内側へ平行移動し、隣り合う線の交点でポリゴンを作り直す。"""
+    n = len(loop)
+    lines = []
+    for i in range(n):
+        p, e, nrm, _ = _edge_frame(loop, i)
+        lines.append((geom.add(p, geom.mul(nrm, -offs[i])), e))
+    out = []
+    for i in range(n):
+        (p1, e1), (p2, e2) = lines[i - 1], lines[i]
+        den = e1[0] * e2[1] - e1[1] * e2[0]
+        if abs(den) < 1e-9:
+            out.append(p2)
+            continue
+        w = geom.sub(p2, p1)
+        s = (w[0] * e2[1] - w[1] * e2[0]) / den
+        out.append(geom.add(p1, geom.mul(e1, s)))
+    return out
+
+
+def _run(mb, loop, i, t0, t1, z0, floor_h, f0, f1, **kw):
+    """辺 i の t0..t1 の区間だけに facade.add_facade の窓割りを貼る。"""
+    fr = _edge_frame(loop, i)
+    rect = [_pt(fr, t0, 0.0), _pt(fr, t1, 0.0), _pt(fr, t1, -1.0), _pt(fr, t0, -1.0)]
+    facade.add_facade(mb, rect, z0, floor_h, f0, f1, edges=[0], **kw)
+
+
+def _balconies(mb, fr, t0, t1, z_floors):
+    """辺ローカル t0..t1 に各階のバルコニーを並べる。戻り値は 1 階ぶんの住戸数。
+
+    床スラブ・腰壁（2 階）/ 型板ガラスの手すり（3 階以上）・隔て板・奥の掃き出し窓。
+    """
+    units = max(1, int(round((t1 - t0) / UNIT_W)))
+    w = (t1 - t0) / units
+    for k, z in enumerate(z_floors):
+        _box(mb, fr, t0, t1, -BALC_D, 0.0, z - SLAB_T, z, "dorm_white")
+        if k == 0:
+            _box(mb, fr, t0, t1, -0.10, 0.04, z - BAND_LO, z + BAND_HI, "tile_charcoal")
+        else:
+            _box(mb, fr, t0, t1, -0.10, -0.04, z, z + RAIL_H - 0.06, "glass_frosted")
+            _box(mb, fr, t0, t1, -0.12, -0.02, z + RAIL_H - 0.06, z + RAIL_H, "metal_white")
+        for j in range(1, units):
+            ts = t0 + w * j
+            _box(mb, fr, ts - 0.03, ts + 0.03, -BALC_D, -0.12, z, z + 1.95, "dorm_white")
+        for j in range(units):
+            _pane(mb, fr, t0 + w * j + 0.35, t0 + w * (j + 1) - 0.35, -BALC_D + 0.01,
+                  z + 0.05, z + 2.05, "glass_dark")
+    return units
+
+
+def _front_ground(shell, trim, ff, t_door, dr, core_t, top):
+    """玄関面の 1 階。E から順に素材を切り替える（FRONT_* の割り付け）。"""
+    s0, s1 = t_door - dr["WO"], t_door + dr["WO"]
+    _box_open(shell, ff, 0.0, FRONT_BROWN, -0.30, 0.0, 0.0, top, "panel_brown", "t0")
+    for a, b, mat in ((FRONT_RECESS, FRONT_STONE, "stone_dark"),
+                      (FRONT_STONE, s0, "plastic_black"),
+                      (s1, s1 + 0.20, "concrete_grey")):
+        if b - a > 0.01:
+            _box(shell, ff, a, b, -0.30, 0.0, 0.0, top, mat)
+    # 凹んだ壁の小窓（壁は基壇の側面そのもの）
+    _box(trim, ff, FRONT_BROWN + 0.35, FRONT_RECESS - 0.35, -CORE_IN, -CORE_IN + 0.04,
+         1.10, 2.30, "metal_charcoal")
+    _pane(trim, ff, FRONT_BROWN + 0.42, FRONT_RECESS - 0.42, -CORE_IN + 0.045,
+          1.17, 2.23, "glass_dark")
+    # 玄関の風除室の上（庇から 2 階の床まで）
+    _box(shell, ff, s0, s1, -0.30, 0.0, dr["HT"], top, "concrete_grey")
+    # 目隠しルーバーと、それに絡むつる植物
+    r0, r1 = s1 + 0.20, core_t
+    _pane(trim, ff, r0, r1, -CORE_IN + 0.02, 0.0, top, "metal_charcoal")
+    _box(trim, ff, r0, r1, -0.14, -0.02, 0.0, 0.15, "metal_charcoal")
+    _box(trim, ff, r0, r1, -0.14, -0.02, top - 0.15, top, "metal_charcoal")
+    n_slat = int((r1 - r0) / 0.20)
+    for j in range(n_slat):
+        ts = r0 + 0.10 + 0.20 * j
+        _box(trim, ff, ts - 0.025, ts + 0.025, -0.12, -0.04, 0.15, top - 0.15, "metal_charcoal")
+    for a, b, z0, z1 in ((r0 + 0.3, r0 + 1.1, 0.4, 2.6), (r1 - 1.3, r1 - 0.4, 1.0, 3.2)):
+        _box(trim, ff, a, b, -0.03, 0.05, z0, z1, "leaf_light", "leaf_top")
+    return s0, s1
+
+
+def _street_planters(trim, ff, t_door):
+    """玄関の左右、歩道側の植え込み（黒いプランターに低木と赤い花）。"""
+    for a, b in ((t_door - 7.6, t_door - 3.6), (t_door + 3.6, t_door + 5.6)):
+        a = max(0.05, a)
+        if b - a < 0.8:
+            continue
+        _box(trim, ff, a, b, 0.05, 0.85, 0.0, 0.55, "plastic_black")
+        _box(trim, ff, a + 0.10, b - 0.10, 0.15, 0.75, 0.55, 0.95, "leaf_light", "leaf_top")
+        k = 0
+        t = a + 0.35
+        while t < b - 0.35:
+            _box(trim, ff, t - 0.12, t + 0.12, 0.30 + 0.15 * (k % 2), 0.54 + 0.15 * (k % 2),
+                 0.95, 1.07, "flower_red")
+            t += 0.70
+            k += 1
+
+
+def _roof_terrace(trim, ff, core_t, h):
+    """屋上テラス（玄関面の上）と、その奥の塔屋・空調の室外機。位置は航空写真から。"""
+    t0, u1 = TERRACE_T0, TERRACE_U
+    _box(trim, ff, t0, core_t, -u1, -0.25, h, h + 0.10, "deck_wood")
+    # 玄関面の縁: 低い立ち上がり + ガラス手すり
+    _box(trim, ff, 0.25, core_t, -0.25, 0.0, h, h + 0.30, "dorm_white")
+    _box(trim, ff, 0.25, core_t, -0.15, -0.11, h + 0.30, h + 1.10, "glass_clear")
+    _box(trim, ff, 0.25, core_t, -0.17, -0.09, h + 1.10, h + 1.18, "metal_white")
+    n_post = max(2, int(round((core_t - 0.25) / 1.8)) + 1)
+    for j in range(n_post):
+        ts = 0.25 + (core_t - 0.25 - 0.06) * j / (n_post - 1)
+        _box(trim, ff, ts, ts + 0.06, -0.17, -0.09, h + 0.30, h + 1.10, "metal_white")
+    # 西端: 背の高いメッシュフェンス（柱と横桟）
+    for j in range(7):
+        u = 0.30 + (u1 - 0.36) * j / 6
+        _box(trim, ff, t0 - 0.03, t0 + 0.03, -u - 0.06, -u, h, h + 2.40, "metal_grey")
+    for z in (h + 0.10, h + 1.25, h + 2.34):
+        _box(trim, ff, t0 - 0.02, t0 + 0.02, -u1, -0.30, z, z + 0.06, "metal_grey")
+    # 北端: 縦格子の手すり
+    for z in (h + 0.12, h + 1.04):
+        _box(trim, ff, t0, core_t, -u1 - 0.03, -u1 + 0.03, z, z + 0.06, "metal_grey")
+    t = t0 + 0.25
+    while t < core_t - 0.1:
+        _box(trim, ff, t - 0.015, t + 0.015, -u1 - 0.015, -u1 + 0.015, h + 0.18, h + 1.04,
+             "metal_grey")
+        t += 0.50
+    # 塔屋（階段の出口）: 灰色の縁石の上の白い箱、扉と小庇はテラス側
+    _box(trim, ff, 8.85, 11.15, -11.76, -7.76, h, h + 0.30, "concrete_grey")
+    _box(trim, ff, 9.00, 11.00, -11.51, -8.01, h + 0.30, h + 2.90, "dorm_white",
+         "concrete_light")
+    _pane(trim, ff, 9.55, 10.45, -8.00, h + 0.32, h + 2.40, "metal_grey")
+    _box(trim, ff, 9.35, 10.65, -8.01, -7.41, h + 2.50, h + 2.60, "metal_white")
+    # 奥の小さな塔屋と空調の室外機
+    _box(trim, ff, 12.75, 14.05, -21.45, -17.95, h, h + 2.00, "dorm_white", "concrete_light")
+    for tc, uc in ((6.98, 18.80), (9.53, 18.48), (7.26, 15.27), (9.68, 15.76)):
+        _box(trim, ff, tc - 0.50, tc + 0.50, -uc - 0.35, -uc + 0.35, h, h + 0.90, "metal_grey")
+    # 植栽とベンチ
+    for a, b, d0, d1 in ((5.20, 7.40, -1.05, -0.35), (11.40, 13.60, -1.05, -0.35),
+                         (t0 + 0.15, t0 + 0.85, -8.00, -3.00)):
+        _box(trim, ff, a, b, d0, d1, h + 0.10, h + 0.55, "plastic_black")
+        _box(trim, ff, a + 0.10, b - 0.10, d0 + 0.10, d1 - 0.10, h + 0.55, h + 0.95,
+             "leaf_light", "leaf_top")
+    for a, b, d0, d1 in ((7.60, 9.40, -3.45, -3.00), (5.60, 6.05, -7.60, -5.80)):
+        _box(trim, ff, a, b, d0, d1, h + 0.10, h + 0.45, "deck_wood")
 
 
 def _nameplate(mb, dr):
-    """銘板「葛飾コミュニティハウス」。壁付けの板 + 道路際の自立サイン。
+    """銘板「葛飾コミュニティハウス」。道路際の自立サイン（台座 + 白い板 + 濃色の帯）。
 
     大学名も大学色（tus_green）も使わない。運営は共立メンテナンスであって大学ではない。
     """
@@ -186,12 +346,6 @@ def _nameplate(mb, dr):
                 entrances.local(dr, s1, d1), entrances.local(dr, s0, d1)]
         mb.add_prism(poly, z0, z1, mat, top, bottom)
 
-    # 壁付け（玄関の右手、庇の下）
-    box(3.6, 6.4, 0.02, 0.10, 2.05, 2.65, "wall_accent_navy",
-        "wall_accent_navy", "wall_accent_navy")
-    box(3.7, 6.3, 0.10, 0.14, 2.12, 2.58, "sign_plate", "sign_plate", "sign_plate")
-
-    # 自立サイン（歩道側）。低い台座 + 白い板 + 濃紺の帯
     s = -(dr["WO"] + entrances.SIGN_S)
     d = dr["D"] + entrances.SIGN_D
     box(s - 1.10, s + 1.10, d - 0.30, d + 0.30, 0.0, 0.42,
@@ -202,295 +356,101 @@ def _nameplate(mb, dr):
     box(s - 1.05, s + 1.05, d - 0.07, d + 0.07, 1.00, 2.30,
         "sign_plate", "sign_plate", "sign_plate")
     box(s - 1.05, s + 1.05, d - 0.09, d + 0.09, 1.00, 1.32,
-        "wall_accent_navy", "wall_accent_navy", "wall_accent_navy")
+        "metal_charcoal", "metal_charcoal", "metal_charcoal")
 
 
 def build_exterior(dorm, shell=None, trim=None):
-    """外観を組む。戻り値は (躯体の MeshBuilder, 付属物の MeshBuilder)。
+    """外観を組む。戻り値は (躯体の MeshBuilder, 付属物の MeshBuilder, 寸法の辞書)。
 
     * 躯体（shell）は footprint の外へ 1 mm も出ない。検証はこれを測る。
-    * 窓・壁・手すりは全部 **厚みのある閉じた立体**（add_prism）で作る。板 1 枚の面は
-      PhysX が片面でしか受け止めず、室内から外へ素通りになる（#45）。
+    * 基壇・本体・階段室・屋上スラブ・バルコニーは **閉じた立体**（add_prism）で作る。
+      板 1 枚の面は PhysX が片面でしか受け止めず、室内から外へ素通りになる（#45）。
+      窓ガラスなどの板は、必ず閉じた立体のすぐ手前に貼る。
     """
     shell = shell or MeshBuilder(SHELL_OBJ)
     trim = trim or MeshBuilder(TRIM_OBJ)
 
     loop = loop_of(dorm)
+    n = len(loop)
     h = float(dorm["height"])
     gf, up, lv = floor_heights(dorm)
+    top1 = gf - SLAB_T                       # 1 階の壁の天端 = 2 階のバルコニーの床下
 
-    # --- 閉じた躯体コア（上下の蓋つき。ここがあるので中は完全に塞がっている） ---
-    core = geom.offset_polygon(loop, -CORE_IN)
-    shell.add_prism(core, -0.60, h - 0.02, "concrete_light",
-                    "roof_grey", "concrete_dark")
+    front = int(dorm["entrance"]["edge_index"]) % n   # 玄関面（南南東）
+    side = (front + 1) % n                            # 東北東面（いちばん長い辺）
+    rear = [i for i in range(n) if i not in (front, side)]
+    ff, fs = _edge_frame(loop, front), _edge_frame(loop, side)
+    core_t = ff[3] - CORE_S                  # 玄関面で階段室が始まる t
+    dr = door_frame(dorm)
+    t_door = geom.dot(geom.sub(dr["origin"], ff[0]), ff[1])
 
-    # --- 1 階（腰高のガラス。ロビーとして明るく） ---
-    facade.add_facade(shell, loop, 0.0, gf, 0, 1,
-                      wall="concrete_grey", glass="glass_clear",
-                      seg=3.2, sill=1.00, header=0.60, inset=0.22, mullion=0.30)
-    # --- 2 階以上（住戸窓。腰 1.05 / 垂れ 0.95 の強い横しまで「5 階建て」に見せる） ---
-    facade.add_facade(shell, loop, gf, up, 0, lv - 1,
-                      wall="concrete_light", glass="glass_dark",
-                      seg=3.2, sill=1.05, header=0.95, inset=0.30, mullion=0.35)
+    # --- 閉じた躯体: 1 階の基壇、2 階以上の本体（玄関面・東北東面はバルコニーの奥まで下げる）
+    shell.add_prism(geom.offset_polygon(loop, -CORE_IN), -0.60, top1,
+                    "concrete_grey", "concrete_grey", "concrete_dark")
+    offs = [BALC_D if i in (front, side) else CORE_IN for i in range(n)]
+    shell.add_prism(_inset(loop, offs), top1, h - ROOF_T,
+                    "dorm_cream", "dorm_white", "dorm_white")
 
-    # --- 屋上（陸屋根 + パラペット） ---
-    shell.add_ngon_flat(loop, h, "roof_grey")
-    facade.add_parapet(shell, loop, h, PARAPET_H, 0.30, "concrete_light")
+    # --- 角 F の階段室（footprint の 2 辺にぴったり。屋上より CORE_TOP 高い） ---
+    corner = loop[side]
+    a = _pt(ff, core_t, 0.0)
+    b = _pt(fs, CORE_U, 0.0)
+    inner = geom.add(a, geom.sub(b, corner))
+    shell.add_prism([a, corner, b, inner], -0.60, h + CORE_TOP,
+                    "tile_mauve", "concrete_dark", "concrete_dark")
 
-    # --- 各階の床見切り（水平ライン）。閉じたスラブなので当たり判定も素直 ---
-    band = geom.offset_polygon(loop, BAND_OUT)
+    # --- 1 階 ---
+    _front_ground(shell, trim, ff, t_door, dr, core_t, top1)
+    # 角 A の端は裏の辺の外壁と同じ平面なので、パネルは端を抜き、幅木は 2 cm 手前で止める
+    _box_open(shell, fs, CORE_U, fs[3], -0.30, 0.0, 0.0, top1, "panel_brown", "t1")
+    _box(trim, fs, CORE_U, fs[3] - 0.02, -0.30, 0.02, 0.0, 0.25, "concrete_dark")
+    t = CORE_U + 3.6
+    while t < fs[3] - 0.5:
+        _box(trim, fs, t - 0.015, t + 0.015, -0.02, 0.015, 0.25, top1 - 0.10, "concrete_dark")
+        t += 3.6
+    for i in rear:
+        _run(shell, loop, i, 0.0, _edge_frame(loop, i)[3], 0.0, gf, 0, 1,
+             wall="dorm_white", glass="glass_dark",
+             seg=3.2, sill=1.20, header=1.20, inset=0.20, mullion=2.00)
+
+    # --- 2 階以上 ---
     z_floors = [gf + up * k for k in range(lv - 1)]
-    for z in z_floors:
-        trim.add_prism(band, z - BAND_H, z, "concrete_grey",
-                       "concrete_grey", "concrete_grey")
+    for i in rear:
+        L = _edge_frame(loop, i)[3]
+        t0 = BALC_D if i == (side + 1) % n else 0.0         # 東北東面のバルコニーの妻
+        t1 = L - BALC_D if (i + 1) % n == front else L      # 玄関面のバルコニーの妻
+        _run(shell, loop, i, t0, t1, gf, up, 0, lv - 1,
+             wall="dorm_white", glass="glass_dark",
+             seg=3.0, sill=1.00, header=0.95, inset=0.20, mullion=1.85)
+    # バルコニーの妻壁（両端。footprint の角 E・A にかかる）。幅は裏の本体の下げ CORE_IN と
+    # そろえ、本体との間にすき間を作らない。1 階の天端〜2 階の床は裏の辺の 1 階の外壁と
+    # 同じ平面に乗るので、その端を抜く
+    _box_open(shell, ff, 0.0, CORE_IN, -BALC_D, 0.0, top1, gf, "dorm_white", "t0")
+    _box(shell, ff, 0.0, CORE_IN, -BALC_D, 0.0, gf, h - ROOF_T, "dorm_white")
+    _box_open(shell, fs, fs[3] - CORE_IN, fs[3], -BALC_D, 0.0, top1, gf, "dorm_white", "t1")
+    _box(shell, fs, fs[3] - CORE_IN, fs[3], -BALC_D, 0.0, gf, h - ROOF_T, "dorm_white")
+    units = _balconies(trim, ff, CORE_IN, core_t, z_floors)
+    units += _balconies(trim, fs, CORE_U, fs[3] - CORE_IN, z_floors)
 
-    # --- バルコニー（いちばん長い辺 = 東北東向きの 42 m 面） ---
-    ei = geom.longest_edge(loop)
-    n_balc = _balconies(trim, loop, ei, z_floors)
-
-    # --- 屋上の塔屋（階段室）と高置水槽 ---
-    cx, cy = geom.centroid(loop)
-    pent = [(cx - 3.2, cy - 2.4), (cx + 3.2, cy - 2.4),
-            (cx + 3.2, cy + 2.4), (cx - 3.2, cy + 2.4)]
-    trim.add_prism(pent, h, h + PENT_H, "concrete_light", "roof_grey", None)
-    tx, ty = cx + 6.0, cy - 6.0
-    for sx in (-1.3, 1.3):
-        for sy in (-1.0, 1.0):
-            trim.add_prism([(tx + sx - 0.12, ty + sy - 0.12), (tx + sx + 0.12, ty + sy - 0.12),
-                            (tx + sx + 0.12, ty + sy + 0.12), (tx + sx - 0.12, ty + sy + 0.12)],
-                           h, h + 1.60, "metal_grey", None, None)
-    trim.add_cylinder(tx, ty, h + 1.60, h + 3.10, 1.70, "metal_white",
-                      seg=8, cap_top=True, cap_bottom=True)
+    # --- 屋上: スラブ（5 階のバルコニーの屋根を兼ねる）+ パラペット + テラス ---
+    shell.add_prism(geom.offset_polygon(loop, -0.02), h - ROOF_T, h,
+                    "dorm_white", "concrete_light", "dorm_white")
+    # パラペットは東北東面の階段室の脇から裏の 4 辺を回り、玄関面の角 E の先 0.25 m で止める
+    # （階段室の面と重ねない）
+    ring = geom.offset_polygon(loop, -PARAPET_T)
+    corners = [(side + 1 + k) % n for k in range(len(rear) + 1)]
+    _parapet_chain(shell,
+                   [_pt(fs, CORE_U, 0.0)] + [loop[i] for i in corners] + [_pt(ff, PARAPET_T, 0.0)],
+                   [_pt(fs, CORE_U, -PARAPET_T)] + [ring[i] for i in corners]
+                   + [_pt(ff, PARAPET_T, -PARAPET_T)],
+                   h, PARAPET_H, "dorm_white")
+    _roof_terrace(trim, ff, core_t, h)
 
     # --- 玄関（キャンパスの他の棟と同じ「入れる扉」。紺の風除室 + ガラス両開き + 庇） ---
-    dr = door_frame(dorm)
     entrances.build_one(trim, dr)
     _nameplate(trim, dr)
+    _street_planters(trim, ff, t_door)
 
     return shell, trim, dict(levels=lv, gf=gf, up=up, height=h,
-                             balcony_edge=ei, balcony_floors=n_balc, door=dr)
-
-
-# --------------------------------------------------------------------------- #
-#  屋内: InteriorSpec
-# --------------------------------------------------------------------------- #
-def make_spec(dorm):
-    """屋内のローカル座標系。玄関の外向き法線の逆が +Y（= 奥）になるように組む。"""
-    origin, n, _bearing = entrance_of(dorm)
-    t = (-n[1], n[0])
-    frame = geom.Frame(t)          # Frame.v = u を +90 度 = -n = 建物の中へ
-    eu, ev = frame.uv(origin)
-    uvbb = (eu + X0, ev + Y_FACE, eu + X1, ev + Y_BACK)
-    return InteriorSpec(ID, DISPLAY, dorm.get("levels") or 5,
-                        dorm.get("height") or 17.8, uvbb, (eu, ev), "+v", frame)
-
-
-# --------------------------------------------------------------------------- #
-#  屋内: プラン
-# --------------------------------------------------------------------------- #
-def _hall(c):
-    """玄関ホール（y 3.1 – 12.6）。管理人室のカウンターと寮長。"""
-    s = c.spec
-    ix0, iy0, ix1, _iy1 = s.inner()
-    mb = c.furn("hall")
-
-    # 管理人室（北東の隅）。受付窓は腰カウンターと垂れ壁でふさぐので入れない
-    sh.partition(c.wall, (4.20, 8.00), (4.20, Y_CROSS), 0.0, Z_PART,
-                 gaps=[(1.20, 3.60)])
-    sh.partition(c.wall, (4.20, 8.00), (ix1, 8.00), 0.0, Z_PART)
-    sh.partition(c.wall, (4.20, 9.20), (4.20, 11.60), 1.30, Z_PART)   # 受付窓の垂れ壁
-    F.counter(c.wall, 4.02, 9.20, 4.38, 11.60, h=1.10)
-    F.reception(mb, 5.40, 10.40, ang=math.pi * 0.5, w=3.4, d=0.9)
-    F.bookshelf(mb, 7.35, 11.40, ang=math.pi * 0.5, w=1.40, h=1.85, rng=c.rng)
-    F.chair(mb, 6.40, 10.40, ang=math.pi * 0.5)
-    sh.wall_sign(mb, 4.10, 11.95, 2.30, ang=math.pi * 0.5, w=1.2, h=0.36)
-    c.sign(4.10, 11.95, 2.30)
-
-    # メールボックス（玄関の西どなり）と掲示板
-    F.locker_bank(mb, -6.80, -2.60, 3.34, ang=0.0, h=1.70, mat="metal_gray")
-    sh.notice_board(mb, ix0 + 0.05, 6.20, 0.95, ang=-math.pi * 0.5,
-                    w=2.20, h=1.20, sheets=8, rng=c.rng)
-    sh.notice_board(mb, ix0 + 0.05, 9.00, 0.95, ang=-math.pi * 0.5,
-                    w=2.20, h=1.20, sheets=6, rng=c.rng)
-
-    # 腰かけ・観葉植物・自販機・時計
-    F.bench(mb, -6.10, 7.20, ang=-math.pi * 0.5, w=1.80, back=True)
-    F.bench(mb, -6.10, 9.40, ang=-math.pi * 0.5, w=1.80, back=True)
-    sh.planter(mb, -2.60, 11.80, r=0.42, h=0.46, leaf_h=1.6)
-    sh.planter(mb, 2.60, 11.80, r=0.42, h=0.46, leaf_h=1.6)
-    sh.vending(mb, 7.10, 4.60, ang=math.pi * 0.5, mat="fm_blue")
-    sh.vending(mb, 7.10, 5.90, ang=math.pi * 0.5, mat="fm_green")
-    sh.clock(c.wall, -3.40, Y_CROSS - 0.02, 2.35, ang=math.pi)
-    sh.ceiling_lights(c.wall, ix0, iy0, ix1, Y_CROSS, Z_CEIL, sx=4.0, sy=4.2)
-
-    # 寮長。カウンターの手前に立つ（spawn からまっすぐ見える位置）
-    c.npc(2.60, 9.60)          # npc_dorm_1（既存 9 棟と同じ連番の契約）
-    c.poi("kanrinin", 2.60, 9.60)
-    # Unity 側 DormStage.NpcEmpty = "npc_" + DormRoute.DialogueId = "npc_dorm_head"。
-    # 連番の npc_dorm_1 とは別名なので、同じ場所に別名の Empty も出しておく。
-    c._put("npc_%s_head" % c.spec.id, 2.60, 9.60)
-    c.note("寮長 = npc_dorm_1 / poi_dorm_kanrinin（玄関ホール、管理人カウンターの手前）")
-    return mb
-
-
-def _lounge(c):
-    """ラウンジ（西、y 12.6 – 23.0）。寮生が 1 人いる。"""
-    s = c.spec
-    ix0, _iy0, _ix1, _iy1 = s.inner()
-    mb = c.furn("lounge")
-    x_in = -CORR_X - sh.PART * 0.5
-
-    F.sofa(mb, -5.40, 15.60, ang=0.0, w=2.10)
-    F.sofa(mb, -5.40, 19.40, ang=math.pi, w=2.10)
-    F.round_table(mb, -5.40, 17.50, r=0.62, h=0.44)
-    F.lounge_chair(mb, -3.10, 17.50, ang=math.pi * 0.5)
-    F.lounge_chair(mb, -7.00, 17.50, ang=-math.pi * 0.5)
-    F.bookshelf(mb, ix0 + 0.30, 21.40, ang=-math.pi * 0.5, w=1.60, h=1.85,
-                rng=c.rng)
-    F.bookshelf(mb, ix0 + 0.30, 13.60, ang=-math.pi * 0.5, w=1.60, h=1.85,
-                rng=c.rng)
-    # テレビ（廊下側の壁に掛ける）
-    kit.box(mb, x_in - 0.10, 20.10, 1.05, x_in - 0.06, 21.70, 1.98, "plastic_black")
-    kit.box(mb, x_in - 0.14, 20.20, 1.12, x_in - 0.10, 21.60, 1.91, "screen_blue")
-    sh.planter(mb, -7.20, 22.20, r=0.40, h=0.44, leaf_h=1.5)
-    sh.ceiling_lights(c.wall, ix0, Y_CROSS, x_in, Y_NORTH, Z_CEIL, sx=3.4, sy=3.6)
-    sh.wall_sign(mb, x_in - 0.02, 14.10, 2.35, ang=math.pi * 0.5, w=1.2, h=0.34)
-    c.sign(x_in - 0.02, 14.10, 2.35)
-
-    c.npc(-4.00, 16.40)
-    c.poi("lounge", -5.40, 17.50)
-    return mb
-
-
-def _dining(c):
-    """食堂（東、y 12.6 – 23.0）。ドーミーなので朝夕 2 食つき。"""
-    s = c.spec
-    _ix0, _iy0, ix1, _iy1 = s.inner()
-    mb = c.furn("dining")
-    x_in = CORR_X + sh.PART * 0.5
-
-    for j in range(3):
-        y = 14.40 + j * 2.60
-        for k in range(2):
-            x = 3.40 + k * 2.80
-            F.table(mb, x, y, ang=0.0, w=1.50, d=0.85, h=0.72)
-            F.chair_canteen(mb, kit.T(x - 0.45, y - 0.72, 0.0, 0.0))
-            F.chair_canteen(mb, kit.T(x + 0.45, y - 0.72, 0.0, 0.0))
-            F.chair_canteen(mb, kit.T(x - 0.45, y + 0.72, 0.0, math.pi))
-            F.chair_canteen(mb, kit.T(x + 0.45, y + 0.72, 0.0, math.pi))
-
-    # 配膳カウンターと厨房の仕切り（北端。厨房側へは入れない）
-    sh.partition(c.wall, (x_in, 21.60), (ix1, 21.60), 0.0, Z_PART)
-    F.serving_line(mb, x_in + 0.40, ix1 - 0.40, 20.85, depth=1.10, h=0.95,
-                   trays=True)
-    F.tray_rack(mb, x_in + 0.70, 19.80, ang=math.pi)
-    sh.ceiling_lights(c.wall, x_in, Y_CROSS, ix1, Y_NORTH, Z_CEIL, sx=3.4, sy=3.6)
-    sh.wall_sign(mb, x_in + 0.02, 14.10, 2.35, ang=-math.pi * 0.5, w=1.2, h=0.34)
-    c.sign(x_in + 0.02, 14.10, 2.35)
-    c.poi("shokudo", 5.00, 17.00)
-    return mb
-
-
-def _corridor(c):
-    """中廊下（y 12.6 – 40.5）。奥は行き止まりで、居室には入れない。"""
-    s = c.spec
-    _ix0, _iy0, _ix1, iy1 = s.inner()
-    mb = c.furn("corridor")
-    xw = -CORR_X + sh.PART * 0.5      # 西側の壁の「廊下側」の面（-1.52）
-    xe = CORR_X - sh.PART * 0.5       # 東側の壁の「廊下側」の面（+1.52）
-
-    # 居室の扉（見た目だけ。壁に開口は開けないので中へは入れない）
-    for j in range(5):
-        y = 24.60 + j * 2.60
-        sh.door(mb, xw + 0.05, y, ang=math.pi * 0.5, w=0.90, h=2.05,
-                leaf="desk_wood", open_=0.0)
-        sh.door(mb, xe - 0.05, y, ang=-math.pi * 0.5, w=0.90, h=2.05,
-                leaf="desk_wood", open_=0.0)
-
-    # 誘導灯・消火器・ライン照明
-    for j in range(4):
-        y = 16.00 + j * 7.00
-        sh.exit_sign(c.wall, 0.0, y, Z_CEIL - 0.06, ang=math.pi)
-    sh.fire_extinguisher(mb, xe - 0.30, 20.20, ang=math.pi * 0.5)
-    sh.fire_extinguisher(mb, xw + 0.30, 33.00, ang=-math.pi * 0.5)
-    sh.light_strip(c.wall, -0.40, Y_CROSS, 0.40, iy1, Z_CEIL)
-
-    # 行き止まり: エレベーター + 立入禁止の掲示 + 進入止めのポール
-    sh.elevator_bank(mb, 0.0, iy1 - 0.06, count=1, ang=0.0, w=1.05, h=2.25)
-    sh.wall_sign(mb, xw + 0.02, iy1 - 1.90, 1.95, ang=-math.pi * 0.5,
-                 w=1.10, h=0.40)
-    c.sign(xw + 0.02, iy1 - 1.90, 1.95)
-    sh.notice_board(mb, xe - 0.02, iy1 - 2.10, 0.95, ang=math.pi * 0.5,
-                    w=1.60, h=1.10, sheets=5, rng=c.rng)
-    for sx in (-1.30, 1.30):
-        kit.cyl(mb, sx, iy1 - 2.20, 0.0, 0.92, 0.055, "stainless", seg=8)
-    kit.box(mb, -1.34, iy1 - 2.24, 0.84, 1.34, iy1 - 2.16, 0.90, "stainless")
-    c.poi("corridor_end", 0.0, iy1 - 3.20)
-    return mb
-
-
-def build(c):
-    """kcd_interior のプランと同じ契約（registry.get(bid).build(c) と同形）。"""
-    s = c.spec
-    ix0, iy0, ix1, iy1 = s.inner()
-
-    # 躯体（床 + 外周壁 + 入口ガラススクリーン + 天井）
-    common.envelope(c, Z_CEIL, floor_mat="floor_tile_grey", door_w=DOOR_W,
-                    glass="glass_clear", sill=0.95,
-                    header=Z_TOP - Z_WIN_TOP, seg=3.2,
-                    wall="wall_white", z_top=Z_TOP, ceil=True,
-                    ceil_mat="ceiling_white", grid=2.4, floor_thick=0.30)
-    common.entry_kit(c, Z_CEIL, door_w=DOOR_W, spawn_depth=1.50, bin_x=5.60)
-
-    # 間仕切り: 玄関ホール／ラウンジ・食堂の境（中廊下の入口だけ開ける）
-    sh.partition(c.wall, (ix0, Y_CROSS), (-CORR_X, Y_CROSS), 0.0, Z_PART)
-    sh.partition(c.wall, (CORR_X, Y_CROSS), (ix1, Y_CROSS), 0.0, Z_PART)
-    # 中廊下の壁。ラウンジと食堂の入口だけ開ける
-    sh.partition(c.wall, (-CORR_X, Y_CROSS), (-CORR_X, iy1), 0.0, Z_PART,
-                 gaps=[(4.40, 5.60)])
-    sh.partition(c.wall, (CORR_X, Y_CROSS), (CORR_X, iy1), 0.0, Z_PART,
-                 gaps=[(4.40, 5.60)])
-    # 開口の上の垂れ壁（上階の床から抜けられないように必ずふさぐ。#45）
-    sh.partition(c.wall, (-CORR_X, Y_CROSS + 4.40), (-CORR_X, Y_CROSS + 5.60),
-                 2.20, Z_PART)
-    sh.partition(c.wall, (CORR_X, Y_CROSS + 4.40), (CORR_X, Y_CROSS + 5.60),
-                 2.20, Z_PART)
-    # 建具は「面の法線 = +Y を ang 回転」。廊下の壁は Y 方向に走るので ang = ±pi/2。
-    # 0 のままだと引き戸が廊下を横切って立つ（プレビューで発覚）
-    sh.door(c.wall, -CORR_X, Y_CROSS + 5.00, ang=math.pi * 0.5, w=1.10, h=2.10,
-            glass="glass_clear", open_=0.86)
-    sh.door(c.wall, CORR_X, Y_CROSS + 5.00, ang=-math.pi * 0.5, w=1.10, h=2.10,
-            glass="glass_clear", open_=0.86)
-    # 居室エリアの仕切り（ここから奥は入れない）
-    sh.partition(c.wall, (ix0, Y_NORTH), (-CORR_X, Y_NORTH), 0.0, Z_PART)
-    sh.partition(c.wall, (CORR_X, Y_NORTH), (ix1, Y_NORTH), 0.0, Z_PART)
-
-    _hall(c)
-    _lounge(c)
-    _dining(c)
-    _corridor(c)
-
-    # プレビュー用の明かり
-    for y in (6.0, 10.5):
-        c.light(-3.0, y, Z_CEIL - 0.15, 200.0, 1.6)
-        c.light(3.0, y, Z_CEIL - 0.15, 200.0, 1.6)
-    for y in (15.5, 20.0):
-        c.light(-5.0, y, Z_CEIL - 0.15, 190.0, 1.6)
-        c.light(5.0, y, Z_CEIL - 0.15, 190.0, 1.6)
-    for y in (16.0, 24.0, 32.0, 39.0):
-        c.light(0.0, y, Z_CEIL - 0.15, 150.0, 1.2)
-
-    # プレビューのカメラ
-    c.cam("", (0.0, 4.20, 2.25), (1.60, 12.00, 1.15), 17.0)
-    c.cam("hall", (-6.60, 4.30, 2.30), (4.20, 10.60, 1.20), 19.0)
-    c.cam("lounge", (-1.90, 13.60, 2.20), (-6.20, 20.00, 1.00), 19.0)
-    c.cam("corridor", (0.0, 13.40, 1.95), (0.0, iy1 - 0.20, 1.55), 24.0)
-
-    c.note("運営は %s。%s" % (OPERATOR, NOT_UNIVERSITY))
-    c.note("ミニマップはキャンパス外なので黒のまま（#41 の仕様）")
-    c.note("行き止まりの廊下: 居室の扉は見た目だけで開口を開けていない")
-    return c
-
-
-# 既存の kcd_interior プランと同じ呼び方ができるようにしておく
-build_interior = build
+                             balcony_edge=[front, side], balcony_floors=len(z_floors),
+                             balcony_units=units, door=dr)

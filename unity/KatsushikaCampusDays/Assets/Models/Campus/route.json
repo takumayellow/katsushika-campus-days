@@ -172,9 +172,9 @@
   ],
   "objects": [
    "bld_route_background",
-   "bld_dorm",
-   "route_ground",
    "bld_dorm_trim",
+   "route_ground",
+   "bld_dorm",
    "bld_route_fence",
    "route_props_lamp"
   ],
@@ -225,8 +225,12 @@
     "gf": 4.0,
     "up": 3.45,
     "height": 17.8,
-    "balcony_edge": 5,
+    "balcony_edge": [
+     4,
+     5
+    ],
     "balcony_floors": 4,
+    "balcony_units": 18,
     "door": {
      "W": 1.6,
      "H": 2.6,
@@ -270,7 +274,7 @@
    "lamps": 8,
    "window_spacing_m": 3.6,
    "window_estimate": 656,
-   "tris": 15098,
+   "tris": 15925,
    "budget": 16000,
    "per_object": {
     "bld_route_background": {
@@ -278,20 +282,20 @@
      "faces": 4790,
      "tris": 9112
     },
-    "bld_dorm": {
-     "verts": 1566,
-     "faces": 1206,
-     "tris": 2400
+    "bld_dorm_trim": {
+     "verts": 1971,
+     "faces": 1311,
+     "tris": 2622
     },
     "route_ground": {
      "verts": 1347,
      "faces": 910,
      "tris": 1820
     },
-    "bld_dorm_trim": {
-     "verts": 540,
-     "faces": 427,
-     "tris": 810
+    "bld_dorm": {
+     "verts": 924,
+     "faces": 720,
+     "tris": 1415
     },
     "bld_route_fence": {
      "verts": 344,
@@ -322,13 +326,13 @@
       "checked": true
      },
      "bld_dorm": {
-      "open_edges": 852,
-      "open_edge_m": 2569.777,
+      "open_edges": 513,
+      "open_edge_m": 1559.407,
       "checked": false
      },
      "bld_dorm_trim": {
-      "open_edges": 146,
-      "open_edge_m": 172.56,
+      "open_edges": 410,
+      "open_edge_m": 754.685,
       "checked": false
      },
      "route_props_lamp": {
@@ -338,7 +342,7 @@
      }
     }
    },
-   "fbx_bytes": 258812,
+   "fbx_bytes": 271212,
    "select": {
     "roads_total": 64,
     "roads_kept": 24,

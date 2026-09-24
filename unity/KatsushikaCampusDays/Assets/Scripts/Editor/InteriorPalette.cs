@@ -100,7 +100,12 @@ namespace KCD.Editor
             { "plant_green", new Surface("699E65", 0.12f, 0.00f) },
             { "plant_pot", new Surface("AA978A", 0.20f, 0.00f) },
             { "soil_dark", new Surface("776757", 0.05f, 0.00f) },
-            { "tray_beige", new Surface("D1C5AF", 0.35f, 0.00f) }
+            { "tray_beige", new Surface("D1C5AF", 0.35f, 0.00f) },
+            // 寮（葛飾コミュニティハウス 1F。館内写真から。imats.py と同じ値）
+            { "wallpaper_orange", new Surface("C4623F", 0.15f, 0.00f) },
+            { "fabric_yellow", new Surface("E3BD2E", 0.14f, 0.00f) },
+            { "floor_carpet_gold", new Surface("B08F4E", 0.05f, 0.00f) },
+            { "door_frosted", new Surface("DDE4E6", 0.70f, 0.00f) }
         };
 
         /// <summary>透ける材質: 色とアルファ。</summary>

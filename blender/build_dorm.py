@@ -32,6 +32,7 @@ from kcd_interior import closure, imats                # noqa: E402
 from kcd_interior import spec as ispec                 # noqa: E402
 from kcd_interior.ctx import Ctx                       # noqa: E402
 from kcd_route import dorm as D                        # noqa: E402
+from kcd_route import dorm_interior as DI              # noqa: E402
 
 FBX_OPTS = dict(
     use_selection=False,
@@ -247,6 +248,7 @@ def build_exterior_scene(dorm, args, eng):
         "floor_h_upper": round(info["up"], 3), "height": info["height"],
         "balcony_edge": info["balcony_edge"],
         "balcony_floors": info["balcony_floors"],
+        "balcony_units": info["balcony_units"],
         "footprint": check_footprint(shell, loop),
         "entrance": check_entrance(dorm, dr),
         "fbx": None, "size": 0, "previews": [],
@@ -305,9 +307,9 @@ def build_interior_scene(dorm, args, eng):
     mats.build_all()
     imats.build_all()
 
-    sp = D.make_spec(dorm)
+    sp = DI.make_spec(dorm)
     c = Ctx(sp, seed=args.seed)
-    D.build(c)
+    DI.build(c)
     c.flush_seats()
 
     objects = [mb.to_object() for mb in c.builders() if mb.faces]
@@ -342,8 +344,10 @@ def build_interior_scene(dorm, args, eng):
             "facing_bearing_deg": float(dorm["entrance"]["facing_bearing"]),
         },
     }
-    sidecar = os.path.join(args.out_dir, "%s.json" % D.ID)
-    ispec.dump_sidecar(sp, meta_extra, sidecar)
+    sidecar = None
+    if not args.no_export:
+        sidecar = os.path.join(args.out_dir, "%s.json" % D.ID)
+        ispec.dump_sidecar(sp, meta_extra, sidecar)
 
     out = {"tris": tris, "objects": [o.name for o in objects],
            "empties": [n for n, _ in c.empties], "notes": c.notes,
@@ -413,10 +417,10 @@ def main():
         print("[dorm] 外観  tris=%d (躯体 %d + 付属 %d)  最長辺 %.1f/%.1f m"
               % (ext["tris"], ext["shell_tris"], ext["trim_tris"],
                  ext["shell_max_edge"], ext["trim_max_edge"]))
-        print("[dorm] 外観  %d 階 / 階高 %.2f + %.2f x %d / 高さ %.1f m / バルコニー 辺%d x %d 層"
+        print("[dorm] 外観  %d 階 / 階高 %.2f + %.2f x %d / 高さ %.1f m / バルコニー 辺%s x %d 層 x %d 戸"
               % (ext["levels"], ext["floor_h_ground"], ext["floor_h_upper"],
                  ext["levels"] - 1, ext["height"], ext["balcony_edge"],
-                 ext["balcony_floors"]))
+                 ext["balcony_floors"], ext["balcony_units"]))
         print("[dorm] footprint  頂点ずれ最大 %.4f m / 外へのはみ出し最大 %.4f m / 辺の欠け %s  -> %s"
               % (fp_["corner_dist_max"], fp_["outside_max"],
                  "なし" if all(e.get("covered") for e in fp_["edges"]) else "あり",

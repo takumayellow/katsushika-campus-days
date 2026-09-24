@@ -44,6 +44,16 @@ namespace KCD.Editor
             { "water", "8FB8C8" },
             { "white", "F5F5F2" },
             { "wood", "9A6B3F" },
+            // 葛飾コミュニティハウスの外観（blender/kcd_route/dorm.py。mats.py の PALETTE と同じ色）。
+            // glass_frosted は名前が glass* なので、EnsureCampus でアルファ 0.72 の半透明になる。
+            { "dorm_white", "E8EEEB" },
+            { "dorm_cream", "E4DAC6" },
+            { "glass_frosted", "E6EEEE" },
+            { "tile_mauve", "6E5A56" },
+            { "tile_charcoal", "7E7A80" },
+            { "panel_brown", "9A7A68" },
+            { "deck_wood", "746967" },
+            { "metal_charcoal", "3A4048" },
             // モール北側の花壇（#56。blender/kcd_lib/mats.py と同じ色）
             { "bed_soil", "5A4331" },
             { "flower_leaf", "3E7A2E" },
