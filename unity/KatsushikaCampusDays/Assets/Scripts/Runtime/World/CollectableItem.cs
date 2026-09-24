@@ -34,8 +34,24 @@ namespace KCD
 
         private void Awake()
         {
-            PromptLabel = L.Get("ui.interact.pick_up", "拾う");
             _basePosition = transform.position;
+        }
+
+        private void OnEnable()
+        {
+            L.LocaleChanged += RefreshPrompt;
+            RefreshPrompt();
+        }
+
+        private void OnDisable()
+        {
+            L.LocaleChanged -= RefreshPrompt;
+        }
+
+        /// <summary>いまの言語で「拾う」を出す。言語を切り替えたら出し直す。</summary>
+        private void RefreshPrompt()
+        {
+            PromptLabel = L.Get("ui.interact.pick_up", "拾う");
         }
 
         private void Start()
