@@ -33,9 +33,10 @@ namespace KCD
             data.DayNumber = manager.DayNumber;
             data.Quests = manager.Quests != null ? manager.Quests.Capture() : new QuestProgress();
 
-            data.Buildings = DayStats.BuildingIds();
-            data.Collected = DayStats.CollectedIds();
-            data.PhotoSpots = DayStats.PhotoSpotIds();
+            data.Buildings = DayStats.SortedBuildingIds();
+            data.Collected = DayStats.SortedCollectedIds();
+            data.PhotoSpots = DayStats.SortedPhotoSpotIds();
+            data.Talked = DayStats.SortedTalkedIds();
 
             var player = UnityEngine.Object.FindAnyObjectByType<PlayerController>();
             if (player != null)
@@ -231,8 +232,11 @@ namespace KCD
             manager.HasEnteredCampus = true;
             manager.DayNumber = data.DayNumber;
 
-            DayStats.Restore(data.Buildings, data.Collected, data.PhotoSpots);
+            DayStats.Restore(data.Buildings, data.Collected, data.PhotoSpots, data.Talked);
             manager.Quests?.Restore(data.Quests);
+
+            // 読み込んだ進行で取れている称号は、ロードの時点で黙って獲得済みにする（トーストを並べない）。
+            manager.SyncAchievementsQuietly();
         }
 
         /// <summary>見た目・時計・位置・屋内を今のシーンに当てる。</summary>

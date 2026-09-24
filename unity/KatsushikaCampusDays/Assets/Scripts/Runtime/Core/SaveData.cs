@@ -58,6 +58,9 @@ namespace KCD
         /// <summary>撮った写真スポット（DayStats）。</summary>
         public List<string> PhotoSpots = new List<string>();
 
+        /// <summary>話しかけた NPC（DayStats）。称号「顔なじみ」が数える。</summary>
+        public List<string> Talked = new List<string>();
+
         public Vector3 PlayerPosition => new Vector3(PlayerX, PlayerY, PlayerZ);
 
         public Vector3 ReturnPosition => new Vector3(ReturnX, ReturnY, ReturnZ);
@@ -146,7 +149,8 @@ namespace KCD
                 Quests = SanitizeQuests(source.Quests),
                 Buildings = CleanIds(source.Buildings),
                 Collected = CleanIds(source.Collected),
-                PhotoSpots = CleanIds(source.PhotoSpots)
+                PhotoSpots = CleanIds(source.PhotoSpots),
+                Talked = CleanIds(source.Talked)
             };
 
             bool finitePosition = IsFinite(source.PlayerX) && IsFinite(source.PlayerY) && IsFinite(source.PlayerZ);

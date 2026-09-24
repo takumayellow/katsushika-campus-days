@@ -56,10 +56,16 @@ namespace KCD
         private float _wCollectibles = 0.30f;
         private float _wPhotos = 0.15f;
         private float _wBuildings = 0.10f;
-        private int _tQuests = 13;
-        private int _tCollectibles = 20;
-        private int _tPhotos = 6;
-        private int _tBuildings = 9;
+        /// <summary>result.json が読めないときの分母。result.json の totals と同じ値にしておく（ResultTotalsTests）。</summary>
+        public const int DefaultQuestTotal = 13;
+        public const int DefaultCollectibleTotal = 20;
+        public const int DefaultPhotoTotal = 6;
+        public const int DefaultBuildingTotal = 9;
+
+        private int _tQuests = DefaultQuestTotal;
+        private int _tCollectibles = DefaultCollectibleTotal;
+        private int _tPhotos = DefaultPhotoTotal;
+        private int _tBuildings = DefaultBuildingTotal;
         private readonly List<RankEntry> _ranks = new List<RankEntry>();
         private bool _armed = true;
         private bool _loaded;
@@ -422,13 +428,17 @@ namespace KCD
                 }
             }
 
+            // 隠しアイテムと写真は collectibles.json に載っている id だけ数える (#65)。
+            // 以前は拾った物を全部数えていて、牛乳と葉（クエストの拾い物）の 2 種で 2/20 のまま止まっていた。
+            // 分母（result.json の totals）が一覧の件数と合っていることは ResultTotalsTests が見る。
+            CollectibleCatalog catalog = CollectibleCatalog.Instance;
             var data = new ResultData
             {
                 Quests = Mathf.Min(done, _tQuests),
                 QuestTotal = _tQuests,
-                Collectibles = Mathf.Min(DayStats.CollectedCount, _tCollectibles),
+                Collectibles = Mathf.Min(DayStats.HiddenCollectedCount(catalog), _tCollectibles),
                 CollectibleTotal = _tCollectibles,
-                Photos = Mathf.Min(DayStats.PhotoSpotCount, _tPhotos),
+                Photos = Mathf.Min(DayStats.CatalogPhotoCount(catalog), _tPhotos),
                 PhotoTotal = _tPhotos,
                 Buildings = Mathf.Min(DayStats.BuildingCount, _tBuildings),
                 BuildingTotal = _tBuildings,

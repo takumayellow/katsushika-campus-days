@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
@@ -82,6 +83,18 @@ namespace KCD
         /// <summary>クエスト進行。GameManager と寿命を共にする。</summary>
         public QuestSystem Quests { get; private set; }
 
+        /// <summary>獲得した称号 (#65)。GameManager と寿命を共にし、「はじめから」で空にする。セーブには載せない。</summary>
+        public AchievementBook Achievements { get; } = new AchievementBook();
+
+        /// <summary>クエストが動いたので称号を数え直す。</summary>
+        private bool _achievementsDirty = true;
+
+        /// <summary>最後に称号を数えたときの DayStats.Version。</summary>
+        private int _achievementStatsVersion = -1;
+
+        /// <summary>購読している QuestSystem。付け替えのときに外す。</summary>
+        private QuestSystem _subscribedQuests;
+
         /// <summary>ゲーム内時刻（時間単位の実数、0-24）。DayNightCycle が毎フレーム更新する。</summary>
         public float GameTimeHours { get; set; } = DayRestart.DayStartHour;
 
@@ -108,6 +121,35 @@ namespace KCD
                 Quests = CreateQuests();
                 Quests.LoadFromResources();
             }
+
+            SubscribeQuests();
+        }
+
+        /// <summary>クエストの変化で称号を数え直す。同じ QuestSystem に二重には付けない。</summary>
+        private void SubscribeQuests()
+        {
+            if (_subscribedQuests == Quests)
+            {
+                return;
+            }
+
+            if (_subscribedQuests != null)
+            {
+                _subscribedQuests.Changed -= OnQuestsChanged;
+            }
+
+            _subscribedQuests = Quests;
+            if (_subscribedQuests != null)
+            {
+                _subscribedQuests.Changed += OnQuestsChanged;
+            }
+
+            _achievementsDirty = true;
+        }
+
+        private void OnQuestsChanged()
+        {
+            _achievementsDirty = true;
         }
 
         /// <summary>クエスト進行を作る。達成したら自動セーブを頼む (#61)。</summary>
@@ -154,6 +196,11 @@ namespace KCD
             }
 
             Quests.ResetForNewGame();
+            SubscribeQuests();
+
+            // 称号も前の周回のものを持ち越さない。ResetForNewGame は黙って作り直す（Changed を出さない）ので、ここで印を付ける。
+            Achievements.Reset();
+            _achievementsDirty = true;
 
             // 選択キャラクター（SelectedCharacterId / PlayerPrefs）はここでは触らない。
             // 「はじめから」はこのあとキャラ選択で決まるし、次回の既定値として覚えておいてよい。
@@ -168,10 +215,57 @@ namespace KCD
             {
                 AutoSave.Tick(HasEnteredCampus && SceneManager.GetActiveScene().name == CampusSceneName);
             }
+
+            RefreshAchievements(true);
+        }
+
+        /// <summary>
+        /// セーブを読んだあとに呼ぶ。読む前に取っていた称号は、トーストを出さずに獲得済みにする
+        /// （ロードのたびに「称号を獲得」が並ばないように）。
+        /// </summary>
+        public void SyncAchievementsQuietly()
+        {
+            _achievementsDirty = true;
+            RefreshAchievements(false);
+        }
+
+        /// <summary>
+        /// クエストか DayStats が動いたフレームだけ称号を数え直し、announce なら新しく取ったものをトーストで知らせる。
+        /// クエストの報酬の収集物もここで記録する（QuestSystem.Restore のあとも追いつくように、達成済みを全部見る）。
+        /// </summary>
+        private void RefreshAchievements(bool announce)
+        {
+            if (!_achievementsDirty && _achievementStatsVersion == DayStats.Version)
+            {
+                return;
+            }
+
+            _achievementsDirty = false;
+            QuestRewards.GrantCompleted(Quests);
+            _achievementStatsVersion = DayStats.Version;
+
+            List<CatalogAchievement> unlocked =
+                Achievements.Refresh(CollectibleCatalog.Instance, AchievementRecord.FromDayStats(Quests));
+            HUD hud = announce ? HUD.Instance : null;
+            if (hud == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < unlocked.Count; i++)
+            {
+                hud.ShowToast(L.Format("ui.hud.achievement_unlocked", unlocked[i].DisplayName));
+            }
         }
 
         private void OnDestroy()
         {
+            if (_subscribedQuests != null)
+            {
+                _subscribedQuests.Changed -= OnQuestsChanged;
+                _subscribedQuests = null;
+            }
+
             if (_instance == this)
             {
                 _instance = null;

@@ -38,6 +38,32 @@ namespace KCD
             _basePosition = transform.position;
         }
 
+        private void Start()
+        {
+            // 隠しアイテムは 1 日に 1 度だけ。タイトルへ戻らずにシーンを読み直したとき、
+            // 拾った物が同じ場所に出てこないようにする（DayStats はシーンをまたいで残る）。
+            if (CollectibleCatalog.Instance.IsHidden(_itemId) && DayStats.HasCollected(_itemId))
+            {
+                _taken = true;
+                Destroy(gameObject);
+            }
+        }
+
+        /// <summary>
+        /// 拾ったときのトースト。隠しアイテムは「隠しアイテム発見: ◯◯」、
+        /// 牛乳や葉のようなクエストの拾い物は「◯◯を拾った」。
+        /// </summary>
+        public static string ToastFor(string itemId, string displayName)
+        {
+            CatalogItem item = CollectibleCatalog.Instance.FindItem(itemId);
+            if (item != null && item.IsHidden)
+            {
+                return L.Format("ui.hud.collectible_found", item.DisplayName);
+            }
+
+            return L.Format("ui.hud.picked_up", L.Get("ui.item." + itemId, displayName));
+        }
+
         private void Update()
         {
             float bob = Mathf.Sin(Time.time * 1.8f) * _bobHeight;
@@ -56,7 +82,7 @@ namespace KCD
             AudioManager.Instance?.PlaySe("item_get");
             GameManager.Instance.Quests?.ReportCollect(_itemId);
             DayStats.NoteCollect(_itemId);
-            HUD.Instance?.ShowToast(L.Format("ui.hud.picked_up", L.Get("ui.item." + _itemId, _displayName)));
+            HUD.Instance?.ShowToast(ToastFor(_itemId, _displayName));
             Destroy(gameObject);
         }
     }

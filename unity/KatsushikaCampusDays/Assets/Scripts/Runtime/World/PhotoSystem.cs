@@ -123,6 +123,21 @@ namespace KCD
             }
         }
 
+        /// <summary>
+        /// 撮影のトーストに出す名前。写真スポットならその名前（「モールの見通し」など）、
+        /// 一覧に無い id ならその id、自由撮影ならファイル名。
+        /// </summary>
+        public static string LabelFor(string spotId, string fileName)
+        {
+            if (string.IsNullOrEmpty(spotId))
+            {
+                return fileName ?? string.Empty;
+            }
+
+            CatalogPhotoSpot spot = CollectibleCatalog.Instance?.FindPhotoSpot(spotId);
+            return spot != null ? spot.DisplayName : spotId;
+        }
+
         private void SetActive(bool active)
         {
             KCDInput.PhotoMode = active;
@@ -197,8 +212,7 @@ namespace KCD
                 SetOverlay(true);
             }
 
-            string label = string.IsNullOrEmpty(spotId) ? fileName : spotId;
-            HUD.Instance?.ShowToast(L.Format("ui.hud.photo_taken", label));
+            HUD.Instance?.ShowToast(L.Format("ui.hud.photo_taken", LabelFor(spotId, fileName)));
             DayStats.NotePhoto(string.IsNullOrEmpty(spotId) ? fileName : spotId);
             PhotoTaken?.Invoke(string.IsNullOrEmpty(spotId) ? fileName : spotId);
             _capturing = false;

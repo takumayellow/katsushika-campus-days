@@ -60,6 +60,37 @@ namespace KCD.Tests
             Assert.AreEqual("t_idle", topic.Id, "依頼をもう一度されない");
         }
 
+        private const string GymJson =
+            "{\"id\":\"q_gym\",\"order\":5,\"prerequisites\":[\"q_lunch\"]," +
+            "\"steps\":[{\"id\":\"s1\",\"type\":\"enter\",\"target\":\"gym\"}]}";
+
+        private const string KanameGymJson =
+            "{\"id\":\"kaname\",\"topics\":[" +
+            "{\"id\":\"t_gym\",\"once\":true,\"startsQuest\":\"q_gym\",\"lines\":[\"a\"]}," +
+            "{\"id\":\"t_idle\",\"lines\":[\"c\"]}]}";
+
+        [Test]
+        public void RequestWithUnmetPrerequisites_IsNotOfferedUntilTheyAreMet()
+        {
+            // 前提で断られる依頼を出すと、once の話題を使い切って二度と受けられなくなる (#65)。
+            var quests = new QuestSystem();
+            quests.Load(new[]
+            {
+                QuestData.FromJson(MiniJson.Deserialize(LunchJson) as Dictionary<string, object>),
+                QuestData.FromJson(MiniJson.Deserialize(GymJson) as Dictionary<string, object>)
+            });
+            DialogueData kaname = DialogueData.FromJson(MiniJson.Deserialize(KanameGymJson) as Dictionary<string, object>);
+
+            Assert.AreEqual("t_idle", DialogueSystem.SelectTopic(kaname, quests, new HashSet<string>()).Id,
+                "前提（q_lunch）を終える前に依頼を出している");
+
+            quests.StartQuest("q_lunch");
+            quests.ReportEnter("kyoso");
+            Assert.IsTrue(quests.IsCompleted("q_lunch"));
+
+            Assert.AreEqual("t_gym", DialogueSystem.SelectTopic(kaname, quests, new HashSet<string>()).Id);
+        }
+
         [Test]
         public void SpentOnceTopic_IsStillSkipped()
         {

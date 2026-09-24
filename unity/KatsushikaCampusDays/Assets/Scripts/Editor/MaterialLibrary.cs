@@ -67,8 +67,16 @@ namespace KCD.Editor
             { "vending_blue", "0F54B8" },
             { "bin_green", "296638" },
             { "bike_frame", "2E2E33" },
-            { "bike_tire", "0F0F0F" }
+            { "bike_tire", "0F0F0F" },
+            // 隠しアイテムの宝石（#65）。collectibles.json の rarity ごとの色で、少し光らせて遠くから見つけやすくする。
+            { "gem_common", "E8DCC0" },
+            { "gem_uncommon", "5FCF8E" },
+            { "gem_rare", "58A8F0" },
+            { "gem_legendary", "F2B93B" }
         };
+
+        /// <summary>宝石の自己発光の強さ（基本色に掛ける）。</summary>
+        private const float GemEmission = 0.55f;
 
         /// <summary>
         /// 服・髪などの名前に含まれる色語 → 色。palette.json が無いキャラだけの予備 (#55)。
@@ -141,6 +149,15 @@ namespace KCD.Editor
             {
                 MakeTransparent(material, name == "glass_clear" ? 0.32f : 0.72f, color);
                 material.SetFloat("_Smoothness", 0.92f);
+            }
+            else if (name.StartsWith("gem_"))
+            {
+                material.SetColor("_BaseColor", color);
+                material.SetFloat("_Smoothness", 0.9f);
+                material.SetFloat("_Metallic", 0f);
+                material.EnableKeyword("_EMISSION");
+                material.SetColor("_EmissionColor", color * GemEmission);
+                material.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
             }
             else if (!CampusColors.ContainsKey(name) && InteriorPalette.TryGetSurface(name, out InteriorPalette.Surface surface))
             {

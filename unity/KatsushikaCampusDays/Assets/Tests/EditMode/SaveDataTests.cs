@@ -113,6 +113,7 @@ namespace KCD.Tests
             data.Buildings.Add("library");
             data.Collected.Add("item_card");
             data.PhotoSpots.Add("ps_gate");
+            data.Talked.Add("inari");
 
             SaveData restored = SaveDataRules.Parse(SaveDataRules.ToJson(data));
 
@@ -132,6 +133,7 @@ namespace KCD.Tests
             CollectionAssert.AreEqual(new[] { "library" }, restored.Buildings);
             CollectionAssert.AreEqual(new[] { "item_card" }, restored.Collected);
             CollectionAssert.AreEqual(new[] { "ps_gate" }, restored.PhotoSpots);
+            CollectionAssert.AreEqual(new[] { "inari" }, restored.Talked);
         }
 
         // ---- 古いセーブ ----
@@ -157,6 +159,8 @@ namespace KCD.Tests
             Assert.AreEqual(0, data.Buildings.Count);
             Assert.AreEqual(0, data.Collected.Count);
             Assert.AreEqual(0, data.PhotoSpots.Count);
+            Assert.IsNotNull(data.Talked, "話した NPC を持たないセーブは空で読む");
+            Assert.AreEqual(0, data.Talked.Count);
             Assert.AreEqual(SavePlacement.Outside, SaveDataRules.Placement(data, false));
         }
 
@@ -211,7 +215,8 @@ namespace KCD.Tests
                 Quests = null,
                 Buildings = null,
                 Collected = null,
-                PhotoSpots = null
+                PhotoSpots = null,
+                Talked = null
             };
 
             SaveData data = SaveDataRules.Sanitize(broken);
@@ -227,6 +232,7 @@ namespace KCD.Tests
             Assert.IsNotNull(data.Buildings);
             Assert.IsNotNull(data.Collected);
             Assert.IsNotNull(data.PhotoSpots);
+            Assert.IsNotNull(data.Talked);
         }
 
         [TestCase(25.5f, 1.5f)]
@@ -415,15 +421,18 @@ namespace KCD.Tests
             DayStats.NoteEnter("gym");
             DayStats.NoteCollect("item_card");
             DayStats.NotePhoto("ps_gate");
+            DayStats.NoteTalk("inari");
 
-            List<string> buildings = DayStats.BuildingIds();
-            List<string> collected = DayStats.CollectedIds();
-            List<string> photos = DayStats.PhotoSpotIds();
+            List<string> buildings = DayStats.SortedBuildingIds();
+            List<string> collected = DayStats.SortedCollectedIds();
+            List<string> photos = DayStats.SortedPhotoSpotIds();
+            List<string> talked = DayStats.SortedTalkedIds();
 
             DayStats.Reset();
             DayStats.NoteEnter("cafeteria");
+            DayStats.NoteTalk("kappa");
 
-            DayStats.Restore(buildings, collected, photos);
+            DayStats.Restore(buildings, collected, photos, talked);
 
             Assert.AreEqual(2, DayStats.BuildingCount);
             Assert.IsTrue(DayStats.HasEntered("library"));
@@ -431,6 +440,8 @@ namespace KCD.Tests
             Assert.IsFalse(DayStats.HasEntered("cafeteria"), "読み込む前の記録は捨てる");
             Assert.IsTrue(DayStats.HasCollected("item_card"));
             Assert.AreEqual(1, DayStats.PhotoSpotCount);
+            Assert.IsTrue(DayStats.HasTalked("inari"), "話した NPC が戻らないと、称号「顔なじみ」がロードで消える");
+            Assert.IsFalse(DayStats.HasTalked("kappa"));
         }
 
         [Test]
@@ -439,11 +450,12 @@ namespace KCD.Tests
             DayStats.NoteEnter("library");
 
             Assert.DoesNotThrow(() => DayStats.Restore(null, new[] { "", null, "item_card" },
-                new[] { "kcd_20260924_120000.png", "ps_gate" }));
+                new[] { "kcd_20260924_120000.png", "ps_gate" }, new[] { null, "", "inari" }));
 
             Assert.AreEqual(0, DayStats.BuildingCount);
             Assert.AreEqual(1, DayStats.CollectedCount);
             Assert.AreEqual(1, DayStats.PhotoSpotCount, "ps_ で始まらないものは写真スポットとして数えない");
+            Assert.AreEqual(1, DayStats.TalkedIds.Count);
         }
 
         [Test]
@@ -453,7 +465,7 @@ namespace KCD.Tests
             DayStats.NoteEnter("library");
             DayStats.NoteEnter("cafeteria");
 
-            CollectionAssert.AreEqual(new[] { "cafeteria", "gym", "library" }, DayStats.BuildingIds());
+            CollectionAssert.AreEqual(new[] { "cafeteria", "gym", "library" }, DayStats.SortedBuildingIds());
         }
 
         private static SaveData IndoorSave()

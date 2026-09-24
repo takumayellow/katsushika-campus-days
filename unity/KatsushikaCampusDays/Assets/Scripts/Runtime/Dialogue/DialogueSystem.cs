@@ -190,6 +190,18 @@ namespace KCD
                     continue;
                 }
 
+                // 前提のそろっていない依頼も出さない (#65)。出すと会話の終わりの StartQuest が前提で断られ、
+                // once の話題は使い終えた扱いになるので、その依頼は二度と受けられなくなる
+                // （オリエンテーションの前に空と話すと、コーヒーも実験ノートも達成できなかった）。
+                if (!string.IsNullOrEmpty(topic.StartsQuest) && quests != null)
+                {
+                    QuestData requested = quests.Find(topic.StartsQuest);
+                    if (requested != null && !quests.PrerequisitesMet(requested))
+                    {
+                        continue;
+                    }
+                }
+
                 bool conditional = false;
 
                 if (!string.IsNullOrEmpty(topic.RequiresActiveQuest))
