@@ -110,7 +110,8 @@ namespace KCD.Tests
             }
 
             Assert.IsEmpty(copies,
-                ScenePath + " に renderer.material の複製が " + copies.Count + " 個埋め込まれている: " + string.Join(", ", copies));
+                ScenePath + " に renderer.material の複製が " + copies.Count + " 個埋め込まれている"
+                + "（編集時に複製を作る生成コードを直し、KCD/シーンを組み直す）: " + string.Join(", ", copies));
         }
 
         private static string AssetPathOf(Material material)
