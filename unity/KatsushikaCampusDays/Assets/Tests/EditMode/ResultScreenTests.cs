@@ -5,7 +5,8 @@ namespace KCD.Tests
 {
     /// <summary>
     /// リザルト画面の開閉と選択 (#67)。開くと時間と操作を止め、選ぶと閉じて戻してから選んだ先へ進む。
-    /// 文字の板は渡さない（Redraw は null の板を飛ばす）ので、TextMeshPro もローカライズも要らない。
+    /// 文字の板は渡さない（Redraw は null の板を飛ばす）ので、TextMeshPro の部品もローカライズも要らない。
+    /// ただし Bind の引数の型が TMP_Text なので、null を渡すだけでも asmdef に Unity.TextMeshPro の参照が要る。
     /// </summary>
     public sealed class ResultScreenTests
     {
