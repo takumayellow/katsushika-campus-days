@@ -39,7 +39,7 @@
 
 | 項目 | 値 |
 |---|---|
-| 外観 三角形 | **4,033**（躯体 `bld_dorm` 1,405 + 付属 `bld_dorm_trim` 2,628） |
+| 外観 三角形 | **3,641**（躯体 `bld_dorm` 1,357 + 付属 `bld_dorm_trim` 2,284） |
 | 屋内 三角形 | **11,192 / 30,000** |
 | 屋内 FBX | 0.23 MB / メッシュ 10 / Empty 58（読み戻して 58/58 一致） |
 | 屋内の穴 | **0 件・総延長 0.000 m**（`kcd_interior/closure.py`） |
@@ -93,7 +93,7 @@
 書かない。`build_route.py` は `dorm.build_exterior(ground.dorm(data))` の躯体と付属物を
 route.fbx に入れる。
 
-* **三角形の上限**。route.fbx 全体で 15,925 / 16,000（`--budget`）。外観だけで上限 8,000
+* **三角形の上限**。route.fbx 全体で 15,529 / 16,000（`--budget`）。外観だけで上限 8,000
   （`build_dorm.py` の `EXT_BUDGET`）。
 * **`check_closed` から外観を外す**。外皮は `facade.add_facade` の窓割りと窓ガラスの板で閉じて
   いない（campus.fbx の 9 棟も同じで、`build_campus.py` はこの検査をしていない）。閉じた立体は上の

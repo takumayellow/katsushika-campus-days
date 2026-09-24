@@ -129,7 +129,7 @@ def excluded(road):
 | `check_no_down_faces()` | 地面に下向きの水平面が無い / 三角形の辺 ≤ 50 m（#30） | 最長 42.4 m |
 | `check_closed()` | 1 面にしか使われていない辺（穴の縁）の総延長（#45） | 全立体 **0 本 / 0.000 m** |
 | `props.check_enclosure()` | 輪を 5 cm 刻みで歩いて、塀 / ガードレール / 建物 のどれかで塞がっているか | 開き **最大 0.15 m**（通れる幅 0.56 m 未満） |
-| 三角形の予算 | `--budget` を超えたら止める | 11,888 / 14,000 |
+| 三角形の予算 | `--budget` を超えたら止める | 15,529 / 16,000 |
 
 `check_enclosure` の 0.56 m は Unity の `ActorFactory.BodyRadius = 0.28 m` の直径。
 これより狭い隙間は CharacterController が通れない。
