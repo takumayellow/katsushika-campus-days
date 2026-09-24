@@ -2,16 +2,16 @@
  "id": "greenhouse",
  "display": "温室",
  "entrance_world": {
-  "x": 107.653,
-  "z": 14.6969
+  "x": 105.2634,
+  "z": 24.4749
  },
- "yaw_deg": 24.5514,
+ "yaw_deg": 114.5514,
  "campus_frame_deg": -24.5514,
  "envelope": {
-  "x0": -3.736,
-  "x1": 3.736,
+  "x0": -5.34,
+  "x1": 5.401,
   "y_face": 2.5,
-  "y_back": 13.241
+  "y_back": 9.973
  },
  "wall_thickness": 0.3,
  "spawn": {
@@ -31,25 +31,25 @@
    "z": 3.05
   },
   "poi_greenhouse_plants": {
-   "x": 0.0,
+   "x": 0.031,
    "y": 0.0,
-   "z": 7.87
+   "z": 6.236
   },
   "npc_greenhouse_1": {
-   "x": 0.0,
+   "x": 0.031,
    "y": 0.0,
    "z": 5.4
   },
   "sign_greenhouse_1": {
-   "x": 0.0,
+   "x": 0.031,
    "y": 2.2,
-   "z": 12.721
+   "z": 9.453
   }
  },
- "triangles": 4128,
+ "triangles": 4072,
  "seats": 0,
  "notes": [
-  "切妻ガラス屋根の温室（栽培ベンチ 2 列・鉢植え・灌水パイプ）"
+  "切妻ガラス屋根の温室（棟木は入口の妻面から奥へ・栽培ベンチ 4 列・鉢植え・灌水パイプ）"
  ],
  "objects": [
   "floor_greenhouse",
@@ -62,7 +62,7 @@
    "ext_greenhouse",
    "ext_greenhouse_trees"
   ],
-  "triangles": 4109,
+  "triangles": 4105,
   "radius": 30.0,
   "dz": -0.03
  }
