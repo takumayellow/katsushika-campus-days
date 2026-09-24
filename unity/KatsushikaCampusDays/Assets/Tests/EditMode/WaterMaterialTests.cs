@@ -98,7 +98,8 @@ namespace KCD.Tests
                     foreach (string s in shadows)
                     {
                         string[] keywords = Keywords(i, f, s);
-                        // GLES3x（WebGL 2）は頂点の指定で全ての段をまとめてコンパイルする。
+                        // GLES3x（WebGL 2）は頂点の指定でピクセルの段もまとめてコンパイルする。
+                        // ShaderData.Pass.CompileVariant の説明に「OpenGLCore・GLES3x・Switch・Vulkan は全ての段を Vertex に含める」とある。
                         failures.AddRange(CompileErrors(pass, ProgramType.Vertex, keywords, CompilerPlatform.GLES3x, BuildTarget.WebGL));
                         variants++;
                     }
