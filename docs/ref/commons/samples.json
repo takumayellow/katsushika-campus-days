@@ -1,0 +1,761 @@
+{
+ "method": "sRGB のままチャンネルごとの中央値。rect は docs/ref/commons の画像の画素 [x0, y0, x1, y1)（右下は含まない）",
+ "samples": [
+  {
+   "sample": "tusk_brick_lecture",
+   "file": "TUS-Katsushika.jpg",
+   "rect": [
+    528,
+    312,
+    624,
+    360
+   ],
+   "median_hex": "#483A30",
+   "pixels": 4608,
+   "group": "煉瓦",
+   "label": "講義棟の校名サインの煉瓦（曇り）"
+  },
+  {
+   "sample": "tusk_stone_tower",
+   "file": "TUS-Katsushika.jpg",
+   "rect": [
+    366,
+    160,
+    430,
+    216
+   ],
+   "median_hex": "#858680",
+   "pixels": 3584,
+   "group": "建物・その他",
+   "label": "白い塔の壁（曇り）"
+  },
+  {
+   "sample": "tusk_r1_facade_avg",
+   "file": "TUS-Katsushika.jpg",
+   "rect": [
+    12,
+    160,
+    312,
+    392
+   ],
+   "median_hex": "#444743",
+   "pixels": 69600,
+   "group": "建物・その他",
+   "label": "第1研究棟の格子の面（曇り・全体）"
+  },
+  {
+   "sample": "tusk_lecture_wing_avg",
+   "file": "TUS-Katsushika.jpg",
+   "rect": [
+    648,
+    272,
+    832,
+    464
+   ],
+   "median_hex": "#54554B",
+   "pixels": 35328,
+   "group": "建物・その他",
+   "label": "講義棟（曇り・全体）"
+  },
+  {
+   "sample": "tusk_colonnade_fascia",
+   "file": "TUS-Katsushika.jpg",
+   "rect": [
+    410,
+    374,
+    600,
+    385
+   ],
+   "median_hex": "#575852",
+   "pixels": 2090,
+   "group": "建物・その他",
+   "label": "列柱の上の庇"
+  },
+  {
+   "sample": "tusk_asphalt",
+   "file": "TUS-Katsushika.jpg",
+   "rect": [
+    440,
+    622,
+    694,
+    658
+   ],
+   "median_hex": "#4F5552",
+   "pixels": 9144,
+   "group": "車道・園路",
+   "label": "交差点の車道（曇り）"
+  },
+  {
+   "sample": "tusk_sidewalk_red",
+   "file": "TUS-Katsushika.jpg",
+   "rect": [
+    484,
+    534,
+    624,
+    545
+   ],
+   "median_hex": "#70665F",
+   "pixels": 1540,
+   "group": "敷石・広場",
+   "label": "赤茶の歩道（上側）"
+  },
+  {
+   "sample": "tusk_sidewalk_red_R",
+   "file": "TUS-Katsushika.jpg",
+   "rect": [
+    936,
+    564,
+    1016,
+    577
+   ],
+   "median_hex": "#83766D",
+   "pixels": 1040,
+   "group": "敷石・広場",
+   "label": "赤茶の歩道（右端）"
+  },
+  {
+   "sample": "c01_brick_endwall",
+   "file": "TUS_Katsushika_Campus_01.jpg",
+   "rect": [
+    710,
+    150,
+    780,
+    500
+   ],
+   "median_hex": "#8C6C55",
+   "pixels": 24500,
+   "group": "煉瓦",
+   "label": "第1研究棟の端部の煉瓦（日なた）"
+  },
+  {
+   "sample": "c01_precast_pier",
+   "file": "TUS_Katsushika_Campus_01.jpg",
+   "rect": [
+    691,
+    260,
+    698,
+    395
+   ],
+   "median_hex": "#B3B5AF",
+   "pixels": 945,
+   "group": "建物・その他",
+   "label": "第1研究棟のプレキャストの縦材"
+  },
+  {
+   "sample": "c01_louver_a",
+   "file": "TUS_Katsushika_Campus_01.jpg",
+   "rect": [
+    642,
+    315,
+    651,
+    360
+   ],
+   "median_hex": "#595E5C",
+   "pixels": 405,
+   "group": "建物・その他",
+   "label": "第1研究棟のルーバー（1）"
+  },
+  {
+   "sample": "c01_louver_b",
+   "file": "TUS_Katsushika_Campus_01.jpg",
+   "rect": [
+    676,
+    265,
+    687,
+    305
+   ],
+   "median_hex": "#595E60",
+   "pixels": 440,
+   "group": "建物・その他",
+   "label": "第1研究棟のルーバー（2）"
+  },
+  {
+   "sample": "c01_r1_facade_avg",
+   "file": "TUS_Katsushika_Campus_01.jpg",
+   "rect": [
+    330,
+    220,
+    685,
+    570
+   ],
+   "median_hex": "#646661",
+   "pixels": 124250,
+   "group": "建物・その他",
+   "label": "第1研究棟の格子の面（全体）"
+  },
+  {
+   "sample": "c01_box_panel",
+   "file": "TUS_Katsushika_Campus_01.jpg",
+   "rect": [
+    235,
+    390,
+    253,
+    425
+   ],
+   "median_hex": "#615E59",
+   "pixels": 630,
+   "group": "建物・その他",
+   "label": "左の棟の張り出した箱のパネル"
+  },
+  {
+   "sample": "c01_glass_stair",
+   "file": "TUS_Katsushika_Campus_01.jpg",
+   "rect": [
+    900,
+    220,
+    940,
+    510
+   ],
+   "median_hex": "#55879C",
+   "pixels": 11600,
+   "group": "建物・その他",
+   "label": "第1研究棟のガラスの階段室"
+  },
+  {
+   "sample": "c01_lawn_dormant_mar",
+   "file": "TUS_Katsushika_Campus_01.jpg",
+   "rect": [
+    350,
+    690,
+    500,
+    720
+   ],
+   "median_hex": "#F0D78A",
+   "pixels": 4500,
+   "group": "芝・植え込み",
+   "label": "第1研究棟前の冬枯れの芝（3 月）"
+  },
+  {
+   "sample": "c02_stone_tower_sun",
+   "file": "TUS_Katsushika_Campus_02.jpg",
+   "rect": [
+    555,
+    150,
+    630,
+    350
+   ],
+   "median_hex": "#DCDCDB",
+   "pixels": 15000,
+   "group": "建物・その他",
+   "label": "白い塔の壁（日なた）"
+  },
+  {
+   "sample": "c02_brick_shade",
+   "file": "TUS_Katsushika_Campus_02.jpg",
+   "rect": [
+    445,
+    175,
+    500,
+    425
+   ],
+   "median_hex": "#7E5C47",
+   "pixels": 13750,
+   "group": "煉瓦",
+   "label": "煉瓦の壁（日陰）"
+  },
+  {
+   "sample": "c02_brick_sign_sun",
+   "file": "TUS_Katsushika_Campus_02.jpg",
+   "rect": [
+    812,
+    307,
+    950,
+    365
+   ],
+   "median_hex": "#856854",
+   "pixels": 8004,
+   "group": "煉瓦",
+   "label": "講義棟の校名サインの煉瓦（日なた）"
+  },
+  {
+   "sample": "c02_steps",
+   "file": "TUS_Katsushika_Campus_02.jpg",
+   "rect": [
+    36,
+    643,
+    292,
+    723
+   ],
+   "median_hex": "#74746E",
+   "pixels": 20480,
+   "group": "敷石・広場",
+   "label": "講義棟前の大階段"
+  },
+  {
+   "sample": "c02_plaza",
+   "file": "TUS_Katsushika_Campus_02.jpg",
+   "rect": [
+    50,
+    735,
+    950,
+    765
+   ],
+   "median_hex": "#B9B9B8",
+   "pixels": 27000,
+   "group": "敷石・広場",
+   "label": "講義棟前の広場"
+  },
+  {
+   "sample": "c02_column",
+   "file": "TUS_Katsushika_Campus_02.jpg",
+   "rect": [
+    615,
+    435,
+    626,
+    570
+   ],
+   "median_hex": "#C0BFB2",
+   "pixels": 1485,
+   "group": "建物・その他",
+   "label": "講義棟の列柱"
+  },
+  {
+   "sample": "c02_lawn_dormant_mar",
+   "file": "TUS_Katsushika_Campus_02.jpg",
+   "rect": [
+    850,
+    590,
+    990,
+    607
+   ],
+   "median_hex": "#CAAC65",
+   "pixels": 2380,
+   "group": "芝・植え込み",
+   "label": "講義棟前の冬枯れの芝（3 月）"
+  },
+  {
+   "sample": "lib_mall_pavers",
+   "file": "TUS_Katsushika_Library.jpg",
+   "rect": [
+    331,
+    667,
+    731,
+    763
+   ],
+   "median_hex": "#D7DFDE",
+   "pixels": 38400,
+   "group": "敷石・広場",
+   "label": "図書館へ向かうモールの敷石"
+  },
+  {
+   "sample": "lib_planting_L",
+   "file": "TUS_Katsushika_Library.jpg",
+   "rect": [
+    132,
+    512,
+    278,
+    585
+   ],
+   "median_hex": "#B4C51D",
+   "pixels": 10658,
+   "group": "芝・植え込み",
+   "label": "モールの左の植え込み"
+  },
+  {
+   "sample": "lib_groundcover_R",
+   "file": "TUS_Katsushika_Library.jpg",
+   "rect": [
+    917,
+    555,
+    1013,
+    603
+   ],
+   "median_hex": "#9AD01B",
+   "pixels": 4608,
+   "group": "芝・植え込み",
+   "label": "モールの右の地被"
+  },
+  {
+   "sample": "lib_upper_hall_box",
+   "file": "TUS_Katsushika_Library.jpg",
+   "rect": [
+    175,
+    269,
+    270,
+    300
+   ],
+   "median_hex": "#1D6785",
+   "pixels": 2945,
+   "group": "建物・その他",
+   "label": "図書館の屋根の上の箱（ガラス）"
+  },
+  {
+   "sample": "lib_central_roof",
+   "file": "TUS_Katsushika_Library.jpg",
+   "rect": [
+    373,
+    289,
+    585,
+    319
+   ],
+   "median_hex": "#3B8AAC",
+   "pixels": 6360,
+   "group": "建物・その他",
+   "label": "図書館の中央の屋根（ガラス）"
+  },
+  {
+   "sample": "park21_lawn_may",
+   "file": "niijuku_park_TUS_2021.jpg",
+   "rect": [
+    102,
+    635,
+    915,
+    737
+   ],
+   "median_hex": "#B6C26B",
+   "pixels": 82926,
+   "group": "芝・植え込み",
+   "label": "第1研究棟前の芝の広場（5 月）"
+  },
+  {
+   "sample": "park21_r1_facade_avg",
+   "file": "niijuku_park_TUS_2021.jpg",
+   "rect": [
+    292,
+    127,
+    597,
+    394
+   ],
+   "median_hex": "#9CA9A1",
+   "pixels": 81435,
+   "group": "建物・その他",
+   "label": "第1研究棟の格子の面（5 月・全体）"
+  },
+  {
+   "sample": "park21_brick_strip",
+   "file": "niijuku_park_TUS_2021.jpg",
+   "rect": [
+    743,
+    223,
+    748,
+    391
+   ],
+   "median_hex": "#7A6F69",
+   "pixels": 840,
+   "group": "煉瓦",
+   "label": "右の棟の煉瓦色の縦の帯（遠景）"
+  },
+  {
+   "sample": "higa_pavers_sun",
+   "file": "niijuku_park_higa4_01.jpg",
+   "rect": [
+    495,
+    625,
+    609,
+    648
+   ],
+   "median_hex": "#A9A297",
+   "pixels": 2622,
+   "group": "敷石・広場",
+   "label": "公園の園路の敷石（日なた）"
+  },
+  {
+   "sample": "higa_paver_darkband",
+   "file": "niijuku_park_higa4_01.jpg",
+   "rect": [
+    465,
+    676,
+    480,
+    688
+   ],
+   "median_hex": "#7D7775",
+   "pixels": 180,
+   "group": "敷石・広場",
+   "label": "公園の園路の濃い帯"
+  },
+  {
+   "sample": "higa_lawn_dormant_dec",
+   "file": "niijuku_park_higa4_01.jpg",
+   "rect": [
+    38,
+    520,
+    432,
+    561
+   ],
+   "median_hex": "#C1A277",
+   "pixels": 16154,
+   "group": "芝・植え込み",
+   "label": "公園入口の冬枯れの芝（12 月）"
+  },
+  {
+   "sample": "higa_concrete_bench",
+   "file": "niijuku_park_higa4_01.jpg",
+   "rect": [
+    191,
+    492,
+    432,
+    504
+   ],
+   "median_hex": "#CFC7B4",
+   "pixels": 2892,
+   "group": "建物・その他",
+   "label": "公園入口の円いコンクリートのベンチ"
+  },
+  {
+   "sample": "pano_kyoso_facade_avg",
+   "file": "scene_in_front_of_university.jpg",
+   "rect": [
+    275,
+    58,
+    409,
+    142
+   ],
+   "median_hex": "#657380",
+   "pixels": 11256,
+   "group": "建物・その他",
+   "label": "共創棟（遠景・全体）"
+  },
+  {
+   "sample": "pano_r1_facade_avg",
+   "file": "scene_in_front_of_university.jpg",
+   "rect": [
+    467,
+    50,
+    617,
+    134
+   ],
+   "median_hex": "#555D68",
+   "pixels": 12600,
+   "group": "建物・その他",
+   "label": "第1研究棟（遠景・全体）"
+  },
+  {
+   "sample": "pano_lawn_2026",
+   "file": "scene_in_front_of_university.jpg",
+   "rect": [
+    33,
+    217,
+    248,
+    242
+   ],
+   "median_hex": "#92906F",
+   "pixels": 5375,
+   "group": "芝・植え込み",
+   "label": "公園の芝（5 月）"
+  },
+  {
+   "sample": "tusk_sidewalk_red_lower",
+   "file": "TUS-Katsushika.jpg",
+   "rect": [
+    484,
+    545,
+    624,
+    551
+   ],
+   "median_hex": "#887067",
+   "pixels": 840,
+   "group": "敷石・広場",
+   "label": "赤茶の歩道（下側）"
+  },
+  {
+   "sample": "park21_box_panel",
+   "file": "niijuku_park_TUS_2021.jpg",
+   "rect": [
+    721,
+    269,
+    734,
+    289
+   ],
+   "median_hex": "#89A0A4",
+   "pixels": 260,
+   "group": "建物・その他",
+   "label": "右の棟の張り出した箱のパネル"
+  },
+  {
+   "sample": "lib_mall_dark_unit",
+   "file": "TUS_Katsushika_Library.jpg",
+   "rect": [
+    648,
+    682,
+    672,
+    689
+   ],
+   "median_hex": "#A6B7B3",
+   "pixels": 168,
+   "group": "敷石・広場",
+   "label": "モールの濃い色の敷石 1 枚"
+  },
+  {
+   "sample": "boiler_rust",
+   "file": "earth_powered_boiler.jpg",
+   "rect": [
+    190,
+    113,
+    271,
+    164
+   ],
+   "median_hex": "#AC5C56",
+   "pixels": 4131,
+   "group": "建物・その他",
+   "label": "球形ボイラの錆"
+  },
+  {
+   "sample": "boiler_groundcover",
+   "file": "earth_powered_boiler.jpg",
+   "rect": [
+    329,
+    457,
+    988,
+    548
+   ],
+   "median_hex": "#9DA240",
+   "pixels": 59969,
+   "group": "芝・植え込み",
+   "label": "ボイラ前の植え込み"
+  },
+  {
+   "sample": "emb_lawn_treeshade",
+   "file": "embankment_front_university.jpg",
+   "rect": [
+    704,
+    288,
+    816,
+    368
+   ],
+   "median_hex": "#343C23",
+   "pixels": 8960,
+   "group": "芝・植え込み",
+   "label": "土手の芝（5 月・木陰）"
+  },
+  {
+   "sample": "emb_lawn_sunlit",
+   "file": "embankment_front_university.jpg",
+   "rect": [
+    739,
+    458,
+    790,
+    512
+   ],
+   "median_hex": "#C0B481",
+   "pixels": 2754,
+   "group": "芝・植え込み",
+   "label": "土手の芝（5 月・日なた）"
+  },
+  {
+   "sample": "emb_path_left",
+   "file": "embankment_front_university.jpg",
+   "rect": [
+    19,
+    304,
+    122,
+    378
+   ],
+   "median_hex": "#CBBCB0",
+   "pixels": 7622,
+   "group": "土",
+   "label": "土手の土の園路"
+  },
+  {
+   "sample": "emb_asphalt_path_sun",
+   "file": "embankment_front_university.jpg",
+   "rect": [
+    896,
+    221,
+    1018,
+    250
+   ],
+   "median_hex": "#C9C1C9",
+   "pixels": 3538,
+   "group": "車道・園路",
+   "label": "土手の舗装した園路（日なた）"
+  },
+  {
+   "sample": "boiler_r1_brick_sun",
+   "file": "earth_powered_boiler.jpg",
+   "rect": [
+    737,
+    102,
+    753,
+    278
+   ],
+   "median_hex": "#B49C92",
+   "pixels": 2816,
+   "group": "煉瓦",
+   "label": "第1研究棟の煉瓦（日なた・遠景）"
+  },
+  {
+   "sample": "boiler_r1_grid_avg_sun",
+   "file": "earth_powered_boiler.jpg",
+   "rect": [
+    779,
+    88,
+    940,
+    285
+   ],
+   "median_hex": "#7D808B",
+   "pixels": 31717,
+   "group": "建物・その他",
+   "label": "第1研究棟の格子（日なた・全体）"
+  },
+  {
+   "sample": "boiler_lawn_beyond_pond",
+   "file": "earth_powered_boiler.jpg",
+   "rect": [
+    732,
+    337,
+    951,
+    362
+   ],
+   "median_hex": "#D7D89D",
+   "pixels": 5475,
+   "group": "芝・植え込み",
+   "label": "池の向こうの芝（9 月・強い日なた）"
+  },
+  {
+   "sample": "south_pond_water",
+   "file": "south_side_of_park.jpg",
+   "rect": [
+    11,
+    544,
+    347,
+    573
+   ],
+   "median_hex": "#4E5F74",
+   "pixels": 9744,
+   "group": "水",
+   "label": "公園の南の池"
+  },
+  {
+   "sample": "south_lawn_sun",
+   "file": "south_side_of_park.jpg",
+   "rect": [
+    699,
+    491,
+    837,
+    511
+   ],
+   "median_hex": "#949D6E",
+   "pixels": 2760,
+   "group": "芝・植え込み",
+   "label": "池の向こうの芝（5 月）"
+  },
+  {
+   "sample": "mgmt_lawn_may",
+   "file": "park_management_building.jpg",
+   "rect": [
+    80,
+    384,
+    987,
+    560
+   ],
+   "median_hex": "#9BA163",
+   "pixels": 159632,
+   "group": "芝・植え込み",
+   "label": "管理棟前の芝（5 月）"
+  },
+  {
+   "sample": "pergola_soil_plaza",
+   "file": "pergola_katsushika.jpg",
+   "rect": [
+    140,
+    351,
+    329,
+    380
+   ],
+   "median_hex": "#D9C1A8",
+   "pixels": 5481,
+   "group": "土",
+   "label": "パーゴラ前の土の広場"
+  }
+ ]
+}
