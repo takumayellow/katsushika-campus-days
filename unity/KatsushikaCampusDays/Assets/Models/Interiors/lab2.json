@@ -83,5 +83,14 @@
   "furn_lab2_02_corridor",
   "furn_lab2_03_lab01",
   "furn_lab2_04_prep02"
- ]
+ ],
+ "ext": {
+  "objects": [
+   "ext_lab2",
+   "ext_lab2_trees"
+  ],
+  "triangles": 6597,
+  "radius": 30.0,
+  "dz": -0.03
+ }
 }
