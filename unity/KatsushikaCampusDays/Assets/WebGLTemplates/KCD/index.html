@@ -7,10 +7,24 @@
     <!-- アイコンは外部ファイルを増やさないよう SVG を埋め込む。 -->
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2312151b'/%3E%3Cpath d='M6 20l10-9 10 9v6H6z' fill='%233f7ad6'/%3E%3C/svg%3E">
     <link rel="stylesheet" href="TemplateData/style.css">
+    <!-- 次の行は tools/deploy_pages.py --build がビルド元のコミットと作業ツリーの状態を書いた
+         <meta name="kcd-build"> に置き換える (#75)。 -->
+    <!-- KCD_BUILD_STAMP -->
   </head>
   <body>
     <div id="unity-container">
       <h1 id="kcd-title">葛飾キャンパスデイズ</h1>
+
+      <!-- 指だけで操作する端末（スマホ・タブレット）では、ゲームを読み込む前にこれを出す (#73)。
+           操作はキーボードとマウス、またはゲームパッドだけで、タッチ操作は作っていない。
+           「それでも読み込む」を押すまで Build/ のファイルは取りに行かない。 -->
+      <section id="kcd-pc-only" hidden>
+        <h2 id="kcd-pc-only-title">PC 向けのゲームです</h2>
+        <p>キーボードとマウス、またはゲームパッドで操作します。タッチ操作には対応していないので、この端末では歩き回れません。</p>
+        <p>PC のブラウザで次のアドレスを開いてください。<br><span id="kcd-pc-only-url"></span></p>
+        <p class="kcd-sub">読み込むと数十 MB の通信があります。</p>
+        <button type="button" id="kcd-pc-only-continue">それでも読み込む</button>
+      </section>
 
       <div id="unity-fullscreen-container">
         <canvas id="unity-canvas" width="{{{ WIDTH }}}" height="{{{ HEIGHT }}}" tabindex="-1"></canvas>
@@ -39,6 +53,9 @@
         <p class="kcd-line kcd-sub"><b>WASD</b> 移動　·　<b>Shift</b> ダッシュ　·　<b>E</b> 話す　·　<b>Tab</b> クエスト</p>
         <button type="button" class="kcd-fullscreen">⛶ 全画面</button>
       </div>
+
+      <!-- どのコミットから作ったビルドか。不具合の報告で版を言えるよう, 隅に小さく出す (#75)。 -->
+      <p id="kcd-build" hidden></p>
     </div>
 
     <script>
@@ -46,6 +63,17 @@
       let fullscreenContainer = document.querySelector("#unity-fullscreen-container");
       const overlay = document.querySelector("#kcd-overlay");
       const guide = document.querySelector("#kcd-guide");
+
+      // deploy_pages.py が書いたビルド元の記録を, ページの隅に短く出す。記録が無ければ出さない。
+      (function showBuildStamp() {
+        const meta = document.querySelector('meta[name="kcd-build"]');
+        const match = meta && /commit=([0-9a-f]{7})[0-9a-f]* tree=(\w+)/.exec(meta.content);
+        if (!match) return;
+        const label = document.querySelector("#kcd-build");
+        label.textContent = "build " + match[1] + (match[2] === "clean" ? "" : " (" + match[2] + ")");
+        label.title = meta.content;
+        label.hidden = false;
+      })();
 
       // 一時的な注意書き、または type=='error' のときはキャンバスの上に残るエラー表示。
       function unityShowBanner(msg, type) {
@@ -97,10 +125,24 @@
         showBanner: unityShowBanner,
       };
 
-      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-        // スマホ・タブレットは画面いっぱいに広げる。
-        document.querySelector("#unity-container").className = "unity-mobile";
-        canvas.className = "unity-mobile";
+      const container = document.querySelector("#unity-container");
+
+      // 指だけで操作する端末か (#73)。主な入力が粗いポインタでホバーできず、マウスやペンの
+      // ような細かいポインタが 1 つも無いもの。iPadOS の Safari は UA が Mac を名乗るが、
+      // これなら拾える。マウスをつないだタブレットは細かいポインタがあるので止めない。
+      function isTouchOnly() {
+        if (!window.matchMedia) return false;
+        return matchMedia("(pointer: coarse)").matches
+          && matchMedia("(hover: none)").matches
+          && !matchMedia("(any-pointer: fine)").matches;
+      }
+
+      function applyMobileLayout() {
+        if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || isTouchOnly()) {
+          // スマホ・タブレットは画面いっぱいに広げる。
+          container.classList.add("unity-mobile");
+          canvas.classList.add("unity-mobile");
+        }
       }
 
 #if BACKGROUND_FILENAME
@@ -142,35 +184,54 @@
         if (document.activeElement !== canvas) canvas.focus({ preventScroll: true });
       }
 
-      var script = document.createElement("script");
-      script.src = loaderUrl;
-      script.onload = () => {
-        const loadingContainer = document.querySelector("#unity-loading-container");
-        const progressBarFull = document.querySelector("#unity-progress-bar-full");
+      // ローダーを差し込んでゲームを読み込む。ここを呼ぶまで Build/ のファイルは取りに行かない。
+      function startLoading() {
+        applyMobileLayout();
+        var script = document.createElement("script");
+        script.src = loaderUrl;
+        script.onload = () => {
+          const loadingContainer = document.querySelector("#unity-loading-container");
+          const progressBarFull = document.querySelector("#unity-progress-bar-full");
 
-        createUnityInstance(canvas, config, (progress) => {
-          if (progress < 1) {
-            loadingContainer.style.display = "flex";
-            progressBarFull.style.width = 100 * progress + "%";
-          } else {
-            loadingContainer.style.display = "none";
-          }
-        }).then((unityInstance) => {
-          document.querySelectorAll(".kcd-fullscreen").forEach((button) => {
-            button.onclick = () => { unityInstance.SetFullscreen(1); focusCanvas(); };
-          });
-          focusCanvas();
-          document.addEventListener("keydown", (e) => {
-            if (e.target === document.body || e.target === document.documentElement) {
-              focusCanvas();
+          createUnityInstance(canvas, config, (progress) => {
+            if (progress < 1) {
+              loadingContainer.style.display = "flex";
+              progressBarFull.style.width = 100 * progress + "%";
+            } else {
+              loadingContainer.style.display = "none";
             }
-          }, true);
-        }).catch((message) => {
-          unityShowBanner(message, 'error');
-        });
-      };
+          }).then((unityInstance) => {
+            document.querySelectorAll(".kcd-fullscreen").forEach((button) => {
+              button.onclick = () => { unityInstance.SetFullscreen(1); focusCanvas(); };
+            });
+            focusCanvas();
+            document.addEventListener("keydown", (e) => {
+              if (e.target === document.body || e.target === document.documentElement) {
+                focusCanvas();
+              }
+            }, true);
+          }).catch((message) => {
+            unityShowBanner(message, 'error');
+          });
+        };
 
-      document.body.appendChild(script);
+        document.body.appendChild(script);
+      }
+
+      // 指だけの端末では、案内を出して「それでも読み込む」を待つ (#73)。
+      if (isTouchOnly()) {
+        const pcOnly = document.querySelector("#kcd-pc-only");
+        document.querySelector("#kcd-pc-only-url").textContent = location.href.split("#")[0];
+        container.classList.add("kcd-gated");
+        pcOnly.hidden = false;
+        document.querySelector("#kcd-pc-only-continue").addEventListener("click", () => {
+          pcOnly.hidden = true;
+          container.classList.remove("kcd-gated");
+          startLoading();
+        }, { once: true });
+      } else {
+        startLoading();
+      }
     </script>
   </body>
 </html>

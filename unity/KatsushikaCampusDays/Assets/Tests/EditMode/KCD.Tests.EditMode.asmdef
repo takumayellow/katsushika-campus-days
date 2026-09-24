@@ -3,6 +3,8 @@
     "rootNamespace": "KCD.Tests",
     "references": [
         "KCD.Runtime",
+        "Unity.TextMeshPro",
+        "UnityEngine.UI",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

@@ -1,0 +1,22 @@
+{
+    "name": "KCD.Tests.PlayMode",
+    "rootNamespace": "KCD.Tests",
+    "references": [
+        "KCD.Runtime",
+        "Unity.TextMeshPro",
+        "UnityEngine.TestRunner"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

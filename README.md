@@ -8,7 +8,7 @@
 
 - エンジン: Unity 6 (6000.6.2f1, URP)
 - アセット生成: Blender 4.5 LTS を headless Python で駆動（手作業ゼロで再生成できる）
-- 音声: numpy で手続き合成した BGM 9 / SE 37 / 環境音 7（外部素材なし）
+- 音声: BGM 8 / ジングル 2 / SE 41 / 環境音 7。タイトルとキャンパスの BGM 5 曲は東京理科大学校歌（タイトルは東北きりたんの歌唱 + ピアノ伴奏、キャンパスはピアノ伴奏）。ほかは numpy で合成したオリジナル
 - 設計書: [docs/DESIGN.md](docs/DESIGN.md)、データ仕様: [docs/CONTENT_SPEC.md](docs/CONTENT_SPEC.md)
 - 遊び方: [docs/HOW_TO_PLAY.md](docs/HOW_TO_PLAY.md)
 - 複数のエージェントで分担するときの決まり: [docs/AGENT_COORDINATION.md](docs/AGENT_COORDINATION.md)
@@ -48,15 +48,37 @@ MSYS_NO_PATHCONV=1 "$UNITY" -batchmode -nographics -quit -projectPath "$KCD\unit
 python tools/check_unity_log.py unity/logs/import.log unity/logs/scene.log unity/logs/build.log
 
 # 4. テストとスモーク
-MSYS_NO_PATHCONV=1 "$UNITY" -batchmode -nographics -projectPath "$KCD\unity\KatsushikaCampusDays" -runTests -testPlatform EditMode -testResults "$KCD\unity\logs\tests_editmode.xml" -logFile "$KCD\unity\logs\tests.log"
+python tools/run_tests.py   # EditMode → PlayMode → pytest。Unity が動いていたら止まる（--wait で待つ）
+python -m pytest -q         # pytest だけ（tests/, tools/, blender/kcd_lib の純 Python 部分。bpy は差し替え。数秒。pip install -r requirements-test.txt）
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/smoke_run.ps1 -WaitSec 25 -Out docs/screenshots/smoke_title.png
 
 # 5. 配布 zip
 python tools/package_zip.py
 
 # 6. ブラウザ版を GitHub Pages に載せる（WebGL ビルド → Release web-latest → pages.yml）
-python tools/deploy_pages.py --build
+#    unity/KatsushikaCampusDays の下に未コミットの変更があると止まる（--allow-dirty で通す）。
+#    ビルド元のコミットは index.html の <meta name="kcd-build"> とページ右下に出る。
+python tools/deploy_pages.py --build --smoke   # --smoke: 載せる前に build/WebGL を E2E スモーク
+
+# 7. ブラウザ版の E2E スモーク（Playwright。初回だけ pip install -r e2e/requirements.txt）
+python e2e/run_webgl_smoke.py                      # 公開版を Edge の headless + 実 GPU で、キャンパスまで
+python e2e/run_webgl_smoke.py --serve build/WebGL  # ローカルのビルドを Pages と同じ条件で配信して
+python -m pytest e2e                               # スモークの部品の単体テスト
 ```
+
+`tools/run_tests.py` は結果を `unity/logs/tests_{editmode,playmode}.xml` と `.log` に書き、失敗とスキップの
+名前・メッセージだけを抜き出して表示する。`--platform playmode`、`--filter <テスト名の正規表現>`、
+`--skip-unity`（pytest だけ）が使える。batchmode が書き換える URP GlobalSettings・`ProjectSettings.asset`・
+`.mat` は、実行前に変更が無かったものだけ元に戻す。終了コードは 0 = 全部通った、1 = 失敗かスキップか
+ログのエラーがある、2 = 走らせられなかった、3 = 別の Unity が動いている。
+PlayMode のテスト（`Assets/Tests/PlayMode`）は Title と Campus を読み込んで動かすので、
+`SceneBuilder.BuildAll` でシーンを作り直したあとに回す。
+
+E2E スモーク（`e2e/`）は、読み込み時間・Build/ の応答・コンソールのエラー・キャンバスの描画・
+キャンバス内の案内（`#kcd-overlay`）・Enter でのキャラ選択とキャンパス入りを確かめ、
+`build/e2e/<対象>-<日時>/` に `metrics.json`（時間と wasm / JS のヒープ）とスクリーンショットを残す。
+既知の警告は `e2e/kcd_e2e/console_policy.py` の許可リストに理由付きで載せる。
+Pages の配信が終わると `.github/workflows/e2e-pages.yml` が GPU なし（SwiftShader）でキャラ選択まで確かめる。
 
 Unity のライセンスは Hub でサインインしてから batchmode を使う。Unity 公式の agent skills は
 `skills-lock.json` で固定してあり、`npx skills experimental_install` で `.agents/skills/` に復元できる。
@@ -91,6 +113,11 @@ Overpass の生データ 2 つは大きいので gitignore。寮への道の分�
 
 ## クレジット
 
-- 地図データ © OpenStreetMap contributors (ODbL)。詳細は [docs/CREDITS.md](docs/CREDITS.md)
-- 「坊っちゃん」「マドンナちゃん」は東京理科大学の公式キャラクター。本作は非公式・非営利のファンメイドで、独自にモデリングしている。
-- フォント: Noto Sans JP (SIL Open Font License 1.1)
+素材ごとの出所・権利・確認状況は [docs/CREDITS.md](docs/CREDITS.md)。ゲーム内のクレジット画面も同じ内容。
+
+- 地図データ © OpenStreetMap contributors (ODbL)。https://www.openstreetmap.org/copyright
+- 音楽: 東京理科大学校歌（作詞 佐治巌 / 作曲 大和憲史）。歌唱は東北きりたん（NEUTRINO）、ピアノ伴奏はヤマハの自動採譜（Piano Sheet Converter）を手直ししたもの。校歌の権利は未確認で、配布前に確かめる項目を CREDITS.md に並べている
+- 効果音・環境音・ジングルは numpy で合成したオリジナル
+- 「坊っちゃん」「マドンナちゃん」は東京理科大学の公式キャラクター。本作は非公式・非営利のファンメイドで、3D モデルは独自に制作している
+- フォント: Noto Sans JP（© Adobe）、Liberation Sans（© Google, Red Hat）。どちらも SIL Open Font License 1.1 で、本文は `Assets/StreamingAssets/Licenses` に同梱
+- `docs/ref` の参考画像（大学の公式イラスト・鳥瞰図、日建設計の写真など）は各権利者のもので、ゲームには入っていない

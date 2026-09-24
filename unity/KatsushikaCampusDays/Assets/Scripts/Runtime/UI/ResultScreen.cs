@@ -116,10 +116,25 @@ namespace KCD
             if (KCDInput.SubmitPressed)
             {
                 AudioManager.Instance?.PlayUi("ui_confirm");
-                Action chosen = _index == 0 ? _onContinue : _onToTitle;
-                Close();
-                chosen?.Invoke();
+                Choose(_index);
             }
+        }
+
+        /// <summary>
+        /// 選択肢を選んで閉じる（0 = もう一日歩く、1 = タイトルへ）。決定キーと同じ道で、テストとスモークからも呼ぶ。
+        /// 開いていないときと範囲外の番号は何もしない。
+        /// </summary>
+        public void Choose(int index)
+        {
+            if (!IsOpen || index < 0 || index >= ChoiceKeys.Length)
+            {
+                return;
+            }
+
+            _index = index;
+            Action chosen = index == 0 ? _onContinue : _onToTitle;
+            Close();
+            chosen?.Invoke();
         }
 
         private void Redraw()

@@ -1,0 +1,203 @@
+{
+ "about": "site.basin_edges の答え。python blender/tests/basin_fixture.py で作り直す (#68)",
+ "rim": 1.6,
+ "eps": 0.0001,
+ "cases": [
+  {
+   "name": "basins",
+   "note": "site.BASINS そのもの（CampusStage.Basins と同じはず）",
+   "rects": [
+    [-59.5, -16.4, -50.0, 24.0],
+    [-59.5, -78.0, -50.0, -31.6],
+    [-100.0, -78.0, -59.5, -66.0]
+   ],
+   "edges": [
+    {"axis": "v", "c": -16.4, "t0": -59.5, "t1": -50.0, "out": -1, "ext0": true, "ext1": true},
+    {"axis": "v", "c": 24.0, "t0": -59.5, "t1": -50.0, "out": 1, "ext0": true, "ext1": true},
+    {"axis": "u", "c": -59.5, "t0": -16.4, "t1": 24.0, "out": -1, "ext0": true, "ext1": true},
+    {"axis": "u", "c": -50.0, "t0": -16.4, "t1": 24.0, "out": 1, "ext0": true, "ext1": true},
+    {"axis": "v", "c": -78.0, "t0": -59.5, "t1": -50.0, "out": -1, "ext0": true, "ext1": true},
+    {"axis": "v", "c": -31.6, "t0": -59.5, "t1": -50.0, "out": 1, "ext0": true, "ext1": true},
+    {"axis": "u", "c": -59.5, "t0": -66.0, "t1": -31.6, "out": -1, "ext0": false, "ext1": true},
+    {"axis": "u", "c": -50.0, "t0": -78.0, "t1": -31.6, "out": 1, "ext0": true, "ext1": true},
+    {"axis": "v", "c": -78.0, "t0": -100.0, "t1": -59.5, "out": -1, "ext0": true, "ext1": true},
+    {"axis": "v", "c": -66.0, "t0": -100.0, "t1": -59.5, "out": 1, "ext0": true, "ext1": false},
+    {"axis": "u", "c": -100.0, "t0": -78.0, "t1": -66.0, "out": -1, "ext0": true, "ext1": true}
+   ]
+  },
+  {
+   "name": "single",
+   "note": "1 枚だけ。4 辺そのままで、角はすべて延ばす",
+   "rects": [
+    [0.0, 0.0, 10.0, 4.0]
+   ],
+   "edges": [
+    {"axis": "v", "c": 0.0, "t0": 0.0, "t1": 10.0, "out": -1, "ext0": true, "ext1": true},
+    {"axis": "v", "c": 4.0, "t0": 0.0, "t1": 10.0, "out": 1, "ext0": true, "ext1": true},
+    {"axis": "u", "c": 0.0, "t0": 0.0, "t1": 4.0, "out": -1, "ext0": true, "ext1": true},
+    {"axis": "u", "c": 10.0, "t0": 0.0, "t1": 4.0, "out": 1, "ext0": true, "ext1": true}
+   ]
+  },
+  {
+   "name": "l_shape",
+   "note": "L 字。接する辺を引き、入隅（内側の角）は延ばさない",
+   "rects": [
+    [0.0, 0.0, 10.0, 4.0],
+    [0.0, 4.0, 4.0, 12.0]
+   ],
+   "edges": [
+    {"axis": "v", "c": 0.0, "t0": 0.0, "t1": 10.0, "out": -1, "ext0": true, "ext1": true},
+    {"axis": "v", "c": 4.0, "t0": 4.0, "t1": 10.0, "out": 1, "ext0": false, "ext1": true},
+    {"axis": "u", "c": 0.0, "t0": 0.0, "t1": 4.0, "out": -1, "ext0": true, "ext1": true},
+    {"axis": "u", "c": 10.0, "t0": 0.0, "t1": 4.0, "out": 1, "ext0": true, "ext1": true},
+    {"axis": "v", "c": 12.0, "t0": 0.0, "t1": 4.0, "out": 1, "ext0": true, "ext1": true},
+    {"axis": "u", "c": 0.0, "t0": 4.0, "t1": 12.0, "out": -1, "ext0": true, "ext1": true},
+    {"axis": "u", "c": 4.0, "t0": 4.0, "t1": 12.0, "out": 1, "ext0": false, "ext1": true}
+   ]
+  },
+  {
+   "name": "t_shape",
+   "note": "T 字。1 本の辺が中ほどを覆われて 2 本に割れる",
+   "rects": [
+    [0.0, 0.0, 12.0, 4.0],
+    [4.0, 4.0, 8.0, 10.0]
+   ],
+   "edges": [
+    {"axis": "v", "c": 0.0, "t0": 0.0, "t1": 12.0, "out": -1, "ext0": true, "ext1": true},
+    {"axis": "v", "c": 4.0, "t0": 0.0, "t1": 4.0, "out": 1, "ext0": true, "ext1": false},
+    {"axis": "v", "c": 4.0, "t0": 8.0, "t1": 12.0, "out": 1, "ext0": false, "ext1": true},
+    {"axis": "u", "c": 0.0, "t0": 0.0, "t1": 4.0, "out": -1, "ext0": true, "ext1": true},
+    {"axis": "u", "c": 12.0, "t0": 0.0, "t1": 4.0, "out": 1, "ext0": true, "ext1": true},
+    {"axis": "v", "c": 10.0, "t0": 4.0, "t1": 8.0, "out": 1, "ext0": true, "ext1": true},
+    {"axis": "u", "c": 4.0, "t0": 4.0, "t1": 10.0, "out": -1, "ext0": false, "ext1": true},
+    {"axis": "u", "c": 8.0, "t0": 4.0, "t1": 10.0, "out": 1, "ext0": false, "ext1": true}
+   ]
+  },
+  {
+   "name": "partial_share",
+   "note": "ずれて接する。互いの辺の一部だけが消える",
+   "rects": [
+    [0.0, 0.0, 10.0, 4.0],
+    [6.0, 4.0, 16.0, 8.0]
+   ],
+   "edges": [
+    {"axis": "v", "c": 0.0, "t0": 0.0, "t1": 10.0, "out": -1, "ext0": true, "ext1": true},
+    {"axis": "v", "c": 4.0, "t0": 0.0, "t1": 6.0, "out": 1, "ext0": true, "ext1": false},
+    {"axis": "u", "c": 0.0, "t0": 0.0, "t1": 4.0, "out": -1, "ext0": true, "ext1": true},
+    {"axis": "u", "c": 10.0, "t0": 0.0, "t1": 4.0, "out": 1, "ext0": true, "ext1": false},
+    {"axis": "v", "c": 4.0, "t0": 10.0, "t1": 16.0, "out": -1, "ext0": false, "ext1": true},
+    {"axis": "v", "c": 8.0, "t0": 6.0, "t1": 16.0, "out": 1, "ext0": true, "ext1": true},
+    {"axis": "u", "c": 6.0, "t0": 4.0, "t1": 8.0, "out": -1, "ext0": false, "ext1": true},
+    {"axis": "u", "c": 16.0, "t0": 4.0, "t1": 8.0, "out": 1, "ext0": true, "ext1": true}
+   ]
+  },
+  {
+   "name": "full_share",
+   "note": "同じ幅で接する。継ぎ目の辺は両側とも消える",
+   "rects": [
+    [0.0, 0.0, 10.0, 4.0],
+    [0.0, 4.0, 10.0, 8.0]
+   ],
+   "edges": [
+    {"axis": "v", "c": 0.0, "t0": 0.0, "t1": 10.0, "out": -1, "ext0": true, "ext1": true},
+    {"axis": "u", "c": 0.0, "t0": 0.0, "t1": 4.0, "out": -1, "ext0": true, "ext1": true},
+    {"axis": "u", "c": 10.0, "t0": 0.0, "t1": 4.0, "out": 1, "ext0": true, "ext1": true},
+    {"axis": "v", "c": 8.0, "t0": 0.0, "t1": 10.0, "out": 1, "ext0": true, "ext1": true},
+    {"axis": "u", "c": 0.0, "t0": 4.0, "t1": 8.0, "out": -1, "ext0": true, "ext1": true},
+    {"axis": "u", "c": 10.0, "t0": 4.0, "t1": 8.0, "out": 1, "ext0": true, "ext1": true}
+   ]
+  },
+  {
+   "name": "side_by_side",
+   "note": "u 方向に並ぶ。外周の辺は同じ直線上で 2 本に分かれたまま残る",
+   "rects": [
+    [0.0, 0.0, 4.0, 4.0],
+    [4.0, 0.0, 8.0, 4.0]
+   ],
+   "edges": [
+    {"axis": "v", "c": 0.0, "t0": 0.0, "t1": 4.0, "out": -1, "ext0": true, "ext1": true},
+    {"axis": "v", "c": 4.0, "t0": 0.0, "t1": 4.0, "out": 1, "ext0": true, "ext1": true},
+    {"axis": "u", "c": 0.0, "t0": 0.0, "t1": 4.0, "out": -1, "ext0": true, "ext1": true},
+    {"axis": "v", "c": 0.0, "t0": 4.0, "t1": 8.0, "out": -1, "ext0": true, "ext1": true},
+    {"axis": "v", "c": 4.0, "t0": 4.0, "t1": 8.0, "out": 1, "ext0": true, "ext1": true},
+    {"axis": "u", "c": 8.0, "t0": 0.0, "t1": 4.0, "out": 1, "ext0": true, "ext1": true}
+   ]
+  },
+  {
+   "name": "near_touch",
+   "note": "5e-5 m の隙間は許容差（1e-4）の内なので、接しているとみなす",
+   "rects": [
+    [0.0, 0.0, 10.0, 4.0],
+    [0.0, 4.00005, 10.0, 8.0]
+   ],
+   "edges": [
+    {"axis": "v", "c": 0.0, "t0": 0.0, "t1": 10.0, "out": -1, "ext0": true, "ext1": true},
+    {"axis": "u", "c": 0.0, "t0": 0.0, "t1": 4.0, "out": -1, "ext0": true, "ext1": true},
+    {"axis": "u", "c": 10.0, "t0": 0.0, "t1": 4.0, "out": 1, "ext0": true, "ext1": true},
+    {"axis": "v", "c": 8.0, "t0": 0.0, "t1": 10.0, "out": 1, "ext0": true, "ext1": true},
+    {"axis": "u", "c": 0.0, "t0": 4.00005, "t1": 8.0, "out": -1, "ext0": true, "ext1": true},
+    {"axis": "u", "c": 10.0, "t0": 4.00005, "t1": 8.0, "out": 1, "ext0": true, "ext1": true}
+   ]
+  },
+  {
+   "name": "near_miss",
+   "note": "1 mm の隙間は許容差の外なので、両方の辺が残る",
+   "rects": [
+    [0.0, 0.0, 10.0, 4.0],
+    [0.0, 4.001, 10.0, 8.0]
+   ],
+   "edges": [
+    {"axis": "v", "c": 0.0, "t0": 0.0, "t1": 10.0, "out": -1, "ext0": true, "ext1": true},
+    {"axis": "v", "c": 4.0, "t0": 0.0, "t1": 10.0, "out": 1, "ext0": true, "ext1": true},
+    {"axis": "u", "c": 0.0, "t0": 0.0, "t1": 4.0, "out": -1, "ext0": true, "ext1": true},
+    {"axis": "u", "c": 10.0, "t0": 0.0, "t1": 4.0, "out": 1, "ext0": true, "ext1": true},
+    {"axis": "v", "c": 4.001, "t0": 0.0, "t1": 10.0, "out": -1, "ext0": true, "ext1": true},
+    {"axis": "v", "c": 8.0, "t0": 0.0, "t1": 10.0, "out": 1, "ext0": true, "ext1": true},
+    {"axis": "u", "c": 0.0, "t0": 4.001, "t1": 8.0, "out": -1, "ext0": true, "ext1": true},
+    {"axis": "u", "c": 10.0, "t0": 4.001, "t1": 8.0, "out": 1, "ext0": true, "ext1": true}
+   ]
+  },
+  {
+   "name": "sliver",
+   "note": "覆われ残りが 5e-5 m の切れ端は捨てる",
+   "rects": [
+    [0.0, 0.0, 10.0, 4.0],
+    [5e-05, 4.0, 10.0, 8.0]
+   ],
+   "edges": [
+    {"axis": "v", "c": 0.0, "t0": 0.0, "t1": 10.0, "out": -1, "ext0": true, "ext1": true},
+    {"axis": "u", "c": 0.0, "t0": 0.0, "t1": 4.0, "out": -1, "ext0": true, "ext1": true},
+    {"axis": "u", "c": 10.0, "t0": 0.0, "t1": 4.0, "out": 1, "ext0": true, "ext1": true},
+    {"axis": "v", "c": 8.0, "t0": 5e-05, "t1": 10.0, "out": 1, "ext0": true, "ext1": true},
+    {"axis": "u", "c": 5e-05, "t0": 4.0, "t1": 8.0, "out": -1, "ext0": false, "ext1": true},
+    {"axis": "u", "c": 10.0, "t0": 4.0, "t1": 8.0, "out": 1, "ext0": true, "ext1": true}
+   ]
+  },
+  {
+   "name": "library_moat",
+   "note": "今の堀に西の帯を足した U 字。入隅が 2 か所",
+   "rects": [
+    [-59.5, -16.4, -50.0, 24.0],
+    [-59.5, -78.0, -50.0, -31.6],
+    [-100.0, -78.0, -59.5, -66.0],
+    [-100.0, -66.0, -90.0, -40.0]
+   ],
+   "edges": [
+    {"axis": "v", "c": -16.4, "t0": -59.5, "t1": -50.0, "out": -1, "ext0": true, "ext1": true},
+    {"axis": "v", "c": 24.0, "t0": -59.5, "t1": -50.0, "out": 1, "ext0": true, "ext1": true},
+    {"axis": "u", "c": -59.5, "t0": -16.4, "t1": 24.0, "out": -1, "ext0": true, "ext1": true},
+    {"axis": "u", "c": -50.0, "t0": -16.4, "t1": 24.0, "out": 1, "ext0": true, "ext1": true},
+    {"axis": "v", "c": -78.0, "t0": -59.5, "t1": -50.0, "out": -1, "ext0": true, "ext1": true},
+    {"axis": "v", "c": -31.6, "t0": -59.5, "t1": -50.0, "out": 1, "ext0": true, "ext1": true},
+    {"axis": "u", "c": -59.5, "t0": -66.0, "t1": -31.6, "out": -1, "ext0": false, "ext1": true},
+    {"axis": "u", "c": -50.0, "t0": -78.0, "t1": -31.6, "out": 1, "ext0": true, "ext1": true},
+    {"axis": "v", "c": -78.0, "t0": -100.0, "t1": -59.5, "out": -1, "ext0": true, "ext1": true},
+    {"axis": "v", "c": -66.0, "t0": -90.0, "t1": -59.5, "out": 1, "ext0": false, "ext1": false},
+    {"axis": "u", "c": -100.0, "t0": -78.0, "t1": -66.0, "out": -1, "ext0": true, "ext1": true},
+    {"axis": "v", "c": -40.0, "t0": -100.0, "t1": -90.0, "out": 1, "ext0": true, "ext1": true},
+    {"axis": "u", "c": -100.0, "t0": -66.0, "t1": -40.0, "out": -1, "ext0": true, "ext1": true},
+    {"axis": "u", "c": -90.0, "t0": -66.0, "t1": -40.0, "out": 1, "ext0": false, "ext1": true}
+   ]
+  }
+ ]
+}
