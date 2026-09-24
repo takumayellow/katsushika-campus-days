@@ -22,6 +22,8 @@ on:
   push:
     paths:
       - "e2e/**"
+      # テンプレートの読み込み処理は e2e/tests/test_template_loading.py が Unity 無しで確かめる (#102)。
+      - "unity/KatsushikaCampusDays/Assets/WebGLTemplates/**"
       - ".github/workflows/e2e-pages.yml"
 
 permissions:
