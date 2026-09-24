@@ -356,6 +356,7 @@ namespace KCD.Editor
         /// 幹だけ当たり判定を持たせる。半径は幹の見た目に合わせて細く（葉に引っかからない, #30）。
         /// 木のメッシュは NavMesh のベイクから外し（樹冠の下を歩けなくしない）、幹の足もとだけを
         /// NavMeshModifierVolume（Not Walkable）で抜いて、NPC が幹をすり抜けないようにする。
+        /// 描くときは TreeChunkCombiner が再生の始めにマスごとにまとめる（1 本ずつだと描画コールが多すぎる, #57）。
         /// </summary>
         private static void DressTrees(GameObject trees)
         {
@@ -402,7 +403,7 @@ namespace KCD.Editor
                 prototype.gameObject.SetActive(false);
             }
 
-            EnableInstancing(trees);
+            trees.AddComponent<TreeChunkCombiner>();
             EditorPaths.Report("樹木を " + count + " 本植えました（原型 " + prototypes.Count + " 種）。");
         }
 
@@ -416,8 +417,10 @@ namespace KCD.Editor
             body.transform.localScale = relative.lossyScale;
             body.AddComponent<MeshFilter>().sharedMesh = mesh;
             body.AddComponent<MeshRenderer>().sharedMaterials = materials;
-            GameObjectUtility.SetStaticEditorFlags(body,
-                StaticEditorFlags.BatchingStatic | StaticEditorFlags.OccludeeStatic);
+
+            // 静的バッチにすると、ビルドした版では MeshFilter のメッシュが結合済みのメッシュに差し替わり、
+            // TreeChunkCombiner が原型を読めなくなる。まとめるのは TreeChunkCombiner に任せる。
+            GameObjectUtility.SetStaticEditorFlags(body, StaticEditorFlags.OccludeeStatic);
 
             // Empty の軸は Blender の Z-up のまま来ることがあるので、幹はワールドの上向きにそろえる。
             // 大きさは Empty の拡大（木の scale）をそのまま受け、太い木ほど幹も太くなる。
@@ -437,23 +440,6 @@ namespace KCD.Editor
             volume.center = new Vector3(0f, 1f, 0f);
             volume.size = new Vector3(half * 2f, 2f, half * 2f);
             volume.area = 1;   // 1 = Not Walkable
-        }
-
-        /// <summary>同じマテリアルの木を GPU インスタンシングでまとめて描く。</summary>
-        private static void EnableInstancing(GameObject trees)
-        {
-            var seen = new HashSet<Material>();
-            foreach (Renderer renderer in trees.GetComponentsInChildren<Renderer>(true))
-            {
-                foreach (Material material in renderer.sharedMaterials)
-                {
-                    if (material != null && seen.Add(material) && !material.enableInstancing)
-                    {
-                        material.enableInstancing = true;
-                        EditorUtility.SetDirty(material);
-                    }
-                }
-            }
         }
 
         public static void Ignore(GameObject go)
