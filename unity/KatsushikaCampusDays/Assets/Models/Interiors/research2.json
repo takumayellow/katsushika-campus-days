@@ -201,7 +201,7 @@
    "z": 5.52
   }
  },
- "triangles": 64170,
+ "triangles": 64210,
  "seats": 1400,
  "notes": [
   "食堂 1F 1164 席",
@@ -219,5 +219,14 @@
   "furn_research2_05_tables",
   "furn_research2_06_chairs",
   "furn_research2_07_green"
- ]
+ ],
+ "ext": {
+  "objects": [
+   "ext_research2",
+   "ext_research2_trees"
+  ],
+  "triangles": 25385,
+  "radius": 30.0,
+  "dz": -0.03
+ }
 }

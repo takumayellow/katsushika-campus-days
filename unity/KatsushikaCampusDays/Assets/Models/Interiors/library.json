@@ -441,7 +441,7 @@
    "z": 45.007
   }
  },
- "triangles": 57864,
+ "triangles": 57924,
  "seats": 299,
  "notes": [
   "開架書架 14 連",
@@ -458,5 +458,14 @@
   "furn_library_04_reading",
   "furn_library_05_booths",
   "furn_library_06_gallery"
- ]
+ ],
+ "ext": {
+  "objects": [
+   "ext_library",
+   "ext_library_trees"
+  ],
+  "triangles": 12969,
+  "radius": 30.0,
+  "dz": -0.03
+ }
 }

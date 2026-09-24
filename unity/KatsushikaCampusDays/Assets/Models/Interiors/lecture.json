@@ -831,7 +831,7 @@
    "z": 16.48
   }
  },
- "triangles": 47289,
+ "triangles": 47429,
  "seats": 820,
  "notes": [
   "大ホール 600 席（16/18/16 × 12 列）",
@@ -849,5 +849,14 @@
   "furn_lecture_06_seminar",
   "furn_lecture_07_atrium",
   "furn_lecture_08_lecture_room"
- ]
+ ],
+ "ext": {
+  "objects": [
+   "ext_lecture",
+   "ext_lecture_trees"
+  ],
+  "triangles": 43851,
+  "radius": 30.0,
+  "dz": -0.03
+ }
 }
