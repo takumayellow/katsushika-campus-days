@@ -69,11 +69,9 @@ def build(c):
         F.greenhouse_bench(mb, bx, (iy0 + iy1) * 0.5, ang=math.pi * 0.5,
                            w=length, d=1.15, h=0.78, rng=rng)
 
-    # 床置きの大鉢
-    for i in range(5):
-        px = ix0 + 0.9 + (i % 2) * ((ix1 - ix0) - 1.8)
-        py = iy0 + 2.0 + i * ((iy1 - iy0) - 3.4) / 4.0
-        shell.planter(mb, px, py, r=0.36 + rng.random() * 0.12,
+    # 床置きの大鉢（各列の奥の端と妻面の壁のあいだ。中央通路の突き当たりは看板の下なので空ける）
+    for px in rows:
+        shell.planter(mb, px, iy1 - 0.6, r=0.36 + rng.random() * 0.12,
                       h=0.40, leaf_h=0.9 + rng.random() * 0.9)
 
     # 灌水パイプ（棟に沿って + ベンチ上の散水枝）
