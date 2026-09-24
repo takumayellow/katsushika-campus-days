@@ -56,7 +56,12 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/smoke_run.ps1 -Wai
 python tools/package_zip.py
 
 # 6. ブラウザ版を GitHub Pages に載せる（WebGL ビルド → Release web-latest → pages.yml）
-python tools/deploy_pages.py --build
+python tools/deploy_pages.py --build --smoke   # --smoke: 載せる前に build/WebGL を E2E スモーク
+
+# 7. ブラウザ版の E2E スモーク（Playwright。初回だけ pip install -r e2e/requirements.txt）
+python e2e/run_webgl_smoke.py                      # 公開版を Edge の headless + 実 GPU で、キャンパスまで
+python e2e/run_webgl_smoke.py --serve build/WebGL  # ローカルのビルドを Pages と同じ条件で配信して
+python -m pytest e2e                               # スモークの部品の単体テスト
 ```
 
 `tools/run_tests.py` は結果を `unity/logs/tests_{editmode,playmode}.xml` と `.log` に書き、失敗とスキップの
@@ -66,6 +71,12 @@ python tools/deploy_pages.py --build
 ログのエラーがある、2 = 走らせられなかった、3 = 別の Unity が動いている。
 PlayMode のテスト（`Assets/Tests/PlayMode`）は Title と Campus を読み込んで動かすので、
 `SceneBuilder.BuildAll` でシーンを作り直したあとに回す。
+
+E2E スモーク（`e2e/`）は、読み込み時間・Build/ の応答・コンソールのエラー・キャンバスの描画・
+キャンバス内の案内（`#kcd-overlay`）・Enter でのキャラ選択とキャンパス入りを確かめ、
+`build/e2e/<対象>-<日時>/` に `metrics.json`（時間と wasm / JS のヒープ）とスクリーンショットを残す。
+既知の警告は `e2e/kcd_e2e/console_policy.py` の許可リストに理由付きで載せる。
+Pages の配信が終わると `.github/workflows/e2e-pages.yml` が GPU なし（SwiftShader）でキャラ選択まで確かめる。
 
 Unity のライセンスは Hub でサインインしてから batchmode を使う。Unity 公式の agent skills は
 `skills-lock.json` で固定してあり、`npx skills experimental_install` で `.agents/skills/` に復元できる。
