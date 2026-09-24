@@ -86,14 +86,15 @@ namespace KCD
             // DormEnding.IsAnyShowing: 裏エンド (#41) の暗転中と結果表示中は Esc を食わせない。
             // 食わせると暗転の裏でポーズが開き、閉じたときの SetOpen(false) が
             // Time.timeScale = 1 に戻してしまう（裏エンドの最中に時間が動き出す）。
-            if (KCDInput.PhotoMode || KCDInput.ModalClosedThisFrame || ResultScreen.IsAnyOpen ||
-                DormEnding.IsAnyShowing || (_settings != null && _settings.IsOpen))
+            if (IgnoresMenuKey(KCDInput.PhotoMode, KCDInput.ModalClosedThisFrame, ResultScreen.IsAnyOpen,
+                    DormEnding.IsAnyShowing, _settings != null && _settings.IsOpen))
             {
                 return;
             }
 
             QuestLogView log = HUD.Instance != null ? HUD.Instance.QuestLogView : null;
-            if (!IsOpen && log != null && (log.IsOpen || log.ClosedByMenuFrame == Time.frameCount))
+            if (QuestLogKeepsTheMenuKey(IsOpen, log != null && log.IsOpen,
+                    log != null && log.ClosedByMenuFrame == Time.frameCount))
             {
                 return;
             }
@@ -112,7 +113,7 @@ namespace KCD
             int step = KCDInput.MenuVertical;
             if (step != 0)
             {
-                _index = (_index + step + EntryKeys.Length) % EntryKeys.Length;
+                _index = MoveCursor(_index, step);
                 Redraw();
                 AudioManager.Instance?.PlayUi("ui_move");
             }
@@ -122,6 +123,34 @@ namespace KCD
                 AudioManager.Instance?.PlayUi("ui_confirm");
                 Execute(_index);
             }
+        }
+
+        /// <summary>メニューの項目数（再開 / セーブ / ロード / 設定 / タイトルへ）。</summary>
+        public static int EntryCount => EntryKeys.Length;
+
+        /// <summary>
+        /// Esc（メニューキー）を見ないか。写真モード中、モーダルを閉じたそのフレーム、結果画面・寮の締めの表示中、
+        /// ポーズから開いた設定パネルの間は、ポーズを開きも閉じもしない。
+        /// </summary>
+        public static bool IgnoresMenuKey(bool photoMode, bool modalClosedThisFrame, bool resultOpen,
+            bool dormEndingShowing, bool settingsOpen)
+        {
+            return photoMode || modalClosedThisFrame || resultOpen || dormEndingShowing || settingsOpen;
+        }
+
+        /// <summary>
+        /// ポーズが閉じているとき、Esc をクエストログに譲るか。ログが開いている間と、ログを Esc で閉じたそのフレーム
+        /// （同じ Esc でポーズが開かないように）。ポーズが開いていれば譲らない（Esc で閉じられる）。
+        /// </summary>
+        public static bool QuestLogKeepsTheMenuKey(bool pauseOpen, bool questLogOpen, bool questLogClosedThisFrame)
+        {
+            return !pauseOpen && (questLogOpen || questLogClosedThisFrame);
+        }
+
+        /// <summary>上下でカーソルを 1 つずらした先。端から先へ進むと反対の端に回り込む。</summary>
+        public static int MoveCursor(int index, int step)
+        {
+            return (index + step + EntryKeys.Length) % EntryKeys.Length;
         }
 
         /// <summary>開閉する。開いている間は時間を止め、自分の名前で操作を封鎖する。</summary>
