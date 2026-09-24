@@ -3,27 +3,39 @@ using UnityEngine;
 namespace KCD
 {
     /// <summary>
-    /// ゲーム内 1 日 = 実時間 12 分。08:30 から始まり、太陽の角度・色・環境光を動かす。
-    /// 日没どきの色は葛飾キャンパスの西日を想定して橙寄りにしてある。
+    /// ゲーム内 1 日 = 実時間 12 分。08:30 から始まり、太陽の角度・色、空（KCD/Sky）・霧・環境光を動かす。
+    /// 色は <see cref="SkyPalette"/> が時刻ごとに決める（日没どきは葛飾キャンパスの西日を想定して橙と桃色）。
+    /// 太陽は東（+x）から昇り、南（-z）の空を通って西（-x）へ沈む。太陽が沈んだあとは同じライトを月明かりにする。
     /// </summary>
     [RequireComponent(typeof(Light))]
     public sealed class DayNightCycle : MonoBehaviour
     {
+        /// <summary>既定の日の出・日の入りの時刻と緯度。シーン生成（SkyFactory）が朝の太陽の向きを出すのにも使う。</summary>
+        public const float DefaultSunriseHour = 5.5f;
+        public const float DefaultSunsetHour = 18.5f;
+        public const float DefaultLatitudeDegrees = 35.7f;
+
         [SerializeField] private float _realSecondsPerGameDay = 720f;
         // 一日の始まりは DayRestart が正。ここに 8.5f と書き直すと「もう一日歩く」の朝とずれる。
         [SerializeField] private float _startHour = DayRestart.DayStartHour;
-        [SerializeField] private float _sunriseHour = 5.5f;
-        [SerializeField] private float _sunsetHour = 18.5f;
-        [SerializeField] private float _northOffsetDegrees = 20f;
-
-        [SerializeField] private Gradient _sunColor;
-        [SerializeField] private AnimationCurve _sunIntensity;
-        [SerializeField] private Gradient _ambientColor;
+        [SerializeField] private float _sunriseHour = DefaultSunriseHour;
+        [SerializeField] private float _sunsetHour = DefaultSunsetHour;
+        // 葛飾（東京）の緯度。南中の高さが 90° − 緯度になる（真上を通ると昼の影が足もとに潰れる）。
+        [SerializeField] private float _latitudeDegrees = DefaultLatitudeDegrees;
         [SerializeField] private Color _indoorAmbient = new Color(0.56f, 0.57f, 0.60f);
         private bool _outdoorFog = true;
         private bool _wasIndoor;
 
+        /// <summary>太陽は地平線から 5° 昇るまでに明るくなり、月明かりは太陽が 10° 沈むまでに灯る。</summary>
+        public const float SunFadeDegrees = 5f;
+        public const float MoonFadeDegrees = 10f;
+
+        /// <summary>月の方へ向かう単位ベクトル。月は時刻で動かさず、南東の空の 38° に置く。</summary>
+        public static readonly Vector3 MoonDirection = new Vector3(0.557f, 0.616f, -0.557f).normalized;
+
         private Light _sun;
+        private Material _sharedSky;
+        private Material _skyMaterial;
 
         /// <summary>現在のゲーム内時刻（0-24 の実数）。</summary>
         public float Hours { get; private set; }
@@ -45,7 +57,30 @@ namespace KCD
             _sun.type = LightType.Directional;
             Hours = _startHour;
 
-            EnsureDefaults();
+            // シーンの空のマテリアルを複製してから書き換える。共有のアセットを直接書くと、
+            // エディタで再生しただけで .mat が書き換わって差分が出る。
+            _sharedSky = RenderSettings.skybox;
+            if (SkyMaterial.IsSky(_sharedSky))
+            {
+                _skyMaterial = new Material(_sharedSky) { name = _sharedSky.name + " (Runtime)" };
+                RenderSettings.skybox = _skyMaterial;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (_skyMaterial == null)
+            {
+                return;
+            }
+
+            if (RenderSettings.skybox == _skyMaterial)
+            {
+                RenderSettings.skybox = _sharedSky;
+            }
+
+            Destroy(_skyMaterial);
+            _skyMaterial = null;
         }
 
         /// <summary>
@@ -93,25 +128,69 @@ namespace KCD
             Apply();
         }
 
+        /// <summary>
+        /// 太陽の方へ向かう単位ベクトル（ライトの forward の逆）。日の出で真東の地平線、
+        /// 日の出と日の入りのまん中で真南の 90° − 緯度、日の入りで真西の地平線。夜は同じ円の地平線より下を回る。
+        /// </summary>
+        public static Vector3 SunDirection(float hours, float sunriseHour, float sunsetHour, float latitudeDegrees)
+        {
+            float span = Mathf.Max(0.01f, sunsetHour - sunriseHour);
+            float angle = (Mathf.Repeat(hours, 24f) - sunriseHour) / span * Mathf.PI;
+            float latitude = latitudeDegrees * Mathf.Deg2Rad;
+            // 日周の円は東西を通り、真上から南へ緯度ぶん傾いている。
+            Vector3 noon = new Vector3(0f, Mathf.Cos(latitude), -Mathf.Sin(latitude));
+            return (Vector3.right * Mathf.Cos(angle) + noon * Mathf.Sin(angle)).normalized;
+        }
+
+        /// <summary>既定の日の出・日の入り・緯度での太陽の向き。</summary>
+        public static Vector3 DefaultSunDirection(float hours)
+        {
+            return SunDirection(hours, DefaultSunriseHour, DefaultSunsetHour, DefaultLatitudeDegrees);
+        }
+
+        /// <summary>太陽の明るさ。空の配色の値に、地平線ぎわで 0 へ落ちる減衰を掛ける。</summary>
+        public static float SunLightIntensity(SkyState sky, Vector3 sunDirection)
+        {
+            return sky.SunIntensity * Mathf.Clamp01(HeightDegrees(sunDirection) / SunFadeDegrees);
+        }
+
+        /// <summary>向きの地平線からの高さ（度、地平線より下なら負）。</summary>
+        public static float HeightDegrees(Vector3 direction)
+        {
+            return Mathf.Asin(Mathf.Clamp(direction.normalized.y, -1f, 1f)) * Mathf.Rad2Deg;
+        }
+
         private void Apply()
         {
+            SkyState sky = SkyPalette.Evaluate(Hours);
+            Vector3 sunDirection = SunDirection(Hours, _sunriseHour, _sunsetHour, _latitudeDegrees);
+            SkyMaterial.Apply(_skyMaterial, sky, sunDirection, MoonDirection);
+
             if (ApplyIndoor())
             {
                 return;
             }
 
-            // 日の出で地平線、南中で真上、日の入りで再び地平線になるよう写像する。
-            float dayProgress = Mathf.InverseLerp(_sunriseHour, _sunsetHour, Hours);
-            float elevation = Mathf.Lerp(-12f, 192f, dayProgress);
+            float height = HeightDegrees(sunDirection);
+            float sunIntensity = SunLightIntensity(sky, sunDirection);
+            float moonIntensity = sky.MoonIntensity * Mathf.Clamp01(-height / MoonFadeDegrees);
+            if (sunIntensity >= moonIntensity)
+            {
+                transform.rotation = Quaternion.LookRotation(-sunDirection, Vector3.up);
+                _sun.color = sky.SunColor;
+                _sun.intensity = sunIntensity;
+            }
+            else
+            {
+                transform.rotation = Quaternion.LookRotation(-MoonDirection, Vector3.up);
+                _sun.color = SkyPalette.MoonColor;
+                _sun.intensity = moonIntensity;
+            }
 
-            transform.rotation = Quaternion.Euler(elevation, _northOffsetDegrees, 0f);
-
-            float t = Hours / 24f;
-            _sun.color = _sunColor.Evaluate(t);
-            _sun.intensity = Mathf.Max(0f, _sunIntensity.Evaluate(t));
-
-            RenderSettings.ambientLight = _ambientColor.Evaluate(t);
             _sun.enabled = _sun.intensity > 0.01f;
+
+            // 霧の色・環境光を毎回空に合わせる。屋内で上書きした横と下の環境光もここで戻る。
+            SkyMaterial.ApplyEnvironment(sky);
         }
 
         /// <summary>
@@ -144,57 +223,6 @@ namespace KCD
             RenderSettings.ambientEquatorColor = _indoorAmbient * 0.92f;
             RenderSettings.ambientGroundColor = _indoorAmbient * 0.7f;
             return true;
-        }
-
-        private void EnsureDefaults()
-        {
-            if (_sunColor == null || _sunColor.colorKeys.Length == 0)
-            {
-                _sunColor = BuildGradient(
-                    new Color(0.24f, 0.28f, 0.45f),
-                    new Color(1.00f, 0.76f, 0.55f),
-                    new Color(1.00f, 0.97f, 0.92f),
-                    new Color(1.00f, 0.62f, 0.38f),
-                    new Color(0.22f, 0.26f, 0.44f));
-            }
-
-            if (_ambientColor == null || _ambientColor.colorKeys.Length == 0)
-            {
-                _ambientColor = BuildGradient(
-                    new Color(0.10f, 0.12f, 0.20f),
-                    new Color(0.42f, 0.40f, 0.44f),
-                    new Color(0.62f, 0.64f, 0.70f),
-                    new Color(0.44f, 0.34f, 0.34f),
-                    new Color(0.10f, 0.12f, 0.20f));
-            }
-
-            if (_sunIntensity == null || _sunIntensity.length == 0)
-            {
-                _sunIntensity = new AnimationCurve(
-                    new Keyframe(0.00f, 0.02f),
-                    new Keyframe(0.24f, 0.25f),
-                    new Keyframe(0.50f, 1.35f),
-                    new Keyframe(0.78f, 0.35f),
-                    new Keyframe(1.00f, 0.02f));
-            }
-        }
-
-        private static Gradient BuildGradient(params Color[] colors)
-        {
-            var gradient = new Gradient();
-            var colorKeys = new GradientColorKey[colors.Length];
-            for (int i = 0; i < colors.Length; i++)
-            {
-                colorKeys[i] = new GradientColorKey(colors[i], i / (float)(colors.Length - 1));
-            }
-
-            gradient.SetKeys(colorKeys, new[]
-            {
-                new GradientAlphaKey(1f, 0f),
-                new GradientAlphaKey(1f, 1f)
-            });
-
-            return gradient;
         }
     }
 }
