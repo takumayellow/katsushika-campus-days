@@ -104,9 +104,7 @@ def turned(c, ox, oy, ang):
         mb.verts[v0:] = [mv(v) for v in mb.verts[v0:]]
         seats = getattr(mb, "seats", None)
         if seats:
-            seats[s0:] = [dict(st, c=mv(st["c"]), f=mv(st["f"]), s=mv(st["s"]),
-                               anchors=[mv(a) for a in st["anchors"]])
-                          for st in seats[s0:]]
+            seats[s0:] = [kit.moved_seat(st, mv) for st in seats[s0:]]
     c.empties[n_emp:] = [(n, mv(p)) for n, p in c.empties[n_emp:]]
     c.lights[n_light:] = [mv(lt) for lt in c.lights[n_light:]]
     c.cams[n_cam:] = [(sfx, mv(a), mv(b), lens)

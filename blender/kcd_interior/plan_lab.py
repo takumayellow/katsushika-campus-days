@@ -107,7 +107,8 @@ def _wing(c, ax0, ax1, wy0, wy1, prep_w=None):
     rx0, rx1, _k = rooms[0]
     c.cam("room", (rx1 - 1.3, cor_y1 + 0.9, 2.15), (rx0 + 1.8, wy1 - 2.4, 0.95),
           lens=20.0)
-    c.note("廊下 + 実験室 %d 室（実験台・ドラフト・ボンベ・薬品庫）" % len(rooms))
+    c.note("廊下 + 実験室 %d 室 + 準備室 %d 室（実験台・ドラフト・ボンベ・薬品庫）"
+           % (len(lab_idx), len(prep_idx)))
 
 
 def _hall(c, ix0, ix1, iy0, iy1):
