@@ -11,6 +11,7 @@ namespace KCD
 
         private bool _welcomed;
         private float _startedAt;
+        private bool _continued;
 
         private void Start()
         {
@@ -28,6 +29,14 @@ namespace KCD
 
         private void Update()
         {
+            // タイトルの「つづきから」の位置と屋内。Start ではなく最初の Update で当てるのは、
+            // Minimap.Start が屋内の表示を消すなど、ほかの Start より後でないと上書きされるため (#61)。
+            if (!_continued)
+            {
+                _continued = true;
+                SaveSystem.ApplyPending();
+            }
+
             if (!_welcomed && Time.unscaledTime - _startedAt > _welcomeDelay)
             {
                 _welcomed = true;
@@ -45,6 +54,10 @@ namespace KCD
                 if (SaveSystem.Save())
                 {
                     HUD.Instance?.ShowToast(L.Get("ui.hud.quick_saved", "クイックセーブしました"));
+                }
+                else
+                {
+                    HUD.Instance?.ShowToast(L.Get("ui.hud.save_failed", "セーブできませんでした"));
                 }
             }
             else if (KCDInput.QuickLoadPressed)

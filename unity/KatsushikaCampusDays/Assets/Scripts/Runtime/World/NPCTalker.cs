@@ -71,6 +71,8 @@ namespace KCD
             dialogue.Finished += OnDialogueFinished;
             _subscribed = true;
 
+            // 称号「顔なじみ」(ach_friends) は話した NPC の数で決まる (#65)。
+            DayStats.NoteTalk(_npcId);
             GameManager.Instance.Quests?.ReportTalk(_npcId);
         }
 

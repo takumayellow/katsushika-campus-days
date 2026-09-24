@@ -87,8 +87,18 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: flower_orange
+    second: {fileID: 2100000, guid: 7815e5f2a8004c4478d36fb3f9176865, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: flower_pink
     second: {fileID: 2100000, guid: 3cc72ec806df38d45b037aa59a6ee86a, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: flower_purple
+    second: {fileID: 2100000, guid: 18305a5d71dba784e8a22ba4c5bf43bb, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule

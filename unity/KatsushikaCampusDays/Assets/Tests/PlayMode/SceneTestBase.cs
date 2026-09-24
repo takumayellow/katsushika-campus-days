@@ -1,3 +1,5 @@
+using System;
+using System.IO;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -16,11 +18,21 @@ namespace KCD.Tests
 
         protected LogCapture Capture { get; private set; }
 
+        /// <summary>このテストのセーブの置き場。空のフォルダから始めるので、端末に残ったセーブで結果が変わらない。</summary>
+        protected string SaveDirectory { get; private set; }
+
         [SetUp]
         public void SetUpCapture()
         {
             Time.timeScale = 1f;
             KCDInput.ClearAllBlocks();
+
+            // 一日の終わりの自動セーブなどが、その端末で遊んでいるセーブ（persistentDataPath）を上書きしないように。
+            SaveDirectory = Path.Combine(Path.GetTempPath(), "kcd-playmode-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(SaveDirectory);
+            SaveSystem.DirectoryOverride = SaveDirectory;
+            SaveSystem.DiscardPending();
+
             Capture = new LogCapture();
         }
 
@@ -31,6 +43,16 @@ namespace KCD.Tests
             Capture = null;
             Time.timeScale = 1f;
             KCDInput.ClearAllBlocks();
+
+            AutoSave.Cancel();
+            SaveSystem.DiscardPending();
+            SaveSystem.DirectoryOverride = null;
+            if (SaveDirectory != null && Directory.Exists(SaveDirectory))
+            {
+                Directory.Delete(SaveDirectory, true);
+            }
+
+            SaveDirectory = null;
         }
 
         /// <summary>

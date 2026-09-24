@@ -19,7 +19,10 @@ namespace KCD
         /// </summary>
         private static readonly HashSet<object> Blockers = new HashSet<object>(ReferenceComparer.Instance);
 
-        /// <summary>GameplayBlocked への代入で立てる、オーナーを持たない封鎖（ポーズ・クエストログ・写真モードなど旧来の書き方）。</summary>
+        /// <summary>
+        /// GameplayBlocked への代入で立てる、オーナーを持たない封鎖（旧来の書き方）。
+        /// ポーズ・クエストログ・写真モード・リザルトは Block(this) に移した (#62)。
+        /// </summary>
         private static bool _sharedBlock;
 
         /// <summary>
