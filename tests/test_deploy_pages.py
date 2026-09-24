@@ -6,6 +6,7 @@ git_state だけは一時ディレクトリに本物の git リポジトリを�
 
 from __future__ import annotations
 
+import json
 import subprocess
 import sys
 import zipfile
@@ -28,9 +29,25 @@ HASHES = {
 }
 
 
-def built_index(marker: bool = True) -> str:
-    """Unity がテンプレートを展開した後の index.html に近い形。"""
+# 段階読み込み（PROGRESSIVE_ASSET_LOADING）のときに data の配列へ入るファイル。
+# ローダーは配列の URL を buildUrl を付けずにそのまま取りに行くので, index.html からの相対パスになる。
+PRIMARY = ["Build/Data/level0.data.unityweb", "Build/Data/globalgamemanagers.data.unityweb"]
+SECONDARY = ["Build/Data/level1.data.unityweb"]
+
+
+def built_index(marker: bool = True, data: str = "url") -> str:
+    """Unity がテンプレートを展開した後の index.html に近い形。
+
+    data は data の参照の形: "url" は dataUrl, "arrays" は primaryDataUrls / secondaryDataUrls,
+    "none" はどちらも無い（テンプレートが崩れた場合）。
+    """
     head_marker = f"    {dp.STAMP_MARKER}\n" if marker else ""
+    data_lines = {
+        "url": f"        dataUrl: buildUrl + \"/{HASHES['data']}\",\n",
+        "arrays": (f"        primaryDataUrls: {json.dumps(PRIMARY)},\n"
+                   f"        secondaryDataUrls: {json.dumps(SECONDARY)},\n"),
+        "none": "",
+    }[data]
     return (
         "<!DOCTYPE html>\n<html lang=\"ja\">\n  <head>\n    <meta charset=\"utf-8\">\n"
         f"{head_marker}"
@@ -38,7 +55,8 @@ def built_index(marker: bool = True) -> str:
         "      var buildUrl = \"Build\";\n"
         f"      var loaderUrl = buildUrl + \"/{HASHES['loader']}\";\n"
         "      var config = {\n"
-        f"        dataUrl: buildUrl + \"/{HASHES['data']}\",\n"
+        "        arguments: [],\n"
+        f"{data_lines}"
         f"        frameworkUrl: buildUrl + \"/{HASHES['framework']}\",\n"
         f"        codeUrl: buildUrl + \"/{HASHES['code']}\",\n"
         "        streamingAssetsUrl: \"StreamingAssets\",\n"
@@ -54,9 +72,13 @@ def make_build(tmp_path: Path, html: str | None = None, stale: bool = True) -> P
     (build / "TemplateData" / "style.css").write_text("body{}", encoding="utf-8")
     for name in HASHES.values():
         (build / "Build" / name).write_bytes(b"x" * 16)
+    for rel in PRIMARY + SECONDARY:
+        (build / rel).parent.mkdir(parents=True, exist_ok=True)
+        (build / rel).write_bytes(b"d" * 16)
     if stale:
         # 前のビルドが残したハッシュ名のファイル
         (build / "Build" / "ffffffffffffffffffffffffffffffff.data.unityweb").write_bytes(b"old")
+        (build / "Build" / "Data" / "level9.data.unityweb").write_bytes(b"old")
     return build
 
 
@@ -77,6 +99,18 @@ def test_template_references_build_files_through_placeholders():
         assert "{{{ " + placeholder + " }}}" in html
         html = html.replace("{{{ " + placeholder + " }}}", HASHES[key])
     assert set(HASHES.values()) <= set(dp.referenced_build_files(html))
+    assert dp.missing_loader_parts(html) == []
+
+
+def test_template_progressive_data_arrays_are_read():
+    # 段階読み込みを有効にすると, data は buildUrl + "/..." ではなく JSON の配列で入る。
+    # その差し込み口に値を入れたとき, 配列の中のファイルも参照として読めることを見る。
+    html = TEMPLATE.read_text(encoding="utf-8")
+    for placeholder, urls in (("PRIMARY_DATA_FILES", PRIMARY), ("SECONDARY_DATA_FILES", SECONDARY)):
+        slot = "{{{ JSON.stringify(" + placeholder + ") }}}"
+        assert slot in html
+        html = html.replace(slot, json.dumps(urls))
+    assert set(PRIMARY + SECONDARY) <= set(dp.referenced_paths(html))
 
 
 def test_project_settings_name_files_as_hashes():
@@ -98,6 +132,44 @@ def test_referenced_build_files_reads_background_without_css_tail():
 def test_referenced_build_files_ignores_other_urls():
     html = 'streamingAssetsUrl: "StreamingAssets", href="TemplateData/style.css"'
     assert dp.referenced_build_files(html) == []
+
+
+def test_referenced_paths_read_progressive_data_arrays():
+    paths = dp.referenced_paths(built_index(data="arrays"))
+    assert paths == [f"Build/{HASHES[k]}" for k in ("loader", "framework", "code")] + PRIMARY + SECONDARY
+
+
+def test_referenced_paths_strip_leading_dot_slash():
+    html = 'primaryDataUrls: ["./Build/Data/a.data"], secondaryDataUrls: [],'
+    assert dp.referenced_paths(html) == ["Build/Data/a.data"]
+
+
+def test_referenced_paths_reject_broken_array():
+    with pytest.raises(ValueError):
+        dp.referenced_paths('primaryDataUrls: ["Build/a.data",],')
+
+
+@pytest.mark.parametrize("url", ["/Build/a.data", "https://example.invalid/a.data", "Build/../a.data", ""])
+def test_referenced_paths_reject_urls_outside_site(url):
+    with pytest.raises(ValueError):
+        dp.referenced_paths(f"primaryDataUrls: {json.dumps([url])},")
+
+
+def test_missing_loader_parts_none_for_both_data_forms():
+    assert dp.missing_loader_parts(built_index(data="url")) == []
+    assert dp.missing_loader_parts(built_index(data="arrays")) == []
+
+
+def test_missing_loader_parts_reports_data_when_absent():
+    assert dp.missing_loader_parts(built_index(data="none")) == ["data"]
+    empty_arrays = built_index(data="none").replace(
+        "arguments: [],", "arguments: [], primaryDataUrls: [], secondaryDataUrls: [],")
+    assert dp.missing_loader_parts(empty_arrays) == ["data"]
+
+
+def test_missing_loader_parts_reports_code_and_framework():
+    html = built_index().replace("codeUrl:", "wasmUrl:").replace("frameworkUrl:", "jsUrl:")
+    assert dp.missing_loader_parts(html) == ["frameworkUrl", "codeUrl"]
 
 
 # --- ビルド元の記録 -------------------------------------------------------
@@ -173,6 +245,37 @@ def test_zip_keeps_only_referenced_build_files(tmp_path):
         names = set(zf.namelist())
     expected = {"index.html", "TemplateData/style.css"} | {f"Build/{n}" for n in HASHES.values()}
     assert names == expected
+
+
+def test_zip_keeps_progressive_data_files(tmp_path):
+    build = make_build(tmp_path, html=built_index(data="arrays"))
+    out = tmp_path / "webgl.zip"
+    assert dp.make_zip(build, out) == 0
+    with zipfile.ZipFile(out) as zf:
+        names = set(zf.namelist())
+    expected = ({"index.html", "TemplateData/style.css"} | set(PRIMARY) | set(SECONDARY)
+                | {f"Build/{HASHES[k]}" for k in ("loader", "framework", "code")})
+    assert names == expected
+
+
+def test_zip_fails_when_progressive_data_file_missing(tmp_path):
+    build = make_build(tmp_path, html=built_index(data="arrays"), stale=False)
+    (build / SECONDARY[0]).unlink()
+    assert dp.make_zip(build, tmp_path / "webgl.zip") == 1
+    assert not (tmp_path / "webgl.zip").exists()
+
+
+def test_zip_fails_when_index_does_not_reference_data(tmp_path):
+    # data の参照を読めないまま Build/ を絞ると, data の無い zip が「成功」として配信される。
+    build = make_build(tmp_path, html=built_index(data="none"))
+    assert dp.make_zip(build, tmp_path / "webgl.zip") == 1
+    assert not (tmp_path / "webgl.zip").exists()
+
+
+def test_deploy_stops_when_index_does_not_reference_data(fake, tmp_path):
+    make_build(tmp_path, html=dp.stamp_html(built_index(data="none"), SHA, "clean", "t"))
+    assert dp.main(fake.argv) == 1
+    assert fake.uploads == [] and fake.dispatched == []
 
 
 def test_zip_fails_when_referenced_file_missing(tmp_path):

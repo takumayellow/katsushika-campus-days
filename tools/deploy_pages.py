@@ -21,11 +21,14 @@ Pages に載せるだけなので、git のサイズ制限（1 ファイル 100 
 ファイル名 (#75):
     Build/ の中身は内容のハッシュ名（PlayerSettings.WebGL.nameFilesAsHashes）で出る。
     zip には index.html が参照する Build/ のファイルだけを入れ、前のビルドの残りを載せない。
+    参照は buildUrl + "/<名前>" と, 段階読み込みのときの primaryDataUrls / secondaryDataUrls の
+    配列から読む。loader・framework・wasm・data のどれかの参照を読み取れなければ zip を作らない。
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import re
 import subprocess
@@ -52,6 +55,16 @@ STAMP_RE = re.compile(
     r'tree=(?P<tree>clean|dirty|unknown) built=(?P<built>[^"]*)">')
 # テンプレートは Build/ のファイルを buildUrl + "/<ファイル名>" の形で参照する。
 BUILD_REF_RE = re.compile(r'buildUrl \+ "/([^"\'\s)]+)')
+# 段階読み込み（PROGRESSIVE_ASSET_LOADING）では data が buildUrl を付けない JSON の配列で入る。
+# ローダーは配列の URL をそのまま取りに行くので, 中身は index.html からの相対パス。
+DATA_URLS_RE = re.compile(r'\b(primaryDataUrls|secondaryDataUrls)\s*:\s*(\[[^\]]*\])')
+# ローダーが起動に必ず読む Build/ のファイルの設定。data は dataUrl か primaryDataUrls のどちらか。
+LOADER_PART_RES = (
+    ("loaderUrl", re.compile(r'\bloaderUrl\s*=\s*buildUrl \+ "/')),
+    ("frameworkUrl", re.compile(r'\bframeworkUrl\s*:\s*buildUrl \+ "/')),
+    ("codeUrl", re.compile(r'\bcodeUrl\s*:\s*buildUrl \+ "/')),
+)
+DATA_URL_RE = re.compile(r'\bdataUrl\s*:\s*buildUrl \+ "/')
 
 
 @dataclass(frozen=True)
@@ -142,13 +155,52 @@ def stamp_file(index: Path, state: GitState, built: str) -> BuildStamp:
     return BuildStamp(commit=state.commit, tree=state.tree, built=built)
 
 
+def data_url_arrays(html: str) -> dict[str, list[str]]:
+    """primaryDataUrls / secondaryDataUrls の中身。無いものは入れない。"""
+    arrays: dict[str, list[str]] = {}
+    for key, text in DATA_URLS_RE.findall(html):
+        try:
+            urls = json.loads(text)
+        except json.JSONDecodeError as error:
+            raise ValueError(f"index.html の {key} を JSON の配列として読めない: {text}") from error
+        if not isinstance(urls, list) or not all(isinstance(url, str) for url in urls):
+            raise ValueError(f"index.html の {key} が文字列の配列ではない: {text}")
+        arrays.setdefault(key, []).extend(urls)
+    return arrays
+
+
+def site_path(url: str) -> str:
+    """index.html からの相対 URL を, サイトの根からのパスにする。サイトの外を指すものは止める。"""
+    path = url[2:] if url.startswith("./") else url
+    parts = path.split("/")
+    if not path or path.startswith("/") or ":" in path or any(p in ("", ".", "..") for p in parts):
+        raise ValueError(f"index.html がサイトの中のファイルとして読めない URL を参照している: {url!r}")
+    return path
+
+
+def referenced_paths(html: str) -> list[str]:
+    """index.html が読む Build/ まわりのファイルの, サイトの根からのパス（重複なし, 出てきた順）。"""
+    paths = [f"Build/{name}" for name in BUILD_REF_RE.findall(html)]
+    for urls in data_url_arrays(html).values():
+        paths.extend(site_path(url) for url in urls)
+    return list(dict.fromkeys(paths))
+
+
 def referenced_build_files(html: str) -> list[str]:
-    """index.html が Build/ から読むファイル名（loader, data, framework, wasm など）。"""
-    names = []
-    for name in BUILD_REF_RE.findall(html):
-        if name not in names:
-            names.append(name)
-    return names
+    """index.html が Build/ から読むファイル（loader, data, framework, wasm など）の Build/ からのパス。"""
+    return [path[len("Build/"):] for path in referenced_paths(html) if path.startswith("Build/")]
+
+
+def missing_loader_parts(html: str) -> list[str]:
+    """ローダーが起動に必ず読むのに, index.html から参照を読み取れないもの。
+
+    参照の書き方がテンプレートや Unity の版で変わると, そのファイルが「参照されていない」として
+    zip から外れ, 動かないビルドが配信される。ここで欠けを見つけて止める。
+    """
+    missing = [name for name, pattern in LOADER_PART_RES if not pattern.search(html)]
+    if not DATA_URL_RE.search(html) and not data_url_arrays(html).get("primaryDataUrls"):
+        missing.append("data")
+    return missing
 
 
 def select_files(build_dir: Path) -> list[Path]:
@@ -156,21 +208,27 @@ def select_files(build_dir: Path) -> list[Path]:
 
     ハッシュ名にすると, 前のビルドのファイルが同じ名前で上書きされずに Build/ に残る。
     それを載せると配信サイズが毎回ふくらむので, 参照されていないものは外す。
+    外すのは参照を読み取れた場合だけで, loader・framework・wasm・data のどれかの参照が
+    読めなければ止める（読めないまま外すと, 前のビルドの残りと見分けが付かない）。
     """
     html = (build_dir / "index.html").read_text(encoding="utf-8")
-    refs = referenced_build_files(html)
+    refs = referenced_paths(html)
     if not refs:
         raise ValueError("index.html から Build/ のファイルの参照を読み取れない")
+    unread = missing_loader_parts(html)
+    if unread:
+        raise ValueError("index.html からローダーが読むファイルの参照を読み取れない: " + ", ".join(unread))
 
-    missing = [name for name in refs if not (build_dir / "Build" / name).is_file()]
+    missing = [path for path in refs if not (build_dir / path).is_file()]
     if missing:
-        raise FileNotFoundError("index.html が参照する Build/ のファイルが無い: " + ", ".join(missing))
+        raise FileNotFoundError("index.html が参照するファイルが無い: " + ", ".join(missing))
 
+    keep = set(refs)
     selected = []
     skipped = []
     for path in sorted(p for p in build_dir.rglob("*") if p.is_file()):
         rel = path.relative_to(build_dir).as_posix()
-        if rel.startswith("Build/") and rel[len("Build/"):] not in refs:
+        if rel.startswith("Build/") and rel not in keep:
             skipped.append(rel)
             continue
         selected.append(path)
