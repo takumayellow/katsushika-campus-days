@@ -42,8 +42,7 @@ namespace KCD
 
         private void Start()
         {
-            _index = Mathf.Max(0, System.Array.IndexOf(
-                GameManager.PlayableCharacterIds, GameManager.Instance.SelectedCharacterId));
+            _index = StartIndex(GameManager.Instance.SelectedCharacterId);
 
             L.LocaleChanged += OnLocaleChanged;
             OnLocaleChanged();
@@ -88,7 +87,7 @@ namespace KCD
             int count = Mathf.Min(_stands.Length, GameManager.PlayableCharacterIds.Length);
             if (step != 0 && count > 0)
             {
-                _index = (_index + step + count) % count;
+                _index = Step(_index, step, count);
                 AudioManager.Instance?.PlayUi("ui_move");
                 Refresh();
             }
@@ -97,6 +96,18 @@ namespace KCD
             {
                 Confirm();
             }
+        }
+
+        /// <summary>選択画面を開いたときに選んでおく子。いまのキャラの位置、知らない id なら先頭。</summary>
+        public static int StartIndex(string selectedCharacterId)
+        {
+            return Mathf.Max(0, System.Array.IndexOf(GameManager.PlayableCharacterIds, selectedCharacterId));
+        }
+
+        /// <summary>←→ で 1 人ずらした先。端から先へ進むと反対の端に回り込む。</summary>
+        public static int Step(int index, int step, int count)
+        {
+            return (index + step + count) % count;
         }
 
         private void AnimateStands()
