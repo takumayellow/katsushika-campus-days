@@ -402,9 +402,10 @@ Shader "KCD/Toon"
             }
 
             // 顔の明部の割合を、法線ではなく頭の向きで決める（法線で塗ると鼻や頬の凹凸で陰がまだらになる）。
-            // 球の顔に水平方向から光が当たると、明暗の境目は顔の左右の位置で -(光の前後成分) に来る。
+            // 顔を縦の円柱とみなし、焼いた左右の位置 w = sinθ の面が水平方向の光へ向く度合い cos(θ-φ) で明暗を分ける。
             // 真横からなら顔の中央、正面からなら顔の外（全部明部）、真後ろからなら全部陰。
-            // 光が真上に近い（水平成分が小さい）ほど境目を顔の外へ出して、顔全体を明部にする。
+            // 光が真上に近い（水平成分が小さい）ほど境目を顔の外へ出して、顔全体を明部にする
+            // （真後ろの高い光では両方の縁から中央へ明部が広がる。光が顔の正面の左右を跨いでも明暗は跳ばない）。
             // _FaceShadowBias は斜めの光で境目を陰の側へずらす量。正面と真後ろでは効かせない
             // （真後ろからの光で顔の縁に細い明部が残らない）。ToonLook.FaceLit が同じ式を C# で持つ。
             half FaceLit(half4 faceFrame, half3 lightDirWS, half shadowAttenuation)
@@ -414,11 +415,13 @@ Shader "KCD/Toon"
                 float2 right = float2(forward.y, -forward.x);    // +Z を向くキャラの右は +X
                 float2 lightH = lightDirWS.xz;
                 float lengthH = length(lightH);
-                float front = dot(forward, lightH) / max(lengthH, 1e-4);
-                float side = dot(right, lightH);
-                float threshold = lerp(-1.0, -front, saturate(lengthH * 2.0)) - _FaceShadowBias * (1.0 - abs(front));
-                float u = side >= 0.0 ? faceFrame.w : -faceFrame.w;
-                float lit = smoothstep(threshold - _FaceShadowSoftness, threshold + _FaceShadowSoftness, u);
+                float2 lightN = lightH / max(lengthH, 1e-4);
+                float front = dot(forward, lightN);
+                float side = dot(right, lightN);
+                float u = faceFrame.w;
+                float facing = u * side + sqrt(saturate(1.0 - u * u)) * front;
+                float threshold = lerp(-1.0 - 2.0 * _FaceShadowSoftness, -_FaceShadowBias * (1.0 - abs(front)), saturate(lengthH * 2.0));
+                float lit = smoothstep(threshold - _FaceShadowSoftness, threshold + _FaceShadowSoftness, facing);
                 return (half)lit * shadowAttenuation;
             }
             #endif

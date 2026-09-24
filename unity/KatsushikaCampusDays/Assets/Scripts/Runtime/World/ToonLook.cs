@@ -25,7 +25,7 @@ namespace KCD
 
         /// <summary>
         /// 顔の縁の左右の位置。Blender の顔の面は正面から左右 74° まで（kcd_chara/body.py）なので、
-        /// 頭を球とみなすと縁は sin 74° = 0.96 に来る。
+        /// 頭の水平の断面を円とみなすと縁は sin 74° = 0.96 に来る。
         /// </summary>
         public const float FaceEdgeSine = 0.96f;
 
@@ -418,11 +418,13 @@ namespace KCD
             var right = new Vector2(forward.y, -forward.x);
             var lightH = new Vector2(lightDirection.x, lightDirection.z);
             float lengthH = lightH.magnitude;
-            float front = Vector2.Dot(forward, lightH) / Mathf.Max(lengthH, 1e-4f);
-            float side = Vector2.Dot(right, lightH);
-            float threshold = Mathf.Lerp(-1f, -front, Mathf.Clamp01(lengthH * 2f)) - bias * (1f - Mathf.Abs(front));
-            float u = side >= 0f ? faceSide : -faceSide;
-            return SmoothStep(threshold - softness, threshold + softness, u);
+            var lightN = lightH / Mathf.Max(lengthH, 1e-4f);
+            float front = Vector2.Dot(forward, lightN);
+            float side = Vector2.Dot(right, lightN);
+            float u = faceSide;
+            float facing = u * side + Mathf.Sqrt(Mathf.Clamp01(1f - u * u)) * front;
+            float threshold = Mathf.Lerp(-1f - 2f * softness, -bias * (1f - Mathf.Abs(front)), Mathf.Clamp01(lengthH * 2f));
+            return SmoothStep(threshold - softness, threshold + softness, facing);
         }
 
         /// <summary>
