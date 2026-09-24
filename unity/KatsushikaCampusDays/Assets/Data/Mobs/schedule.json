@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "coordinate_note": "x,z は campus.json 座標 (x=東 m, z=北 m)。{entrance: <building id>} は Models/Interiors/<id>.json の entrance_world、{place: <id>} は CampusProps の VisitZone の位置。",
+  "coordinate_note": "x,z は campus.json 座標 (= Unity のワールド座標, x=東 m, z=北 m)。{entrance: <building id>} は Campus シーンの entrance_<id>（ドア前の床。無ければ Models/Interiors/<id>.json の entrance_world）、{place: <id>} は CampusProps の VisitZone (Zone_<id>) の位置。どの点も NavMesh から 3 m 以内に置く（MobPoolNavMeshTests が確かめる）。",
   "spawn_stagger_seconds": 2.5,
   "respawn_delay_seconds": 6.0,
   "avoid_player_radius": 1.2,
@@ -287,15 +287,11 @@
             },
             {
               "x": 60.0,
-              "z": -110.0
+              "z": -121.0
             },
             {
-              "x": 81.0,
-              "z": -63.4
-            },
-            {
-              "x": 53.7,
-              "z": -50.9
+              "x": 8.0,
+              "z": -96.0
             },
             {
               "x": 26.4,
@@ -475,8 +471,8 @@
               "entrance": "lab1"
             },
             {
-              "x": 76.0,
-              "z": 30.0
+              "x": 94.0,
+              "z": 10.0
             },
             {
               "entrance": "lab2"
@@ -491,12 +487,12 @@
               "entrance": "kyoso"
             },
             {
-              "x": 81.0,
-              "z": -63.4
+              "x": 8.0,
+              "z": -96.0
             },
             {
               "x": 60.0,
-              "z": -110.0
+              "z": -121.0
             },
             {
               "entrance": "research1"
@@ -512,8 +508,8 @@
               "z": -38.4
             },
             {
-              "x": 14.0,
-              "z": 10.0
+              "x": 52.0,
+              "z": 12.0
             },
             {
               "entrance": "gym"
@@ -569,7 +565,7 @@
       "label_ja": "夕方",
       "label_en": "Evening",
       "from_hour": 17.0,
-      "to_hour": 20.0,
+      "to_hour": 19.0,
       "count": 12,
       "walk_speed": 1.45,
       "loop": true,
@@ -637,18 +633,6 @@
               "entrance": "research1"
             },
             {
-              "x": 60.0,
-              "z": -110.0
-            },
-            {
-              "x": 99.2,
-              "z": -71.7
-            },
-            {
-              "x": 126.5,
-              "z": -84.1
-            },
-            {
               "place": "gate_main"
             }
           ],
@@ -661,8 +645,8 @@
               "entrance": "gym"
             },
             {
-              "x": 14.0,
-              "z": 10.0
+              "x": 52.0,
+              "z": 12.0
             },
             {
               "x": 26.4,
@@ -712,6 +696,90 @@
             {
               "x": 126.5,
               "z": -84.1
+            },
+            {
+              "place": "gate_main"
+            }
+          ],
+          "end": "despawn"
+        }
+      ]
+    },
+    {
+      "id": "night",
+      "label_ja": "夜",
+      "label_en": "Night",
+      "from_hour": 19.0,
+      "to_hour": 24.0,
+      "count": 2,
+      "walk_speed": 1.3,
+      "loop": true,
+      "routes": [
+        {
+          "weight": 2,
+          "waypoints": [
+            {
+              "entrance": "library"
+            },
+            {
+              "x": -19.1,
+              "z": -17.6
+            },
+            {
+              "x": -0.9,
+              "z": -26.0
+            },
+            {
+              "x": 26.4,
+              "z": -38.4
+            },
+            {
+              "x": 53.7,
+              "z": -50.9
+            },
+            {
+              "x": 81.0,
+              "z": -63.4
+            },
+            {
+              "x": 126.5,
+              "z": -84.1
+            },
+            {
+              "place": "gate_main"
+            }
+          ],
+          "end": "despawn"
+        },
+        {
+          "weight": 2,
+          "waypoints": [
+            {
+              "entrance": "lab1"
+            },
+            {
+              "x": 72.0,
+              "z": -30.0
+            },
+            {
+              "x": 99.2,
+              "z": -71.7
+            },
+            {
+              "x": 126.5,
+              "z": -84.1
+            },
+            {
+              "place": "gate_main"
+            }
+          ],
+          "end": "despawn"
+        },
+        {
+          "weight": 1,
+          "waypoints": [
+            {
+              "entrance": "research1"
             },
             {
               "place": "gate_main"
