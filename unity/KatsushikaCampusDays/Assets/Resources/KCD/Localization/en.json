@@ -90,6 +90,7 @@
     "ui.interact.exit": "Exit",
     "ui.interact.photo": "Take photo",
     "ui.interact.water": "Water the plants",
+    "ui.interact.sit": "Sit",
     "ui.questlog.heading": "Quest Log",
     "ui.questlog.empty": "No quests yet.\nWalk the campus and talk to someone.",
     "ui.questlog.active": "[Active] ",

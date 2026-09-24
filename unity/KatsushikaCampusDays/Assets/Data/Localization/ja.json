@@ -90,6 +90,7 @@
     "ui.interact.exit": "出る",
     "ui.interact.photo": "撮影する",
     "ui.interact.water": "水をやる",
+    "ui.interact.sit": "座る",
     "ui.questlog.heading": "クエストログ",
     "ui.questlog.empty": "まだ受けているクエストはない。\nキャンパスを歩いて、誰かに話しかけてみよう。",
     "ui.questlog.active": "[受注中] ",
