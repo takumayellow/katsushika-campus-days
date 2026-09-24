@@ -124,7 +124,7 @@ namespace KCD.Editor
             Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (material != null)
             {
-                Repaint(material, name);
+                Repaint(material, name, CampusSurfaces.LoadTiling());
                 return material;
             }
 
@@ -174,6 +174,12 @@ namespace KCD.Editor
                 }
             }
 
+            CampusSurfaces.Apply(material, name, CampusSurfaces.LoadTiling(), out bool textured);
+            if (textured)
+            {
+                material.SetColor(BaseColorId, Color.white);
+            }
+
             Save(material, path);
             return material;
         }
@@ -188,27 +194,73 @@ namespace KCD.Editor
         ///
         /// CampusColors に載っていない名前（屋内のパレット由来など）は、手で調整した値を
         /// 上書きしてしまわないよう触らない。
+        ///
+        /// 面のテクスチャ（<see cref="CampusSurfaces"/>）もここで合わせる。画像を貼った面は
+        /// 画像の平均色が宣言の色なので、_BaseColor は白にする。直したら true。
         /// </summary>
-        private static void Repaint(Material material, string name)
+        private static bool Repaint(Material material, string name, Dictionary<string, float> tiling)
         {
             if (!CampusColors.TryGetValue(name, out string hex))
             {
-                return;
+                return false;
             }
 
             Color declared = Parse(hex);
-            if (!material.HasProperty(BaseColorId) || Same(material.GetColor(BaseColorId), declared))
+            bool changed = CampusSurfaces.Apply(material, name, tiling, out bool textured);
+            Color target = textured ? Color.white : declared;
+            if (material.HasProperty(BaseColorId) && !Same(material.GetColor(BaseColorId), target))
             {
-                return;
+                // ガラスと水は半透明なので、アルファは今の値のまま残す
+                target.a = material.GetColor(BaseColorId).a;
+                material.SetColor(BaseColorId, target);
+                if (material.HasProperty(ShadeColorId))
+                {
+                    material.SetColor(ShadeColorId, declared * 0.62f);
+                }
+
+                changed = true;
             }
 
-            material.SetColor(BaseColorId, declared);
-            if (material.HasProperty(ShadeColorId))
+            if (changed)
             {
-                material.SetColor(ShadeColorId, declared * 0.62f);
+                EditorUtility.SetDirty(material);
             }
 
-            EditorUtility.SetDirty(material);
+            return changed;
+        }
+
+        /// <summary>
+        /// キャンパスの .mat をすべて CampusColors の色と面のテクスチャに合わせ直し、直した数を返す (#59)。
+        ///
+        /// 一度差し替えた FBX は埋め込みのマテリアルを返さなくなるので（<see cref="RepaintCharacters"/> と
+        /// 同じ事情）、ResolveMaterials 経由の <see cref="EnsureCampus"/> には既存の .mat がほとんど来ない。
+        /// ここでは FBX を通さず、フォルダの .mat を直接引く。
+        /// </summary>
+        public static int RepaintCampus()
+        {
+            if (!AssetDatabase.IsValidFolder(CampusFolder))
+            {
+                return 0;
+            }
+
+            Dictionary<string, float> tiling = CampusSurfaces.LoadTiling();
+            int repainted = 0;
+            foreach (string guid in AssetDatabase.FindAssets("t:Material", new[] { CampusFolder }))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
+                if (material != null && Repaint(material, Path.GetFileNameWithoutExtension(path), tiling))
+                {
+                    repainted++;
+                }
+            }
+
+            if (repainted > 0)
+            {
+                AssetDatabase.SaveAssets();
+            }
+
+            return repainted;
         }
 
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
