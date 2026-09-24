@@ -38,11 +38,49 @@ namespace KCD
                 hud.ShowInteractionPrompt(_current);
             }
 
-            if (_current != null && KCDInput.InteractPressed && !KCDInput.GameplayBlocked
-                && !KCDInput.ModalClosedThisFrame)
+            if (ShouldInteract(_current != null, KCDInput.InteractPressed, KCDInput.GameplayBlocked,
+                    KCDInput.ModalClosedThisFrame))
             {
                 _current.Interact(gameObject);
             }
+        }
+
+        /// <summary>
+        /// E で調べてよいか。対象がいて、会話やメニューで操作が封鎖されておらず、
+        /// モーダルを閉じたそのフレームでもないとき（会話の最終行を送った E で同じ相手に話しかけ直さない）。
+        /// </summary>
+        public static bool ShouldInteract(bool hasTarget, bool interactPressed, bool gameplayBlocked,
+            bool modalClosedThisFrame)
+        {
+            return hasTarget && interactPressed && !gameplayBlocked && !modalClosedThisFrame;
+        }
+
+        /// <summary>
+        /// 候補の点数（小さいほど優先: 近くて、より正面）。高さは見ず、平面の距離が range を超えるか、
+        /// 正面度（forward との内積）が facingDot より小さい（背中側・真横）なら候補にしない。
+        /// 足もと（平面で 5 cm 未満）は正面にあるものとして扱う。
+        /// </summary>
+        public static bool TryScore(Vector3 origin, Vector3 forward, Vector3 target, float range, float facingDot,
+            out float score)
+        {
+            score = float.MaxValue;
+            Vector3 delta = target - origin;
+            delta.y = 0f;
+            float distance = delta.magnitude;
+            if (distance > range)
+            {
+                return false;
+            }
+
+            float facing = distance < 0.05f ? 1f : Vector3.Dot(forward, delta / distance);
+            if (facing < facingDot)
+            {
+                return false;
+            }
+
+            // 近くて、より正面にあるものを優先する。
+            score = distance - facing;
+            return true;
         }
 
         private Interactable FindBest()
@@ -68,22 +106,12 @@ namespace KCD
                     continue;
                 }
 
-                Vector3 delta = candidate.transform.position - transform.position;
-                delta.y = 0f;
-                float distance = delta.magnitude;
-                if (distance > candidate.InteractionRange)
+                if (!TryScore(transform.position, forward, candidate.transform.position, candidate.InteractionRange,
+                        _facingDot, out float score))
                 {
                     continue;
                 }
 
-                float facing = distance < 0.05f ? 1f : Vector3.Dot(forward, delta / distance);
-                if (facing < _facingDot)
-                {
-                    continue;
-                }
-
-                // 近くて、より正面にあるものを優先する。
-                float score = distance - facing;
                 if (score < bestScore)
                 {
                     bestScore = score;

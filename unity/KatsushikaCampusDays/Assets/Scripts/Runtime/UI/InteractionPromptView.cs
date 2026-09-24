@@ -37,17 +37,29 @@ namespace KCD
         /// <summary>対象を差し替える。null なら消える。</summary>
         public void SetTarget(Interactable target)
         {
-            bool visible = target != null && !KCDInput.GameplayBlocked;
+            bool visible = IsVisible(target != null, KCDInput.GameplayBlocked);
             _targetAlpha = visible ? 1f : 0f;
 
             if (visible && _label != null)
             {
-                string text = "[E] " + target.PromptLabel;
+                string text = LabelFor(target.PromptLabel);
                 if (_label.text != text)
                 {
                     _label.text = text;
                 }
             }
+        }
+
+        /// <summary>案内を出すか。対象がいて、会話やメニューで操作が封鎖されていないときだけ（押しても調べられない案内は出さない）。</summary>
+        public static bool IsVisible(bool hasTarget, bool gameplayBlocked)
+        {
+            return hasTarget && !gameplayBlocked;
+        }
+
+        /// <summary>案内の文言。「[E] 話す」の形。</summary>
+        public static string LabelFor(string promptLabel)
+        {
+            return "[E] " + promptLabel;
         }
 
         private void Update()
