@@ -45,7 +45,7 @@ namespace KCD
         {
             foreach (Mesh mesh in _meshes)
             {
-                DestroyObject(mesh);
+                DestroyOwned(mesh);
             }
 
             _meshes.Clear();
@@ -163,7 +163,7 @@ namespace KCD
             catch (System.Exception e)
             {
                 // まとめ損ねたマスは元の木を 1 本ずつ描いたままにする。ほかのマスはまとめ続ける。
-                DestroyObject(chunk);
+                DestroyOwned(chunk);
                 Debug.LogWarning(string.Format(
                     "TreeChunkCombiner: {0} をまとめられず、{1} 本を 1 本ずつ描く: {2}", name, members.Count, e.Message), this);
                 return;
@@ -360,7 +360,7 @@ namespace KCD
             }
         }
 
-        private static void DestroyObject(Object target)
+        private static void DestroyOwned(Object target)
         {
             if (target == null)
             {
