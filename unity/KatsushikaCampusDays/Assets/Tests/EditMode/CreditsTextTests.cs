@@ -113,8 +113,14 @@ namespace KCD.Tests
 
             Assert.AreEqual(Regex.Matches(text, "<size=").Count, Regex.Matches(text, "</size>").Count,
                 locale + ": <size> の開きと閉じの数が合わない");
-            Assert.AreEqual(Regex.Matches(text, "<alpha=").Count, Regex.Matches(text, "</alpha>").Count,
-                locale + ": <alpha> の開きと閉じの数が合わない");
+            // TextMeshPro に </alpha> は無く、画面に文字のまま出る。濃さは <alpha=#FF> で戻す。
+            StringAssert.DoesNotContain("</alpha>", text, locale + ": TextMeshPro に無い </alpha> を使っている");
+            MatchCollection alphas = Regex.Matches(text, "<alpha=#([0-9A-Fa-f]{2})>");
+            if (alphas.Count > 0)
+            {
+                Assert.AreEqual("FF", alphas[alphas.Count - 1].Groups[1].Value.ToUpperInvariant(),
+                    locale + ": <alpha=#..> で薄くしたあと <alpha=#FF> で戻していない");
+            }
         }
 
         [Test]

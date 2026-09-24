@@ -104,7 +104,7 @@ namespace KCD
                 + "Made with Unity 6 (URP). Buildings, characters and their textures are generated in Blender 4.5."));
             builder.Append("</size>\n\n<size=75%><alpha=#99>");
             builder.Append(L.Pick("Esc / Enter で戻る", "Esc / Enter: back"));
-            builder.Append("</alpha></size>");
+            builder.Append("<alpha=#FF></size>");
             return builder.ToString();
         }
 

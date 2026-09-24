@@ -107,6 +107,7 @@ namespace KCD
 
         private void Update()
         {
+            SyncTitleVisibility();
             BlinkPrompt();
 
             if (_moved || IsModalOpen || KCDInput.ModalClosedThisFrame ||
@@ -146,6 +147,24 @@ namespace KCD
                     AudioManager.Instance?.PlayUi("ui_confirm");
                     GameManager.Instance.EnterCampus();
                 }
+            }
+        }
+
+        /// <summary>
+        /// 設定かクレジットを開いている間は、題名と案内を隠す。パネルは半透明なので、
+        /// 大きな白い題名がパネルの見出しに重なって読めなくなる。
+        /// </summary>
+        private void SyncTitleVisibility()
+        {
+            if (_moved || _titleRoot == null)
+            {
+                return;
+            }
+
+            bool show = !IsModalOpen;
+            if (_titleRoot.activeSelf != show)
+            {
+                _titleRoot.SetActive(show);
             }
         }
 
