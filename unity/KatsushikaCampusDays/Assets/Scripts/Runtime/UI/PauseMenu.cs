@@ -63,6 +63,12 @@ namespace KCD
         /// <summary>時間を止めて封鎖を掛けているか。設定パネルを出している間（本体は隠れている）も true。</summary>
         private bool _paused;
 
+        /// <summary>
+        /// 「設定」を Enter で選んだフレーム。設定パネルはこの次のフレームで開く (#103)。
+        /// 選んでいなければ <see cref="KCDInput.NoFrame"/>。
+        /// </summary>
+        private int _settingsRequestedFrame = KCDInput.NoFrame;
+
         /// <summary>開いているか。</summary>
         public bool IsOpen => _root != null && _root.activeSelf;
 
@@ -106,6 +112,7 @@ namespace KCD
         /// </summary>
         public void Abandon()
         {
+            _settingsRequestedFrame = KCDInput.NoFrame;
             if (!_paused)
             {
                 return;
@@ -150,6 +157,21 @@ namespace KCD
                 return;
             }
 
+            // 「設定」を選んだ Enter のフレームでは設定パネルを開かず、次のフレームで開く (#103)。
+            // 同じフレームに開くと、そのフレームのうちに SettingsView.Update（同じキャンバスで PauseMenu の後に付いている）が
+            // 同じ Enter を拾い、最初の行（BGM）を +10% して PlayerPrefs に保存していた。
+            // 次のフレームなら、その Enter はもう届かない（Update の順に関係ない）。
+            if (_settingsRequestedFrame != KCDInput.NoFrame)
+            {
+                if (!KCDInput.IgnoresInput(_settingsRequestedFrame, input.Frame))
+                {
+                    _settingsRequestedFrame = KCDInput.NoFrame;
+                    OpenSettings();
+                }
+
+                return;
+            }
+
             // ほかの仕組みが封鎖している間は、閉じたポーズを開かない (#105)。
             // 建物の出入り（InteriorLoader.Travel）と翌朝への戻り（DayEndEvaluator.RestartDay）の暗転は
             // Block(this) を掛けるだけで上のフラグを立てないので、ここで見ないと暗転の裏でポーズが開く。
@@ -183,7 +205,7 @@ namespace KCD
             if (input.Submit)
             {
                 AudioManager.Instance?.PlayUi("ui_confirm");
-                Execute(_index);
+                Execute(_index, input.Frame);
             }
         }
 
@@ -200,6 +222,8 @@ namespace KCD
                 AudioManager.Instance?.PlayUi(open ? "ui_open" : "ui_close");
             }
 
+            // 開き直しても閉じても、選んだだけでまだ開いていない設定パネルは持ち越さない。
+            _settingsRequestedFrame = KCDInput.NoFrame;
             _root.SetActive(open);
             Time.timeScale = open ? 0f : 1f;
             _paused = open;
@@ -243,7 +267,8 @@ namespace KCD
             _bodyLabel.text = builder.ToString();
         }
 
-        private void Execute(int index)
+        /// <summary>選んだ行を実行する。frame は決めた Enter のフレーム。</summary>
+        private void Execute(int index, int frame)
         {
             switch (index)
             {
@@ -265,7 +290,8 @@ namespace KCD
                     SaveSystem.Load();
                     break;
                 case 3:
-                    OpenSettings();
+                    // ここでは開かない。次のフレームの Tick が開く (#103)。
+                    _settingsRequestedFrame = frame;
                     break;
                 case 4:
                     SetOpen(false);

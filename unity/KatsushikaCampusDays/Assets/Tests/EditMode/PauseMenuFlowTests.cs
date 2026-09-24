@@ -63,7 +63,34 @@ namespace KCD.Tests
             return pause;
         }
 
+        /// <summary>ラベル無しの設定パネル。Update は走らないので、開いたかどうかだけを見る。</summary>
+        private SettingsView MakeSettings()
+        {
+            SettingsView settings = Make("SettingsForTest").AddComponent<SettingsView>();
+            settings.Bind(MakeRoot("SettingsRoot"), null, null);
+            return settings;
+        }
+
         private static PauseMenu.FrameInput Menu(int frame) => new PauseMenu.FrameInput(frame, menu: true);
+
+        private static PauseMenu.FrameInput Submit(int frame) => new PauseMenu.FrameInput(frame, submit: true);
+
+        private static PauseMenu.FrameInput Idle(int frame) => new PauseMenu.FrameInput(frame);
+
+        /// <summary>行の並び（EntryKeys）での「設定」の位置。</summary>
+        private const int SettingsRow = 3;
+
+        /// <summary>ポーズを開き、「設定」の行まで下へ送る。次に使えるフレーム番号を返す。</summary>
+        private static int OpenAndMoveToSettings(PauseMenu pause, int frame)
+        {
+            pause.Tick(Menu(frame++));
+            for (int i = 0; i < SettingsRow; i++)
+            {
+                pause.Tick(new PauseMenu.FrameInput(frame++, vertical: 1));
+            }
+
+            return frame;
+        }
 
         // ---- 封鎖の最中の Esc (#105) ----
 
@@ -158,6 +185,75 @@ namespace KCD.Tests
             Assert.IsFalse(PauseMenu.AcceptsMenu(false, true, false), "ほかの封鎖があるのに開ける");
             Assert.IsTrue(PauseMenu.AcceptsMenu(true, true, false), "開いているポーズを閉じられない");
             Assert.IsTrue(PauseMenu.AcceptsMenu(false, true, true), "自分の封鎖で自分を止めている");
+        }
+
+        // ---- 「設定」を選んだ Enter の持ち越し (#103) ----
+
+        [Test]
+        public void Settings_ChosenWithEnter_OpensOnTheNextFrame()
+        {
+            PauseMenu pause = MakePause();
+            SettingsView settings = MakeSettings();
+            pause.Settings = settings;
+            int frame = OpenAndMoveToSettings(pause, 100);
+
+            // 決めた Enter のフレームで開くと、同じフレームの SettingsView.Update が同じ Enter を拾い、
+            // 最初の行（BGM）で Adjust(1) → 音量 +10% を保存する。開くのは次のフレーム。
+            pause.Tick(Submit(frame));
+            Assert.IsFalse(settings.IsOpen, "「設定」を決めた Enter のフレームで設定が開いた（その Enter で BGM が +10% される）");
+            Assert.IsTrue(pause.IsOpen, "設定が開く前にポーズの本体が消えた");
+
+            // 同じフレームにもう一度回っても開かない。
+            pause.Tick(Idle(frame));
+            Assert.IsFalse(settings.IsOpen, "同じフレームのうちに設定が開いた");
+
+            pause.Tick(Idle(frame + 1));
+            Assert.IsTrue(settings.IsOpen, "次のフレームになっても設定が開かない");
+            Assert.IsFalse(pause.IsOpen, "設定を出している間はポーズの本体を隠す");
+            Assert.IsTrue(pause.IsPaused, "設定を出している間に時間が動き出した");
+            Assert.IsTrue(KCDInput.IsBlockedBy(pause), "設定を出している間にポーズの封鎖が外れた");
+            Assert.AreEqual(0f, Time.timeScale);
+        }
+
+        [Test]
+        public void Settings_Closed_ShowsThePauseAgain()
+        {
+            PauseMenu pause = MakePause();
+            SettingsView settings = MakeSettings();
+            pause.Settings = settings;
+            int frame = OpenAndMoveToSettings(pause, 200);
+            pause.Tick(Submit(frame));
+            pause.Tick(Idle(frame + 1));
+            Assert.IsTrue(settings.IsOpen);
+
+            settings.Close();
+
+            Assert.IsTrue(pause.IsOpen, "設定を閉じてもポーズに戻らない");
+            Assert.IsTrue(pause.IsPaused);
+            Assert.AreEqual(0f, Time.timeScale);
+
+            // 設定から戻ったあとも、次の Enter でまた開ける（行は「設定」のまま）。
+            pause.Tick(Submit(frame + 2));
+            pause.Tick(Idle(frame + 3));
+            Assert.IsTrue(settings.IsOpen, "設定から戻ったあとに設定を開き直せない");
+        }
+
+        [Test]
+        public void Settings_NotOpened_WhenThePauseClosesBeforeTheNextFrame()
+        {
+            PauseMenu pause = MakePause();
+            SettingsView settings = MakeSettings();
+            pause.Settings = settings;
+            int frame = OpenAndMoveToSettings(pause, 300);
+            pause.Tick(Submit(frame));
+
+            // 選んだあと、次のフレームを待たずにポーズが閉じられた（SetOpen(false) / シーンの片付け）。
+            pause.SetOpen(false);
+            pause.Tick(Idle(frame + 1));
+
+            Assert.IsFalse(settings.IsOpen, "閉じたポーズから設定だけが開いた");
+            Assert.IsFalse(pause.IsPaused);
+            Assert.AreEqual(1f, Time.timeScale);
         }
     }
 }
