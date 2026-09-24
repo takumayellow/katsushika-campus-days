@@ -101,6 +101,18 @@ namespace KCD.Editor
                         Object.DestroyImmediate(water);
                     }
 
+                    // 水面は KCD/Water で描く (#58)。FBX の "water" は取り込みで water.mat へ付け替え済みで、
+                    // MaterialLibrary.EnsureCampus の新規作成の道を通らないので、ここで毎回シェーダと値を合わせる。
+                    // 半透明の 1 パスだけで描き、影は落とさない（受けるだけ）。
+                    MeshRenderer surface = go.GetComponent<MeshRenderer>();
+                    if (surface != null)
+                    {
+                        Material waterMaterial = MaterialLibrary.EnsureCampus("water");
+                        WaterMaterial.Apply(waterMaterial);
+                        surface.sharedMaterial = waterMaterial;
+                        surface.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                    }
+
                     Ignore(go);
                 }
                 else if (backdrop)

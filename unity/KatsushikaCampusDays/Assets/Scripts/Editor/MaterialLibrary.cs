@@ -156,8 +156,9 @@ namespace KCD.Editor
             }
             else if (name == "water")
             {
-                MakeTransparent(material, 0.58f, color);
-                material.SetFloat("_Smoothness", 0.96f);
+                // 屋外の水面は専用のシェーダ KCD/Water (#58)。透け・映り込み・さざ波の値はシェーダの既定値が正。
+                material.SetColor("_BaseColor", color);
+                WaterMaterial.Apply(material);
             }
             else
             {
