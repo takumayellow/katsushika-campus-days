@@ -24,7 +24,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import bpy  # noqa: E402
 
-from kcd_lib import buildings, entrances, geom, mats, props, render, site  # noqa: E402
+from kcd_lib import buildings, entrances, geom, mats, props, render, site, uv  # noqa: E402
 from kcd_lib.mesh import MeshBuilder  # noqa: E402
 
 FBX_OPTS = dict(
@@ -134,8 +134,10 @@ def total_verts():
     return n
 
 
-def export_fbx(path):
+def export_fbx(path, axis=(1.0, 0.0)):
+    """axis は水平な面の UV の向き（kcd_lib.uv）。キャンパスは研究棟の長辺に揃える。"""
     os.makedirs(os.path.dirname(path), exist_ok=True)
+    uv.write_scene(bpy.context.scene, axis)
     bpy.ops.export_scene.fbx(filepath=path, **FBX_OPTS)
     return os.path.getsize(path)
 
@@ -394,7 +396,7 @@ def main():
               % (o.name, len(o.data.vertices), len(o.data.polygons), tris))
 
     campus_fbx = os.path.join(args.out_dir, "campus.fbx")
-    size_campus = export_fbx(campus_fbx)
+    size_campus = export_fbx(campus_fbx, frame.u)
     print("[fbx] %s  %.2f MB" % (campus_fbx, size_campus / 1048576.0))
 
     # --- 樹木（プレビューにはインスタンスを置く）---
