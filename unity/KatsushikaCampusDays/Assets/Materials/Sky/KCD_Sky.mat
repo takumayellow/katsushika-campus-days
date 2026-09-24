@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: KCD_Sky
+  m_Shader: {fileID: 4800000, guid: 17ebbac74297ec541a3835c17ebf404c, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs: []
+    m_Ints: []
+    m_Floats:
+    - _CloudCover: 0.42
+    - _CloudSpeed: 0.006
+    - _SkylineHeight: 0.03
+    - _Stars: 0
+    - _SunDisk: 3
+    m_Colors:
+    - _CloudColor: {r: 1, g: 0.992, b: 0.98, a: 0.88}
+    - _HorizonColor: {r: 0.74799997, g: 0.854, b: 0.95, a: 1}
+    - _MoonDirection: {r: 0.5570128, g: 0.6160142, b: -0.5570128, a: 0}
+    - _SkylineColor: {r: 0.5338, g: 0.65857995, b: 0.79475003, a: 1}
+    - _SunDirection: {r: 0.7485108, g: 0.538511, b: -0.3869594, a: 0}
+    - _SunGlowColor: {r: 1, g: 0.936, b: 0.832, a: 0.51}
+    - _ZenithColor: {r: 0.348, g: 0.59, b: 0.9, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
