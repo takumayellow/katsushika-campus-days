@@ -52,8 +52,11 @@ MSYS_NO_PATHCONV=1 "$UNITY" -batchmode -nographics -quit \
 python tools/check_unity_log.py unity/logs/import.log unity/logs/scene.log unity/logs/build.log
 ```
 
-`error CS` と例外の件数、`[KCD]` の進捗、保存したシーン、ビルド結果を並べる。
-どちらかが 1 件でもあれば終了コード 1 を返すので、そのまま CI に置ける。
+`error CS`・`warning CS`・例外・NavMesh の失敗・シェーダの欠け（`Shader ... not found`）・
+編集時のマテリアル複製（`Instantiating material ...`）の件数、`[KCD]` の進捗、保存したシーン、ビルド結果を並べる。
+どれかが 1 件でもあるか、ビルド結果が Succeeded でなければ終了コード 1 を返すので、そのまま CI に置ける。
+`unity/logs/tests_editmode.xml` のようにテスト結果の XML を渡すと、失敗したテストを拾う。
+直せない理由が分かっている行は `KNOWN_LINES` に理由付きで載せてあり、`[KNOWN]` として件数だけ出す。
 
 ## 副: Unity.exe を直に叩く
 

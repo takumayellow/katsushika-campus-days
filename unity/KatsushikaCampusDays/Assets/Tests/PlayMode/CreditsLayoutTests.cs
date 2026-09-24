@@ -93,7 +93,7 @@ namespace KCD.Tests
         private static TMP_Text FindBody(CreditsView credits)
         {
             string text = CreditsView.BuildText();
-            foreach (TMP_Text label in Object.FindObjectsByType<TMP_Text>(FindObjectsSortMode.None))
+            foreach (TMP_Text label in Object.FindObjectsByType<TMP_Text>(FindObjectsInactive.Exclude))
             {
                 if (label.isActiveAndEnabled && label.text == text)
                 {

@@ -15,7 +15,7 @@ namespace KCD.Editor
         {
             EditorSceneManager.OpenScene(EditorPaths.CampusScene, OpenSceneMode.Single);
             var sb = new StringBuilder();
-            foreach (Renderer renderer in Object.FindObjectsByType<Renderer>(FindObjectsSortMode.None))
+            foreach (Renderer renderer in Object.FindObjectsByType<Renderer>(FindObjectsInactive.Exclude))
             {
                 if (renderer.transform.parent == null || renderer.transform.parent.name != "Campus")
                 {
