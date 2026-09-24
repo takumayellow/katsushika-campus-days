@@ -337,8 +337,8 @@
     },
     {
       "id": "ps_gym_catwalk",
-      "name_ja": "キャットウォークからのアリーナ",
-      "name_en": "Arena from the Catwalk",
+      "name_ja": "観覧席の最上段からのアリーナ",
+      "name_en": "Arena from the Top of the Bleachers",
       "building": "gym",
       "position": "poi_gym_catwalk",
       "look_dir": {
