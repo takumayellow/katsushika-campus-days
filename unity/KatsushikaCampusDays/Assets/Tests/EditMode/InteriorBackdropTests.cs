@@ -148,5 +148,95 @@ namespace KCD.Tests
             AssertColor(InteriorBackdrop.TintAt(23f), InteriorBackdrop.TintAt(-1f), "-1 時 = 23 時");
             AssertColor(InteriorBackdrop.TintAt(0f), InteriorBackdrop.TintAt(24f), "24 時 = 0 時");
         }
+
+        // --- 撮った画か仮のグラデーションかの見分け方（InteriorBackdropSceneTests が PNG に使う） ----------------
+
+        private const int PanoramaWidth = 256;
+        private const int PanoramaHeight = 64;
+
+        /// <summary>行ごとに一色の画。InteriorBackdropStage.Placeholder と同じ作り（水平より下は地面、上は地平から空へ）。</summary>
+        private static Color32[] RowConstantPanorama(float tanBottom, float tanTop)
+        {
+            var ground = new Color32(104, 118, 92, 255);
+            var horizon = new Color32(214, 222, 228, 255);
+            var zenith = new Color32(118, 158, 212, 255);
+            var pixels = new Color32[PanoramaWidth * PanoramaHeight];
+            for (int j = 0; j < PanoramaHeight; j++)
+            {
+                float t = tanBottom + (j + 0.5f) / PanoramaHeight * (tanTop - tanBottom);
+                Color32 color = t < 0f ? ground : Color32.Lerp(horizon, zenith, Mathf.Sqrt(t / tanTop));
+                for (int i = 0; i < PanoramaWidth; i++)
+                {
+                    pixels[j * PanoramaWidth + i] = color;
+                }
+            }
+
+            return pixels;
+        }
+
+        [Test]
+        public void 行ごとに一色の仮の画は撮った画とみなさない()
+        {
+            Color32[] pixels = RowConstantPanorama(-0.2f, 0.84f);
+            float spread = InteriorBackdropSceneTests.MaxRowStdDev(pixels, PanoramaWidth, 0, PanoramaHeight - 1, out _);
+            Assert.Less(spread, 1e-3f, "行ごとに一色なら、列方向のばらつきは 0");
+            Assert.Less(spread, InteriorBackdropSceneTests.MinPanoramaRowStdDev);
+        }
+
+        [Test]
+        public void 建物や木と空が左右に並ぶ行は撮った画とみなす()
+        {
+            Color32[] pixels = RowConstantPanorama(-0.2f, 0.84f);
+            const int row = 20;
+            var tree = new Color32(52, 92, 48, 255);
+            var wall = new Color32(188, 186, 178, 255);
+            for (int i = 0; i < PanoramaWidth; i++)
+            {
+                int block = i / 16;
+                if (block % 3 == 0)
+                {
+                    pixels[row * PanoramaWidth + i] = tree;
+                }
+                else if (block % 3 == 1)
+                {
+                    pixels[row * PanoramaWidth + i] = wall;
+                }
+            }
+
+            float spread = InteriorBackdropSceneTests.MaxRowStdDev(pixels, PanoramaWidth, 0, PanoramaHeight - 1, out int at);
+            Assert.AreEqual(row, at, "ばらつきの最も大きい行");
+            Assert.GreaterOrEqual(spread, InteriorBackdropSceneTests.MinPanoramaRowStdDev, "木・壁・空が並ぶ行");
+        }
+
+        [Test]
+        public void 空だけのなめらかな明るさの変化は撮った画とみなさない()
+        {
+            // 空の明るさが方位でゆっくり ±4 段だけ変わる行。建物も木も無いので、撮った画の基準には届かない。
+            Color32[] pixels = RowConstantPanorama(-0.2f, 0.84f);
+            const int row = 40;
+            for (int i = 0; i < PanoramaWidth; i++)
+            {
+                Color32 sky = pixels[row * PanoramaWidth + i];
+                int wave = Mathf.RoundToInt(4f * Mathf.Sin(2f * Mathf.PI * i / PanoramaWidth));
+                pixels[row * PanoramaWidth + i] = new Color32(
+                    (byte)(sky.r + wave), (byte)(sky.g + wave), (byte)(sky.b + wave), 255);
+            }
+
+            float spread = InteriorBackdropSceneTests.MaxRowStdDev(pixels, PanoramaWidth, 0, PanoramaHeight - 1, out int at);
+            Assert.AreEqual(row, at, "ばらつきの最も大きい行");
+            Assert.Greater(spread, 1f, "空の行のゆらぎを拾えている");
+            Assert.Less(spread, InteriorBackdropSceneTests.MinPanoramaRowStdDev);
+        }
+
+        [Test]
+        public void 見る行は仰角から決まる()
+        {
+            // 行 j の中心は tanBottom + (j + 0.5) / height * (tanTop - tanBottom)。
+            Assert.AreEqual(0, InteriorBackdropSceneTests.PanoramaRow(-0.1f, -0.1f, 0.9f, 512), "下端");
+            Assert.AreEqual(51, InteriorBackdropSceneTests.PanoramaRow(0f, -0.1f, 0.9f, 512), "水平");
+            Assert.AreEqual(511, InteriorBackdropSceneTests.PanoramaRow(0.9f, -0.1f, 0.9f, 512), "上端");
+            Assert.AreEqual(0, InteriorBackdropSceneTests.PanoramaRow(-1f, -0.1f, 0.9f, 512), "下端より下は下端の行");
+            Assert.AreEqual(511, InteriorBackdropSceneTests.PanoramaRow(2f, -0.1f, 0.9f, 512), "上端より上は上端の行");
+        }
     }
 }

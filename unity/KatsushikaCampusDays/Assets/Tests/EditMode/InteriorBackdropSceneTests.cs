@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -15,6 +16,8 @@ namespace KCD.Tests
     /// SceneBuilder（InteriorBackdropStage）は屋内ごとに、パノラマを貼った閉じたドームを置く。ここでは
     /// 置いたシーンを開き、窓のある屋内（図書館 2 階の自習室・寮のラウンジ・寮の食堂）の窓から外へ飛ばした線が
     /// 必ずドームに当たること、近景 ext_* に当たり判定が無いこと、WebGL の予算に収まることを確かめる。
+    /// パノラマの PNG も読み、仮のグラデーションのままでなくキャンパスを撮った画であることを確かめる
+    /// （SceneBuilder を -nographics で回しただけでは撮れないので、InteriorBackdropStage.Bake を回すまで赤になる）。
     /// </summary>
     public sealed class InteriorBackdropSceneTests
     {
@@ -53,6 +56,18 @@ namespace KCD.Tests
 
         /// <summary>三角形の縁に当たった線を取りこぼさないための、重心座標の余裕。</summary>
         private const float BarycentricSlack = 1e-3f;
+
+        /// <summary>
+        /// パノラマの 1 行の、左右（列方向）の明るさの標準偏差（0〜255）の下限。見る行のうち最も大きい値と比べる。
+        /// 仮のグラデーション（InteriorBackdropStage.Placeholder）は行ごとに一色なので、どの行も 0。
+        /// キャンパスを撮った画は、地面から水平の少し上までに道・芝・建物・木・空が左右に並ぶ。
+        /// docs/previews の目の高さの画（campus_mall・campus_lecture・campus_library・dorm_front・dorm_oblique）で、
+        /// 画面の下 6 割の行の最大は 39.5〜55.7 あったので、その 5 分の 1 程度に置く。
+        /// </summary>
+        internal const float MinPanoramaRowStdDev = 8f;
+
+        /// <summary>ばらつきを見る帯の上端の仰角（度）。パノラマの下端（地面）からここまでの行を見る。</summary>
+        internal const float PanoramaBandTopDegrees = 10f;
 
         private Scene _scene;
         private readonly Dictionary<string, Transform> _interiors = new Dictionary<string, Transform>();
@@ -148,6 +163,43 @@ namespace KCD.Tests
             Mesh mesh = DomeMesh(backdrop);
             Assert.IsTrue(mesh != null, id + " のドームのメッシュが無い");
             Assert.LessOrEqual(mesh.triangles.Length / 3, MaxDomeTriangles, "ドームの三角形の数");
+        }
+
+        /// <summary>
+        /// 貼ってあるパノラマが、仮のグラデーションでなくキャンパスを撮った画であること。
+        /// 取り込んだテクスチャは crunch で圧縮され読めないので、PNG を直接読む（可逆なので仮の画の行は一色のまま）。
+        /// 地面から仰角 10 度までの行で、左右の明るさのばらつきが最も大きい行を見る。
+        /// </summary>
+        [TestCaseSource(nameof(BuildingIds))]
+        public void パノラマは仮のグラデーションでなくキャンパスを撮った画(string id)
+        {
+            InteriorBackdrop backdrop = Backdrop(id);
+            MeshRenderer renderer = backdrop.GetComponent<MeshRenderer>();
+            Material material = renderer != null ? renderer.sharedMaterial : null;
+            Assert.IsTrue(material != null, id + " のドームにマテリアルが無い");
+            Texture texture = material.HasProperty("_BaseMap") ? material.GetTexture("_BaseMap") : null;
+            Assert.IsTrue(texture != null, id + " のパノラマ（_BaseMap）が無い");
+
+            string assetPath = AssetDatabase.GetAssetPath(texture);
+            string file = Path.Combine(Path.GetDirectoryName(Application.dataPath), assetPath);
+            Assert.IsTrue(File.Exists(file), id + " のパノラマの画像ファイルが無い: " + assetPath);
+
+            var image = new Texture2D(2, 2);
+            try
+            {
+                Assert.IsTrue(image.LoadImage(File.ReadAllBytes(file)), assetPath + " を読めない");
+                int top = PanoramaRow(Mathf.Tan(PanoramaBandTopDegrees * Mathf.Deg2Rad),
+                    backdrop.TanBottom, backdrop.TanTop, image.height);
+                float spread = MaxRowStdDev(image.GetPixels32(), image.width, 0, top, out int row);
+                Assert.GreaterOrEqual(spread, MinPanoramaRowStdDev,
+                    id + " のパノラマ " + assetPath + " は、地面から仰角 " + PanoramaBandTopDegrees + " 度まで（行 0〜" + top
+                    + "）のどの行も左右でほぼ一色（列方向の明るさの標準偏差は最大で行 " + row + " の " + spread.ToString("F1")
+                    + "）。仮のグラデーションのままなので、-nographics を付けずに KCD.Editor.InteriorBackdropStage.Bake で撮る");
+            }
+            finally
+            {
+                Object.DestroyImmediate(image);
+            }
         }
 
         // --- 窓の外 ------------------------------------------------------------------------
@@ -479,6 +531,55 @@ namespace KCD.Tests
             float dx = Mathf.Max(Mathf.Abs(point.x - bounds.center.x) - bounds.extents.x, 0f);
             float dz = Mathf.Max(Mathf.Abs(point.z - bounds.center.z) - bounds.extents.z, 0f);
             return Mathf.Sqrt(dx * dx + dz * dz);
+        }
+
+        /// <summary>
+        /// tan(仰角) が入るパノラマの行（0 = 下端）。行 j の中心は tanBottom + (j + 0.5) / height * (tanTop - tanBottom)
+        /// （InteriorBackdropStage.Stitch と同じ割り当て）。範囲の外は端の行にする。
+        /// </summary>
+        internal static int PanoramaRow(float tan, float tanBottom, float tanTop, int height)
+        {
+            float span = tanTop - tanBottom;
+            if (span <= 0f)
+            {
+                return height - 1;
+            }
+
+            int row = Mathf.FloorToInt((tan - tanBottom) / span * height);
+            return Mathf.Clamp(row, 0, height - 1);
+        }
+
+        /// <summary>
+        /// firstRow〜lastRow の各行で、列方向の明るさ（sRGB の 0〜255 に Rec. 709 の重み）の標準偏差を求め、
+        /// 最も大きい値とその行を返す。画素は行 0 = 下端の並び（Texture2D.GetPixels32 と同じ）。
+        /// </summary>
+        internal static float MaxRowStdDev(Color32[] pixels, int width, int firstRow, int lastRow, out int maxRow)
+        {
+            maxRow = firstRow;
+            double best = 0.0;
+            for (int row = firstRow; row <= lastRow; row++)
+            {
+                double sum = 0.0;
+                double squares = 0.0;
+                int start = row * width;
+                for (int column = 0; column < width; column++)
+                {
+                    Color32 c = pixels[start + column];
+                    double luminance = 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+                    sum += luminance;
+                    squares += luminance * luminance;
+                }
+
+                double mean = sum / width;
+                double variance = System.Math.Max(squares / width - mean * mean, 0.0);
+                if (variance > best)
+                {
+                    best = variance;
+                    maxRow = row;
+                }
+            }
+
+            return (float)System.Math.Sqrt(best);
         }
 
         /// <summary>
