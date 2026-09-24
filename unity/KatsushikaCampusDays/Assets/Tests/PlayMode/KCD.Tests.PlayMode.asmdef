@@ -1,16 +1,11 @@
 {
-    "name": "KCD.Tests.EditMode",
+    "name": "KCD.Tests.PlayMode",
     "rootNamespace": "KCD.Tests",
     "references": [
         "KCD.Runtime",
-        "Unity.TextMeshPro",
-        "UnityEngine.UI",
-        "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner"
+        "UnityEngine.TestRunner"
     ],
-    "includePlatforms": [
-        "Editor"
-    ],
+    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": true,
