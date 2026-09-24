@@ -207,10 +207,9 @@ def open_edge_length(obj):
 def check_closed(objs, skip=()):
     """当たり判定に使う立体が全部閉じていること。穴の縁の総延長が 0 m でなければ止める。
 
-    skip には寮の外観を渡す。寮はキャンパスの 9 棟とまったく同じ作り（facade.add_facade の
-    窓割り + add_ngon_flat の陸屋根）で、外皮は閉じていない。閉じているのは footprint から
-    CORE_IN だけ内側に立てた躯体コア（上下に蓋つきの add_prism）で、屋内へ素通りしないのは
-    そちらが担保する。build_campus.py も 9 棟に閉じ検査を掛けていない。外観そのものの検査は
+    skip には寮の外観を渡す。寮の外皮は facade.add_facade の窓割りと窓ガラスの板で、閉じていない。
+    閉じているのは 1 階の基壇・2 階以上の本体・角の階段室・屋上スラブ（どれも上下に蓋つきの
+    add_prism）で、屋内へ素通りしないのはそちらが担保する。build_campus.py も 9 棟に閉じ検査を掛けていない。外観そのものの検査は
     build_dorm.py（footprint 一致・玄関の向き・穴の幅 MAX_GAP）が持っている。
     """
     report = {}
@@ -226,7 +225,7 @@ def check_closed(objs, skip=()):
     print("[route] closure ok: %s いずれも穴の縁 0 本 / 0.000 m"
           % ", ".join(sorted(k for k in report if report[k]["checked"])))
     if skip:
-        print("[route] closure skip: %s（9 棟と同じ外皮。閉じているのは躯体コア）"
+        print("[route] closure skip: %s（外皮は窓割りの板。閉じているのは基壇・本体・階段室・屋上スラブ）"
               % ", ".join(sorted(skip)))
     return report
 
