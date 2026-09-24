@@ -57,7 +57,8 @@ namespace KCD
             _openedAt = Time.unscaledTime;
 
             HUD.Instance?.SetGameplayUIVisible(false);
-            KCDInput.GameplayBlocked = true;
+            // 自分の名前で封鎖する。閉じるときに、ほかの画面の封鎖まで外さない (#62)。
+            KCDInput.Block(this);
             Time.timeScale = 0f;
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
@@ -80,7 +81,7 @@ namespace KCD
             _root.SetActive(false);
             IsAnyOpen = false;
             Time.timeScale = 1f;
-            KCDInput.GameplayBlocked = false;
+            KCDInput.Unblock(this);
             KCDInput.MarkModalClosed();
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
@@ -94,8 +95,9 @@ namespace KCD
             {
                 IsAnyOpen = false;
                 Time.timeScale = 1f;
-                KCDInput.GameplayBlocked = false;
             }
+
+            KCDInput.Unblock(this);
         }
 
         private void Update()

@@ -83,12 +83,12 @@ namespace KCD
         public QuestSystem Quests { get; private set; }
 
         /// <summary>ゲーム内時刻（時間単位の実数、0-24）。DayNightCycle が毎フレーム更新する。</summary>
-        public float GameTimeHours { get; set; } = 8.5f;
+        public float GameTimeHours { get; set; } = DayRestart.DayStartHour;
 
         /// <summary>タイトルからキャンパスへ入った回数。初回だけオリエンのクエストを自動開始する。</summary>
         public bool HasEnteredCampus { get; set; }
 
-        /// <summary>何日目か。「もう一日歩く」を選ぶたびに 1 つ進む（#16）。セーブには載せない。</summary>
+        /// <summary>何日目か。「もう一日歩く」を選ぶたびに 1 つ進む（#16）。セーブにも載せる (#61)。</summary>
         public int DayNumber { get; set; } = DayRestart.FirstDay;
 
         private void Awake()
@@ -105,9 +105,17 @@ namespace KCD
 
             if (Quests == null)
             {
-                Quests = new QuestSystem();
+                Quests = CreateQuests();
                 Quests.LoadFromResources();
             }
+        }
+
+        /// <summary>クエスト進行を作る。達成したら自動セーブを頼む (#61)。</summary>
+        private static QuestSystem CreateQuests()
+        {
+            var quests = new QuestSystem();
+            AutoSave.Watch(quests);
+            return quests;
         }
 
         /// <summary>
@@ -135,10 +143,14 @@ namespace KCD
             // 探索率のもと。static なのでアプリを起動している間ずっと残る（シーンでは消えない）。
             DayStats.Reset();
 
+            // 「つづきから」を選びかけて読んだセーブが残っていたら、キャンパスで当てないよう捨てる。
+            SaveSystem.DiscardPending();
+            AutoSave.Cancel();
+
             // クエストも GameManager と寿命を共にするので読み直す。タイトルで受注音を鳴らさない口を使う。
             if (Quests == null)
             {
-                Quests = new QuestSystem();
+                Quests = CreateQuests();
             }
 
             Quests.ResetForNewGame();
@@ -150,6 +162,12 @@ namespace KCD
         private void Update()
         {
             Quests?.Tick(Time.deltaTime);
+
+            // 頼まれていた自動セーブを、封鎖が外れた最初のフレームで書く (#61)。
+            if (AutoSave.Pending)
+            {
+                AutoSave.Tick(HasEnteredCampus && SceneManager.GetActiveScene().name == CampusSceneName);
+            }
         }
 
         private void OnDestroy()
@@ -179,14 +197,25 @@ namespace KCD
         {
             // 封鎖を掛けた画面・演出はシーンごと消えるので、残った封鎖をまとめて外す (#40)。
             KCDInput.ClearAllBlocks();
+
+            // 前のキャンパスで頼まれたまま書けなかった自動セーブを、次のキャンパスの最初のフレーム
+            // （「つづきから」の位置を当てる前）に書かないよう捨てる (#61)。
+            AutoSave.Cancel();
             SceneManager.LoadScene(CampusSceneName);
         }
 
-        /// <summary>タイトルへ戻る。進行はメモリ上に残るのでそのまま再開できる。</summary>
+        /// <summary>
+        /// タイトルへ戻る。封鎖と時間停止を解いてから Title を読む。
+        /// メモリ上の進行はタイトルでは使わない。「つづきから」はセーブを読み直し、「はじめから」は
+        /// <see cref="BeginNewGame"/> で初期値に戻すので、セーブしていない進行はここで失われる。
+        /// </summary>
         public void ReturnToTitle()
         {
             KCDInput.ClearAllBlocks();
             Time.timeScale = 1f;
+
+            // 封鎖を外したので、シーンが切り替わるまでのフレームで自動セーブが書かないよう捨てる (#61)。
+            AutoSave.Cancel();
             SceneManager.LoadScene(TitleSceneName);
         }
 
@@ -194,8 +223,9 @@ namespace KCD
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Bootstrap()
         {
-            // ドメインの再読み込みを切った再生（Enter Play Mode Options）でも、前回の再生の封鎖を持ち越さない。
+            // ドメインの再読み込みを切った再生（Enter Play Mode Options）でも、前回の再生の封鎖と自動セーブを持ち越さない。
             KCDInput.ClearAllBlocks();
+            AutoSave.Cancel();
             _ = Instance;
             // Web 版は品質レベルの取り違えで描画が崩れたことがあるので、どの設定で起動したかを残す。
             RenderPipelineAsset pipeline = GraphicsSettings.currentRenderPipeline;

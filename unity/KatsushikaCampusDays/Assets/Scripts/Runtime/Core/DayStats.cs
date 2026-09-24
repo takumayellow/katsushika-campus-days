@@ -5,7 +5,7 @@ namespace KCD
 {
     /// <summary>
     /// 一日の歩き方の記録。入った建物・拾った物・撮った写真スポットを種類で数える。
-    /// リザルト画面がここから達成率を作る。セーブには載せない（起動中のみ）。
+    /// リザルト画面がここから達成率を作る。セーブにも載せ、つづきからで戻す (#53, #61)。
     /// </summary>
     public static class DayStats
     {
@@ -61,6 +61,47 @@ namespace KCD
             _buildings.Clear();
             _collected.Clear();
             _photoSpots.Clear();
+        }
+
+        /// <summary>セーブ用。入った建物の id（並びは安定させる）。</summary>
+        public static List<string> BuildingIds() => Sorted(_buildings);
+
+        /// <summary>セーブ用。拾った物の id。</summary>
+        public static List<string> CollectedIds() => Sorted(_collected);
+
+        /// <summary>セーブ用。撮った写真スポットの id。</summary>
+        public static List<string> PhotoSpotIds() => Sorted(_photoSpots);
+
+        /// <summary>
+        /// セーブから戻す。今の記録は捨てて置き換える。null のリストは空、空の id は数えず、
+        /// 写真は記録するときと同じく ps_ で始まるものだけ数える。
+        /// </summary>
+        public static void Restore(IEnumerable<string> buildings, IEnumerable<string> collected, IEnumerable<string> photoSpots)
+        {
+            Reset();
+            AddAll(buildings, NoteEnter);
+            AddAll(collected, NoteCollect);
+            AddAll(photoSpots, NotePhoto);
+        }
+
+        private static List<string> Sorted(HashSet<string> ids)
+        {
+            var list = new List<string>(ids);
+            list.Sort(StringComparer.Ordinal);
+            return list;
+        }
+
+        private static void AddAll(IEnumerable<string> ids, Action<string> note)
+        {
+            if (ids == null)
+            {
+                return;
+            }
+
+            foreach (string id in ids)
+            {
+                note(id);
+            }
         }
     }
 }
