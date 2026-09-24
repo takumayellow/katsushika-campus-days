@@ -111,15 +111,27 @@ namespace KCD
         private void Evaluate(out float temperature, out float saturation, out float vignette)
         {
             InteriorLoader loader = InteriorLoader.Instance;
-            if (loader != null && loader.IsInside)
+            bool inside = loader != null && loader.IsInside;
+            float hours = _cycle != null ? _cycle.Hours : 12f;
+            Grade(hours, inside, _baseVignette, out temperature, out saturation, out vignette);
+        }
+
+        /// <summary>
+        /// その時刻の色温度・彩度（プロファイルの彩度への足し分）・ビネット。キーの間は線形につなぎ、
+        /// 時刻は 24 時で折り返す。屋内は時刻によらず中立（色温度 0、彩度 +4、ビネットはプロファイルの値）。
+        /// </summary>
+        public static void Grade(float hours, bool inside, float baseVignette,
+            out float temperature, out float saturation, out float vignette)
+        {
+            if (inside)
             {
                 temperature = 0f;
                 saturation = 4f;
-                vignette = _baseVignette;
+                vignette = baseVignette;
                 return;
             }
 
-            float hour = _cycle != null ? Mathf.Repeat(_cycle.Hours, 24f) : 12f;
+            float hour = Mathf.Repeat(hours, 24f);
             Key previous = Keys[0];
             if (hour < previous.Hour)
             {
