@@ -129,7 +129,9 @@ namespace KCD
             }
         }
 
-        /// <summary>id の NPC に話しかける。条件に合う話題が無ければ false。</summary>
+        /// <summary>
+        /// id の NPC に話しかけ、クエストに talk を報告する。条件に合う話題が無ければ何も報告せず false。
+        /// </summary>
         public bool TalkTo(string dialogueId)
         {
             if (_topic != null || !_data.TryGetValue(dialogueId, out DialogueData data))
@@ -144,12 +146,15 @@ namespace KCD
             }
 
             _topic = chosen;
-            _topicKey = data.Id + "/" + chosen.Id;
             _lineIndex = 0;
             _lineStartedAt = Time.unscaledTime;
 
             // 会話の封鎖は会話のもの。建物の出入りや落下からの復帰の暗転が終わっても外れない (#40)。
             KCDInput.Block(this);
+
+            // talk の報告は封鎖のあと。「〜と話す」で達成したときに PlayerAnimatorDriver が会話中だと分かって手を振らない。
+            _topic = ReportTalkAndSelect(data, GameManager.Instance.Quests, _spentTopics, chosen);
+            _topicKey = data.Id + "/" + _topic.Id;
             LineChanged?.Invoke(CurrentLine);
             return true;
         }
@@ -237,6 +242,66 @@ namespace KCD
             }
 
             return fallback;
+        }
+
+        /// <summary>
+        /// talk を報告し、この話しかけで達成したクエストのお礼の話題があればそれを、無ければ chosen を返す（テストから呼ぶ）(#94)。
+        /// chosen は報告の前に <see cref="SelectTopic(DialogueData, QuestSystem, ICollection{string})"/> で選んだもの。
+        ///
+        /// 以前は話題を選んでから報告していたので、牛乳を届けた会話で要が「ファミマは共創棟の 1 階」と
+        /// 受注中のヒント（requiresActiveQuest）を言い、お礼（requiresCompletedQuest）は次に話したときに出ていた。
+        /// 報告のあとに選び直すだけだと、オリエンテーションを終えた会話で教授の最初のあいさつ（無条件の t_welcome）より
+        /// 体育館の依頼（t_gym_start）が先に出てしまうので、差し替えるのはこの報告で達成になったクエストのお礼だけにする。
+        /// 依頼（startsQuest）の話題はお礼として扱わない。
+        /// </summary>
+        public static DialogueTopic ReportTalkAndSelect(
+            DialogueData data, QuestSystem quests, ICollection<string> spentTopics, DialogueTopic chosen)
+        {
+            if (data == null || quests == null)
+            {
+                return chosen;
+            }
+
+            var completedBefore = new HashSet<string>(StringComparer.Ordinal);
+            for (int i = 0; i < data.Topics.Count; i++)
+            {
+                string required = data.Topics[i].RequiresCompletedQuest;
+                if (!string.IsNullOrEmpty(required) && quests.IsCompleted(required))
+                {
+                    completedBefore.Add(required);
+                }
+            }
+
+            quests.ReportTalk(data.Id);
+
+            for (int i = 0; i < data.Topics.Count; i++)
+            {
+                DialogueTopic topic = data.Topics[i];
+                string required = topic.RequiresCompletedQuest;
+                if (string.IsNullOrEmpty(required) || completedBefore.Contains(required) || !quests.IsCompleted(required))
+                {
+                    continue;
+                }
+
+                if (!string.IsNullOrEmpty(topic.StartsQuest) || topic.Lines.Count == 0)
+                {
+                    continue;
+                }
+
+                if (topic.Once && spentTopics != null && spentTopics.Contains(data.Id + "/" + topic.Id))
+                {
+                    continue;
+                }
+
+                if (!string.IsNullOrEmpty(topic.RequiresActiveQuest) && !quests.IsActive(topic.RequiresActiveQuest))
+                {
+                    continue;
+                }
+
+                return topic;
+            }
+
+            return chosen;
         }
 
         /// <summary>次の行へ。最後まで行けば会話を閉じる。</summary>

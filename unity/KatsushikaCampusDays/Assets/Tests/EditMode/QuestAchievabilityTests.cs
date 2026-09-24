@@ -64,7 +64,7 @@ namespace KCD.Tests
             return quests;
         }
 
-        /// <summary>プレイヤーの操作をなぞる。会話は NPCTalker.Interact と DialogueSystem.Finish と同じ順で進める。</summary>
+        /// <summary>プレイヤーの操作をなぞる。会話は DialogueSystem.TalkTo と DialogueSystem.Finish と同じ順で進める。</summary>
         private sealed class Player
         {
             private readonly QuestSystem _quests;
@@ -93,8 +93,8 @@ namespace KCD.Tests
                     return;
                 }
 
-                // NPCTalker.Interact: 会話が始まった時点で talk を報告する。
-                _quests.ReportTalk(npc.Id);
+                // DialogueSystem.TalkTo: 会話が始まった時点で talk を報告し、それで達成したクエストのお礼があれば差し替える (#94)。
+                topic = DialogueSystem.ReportTalkAndSelect(npc, _quests, _spent, topic);
 
                 // DialogueSystem.Finish: 閉じたときに once を使い切り、依頼を受け、フラグを立てる。
                 if (topic.Once)
