@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Globalization;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -234,7 +235,7 @@ namespace KCD
             return "[KCD] graphics tier=" + QualityTiers.Key(Current)
                    + " " + settings.Pipeline
                    + " post=" + (settings.PostProcessing ? "on" : "off")
-                   + " trees=" + (settings.TreeDrawDistance > 0f ? settings.TreeDrawDistance + "m" : "all")
+                   + " trees=" + (settings.TreeDrawDistance > 0f ? settings.TreeDrawDistance.ToString(CultureInfo.InvariantCulture) + "m" : "all")
                    + " pipeline=" + (s_Clone != null ? "copy of " + pipelineName : pipelineName)
                    + " vSyncCount=" + QualitySettings.vSyncCount
                    + " targetFrameRate=" + Application.targetFrameRate;
