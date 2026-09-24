@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.AI.Navigation;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.AI;
@@ -53,6 +54,16 @@ namespace KCD.Editor
             var group = new GameObject("Mobs");
             group.transform.SetParent(root, false);
             MobScheduler scheduler = group.AddComponent<MobScheduler>();
+
+            // 焼いた直後の NavMesh は、バッチモードでは NavMeshSurface がまだ世界に載せていないことがあり、
+            // そのままだと SamplePosition がどの点も外す。載っていれば AddData は何もしない。
+            foreach (NavMeshSurface surface in root.GetComponentsInChildren<NavMeshSurface>(true))
+            {
+                surface.AddData();
+            }
+
+            // CampusProps.Build が足した地面や小物の当たりを、下ろすときのレイに見せる。
+            Physics.SyncTransforms();
 
             ResolveWaypoints(root, schedule, out string[] keys, out Vector3[] positions);
 
