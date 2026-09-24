@@ -9,6 +9,8 @@ namespace KCD
     /// <summary>
     /// スモークテスト用の進行役。コマンドライン引数 -kcd-* があるときだけ生まれる。
     ///   -kcd-start campus      タイトルを飛ばしてキャンパスへ
+    ///   -kcd-start credits     タイトルでクレジットを開いたままにする
+    ///   -kcd-lang en           表示する言語を合わせる（ja / en。選択は PlayerPrefs に残る）
     ///   -kcd-time 17.5         ゲーム内時刻を合わせる
     ///   -kcd-talk inari        NPC の前へワープして会話を始める
     ///   -kcd-interior kyoso    建物の中へ入る
@@ -83,6 +85,12 @@ namespace KCD
             _faceCam = ArgFloat("-kcd-face-cam", float.NaN);
             SmokeProbe.Open(Arg("-kcd-log"));
             SmokeProbe.Log("args: " + string.Join(" ", Environment.GetCommandLineArgs()));
+            string lang = Arg("-kcd-lang");
+            if (!string.IsNullOrEmpty(lang))
+            {
+                L.SetLocale(lang);
+                SmokeProbe.Log("locale: " + L.Locale);
+            }
             SceneManager.sceneLoaded += OnSceneLoaded;
         }
 
@@ -139,6 +147,21 @@ namespace KCD
             }
 
             SmokeProbe.Dump("title");
+
+            if (_start == "credits")
+            {
+                CreditsView credits = FindAnyObjectByType<CreditsView>();
+                if (credits == null)
+                {
+                    Debug.LogWarning("[KCD] スモーク: タイトルに CreditsView が無い");
+                    yield break;
+                }
+
+                credits.Open();
+                yield return new WaitForSecondsRealtime(0.5f);
+                SmokeProbe.Dump("credits");
+                yield break;
+            }
 
             if (_start == "campus")
             {
