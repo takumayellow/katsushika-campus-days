@@ -143,5 +143,28 @@ namespace KCD.Editor
             mesh.uv = metric;
             filter.sharedMesh = mesh;
         }
+
+        /// <summary>
+        /// 上から見た位置（m）を UV にした複製へ差し替える。円柱の台座のように UV が面ごとに 0..1 の
+        /// プリミティブでも、上面は実寸で並ぶ。高さは UV に入れないので、側面には縁の画素が縦に引き伸ばされる。
+        /// <paramref name="scale"/> は置いたときの localScale（メッシュの 1 単位が何 m か）。
+        /// 親ごと拡大縮小されたときは、画像も一緒に拡大縮小される。
+        /// </summary>
+        public static void UseTopDownUv(MeshFilter filter, Vector3 scale)
+        {
+            Mesh source = filter.sharedMesh;
+            Mesh mesh = Object.Instantiate(source);
+            mesh.name = source.name + "_topdown";
+
+            Vector3[] vertices = source.vertices;
+            var uv = new Vector2[vertices.Length];
+            for (int i = 0; i < vertices.Length; i++)
+            {
+                uv[i] = new Vector2(vertices[i].x * scale.x, vertices[i].z * scale.z);
+            }
+
+            mesh.uv = uv;
+            filter.sharedMesh = mesh;
+        }
     }
 }

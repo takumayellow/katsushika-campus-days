@@ -82,6 +82,8 @@ SOURCE_HOST = "ambientcg.com"
 MAX_BYTES = 64 * 2**20
 ASSET_NAME = re.compile(r"[A-Za-z]+\d+")
 VARIANT_NAME = re.compile(r"\d+K-(JPG|PNG)")
+# マテリアル名は書き出すファイル名になる。CampusColors の名前と同じ書き方だけを通す
+MATERIAL_NAME = re.compile(r"[a-z0-9_]+")
 
 
 # ---------------------------------------------------------------------------
@@ -602,6 +604,15 @@ def main(argv: list[str] | None = None) -> int:
     output = ROOT / manifest["output"]["folder"]
     suffix = manifest["output"]["format"]
     quality = manifest["output"]["quality"]
+
+    # 書き先もファイル名も manifest の文字列から作るので、リポジトリの外や別の名前へは書かない
+    if not output.resolve().is_relative_to(ROOT.resolve()):
+        raise SystemExit(f"output.folder がリポジトリの外: {manifest['output']['folder']}")
+    odd = [m for s in manifest["surfaces"] for m in s["materials"] if not MATERIAL_NAME.fullmatch(m)]
+    if odd:
+        raise SystemExit(f"マテリアル名に a-z・0-9・_ 以外がある: {odd}")
+    if suffix != "jpg":
+        raise SystemExit(f"output.format は jpg だけ（CampusSurfaces が <マテリアル名>.jpg を読む）: {suffix}")
 
     # Unity の Assets の外へ書くよう指定されたら .meta は要らない
     in_unity = output.resolve().is_relative_to((UNITY_PROJECT / "Assets").resolve())

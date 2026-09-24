@@ -477,6 +477,30 @@ def test_main_writes_whole_tiling_even_with_only(fake_project):
     assert meta.startswith(f"fileFormatVersion: 2\nguid: {ft.meta_guid(tiling)}\nTextScriptImporter:\n")
 
 
+@pytest.mark.parametrize(
+    "field, value, message",
+    [
+        ("folder", "../outside", "リポジトリの外"),
+        ("material", "../lawn", "a-z"),
+        ("material", "Lawn", "a-z"),
+        ("format", "jpg/../../outside", "jpg だけ"),
+    ],
+)
+def test_main_refuses_paths_outside_the_manifest_rules(fake_project, field, value, message):
+    """書き先とファイル名は manifest の文字列から作る。リポジトリの外や、名前の規則から外れたものは書かない。"""
+    manifest_path = ft.MANIFEST
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if field in ("folder", "format"):
+        manifest["output"][field] = value
+    else:
+        manifest["surfaces"][1]["materials"] = [value]
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    with pytest.raises(SystemExit, match=message):
+        ft.main([])
+    assert not fake_project.exists()
+
+
 def test_check_flags_missing_or_stale_tiling(fake_project, capsys):
     """--check は tiling.json を書かない。.meta が無い・manifest と違う・無い、のどれでも NG で落ちる。"""
     tiling = fake_project / ft.TILING_NAME
