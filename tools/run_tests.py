@@ -13,7 +13,8 @@ Unity.exe はマシンで 1 台だけ動かす約束なので、tasklist に Uni
 
 各プラットフォームの結果は unity/logs/tests_<platform>.xml と .log に絶対パスで書く
 （相対パスだと Unity はプロジェクトのフォルダから解決する）。XML の失敗・スキップ・未確定、
-tools/check_unity_log.py がログに見つけたエラー、pytest の失敗は、どれか 1 つでもあれば exit 1。
+tools/check_unity_log.py がログに見つけた失敗の証拠（エラー・警告・例外・シェーダの欠けなど）、
+pytest の失敗は、どれか 1 つでもあれば exit 1。
 
 batchmode で開くと、テストと無関係に次のファイルが書き換わる。実行前に clean だったものだけ
 git で元に戻す（--keep-noise で戻さない）。
