@@ -268,6 +268,7 @@ namespace KCD.Editor
         private static void PlaceSigns(Transform parent)
         {
             TMP_FontAsset font = FontLibrary.Ensure();
+            Material signMaterial = FontLibrary.EnsureSignMaterial(font, 0.18f, new Color32(24, 30, 40, 220));
             int count = 0;
 
             foreach (KeyValuePair<string, string> pair in BuildingNames)
@@ -286,11 +287,16 @@ namespace KCD.Editor
                 text.fontSize = 3.2f;
                 text.alignment = TextAlignmentOptions.Center;
                 text.color = new Color(1f, 1f, 1f, 0.92f);
-                text.outlineWidth = 0.18f;
-                text.outlineColor = new Color32(24, 30, 40, 220);
                 if (font != null)
                 {
                     text.font = font;
+                }
+
+                // outlineWidth / outlineColor は編集時に renderer.material でマテリアルを複製するので使わず、
+                // 縁取りを持たせた共有マテリアルを差す（#64）。
+                if (signMaterial != null)
+                {
+                    text.fontSharedMaterial = signMaterial;
                 }
 
                 text.rectTransform.sizeDelta = new Vector2(12f, 3f);
