@@ -34,10 +34,19 @@ namespace KCD
             }
 
             InteriorLoader loader = InteriorLoader.Instance;
-            if (loader != null && loader.CurrentId == _buildingId)
+            if (ShouldExit(loader, _buildingId))
             {
                 loader.Exit();
             }
+        }
+
+        /// <summary>
+        /// この出口を踏んだら外へ出すか。今いる建物の出口のときだけ true。
+        /// 外にいるとき・別の建物の出口のときは何もしない（外にいるときの Exit はもともと何もしない）。
+        /// </summary>
+        public static bool ShouldExit(InteriorLoader loader, string buildingId)
+        {
+            return loader != null && loader.IsInside && loader.CurrentId == buildingId;
         }
     }
 }
