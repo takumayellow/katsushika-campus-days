@@ -55,7 +55,7 @@ TRIM_OBJ = "bld_dorm_trim"    # 手すり・デッキ・ルーバー・玄関・
 CORE_IN = 0.45      # 閉じた躯体（1 階の基壇・2 階以上の本体の背面）を footprint からどれだけ内側に置くか
 GF_MAX = 4.00       # 1 階の階高の上限
 BALC_D = 1.50       # バルコニーの奥行き。footprint（屋上スラブの外形）の内側に取る
-SLAB_T = 0.20       # バルコニーの床スラブの厚み。白い小口が各階の横しまになる
+SLAB_T = 0.35       # バルコニーの床スラブの厚み。白い小口が各階の横しまになる
 RAIL_H = 1.10       # 3〜5 階の型板ガラスの手すりの高さ（床から）
 BAND_LO = 0.40      # 2 階のタイル張りの腰壁: 床から下へ
 BAND_HI = 1.20      # 同: 床から上へ
@@ -224,20 +224,28 @@ def _run(mb, loop, i, t0, t1, z0, floor_h, f0, f1, **kw):
     facade.add_facade(mb, rect, z0, floor_h, f0, f1, edges=[0], **kw)
 
 
-def _balconies(mb, fr, t0, t1, z_floors):
+def _balconies(mb, fr, t0, t1, z_floors, t_open=None):
     """辺ローカル t0..t1 に各階のバルコニーを並べる。戻り値は 1 階ぶんの住戸数。
 
     床スラブ・腰壁（2 階）/ 型板ガラスの手すり（3 階以上）・隔て板・奥の掃き出し窓。
+    t_open を渡すと、3 階以上のスラブと手すり・2 階の腰壁をその t まで片持ちで延ばし、
+    手すりの端を型板ガラスの妻で閉じる（妻壁を立てない端）。2 階の床のその区間は躯体が持つ。
+    住戸の割り付けは t0..t1 のまま。
     """
     units = max(1, int(round((t1 - t0) / UNIT_W)))
     w = (t1 - t0) / units
+    s0 = t0 if t_open is None else t_open
     for k, z in enumerate(z_floors):
-        _box(mb, fr, t0, t1, -BALC_D, 0.0, z - SLAB_T, z, "dorm_white")
+        _box(mb, fr, t0 if k == 0 else s0, t1, -BALC_D, 0.0, z - SLAB_T, z, "dorm_white")
         if k == 0:
-            _box(mb, fr, t0, t1, -0.10, 0.04, z - BAND_LO, z + BAND_HI, "tile_charcoal")
+            _box(mb, fr, s0, t1, -0.10, 0.04, z - BAND_LO, z + BAND_HI, "tile_charcoal")
         else:
-            _box(mb, fr, t0, t1, -0.10, -0.04, z, z + RAIL_H - 0.06, "glass_frosted")
-            _box(mb, fr, t0, t1, -0.12, -0.02, z + RAIL_H - 0.06, z + RAIL_H, "metal_white")
+            _box(mb, fr, s0, t1, -0.10, -0.04, z, z + RAIL_H - 0.06, "glass_frosted")
+            _box(mb, fr, s0, t1, -0.12, -0.02, z + RAIL_H - 0.06, z + RAIL_H, "metal_white")
+            if t_open is not None:
+                a, b = _pt(fr, s0 + 0.02, -BALC_D), _pt(fr, s0 + 0.02, -0.10)
+                mb.add_quad((a[0], a[1], z), (b[0], b[1], z), (b[0], b[1], z + RAIL_H - 0.06),
+                            (a[0], a[1], z + RAIL_H - 0.06), "glass_frosted")
         for j in range(1, units):
             ts = t0 + w * j
             _box(mb, fr, ts - 0.03, ts + 0.03, -BALC_D, -0.12, z, z + 1.95, "dorm_white")
@@ -414,14 +422,15 @@ def build_exterior(dorm, shell=None, trim=None):
         _run(shell, loop, i, t0, t1, gf, up, 0, lv - 1,
              wall="dorm_white", glass="glass_dark",
              seg=3.0, sill=1.00, header=0.95, inset=0.20, mullion=1.85)
-    # バルコニーの妻壁（両端。footprint の角 E・A にかかる）。幅は裏の本体の下げ CORE_IN と
-    # そろえ、本体との間にすき間を作らない。1 階の天端〜2 階の床は裏の辺の 1 階の外壁と
-    # 同じ平面に乗るので、その端を抜く
+    # バルコニーの端。玄関面の角 E は妻壁を立てず、スラブと型板ガラスの手すりが角まで片持ちで
+    # 出る（_balconies の t_open）。東北東面の角 A には、裏の本体の下げ CORE_IN とそろえた幅の
+    # 妻壁を立てる。角 E・A とも 1 階の天端〜2 階の床は裏の辺の 1 階の外壁と同じ平面に乗るので、
+    # その端を抜く。角 E の奥は、裏の外壁と本体の間（幅 CORE_IN）の端を本体と同じ壁で塞ぐ
     _box_open(shell, ff, 0.0, CORE_IN, -BALC_D, 0.0, top1, gf, "dorm_white", "t0")
-    _box(shell, ff, 0.0, CORE_IN, -BALC_D, 0.0, gf, h - ROOF_T, "dorm_white")
+    _pane(shell, ff, 0.0, CORE_IN, -BALC_D, gf, h - ROOF_T, "dorm_cream")
     _box_open(shell, fs, fs[3] - CORE_IN, fs[3], -BALC_D, 0.0, top1, gf, "dorm_white", "t1")
     _box(shell, fs, fs[3] - CORE_IN, fs[3], -BALC_D, 0.0, gf, h - ROOF_T, "dorm_white")
-    units = _balconies(trim, ff, CORE_IN, core_t, z_floors)
+    units = _balconies(trim, ff, CORE_IN, core_t, z_floors, t_open=0.0)
     units += _balconies(trim, fs, CORE_U, fs[3] - CORE_IN, z_floors)
 
     # --- 屋上: スラブ（5 階のバルコニーの屋根を兼ねる）+ パラペット + テラス ---

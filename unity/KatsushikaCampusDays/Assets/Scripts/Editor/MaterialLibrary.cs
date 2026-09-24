@@ -48,8 +48,8 @@ namespace KCD.Editor
             // glass_frosted は名前が glass* なので、EnsureCampus でアルファ 0.72 の半透明になる。
             { "dorm_white", "E8EEEB" },
             { "dorm_cream", "E4DAC6" },
-            { "glass_frosted", "E6EEEE" },
-            { "tile_mauve", "6E5A56" },
+            { "glass_frosted", "C4D6DA" },
+            { "tile_mauve", "5A4038" },
             { "tile_charcoal", "7E7A80" },
             { "panel_brown", "9A7A68" },
             { "deck_wood", "746967" },
