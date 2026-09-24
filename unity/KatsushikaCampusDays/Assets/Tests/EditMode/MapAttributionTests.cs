@@ -25,28 +25,19 @@ namespace KCD.Tests
         /// <summary>言語を切り替えて read を呼び、PlayerPrefs の言語設定を元に戻す。</summary>
         internal static T In<T>(string locale, Func<T> read)
         {
-            bool hadKey = PlayerPrefs.HasKey(L.PrefKey);
-            string savedPref = hadKey ? PlayerPrefs.GetString(L.PrefKey) : null;
-            string before = L.Locale;
-            try
+            using (new PlayerPrefsKeyScope(L.PrefKey))
             {
-                L.SetLocale(locale);
-                Assert.AreEqual(locale, L.Locale, "Resources/KCD/Localization/" + locale + ".json を読めていない");
-                return read();
-            }
-            finally
-            {
-                L.SetLocale(before);
-                if (hadKey)
+                string before = L.Locale;
+                try
                 {
-                    PlayerPrefs.SetString(L.PrefKey, savedPref);
+                    L.SetLocale(locale);
+                    Assert.AreEqual(locale, L.Locale, "Resources/KCD/Localization/" + locale + ".json を読めていない");
+                    return read();
                 }
-                else
+                finally
                 {
-                    PlayerPrefs.DeleteKey(L.PrefKey);
+                    L.SetLocale(before);
                 }
-
-                PlayerPrefs.Save();
             }
         }
 
