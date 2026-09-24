@@ -167,10 +167,28 @@ namespace KCD.Editor
             TitleMenu menu = host.AddComponent<TitleMenu>();
             menu.Bind(titleRoot.gameObject, selectRoot.gameObject, prompt, select);
 
+            BuildMapAttribution(canvasRect);
+
             SettingsView settings = UIFactory.BuildSettings(host, canvasRect);
             CreditsView credits = UIFactory.BuildCredits(host, canvasRect);
             menu.BindExtras(settings, credits);
             menu.BindHeadings(title, subtitle);
+        }
+
+        /// <summary>
+        /// 地図データの帰属表示（ODbL）を右下に小さく出す (#20)。TitleRoot と SelectRoot の外に置くので、
+        /// タイトルと主人公選びのどちらでも見える。設定とクレジットの画面はこの後に作るので、重なればそちらが上に描かれる。
+        /// 下端から 12〜68 px に収め、いちばん下にある主人公選びの操作説明（下端から 92 px より上）と重ならない。
+        /// </summary>
+        private static void BuildMapAttribution(RectTransform canvasRect)
+        {
+            RectTransform box = UIFactory.Rect(canvasRect, "MapAttribution", new Vector2(1f, 0f),
+                new Vector2(1f, 0f), new Vector2(-24f, 12f), new Vector2(900f, 56f));
+            TMP_Text label = UIFactory.Label(
+                box, "Label", MapAttribution.DefaultJa, 22f, TextAlignmentOptions.BottomRight);
+            Color ink = label.color;
+            label.color = new Color(ink.r, ink.g, ink.b, 0.8f);
+            box.gameObject.AddComponent<MapAttributionLabel>().Bind(label);
         }
     }
 }
