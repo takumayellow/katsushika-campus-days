@@ -16,6 +16,11 @@ namespace KCD
         [SerializeField] private float _charactersPerSecond = 42f;
 
         private DialogueSystem _dialogue;
+
+        /// <summary>表示中の行と、話者が空の行に出すプレイヤーの名前。言語を切り替えたらこれを出し直す。</summary>
+        private DialogueLine _line;
+        private string _playerName = string.Empty;
+
         private string _fullText = string.Empty;
         private float _revealed;
         private int _revealedFrame = -1;
@@ -31,6 +36,12 @@ namespace KCD
             _continueMark = continueMark;
         }
 
+        /// <summary>言語の切り替えは DialogueSystem の有無と関係なく、生きているあいだずっと受ける。</summary>
+        private void Awake()
+        {
+            L.LocaleChanged += OnLocaleChanged;
+        }
+
         private void Start()
         {
             _dialogue = DialogueSystem.Instance;
@@ -43,7 +54,6 @@ namespace KCD
             _dialogue.LineChanged += OnLineChanged;
             _dialogue.Finished += OnFinished;
             _dialogue.AdvanceGate = IsFullyRevealed;
-            L.LocaleChanged += OnLocaleChanged;
             SetVisible(false);
         }
 
@@ -73,6 +83,23 @@ namespace KCD
                 return;
             }
 
+            GameManager game = GameManager.Instance;
+            Show(line, game.SelectedCharacterShortName, game.SelectedCharacterId);
+        }
+
+        /// <summary>
+        /// 1 行をいまの言語で出し、1 文字目から送り始める。playerName と playerId は話者が空の行（プレイヤー）の名前と声。
+        /// DialogueSystem の行更新から呼ぶ。テストからも呼ぶ。
+        /// </summary>
+        public void Show(DialogueLine line, string playerName, string playerId)
+        {
+            if (line == null)
+            {
+                return;
+            }
+
+            _line = line;
+            _playerName = playerName ?? string.Empty;
             SetVisible(true);
             ShowSpeaker(line);
 
@@ -80,7 +107,7 @@ namespace KCD
             _revealed = 0f;
             _revealedFrame = -1;
             _lastBlipAt = 0;
-            _voice = DialogueVoice.ForSpeaker(line.Speaker, GameManager.Instance.SelectedCharacterId);
+            _voice = DialogueVoice.ForSpeaker(line.Speaker, playerId);
 
             if (_bodyLabel != null)
             {
@@ -99,7 +126,7 @@ namespace KCD
         {
             if (_speakerLabel != null)
             {
-                _speakerLabel.text = SpeakerLabel(line, GameManager.Instance.SelectedCharacterShortName);
+                _speakerLabel.text = SpeakerLabel(line, _playerName);
             }
         }
 
@@ -109,7 +136,7 @@ namespace KCD
         /// </summary>
         private void OnLocaleChanged()
         {
-            DialogueLine line = _dialogue != null ? _dialogue.CurrentLine : null;
+            DialogueLine line = _line;
             if (line == null || _root == null || !_root.activeSelf)
             {
                 return;
@@ -130,6 +157,7 @@ namespace KCD
 
         private void OnFinished()
         {
+            _line = null;
             SetVisible(false);
         }
 

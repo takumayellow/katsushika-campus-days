@@ -39,12 +39,24 @@ namespace KCD
 
         private void Start()
         {
-            _quests = GameManager.Instance.Quests;
             if (_quests == null)
+            {
+                Watch(GameManager.Instance.Quests);
+            }
+        }
+
+        /// <summary>
+        /// quests を追って表示する。クエストの変化と言語の切り替えで出し直す。
+        /// ふだんは Start が GameManager のものを渡す。テストはシーンの外で作ったものを先に渡す。2 つ目からは無視する。
+        /// </summary>
+        public void Watch(QuestSystem quests)
+        {
+            if (quests == null || _quests != null)
             {
                 return;
             }
 
+            _quests = quests;
             _quests.Changed += Refresh;
             _quests.QuestCompleted += OnQuestCompleted;
             _quests.StepTimedOut += OnStepTimedOut;
