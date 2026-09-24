@@ -19,6 +19,7 @@ batchmode で開くと、テストと無関係に次のファイルが書き換�
 git で元に戻す（--keep-noise で戻さない）。
     Assets/Settings/UniversalRenderPipelineGlobalSettings.asset
     ProjectSettings/ProjectSettings.asset（preloadedAssets）
+    ProjectSettings/TimeManager.asset（Fixed Timestep を 6000.6 の有理数の書き方に直す）
     *.mat（浮動小数点の書き方の揺れ）
 
 終了コード: 0 = 全部通った / 1 = 失敗・スキップ・ログのエラーがある /
@@ -64,6 +65,7 @@ UNITY_RUN_ERROR = 3
 NOISE_FILES = (
     "Assets/Settings/UniversalRenderPipelineGlobalSettings.asset",
     "ProjectSettings/ProjectSettings.asset",
+    "ProjectSettings/TimeManager.asset",
 )
 NOISE_SUFFIXES = (".mat",)
 

@@ -273,6 +273,11 @@ def test_only_fresh_noise_is_reverted():
     assert other == [SCRIPT]
 
 
+def test_time_manager_upgrade_is_noise():
+    # 6000.6 は開くたびに Fixed Timestep を有理数の書き方に直す。値は 0.02 のまま。
+    assert run_tests.is_noise("unity/KatsushikaCampusDays/ProjectSettings/TimeManager.asset")
+
+
 def test_urp_project_settings_is_not_noise():
     # 似た名前の URPProjectSettings.asset は設定の本体なので戻さない。
     assert not run_tests.is_noise("unity/KatsushikaCampusDays/ProjectSettings/URPProjectSettings.asset")

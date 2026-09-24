@@ -34,6 +34,8 @@ IGNORED = (
     "ExceptionHandl",
     "StackTraceUtility",
     "ExitDontLaunchBugReporter",
+    # Test Framework がテスト中のログすべてに付けるフレーム（LogAssert.Expect で待つ警告にも付く）
+    "UnityLogCheckDelegatingCommand:CaptureException",
     "-executeMethod",
     " kb	",
 )

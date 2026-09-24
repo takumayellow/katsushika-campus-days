@@ -49,3 +49,23 @@ def test_ignored_tokens_do_not_count_as_exceptions(tmp_path):
 def test_missing_log_is_unreadable(tmp_path):
     out = io.StringIO()
     assert check_unity_log.scan(tmp_path / "none.log", out) == 2
+
+
+def test_test_framework_frames_under_an_expected_warning_are_not_exceptions(tmp_path):
+    # EditMode のテストが LogAssert.Expect で待つ警告にも、Test Framework のフレームが付く。
+    frame = (
+        "UnityEngine.TestRunner.NUnitExtensions.Runner.UnityLogCheckDelegatingCommand:CaptureException "
+        "(NUnit.Framework.Internal.TestResult,System.Action) (at ./Library/PackageCache/"
+        "com.unity.test-framework@7a3849e09bd0/UnityEngine.TestRunner/NUnitExtensions/Runner/"
+        "UnityLogCheckDelegatingCommand.cs:93)\n"
+    )
+    code, text = scan_text(tmp_path, "TreeChunkCombiner: 1 個はまとめずに 1 つずつ描く（odd）\n" + frame)
+    assert code == 0
+    assert "Exception: 0" in text
+
+
+def test_exception_thrown_inside_a_test_still_fails(tmp_path):
+    frame = "UnityEngine.TestRunner.NUnitExtensions.Runner.UnityLogCheckDelegatingCommand:CaptureException (x)\n"
+    code, text = scan_text(tmp_path, "NullReferenceException: Object reference not set\n" + frame)
+    assert code == 1
+    assert "Exception: 1" in text
