@@ -156,7 +156,10 @@ namespace KCD.Tests
         [Test]
         public void Overlay_ShowsTheLabelOfTheCurrentLanguage()
         {
+            // 言語を切り替えると L.PrefKey に書く。キーの無かった機械には残さず、有った機械には元の値を戻す (#101)。
             string before = L.Locale;
+            bool hadKey = PlayerPrefs.HasKey(L.PrefKey);
+            string savedPref = hadKey ? PlayerPrefs.GetString(L.PrefKey) : null;
             try
             {
                 SceneLoader loader = MakeLoader();
@@ -173,6 +176,51 @@ namespace KCD.Tests
             finally
             {
                 L.SetLocale(before);
+                if (hadKey)
+                {
+                    PlayerPrefs.SetString(L.PrefKey, savedPref);
+                }
+                else
+                {
+                    PlayerPrefs.DeleteKey(L.PrefKey);
+                }
+
+                PlayerPrefs.Save();
+            }
+        }
+
+        [Test]
+        public void Overlay_LanguageTest_LeavesNoLocaleKeyWhereThereWasNone()
+        {
+            // 開発機の本物の言語設定。上のテストの戻し方が壊れていても失くさないよう、ここで手で預かって手で戻す。
+            bool machineHadKey = PlayerPrefs.HasKey(L.PrefKey);
+            string machinePref = machineHadKey ? PlayerPrefs.GetString(L.PrefKey) : null;
+            bool written = false;
+            void OnChanged() => written |= PlayerPrefs.HasKey(L.PrefKey);
+
+            // 言語を選んだことのない機械（新しい checkout・CI）。
+            PlayerPrefs.DeleteKey(L.PrefKey);
+            L.LocaleChanged += OnChanged;
+            try
+            {
+                Overlay_ShowsTheLabelOfTheCurrentLanguage();
+
+                Assert.IsTrue(written, "前提: 言語の往復で KCD.Locale が書かれていない（確かめたことにならない）");
+                Assert.IsFalse(PlayerPrefs.HasKey(L.PrefKey), "言語を選んだことのない機械に KCD.Locale を作って残した");
+            }
+            finally
+            {
+                L.LocaleChanged -= OnChanged;
+                if (machineHadKey)
+                {
+                    PlayerPrefs.SetString(L.PrefKey, machinePref);
+                }
+                else
+                {
+                    PlayerPrefs.DeleteKey(L.PrefKey);
+                }
+
+                PlayerPrefs.Save();
             }
         }
 
