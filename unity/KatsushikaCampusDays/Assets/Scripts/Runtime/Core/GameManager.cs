@@ -210,13 +210,14 @@ namespace KCD
         {
             Quests?.Tick(Time.deltaTime);
 
+            // クエストの報酬の収集物はここで DayStats に載る。同じフレームの自動セーブに入るよう、先に数える。
+            RefreshAchievements(true);
+
             // 頼まれていた自動セーブを、封鎖が外れた最初のフレームで書く (#61)。
             if (AutoSave.Pending)
             {
                 AutoSave.Tick(HasEnteredCampus && SceneManager.GetActiveScene().name == CampusSceneName);
             }
-
-            RefreshAchievements(true);
         }
 
         /// <summary>
