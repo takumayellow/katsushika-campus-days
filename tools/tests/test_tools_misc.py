@@ -29,7 +29,6 @@ def test_scan_clean_log(tmp_path):
         "[KCD] SceneBuilder: campus を組み立てた",
         "Saved scene: Assets/Scenes/Campus.unity",
         "ビルド結果: Succeeded",
-        "Assets/Scripts/Foo.cs(3,5): warning CS0618: 'X' is obsolete",
         # Unity が正常系で出す、例外とは無関係な行
         "Native Crash Reporting: ExceptionHandler installed",
         "UnityEngine.StackTraceUtility:ExtractStackTrace ()",

@@ -49,30 +49,21 @@ namespace KCD.Tests
         };
 
         /// <summary>言語を切り替えて本文を作り、PlayerPrefs の言語設定を元に戻す。</summary>
-        private static string TextIn(string locale)
+        internal static string TextIn(string locale)
         {
-            bool hadKey = PlayerPrefs.HasKey(L.PrefKey);
-            string savedPref = hadKey ? PlayerPrefs.GetString(L.PrefKey) : null;
-            string before = L.Locale;
-            try
+            using (new PlayerPrefsKeyScope(L.PrefKey))
             {
-                L.SetLocale(locale);
-                Assert.AreEqual(locale, L.Locale, "Resources/KCD/Localization/" + locale + ".json を読めていない");
-                return CreditsView.BuildText();
-            }
-            finally
-            {
-                L.SetLocale(before);
-                if (hadKey)
+                string before = L.Locale;
+                try
                 {
-                    PlayerPrefs.SetString(L.PrefKey, savedPref);
+                    L.SetLocale(locale);
+                    Assert.AreEqual(locale, L.Locale, "Resources/KCD/Localization/" + locale + ".json を読めていない");
+                    return CreditsView.BuildText();
                 }
-                else
+                finally
                 {
-                    PlayerPrefs.DeleteKey(L.PrefKey);
+                    L.SetLocale(before);
                 }
-
-                PlayerPrefs.Save();
             }
         }
 

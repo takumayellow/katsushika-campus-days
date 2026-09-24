@@ -490,15 +490,18 @@ namespace KCD.Editor
         /// </summary>
         private static Mesh SaveMesh(Mesh built, string path)
         {
+            // メインのアセットの名前はファイル名にそろえる。違う名前で書くと、組み直すたびに名前だけの差分が出る。
+            string assetName = Path.GetFileNameWithoutExtension(path);
             Mesh existing = AssetDatabase.LoadAssetAtPath<Mesh>(path);
             if (existing == null)
             {
+                built.name = assetName;
                 AssetDatabase.CreateAsset(built, path);
                 return built;
             }
 
             existing.Clear();
-            existing.name = built.name;
+            existing.name = assetName;
             existing.SetVertices(built.vertices);
             existing.SetUVs(0, built.uv);
             existing.SetTriangles(built.triangles, 0);

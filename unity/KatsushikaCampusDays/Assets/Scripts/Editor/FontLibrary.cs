@@ -16,6 +16,10 @@ namespace KCD.Editor
     {
         public const string FontFolder = "Assets/Fonts";
         public const string FontAssetPath = "Assets/Fonts/KCD_JP.asset";
+
+        /// <summary>建物の名札が共有する縁取り付きマテリアル。</summary>
+        public const string SignMaterialPath = "Assets/Fonts/KCD_JP - Sign Outline.mat";
+
         private const string TmpSettingsPath = TmpEssentials.SettingsPath;
 
         /// <summary>OS 側のフォント候補。再配布できる OFL のものを先に置く。</summary>
@@ -88,6 +92,42 @@ namespace KCD.Editor
             Register(_cached);
             EditorPaths.Report("日本語フォントアセットを生成: " + FontAssetPath + " (" + font.name + ")");
             return _cached;
+        }
+
+        /// <summary>
+        /// フォントの既定マテリアルを写した縁取り付きマテリアルを 1 枚だけ用意して返す（#64）。
+        /// TextMeshPro の outlineWidth / outlineColor は編集時に renderer.material を呼び、
+        /// 名札 1 枚ごとにマテリアルを複製してシーンへ埋め込むので、名札はこの 1 枚を共有する。
+        /// 毎回フォント側の値を写し直すので、アトラスを作り直しても古い値が残らない。
+        /// </summary>
+        public static Material EnsureSignMaterial(TMP_FontAsset fontAsset, float outlineWidth, Color32 outlineColor)
+        {
+            if (fontAsset == null || fontAsset.material == null)
+            {
+                return null;
+            }
+
+            Material source = fontAsset.material;
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(SignMaterialPath);
+            if (material == null)
+            {
+                EditorPaths.EnsureFolder(FontFolder);
+                material = new Material(source) { name = Path.GetFileNameWithoutExtension(SignMaterialPath) };
+                AssetDatabase.CreateAsset(material, SignMaterialPath);
+            }
+            else
+            {
+                material.shader = source.shader;
+                material.CopyPropertiesFromMaterial(source);
+            }
+
+            material.SetFloat(ShaderUtilities.ID_OutlineWidth, outlineWidth);
+            material.SetColor(ShaderUtilities.ID_OutlineColor, outlineColor);
+            // Mobile/Distance Field は OUTLINE_ON が無いと縁を描かない（shader_feature）。
+            material.EnableKeyword(ShaderUtilities.Keyword_Outline);
+            ShaderUtilities.UpdateShaderRatios(material);
+            EditorUtility.SetDirty(material);
+            return material;
         }
 
         /// <summary>TMP の既定フォントに設定して、明示指定を忘れても日本語が出るようにする。</summary>

@@ -25,7 +25,10 @@ namespace KCD.Tests
             GameObject titleRoot = GameObject.Find("TitleRoot");
             Assert.IsNotNull(titleRoot, "タイトルに TitleRoot（題名と案内）が無い");
 
+            // 言語を切り替えると L.PrefKey に書く。キーの無かった機械には残さず、有った機械には元の値を戻す (#101)。
             string before = L.Locale;
+            bool hadKey = PlayerPrefs.HasKey(L.PrefKey);
+            string savedPref = hadKey ? PlayerPrefs.GetString(L.PrefKey) : null;
             try
             {
                 foreach (string locale in new[] { "ja", "en" })
@@ -52,6 +55,16 @@ namespace KCD.Tests
             finally
             {
                 L.SetLocale(before);
+                if (hadKey)
+                {
+                    PlayerPrefs.SetString(L.PrefKey, savedPref);
+                }
+                else
+                {
+                    PlayerPrefs.DeleteKey(L.PrefKey);
+                }
+
+                PlayerPrefs.Save();
             }
 
             AssertNoErrors("クレジット");
@@ -93,7 +106,7 @@ namespace KCD.Tests
         private static TMP_Text FindBody(CreditsView credits)
         {
             string text = CreditsView.BuildText();
-            foreach (TMP_Text label in Object.FindObjectsByType<TMP_Text>(FindObjectsSortMode.None))
+            foreach (TMP_Text label in Object.FindObjectsByType<TMP_Text>(FindObjectsInactive.Exclude))
             {
                 if (label.isActiveAndEnabled && label.text == text)
                 {
