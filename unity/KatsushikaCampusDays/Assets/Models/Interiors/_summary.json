@@ -100,7 +100,7 @@
    "notes": [
     "1F ロビー（受付・ソファ・掲示板）+ EV3 基 + 廊下 142 m + 研究室2室 + 教授室"
    ],
-   "size": 462012,
+   "size": 476908,
    "fbx": "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\unity\\KatsushikaCampusDays\\Assets\\Models\\Interiors\\research1.fbx",
    "previews": [
     "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\docs\\previews\\interior_research1.png"
@@ -293,7 +293,7 @@
     "中教室 60 席",
     "3 層吹き抜けの大階段ホール + 大ホール + ホワイエ + 演習室 3 室 + 中教室"
    ],
-   "size": 576764,
+   "size": 605564,
    "fbx": "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\unity\\KatsushikaCampusDays\\Assets\\Models\\Interiors\\lecture.fbx",
    "previews": [
     "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\docs\\previews\\interior_lecture_hall.png",
@@ -361,7 +361,7 @@
     "食堂 合計 1400 席",
     "1〜2F 吹き抜けの大食堂。配膳カウンター 38 m・券売機 6 台・返却口・2F 回廊"
    ],
-   "size": 632604,
+   "size": 649756,
    "fbx": "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\unity\\KatsushikaCampusDays\\Assets\\Models\\Interiors\\research2.fbx",
    "previews": [
     "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\docs\\previews\\interior_research2.png",
@@ -475,7 +475,7 @@
    "notes": [
     "1F=カフェ（吹き抜け）+ コンビニ、2F=ラウンジ。q_coffee の舞台"
    ],
-   "size": 360716,
+   "size": 371244,
    "fbx": "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\unity\\KatsushikaCampusDays\\Assets\\Models\\Interiors\\kyoso.fbx",
    "previews": [
     "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\docs\\previews\\interior_kyoso.png"
@@ -589,7 +589,7 @@
     "個人閲覧ブース 66 席",
     "開架書架 + 閲覧席 + 2F 回廊の吹き抜け + 個人閲覧ブース"
    ],
-   "size": 600332,
+   "size": 620252,
    "fbx": "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\unity\\KatsushikaCampusDays\\Assets\\Models\\Interiors\\library.fbx",
    "previews": [
     "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\docs\\previews\\interior_library.png",
@@ -650,7 +650,7 @@
     "用具庫 + 体操器具（跳び箱・マット・平均台）+ 得点板 + 肋木・キャットウォーク",
     "アリーナ（28×15 m コート・ゴール 2 基・ステージ・観覧席・屋根トラス）"
    ],
-   "size": 271708,
+   "size": 307916,
    "fbx": "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\unity\\KatsushikaCampusDays\\Assets\\Models\\Interiors\\gym.fbx",
    "previews": [
     "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\docs\\previews\\interior_gym.png"
@@ -693,7 +693,7 @@
    "notes": [
     "廊下 + 実験室 3 室（実験台・ドラフト・ボンベ・薬品庫）"
    ],
-   "size": 271516,
+   "size": 272060,
    "fbx": "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\unity\\KatsushikaCampusDays\\Assets\\Models\\Interiors\\lab1.fbx",
    "previews": [
     "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\docs\\previews\\interior_lab1.png",
@@ -729,7 +729,7 @@
    "notes": [
     "廊下 + 実験室 2 室（実験台・ドラフト・ボンベ・薬品庫）"
    ],
-   "size": 196620,
+   "size": 197228,
    "fbx": "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\unity\\KatsushikaCampusDays\\Assets\\Models\\Interiors\\lab2.fbx",
    "previews": [
     "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\docs\\previews\\interior_lab2.png",
@@ -758,7 +758,7 @@
    "notes": [
     "切妻ガラス屋根の温室（栽培ベンチ 2 列・鉢植え・灌水パイプ）"
    ],
-   "size": 102860,
+   "size": 103420,
    "fbx": "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\unity\\KatsushikaCampusDays\\Assets\\Models\\Interiors\\greenhouse.fbx",
    "previews": [
     "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\docs\\previews\\interior_greenhouse.png"

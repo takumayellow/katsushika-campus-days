@@ -116,6 +116,8 @@ namespace KCD.Editor
 
             Object.DestroyImmediate(disc.GetComponent<Collider>());
             disc.GetComponent<Renderer>().sharedMaterial = MaterialLibrary.EnsureCampus("stone_light");
+            // stone_light には敷石の写真が貼られる。円柱の UV は面ごとに 0..1 なので、実寸にそろえる。
+            CampusSurfaces.UseTopDownUv(disc.GetComponent<MeshFilter>(), disc.transform.localScale);
         }
 
         /// <summary>タイトル表示と選択画面。どちらも同じ Canvas に置き、TitleMenu が切り替える。</summary>

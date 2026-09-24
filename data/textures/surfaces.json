@@ -1,0 +1,107 @@
+{
+  "_comment": "キャンパスの面に貼るテクスチャの出所と加工の指定。tools/fetch_textures.py が読む。 saturation / contrast は Color マップの彩度と明暗を残す割合（0..1）。 depth は AO / Displacement を暗くするマスクとして焼き込む強さ（0 で焼かない、1 で凹凸マップそのまま）。 highpass_px を付けると、焼き込む前に凹凸マップからこの半径より大きなムラを抜く。",
+  "source": {
+    "site": "ambientCG",
+    "site_url": "https://ambientcg.com/",
+    "license": "CC0 1.0 Universal",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "license_page": "https://ambientcg.com/license",
+    "license_checked": "2026-09-24",
+    "credit_template": "Created using {asset} from ambientCG.com, licensed under the Creative Commons CC0 1.0 Universal License."
+  },
+  "download": {
+    "variant": "1K-JPG",
+    "maps": [
+      "Color",
+      "AmbientOcclusion",
+      "Displacement"
+    ],
+    "_comment": "Color はそのまま色に、AmbientOcclusion / Displacement は暗くするマスクとして焼き込む。無い素材もある（Concrete034 は AO 無し）。",
+    "api": "https://ambientcg.com/api/v2/full_json?type=Material&id={asset}&include=downloadData"
+  },
+  "output": {
+    "folder": "unity/KatsushikaCampusDays/Assets/Textures/surfaces",
+    "format": "jpg",
+    "quality": 92,
+    "_comment": "Unity が取り込み時に DXT/ETC へ再圧縮するので、リポジトリに置く元は jpg で足りる。png だと約 5 倍になる。.meta が無ければパスから決まる GUID だけを書いた .meta を置く（取り込み設定は Unity の既定のまま）。"
+  },
+  "surfaces": [
+    {
+      "asset": "PavingStones136",
+      "tile_cm": 200,
+      "size_px": 512,
+      "saturation": 0.35,
+      "contrast": 0.75,
+      "depth": 0.55,
+      "materials": [
+        "stone_light",
+        "stone_dark"
+      ],
+      "note": "モールと広場の舗装。四角い現代的な敷石（tags: city, modern, square）。歴史的な玉石は葛飾キャンパスに合わない。目地は AO と Displacement から焼く。tile_cm は API に登録が無いため、敷石 1 枚 ≒ 50cm × 4 枚で 200cm と置いた。"
+    },
+    {
+      "asset": "Asphalt033",
+      "tile_cm": 250,
+      "size_px": 512,
+      "saturation": 0.25,
+      "contrast": 0.6,
+      "depth": 0.5,
+      "materials": [
+        "asphalt"
+      ],
+      "note": "車道と駐車場。Color は標準偏差 4.6 でほぼ無地なので、粒は AO と Displacement から焼く。細かい粒しか無いので広く並べても繰り返しは目立たない。tile_cm は API の dimensionX。"
+    },
+    {
+      "asset": "Grass004",
+      "tile_cm": 140,
+      "size_px": 512,
+      "saturation": 0.5,
+      "contrast": 0.7,
+      "depth": 0.3,
+      "materials": [
+        "grass",
+        "grass_dark"
+      ],
+      "note": "芝地。#51 が樹冠と芝の色の関係を問題にしているので、平均色は CampusColors の宣言どおりに戻し、ムラだけを足す。tile_cm は API の dimensionX。"
+    },
+    {
+      "asset": "Ground048",
+      "tile_cm": 140,
+      "size_px": 512,
+      "saturation": 0.45,
+      "contrast": 0.7,
+      "depth": 0.3,
+      "materials": [
+        "bed_soil"
+      ],
+      "note": "モール北側の花壇の土 (#56)。tile_cm は API の dimensionX。"
+    },
+    {
+      "asset": "Concrete034",
+      "tile_cm": 110,
+      "size_px": 512,
+      "saturation": 0.2,
+      "contrast": 0.45,
+      "depth": 0.14,
+      "highpass_px": 8,
+      "materials": [
+        "concrete_light",
+        "concrete_grey",
+        "concrete_dark"
+      ],
+      "note": "建物の外壁。面積が一番広いので、模様が主張すると全体が汚れて見える。AO は同梱されておらず Displacement だけを焼く。その Displacement は 1/4 タイルほどの大きなムラが強く、そのまま焼くと 6 m の壁で繰り返しが格子に見えた。highpass_px で大きなムラを抜き、細かい粒だけを残す。素材は 110 × 55 cm（1024 × 512 px）の横長なので、縦に 2 枚並べて 110 cm 角にしている（dimensionX / dimensionY）。そのため近くで見ると 55 cm ごとに同じ模様が出る。"
+    },
+    {
+      "asset": "Bricks101",
+      "tile_cm": 200,
+      "size_px": 512,
+      "saturation": 0.4,
+      "contrast": 0.7,
+      "depth": 0.5,
+      "materials": [
+        "brick_red"
+      ],
+      "note": "煉瓦の面。現代的で汚れの無いもの（tags: clean, modern, urban）。目地は凹んでいるので AO / Displacement からは暗く焼ける。実物の目地は明るいが、トゥーンの輪郭線に近い見え方になるのでそのままにする。tile_cm は API に登録が無いため、煉瓦 1 枚 210mm × 8 枚強で 200cm と置いた。"
+    }
+  ]
+}

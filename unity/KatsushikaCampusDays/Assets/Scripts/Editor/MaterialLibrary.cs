@@ -21,8 +21,8 @@ namespace KCD.Editor
         /// <summary>キャンパス側のマテリアル名 → 基本色（RGB hex）。</summary>
         private static readonly Dictionary<string, string> CampusColors = new Dictionary<string, string>
         {
-            { "asphalt", "3C3C3C" },
-            { "brick_red", "8E3B2F" },
+            { "asphalt", "6A6A68" },
+            { "brick_red", "7A5C50" },
             { "concrete_light", "D8D6D0" },
             { "concrete_grey", "B4B2AC" },
             { "concrete_dark", "8A8884" },
@@ -67,7 +67,17 @@ namespace KCD.Editor
             { "vending_blue", "0F54B8" },
             { "bin_green", "296638" },
             { "bike_frame", "2E2E33" },
-            { "bike_tire", "0F0F0F" }
+            { "bike_tire", "0F0F0F" },
+            // 道路の白線・校庭の土・背景の建物（blender/kcd_lib/mats.py と同じ色）。
+            // ここに無かったので、どれも B0B0AC の灰色で .mat が作られていた。
+            { "line_white", "F3F3F1" },
+            { "soil", "AA957C" },
+            { "bg_wall_0", "C7C1B3" },
+            { "bg_wall_1", "B2B0A9" },
+            { "bg_wall_2", "A3A3A1" },
+            { "bg_wall_3", "D1CCC2" },
+            { "bg_wall_4", "8F8F90" },
+            { "bg_wall_5", "B8B2A4" }
         };
 
         /// <summary>
@@ -124,7 +134,7 @@ namespace KCD.Editor
             Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (material != null)
             {
-                Repaint(material, name);
+                Repaint(material, name, CampusSurfaces.LoadTiling());
                 return material;
             }
 
@@ -174,6 +184,12 @@ namespace KCD.Editor
                 }
             }
 
+            CampusSurfaces.Apply(material, name, CampusSurfaces.LoadTiling(), out bool textured);
+            if (textured)
+            {
+                material.SetColor(BaseColorId, Color.white);
+            }
+
             Save(material, path);
             return material;
         }
@@ -188,27 +204,73 @@ namespace KCD.Editor
         ///
         /// CampusColors に載っていない名前（屋内のパレット由来など）は、手で調整した値を
         /// 上書きしてしまわないよう触らない。
+        ///
+        /// 面のテクスチャ（<see cref="CampusSurfaces"/>）もここで合わせる。画像を貼った面は
+        /// 画像の平均色が宣言の色なので、_BaseColor は白にする。直したら true。
         /// </summary>
-        private static void Repaint(Material material, string name)
+        private static bool Repaint(Material material, string name, Dictionary<string, float> tiling)
         {
             if (!CampusColors.TryGetValue(name, out string hex))
             {
-                return;
+                return false;
             }
 
             Color declared = Parse(hex);
-            if (!material.HasProperty(BaseColorId) || Same(material.GetColor(BaseColorId), declared))
+            bool changed = CampusSurfaces.Apply(material, name, tiling, out bool textured);
+            Color target = textured ? Color.white : declared;
+            if (material.HasProperty(BaseColorId) && !Same(material.GetColor(BaseColorId), target))
             {
-                return;
+                // ガラスと水は半透明なので、アルファは今の値のまま残す
+                target.a = material.GetColor(BaseColorId).a;
+                material.SetColor(BaseColorId, target);
+                if (material.HasProperty(ShadeColorId))
+                {
+                    material.SetColor(ShadeColorId, declared * 0.62f);
+                }
+
+                changed = true;
             }
 
-            material.SetColor(BaseColorId, declared);
-            if (material.HasProperty(ShadeColorId))
+            if (changed)
             {
-                material.SetColor(ShadeColorId, declared * 0.62f);
+                EditorUtility.SetDirty(material);
             }
 
-            EditorUtility.SetDirty(material);
+            return changed;
+        }
+
+        /// <summary>
+        /// キャンパスの .mat をすべて CampusColors の色と面のテクスチャに合わせ直し、直した数を返す (#59)。
+        ///
+        /// 一度差し替えた FBX は埋め込みのマテリアルを返さなくなるので（<see cref="RepaintCharacters"/> と
+        /// 同じ事情）、ResolveMaterials 経由の <see cref="EnsureCampus"/> には既存の .mat がほとんど来ない。
+        /// ここでは FBX を通さず、フォルダの .mat を直接引く。
+        /// </summary>
+        public static int RepaintCampus()
+        {
+            if (!AssetDatabase.IsValidFolder(CampusFolder))
+            {
+                return 0;
+            }
+
+            Dictionary<string, float> tiling = CampusSurfaces.LoadTiling();
+            int repainted = 0;
+            foreach (string guid in AssetDatabase.FindAssets("t:Material", new[] { CampusFolder }))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
+                if (material != null && Repaint(material, Path.GetFileNameWithoutExtension(path), tiling))
+                {
+                    repainted++;
+                }
+            }
+
+            if (repainted > 0)
+            {
+                AssetDatabase.SaveAssets();
+            }
+
+            return repainted;
         }
 
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");

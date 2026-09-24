@@ -90,6 +90,7 @@ namespace KCD.Editor
             // Plane は 10 m 四方なので 1/10 で割る。
             ground.transform.localScale = new Vector3((x1 - x0) * 0.1f, 1f, 60f);
             ground.GetComponent<MeshRenderer>().sharedMaterial = MaterialLibrary.EnsureCampus("grass_dark");
+            CampusSurfaces.UseMetricUv(ground.GetComponent<MeshFilter>(), new Vector2(x1 - x0, 600f));
             Object.DestroyImmediate(ground.GetComponent<Collider>());
             int groundLayer = LayerMask.NameToLayer("Ground");
             if (groundLayer >= 0)

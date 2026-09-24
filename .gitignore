@@ -44,3 +44,6 @@ unity/*/Data/
 # 校歌の作業用 WAV (mix.sh の中間, BGM の修正前原本など. 完成品は school_song/audio/)
 tools/audio/school_song/work/
 tools/audio/school_song/__pycache__/
+
+# ambientCG から落とした zip (tools/fetch_textures.py が焼き直す元. 焼いた jpg だけ commit する)
+data/textures/.cache/

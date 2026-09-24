@@ -14,6 +14,18 @@
 
 ゲーム内のタイトル画面・クレジット画面と、この README に同じ帰属表示を掲載します。
 
+### 航空写真（色の参考）
+
+地面・舗装・芝の色を決めるときに見た航空写真（`docs/ref/aerial/`）は、国土地理院の地理院タイル（電子国土基本図（オルソ画像））をつなぎ合わせて切り出したものです。ゲームには入っていません。
+
+> 出典：国土地理院 電子国土基本図（オルソ画像）を加工して作成
+
+### 構内の写真（色の参考）
+
+煉瓦・舗装・芝の色を決めるときに見た構内の写真（`docs/ref/commons/`）は、Wikimedia Commons で公開されている 12 枚を縮小したものです。ゲームには入っていません。ライセンスはファイルごとに違い（パブリックドメイン・CC0 1.0・CC BY 4.0・CC BY-SA 3.0・CC BY-SA 4.0）、作者・元画像・ライセンスの一覧は `docs/ref/commons/README.md` にあります。
+
+> 写真：あばさー（パブリックドメイン）、Nyao148（CC BY-SA 3.0）、しんぎんぐきゃっと（CC BY-SA 4.0）、Higa4（CC0 1.0）、Souka Kinmei（CC BY 4.0）、Wikimedia Commons より。長辺 1024 px に縮小
+
 ## キャラクター
 
 - みらい・いなり・かなめ・そら・教授はこのプロジェクトのオリジナルキャラクターです。
@@ -21,9 +33,34 @@
   公式画像・公式データは使用していません（`docs/ref/` の参考画像は配色とシルエットの参照のみ）。
   本プロジェクトは東京理科大学とは無関係で、大学の公式見解を示すものではありません。
 
-## 3D モデル・テクスチャ・音声
+## 3D モデル・テクスチャ
 
-すべて本リポジトリの Python スクリプト（Blender bpy / numpy）で手続き生成しています。外部アセットは使用していません。
+建物・外構・キャラクター・建物内部の 3D モデルは、本リポジトリの Blender (bpy) スクリプトで手続き生成しています。
+キャラクターの顔と絣の模様（`blender/kcd_chara/tex.py`）、ミニマップの画像（`tools/render_minimap.py`・`MinimapAssets.cs`）も同じくスクリプトで描いています。
+
+地面と外壁の面のテクスチャ（`unity/KatsushikaCampusDays/Assets/Textures/surfaces/`）には **ambientCG** の素材を使っています。
+`tools/fetch_textures.py` が `data/textures/surfaces.json` に書いた素材を取得し、平均色を `MaterialLibrary.cs` の
+CampusColors に合わせて焼き直したものです。
+
+| 素材 | 使っている面 |
+| --- | --- |
+| [PavingStones136](https://ambientcg.com/a/PavingStones136) | stone_light・stone_dark（舗装） |
+| [Asphalt033](https://ambientcg.com/a/Asphalt033) | asphalt（車道・駐車場） |
+| [Grass004](https://ambientcg.com/a/Grass004) | grass・grass_dark（芝地） |
+| [Ground048](https://ambientcg.com/a/Ground048) | bed_soil（花壇の土） |
+| [Concrete034](https://ambientcg.com/a/Concrete034) | concrete_light・concrete_grey・concrete_dark（外壁） |
+| [Bricks101](https://ambientcg.com/a/Bricks101) | brick_red（煉瓦の面） |
+
+> Created using PavingStones136, Asphalt033, Grass004, Ground048, Concrete034 and Bricks101 from ambientCG.com, licensed under the Creative Commons CC0 1.0 Universal License.
+
+ambientCG の素材は [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) で配布されていて、表記は義務ではありません
+（[ambientCG のライセンス](https://ambientcg.com/license)、2026-09-24 確認）。どの素材を使ったかを辿れるように載せています。
+
+## 音声
+
+効果音と環境音は本リポジトリの Python スクリプト（numpy）で合成しています。
+一部の BGM は東京理科大学校歌（作曲 大和憲史）をもとにしていて、タイトル画面の曲は東北きりたん（NEUTRINO）の歌唱です。
+出典と権利確認の状況は `unity/KatsushikaCampusDays/Assets/Audio/README.md` の「校歌について」を参照してください。
 
 ## フォント
 

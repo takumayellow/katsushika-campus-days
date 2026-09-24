@@ -496,6 +496,10 @@ namespace KCD.Editor
 
             var renderer = ground.GetComponent<Renderer>();
             renderer.sharedMaterial = MaterialLibrary.EnsureCampus("grass_dark");
+            // 芝の画像を FBX の芝と同じ実寸で並べる (#59)。
+            CampusSurfaces.UseMetricUv(
+                ground.GetComponent<MeshFilter>(),
+                new Vector2(OuterGroundHalfExtent * 2f, OuterGroundHalfExtent * 2f));
             renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             GameObjectUtility.SetStaticEditorFlags(ground, StaticEditorFlags.BatchingStatic);
         }
