@@ -95,6 +95,11 @@
         productName: {{{ JSON.stringify(PRODUCT_NAME) }}},
         productVersion: {{{ JSON.stringify(PRODUCT_VERSION) }}},
         showBanner: unityShowBanner,
+
+        // persistentDataPath に書いたら、その場で IndexedDB へ同期させる (#61)。
+        // 指定しないと、エンジンが書き込みのあとに呼ぶ手動同期 JS_FileSystem_Sync が
+        // 「deprecated」の警告をコンソールに出す（BuildTools/lib/FileSystem.js）。
+        autoSyncPersistentDataPath: true,
       };
 
       if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
