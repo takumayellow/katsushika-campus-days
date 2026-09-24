@@ -58,6 +58,12 @@ namespace KCD.Editor
             /// blender/kcd_route/dorm.py の (x, y) がそのまま (x, z) になる。
             /// </summary>
             DormInterior,
+
+            /// <summary>
+            /// キャンパスの建物の屋内のローカル座標。原点は <see cref="Shot.Building"/> の Interior_&lt;id&gt; の位置で、
+            /// 向きはワールドのまま（x = 右, y = 上, z = 入口から奥）。blender/kcd_interior の (x, y) がそのまま (x, z) になる。
+            /// </summary>
+            Interior,
         }
 
         /// <summary>1 枚の画。</summary>
@@ -68,6 +74,9 @@ namespace KCD.Editor
 
             /// <summary>Eye / Look をどの座標系で読むか。</summary>
             public Frame Space;
+
+            /// <summary>Space が <see cref="Frame.Interior"/> のときの建物（InteriorLoader の id）。</summary>
+            public string Building;
 
             /// <summary>カメラ位置。</summary>
             public Vector3 Eye;
@@ -181,6 +190,39 @@ namespace KCD.Editor
                 Look = new Vector3(0f, 1.5f, 34f),
                 Fov = 46f,
                 Note = "中廊下（x ±1.60 の壁のあいだ）を奥へ。突き当たりは居室エリアの仕切り",
+            },
+
+            // 窓の外の遠景（#60）。窓は外周の壁の腰 0.95 m から 2.55 m まで（dorm.py の envelope）。
+            new Shot
+            {
+                Name = "shot_dorm_lounge_window",
+                Space = Frame.DormInterior,
+                Eye = new Vector3(-2.2f, 1.6f, 17.5f),
+                Look = new Vector3(-9f, 1.7f, 18.5f),
+                Fov = 0f,
+                Note = "ラウンジから西の窓（x -8.00）の外。キャンパスの遠景（ドーム）が見えるか",
+            },
+            new Shot
+            {
+                Name = "shot_dorm_dining_window",
+                Space = Frame.DormInterior,
+                Eye = new Vector3(2.2f, 1.6f, 17f),
+                Look = new Vector3(9f, 1.7f, 16f),
+                Fov = 0f,
+                Note = "食堂から東の窓（x 8.00）の外",
+            },
+
+            // 図書館 2 階の自習室（plan_library.py）。2 階の床は 4.40、机は y 62.435 に x -38.35..-22.75 で並び、
+            // 外周のガラスは高さ 0.85..8.25 で途切れない。奥（+z）の外壁の窓を机ごしに見る。
+            new Shot
+            {
+                Name = "shot_library_2f_window",
+                Space = Frame.Interior,
+                Building = "library",
+                Eye = new Vector3(-30.5f, 6f, 59.5f),
+                Look = new Vector3(-30.5f, 5.8f, 72f),
+                Fov = 0f,
+                Note = "図書館 2 階の自習室から奥の窓の外。キャンパスの遠景（ドーム）が見えるか",
             },
 
             // ここから下はキャンパス（#56）。site.py の (u, v) を CampusProps.Local で読み替えた値:
@@ -461,7 +503,12 @@ namespace KCD.Editor
                         sun.rotation = shot.Sun.HasValue ? Quaternion.Euler(shot.Sun.Value) : sunWas;
                     }
 
-                    Vector3 offset = shot.Space == Frame.DormInterior ? dormOrigin : Vector3.zero;
+                    if (!TryOrigin(shot, dormOrigin, out Vector3 offset))
+                    {
+                        failed++;
+                        continue;
+                    }
+
                     if (Shoot(camera, target, buffer, shot, offset, folder, ref path))
                     {
                         taken++;
@@ -965,6 +1012,33 @@ namespace KCD.Editor
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Eye / Look の座標系の原点（ワールド）。建物の屋内が見つからなければ false（その 1 枚は撮らない。
+        /// ワールドの原点で撮るとキャンパスのまったく別の場所が写るため）。
+        /// </summary>
+        private static bool TryOrigin(Shot shot, Vector3 dormOrigin, out Vector3 origin)
+        {
+            origin = Vector3.zero;
+            switch (shot.Space)
+            {
+                case Frame.DormInterior:
+                    origin = dormOrigin;
+                    return true;
+                case Frame.Interior:
+                    Transform interior = FindByName("Interior_" + shot.Building);
+                    if (interior == null)
+                    {
+                        EditorPaths.Report(shot.Name + ": Interior_" + shot.Building + " が無いので撮りません。");
+                        return false;
+                    }
+
+                    origin = interior.position;
+                    return true;
+                default:
+                    return true;
+            }
         }
 
         /// <summary>非アクティブなものも含めて、名前で Transform を 1 つ探す。</summary>

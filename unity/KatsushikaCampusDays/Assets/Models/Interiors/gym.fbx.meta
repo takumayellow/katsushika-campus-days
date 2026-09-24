@@ -182,6 +182,11 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: rubber_black
+    second: {fileID: 2100000, guid: 5f217f6a9dfd1de459e06c0eb0efbfd0, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: screen_blue
     second: {fileID: 2100000, guid: 1103aa9aebd3d474db2929b910443b92, type: 2}
   - first:

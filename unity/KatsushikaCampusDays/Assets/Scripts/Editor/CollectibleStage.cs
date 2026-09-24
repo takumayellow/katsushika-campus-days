@@ -214,7 +214,7 @@ namespace KCD.Editor
 
         /// <summary>
         /// 屋内の床。poi の少し上から下へ探し、poi の高さから ±<see cref="IndoorFloorTolerance"/> m の
-        /// 上向きの面のうちいちばん上。2 階の回廊やキャットウォークの poi は 2 階の床になる。無ければ poi そのもの。
+        /// 上向きの面のうちいちばん上。2 階の回廊や観覧席の最上段の poi はその床になる。無ければ poi そのもの。
         /// </summary>
         public static Vector3 IndoorFloor(Vector3 poi)
         {

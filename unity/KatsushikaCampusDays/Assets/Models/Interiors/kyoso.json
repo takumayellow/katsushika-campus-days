@@ -456,7 +456,7 @@
    "z": 9.095
   }
  },
- "triangles": 25442,
+ "triangles": 25544,
  "seats": 90,
  "notes": [
   "1F=カフェ（吹き抜け）+ コンビニ、2F=ラウンジ。q_coffee の舞台"
@@ -469,5 +469,14 @@
   "furn_kyoso_03_cafe",
   "furn_kyoso_04_cvs",
   "furn_kyoso_05_lounge"
- ]
+ ],
+ "ext": {
+  "objects": [
+   "ext_kyoso",
+   "ext_kyoso_trees"
+  ],
+  "triangles": 26239,
+  "radius": 30.0,
+  "dz": -0.03
+ }
 }

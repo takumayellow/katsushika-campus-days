@@ -56,5 +56,14 @@
   "wall_greenhouse",
   "furn_greenhouse_01_entry",
   "furn_greenhouse_02_benches"
- ]
+ ],
+ "ext": {
+  "objects": [
+   "ext_greenhouse",
+   "ext_greenhouse_trees"
+  ],
+  "triangles": 4207,
+  "radius": 30.0,
+  "dz": -0.03
+ }
 }
