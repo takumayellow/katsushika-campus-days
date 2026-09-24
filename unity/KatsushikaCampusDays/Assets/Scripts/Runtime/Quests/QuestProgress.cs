@@ -37,6 +37,7 @@ namespace KCD
         /// セーブに無いクエストは未受注に戻し、そのうち autoStart で前提を満たすものは黙って受注する
         /// （あとから足されたクエストを古いセーブで遊んでも始まるように）。
         /// 完了なのにステップが途中、受注中なのにステップが全部済み、といった食い違いは完了にそろえる。
+        /// 前提のそろわないまま受注中の autoStart は、1 ステップも済んでいなければ前提がそろうまで待たせる（HoldPrematureAutoStarts）。
         /// </summary>
         public void Restore(QuestProgress progress)
         {
@@ -74,6 +75,7 @@ namespace KCD
                 RestoreOne(quest, progress.States[i], progress.StepsDone[i]);
             }
 
+            HoldPrematureAutoStarts();
             ActivateNewAutoStarts(restored);
 
             // 計時はセーブに載せない。読み込んだら数える前に戻す。
@@ -145,6 +147,38 @@ namespace KCD
             {
                 _active.Add(quest.Id);
             }
+        }
+
+        /// <summary>
+        /// 前提のそろわないまま受注中になっている autoStart のクエストを、1 ステップも済んでいなければ未受注に戻す (#91)。
+        /// 以前の Load は前提を見ずに autoStart を受注していたので、その頃のセーブには公園・夕焼け・夜の散歩・写真の散歩が
+        /// 最初から受注中で残っている。済んだステップが無ければ失う進行は無く（collect の途中の数はセーブに載らず、
+        /// 拾った物は受注したときに数え直す）、前提がそろった時点で AutoStartUnlocked が新しいゲームと同じように受注する。
+        /// 1 ステップでも済んでいれば、進めた分を消さないよう受注中のまま残す。
+        /// </summary>
+        private void HoldPrematureAutoStarts()
+        {
+            for (int i = 0; i < _all.Count; i++)
+            {
+                QuestData quest = _all[i];
+                if (quest.AutoStart && _active.Contains(quest.Id) && !PrerequisitesMet(quest) && !AnyStepCompleted(quest))
+                {
+                    _active.Remove(quest.Id);
+                }
+            }
+        }
+
+        private static bool AnyStepCompleted(QuestData quest)
+        {
+            for (int s = 0; s < quest.Steps.Count; s++)
+            {
+                if (quest.Steps[s].Completed)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>セーブに行の無い autoStart のクエストのうち、前提を満たすものを黙って受注する。</summary>
