@@ -51,6 +51,9 @@ namespace KCD.Editor
             { "flower_yellow", "F2C84B" },
             { "flower_white", "F4F1EA" },
             { "flower_pink", "E98FB0" },
+            // パンジー・ビオラの紫とマリーゴールドの橙（#58）
+            { "flower_purple", "7456C8" },
+            { "flower_orange", "F28C28" },
             // 葉は理科大グリーン #00843D 基準の 4 段（blender/kcd_lib/mats.py と同じ）。
             // 名前が leaf* なので foliage 判定（KCD/Toon + _ShadeColor 0.62 + アウトライン 0）と
             // CampusStage.IsFoliageMaterial（コライダ除外）はそのまま効く。
