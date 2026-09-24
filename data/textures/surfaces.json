@@ -27,81 +27,56 @@
   },
   "surfaces": [
     {
-      "asset": "PavingStones136",
-      "tile_cm": 200,
-      "size_px": 512,
-      "saturation": 0.35,
-      "contrast": 0.75,
-      "depth": 0.55,
-      "materials": [
-        "stone_light",
-        "stone_dark"
-      ],
-      "note": "モールと広場の舗装。四角い現代的な敷石（tags: city, modern, square）。歴史的な玉石は葛飾キャンパスに合わない。目地は AO と Displacement から焼く。tile_cm は API に登録が無いため、敷石 1 枚 ≒ 50cm × 4 枚で 200cm と置いた。"
-    },
-    {
-      "asset": "Asphalt033",
-      "tile_cm": 250,
-      "size_px": 512,
-      "saturation": 0.25,
-      "contrast": 0.6,
-      "depth": 0.5,
-      "materials": [
-        "asphalt"
-      ],
-      "note": "車道と駐車場。Color は標準偏差 4.6 でほぼ無地なので、粒は AO と Displacement から焼く。細かい粒しか無いので広く並べても繰り返しは目立たない。tile_cm は API の dimensionX。"
-    },
-    {
-      "asset": "Grass004",
-      "tile_cm": 140,
-      "size_px": 512,
-      "saturation": 0.5,
-      "contrast": 0.7,
-      "depth": 0.3,
-      "materials": [
-        "grass",
-        "grass_dark"
-      ],
-      "note": "芝地。#51 が樹冠と芝の色の関係を問題にしているので、平均色は CampusColors の宣言どおりに戻し、ムラだけを足す。tile_cm は API の dimensionX。"
-    },
-    {
-      "asset": "Ground048",
-      "tile_cm": 140,
-      "size_px": 512,
-      "saturation": 0.45,
-      "contrast": 0.7,
-      "depth": 0.3,
-      "materials": [
-        "bed_soil"
-      ],
-      "note": "モール北側の花壇の土 (#56)。tile_cm は API の dimensionX。"
-    },
-    {
-      "asset": "Concrete034",
-      "tile_cm": 110,
-      "size_px": 512,
-      "saturation": 0.2,
-      "contrast": 0.45,
-      "depth": 0.14,
-      "highpass_px": 8,
-      "materials": [
-        "concrete_light",
-        "concrete_grey",
-        "concrete_dark"
-      ],
-      "note": "建物の外壁。面積が一番広いので、模様が主張すると全体が汚れて見える。AO は同梱されておらず Displacement だけを焼く。その Displacement は 1/4 タイルほどの大きなムラが強く、そのまま焼くと 6 m の壁で繰り返しが格子に見えた。highpass_px で大きなムラを抜き、細かい粒だけを残す。素材は 110 × 55 cm（1024 × 512 px）の横長なので、縦に 2 枚並べて 110 cm 角にしている（dimensionX / dimensionY）。そのため近くで見ると 55 cm ごとに同じ模様が出る。"
-    },
-    {
-      "asset": "Bricks101",
-      "tile_cm": 200,
-      "size_px": 512,
-      "saturation": 0.4,
-      "contrast": 0.7,
-      "depth": 0.5,
+      "asset": "Bricks092",
+      "tile_cm": 230,
+      "size_px": 1024,
+      "saturation": 1.0,
+      "contrast": 1.0,
+      "depth": 0,
       "materials": [
         "brick_red"
       ],
-      "note": "煉瓦の面。現代的で汚れの無いもの（tags: clean, modern, urban）。目地は凹んでいるので AO / Displacement からは暗く焼ける。実物の目地は明るいが、トゥーンの輪郭線に近い見え方になるのでそのままにする。tile_cm は API に登録が無いため、煉瓦 1 枚 210mm × 8 枚強で 200cm と置いた。"
+      "bricks": {
+        "source_grid": [
+          18,
+          5
+        ],
+        "grid": [
+          33,
+          10
+        ],
+        "joint": 0.09,
+        "grain": 0.6,
+        "block": 2,
+        "joint_ratio": 0.38,
+        "palette": [
+          {
+            "hex": "#4E423C",
+            "weight": 0.255
+          },
+          {
+            "hex": "#745445",
+            "weight": 0.219
+          },
+          {
+            "hex": "#595049",
+            "weight": 0.174
+          },
+          {
+            "hex": "#66493C",
+            "weight": 0.173
+          },
+          {
+            "hex": "#6A6056",
+            "weight": 0.122
+          },
+          {
+            "hex": "#8A573F",
+            "weight": 0.056
+          }
+        ]
+      },
+      "note": "葛飾キャンパスの外壁は二丁掛の割肌タイル（227×60 mm）の芋張りで、目地は細く暗い。素材からは肌の粒だけを借り、1 枚ずつの色（曇天の写真で色順応をそろえた 6 色と割合）と暗い目地で組み直す。平均は #654F44。測定は docs/ref/brick/ (#109)。"
     }
   ]
 }

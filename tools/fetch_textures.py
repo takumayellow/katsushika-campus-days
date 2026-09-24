@@ -49,6 +49,7 @@ import uuid
 import zipfile
 from pathlib import Path
 
+import brick_bond
 from PIL import Image, ImageChops, ImageFilter, ImageOps, ImageStat
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -511,6 +512,10 @@ def bake_surface(surface: dict, variant: str) -> Image.Image:
     """
     size = surface["size_px"]
     maps = download_maps(surface["asset"], variant, ["Color", *DETAIL_MAPS])
+    if "bricks" in surface:
+        # 煉瓦は素材の張り方・目地をそのまま使わず、実物の芋張りに組み直す (#109)
+        return brick_bond.compose(maps["Color"], maps["Displacement"], surface["bricks"], size, surface["asset"])
+
     color = resize_tileable(maps["Color"].convert("RGB"), size)
     return bake_detail(
         shape(color, surface["saturation"], surface["contrast"]),
