@@ -138,6 +138,8 @@
     "ui.controls.quickload.key": "F9",
     "ui.controls.fullscreen": "全画面",
     "ui.controls.fullscreen.key": "F",
+    "ui.controls.photo": "フォトモード",
+    "ui.controls.photo.key": "P / Y ボタン",
     "ui.credits.heading": "クレジット",
     "ui.credits.map": "地図データ © OpenStreetMap contributors (ODbL)",
     "ui.credits.setting": "舞台: 東京理科大学 葛飾キャンパス（東京都葛飾区新宿 6-3-1）",

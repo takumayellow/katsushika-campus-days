@@ -78,6 +78,9 @@ namespace KCD
             hud.ShowToast(L.Pick(
                 "WASD / 矢印キーで移動　Shift でダッシュ　E で話す　Tab でクエスト",
                 "WASD / Arrows Move   Shift Sprint   E Talk   Tab Quests"));
+            hud.ShowToast(L.Pick(
+                "P でフォトモード（時間が止まり、カメラを自由に動かして撮れる）",
+                "P Photo mode (time stops and you can move the camera freely)"));
 
             // Web 版はカーソルがブラウザのポインターロックに取られる。外し方と全画面の出し方を最初に伝える (#48)。
             if (Application.platform == RuntimePlatform.WebGLPlayer)

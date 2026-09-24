@@ -328,5 +328,133 @@ namespace KCD
         /// <summary>クイックロード（F9）。</summary>
         public static bool QuickLoadPressed =>
             Keyboard.current != null && Keyboard.current.f9Key.wasPressedThisFrame;
+
+        // ここから下はフォトモードの自由カメラ (#12)。フォトモードの間だけ PhotoSystem / PhotoFreeCamera が読む。
+        // フォトモード自身が封鎖を掛けているので GameplayBlocked は見ない。timeScale 0 の間に読むので、時間は実時間で掛ける。
+        // E / Q・Shift・Space は普段は会話 / 手を振る / ダッシュ / ジャンプだが、どれも封鎖中は効かないので重ならない。
+
+        /// <summary>フォトモードで P / 北ボタンのどちらで入ったか。案内をゲームパッドのボタン名で出すかを決める。</summary>
+        public static bool PhotoPressedOnGamepad =>
+            Gamepad.current != null && Gamepad.current.buttonNorth.wasPressedThisFrame;
+
+        /// <summary>フォトモードの移動（x = 左右、y = 前後）。WASD / 矢印キー / 左スティック。</summary>
+        public static Vector2 PhotoMove
+        {
+            get
+            {
+                var move = Vector2.zero;
+                Keyboard keyboard = Keyboard.current;
+                if (keyboard != null)
+                {
+                    if (keyboard.wKey.isPressed || keyboard.upArrowKey.isPressed) { move.y += 1f; }
+                    if (keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed) { move.y -= 1f; }
+                    if (keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed) { move.x += 1f; }
+                    if (keyboard.aKey.isPressed || keyboard.leftArrowKey.isPressed) { move.x -= 1f; }
+                }
+
+                Gamepad gamepad = Gamepad.current;
+                if (gamepad != null)
+                {
+                    move += gamepad.leftStick.ReadValue();
+                }
+
+                return Vector2.ClampMagnitude(move, 1f);
+            }
+        }
+
+        /// <summary>フォトモードの上下。E / R トリガーで上（+1）、Q / L トリガーで下（-1）。</summary>
+        public static float PhotoVertical
+        {
+            get
+            {
+                float vertical = 0f;
+                Keyboard keyboard = Keyboard.current;
+                if (keyboard != null)
+                {
+                    if (keyboard.eKey.isPressed) { vertical += 1f; }
+                    if (keyboard.qKey.isPressed) { vertical -= 1f; }
+                }
+
+                Gamepad gamepad = Gamepad.current;
+                if (gamepad != null)
+                {
+                    vertical += gamepad.rightTrigger.ReadValue() - gamepad.leftTrigger.ReadValue();
+                }
+
+                return Mathf.Clamp(vertical, -1f, 1f);
+            }
+        }
+
+        /// <summary>フォトモードで速く動かす（Shift / L ボタン）。</summary>
+        public static bool PhotoFast =>
+            (Keyboard.current != null &&
+             (Keyboard.current.leftShiftKey.isPressed || Keyboard.current.rightShiftKey.isPressed)) ||
+            (Gamepad.current != null && Gamepad.current.leftShoulder.isPressed);
+
+        /// <summary>フォトモードの向き。<see cref="Look"/> と同じ大きさで、スティックは実時間で掛ける（timeScale 0 でも回る）。</summary>
+        public static Vector2 PhotoLook
+        {
+            get
+            {
+                var look = Vector2.zero;
+                Mouse mouse = Mouse.current;
+                if (mouse != null)
+                {
+                    look += mouse.delta.ReadValue() * 0.06f;
+                }
+
+                Gamepad gamepad = Gamepad.current;
+                if (gamepad != null)
+                {
+                    look += gamepad.rightStick.ReadValue() * (180f * Time.unscaledDeltaTime);
+                }
+
+                return look;
+            }
+        }
+
+        /// <summary>
+        /// フォトモードのズーム（正で寄る）。ホイール 1 目盛りで 1、十字キーの上下は押している間 1 秒に 10。
+        /// ホイールは Input System の既定で 1 目盛り ±1 に揃っている。1 フレームで大きく回しても ±3 までにする。
+        /// </summary>
+        public static float PhotoZoom
+        {
+            get
+            {
+                float zoom = 0f;
+                Mouse mouse = Mouse.current;
+                if (mouse != null)
+                {
+                    zoom += Mathf.Clamp(mouse.scroll.ReadValue().y, -3f, 3f);
+                }
+
+                Gamepad gamepad = Gamepad.current;
+                if (gamepad != null)
+                {
+                    float dpad = (gamepad.dpad.up.isPressed ? 1f : 0f) - (gamepad.dpad.down.isPressed ? 1f : 0f);
+                    zoom += dpad * 10f * Time.unscaledDeltaTime;
+                }
+
+                return zoom;
+            }
+        }
+
+        /// <summary>フォトモードの撮影（Enter / テンキーの Enter / Space / A / X）。</summary>
+        public static bool PhotoShutterPressed =>
+            (Keyboard.current != null &&
+             (Keyboard.current.enterKey.wasPressedThisFrame || Keyboard.current.numpadEnterKey.wasPressedThisFrame ||
+              Keyboard.current.spaceKey.wasPressedThisFrame)) ||
+            (Gamepad.current != null &&
+             (Gamepad.current.buttonSouth.wasPressedThisFrame || Gamepad.current.buttonWest.wasPressedThisFrame));
+
+        /// <summary>フォトモードの操作案内の出し入れ（H / 左スティック押し込み）。</summary>
+        public static bool PhotoHintTogglePressed =>
+            (Keyboard.current != null && Keyboard.current.hKey.wasPressedThisFrame) ||
+            (Gamepad.current != null && Gamepad.current.leftStickButton.wasPressedThisFrame);
+
+        /// <summary>フォトモードのカメラを入ったときの位置と向きに戻す（R / 右スティック押し込み）。</summary>
+        public static bool PhotoResetPressed =>
+            (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame) ||
+            (Gamepad.current != null && Gamepad.current.rightStickButton.wasPressedThisFrame);
     }
 }

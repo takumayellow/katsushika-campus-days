@@ -202,22 +202,8 @@ namespace KCD.Editor
 
             go.AddComponent<CinemachineRotationComposer>();
 
-            CinemachineDeoccluder deoccluder = go.AddComponent<CinemachineDeoccluder>();
-            deoccluder.CollideAgainst = LayerMaskFor("Ground", "Building");
-            deoccluder.MinimumDistanceFromTarget = 0.8f;
-            var avoid = new CinemachineDeoccluder.ObstacleAvoidance
-            {
-                Enabled = true,
-                CameraRadius = 0.32f,
-                Strategy = CinemachineDeoccluder.ObstacleAvoidance.ResolutionStrategy.PullCameraForward,
-                MaximumEffort = 4,
-                Damping = 0.4f
-            };
-
-            // 木や柱の脇でカメラが寄ったり戻ったりを細かく繰り返さないよう、平滑化を入れる (#30)。
-            // SmoothingTime 0.4 / MinimumOcclusionTime 0.1 / DampingWhenOccluded 0.2（値は CinemachineInputBridge）。
-            CinemachineInputBridge.ApplyDeoccluderSmoothing(ref avoid);
-            deoccluder.AvoidObstacles = avoid;
+            // 壁・天井・木の幹の手前で寄せる。寄るのは即時、戻るのは 0.2 s 待って約 0.3 s（#12, #30）。
+            go.AddComponent<CinemachineCameraGuard>();
 
             go.AddComponent<CinemachineInputBridge>();
         }
@@ -296,21 +282,6 @@ namespace KCD.Editor
             {
                 go.layer = layer;
             }
-        }
-
-        private static int LayerMaskFor(params string[] names)
-        {
-            int mask = 0;
-            foreach (string name in names)
-            {
-                int layer = LayerMask.NameToLayer(name);
-                if (layer >= 0)
-                {
-                    mask |= 1 << layer;
-                }
-            }
-
-            return mask;
         }
     }
 }
