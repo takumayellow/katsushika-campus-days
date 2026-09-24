@@ -39,7 +39,7 @@
 | ファイル | 内容 |
 |----------|------|
 | `unity/.../Campus/campus.fbx` | 建物・外構 18 メッシュ（入口の `bld_entrances` を含む）+ `entrance_<id>` / `door_<id>` / `sign_<id>` / `spawn_player` の Empty 28 個。約 1.62 MB / 126,680 頂点 |
-| `unity/.../Campus/trees.fbx` | 樹木 3 種のメッシュ（計 240 頂点）と、それを参照する `tree_<n>` Empty 588 個 |
+| `unity/.../Campus/trees.fbx` | 樹木 3 種のメッシュ（幹 `trunk` と葉 `leaf` の 2 マテリアル。葉の明暗は頂点カラー `Col`。Unity の頂点で 1 本 600 以下）と、それを参照する `tree_<n>` Empty 553 個 |
 | `unity/.../Campus/trees.json` | 樹木インスタンスの (x, y, z, 樹種, スケール, 回転) 一覧。Unity 側で GPU インスタンシングしたい場合の元データ |
 | `docs/previews/campus_{overview,mall,library,lecture}.png` | 1280x720 のプレビュー |
 
@@ -57,7 +57,8 @@
 | `kcd_lib/buildings.py` | 建物ごとの造形（第1研究棟・共創棟・講義棟・第2研究棟・図書館・体育館・実験棟・温室・背景建物） |
 | `kcd_lib/entrances.py` | 入口（風除室・ガラスの両開き扉・庇・足元の石張り）と、Unity の入口トリガー・看板の位置の計画 |
 | `kcd_lib/site.py` | 地面・キャンパスモール・道路と白線・水盤・ベンチ/照明柱・樹木配置 |
-| `kcd_lib/props.py` | 樹木 3 種・ベンチ・照明柱・散布アルゴリズム |
+| `kcd_lib/trees.py` | 樹木 3 種（ケヤキ・丸木・松）。葉のかたまりの面ごとの明暗を頂点カラーに焼く |
+| `kcd_lib/props.py` | ベンチ・照明柱・看板・自販機などの小物と、散布アルゴリズム |
 | `kcd_lib/render.py` | ワールド・太陽・カメラ・レンダ設定 |
 
 ### 座標系

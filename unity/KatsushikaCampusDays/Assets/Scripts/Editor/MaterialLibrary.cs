@@ -51,9 +51,13 @@ namespace KCD.Editor
             { "flower_yellow", "F2C84B" },
             { "flower_white", "F4F1EA" },
             { "flower_pink", "E98FB0" },
+            // パンジー・ビオラの紫とマリーゴールドの橙（#58）
+            { "flower_purple", "7456C8" },
+            { "flower_orange", "F28C28" },
             // 葉は理科大グリーン #00843D 基準の 4 段（blender/kcd_lib/mats.py と同じ）。
             // 名前が leaf* なので foliage 判定（KCD/Toon + _ShadeColor 0.62 + アウトライン 0）と
             // CampusStage.IsFoliageMaterial（コライダ除外）はそのまま効く。
+            // 木の葉のマテリアルは leaf 1 つで、4 段の色は Blender が頂点カラーに焼く（VertexColored, #51）。
             { "leaf_dark", "0A6B38" },
             { "leaf", "0C8C45" },
             { "leaf_light", "4CAE5B" },
@@ -183,6 +187,10 @@ namespace KCD.Editor
                 {
                     material.SetColor("_ShadeColor", color * 0.62f);
                     material.SetFloat("_OutlineWidth", 0f);
+                    if (VertexColored.Contains(name))
+                    {
+                        ApplyVertexColor(material);
+                    }
                 }
                 else
                 {
@@ -208,6 +216,16 @@ namespace KCD.Editor
         /// </summary>
         private static void Repaint(Material material, string name)
         {
+            if (VertexColored.Contains(name))
+            {
+                if (ApplyVertexColor(material))
+                {
+                    EditorUtility.SetDirty(material);
+                }
+
+                return;
+            }
+
             if (!CampusColors.TryGetValue(name, out string hex))
             {
                 return;
@@ -230,6 +248,47 @@ namespace KCD.Editor
 
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int ShadeColorId = Shader.PropertyToID("_ShadeColor");
+        private static readonly int VertexColorId = Shader.PropertyToID("_VertexColor");
+        private const string VertexColorKeyword = "_VERTEXCOLOR_ON";
+
+        /// <summary>
+        /// 色を FBX の頂点カラーで持つマテリアル (#51)。木の葉は 1 本を幹と葉の 2 マテリアルにし、
+        /// 葉の明暗（上面が明るく、内側と下が暗い）は面ごとの頂点カラーで出す。
+        /// 頂点カラーの色は blender/kcd_lib/mats.py の leaf_dark / leaf / leaf_light / leaf_top
+        /// （CampusColors の同名の色と同じ）から作る。
+        /// </summary>
+        private static readonly HashSet<string> VertexColored = new HashSet<string> { "leaf" };
+
+        /// <summary>
+        /// 頂点カラーの色をそのまま出すため、_BaseColor は白、陰は 0.62 の灰色にする。
+        /// 葉の陰を「葉の色 × 0.62」にしていたころは、シェーダが albedo にもう一度それを掛けるので
+        /// 陰の側が葉の色の 2 乗 × 0.62 まで沈んでいた。
+        /// </summary>
+        private static readonly Color VertexColorShade = new Color(0.62f, 0.62f, 0.62f, 1f);
+
+        /// <summary>頂点カラーを使う設定にする。変えたら true。</summary>
+        private static bool ApplyVertexColor(Material material)
+        {
+            if (!material.HasProperty(VertexColorId))
+            {
+                return false;
+            }
+
+            bool same = material.GetFloat(VertexColorId) == 1f
+                && material.IsKeywordEnabled(VertexColorKeyword)
+                && Same(material.GetColor(BaseColorId), Color.white)
+                && Same(material.GetColor(ShadeColorId), VertexColorShade);
+            if (same)
+            {
+                return false;
+            }
+
+            material.SetFloat(VertexColorId, 1f);
+            material.EnableKeyword(VertexColorKeyword);
+            material.SetColor(BaseColorId, Color.white);
+            material.SetColor(ShadeColorId, VertexColorShade);
+            return true;
+        }
 
         /// <summary>色が実質同じか。8 bit に戻したとき同じ値なら同じとみなす。</summary>
         private static bool Same(Color a, Color b)

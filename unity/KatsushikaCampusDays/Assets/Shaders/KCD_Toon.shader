@@ -32,6 +32,10 @@ Shader "KCD/Toon"
         _PatternScale("Pattern Scale", Float) = 1
         _PatternBlend("Pattern Box Blend", Range(0, 1)) = 0.25
 
+        // 頂点カラーを基本色に掛ける（木の葉。1 マテリアルのまま面ごとに明暗と色を変える, #51）。
+        // FBX の頂点カラーは sRGB で入ってくるので、リニア空間では頂点段でリニアに直す。
+        [Toggle(_VERTEXCOLOR_ON)] _VertexColor("Vertex Color", Float) = 0
+
         // Surface / blending state（マテリアル側から差し替える）
         [HideInInspector] _Surface("__surface", Float) = 0.0
         [HideInInspector] _SrcBlend("__src", Float) = 1.0
@@ -67,6 +71,7 @@ Shader "KCD/Toon"
         half   _Pattern;
         float  _PatternScale;
         half   _PatternBlend;
+        half   _VertexColor;
         half   _Surface;
         half   _SrcBlend;
         half   _DstBlend;
@@ -171,6 +176,7 @@ Shader "KCD/Toon"
             #pragma multi_compile_fog
             #pragma shader_feature_local_fragment _ALPHATEST_ON
             #pragma shader_feature_local _PATTERN_ON
+            #pragma shader_feature_local _VERTEXCOLOR_ON
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
             #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
@@ -182,6 +188,7 @@ Shader "KCD/Toon"
             #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Color.hlsl"
 
             TEXTURE2D(_BaseMap);
             SAMPLER(sampler_BaseMap);
@@ -197,6 +204,9 @@ Shader "KCD/Toon"
                     float3 generated  : TEXCOORD2;
                     float3 bindNormal : TEXCOORD3;
                 #endif
+                #if defined(_VERTEXCOLOR_ON)
+                    half4 color : COLOR;
+                #endif
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
@@ -211,6 +221,9 @@ Shader "KCD/Toon"
                 #if defined(_PATTERN_ON)
                     float3 generated  : TEXCOORD5;
                     half3  bindNormal : TEXCOORD6;
+                #endif
+                #if defined(_VERTEXCOLOR_ON)
+                    half3  vertexColor : TEXCOORD7;
                 #endif
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
@@ -233,6 +246,13 @@ Shader "KCD/Toon"
                 #if defined(_PATTERN_ON)
                     output.generated = input.generated * _PatternScale;
                     output.bindNormal = input.bindNormal;
+                #endif
+                #if defined(_VERTEXCOLOR_ON)
+                    #if defined(UNITY_COLORSPACE_GAMMA)
+                        output.vertexColor = input.color.rgb;
+                    #else
+                        output.vertexColor = SRGBToLinear(input.color.rgb);
+                    #endif
                 #endif
                 return output;
             }
@@ -310,6 +330,9 @@ Shader "KCD/Toon"
 
                 #if defined(_PATTERN_ON)
                     albedo *= SamplePatternBox(input.generated, input.bindNormal, _PatternBlend);
+                #endif
+                #if defined(_VERTEXCOLOR_ON)
+                    albedo *= input.vertexColor;
                 #endif
 
                 #if defined(_ALPHATEST_ON)
