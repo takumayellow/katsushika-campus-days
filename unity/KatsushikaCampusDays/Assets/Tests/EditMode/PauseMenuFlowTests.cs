@@ -8,6 +8,8 @@ namespace KCD.Tests
     /// ポーズメニューのキー操作の流れ。EditMode では Update が走らず Time.frameCount も進まないので、
     /// フレーム番号を明示した <see cref="PauseMenu.FrameInput"/> を <see cref="PauseMenu.Tick"/> に渡して進める。
     /// ・封鎖の最中（暗転・会話）に Esc で開かない (#105)
+    /// ・「設定」を決めた Enter を設定パネルに持ち越さない (#103)
+    /// ・「タイトルへ戻る」は確認してから戻る (#104)
     /// ラベルは渡さない（Redraw は null の板を飛ばす）ので、TextMeshPro の部品もローカライズも要らない。
     /// </summary>
     public sealed class PauseMenuFlowTests
@@ -15,11 +17,15 @@ namespace KCD.Tests
         private readonly List<GameObject> _created = new List<GameObject>();
         private float _timeScale;
 
+        /// <summary>ReturnToTitleAction が呼ばれた回数。EditMode で GameManager.ReturnToTitle（LoadScene）は呼べない。</summary>
+        private int _titleReturns;
+
         [SetUp]
         public void SetUp()
         {
             _timeScale = Time.timeScale;
             Time.timeScale = 1f;
+            _titleReturns = 0;
             KCDInput.ClearAllBlocks();
             KCDInput.PhotoMode = false;
         }
@@ -77,18 +83,42 @@ namespace KCD.Tests
 
         private static PauseMenu.FrameInput Idle(int frame) => new PauseMenu.FrameInput(frame);
 
+        private static PauseMenu.FrameInput Down(int frame) => new PauseMenu.FrameInput(frame, vertical: 1);
+
         /// <summary>行の並び（EntryKeys）での「設定」の位置。</summary>
         private const int SettingsRow = 3;
 
-        /// <summary>ポーズを開き、「設定」の行まで下へ送る。次に使えるフレーム番号を返す。</summary>
-        private static int OpenAndMoveToSettings(PauseMenu pause, int frame)
+        /// <summary>行の並び（EntryKeys）での「タイトルへ戻る」の位置。</summary>
+        private const int TitleRow = 4;
+
+        /// <summary>ポーズを開き、row の行まで下へ送る。次に使えるフレーム番号を返す。</summary>
+        private static int OpenAndMoveTo(PauseMenu pause, int row, int frame)
         {
             pause.Tick(Menu(frame++));
-            for (int i = 0; i < SettingsRow; i++)
+            for (int i = 0; i < row; i++)
             {
-                pause.Tick(new PauseMenu.FrameInput(frame++, vertical: 1));
+                pause.Tick(Down(frame++));
             }
 
+            return frame;
+        }
+
+        /// <summary>ポーズを開き、「設定」の行まで下へ送る。次に使えるフレーム番号を返す。</summary>
+        private static int OpenAndMoveToSettings(PauseMenu pause, int frame) => OpenAndMoveTo(pause, SettingsRow, frame);
+
+        /// <summary>タイトルへ戻る処理を数えるだけにしたポーズ。</summary>
+        private PauseMenu MakePauseCountingTitleReturns()
+        {
+            PauseMenu pause = MakePause();
+            pause.ReturnToTitleAction = () => _titleReturns++;
+            return pause;
+        }
+
+        /// <summary>ポーズを開き、「タイトルへ戻る」を Enter で決める。次に使えるフレーム番号を返す。</summary>
+        private static int ChooseReturnToTitle(PauseMenu pause, int frame)
+        {
+            frame = OpenAndMoveTo(pause, TitleRow, frame);
+            pause.Tick(Submit(frame++));
             return frame;
         }
 
@@ -254,6 +284,114 @@ namespace KCD.Tests
             Assert.IsFalse(settings.IsOpen, "閉じたポーズから設定だけが開いた");
             Assert.IsFalse(pause.IsPaused);
             Assert.AreEqual(1f, Time.timeScale);
+        }
+
+        // ---- 「タイトルへ戻る」の確認 (#104) ----
+
+        [Test]
+        public void ReturnToTitle_FirstEnter_AsksInsteadOfLeaving()
+        {
+            PauseMenu pause = MakePauseCountingTitleReturns();
+
+            ChooseReturnToTitle(pause, 400);
+
+            // 前はこの Enter で SetOpen(false) → GameManager.ReturnToTitle() をその場で呼び、
+            // セーブしていない進行を確かめもせずに捨てていた。
+            Assert.AreEqual(0, _titleReturns, "確かめる前にタイトルへ戻った（セーブしていない進行が消える）");
+            Assert.IsTrue(pause.IsConfirmingReturnToTitle, "「タイトルへ戻る」を決めても確認が出ない");
+            Assert.IsTrue(pause.IsOpen, "確認を出す前にポーズが閉じた");
+            Assert.IsTrue(pause.IsPaused);
+            Assert.IsTrue(KCDInput.IsBlockedBy(pause), "確認の間にポーズの封鎖が外れた");
+            Assert.AreEqual(0f, Time.timeScale, "確認の間に時間が動き出した");
+        }
+
+        [Test]
+        public void ReturnToTitle_EnterAgainWithoutMoving_StaysInTheGame()
+        {
+            PauseMenu pause = MakePauseCountingTitleReturns();
+            int frame = ChooseReturnToTitle(pause, 500);
+
+            // 既定は「いいえ」。Enter を続けて 2 回押しただけでは進行を消さない。
+            pause.Tick(Submit(frame));
+
+            Assert.AreEqual(0, _titleReturns, "Enter の連打でタイトルへ戻った（既定が「はい」になっている）");
+            Assert.IsFalse(pause.IsConfirmingReturnToTitle, "「いいえ」を決めても確認が消えない");
+            Assert.IsTrue(pause.IsOpen, "「いいえ」でポーズまで閉じた");
+            Assert.AreEqual(0f, Time.timeScale);
+        }
+
+        [TestCase(1)]
+        [TestCase(-1)]
+        public void ReturnToTitle_Yes_LeavesOnce(int step)
+        {
+            PauseMenu pause = MakePauseCountingTitleReturns();
+            int frame = ChooseReturnToTitle(pause, 600);
+
+            pause.Tick(new PauseMenu.FrameInput(frame++, vertical: step));
+            Assert.AreEqual(0, _titleReturns, "カーソルを動かしただけでタイトルへ戻った");
+
+            pause.Tick(Submit(frame++));
+
+            Assert.AreEqual(1, _titleReturns, "「はい」を決めてもタイトルへ戻らない");
+            Assert.IsFalse(pause.IsOpen);
+            Assert.IsFalse(pause.IsPaused);
+            Assert.IsFalse(pause.IsConfirmingReturnToTitle);
+            Assert.IsFalse(KCDInput.IsBlockedBy(pause));
+            Assert.AreEqual(1f, Time.timeScale);
+
+            // 閉じたあとの Enter でもう一度戻ったりはしない。
+            pause.Tick(Submit(frame));
+            Assert.AreEqual(1, _titleReturns, "タイトルへ戻る処理が二度呼ばれた");
+        }
+
+        [Test]
+        public void ReturnToTitle_Esc_GoesBackToTheListWithoutClosingThePause()
+        {
+            PauseMenu pause = MakePauseCountingTitleReturns();
+            int frame = ChooseReturnToTitle(pause, 700);
+
+            pause.Tick(Menu(frame++));
+
+            Assert.AreEqual(0, _titleReturns);
+            Assert.IsFalse(pause.IsConfirmingReturnToTitle, "Esc で確認が消えない");
+            Assert.IsTrue(pause.IsOpen, "確認を Esc で閉じたらポーズまで閉じた");
+
+            // 一覧に戻ったあとの Esc は、いつもどおりポーズを閉じる。
+            pause.Tick(Menu(frame));
+            Assert.IsFalse(pause.IsOpen);
+            Assert.AreEqual(1f, Time.timeScale);
+        }
+
+        [Test]
+        public void ReturnToTitle_Cancel_GoesBackToTheList()
+        {
+            PauseMenu pause = MakePauseCountingTitleReturns();
+            int frame = ChooseReturnToTitle(pause, 800);
+
+            // パッドの東ボタン（KCDInput.CancelPressed）。一覧では何もしないが、確認では「いいえ」と同じ。
+            pause.Tick(new PauseMenu.FrameInput(frame, cancel: true));
+
+            Assert.AreEqual(0, _titleReturns);
+            Assert.IsFalse(pause.IsConfirmingReturnToTitle, "戻るボタンで確認が消えない");
+            Assert.IsTrue(pause.IsOpen);
+        }
+
+        [Test]
+        public void ReturnToTitle_ConfirmIsForgotten_WhenThePauseIsClosedAndReopened()
+        {
+            PauseMenu pause = MakePauseCountingTitleReturns();
+            int frame = ChooseReturnToTitle(pause, 900);
+
+            pause.SetOpen(false);
+            Assert.IsFalse(pause.IsConfirmingReturnToTitle, "閉じたポーズに確認が残った");
+
+            // 開き直すと一覧の先頭（ゲームに戻る）から。Enter でそのまま再開し、タイトルへは戻らない。
+            pause.Tick(Menu(frame++));
+            Assert.IsFalse(pause.IsConfirmingReturnToTitle);
+            pause.Tick(Submit(frame));
+
+            Assert.AreEqual(0, _titleReturns, "開き直したポーズで前の確認が生きていた");
+            Assert.IsFalse(pause.IsOpen, "開き直したポーズの先頭が「ゲームに戻る」でない");
         }
     }
 }

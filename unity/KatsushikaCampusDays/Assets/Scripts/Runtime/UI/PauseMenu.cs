@@ -4,7 +4,7 @@ using UnityEngine;
 namespace KCD
 {
     /// <summary>
-    /// Esc で開くメニュー。再開 / セーブ / ロード / タイトルへ を上下で選ぶ。
+    /// Esc で開くメニュー。再開 / セーブ / ロード / 設定 / タイトルへ を上下で選ぶ。タイトルへは確認してから戻る。
     /// ボタンイベントに頼らずキーボードだけで完結させ、シーン内参照の配線を減らしている。
     /// </summary>
     public sealed class PauseMenu : MonoBehaviour
@@ -16,13 +16,14 @@ namespace KCD
         public readonly struct FrameInput
         {
             public FrameInput(int frame, bool menu = false, bool submit = false, int vertical = 0,
-                bool consumed = false)
+                bool consumed = false, bool cancel = false)
             {
                 Frame = frame;
                 Menu = menu;
                 Submit = submit;
                 Vertical = vertical;
                 Consumed = consumed;
+                Cancel = cancel;
             }
 
             /// <summary>このフレームの番号（Time.frameCount）。</summary>
@@ -42,7 +43,15 @@ namespace KCD
             /// Esc でクエストログを閉じた（<see cref="QuestLogView.ClosedByMenuFrame"/>）。
             /// </summary>
             public bool Consumed { get; }
+
+            /// <summary>戻る（<see cref="KCDInput.CancelPressed"/>。Esc / 東ボタン）。「タイトルへ戻る」の確認でだけ使う。</summary>
+            public bool Cancel { get; }
         }
+
+        /// <summary>「タイトルへ戻る」の確認の選択肢の位置。上が「はい」、下が「いいえ」。</summary>
+        private const int ConfirmYes = 0;
+
+        private const int ConfirmNo = 1;
 
         private static readonly string[] EntryKeys =
         {
@@ -69,8 +78,22 @@ namespace KCD
         /// </summary>
         private int _settingsRequestedFrame = KCDInput.NoFrame;
 
+        /// <summary>「タイトルへ戻る」の確認を出しているか (#104)。</summary>
+        private bool _confirmingTitle;
+
+        /// <summary>確認でカーソルのある選択肢。出すたびに「いいえ」から始める（進行を消さない側）。</summary>
+        private int _confirmIndex = ConfirmNo;
+
         /// <summary>開いているか。</summary>
         public bool IsOpen => _root != null && _root.activeSelf;
+
+        /// <summary>「タイトルへ戻る」を決めたあとの確認（セーブしていない進行が消える）を出しているか。</summary>
+        public bool IsConfirmingReturnToTitle => _confirmingTitle;
+
+        /// <summary>
+        /// 確認で「はい」を決めたときに呼ぶ処理。null なら GameManager.ReturnToTitle を呼ぶ。テストから差し込む。
+        /// </summary>
+        public System.Action ReturnToTitleAction { get; set; }
 
         /// <summary>
         /// ポーズで時間を止めているか。<see cref="IsOpen"/> と違い、ポーズから開いた設定パネルの間も true。
@@ -142,7 +165,8 @@ namespace KCD
                 menu: KCDInput.MenuPressed,
                 submit: KCDInput.SubmitPressed,
                 vertical: KCDInput.MenuVertical,
-                consumed: KCDInput.ModalClosedThisFrame || (log != null && log.ClosedByMenuFrame == frame)));
+                consumed: KCDInput.ModalClosedThisFrame || (log != null && log.ClosedByMenuFrame == frame),
+                cancel: KCDInput.CancelPressed));
         }
 
         /// <summary>1 フレーム分の処理。<see cref="Update"/> が毎フレーム呼ぶ。テストから直接呼ぶ。</summary>
@@ -180,6 +204,13 @@ namespace KCD
             // 会話を閉じてポーズまで開くことはない。クエストログを開いている間もログ自身の封鎖で止まる。
             if (!AcceptsMenu(IsOpen, KCDInput.GameplayBlocked, KCDInput.IsBlockedBy(this)))
             {
+                return;
+            }
+
+            // 「タイトルへ戻る」の確認の間は、確認だけがキーを使う (#104)。Esc もポーズを閉じずに一覧へ戻す。
+            if (_confirmingTitle && IsOpen)
+            {
+                TickTitleConfirm(input);
                 return;
             }
 
@@ -222,8 +253,9 @@ namespace KCD
                 AudioManager.Instance?.PlayUi(open ? "ui_open" : "ui_close");
             }
 
-            // 開き直しても閉じても、選んだだけでまだ開いていない設定パネルは持ち越さない。
+            // 開き直しても閉じても、選んだだけでまだ開いていない設定パネルと、出していた確認は持ち越さない。
             _settingsRequestedFrame = KCDInput.NoFrame;
+            _confirmingTitle = false;
             _root.SetActive(open);
             Time.timeScale = open ? 0f : 1f;
             _paused = open;
@@ -257,14 +289,83 @@ namespace KCD
             }
 
             var builder = new System.Text.StringBuilder(256);
-            for (int i = 0; i < EntryKeys.Length; i++)
+            if (_confirmingTitle)
             {
-                builder.Append(i == _index ? "<color=#FFD98A>▶ " : "   ");
-                builder.Append(L.Get(EntryKeys[i], EntryFallbacks[i]));
-                builder.Append(i == _index ? "</color>\n" : "\n");
+                // 全角 28 字は文字の大きさ 30 のままだと約 840 になり、ラベルの内側の幅 784 を越えて末尾だけ次の行に落ちる。
+                // 85% (25.5) なら約 714 で 1 行に収まる。
+                builder.Append("<size=85%>");
+                builder.Append(L.Get("ui.pause.confirm_title", "セーブしていない進行は失われます。タイトルへ戻りますか？"));
+                builder.Append("</size>\n\n");
+                AppendEntry(builder, L.Get("ui.common.yes", "はい"), _confirmIndex == ConfirmYes);
+                AppendEntry(builder, L.Get("ui.common.no", "いいえ"), _confirmIndex == ConfirmNo);
+            }
+            else
+            {
+                for (int i = 0; i < EntryKeys.Length; i++)
+                {
+                    AppendEntry(builder, L.Get(EntryKeys[i], EntryFallbacks[i]), i == _index);
+                }
             }
 
             _bodyLabel.text = builder.ToString();
+        }
+
+        private static void AppendEntry(System.Text.StringBuilder builder, string label, bool selected)
+        {
+            builder.Append(selected ? "<color=#FFD98A>▶ " : "   ");
+            builder.Append(label);
+            builder.Append(selected ? "</color>\n" : "\n");
+        }
+
+        /// <summary>
+        /// 「タイトルへ戻る」の確認の 1 フレーム分 (#104)。上下で「はい」「いいえ」を選び、Enter で決める。
+        /// Esc / 戻るは「いいえ」と同じで、ポーズの一覧に戻る（ポーズは閉じない）。
+        /// </summary>
+        private void TickTitleConfirm(FrameInput input)
+        {
+            if (input.Menu || input.Cancel)
+            {
+                EndTitleConfirm();
+                return;
+            }
+
+            if (input.Vertical != 0)
+            {
+                // 選択肢は 2 つなので、上でも下でももう片方へ移る。
+                _confirmIndex = _confirmIndex == ConfirmYes ? ConfirmNo : ConfirmYes;
+                Redraw();
+                AudioManager.Instance?.PlayUi("ui_move");
+            }
+
+            if (!input.Submit)
+            {
+                return;
+            }
+
+            if (_confirmIndex != ConfirmYes)
+            {
+                EndTitleConfirm();
+                return;
+            }
+
+            AudioManager.Instance?.PlayUi("ui_confirm");
+            SetOpen(false);
+            if (ReturnToTitleAction != null)
+            {
+                ReturnToTitleAction();
+            }
+            else
+            {
+                GameManager.Instance.ReturnToTitle();
+            }
+        }
+
+        /// <summary>確認を消してポーズの一覧に戻る。カーソルは「タイトルへ戻る」の行のまま。</summary>
+        private void EndTitleConfirm()
+        {
+            _confirmingTitle = false;
+            Redraw();
+            AudioManager.Instance?.PlayUi("ui_close");
         }
 
         /// <summary>選んだ行を実行する。frame は決めた Enter のフレーム。</summary>
@@ -294,8 +395,11 @@ namespace KCD
                     _settingsRequestedFrame = frame;
                     break;
                 case 4:
-                    SetOpen(false);
-                    GameManager.Instance.ReturnToTitle();
+                    // すぐには戻らない。ReturnToTitle はセーブを書かずにシーンを読み替えるので、
+                    // セーブしていない進行が消えることを伝えて確かめる (#104)。戻るのは TickTitleConfirm の「はい」。
+                    _confirmingTitle = true;
+                    _confirmIndex = ConfirmNo;
+                    Redraw();
                     break;
             }
         }
