@@ -22,20 +22,28 @@ namespace KCD.Editor
         /// <summary>最初の屋内を置く x。NavMesh の範囲（x ≤ 243）から十分離す。</summary>
         private const float FirstSlotX = 1200f;
 
-        /// <summary>隣の屋内との隙間。</summary>
+        /// <summary>隣の屋内との隙間。InteriorBackdropStage.Margin（遠景の帯）はこの半分より小さくする。</summary>
         private const float Gap = 80f;
+
+        /// <summary>
+        /// 屋内の並びの下に敷く地面の高さ（m）。窓の外の近景 ext_* の地面（床から -0.03〜-0.055, #84）と
+        /// 遠景のドームの地面（InteriorBackdropStage.GroundY）より下に置き、どちらも隠さない (#60)。
+        /// </summary>
+        public const float OutsideGroundY = -0.10f;
 
         /// <summary>
         /// 窓のすぐ外の近景（舗装・芝・生垣・木）のメッシュ名の頭。kcd_interior が外周の壁の外にだけ置く (#45)。
         /// プレイヤーは届かないので当たり判定を付けず、描くだけにする (#60)。
         /// </summary>
-        public const string ExteriorPrefix = "ext_";
+        public const string ExteriorPrefix = InteriorBackdrop.ExteriorPrefix;
 
-        /// <summary>窓の外の近景のメッシュか（名前が ext_ で始まる。大文字小文字は見ない）。</summary>
+        /// <summary>
+        /// 窓の外の近景のメッシュか（名前が ext_ で始まる。大文字小文字は見ない）。
+        /// テスト（KCD.Runtime しか参照できない）からも同じ判定を使えるよう、本体はランタイム側に置く。
+        /// </summary>
         public static bool IsExteriorDressing(string objectName)
         {
-            return !string.IsNullOrEmpty(objectName)
-                && objectName.StartsWith(ExteriorPrefix, System.StringComparison.OrdinalIgnoreCase);
+            return InteriorBackdrop.IsExteriorDressing(objectName);
         }
 
         /// <summary>屋内を全部置いて登録する。PlaceSystems（InteriorLoader）のあとに呼ぶ。</summary>
@@ -82,6 +90,7 @@ namespace KCD.Editor
                 int zones = AddPoiZones(interior.transform, id);
                 SeatFactory.PlaceInterior(interior.transform, id);
                 Register(loader, interior.transform, id);
+                InteriorBackdropStage.Build(interior.transform, id, bounds);
                 placed++;
 
                 EditorPaths.Report("屋内 " + id + ": x " + bounds.min.x.ToString("F0") + ".." + bounds.max.x.ToString("F0")
@@ -93,13 +102,16 @@ namespace KCD.Editor
             EditorPaths.Report("屋内を " + placed + " 棟置きました。");
         }
 
-        /// <summary>窓の外に見える地面。無いと空の下半分がそのまま見える。</summary>
+        /// <summary>
+        /// 窓の外に見える地面。無いと空の下半分がそのまま見える。遠景のドームがある屋内ではその下に隠れ、
+        /// サイドカーが無くてドームを置けなかった屋内でだけ見える。
+        /// </summary>
         private static void AddOutsideGround(Transform group, float x0, float x1)
         {
             GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
             ground.name = "OutsideGround";
             ground.transform.SetParent(group, false);
-            ground.transform.position = new Vector3((x0 + x1) * 0.5f, -0.06f, 30f);
+            ground.transform.position = new Vector3((x0 + x1) * 0.5f, OutsideGroundY, 30f);
             // Plane は 10 m 四方なので 1/10 で割る。
             ground.transform.localScale = new Vector3((x1 - x0) * 0.1f, 1f, 60f);
             ground.GetComponent<MeshRenderer>().sharedMaterial = MaterialLibrary.EnsureCampus("grass_dark");
@@ -113,7 +125,11 @@ namespace KCD.Editor
             CampusStage.Ignore(ground);
         }
 
-        /// <summary>当たり判定・レイヤー・静的フラグ。NavMesh からは外す。ワールドの AABB を返す。</summary>
+        /// <summary>
+        /// 当たり判定・レイヤー・静的フラグ。NavMesh からは外す。ワールドの AABB を返す。
+        /// AABB は建物だけを囲み、窓の外の近景 ext_*（外周から約 30 m）は入れない。入れるとスロットの並び・
+        /// 中央の明かり・遠景の帯が近景の大きさで決まってしまう (#60, #84)。
+        /// </summary>
         private static Bounds Dress(GameObject interior)
         {
             int groundLayer = LayerMask.NameToLayer("Ground");
@@ -145,7 +161,7 @@ namespace KCD.Editor
                     | StaticEditorFlags.OccluderStatic | StaticEditorFlags.OccludeeStatic);
 
                 Renderer renderer = go.GetComponent<Renderer>();
-                if (renderer == null)
+                if (renderer == null || !CountsAsBuilding(renderer))
                 {
                     continue;
                 }
@@ -162,6 +178,17 @@ namespace KCD.Editor
             }
 
             return any ? bounds : new Bounds(interior.transform.position, Vector3.one);
+        }
+
+        /// <summary>
+        /// 屋内の大きさ（AABB）に数えるか。窓の外の近景 ext_* と遠景のドームは建物の外なので数えない (#60)。
+        /// DormStage からも同じ判定で使う。
+        /// </summary>
+        public static bool CountsAsBuilding(Renderer renderer)
+        {
+            return renderer != null
+                && !IsExteriorDressing(renderer.gameObject.name)
+                && renderer.GetComponent<InteriorBackdrop>() == null;
         }
 
         /// <summary>床メッシュの継ぎ目から落ちないよう、床の少し下に見えない板を敷く。</summary>
@@ -251,6 +278,11 @@ namespace KCD.Editor
             bool any = false;
             foreach (Renderer renderer in interior.GetComponentsInChildren<Renderer>(true))
             {
+                if (!CountsAsBuilding(renderer))
+                {
+                    continue;
+                }
+
                 if (!any)
                 {
                     bounds = renderer.bounds;
