@@ -80,6 +80,53 @@ namespace KCD.Tests
         }
 
         [Test]
+        public void DistanceToSegment_MeasuresToTheNearestPointOfTheSegment()
+        {
+            // 足元（0, 0, 0）から見る点（0, 1.47, 0）までの芯。
+            Vector3 feet = Vector3.zero;
+            Vector3 aim = new Vector3(0f, 1.47f, 0f);
+
+            Assert.AreEqual(0.5f, CameraMath.DistanceToSegment(new Vector3(0.5f, 1f, 0f), feet, aim), 1e-5f, "芯の横");
+            Assert.AreEqual(1f, CameraMath.DistanceToSegment(new Vector3(0f, 2.47f, 0f), feet, aim), 1e-5f, "頭の上は見る点から");
+            Assert.AreEqual(5f, CameraMath.DistanceToSegment(new Vector3(3f, -4f, 0f), feet, aim), 1e-5f, "足の下は足元から");
+            Assert.AreEqual(2f, CameraMath.DistanceToSegment(new Vector3(0f, 0f, 2f), feet, feet), 1e-5f, "長さ 0 の芯は点");
+        }
+
+        [Test]
+        public void PushOutOfCapsule_MovesInsidePointsOntoTheSurface()
+        {
+            Vector3 feet = Vector3.zero;
+            Vector3 aim = new Vector3(0f, 1.47f, 0f);
+            const float radius = 0.6f;
+
+            Vector3 pushed = CameraMath.PushOutOfCapsule(new Vector3(0.2f, 1f, 0f), feet, aim, radius);
+            Assert.AreEqual(radius, CameraMath.DistanceToSegment(pushed, feet, aim), 1e-4f);
+            Assert.AreEqual(1f, pushed.y, 1e-5f, "芯から真横へ出す");
+            Assert.Greater(pushed.x, 0.2f);
+
+            Vector3 above = CameraMath.PushOutOfCapsule(new Vector3(0f, 1.6f, 0f), feet, aim, radius);
+            Assert.AreEqual(1.47f + radius, above.y, 1e-4f, "頭の上は上へ出す");
+        }
+
+        [Test]
+        public void PushOutOfCapsule_LeavesOutsidePointsAndHandlesTheAxis()
+        {
+            Vector3 feet = Vector3.zero;
+            Vector3 aim = new Vector3(0f, 1.47f, 0f);
+            Vector3 outside = new Vector3(0f, 1f, -2f);
+
+            Assert.AreEqual(outside, CameraMath.PushOutOfCapsule(outside, feet, aim, 0.6f));
+
+            // 芯の上にあると向きが決まらない。縦の芯なら +Z へ出す。
+            Vector3 onAxis = CameraMath.PushOutOfCapsule(new Vector3(0f, 1f, 0f), feet, aim, 0.6f);
+            Assert.AreEqual(0f, onAxis.x, 1e-5f);
+            Assert.AreEqual(1f, onAxis.y, 1e-5f);
+            Assert.AreEqual(0.6f, onAxis.z, 1e-5f);
+
+            Assert.AreEqual(outside, CameraMath.PushOutOfCapsule(outside, feet, aim, -1f), "負の半径は押し出さない");
+        }
+
+        [Test]
         public void MaxOrbitHeight_MatchesTheOutdoorOrbit()
         {
             // 屋外は半径 4.2 m・倍率最大 1.8・縦角最大 62 度で、見る点の上 6.67 m まで上がる。

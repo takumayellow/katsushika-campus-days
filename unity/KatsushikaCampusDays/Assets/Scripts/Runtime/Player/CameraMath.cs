@@ -55,6 +55,49 @@ namespace KCD
             return center + offset.normalized * limit;
         }
 
+        /// <summary>点 point から線分 a–b までの最短距離。</summary>
+        public static float DistanceToSegment(Vector3 point, Vector3 a, Vector3 b)
+        {
+            return Vector3.Distance(point, ClosestOnSegment(point, a, b));
+        }
+
+        /// <summary>
+        /// 線分 a–b を芯にした半径 radius のカプセルの内側にある点を、芯から離す向きに表面まで出す。外側ならそのまま。
+        /// 点が芯の上にあって向きが決まらないときは、芯に直交する水平の向き（芯が縦なら +Z）へ出す。
+        /// </summary>
+        public static Vector3 PushOutOfCapsule(Vector3 point, Vector3 a, Vector3 b, float radius)
+        {
+            float limit = Mathf.Max(0f, radius);
+            Vector3 closest = ClosestOnSegment(point, a, b);
+            Vector3 offset = point - closest;
+            if (offset.sqrMagnitude >= limit * limit)
+            {
+                return point;
+            }
+
+            Vector3 direction = offset.sqrMagnitude > 1e-10f ? offset.normalized : PerpendicularTo(b - a);
+            return closest + direction * limit;
+        }
+
+        private static Vector3 ClosestOnSegment(Vector3 point, Vector3 a, Vector3 b)
+        {
+            Vector3 axis = b - a;
+            float lengthSquared = axis.sqrMagnitude;
+            if (lengthSquared < 1e-10f)
+            {
+                return a;
+            }
+
+            float t = Mathf.Clamp01(Vector3.Dot(point - a, axis) / lengthSquared);
+            return a + axis * t;
+        }
+
+        private static Vector3 PerpendicularTo(Vector3 axis)
+        {
+            Vector3 flat = Vector3.ProjectOnPlane(Vector3.forward, axis.sqrMagnitude > 1e-10f ? axis.normalized : Vector3.up);
+            return flat.sqrMagnitude > 1e-10f ? flat.normalized : Vector3.right;
+        }
+
         /// <summary>
         /// 球の軌道（CinemachineOrbitalFollow の Sphere）でカメラが見る点より上に出る最大の高さ。
         /// 半径 × 半径倍率の上限 × sin(縦角の上限)。縦角が負なら 0。
