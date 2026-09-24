@@ -13,6 +13,12 @@ from mathutils.geometry import tessellate_polygon
 from . import geom, mats
 
 
+# 面ごとの色を書く頂点カラー（面の角ごと, sRGB の 8 bit）の名前。mats.py のプレビューが同じ名前で読む。
+# FBX には sRGB のまま出る（build_campus.py の FBX_OPTS は colors_type 既定の SRGB）。
+# Unity 側は KCD/Toon の _VERTEXCOLOR_ON がリニアに直して基本色に掛ける（#51）。
+COLOR_ATTR = mats.COLOR_ATTR
+
+
 class MeshBuilder:
     def __init__(self, name):
         self.name = name
@@ -21,6 +27,9 @@ class MeshBuilder:
         self.face_mat = []
         self.mat_names = []
         self._mat_index = {}
+        # 面の番号 -> sRGB (r, g, b)。色を渡した面が 1 つも無ければ None のままで、
+        # 頂点カラーを書かない（campus.fbx の建物・地面は今までどおり色なし）。
+        self.face_col = None
 
     # ---- マテリアル ----
     def mat(self, name):
@@ -32,14 +41,18 @@ class MeshBuilder:
         return i
 
     # ---- 低レベル ----
-    def add_face(self, pts, mat):
-        """pts: [(x,y,z), ...] 凸または平面の n 角形。"""
+    def add_face(self, pts, mat, col=None):
+        """pts: [(x,y,z), ...] 凸または平面の n 角形。col は面の色（sRGB 0..1 の 3 つ）。"""
         if len(pts) < 3:
             return
         base = len(self.verts)
         self.verts.extend(pts)
         self.faces.append(tuple(range(base, base + len(pts))))
         self.face_mat.append(self.mat(mat) if isinstance(mat, str) else mat)
+        if col is not None:
+            if self.face_col is None:
+                self.face_col = {}
+            self.face_col[len(self.faces) - 1] = tuple(col)
 
     def add_quad(self, a, b, c, d, mat):
         self.add_face([a, b, c, d], mat)
@@ -156,23 +169,28 @@ class MeshBuilder:
         格子の線から eps 以内の頂点は「線の上」とみなし、細い切れ端を作らない。
         戻り値: (切った面の数, 切った後の面の数)。"""
         verts, faces, fmat = self.verts, self.faces, self.face_mat
+        cols = self.face_col
         new_verts, new_faces, new_mat = [], [], []
+        new_col = {} if cols is not None else None
         n_split = 0
 
-        def emit(poly, mi):
+        def emit(poly, mi, col):
             base = len(new_verts)
             new_verts.extend(poly)
             new_faces.append(tuple(range(base, base + len(poly))))
             new_mat.append(mi)
+            if col is not None:
+                new_col[len(new_faces) - 1] = col
 
-        for face, mi in zip(faces, fmat):
+        for fi, (face, mi) in enumerate(zip(faces, fmat)):
+            col = cols.get(fi) if cols is not None else None
             poly = [verts[k] for k in face]
             xs = [p[0] for p in poly]
             ys = [p[1] for p in poly]
             lines = [(0, k * cell) for k in _grid_range(min(xs), max(xs), cell, eps)]
             lines += [(1, k * cell) for k in _grid_range(min(ys), max(ys), cell, eps)]
             if not lines:
-                emit(poly, mi)
+                emit(poly, mi, col)
                 continue
             n_split += 1
             pieces = [poly] if _is_convex(poly) else _triangulate(poly)
@@ -189,8 +207,9 @@ class MeshBuilder:
                         nxt.append(pc)
                 pieces = nxt
             for pc in pieces:
-                emit(pc, mi)
+                emit(pc, mi, col)
         self.verts, self.faces, self.face_mat = new_verts, new_faces, new_mat
+        self.face_col = new_col
         return n_split, len(new_faces)
 
     # ---- 出力 ----
@@ -205,6 +224,17 @@ class MeshBuilder:
             me.materials.append(mats.get(name))
         for poly, mi in zip(me.polygons, self.face_mat):
             poly.material_index = mi
+        if self.face_col:
+            # remove_doubles の前に面の角へ書く。bmesh を通しても角の色はそのまま残る
+            # （面の番号は重複頂点をまとめると変わりうるので、あとからは書かない）。
+            attr = me.color_attributes.new(COLOR_ATTR, "BYTE_COLOR", "CORNER")
+            flat = [1.0] * (4 * len(me.loops))
+            for pi, col in self.face_col.items():
+                for li in me.polygons[pi].loop_indices:
+                    flat[4 * li:4 * li + 3] = col
+            attr.data.foreach_set("color_srgb", flat)
+            me.color_attributes.active_color = attr
+            me.color_attributes.render_color_index = me.color_attributes.active_color_index
         obj = bpy.data.objects.new(self.name, me)
         (collection or bpy.context.scene.collection).objects.link(obj)
         if merge and len(self.verts) > 0:

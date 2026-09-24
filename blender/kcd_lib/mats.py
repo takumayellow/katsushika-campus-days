@@ -67,6 +67,15 @@ PALETTE = {
     "bike_tire":       ((0.005, 0.005, 0.005), 0.85, 0.0, 1.0),  # #0F0F0F
 }
 
+# 面ごとの色を持たせる頂点カラーの名前（mesh.MeshBuilder が書く）。
+COLOR_ATTR = "Col"
+
+# 基本色を頂点カラーで決めるマテリアル。Blender のプレビューでは頂点カラーを基本色につなぎ、
+# Unity 側は MaterialLibrary.VertexColored が _VERTEXCOLOR_ON を入れて白 × 頂点カラーにする（#51）。
+# 葉は 1 本の木の中で PALETTE の leaf_dark〜leaf_top の間の色を面ごとに焼くので、
+# 上の "leaf" の値はプレビューのワークベンチ表示と、CampusColors との突き合わせにだけ使う。
+VERTEX_COLORED = ("leaf",)
+
 # 背景建物用のクリーム〜グレー
 BG_COLORS = [
     ((0.780, 0.755, 0.700), 0.85),
@@ -92,6 +101,10 @@ def _make(name, rgb, rough, metal, alpha):
     bsdf.inputs["Metallic"].default_value = metal
     if "Alpha" in bsdf.inputs:
         bsdf.inputs["Alpha"].default_value = alpha
+    if name in VERTEX_COLORED:
+        attr = mat.node_tree.nodes.new("ShaderNodeVertexColor")
+        attr.layer_name = COLOR_ATTR
+        mat.node_tree.links.new(attr.outputs["Color"], bsdf.inputs["Base Color"])
     mat.diffuse_color = (rgb[0], rgb[1], rgb[2], alpha)  # Workbench / ビューポート用
     mat.roughness = rough
     mat.metallic = metal
