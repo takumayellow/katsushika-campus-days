@@ -72,7 +72,7 @@ blender/build_campus.py     ◀────────────────�
 blender/build_characters.py                                  ─▶ unity/.../Assets/Models/Characters/<id>/
 blender/build_interiors.py                                   ─▶ unity/.../Assets/Models/Interiors/*.fbx + *.json
 tools/audio/build_audio.py                                   ─▶ unity/.../Assets/Audio/{BGM,SE,Ambient}/*.wav
-tools/fetch_textures.py                                      ─▶ unity/.../Assets/Textures/surfaces/*.jpg（ambientCG）
+tools/fetch_textures.py                                      ─▶ unity/.../Assets/Textures/surfaces/*.jpg（ambientCG）+ tiling.json
 Unity -batchmode -executeMethod KCD.Editor.SceneBuilder.BuildAll   ─▶ Scenes/{Title,Campus}.unity
 Unity -batchmode -executeMethod KCD.Editor.BuildPlayer.BuildWindows ─▶ build/Windows/
 ```

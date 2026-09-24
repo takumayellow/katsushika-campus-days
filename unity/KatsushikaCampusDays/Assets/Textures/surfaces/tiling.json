@@ -1,0 +1,44 @@
+{
+  "surfaces": [
+    {
+      "material": "asphalt",
+      "tile_cm": 250
+    },
+    {
+      "material": "bed_soil",
+      "tile_cm": 140
+    },
+    {
+      "material": "brick_red",
+      "tile_cm": 200
+    },
+    {
+      "material": "concrete_dark",
+      "tile_cm": 110
+    },
+    {
+      "material": "concrete_grey",
+      "tile_cm": 110
+    },
+    {
+      "material": "concrete_light",
+      "tile_cm": 110
+    },
+    {
+      "material": "grass",
+      "tile_cm": 140
+    },
+    {
+      "material": "grass_dark",
+      "tile_cm": 140
+    },
+    {
+      "material": "stone_dark",
+      "tile_cm": 200
+    },
+    {
+      "material": "stone_light",
+      "tile_cm": 200
+    }
+  ]
+}

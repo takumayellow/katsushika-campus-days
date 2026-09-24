@@ -1,7 +1,7 @@
-"""tools/fetch_textures.py: 面のテクスチャの加工と、焼いた画像・.meta の整合 (#78)。
+"""tools/fetch_textures.py: 面のテクスチャの加工と、焼いた画像・tiling.json・.meta の整合 (#78)。
 
 ネットワークには出ない。ambientCG の API と zip は偽物に差し替え、加工は合成画像で、
-整合はリポジトリに置いた jpg / .meta / MaterialLibrary.cs / CREDITS.md で確かめる。
+整合はリポジトリに置いた jpg / tiling.json / .meta / MaterialLibrary.cs / CREDITS.md で確かめる。
 """
 
 import io
@@ -181,13 +181,18 @@ def test_bake_detail_blends_both_maps():
     assert _max_diff(both, only_ao) > 10
 
 
+def _color_map(side=256):
+    """Color の代わり。チャンネルごとに違う粒が乗った、巻いてつながる画像。"""
+    return Image.merge("RGB", [ImageChops.add(_periodic(side, side // 2), _noise((side, side), s), scale=2) for s in (1, 2, 3)])
+
+
 def test_pipeline_meets_report_criteria(tmp_path, monkeypatch):
     """main が流す順（縮小 → 彩度と明暗 → 凹凸 → 色合わせ → jpg）で、report の基準を満たす。
 
     --check はリポジトリの jpg を測るだけなので、作る側の関数はここで通しておく。
     """
     side = 256
-    color = Image.merge("RGB", [ImageChops.add(_periodic(side, side // 2), _noise((side, side), s), scale=2) for s in (1, 2, 3)])
+    color = _color_map(side)
     monkeypatch.setattr(ft, "download_maps", lambda asset, variant, wanted: {"Color": color, **_detail_maps(side)})
     surface = {"asset": "Bricks101", "size_px": 128, "saturation": 0.4, "contrast": 0.7, "depth": 0.5, "highpass_px": 8}
 
@@ -403,12 +408,119 @@ def test_ensure_meta_folder(unity_project):
     assert "DefaultImporter:" in lines
 
 
+def test_ensure_meta_text_importer_matches_unity(unity_project):
+    """tiling.json の .meta は、Unity が .json に書く .meta（trees.json.meta）と GUID 以外が同じ。"""
+    path = unity_project / "Assets" / "Textures" / "tiling.json"
+    assert ft.ensure_meta(path, importer="TextScriptImporter") is True
+    ours = ft.meta_path(path).read_text(encoding="utf-8").splitlines()
+    reference = ft.ROOT / "unity" / "KatsushikaCampusDays" / "Assets" / "Models" / "Campus" / "trees.json.meta"
+    theirs = reference.read_text(encoding="utf-8").splitlines()
+    assert ours[1] == f"guid: {ft.meta_guid(path)}"
+    assert ours[:1] + ours[2:] == theirs[:1] + theirs[2:]
+
+
+# ---- tiling.json ----
+
+def test_tiling_covers_every_manifest_material_in_name_order(manifest):
+    text = ft.tiling_text(manifest)
+    tile_cm = {m: s["tile_cm"] for s in manifest["surfaces"] for m in s["materials"]}
+    entries = json.loads(text)["surfaces"]
+    assert [e["material"] for e in entries] == sorted(tile_cm)
+    assert all(e["tile_cm"] == tile_cm[e["material"]] for e in entries)
+    # 2 字下げ・LF・末尾に改行 1 つ
+    assert text.startswith('{\n  "surfaces": [\n    {\n      "material": ')
+    assert text.endswith("]\n}\n") and "\r" not in text
+
+
+@pytest.fixture
+def fake_project(tmp_path, monkeypatch):
+    """manifest・配色・ambientCG を偽物にした、Unity プロジェクト入りのリポジトリ。焼いた先のフォルダを返す。"""
+    look = {"size_px": 128, "saturation": 0.4, "contrast": 0.7, "depth": 0.5, "highpass_px": 8}
+    manifest = {
+        "source": {"site": "ambientCG", "license": "CC0 1.0 Universal"},
+        "download": {"variant": "1K-JPG"},
+        "output": {"folder": "unity/P/Assets/Textures/surfaces", "format": "jpg", "quality": 92},
+        "surfaces": [
+            # 名前の順と manifest の書き順をわざと違えておく
+            {**look, "asset": "Bricks101", "tile_cm": 200, "materials": ["wall_b", "wall_a"]},
+            {**look, "asset": "Grass004", "tile_cm": 140, "materials": ["lawn"]},
+        ],
+    }
+    (tmp_path / "surfaces.json").write_text(json.dumps(manifest), encoding="utf-8")
+
+    maps = {"Color": _color_map(), **_detail_maps()}
+    monkeypatch.setattr(ft, "ROOT", tmp_path)
+    monkeypatch.setattr(ft, "MANIFEST", tmp_path / "surfaces.json")
+    monkeypatch.setattr(ft, "UNITY_PROJECT", tmp_path / "unity" / "P")
+    monkeypatch.setattr(ft, "download_maps", lambda asset, variant, wanted: maps)
+    monkeypatch.setattr(ft, "load_campus_colors", lambda: {"wall_a": "8E3B2F", "wall_b": "B4B2AC", "lawn": "6FA84A"})
+    return tmp_path / manifest["output"]["folder"]
+
+
+def test_main_writes_whole_tiling_even_with_only(fake_project):
+    """--only で焼くのが 1 枚でも、tiling.json は manifest の全マテリアルで書く。
+
+    一部だけを書くと、CampusSurfaces が載っていない面から画像を外してしまう。
+    """
+    assert ft.main(["--only", "lawn"]) == 0
+    assert [p.name for p in fake_project.glob("*.jpg")] == ["lawn.jpg"]
+
+    tiling = fake_project / ft.TILING_NAME
+    assert json.loads(tiling.read_text(encoding="utf-8")) == {
+        "surfaces": [
+            {"material": "lawn", "tile_cm": 140},
+            {"material": "wall_a", "tile_cm": 200},
+            {"material": "wall_b", "tile_cm": 200},
+        ]
+    }
+    meta = ft.meta_path(tiling).read_text(encoding="utf-8")
+    assert meta.startswith(f"fileFormatVersion: 2\nguid: {ft.meta_guid(tiling)}\nTextScriptImporter:\n")
+
+
+def test_check_flags_missing_or_stale_tiling(fake_project, capsys):
+    """--check は tiling.json を書かない。.meta が無い・manifest と違う・無い、のどれでも NG で落ちる。"""
+    tiling = fake_project / ft.TILING_NAME
+    assert ft.main([]) == 0
+    assert ft.main(["--check"]) == 0
+
+    # Windows で CRLF に変えて checkout されたものは同じとみなす
+    tiling.write_bytes(tiling.read_bytes().replace(b"\n", b"\r\n"))
+    assert ft.main(["--check"]) == 0
+    capsys.readouterr()
+
+    ft.meta_path(tiling).unlink()
+    assert ft.main(["--check"]) == 1
+    assert not ft.meta_path(tiling).exists()
+    ft.ensure_meta(tiling, importer="TextScriptImporter")
+
+    stale = tiling.read_text(encoding="utf-8").replace("140", "150")
+    tiling.write_text(stale, encoding="utf-8")
+    assert ft.main(["--check"]) == 1
+    assert tiling.read_text(encoding="utf-8") == stale
+
+    tiling.unlink()
+    assert ft.main(["--check"]) == 1
+    assert not tiling.exists()
+
+    # 落ちたのは tiling.json だけで、jpg はどれも ok のまま
+    ng = [line.strip() for line in capsys.readouterr().out.splitlines() if line.lstrip().startswith("NG")]
+    assert len(ng) == 3 and all(ft.TILING_NAME in line for line in ng)
+    assert ".meta が無い" in ng[0] and "manifest の tile_cm と違う" in ng[1] and "まだ書かれていない" in ng[2]
+
+
 # ---- リポジトリに置いた成果物 ----
 
 def _committed_textures(manifest):
     folder = ft.ROOT / manifest["output"]["folder"]
     suffix = manifest["output"]["format"]
     return [folder / f"{m}.{suffix}" for s in manifest["surfaces"] for m in s["materials"]]
+
+
+def _committed_assets(manifest):
+    """fetch_textures が .meta を書くもの全部: フォルダ・tiling.json・jpg。"""
+    textures = _committed_textures(manifest)
+    folder = textures[0].parent
+    return [folder, folder / ft.TILING_NAME, *textures]
 
 
 def _meta_guid_line(path):
@@ -419,14 +531,12 @@ def _meta_guid_line(path):
 
 def test_committed_metas_use_path_guids(manifest):
     """Unity が .meta を書き直しても GUID は残る。パスから決まる値のままか見る。"""
-    paths = _committed_textures(manifest)
-    for path in [paths[0].parent, *paths]:
+    for path in _committed_assets(manifest):
         assert _meta_guid_line(path) == ft.meta_guid(path), path
 
 
 def test_committed_meta_guids_are_unique_in_project(manifest):
-    paths = _committed_textures(manifest)
-    paths.append(paths[0].parent)
+    paths = _committed_assets(manifest)
     ours = {ft.meta_guid(p) for p in paths}
     own_metas = {ft.meta_path(p) for p in paths}
     others = {}

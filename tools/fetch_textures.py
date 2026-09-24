@@ -25,10 +25,14 @@
 
 zip は data/textures/.cache/ に残す（gitignore 済み）。2 回目からは落とし直さない。
 
+1 枚が何 cm 四方か（manifest の tile_cm）は、同じフォルダの tiling.json に全マテリアル分を書く。
+CampusSurfaces.cs がそれを読んで、タイリングを 100 / tile_cm にする。
+
 画像の横に Unity の .meta が無ければ、パスから決まる GUID で書く。Unity を開いた
 セッションがそれぞれ .meta を作ると GUID がばらばらになり、マテリアルからの参照が
 どちらか片方で切れる。取り込み設定は既定（Default / Repeat / sRGB / ミップマップ有り）の
 ままでよいので、.meta には GUID しか書かない。残りは Unity が取り込むときに書き足す。
+tiling.json の .meta だけは、短い TextScriptImporter の既定まで書く。
 """
 
 from __future__ import annotations
@@ -404,11 +408,15 @@ def meta_guid(path: Path) -> str:
     return uuid.uuid5(uuid.NAMESPACE_URL, META_GUID_SEED + relative).hex
 
 
-def ensure_meta(path: Path, folder: bool = False) -> bool:
+def ensure_meta(path: Path, folder: bool = False, importer: str | None = None) -> bool:
     """.meta が無ければ書く。書いたら True。
 
     すでにある .meta は触らない。Unity が取り込むと取り込み設定を書き足すので、
     そちらを上書きすると設定が消える。
+
+    importer を渡すと、その取り込み設定の既定の 4 行まで書く。TextScriptImporter のように
+    短くて Unity の版で変わらないものは、ここで書き切っておけば Unity を開いても .meta が
+    書き換わらない。画像の TextureImporter は長く版で変わるので、GUID だけにしておく。
     """
     meta = meta_path(path)
     if meta.exists():
@@ -417,9 +425,12 @@ def ensure_meta(path: Path, folder: bool = False) -> bool:
     lines = ["fileFormatVersion: 2", f"guid: {meta_guid(path)}"]
     if folder:
         # Assets/Audio/Ambient.meta など、Unity がフォルダに書くものと同じ形
+        lines.append("folderAsset: yes")
+        importer = "DefaultImporter"
+    if importer:
+        # フォルダの DefaultImporter も、trees.json.meta の TextScriptImporter も同じ 4 行
         lines += [
-            "folderAsset: yes",
-            "DefaultImporter:",
+            f"{importer}:",
             "  externalObjects: {}",
             "  userData: ",
             "  assetBundleName: ",
@@ -533,6 +544,53 @@ def finish_material(
     return report(material, path, target_hex)
 
 
+# ---------------------------------------------------------------------------
+# tiling.json（1 枚が何 cm 四方か）。CampusSurfaces.cs が読んでタイリングを 100 / tile_cm にする
+# ---------------------------------------------------------------------------
+
+TILING_NAME = "tiling.json"
+
+
+def tiling_text(manifest: dict) -> str:
+    """manifest の全マテリアルの tile_cm を、CampusSurfaces.cs が読む形の JSON にする。
+
+    --only とは関係なく全部を書く。CampusSurfaces は tiling.json に無いマテリアルから
+    このフォルダの画像を外すので、一部だけを書くと残りの面が単色に戻る。
+    並びはマテリアル名の順に固定し、manifest の書き順を変えただけで差分が出ないようにする。
+    """
+    entries = [
+        {"material": material, "tile_cm": surface["tile_cm"]}
+        for surface in manifest["surfaces"]
+        for material in surface["materials"]
+    ]
+    entries.sort(key=lambda entry: entry["material"])
+    return json.dumps({"surfaces": entries}, ensure_ascii=False, indent=2) + "\n"
+
+
+def finish_tiling(path: Path, text: str, check: bool, in_unity: bool) -> bool:
+    """tiling.json を書いて報告する。書けていれば True。
+
+    check（--check）のときは書かずに、今あるものが text と同じかと .meta があるかを確かめる。
+    読むときは改行を \\n に揃えて比べる（Windows で CRLF に変えて checkout されても NG にしない）。
+    """
+    if not check:
+        path.write_text(text, encoding="utf-8", newline="\n")
+        if in_unity:
+            ensure_meta(path, importer="TextScriptImporter")
+    elif not path.exists():
+        print(f"  NG {path.name:<16} まだ書かれていない: {path.relative_to(ROOT)}")
+        return False
+    elif path.read_text(encoding="utf-8") != text:
+        print(f"  NG {path.name:<16} manifest の tile_cm と違う（--check を外して流すと書き直す）")
+        return False
+    elif in_unity and not meta_path(path).exists():
+        print(f"  NG {path.name:<16} .meta が無い（--check を外して流すと書く）")
+        return False
+
+    print(f"  ok {path.name:<16} {len(json.loads(text)['surfaces'])} マテリアルの tile_cm")
+    return True
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--check", action="store_true", help="焼かずに、今ある画像を測って報告する")
@@ -565,6 +623,9 @@ def main(argv: list[str] | None = None) -> int:
         for material in wanted:
             path = output / f"{material}.{suffix}"
             every_ok &= finish_material(material, path, colors.get(material), shaped, quality, in_unity)
+
+    print("タイリング")
+    every_ok &= finish_tiling(output / TILING_NAME, tiling_text(manifest), args.check, in_unity)
 
     print("すべて狙いどおり" if every_ok else "狙いから外れたものがある")
     return 0 if every_ok else 1
