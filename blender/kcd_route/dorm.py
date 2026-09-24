@@ -66,7 +66,7 @@ PARAPET_T = 0.25    # パラペットの厚み
 CORE_S = 2.40       # 角（玄関面と東北東面の出会う角 F）の階段室: 玄関面に沿う幅
 CORE_U = 5.00       # 同: 東北東面に沿う幅
 CORE_TOP = 1.10     # 階段室の屋上からの立ち上がり（屋上のガラス手すりの天端とそろう）
-TERRACE_T0 = 4.60   # 屋上テラス（玄関面の上）の西端の t。ここに背の高いメッシュフェンス
+TERRACE_T0 = 4.60   # 屋上テラス（玄関面の上）の西端の t。ここにメッシュフェンス、縁のガラス手すりもここから
 TERRACE_U = 13.50   # 同: 北端の u。ここに縦格子の手すり
 
 # 玄関面 1 階の割り付け（E からの t）。茶色いパネル → 小窓のある凹んだ壁 → 割肌の石 →
@@ -306,19 +306,20 @@ def _roof_terrace(trim, ff, core_t, h):
     """屋上テラス（玄関面の上）と、その奥の塔屋・空調の室外機。位置は航空写真から。"""
     t0, u1 = TERRACE_T0, TERRACE_U
     _box(trim, ff, t0, core_t, -u1, -0.25, h, h + 0.10, "deck_wood")
-    # 玄関面の縁: 低い立ち上がり + ガラス手すり
-    _box(trim, ff, 0.25, core_t, -0.25, 0.0, h, h + 0.30, "dorm_white")
-    _box(trim, ff, 0.25, core_t, -0.15, -0.11, h + 0.30, h + 1.10, "glass_clear")
-    _box(trim, ff, 0.25, core_t, -0.17, -0.09, h + 1.10, h + 1.18, "metal_white")
-    n_post = max(2, int(round((core_t - 0.25) / 1.8)) + 1)
+    # 玄関面の縁: 低い立ち上がり + ガラス手すり。テラスの幅（t0〜core_t）だけに通し、
+    # 西の t 0.25〜t0 は屋上スラブの白い小口の上に何も立てない
+    _box(trim, ff, t0, core_t, -0.25, 0.0, h, h + 0.30, "dorm_white")
+    _box(trim, ff, t0, core_t, -0.15, -0.11, h + 0.30, h + 1.10, "glass_clear")
+    _box(trim, ff, t0, core_t, -0.17, -0.09, h + 1.10, h + 1.18, "metal_white")
+    n_post = max(2, int(round((core_t - t0) / 1.8)) + 1)
     for j in range(n_post):
-        ts = 0.25 + (core_t - 0.25 - 0.06) * j / (n_post - 1)
+        ts = t0 + (core_t - t0 - 0.06) * j / (n_post - 1)
         _box(trim, ff, ts, ts + 0.06, -0.17, -0.09, h + 0.30, h + 1.10, "metal_white")
-    # 西端: 背の高いメッシュフェンス（柱と横桟）
+    # 西端: メッシュフェンス（柱と横桟）。天端は縁の手すりの支柱とそろえる
     for j in range(7):
         u = 0.30 + (u1 - 0.36) * j / 6
-        _box(trim, ff, t0 - 0.03, t0 + 0.03, -u - 0.06, -u, h, h + 2.40, "metal_grey")
-    for z in (h + 0.10, h + 1.25, h + 2.34):
+        _box(trim, ff, t0 - 0.03, t0 + 0.03, -u - 0.06, -u, h, h + 1.10, "metal_grey")
+    for z in (h + 0.10, h + 0.57, h + 1.04):
         _box(trim, ff, t0 - 0.02, t0 + 0.02, -u1, -0.30, z, z + 0.06, "metal_grey")
     # 北端: 縦格子の手すり
     for z in (h + 0.12, h + 1.04):
