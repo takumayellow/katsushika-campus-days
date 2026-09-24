@@ -235,8 +235,8 @@ namespace KCD
             return L.Get("ui.npc." + step.Giver, step.Giver);
         }
 
-        /// <summary>ステップの表示。制限時間つきなら、状態に応じて 2 行目を足す。</summary>
-        private static string StepLine(QuestData quest)
+        /// <summary>ステップの表示。制限時間つきなら、状態に応じて 2 行目を足す。目標文はいまの言語で出す。</summary>
+        public static string StepLine(QuestData quest)
         {
             QuestStep step = quest?.CurrentStep;
             if (step == null)
@@ -244,7 +244,7 @@ namespace KCD
                 return string.Empty;
             }
 
-            string text = "・" + step.Text;
+            string text = "・" + step.DisplayText;
             if (step.Count > 1)
             {
                 text += "　(" + step.Progress + "/" + step.Count + ")";
@@ -291,7 +291,7 @@ namespace KCD
                 _recentFailure = null;
             }
 
-            hud.ShowToast(L.Format("ui.hud.quest_completed", quest.Title));
+            hud.ShowToast(CompletedMessage(quest));
 
             // 制限時間つきを間に合わせたなら、残り何秒で着いたかを出す。
             for (int i = 0; i < quest.Steps.Count; i++)
@@ -304,13 +304,20 @@ namespace KCD
                 }
             }
 
-            if (!string.IsNullOrEmpty(quest.RewardText))
+            string reward = quest.DisplayRewardText;
+            if (!string.IsNullOrEmpty(reward))
             {
-                hud.ShowToast(quest.RewardText);
+                hud.ShowToast(reward);
             }
 
             // 報酬の称号（rewardType = achievement）のトーストは GameManager が AchievementBook の判定で出す。
             // ここでも出すと、同じ称号が 2 回流れる。
+        }
+
+        /// <summary>達成のトースト（ui.hud.quest_completed）。題名はいまの言語で出す。</summary>
+        public static string CompletedMessage(QuestData quest)
+        {
+            return L.Format("ui.hud.quest_completed", quest.DisplayTitle);
         }
 
         private void Refresh()
@@ -336,7 +343,7 @@ namespace KCD
 
             if (_titleLabel != null)
             {
-                _titleLabel.text = tracked.Title;
+                _titleLabel.text = tracked.DisplayTitle;
             }
 
             if (_stepLabel != null)
