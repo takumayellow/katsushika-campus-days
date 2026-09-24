@@ -46,7 +46,7 @@
           10
         ],
         "joint": 0.09,
-        "grain": 0.6,
+        "grain": 1.0,
         "block": 2,
         "joint_ratio": 0.38,
         "palette": [
