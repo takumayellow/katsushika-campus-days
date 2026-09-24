@@ -165,3 +165,16 @@ Unity 側（`DormStage.BuildEntrance`）は玄関を route.json の `door` / `do
 
 サイドカーの `minimap: "black"` と `off_campus: true` は #41 の仕様
 （キャンパス外なのでミニマップは黒のまま）を Unity 側に渡すためのもの。
+
+## 参照したもの
+
+リポジトリには URL だけを残す（写真・本文・タイルは著作物なので置かない）。
+
+* 設備と館内写真: [東京理科大学専用寮 公式](https://tus-d.com/dormitory/kch/)、
+  [学生会館ドーミー](https://dormy-ac.com/placehall/shutoken/uk/13399/)、
+  [TUS LIFE 学生寮](https://www.tus.ac.jp/tuslife/campuslife/notification/index.html)
+* 外観の写真: [ohesou.com](https://www.ohesou.com/rent/4475/)、
+  [三浦工務店 施工実績](https://www.miura-k.co.jp/works/)、[がくるーむ](https://www.gakuroom.jp/college/5770/)
+* 航空写真: 地理院タイル（`ort` / `seamlessphoto`、ズーム 18）、Esri World Imagery（ズーム 19）
+* 3D 都市モデル: PLATEAU の建物 LOD1 / LOD2（国土交通省）
+* 高さ: OpenStreetMap（Overpass API。軒高 17.8 m は `height`）
