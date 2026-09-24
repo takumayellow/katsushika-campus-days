@@ -31,7 +31,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import bpy  # noqa: E402
 
-from kcd_lib import mats, render  # noqa: E402
+from kcd_lib import entrances, mats, render  # noqa: E402
 from kcd_interior import closure, exterior, imats, registry, spec as ispec  # noqa: E402
 from kcd_interior.ctx import Ctx  # noqa: E402
 
@@ -58,6 +58,11 @@ EXT_PREFIX = exterior.EXT_PREFIX
 INT_BUDGET = 300000       # 屋内の合計
 EXT_BUDGET = 180000       # 近景の合計
 EXT_BUDGET_ONE = 50000    # 近景 1 棟
+
+# 屋内の入口とキャンパスの扉の照合。屋内の内向きと扉の外向き法線の内積の上限と、
+# 面に沿った位置の許容差 [m]
+DOOR_DOT_MAX = -0.9
+DOOR_LATERAL_TOL = 0.05
 
 
 # --------------------------------------------------------------------------- #
@@ -366,6 +371,44 @@ def verify_fbx(path, expect_empties, meta=None, max_gap=0.25):
 
 
 # --------------------------------------------------------------------------- #
+def door_mismatch(specs, data):
+    """屋内の入口が、キャンパスの扉（kcd_lib.entrances）と同じ面の同じ位置にあるか。
+
+    屋内の内向き（ローカル +Y）と扉の外向き法線の内積が DOOR_DOT_MAX 未満で、屋内の面に
+    沿った向き（ローカル X）の差が DOOR_LATERAL_TOL 以内、かつ原点が扉より外にあれば合格。
+    面に直交する向きの差は、屋内の外周が footprint の外接矩形なので棟ごとに違い、
+    正であることだけを見る。扉が無い棟は不合格にする（入口の面を推測で置いているため）。
+    扉が同じ棟に複数あれば、spec._door_row と同じく最初の 1 つと照合する。
+    戻り値は [(bid, 内積, 面に沿った差, 奥行きの差, 合否)]。扉が無い棟は数値が None。
+    """
+    doors = {}
+    for dr in entrances.plan(data, ispec.campus_frame(data), {}):
+        doors.setdefault(dr["id"], dr)
+    rows = []
+    for bid, sp in sorted(specs.items()):
+        dr = doors.get(bid)
+        if dr is None:
+            rows.append((bid, None, None, None, False))
+            continue
+        ox, oy = sp.to_world_xy((0.0, 0.0))
+
+        def axis(u, v):
+            wx, wy = sp.to_world_xy((u, v))
+            return wx - ox, wy - oy
+
+        xx, xy = axis(1.0, 0.0)
+        yx, yy = axis(0.0, 1.0)
+        n = dr["n"]
+        dot = yx * n[0] + yy * n[1]
+        dx, dy = dr["origin"][0] - ox, dr["origin"][1] - oy
+        lateral = dx * xx + dy * xy
+        depth = dx * yx + dy * yy
+        good = (dot < DOOR_DOT_MAX and abs(lateral) <= DOOR_LATERAL_TOL
+                and depth > 0.0)
+        rows.append((bid, dot, lateral, depth, good))
+    return rows
+
+
 def over_budget(report, total, total_ext):
     """三角数が上限を超えたものの説明のリスト。"""
     msgs = ["%s の近景 %d > %d" % (i["id"], i["ext_tris"], EXT_BUDGET_ONE)
@@ -472,6 +515,16 @@ def main():
                  " 近景のメッシュが違う %s != %s" % (res["ext_names"],
                                                     sorted(info["ext_objects"]))))
 
+    for bid, dot, lateral, depth, good in door_mismatch(specs, data):
+        if not good:
+            ok = False
+        if dot is None:
+            print("[verify] NG %-11s 入口とキャンパスの扉: kcd_lib.entrances.DOORS に扉が無い"
+                  % bid)
+            continue
+        print("[verify] %s%-11s 入口とキャンパスの扉: 向きの内積 %.3f 面に沿った差 %.3f m"
+              " 奥行きの差 %.2f m" % ("OK " if good else "NG ", bid, dot, lateral, depth))
+
     total = sum(i["tris"] for i in report)
     total_ext = sum(i["ext_tris"] for i in report)
     over = over_budget(report, total, total_ext)
@@ -482,7 +535,8 @@ def main():
     print("\n[interiors] 合計 %d / %d 三角形 + 近景 %d / %d / %d 棟 / %.1f s  (%s)"
           % (total, INT_BUDGET, total_ext, EXT_BUDGET, len(report), time.time() - t_all,
              "OK" if ok else
-             "Empty 欠落 / POI 契約違反 / 外周の穴 / 近景のメッシュ違い / 予算超過あり"))
+             "Empty 欠落 / POI 契約違反 / 外周の穴 / 近景のメッシュ違い / 入口と扉の食い違い"
+             " / 予算超過あり"))
 
     # 集計を JSON で残す（README 生成の材料）。
     # 一部の棟だけを流したときに上書きすると全棟ぶんの集計が失われるので、

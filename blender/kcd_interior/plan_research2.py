@@ -166,7 +166,7 @@ def build(c):
                       mat="metal_dark", bulb="light_panel")
             if i % 2 == 0:
                 c.light(px, py, CEIL - 3.5, 700.0, 1.2)
-    c.light(0.0, iy0 + 18.0, 6.0, 2200.0, 3.0)
+    c.light((ix0 + ix1) * 0.5, iy0 + 18.0, 6.0, 2200.0, 3.0)
 
     c.cam("", (ix0 + 8.0, iy0 + 7.0, 2.35), (ix0 + 30.0, iy1 - 8.0, 1.60),
           lens=17.0)
