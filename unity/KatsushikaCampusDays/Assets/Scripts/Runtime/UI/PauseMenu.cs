@@ -131,11 +131,13 @@ namespace KCD
         /// <summary>
         /// 開いたまま片付けられるときの後始末。自分が止めた時間と自分の封鎖だけを戻す。
         /// 開いていなければ何もしない（ほかの画面が止めた timeScale を 1 に戻さない）。
+        /// 選んだだけでまだ開いていない設定パネルと、出していた「タイトルへ戻る」の確認は、開いていてもいなくても捨てる。
         /// 音とカーソルは次の画面に任せる。<see cref="OnDisable"/> が呼ぶ。
         /// </summary>
         public void Abandon()
         {
             _settingsRequestedFrame = KCDInput.NoFrame;
+            _confirmingTitle = false;
             if (!_paused)
             {
                 return;

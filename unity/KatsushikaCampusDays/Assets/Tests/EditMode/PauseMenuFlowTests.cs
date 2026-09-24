@@ -393,5 +393,21 @@ namespace KCD.Tests
             Assert.AreEqual(0, _titleReturns, "開き直したポーズで前の確認が生きていた");
             Assert.IsFalse(pause.IsOpen, "開き直したポーズの先頭が「ゲームに戻る」でない");
         }
+
+        [Test]
+        public void ReturnToTitle_ConfirmIsForgotten_WhenThePauseIsAbandoned()
+        {
+            PauseMenu pause = MakePauseCountingTitleReturns();
+            ChooseReturnToTitle(pause, 1000);
+
+            // 開いたまま片付けられた（OnDisable → Abandon）。時間と封鎖と一緒に確認も捨てる。
+            pause.Abandon();
+
+            Assert.IsFalse(pause.IsConfirmingReturnToTitle, "片付けたポーズに確認が残った");
+            Assert.IsFalse(pause.IsPaused);
+            Assert.IsFalse(KCDInput.IsBlockedBy(pause));
+            Assert.AreEqual(1f, Time.timeScale);
+            Assert.AreEqual(0, _titleReturns);
+        }
     }
 }
