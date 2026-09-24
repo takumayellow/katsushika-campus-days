@@ -24,6 +24,50 @@ WebGL 2 対応 GPU。初回は約 100 MB を読み込む。セーブはブラウ
 Windows 10/11 64bit、インストール不要。操作は WASD / 矢印キー移動、マウス視点、Shift ダッシュ、Space ジャンプ、
 E で話す/入る、Tab クエストログ、Esc メニュー。詳細は [docs/HOW_TO_PLAY.md](docs/HOW_TO_PLAY.md)。
 
+## 遊び方
+
+ブラウザ版は https://takumayellow.github.io/katsushika-campus-days/ 。キーボードとマウスのある PC で開く
+（スマートフォンとタブレットでは操作できない、#73）。
+
+タイトル画面で主人公を ← → か A / D で選び、Enter で決める。C でクレジット、O で設定を開く。
+朝 8:30 のキャンパスから 1 日が始まり、学生や教授と話すとクエストが進み、夜にリザルト画面が出る。
+
+操作（`Assets/Scripts/Runtime/Core/KCDInput.cs` の割り当て。ゲームパッドのボタン名は Xbox の配置）:
+
+| 操作 | キーボード / マウス | ゲームパッド |
+| --- | --- | --- |
+| 移動 | W A S D / 矢印キー | 左スティック |
+| 視点 | マウス移動 | 右スティック |
+| ズーム | マウスホイール | なし |
+| ダッシュ | Shift（押しっぱなし） | LB または LT（押しっぱなし） |
+| ジャンプ | Space | A |
+| 話す / 調べる / 入る / 座る | E または Enter | X |
+| クエストログ | Tab | View |
+| ポーズ・設定・セーブ | Esc | Menu |
+| フォトモード | P（Enter / E / Space で撮る、P / Esc で戻る） | Y（A / X で撮る、Y / B で戻る） |
+| 手を振る | Q | RB |
+| 全画面とウィンドウの切り替え | F | なし |
+| クイックセーブ / クイックロード | F5 / F9 | なし |
+
+動作環境・既知の問題・うまく動かないときは [docs/HOW_TO_PLAY.md](docs/HOW_TO_PLAY.md) にまとめてある。
+Windows の配布 zip は `python tools/package_windows.py` で作る。名前は
+`dist/KatsushikaCampusDays_v<版>_<commit の先頭 7 桁>_win64.zip` で、HOW_TO_PLAY.md を README.txt、
+CREDITS.md を CREDITS.txt として同梱する。地図データの帰属（© OpenStreetMap contributors, ODbL）は
+タイトル画面の右下とクレジット画面に出る。
+
+<img src="https://github.com/takumayellow/katsushika-campus-days/blob/01437f9815830d2d9d7286afb07eedf62096987c/docs/progress/57/20260924-windows-chunked-trees.jpg?raw=true" alt="Windows 版のプレイ画面" width="100%">
+
+Windows 版のプレイ画面。左上が進行中のクエスト、右上がミニマップと時刻。
+
+<p>
+<img src="https://github.com/takumayellow/katsushika-campus-days/blob/01437f9815830d2d9d7286afb07eedf62096987c/docs/previews/shot_campus_moat.png?raw=true" alt="図書館とまわりの堀" width="32%">
+<img src="https://github.com/takumayellow/katsushika-campus-days/blob/01437f9815830d2d9d7286afb07eedf62096987c/docs/previews/shot_campus_mall_beds.png?raw=true" alt="モールの並木と花壇" width="32%">
+<img src="https://github.com/takumayellow/katsushika-campus-days/blob/01437f9815830d2d9d7286afb07eedf62096987c/docs/previews/shot_campus_moat_bank.png?raw=true" alt="堀の岸から見た図書館" width="32%">
+</p>
+
+左から、図書館とまわりの堀（南東の上から）、モールの並木と花壇、堀の岸から見た図書館（プレイヤーの目の高さ）。
+3 枚は `KCD.Editor.ScenePreview` が Campus.unity から本編のシェーダのまま撮ったもの。
+
 ## 自分でビルドする
 
 必要なもの: Unity 6000.6.2f1（Hub 版、URP テンプレート）、Blender 4.5、Python 3.11 以上（numpy）。
