@@ -57,6 +57,9 @@ namespace KCD.Tests
                 report.Append("\n  ").Append(onNavMesh ? "[OK] " : "[NG] ").Append(DescribeNpc(npc, agent));
             }
 
+            // 全員が最後に載れていても、NavMesh の失敗のログが出ていれば落とす。#63 の完了条件が「起動ログに NavMesh の
+            // 失敗が 0 件」で、読み込みの順番のせいで agent を作り損ねた NPC は NPCWander の乗り直しで載るため、
+            // isOnNavMesh だけを見ると #63 が残っていても通ってしまう。
             List<CapturedLog> failures = Capture.Matching(LogCapture.NavMeshFailure);
             if (stranded.Count == 0 && failures.Count == 0)
             {
@@ -66,7 +69,7 @@ namespace KCD.Tests
 
             Assert.Fail(
                 npcs.Length + " 体中 " + stranded.Count + " 体が NavMesh に載っていない（" + string.Join(", ", stranded) + "）。" +
-                "NavMesh の失敗のログ " + failures.Count + " 行。" +
+                "NavMesh の失敗のログ " + failures.Count + " 行（#63 の完了条件は 0 行）。" +
                 "\nNPC ごと（NPCWander は " + NPCWander.NavMeshSnapDistance + " m 以内に NavMesh が無いと agent を切る）:" + report +
                 "\nNavMesh に関係するログ:" + LogCapture.Describe(Capture.Matching(NavMeshRelated)) +
                 "\n" + DescribeNavMesh());
