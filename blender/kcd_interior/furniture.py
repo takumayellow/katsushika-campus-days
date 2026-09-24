@@ -602,22 +602,53 @@ def chem_cabinet(mb, x, y, ang=0.0, w=1.2, h=1.85, rng=None):
 # --------------------------------------------------------------------------- #
 #  体育館
 # --------------------------------------------------------------------------- #
-def basketball_hoop(mb, x, y, ang=0.0, rim_z=3.05):
-    """バスケットゴール（支柱 + バックボード + リング + ネット）。"""
+def hoop_base_back(arm):
+    """ゴールの台座が支柱の中心から後ろへ伸びる長さ。"""
+    return 0.55 if arm <= 1.05 else 0.55 + (arm - 1.05) * 0.8
+
+
+def basketball_hoop(mb, x, y, ang=0.0, rim_z=3.05, arm=1.05):
+    """バスケットゴール（支柱 + バックボード + リング + ネット）。
+
+    arm は支柱の中心からバックボード裏面までの張り出し。バックボードの表面は
+    arm + 0.06、リングの中心はその 0.375 m 先（FIBA の寸法）に来る。
+    張り出しが長いときは台座を後ろへ伸ばし、腕の下に斜めの支えを入れる。
+    """
     t = T(x, y, 0.0, ang)
-    t.box(mb, -0.35, -0.55, 0.0, 0.35, 0.55, 0.16, "metal_dark")
+    back = hoop_base_back(arm)
+    t.box(mb, -0.35, -back, 0.0, 0.35, 0.55, 0.16, "metal_dark")
     t.box(mb, -0.11, -0.11, 0.16, 0.11, 0.11, rim_z + 0.90, "metal_gray")
-    t.box(mb, -0.09, 0.11, rim_z + 0.55, 0.09, 1.05, rim_z + 0.72, "metal_gray")
-    t.box(mb, -0.90, 1.05, rim_z + 0.15, 0.90, 1.11, rim_z + 1.20,
+    t.box(mb, -0.09, 0.11, rim_z + 0.55, 0.09, arm, rim_z + 0.72, "metal_gray")
+    if arm > 1.05:
+        kit.tube(mb, t.p(0.0, 0.11, rim_z - 0.45),
+                 t.p(0.0, arm * 0.62, rim_z + 0.56), 0.035, "metal_gray",
+                 seg=4)
+    # 1.80 x 1.05 m の板。下端はリングの 0.15 m 下
+    face = arm + 0.06
+    t.box(mb, -0.90, arm, rim_z - 0.15, 0.90, face, rim_z + 0.90,
           "backboard_white")
-    t.box(mb, -0.30, 1.02, rim_z + 0.30, 0.30, 1.05, rim_z + 0.75,
-          "court_line_blue")
-    p = t.p2(0.0, 1.45)
-    kit.cyl(mb, p[0], p[1], rim_z, rim_z + 0.03, 0.23, "hoop_orange", seg=10)
+    # 板の表のターゲット枠（外寸 0.59 x 0.45、線幅 0.05、下辺の上端がリングの高さ）
+    fy = face + 0.004
+    for u0, z0, u1, z1 in ((-0.295, rim_z - 0.05, 0.295, rim_z),
+                           (-0.295, rim_z + 0.35, 0.295, rim_z + 0.40),
+                           (-0.295, rim_z, -0.245, rim_z + 0.35),
+                           (0.245, rim_z, 0.295, rim_z + 0.35)):
+        mb.add_face([t.p(u0, fy, z0), t.p(u0, fy, z1), t.p(u1, fy, z1),
+                     t.p(u1, fy, z0)], "court_line_blue")
+    # リング（内径 0.45、板の表から 0.15 m 離す）。上から見て輪に見えるよう管でつなぐ
+    rr = 0.235
+    p = t.p2(0.0, face + 0.15 + 0.225)
+    ring = [(p[0] + rr * math.cos(math.pi * 2 * k / 12),
+             p[1] + rr * math.sin(math.pi * 2 * k / 12), rim_z)
+            for k in range(12)]
+    for k in range(12):
+        kit.tube(mb, ring[k], ring[(k + 1) % 12], 0.010, "hoop_orange", seg=3)
+    t.box(mb, -0.06, face, rim_z - 0.10, 0.06, face + 0.15, rim_z + 0.01,
+          "hoop_orange")
     for k in range(8):
         a = math.pi * 2 * k / 8
-        px = p[0] + 0.22 * math.cos(a)
-        py = p[1] + 0.22 * math.sin(a)
+        px = p[0] + rr * math.cos(a)
+        py = p[1] + rr * math.sin(a)
         kit.tube(mb, (px, py, rim_z), (p[0] + 0.10 * math.cos(a),
                                        p[1] + 0.10 * math.sin(a), rim_z - 0.42),
                  0.012, "net_white", seg=3)
@@ -642,14 +673,16 @@ def bleachers(mb, x0, x1, y_front, rows=8, rise=0.42, run=0.78, ang=0.0,
     return count
 
 
-def stage(mb, x0, y0, x1, y1, h=0.90, deck="floor_wood", skirt="wall_accent_navy"):
+def stage(mb, x0, y0, x1, y1, h=0.90, deck="floor_wood", skirt="wall_accent_navy",
+          steps=None, step_w=2.4):
+    """舞台。steps は前面の上り段の中心 x の並び（省略時は中央に 1 か所）。"""
     kit.box(mb, x0, y0, 0.0, x1, y1, h - 0.06, skirt)
     kit.box(mb, x0 - 0.06, y0 - 0.06, h - 0.06, x1 + 0.06, y1 + 0.06, h, deck)
     # 前面の上り段
-    kit.box(mb, (x0 + x1) * 0.5 - 1.2, y0 - 0.9, 0.0, (x0 + x1) * 0.5 + 1.2,
-            y0 - 0.45, h * 0.5, deck)
-    kit.box(mb, (x0 + x1) * 0.5 - 1.2, y0 - 0.45, 0.0, (x0 + x1) * 0.5 + 1.2,
-            y0, h, deck)
+    hw = step_w * 0.5
+    for sx in (steps if steps is not None else ((x0 + x1) * 0.5,)):
+        kit.box(mb, sx - hw, y0 - 0.9, 0.0, sx + hw, y0 - 0.45, h * 0.5, deck)
+        kit.box(mb, sx - hw, y0 - 0.45, 0.0, sx + hw, y0, h, deck)
 
 
 def roof_truss(mb, x0, x1, y, z, depth=1.6, seg=None, mat="metal_gray"):

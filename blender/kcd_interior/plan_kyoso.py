@@ -111,9 +111,10 @@ def _cafe(c, x0, y0, x1, y1):
                     thick=0.14, gaps=[(1.4, 5.2)], glass_top=True, glass_z=2.30)
     shell.ceiling(w, x0, y0, x1, y1, CAFE_CEIL, "ceiling_dark", grid=0.0)
 
-    # 壁の一面をサインカラーに
-    kit.vplate(w, (x1 - 0.14, y1 - 0.16), (x0 + 0.14, y1 - 0.16), 0.0,
-               CAFE_CEIL, "sb_green")
+    # バックバーの背後をサインカラーの壁に。奥（+Y）は全面ガラスなので、
+    # 外から見ても抜けないよう厚みのある箱にし、上のガラスは 3.6 m から上に残す
+    kit.box(w, x0 + 2.0, y1 - 0.16, 0.0, x0 + 14.2, y1 - 0.12, 3.60,
+            "sb_green")
 
     # カウンター（奥壁ぞい）
     cy = y1 - 2.3
@@ -135,7 +136,12 @@ def _cafe(c, x0, y0, x1, y1):
     # 店員はカウンター（cy..cy+0.80）の中ではなく、バックバーとの間の通路に
     c.npc(x0 + 4.0, cy + 1.35, 0.0)
     c.npc(x0 + 7.4, cy + 1.35, 0.0)
-    common.sign_board(c, mb, x0 + 6.0, cy + 0.30, 2.55, ang=0.0, w=3.0, h=0.62)
+    # メニューボードはカウンターの上に吊り、客席（-Y）へ向ける
+    common.sign_board(c, mb, x0 + 6.0, cy + 0.30, 2.55, ang=math.pi, w=3.0,
+                      h=0.62)
+    for sx in (x0 + 4.9, x0 + 7.1):
+        kit.tube(mb, (sx, cy + 0.27, 2.90), (sx, cy + 0.27, CAFE_CEIL), 0.008,
+                 "metal_dark", seg=3)
 
     # 客席（丸テーブル + 長机のコミュナルテーブル）
     for i in range(7):
@@ -193,11 +199,12 @@ def _cvs(c, x0, y0, x1, y1):
                                sx=2.6, sy=3.0, mat="light_strip")
     c.lights_from(pts, CEIL, energy=200.0, step=2)
 
-    # サインバンド（店名色）
-    kit.vplate(w, (x1 - 0.16, y1 - 0.18), (x0 + 0.16, y1 - 0.18), 2.35, 3.05,
-               "fm_green")
-    kit.vplate(w, (x1 - 0.16, y1 - 0.20), (x0 + 0.16, y1 - 0.20), 1.85, 2.35,
-               "fm_blue")
+    # サインバンド（店名色）。奥（+Y）はガラスなので、店内から見える向きに
+    # 厚みのある帯として張る（外からも抜けない）
+    kit.box(w, x0 + 0.16, y1 - 0.20, 2.35, x1 - 0.16, y1 - 0.16, 3.05,
+            "fm_green")
+    kit.box(w, x0 + 0.16, y1 - 0.22, 1.85, x1 - 0.16, y1 - 0.18, 2.35,
+            "fm_blue")
 
     # レジカウンター（入口寄り）
     F.counter(mb, x1 - 5.4, y0 + 1.0, x1 - 1.2, y0 + 1.75, h=1.02,

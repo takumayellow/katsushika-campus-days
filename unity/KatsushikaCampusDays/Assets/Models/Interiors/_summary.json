@@ -1,5 +1,5 @@
 {
- "total_tris": 296725,
+ "total_tris": 297441,
  "buildings": [
   {
    "tris": 40439,
@@ -101,16 +101,16 @@
     "1F ロビー（受付・ソファ・掲示板）+ EV3 基 + 廊下 142 m + 研究室2室 + 教授室"
    ],
    "size": 462012,
-   "fbx": "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\unity\\KatsushikaCampusDays\\Assets\\Models\\Interiors\\research1.fbx",
+   "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/research1.fbx",
    "previews": [
-    "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\docs\\previews\\interior_research1.png"
+    "docs/previews/interior_research1.png"
    ],
    "id": "research1",
    "label": "第1研究棟",
-   "sec": 6.004868268966675
+   "sec": 6.0938286781311035
   },
   {
-   "tris": 47289,
+   "tris": 47429,
    "objects": [
     "floor_lecture",
     "wall_lecture",
@@ -293,18 +293,18 @@
     "中教室 60 席",
     "3 層吹き抜けの大階段ホール + 大ホール + ホワイエ + 演習室 3 室 + 中教室"
    ],
-   "size": 576764,
-   "fbx": "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\unity\\KatsushikaCampusDays\\Assets\\Models\\Interiors\\lecture.fbx",
+   "size": 577980,
+   "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/lecture.fbx",
    "previews": [
-    "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\docs\\previews\\interior_lecture_hall.png",
-    "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\docs\\previews\\interior_lecture.png"
+    "docs/previews/interior_lecture_hall.png",
+    "docs/previews/interior_lecture.png"
    ],
    "id": "lecture",
    "label": "講義棟",
-   "sec": 40.886144399642944
+   "sec": 41.331098794937134
   },
   {
-   "tris": 64170,
+   "tris": 64210,
    "objects": [
     "floor_research2",
     "wall_research2",
@@ -361,18 +361,18 @@
     "食堂 合計 1400 席",
     "1〜2F 吹き抜けの大食堂。配膳カウンター 38 m・券売機 6 台・返却口・2F 回廊"
    ],
-   "size": 632604,
-   "fbx": "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\unity\\KatsushikaCampusDays\\Assets\\Models\\Interiors\\research2.fbx",
+   "size": 632876,
+   "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/research2.fbx",
    "previews": [
-    "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\docs\\previews\\interior_research2.png",
-    "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\docs\\previews\\interior_cafeteria.png"
+    "docs/previews/interior_research2.png",
+    "docs/previews/interior_cafeteria.png"
    ],
    "id": "research2",
    "label": "第2研究棟",
-   "sec": 18.509923219680786
+   "sec": 18.992221355438232
   },
   {
-   "tris": 25442,
+   "tris": 25544,
    "objects": [
     "floor_kyoso",
     "wall_kyoso",
@@ -475,17 +475,17 @@
    "notes": [
     "1F=カフェ（吹き抜け）+ コンビニ、2F=ラウンジ。q_coffee の舞台"
    ],
-   "size": 360716,
-   "fbx": "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\unity\\KatsushikaCampusDays\\Assets\\Models\\Interiors\\kyoso.fbx",
+   "size": 361516,
+   "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/kyoso.fbx",
    "previews": [
-    "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\docs\\previews\\interior_kyoso.png"
+    "docs/previews/interior_kyoso.png"
    ],
    "id": "kyoso",
    "label": "共創棟",
-   "sec": 6.228380441665649
+   "sec": 7.063543081283569
   },
   {
-   "tris": 57864,
+   "tris": 57924,
    "objects": [
     "floor_library",
     "wall_library",
@@ -589,18 +589,18 @@
     "個人閲覧ブース 66 席",
     "開架書架 + 閲覧席 + 2F 回廊の吹き抜け + 個人閲覧ブース"
    ],
-   "size": 600332,
-   "fbx": "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\unity\\KatsushikaCampusDays\\Assets\\Models\\Interiors\\library.fbx",
+   "size": 600956,
+   "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/library.fbx",
    "previews": [
-    "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\docs\\previews\\interior_library.png",
-    "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\docs\\previews\\interior_library_hall.png"
+    "docs/previews/interior_library.png",
+    "docs/previews/interior_library_hall.png"
    ],
    "id": "library",
    "label": "図書館",
-   "sec": 124.29333758354187
+   "sec": 127.16620063781738
   },
   {
-   "tris": 20591,
+   "tris": 20965,
    "objects": [
     "floor_gym",
     "wall_gym",
@@ -650,14 +650,14 @@
     "用具庫 + 体操器具（跳び箱・マット・平均台）+ 得点板 + 肋木・キャットウォーク",
     "アリーナ（28×15 m コート・ゴール 2 基・ステージ・観覧席・屋根トラス）"
    ],
-   "size": 271708,
-   "fbx": "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\unity\\KatsushikaCampusDays\\Assets\\Models\\Interiors\\gym.fbx",
+   "size": 278492,
+   "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/gym.fbx",
    "previews": [
-    "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\docs\\previews\\interior_gym.png"
+    "docs/previews/interior_gym.png"
    ],
    "id": "gym",
    "label": "体育館",
-   "sec": 0.49303364753723145
+   "sec": 0.5338449478149414
   },
   {
    "tris": 22502,
@@ -694,14 +694,14 @@
     "廊下 + 実験室 3 室（実験台・ドラフト・ボンベ・薬品庫）"
    ],
    "size": 271516,
-   "fbx": "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\unity\\KatsushikaCampusDays\\Assets\\Models\\Interiors\\lab1.fbx",
+   "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/lab1.fbx",
    "previews": [
-    "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\docs\\previews\\interior_lab1.png",
-    "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\docs\\previews\\interior_lab1_room.png"
+    "docs/previews/interior_lab1.png",
+    "docs/previews/interior_lab1_room.png"
    ],
    "id": "lab1",
    "label": "実験棟1",
-   "sec": 7.082891941070557
+   "sec": 7.839111804962158
   },
   {
    "tris": 14300,
@@ -730,14 +730,14 @@
     "廊下 + 実験室 2 室（実験台・ドラフト・ボンベ・薬品庫）"
    ],
    "size": 196620,
-   "fbx": "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\unity\\KatsushikaCampusDays\\Assets\\Models\\Interiors\\lab2.fbx",
+   "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/lab2.fbx",
    "previews": [
-    "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\docs\\previews\\interior_lab2.png",
-    "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\docs\\previews\\interior_lab2_room.png"
+    "docs/previews/interior_lab2.png",
+    "docs/previews/interior_lab2_room.png"
    ],
    "id": "lab2",
    "label": "実験棟2",
-   "sec": 3.2099742889404297
+   "sec": 3.385601758956909
   },
   {
    "tris": 4128,
@@ -759,13 +759,13 @@
     "切妻ガラス屋根の温室（栽培ベンチ 2 列・鉢植え・灌水パイプ）"
    ],
    "size": 102860,
-   "fbx": "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\unity\\KatsushikaCampusDays\\Assets\\Models\\Interiors\\greenhouse.fbx",
+   "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/greenhouse.fbx",
    "previews": [
-    "C:\\Users\\takum\\dev\\katsushika-campus-days-wt-game\\docs\\previews\\interior_greenhouse.png"
+    "docs/previews/interior_greenhouse.png"
    ],
    "id": "greenhouse",
    "label": "温室",
-   "sec": 0.3161771297454834
+   "sec": 0.36262083053588867
   }
  ]
 }
