@@ -7,7 +7,7 @@ using UnityEngine.SceneManagement;
 namespace KCD
 {
     /// <summary>
-    /// 画質の段（<see cref="QualityTier"/>）を実行中に切り替える常駐部品 (#70)。
+    /// 画質の段（<see cref="QualityTier"/>）を実行中に切り替える常駐部品 (#70)。フレームの刻み (#15) も起動時に入れる。
     ///
     /// URP のアセット（Assets/Settings/*_RPAsset）は書き換えない。起動した品質レベルのアセットの写しを作って
     /// 段の値を入れ, QualitySettings.renderPipeline を写しに差し替える。段の値が起動したアセットと同じなら
@@ -64,6 +64,7 @@ namespace KCD
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Bootstrap()
         {
+            FramePacing.Apply();
             var host = new GameObject("KCD.QualityManager");
             host.AddComponent<QualityManager>();
             DontDestroyOnLoad(host);
