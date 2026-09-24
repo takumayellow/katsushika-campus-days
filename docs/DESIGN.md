@@ -138,20 +138,23 @@ FBX 共通オプション: `use_selection=False`, `global_scale=1.0`, `apply_uni
 棟ごとに 1 FBX。運用手順は `blender/README_interiors.md`。
 
 ```
-unity/KatsushikaCampusDays/Assets/Models/Interiors/<building_id>.fbx
-unity/KatsushikaCampusDays/Assets/Models/Interiors/<building_id>.json  配置用メタ（entrance_world / yaw_deg / envelope / 全 Empty のローカル座標）
-unity/KatsushikaCampusDays/Assets/Models/Interiors/_summary.json   全棟の三角数・Empty 名・座席数
+unity/KatsushikaCampusDays/Assets/Models/Interiors/<building_id>.fbx   屋内 + 窓の外の近景（ext_<building_id>）
+unity/KatsushikaCampusDays/Assets/Models/Interiors/<building_id>.json  配置用メタ（entrance_world / yaw_deg / envelope / 全 Empty のローカル座標 / ext）
+unity/KatsushikaCampusDays/Assets/Models/Interiors/_summary.json   全棟の三角数（屋内・近景）・Empty 名・座席数
 docs/previews/interior_<building_id>*.png                          検証用レンダ（Eevee Next, 1280×720）
 ```
 
 **座標**: ローカル原点は `entrance_<id>` 直下の床レベル。Unity の +Z が入口から建物の奥へ向く。
-`entrance_<id>` に重ねても、地下のオフセット領域に隔離して置いても成立する。
+近景（`ext_<id>`）は屋外と同じ場所に同じ形を持つので、屋内は屋外から離れた場所に置く
+（Unity の `InteriorStage` は x = 1200 m から棟ごとに並べる）。
 FBX オプションは §3.3 と同じ。
 
 **メッシュ分割**（Unity で MeshCollider を個別に張るため）:
 
 - `floor_<id>` 床スラブ / `wall_<id>` 外壁・間仕切り・建具・ガラス
 - `furn_<id>_<nn>_<区画名>` 区画ごとの什器（例 `furn_lecture_02_hall_seats`）
+- `ext_<id>` / `ext_<id>_trees` 窓の外の近景（地面・道・花壇・隣の棟 / 木）。外周の外にしか無く、
+  プレイヤーは届かないので当たり判定は要らない（Unity 側で `ext_` を当たり判定から外す作業は #60）
 
 **Empty**: `spawn_<id>`（入口から 1.5 m 内側）、`exit_<id>`、`poi_<id>_<name>`、`npc_<id>_<n>`、`sign_<id>_<n>`。
 §4 のクエストが屋内で踏む地点はすべて用意してある。`q_library` は `poi_library_counter` と
@@ -176,6 +179,33 @@ FBX オプションは §3.3 と同じ。
 1 棟あたり 20,000〜80,000 三角形を目安とする。`lab2`（23.7×15.8 m）と `greenhouse`（7.5×10.7 m）は
 フットプリントが小さく、下限を割るのを許容する。
 
+**窓の外の近景**（#84）: 屋外の `campus.fbx` / `trees.fbx` から、外周を四方へ 30 m 広げた矩形の中を
+切り出して同じ FBX に入れる（`kcd_interior/exterior.py`）。木は切らずに丸ごと入れる。屋外と同じ形・同じマテリアル名・同じ木なので、
+窓から見える景色と外へ出たときの景色が一致する。屋内とは別の予算で数える
+（実測 2026-09-24・合計 172,246 三角形 / 上限 180,000、1 棟 50,000 まで）:
+
+| id | 近景 | うち木 | 木の本数 |
+|---|---:|---:|---:|
+| `research1` | 25,633 | 9,172 | 52 |
+| `lecture` | 43,949 | 17,017 | 101 |
+| `research2` | 27,475 | 7,839 | 46 |
+| `kyoso` | 26,239 | 7,893 | 44 |
+| `library` | 14,484 | 9,723 | 58 |
+| `gym` | 12,751 | 4,242 | 25 |
+| `lab1` | 10,911 | 5,713 | 40 |
+| `lab2` | 6,597 | 3,515 | 26 |
+| `greenhouse` | 4,207 | 1,092 | 9 |
+
+- 木は間引かない（近景の 4 割弱が木）。減らすと窓の外と屋外で木の並びが合わなくなる。
+  樹冠が外周にかかる木だけは、切ると断面が見えるので入れない。
+- 花壇の株は外周から 12 m より遠いものを低ポリの形に替える。
+- 建物の中のどこから見ても裏を向く面（隣の棟の向こう側の外壁、樹冠の奥側など）は入れない。
+  キャンパスのマテリアルはすべて片面描画なので、室内からの見た目は変わらない。
+- 屋内は 1 棟ずつしか見えないので、効くのは描画よりメモリ。頂点は 9 棟で 336,539（屋内 584,710）。
+  FBX は位置と法線だけを持つ（UV なし）ので 1 頂点 24 B、Unity の取り込みで接線（16 B）が付いても
+  40 B で、近景の頂点は約 8〜14 MB。16 bit インデックスが約 1 MB
+  （1 メッシュの頂点は最大 55,192 で 16 bit に収まる）。
+
 **上層階**: 床スラブ・手すり・吹き抜けから見える什器までを作り、上層の個室は作らない
 （EV 扉と階数表示のみ）。
 
@@ -183,7 +213,7 @@ FBX オプションは §3.3 と同じ。
 誘導灯、掲示板・ポスター、ゴミ箱、消火器、`sign_<id>_<n>` 付きの案内サイン。
 マテリアルは `kcd_lib/mats.py` の命名規則に `kcd_interior/imats.py` が屋内分を足す。
 
-**検証**: 書き出した FBX を bpy で読み戻し、Empty がすべて揃っているかを照合してから終了する
+**検証**: 書き出した FBX を bpy で読み戻し、Empty と近景のメッシュがすべて揃っているかを照合してから終了する
 （欠落があれば exit 1）。
 
 ## 4. Unity プロジェクト

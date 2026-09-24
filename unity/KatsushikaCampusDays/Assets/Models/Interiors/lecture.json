@@ -849,5 +849,14 @@
   "furn_lecture_06_seminar",
   "furn_lecture_07_atrium",
   "furn_lecture_08_lecture_room"
- ]
+ ],
+ "ext": {
+  "objects": [
+   "ext_lecture",
+   "ext_lecture_trees"
+  ],
+  "triangles": 43949,
+  "radius": 30.0,
+  "dz": -0.03
+ }
 }

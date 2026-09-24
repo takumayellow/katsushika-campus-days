@@ -188,5 +188,14 @@
   "furn_gym_05_seats",
   "furn_gym_06_equipment",
   "furn_gym_07_extras"
- ]
+ ],
+ "ext": {
+  "objects": [
+   "ext_gym",
+   "ext_gym_trees"
+  ],
+  "triangles": 12751,
+  "radius": 30.0,
+  "dz": -0.03
+ }
 }

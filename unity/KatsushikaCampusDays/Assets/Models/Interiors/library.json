@@ -458,5 +458,14 @@
   "furn_library_04_reading",
   "furn_library_05_booths",
   "furn_library_06_gallery"
- ]
+ ],
+ "ext": {
+  "objects": [
+   "ext_library",
+   "ext_library_trees"
+  ],
+  "triangles": 14484,
+  "radius": 30.0,
+  "dz": -0.03
+ }
 }

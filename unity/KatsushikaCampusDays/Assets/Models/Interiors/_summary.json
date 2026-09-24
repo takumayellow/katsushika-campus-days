@@ -1,8 +1,34 @@
 {
  "total_tris": 297441,
+ "total_ext_tris": 172246,
  "buildings": [
   {
    "tris": 40439,
+   "ext_tris": 25633,
+   "ext_stats": {
+    "tris": {
+     "bld": 6724,
+     "site_furniture": 1422,
+     "site_ground": 1901,
+     "site_props_beds": 6222,
+     "site_props_signs": 120,
+     "site_props_trash": 56,
+     "site_props_vending": 16,
+     "trees": 9172
+    },
+    "culled_tris": {
+     "site": 5717,
+     "trees": 1466
+    },
+    "plants": {
+     "full": 0,
+     "simple": 336
+    },
+    "trees": {
+     "placed": 52,
+     "skipped": 3
+    }
+   },
    "objects": [
     "floor_research1",
     "wall_research1",
@@ -13,6 +39,10 @@
     "furn_research1_05_lab_a",
     "furn_research1_06_professor",
     "furn_research1_07_lab_b"
+   ],
+   "ext_objects": [
+    "ext_research1",
+    "ext_research1_trees"
    ],
    "empties": [
     "spawn_research1",
@@ -100,17 +130,42 @@
    "notes": [
     "1F ロビー（受付・ソファ・掲示板）+ EV3 基 + 廊下 142 m + 研究室2室 + 教授室"
    ],
-   "size": 462012,
+   "size": 932956,
    "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/research1.fbx",
    "previews": [
     "docs/previews/interior_research1.png"
    ],
    "id": "research1",
    "label": "第1研究棟",
-   "sec": 6.0938286781311035
+   "sec": 0.6705732345581055
   },
   {
    "tris": 47429,
+   "ext_tris": 43949,
+   "ext_stats": {
+    "tris": {
+     "bld": 11862,
+     "site_furniture": 1074,
+     "site_ground": 1508,
+     "site_props_beds": 12276,
+     "site_props_signs": 140,
+     "site_props_trash": 48,
+     "site_props_vending": 24,
+     "trees": 17017
+    },
+    "culled_tris": {
+     "site": 4299,
+     "trees": 2963
+    },
+    "plants": {
+     "full": 211,
+     "simple": 41
+    },
+    "trees": {
+     "placed": 101,
+     "skipped": 10
+    }
+   },
    "objects": [
     "floor_lecture",
     "wall_lecture",
@@ -122,6 +177,10 @@
     "furn_lecture_06_seminar",
     "furn_lecture_07_atrium",
     "furn_lecture_08_lecture_room"
+   ],
+   "ext_objects": [
+    "ext_lecture",
+    "ext_lecture_trees"
    ],
    "empties": [
     "spawn_lecture",
@@ -293,7 +352,7 @@
     "中教室 60 席",
     "3 層吹き抜けの大階段ホール + 大ホール + ホワイエ + 演習室 3 室 + 中教室"
    ],
-   "size": 577980,
+   "size": 1422348,
    "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/lecture.fbx",
    "previews": [
     "docs/previews/interior_lecture_hall.png",
@@ -301,10 +360,34 @@
    ],
    "id": "lecture",
    "label": "講義棟",
-   "sec": 41.331098794937134
+   "sec": 0.6716158390045166
   },
   {
    "tris": 64210,
+   "ext_tris": 27475,
+   "ext_stats": {
+    "tris": {
+     "bld": 5706,
+     "site_furniture": 1050,
+     "site_ground": 1462,
+     "site_props_beds": 11262,
+     "site_props_signs": 152,
+     "site_water": 4,
+     "trees": 7839
+    },
+    "culled_tris": {
+     "site": 3178,
+     "trees": 1401
+    },
+    "plants": {
+     "full": 191,
+     "simple": 58
+    },
+    "trees": {
+     "placed": 46,
+     "skipped": 20
+    }
+   },
    "objects": [
     "floor_research2",
     "wall_research2",
@@ -315,6 +398,10 @@
     "furn_research2_05_tables",
     "furn_research2_06_chairs",
     "furn_research2_07_green"
+   ],
+   "ext_objects": [
+    "ext_research2",
+    "ext_research2_trees"
    ],
    "empties": [
     "spawn_research2",
@@ -361,7 +448,7 @@
     "食堂 合計 1400 席",
     "1〜2F 吹き抜けの大食堂。配膳カウンター 38 m・券売機 6 台・返却口・2F 回廊"
    ],
-   "size": 632876,
+   "size": 1211804,
    "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/research2.fbx",
    "previews": [
     "docs/previews/interior_research2.png",
@@ -369,10 +456,33 @@
    ],
    "id": "research2",
    "label": "第2研究棟",
-   "sec": 18.992221355438232
+   "sec": 0.5908527374267578
   },
   {
    "tris": 25544,
+   "ext_tris": 26239,
+   "ext_stats": {
+    "tris": {
+     "bld": 9342,
+     "site_furniture": 1340,
+     "site_ground": 1567,
+     "site_props_beds": 5961,
+     "site_props_signs": 136,
+     "trees": 7893
+    },
+    "culled_tris": {
+     "site": 5005,
+     "trees": 1131
+    },
+    "plants": {
+     "full": 0,
+     "simple": 309
+    },
+    "trees": {
+     "placed": 44,
+     "skipped": 7
+    }
+   },
    "objects": [
     "floor_kyoso",
     "wall_kyoso",
@@ -381,6 +491,10 @@
     "furn_kyoso_03_cafe",
     "furn_kyoso_04_cvs",
     "furn_kyoso_05_lounge"
+   ],
+   "ext_objects": [
+    "ext_kyoso",
+    "ext_kyoso_trees"
    ],
    "empties": [
     "spawn_kyoso",
@@ -475,17 +589,41 @@
    "notes": [
     "1F=カフェ（吹き抜け）+ コンビニ、2F=ラウンジ。q_coffee の舞台"
    ],
-   "size": 361516,
+   "size": 817692,
    "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/kyoso.fbx",
    "previews": [
     "docs/previews/interior_kyoso.png"
    ],
    "id": "kyoso",
    "label": "共創棟",
-   "sec": 7.063543081283569
+   "sec": 0.5096192359924316
   },
   {
    "tris": 57924,
+   "ext_tris": 14484,
+   "ext_stats": {
+    "tris": {
+     "bld": 1800,
+     "site_furniture": 292,
+     "site_ground": 1205,
+     "site_props_beds": 1412,
+     "site_props_signs": 46,
+     "site_water": 6,
+     "trees": 9723
+    },
+    "culled_tris": {
+     "site": 778,
+     "trees": 1467
+    },
+    "plants": {
+     "full": 15,
+     "simple": 33
+    },
+    "trees": {
+     "placed": 58,
+     "skipped": 17
+    }
+   },
    "objects": [
     "floor_library",
     "wall_library",
@@ -495,6 +633,10 @@
     "furn_library_04_reading",
     "furn_library_05_booths",
     "furn_library_06_gallery"
+   ],
+   "ext_objects": [
+    "ext_library",
+    "ext_library_trees"
    ],
    "empties": [
     "spawn_library",
@@ -589,7 +731,7 @@
     "個人閲覧ブース 66 席",
     "開架書架 + 閲覧席 + 2F 回廊の吹き抜け + 個人閲覧ブース"
    ],
-   "size": 600956,
+   "size": 905052,
    "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/library.fbx",
    "previews": [
     "docs/previews/interior_library.png",
@@ -597,10 +739,32 @@
    ],
    "id": "library",
    "label": "図書館",
-   "sec": 127.16620063781738
+   "sec": 0.44591546058654785
   },
   {
    "tris": 20965,
+   "ext_tris": 12751,
+   "ext_stats": {
+    "tris": {
+     "bld": 7878,
+     "site_ground": 585,
+     "site_props_signs": 44,
+     "site_water": 2,
+     "trees": 4242
+    },
+    "culled_tris": {
+     "site": 2964,
+     "trees": 558
+    },
+    "plants": {
+     "full": 0,
+     "simple": 0
+    },
+    "trees": {
+     "placed": 25,
+     "skipped": 9
+    }
+   },
    "objects": [
     "floor_gym",
     "wall_gym",
@@ -611,6 +775,10 @@
     "furn_gym_05_seats",
     "furn_gym_06_equipment",
     "furn_gym_07_extras"
+   ],
+   "ext_objects": [
+    "ext_gym",
+    "ext_gym_trees"
    ],
    "empties": [
     "spawn_gym",
@@ -650,17 +818,38 @@
     "用具庫 + 体操器具（跳び箱・マット・平均台）+ 得点板 + 肋木・キャットウォーク",
     "アリーナ（28×15 m コート・ゴール 2 基・ステージ・観覧席・屋根トラス）"
    ],
-   "size": 278492,
+   "size": 501788,
    "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/gym.fbx",
    "previews": [
     "docs/previews/interior_gym.png"
    ],
    "id": "gym",
    "label": "体育館",
-   "sec": 0.5338449478149414
+   "sec": 0.3163454532623291
   },
   {
    "tris": 22502,
+   "ext_tris": 10911,
+   "ext_stats": {
+    "tris": {
+     "bld": 4715,
+     "site_ground": 363,
+     "site_props_signs": 120,
+     "trees": 5713
+    },
+    "culled_tris": {
+     "site": 2621,
+     "trees": 1907
+    },
+    "plants": {
+     "full": 0,
+     "simple": 0
+    },
+    "trees": {
+     "placed": 40,
+     "skipped": 3
+    }
+   },
    "objects": [
     "floor_lab1",
     "wall_lab1",
@@ -669,6 +858,10 @@
     "furn_lab1_03_lab01",
     "furn_lab1_04_lab02",
     "furn_lab1_05_prep03"
+   ],
+   "ext_objects": [
+    "ext_lab1",
+    "ext_lab1_trees"
    ],
    "empties": [
     "spawn_lab1",
@@ -693,7 +886,7 @@
    "notes": [
     "廊下 + 実験室 3 室（実験台・ドラフト・ボンベ・薬品庫）"
    ],
-   "size": 271516,
+   "size": 488412,
    "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/lab1.fbx",
    "previews": [
     "docs/previews/interior_lab1.png",
@@ -701,10 +894,31 @@
    ],
    "id": "lab1",
    "label": "実験棟1",
-   "sec": 7.839111804962158
+   "sec": 0.31574296951293945
   },
   {
    "tris": 14300,
+   "ext_tris": 6597,
+   "ext_stats": {
+    "tris": {
+     "bld": 2609,
+     "site_ground": 363,
+     "site_props_signs": 110,
+     "trees": 3515
+    },
+    "culled_tris": {
+     "site": 2070,
+     "trees": 1513
+    },
+    "plants": {
+     "full": 0,
+     "simple": 0
+    },
+    "trees": {
+     "placed": 26,
+     "skipped": 0
+    }
+   },
    "objects": [
     "floor_lab2",
     "wall_lab2",
@@ -712,6 +926,10 @@
     "furn_lab2_02_corridor",
     "furn_lab2_03_lab01",
     "furn_lab2_04_prep02"
+   ],
+   "ext_objects": [
+    "ext_lab2",
+    "ext_lab2_trees"
    ],
    "empties": [
     "spawn_lab2",
@@ -729,7 +947,7 @@
    "notes": [
     "廊下 + 実験室 2 室（実験台・ドラフト・ボンベ・薬品庫）"
    ],
-   "size": 196620,
+   "size": 345772,
    "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/lab2.fbx",
    "previews": [
     "docs/previews/interior_lab2.png",
@@ -737,15 +955,40 @@
    ],
    "id": "lab2",
    "label": "実験棟2",
-   "sec": 3.385601758956909
+   "sec": 0.2141127586364746
   },
   {
    "tris": 4128,
+   "ext_tris": 4207,
+   "ext_stats": {
+    "tris": {
+     "bld": 2714,
+     "site_ground": 297,
+     "site_props_signs": 104,
+     "trees": 1092
+    },
+    "culled_tris": {
+     "site": 1791,
+     "trees": 708
+    },
+    "plants": {
+     "full": 0,
+     "simple": 0
+    },
+    "trees": {
+     "placed": 9,
+     "skipped": 0
+    }
+   },
    "objects": [
     "floor_greenhouse",
     "wall_greenhouse",
     "furn_greenhouse_01_entry",
     "furn_greenhouse_02_benches"
+   ],
+   "ext_objects": [
+    "ext_greenhouse",
+    "ext_greenhouse_trees"
    ],
    "empties": [
     "spawn_greenhouse",
@@ -758,14 +1001,14 @@
    "notes": [
     "切妻ガラス屋根の温室（栽培ベンチ 2 列・鉢植え・灌水パイプ）"
    ],
-   "size": 102860,
+   "size": 199996,
    "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/greenhouse.fbx",
    "previews": [
     "docs/previews/interior_greenhouse.png"
    ],
    "id": "greenhouse",
    "label": "温室",
-   "sec": 0.36262083053588867
+   "sec": 0.13890337944030762
   }
  ]
 }

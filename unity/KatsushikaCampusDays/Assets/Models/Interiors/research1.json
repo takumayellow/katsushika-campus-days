@@ -436,5 +436,14 @@
   "furn_research1_05_lab_a",
   "furn_research1_06_professor",
   "furn_research1_07_lab_b"
- ]
+ ],
+ "ext": {
+  "objects": [
+   "ext_research1",
+   "ext_research1_trees"
+  ],
+  "triangles": 25633,
+  "radius": 30.0,
+  "dz": -0.03
+ }
 }
