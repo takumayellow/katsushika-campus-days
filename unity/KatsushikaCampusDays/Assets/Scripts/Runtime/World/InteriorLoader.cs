@@ -116,6 +116,9 @@ namespace KCD
             StartCoroutine(Travel(player, entry.Spawn.position, entry.Spawn.eulerAngles.y, () =>
             {
                 MarkInside(entry);
+
+                // 書くのは暗転が明けて封鎖が外れてから（AutoSave）。ここでは頼むだけ (#61)。
+                AutoSave.Request();
                 string name = L.Get("ui.building." + entry.Id, entry.DisplayName);
                 HUD.Instance?.ShowToast(L.Pick(
                     name + " の中に入った。出口は入ってきた扉。",
@@ -140,6 +143,7 @@ namespace KCD
             StartCoroutine(Travel(player, _returnPosition, _returnYaw, () =>
             {
                 MarkOutside();
+                AutoSave.Request();
             }));
         }
 

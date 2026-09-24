@@ -210,6 +210,30 @@ namespace KCD
             return copy;
         }
 
+        /// <summary>
+        /// 翌朝のスポーンに立たせた写し。一日の終わりに「タイトルへ」を選んだときに書く形。
+        /// スポーンを覚えていなければ位置を持たせない（読むとシーンに置かれたスポーンから始まる）。どちらも屋内は外す。
+        /// </summary>
+        public static SaveData AtSpawn(SaveData data, bool hasSpawn, Vector3 spawn, float spawnYaw)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            SaveData copy = StandingAt(data, spawn, spawnYaw);
+            if (!hasSpawn)
+            {
+                copy.HasPosition = false;
+                copy.PlayerX = 0f;
+                copy.PlayerY = 0f;
+                copy.PlayerZ = 0f;
+                copy.PlayerYaw = 0f;
+            }
+
+            return copy;
+        }
+
         /// <summary>0 以上 24 未満の時刻。NaN・無限大は朝。</summary>
         public static float SanitizeHours(float hours)
         {

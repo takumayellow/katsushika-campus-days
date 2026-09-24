@@ -368,6 +368,44 @@ namespace KCD.Tests
             Assert.AreEqual("library", indoor.InteriorId, "元は変えない");
         }
 
+        [Test]
+        public void AtSpawn_WritesTheNextMorningAtTheSpawn_EvenFromIndoors()
+        {
+            // 一日の終わりに建物の中から「タイトルへ」を選んだ形。時計と日数は BeginNextDay で翌朝になっている。
+            SaveData indoor = IndoorSave();
+            indoor.DayNumber = 3;
+            indoor.TimeHours = DayRestart.DayStartHour;
+
+            SaveData saved = SaveDataRules.AtSpawn(indoor, true, new Vector3(5f, 0.1f, -60f), 180f);
+            SaveData read = SaveDataRules.Parse(SaveDataRules.ToJson(saved));
+
+            Assert.AreEqual(SavePlacement.Outside, SaveDataRules.Placement(read, true), "屋内の形が残っていても外のスポーンに立つ");
+            Assert.AreEqual(new Vector3(5f, 0.1f, -60f), read.PlayerPosition);
+            Assert.AreEqual(180f, read.PlayerYaw, 1e-4f);
+            Assert.AreEqual(3, read.DayNumber);
+            Assert.AreEqual(DayRestart.DayStartHour, read.TimeHours, 1e-4f);
+            Assert.AreEqual("library", indoor.InteriorId, "元は変えない");
+        }
+
+        [Test]
+        public void AtSpawn_WithoutAKnownSpawn_LeavesItToTheScene()
+        {
+            SaveData indoor = IndoorSave();
+
+            SaveData saved = SaveDataRules.AtSpawn(indoor, false, Vector3.zero, 0f);
+            SaveData read = SaveDataRules.Parse(SaveDataRules.ToJson(saved));
+
+            Assert.IsFalse(read.HasPosition);
+            Assert.IsFalse(read.IsInside);
+            Assert.AreEqual(SavePlacement.Stay, SaveDataRules.Placement(read, true), "シーンに置かれたスポーンから始める");
+        }
+
+        [Test]
+        public void AtSpawn_NoState_ReturnsNull()
+        {
+            Assert.IsNull(SaveDataRules.AtSpawn(null, true, Vector3.zero, 0f));
+        }
+
         // ---- 一日の記録（DayStats）----
 
         [Test]

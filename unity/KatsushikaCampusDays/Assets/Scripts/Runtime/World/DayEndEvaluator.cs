@@ -209,6 +209,10 @@ namespace KCD
             // 次に入るときは朝から。位置はシーンを読み直すのでスポーンに戻る。
             // 一日ごとの状態も「もう一日歩く」と同じように戻し、進行（クエスト・拾った物・写真）はメモリに残す。
             BeginNextDay();
+
+            // タイトルの「つづきから」はセーブを読むので、翌朝のスポーンに立っている形で書いておく (#61)。
+            // シーンが消えるので AutoSave を待たずにここで書く。
+            SaveSystem.SaveAtSpawn(_hasSpawn, _spawnPosition, _spawnYaw);
             GameManager.Instance.ReturnToTitle();
         }
 
@@ -255,6 +259,9 @@ namespace KCD
             }
 
             int day = BeginNextDay();
+
+            // 翌朝のスポーンに立った状態を、明転して封鎖が外れたところで書く (#61)。
+            AutoSave.Request();
 
             yield return null;
             yield return Fade(0f);

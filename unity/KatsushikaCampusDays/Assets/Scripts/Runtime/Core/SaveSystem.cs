@@ -7,6 +7,7 @@ namespace KCD
     /// <summary>
     /// 1 スロットだけの素朴なセーブ。Application.persistentDataPath に JSON で置く（Web 版は PlayerPrefs、SaveStore 参照）。
     /// F5 でセーブ、F9 でロード。ポーズメニューとタイトルの「つづきから」からも呼ぶ。
+    /// 自動セーブ（クエスト達成・建物の出入り・一日の終わり）は <see cref="AutoSave"/> がここを呼ぶ。
     /// 中身の形と、壊れた入力の読み方は <see cref="SaveData"/> / <see cref="SaveDataRules"/>。
     /// </summary>
     public static class SaveSystem
@@ -80,6 +81,26 @@ namespace KCD
             return Write(data);
         }
 
+        /// <summary>
+        /// 今の状態を、翌朝のスポーンに立っていることにして書く（<see cref="SaveDataRules.AtSpawn"/>）。
+        /// 一日の終わりに「タイトルへ」を選んだとき、朝に戻したあと、タイトルへ移る前に呼ぶ。失敗しても例外は投げない。
+        /// </summary>
+        public static bool SaveAtSpawn(bool hasSpawn, Vector3 spawn, float spawnYaw)
+        {
+            SaveData data;
+            try
+            {
+                data = SaveDataRules.AtSpawn(Capture(), hasSpawn, spawn, spawnYaw);
+            }
+            catch (Exception error)
+            {
+                Debug.LogError("[KCD] セーブする状態を集められません: " + error.Message);
+                return false;
+            }
+
+            return Write(data);
+        }
+
         /// <summary>組み立て済みのセーブを書く。失敗しても例外は投げない。</summary>
         public static bool Write(SaveData data)
         {
@@ -125,6 +146,9 @@ namespace KCD
             }
 
             _pending = null;
+
+            // 読む前に頼まれていた自動セーブは、読み込んだあとの状態には当てはまらないので捨てる。
+            AutoSave.Cancel();
             ApplyToManager(data);
             ApplyToScene(data);
             HUD.Instance?.ShowToast(L.Get("ui.hud.loaded", "ロードしました"));
