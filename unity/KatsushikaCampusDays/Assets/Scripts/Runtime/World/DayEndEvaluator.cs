@@ -64,6 +64,12 @@ namespace KCD
         private bool _armed = true;
         private bool _loaded;
 
+        /// <summary>
+        /// day_end_hour を過ぎたのを覚えておく掛け金。会話などの封鎖中も更新するので、
+        /// 封鎖中に 24 時をまたいで時計が 0 時に巻き戻っても、封鎖が外れたところでその日を終えられる (#62)。
+        /// </summary>
+        private bool _dayEndLatched;
+
         /// <summary>リザルト画面。SceneBuilder が差し込む。</summary>
         public ResultScreen Screen
         {
@@ -82,7 +88,52 @@ namespace KCD
 
             ResultData data = Evaluate();
             _armed = false;
+            _dayEndLatched = false;
             _screen.Show(data, OnContinue, OnToTitle);
+        }
+
+        // ---- 純関数（Unity を起動せずにテストする, #62）----
+
+        /// <summary>
+        /// 日の終わりの掛け金を今の時刻で更新する。封鎖中も毎フレーム呼ぶ。
+        /// ・dayEnd 以上 24 未満なら立てる。
+        /// ・朝から dayEnd まで（dayStart 以上 dayEnd 未満）なら落とす。翌朝への巻き戻しやロードで残さない。
+        /// ・0 時から朝まで（dayStart 未満）は変えない。封鎖中に 24 時をまたいだ夜は立ったまま残り、
+        ///   夜明け前の時刻から始めた場合（スモークの -kcd-time 5 など）は立たない。
+        /// </summary>
+        public static bool LatchDayEnd(bool latched, float hours, float dayStart, float dayEnd)
+        {
+            if (hours >= dayEnd && hours < 24f)
+            {
+                return true;
+            }
+
+            if (hours >= dayStart && hours < dayEnd)
+            {
+                return false;
+            }
+
+            return latched;
+        }
+
+        /// <summary>
+        /// いまリザルトを出すか。掛け金が立っていて、操作の封鎖も裏エンドも無いときだけ。
+        /// 裏エンドは閉じるときに ReturnToTitle が封鎖をまとめて外すので、シーンが切り替わるまでの
+        /// フレームは封鎖だけでは止まらない。<see cref="DormEnding.IsAnyShowing"/> はシーンが消えるまで立っている。
+        /// </summary>
+        public static bool ShouldEndDay(bool latched, bool blocked, bool dormEndingShowing)
+        {
+            return latched && !blocked && !dormEndingShowing;
+        }
+
+        /// <summary>
+        /// リザルトの「歩いた時間」。24 時をまたいで 0 時台に終わったときは、その夜の分も足す
+        /// （引き算だけだと 0 時間になる）。
+        /// </summary>
+        public static float WalkedHours(float hours, float dayStart)
+        {
+            float walked = hours >= dayStart ? hours - dayStart : hours + 24f - dayStart;
+            return Mathf.Clamp(walked, 0f, 24f);
         }
 
         private void Awake()
@@ -127,16 +178,17 @@ namespace KCD
                 return;
             }
 
-            // 会話やメニューの上には出さない。閉じた次のフレームで出す。
             GameManager manager = GameManager.Instance;
-            if (manager == null || !manager.HasEnteredCampus || KCDInput.GameplayBlocked)
+            if (manager == null || !manager.HasEnteredCampus)
             {
                 return;
             }
 
+            // 会話やメニューの上には出さない。ただし 20 時を過ぎたことは封鎖中も覚えておき、
+            // 封鎖が外れた最初のフレームで出す (#62)。
             EnsureLoaded();
-            float hours = manager.GameTimeHours;
-            if (hours >= _dayEndHour && hours < 24f)
+            _dayEndLatched = LatchDayEnd(_dayEndLatched, manager.GameTimeHours, DayStartHour, _dayEndHour);
+            if (ShouldEndDay(_dayEndLatched, KCDInput.GameplayBlocked, DormEnding.IsAnyShowing))
             {
                 EndDayNow();
             }
@@ -234,6 +286,7 @@ namespace KCD
             // 戻したことを追跡表示に伝える。呼ばないと前日の赤い「時間切れ」が残る。
             manager.Quests?.NotifyChanged();
             manager.DayNumber = DayRestart.NextDay(manager.DayNumber);
+            _dayEndLatched = false;
             _armed = true;
             return manager.DayNumber;
         }
@@ -351,7 +404,7 @@ namespace KCD
                 PhotoTotal = _tPhotos,
                 Buildings = Mathf.Min(DayStats.BuildingCount, _tBuildings),
                 BuildingTotal = _tBuildings,
-                HoursWalked = manager != null ? Mathf.Max(0f, manager.GameTimeHours - DayStartHour) : 0f
+                HoursWalked = manager != null ? WalkedHours(manager.GameTimeHours, DayStartHour) : 0f
             };
 
             float percent = 100f * (

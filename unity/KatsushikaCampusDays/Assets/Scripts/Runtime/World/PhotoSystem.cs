@@ -66,8 +66,9 @@ namespace KCD
             if (KCDInput.PhotoMode)
             {
                 KCDInput.PhotoMode = false;
-                KCDInput.GameplayBlocked = false;
             }
+
+            KCDInput.Unblock(this);
         }
 
         private void Update()
@@ -124,7 +125,18 @@ namespace KCD
         private void SetActive(bool active)
         {
             KCDInput.PhotoMode = active;
-            KCDInput.GameplayBlocked = active;
+
+            // 自分の名前で封鎖する。共有の GameplayBlocked への代入だと、写真モードを抜けたときに
+            // ほかの画面の封鎖まで外していた (#62)。
+            if (active)
+            {
+                KCDInput.Block(this);
+            }
+            else
+            {
+                KCDInput.Unblock(this);
+            }
+
             HUD.Instance?.SetGameplayUIVisible(!active);
             SetOverlay(active);
             AudioManager.Instance?.PlayUi(active ? "ui_open" : "ui_close");
