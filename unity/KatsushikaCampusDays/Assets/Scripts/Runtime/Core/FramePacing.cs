@@ -30,9 +30,9 @@ namespace KCD
     /// vSync を切るのは計測の比較用で, 起動引数 <c>-kcd-vsync off</c> で指定する（設定画面には出さない。
     /// 理由は docs/WEBGL_BUDGET.md）。
     ///
-    /// Web 版には触らない。ブラウザは requestAnimationFrame で画面に合わせて回し, targetFrameRate を入れると
-    /// setTimeout で回すように切り替わってかえって刻みが乱れる。エディタにも触らない（QualitySettings を
-    /// 書き換えると ProjectSettings に残るため）。
+    /// Web 版には触らない。Web 版はブラウザの requestAnimationFrame で回り, Unity の手引き（webgl-performance）は
+    /// 上限を掛けないなら targetFrameRate を既定の -1 にして刻みをブラウザに任せるよう勧めている。
+    /// エディタにも触らない（開発者の QualitySettings を再生のたびに書き換えないため）。
     /// </summary>
     public static class FramePacing
     {

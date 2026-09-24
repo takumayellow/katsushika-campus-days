@@ -12,7 +12,7 @@ namespace KCD.Tests
     ///
     /// 段を変えても Assets/Settings/*_RPAsset は書き換えず, 写しにだけ値を入れる。Medium と High は
     /// 今の Web 版・Windows 版のアセットと同じ値から作ってあり, アセットの値が変わったら表も見直す。
-    /// QualitySettings.renderPipeline（ProjectSettings に残る）はテストでは触らない。
+    /// QualitySettings.renderPipeline（開発者のプロジェクトの設定）はテストでは触らない。
     /// </summary>
     public sealed class QualityPipelineTests
     {

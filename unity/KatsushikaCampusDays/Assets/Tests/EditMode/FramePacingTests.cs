@@ -5,7 +5,7 @@ namespace KCD.Tests
 {
     /// <summary>
     /// Windows 版のフレームの刻み (#15)。vSync を入れ, 切ったときは 60 fps で止める。
-    /// Web 版とエディタは触らない（ブラウザは画面に合わせて回し, エディタは ProjectSettings に残るため）。
+    /// Web 版とエディタは触らない（Web 版は刻みをブラウザに任せ, エディタは開発者の設定を書き換えないため）。
     /// </summary>
     public sealed class FramePacingTests
     {
