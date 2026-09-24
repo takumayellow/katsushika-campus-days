@@ -43,11 +43,13 @@ namespace KCD
             _dialogue.LineChanged += OnLineChanged;
             _dialogue.Finished += OnFinished;
             _dialogue.AdvanceGate = IsFullyRevealed;
+            L.LocaleChanged += OnLocaleChanged;
             SetVisible(false);
         }
 
         private void OnDestroy()
         {
+            L.LocaleChanged -= OnLocaleChanged;
             if (_dialogue != null)
             {
                 _dialogue.LineChanged -= OnLineChanged;
@@ -72,17 +74,9 @@ namespace KCD
             }
 
             SetVisible(true);
+            ShowSpeaker(line);
 
-            string speaker = string.IsNullOrEmpty(line.Speaker)
-                ? GameManager.Instance.SelectedCharacterShortName
-                : line.Speaker;
-
-            if (_speakerLabel != null)
-            {
-                _speakerLabel.text = speaker;
-            }
-
-            _fullText = line.Text;
+            _fullText = line.DisplayText;
             _revealed = 0f;
             _revealedFrame = -1;
             _lastBlipAt = 0;
@@ -92,6 +86,45 @@ namespace KCD
             {
                 _bodyLabel.text = _fullText;
                 _bodyLabel.maxVisibleCharacters = 0;
+            }
+        }
+
+        /// <summary>話者欄の名前。話者が空ならプレイヤー、それ以外はいまの言語での話者名。</summary>
+        public static string SpeakerLabel(DialogueLine line, string playerName)
+        {
+            return string.IsNullOrEmpty(line.Speaker) ? playerName : line.DisplaySpeaker;
+        }
+
+        private void ShowSpeaker(DialogueLine line)
+        {
+            if (_speakerLabel != null)
+            {
+                _speakerLabel.text = SpeakerLabel(line, GameManager.Instance.SelectedCharacterShortName);
+            }
+        }
+
+        /// <summary>
+        /// 会話中に言語を切り替えたら、表示中の行をその言語で出し直す。
+        /// 文字数が変わるので送りはやり直さず全文を出す（次の行からはふつうに送る）。
+        /// </summary>
+        private void OnLocaleChanged()
+        {
+            DialogueLine line = _dialogue != null ? _dialogue.CurrentLine : null;
+            if (line == null || _root == null || !_root.activeSelf)
+            {
+                return;
+            }
+
+            ShowSpeaker(line);
+            _fullText = line.DisplayText;
+            _revealed = _fullText.Length;
+            _revealedFrame = Time.frameCount;
+            _lastBlipAt = _fullText.Length;
+
+            if (_bodyLabel != null)
+            {
+                _bodyLabel.text = _fullText;
+                _bodyLabel.maxVisibleCharacters = _fullText.Length;
             }
         }
 
