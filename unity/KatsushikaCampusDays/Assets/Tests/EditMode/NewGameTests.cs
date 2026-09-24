@@ -233,8 +233,9 @@ namespace KCD.Tests
             LogAssert.ignoreFailingMessages = true;
             var go = new GameObject("GameManagerForTest");
 
-            // SelectedCharacterId の setter は PlayerPrefs に書く。テストで開発機の設定を書き換えない。
-            string saved = PlayerPrefs.GetString(GameManager.CharacterPrefKey, "mirai");
+            // SelectedCharacterId の setter は PlayerPrefs に書く。テストで開発機の設定を書き換えない
+            // （キャラを選んだことのない機械では、終わったあともキーを無いままにする）。
+            var characterPref = new PlayerPrefsKeyScope(GameManager.CharacterPrefKey);
 
             try
             {
@@ -250,8 +251,7 @@ namespace KCD.Tests
             finally
             {
                 UnityEngine.Object.DestroyImmediate(go);
-                PlayerPrefs.SetString(GameManager.CharacterPrefKey, saved);
-                PlayerPrefs.Save();
+                characterPref.Dispose();
                 LogAssert.ignoreFailingMessages = ignoring;
             }
         }
