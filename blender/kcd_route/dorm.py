@@ -433,8 +433,9 @@ def build_exterior(dorm, shell=None, trim=None):
     # バルコニーの端。玄関面の角 E は妻壁を立てず、スラブと型板ガラスの手すりが角まで片持ちで
     # 出る（_balconies の t_open）。東北東面の角 A には、裏の本体の下げ CORE_IN とそろえた幅の
     # 妻壁を立てる。角 E・A とも 1 階の天端〜2 階の床は裏の辺の 1 階の外壁と同じ平面に乗るので、
-    # その端を抜く
+    # その端を抜く。角 E の奥は、裏の外壁と本体の間（幅 CORE_IN）の端を本体と同じ壁で塞ぐ
     _box_open(shell, ff, 0.0, CORE_IN, -BALC_D, 0.0, top1, gf, "dorm_white", "t0")
+    _pane(shell, ff, 0.0, CORE_IN, -BALC_D, gf, h - ROOF_T, "dorm_cream")
     _box_open(shell, fs, fs[3] - CORE_IN, fs[3], -BALC_D, 0.0, top1, gf, "dorm_white", "t1")
     _box(shell, fs, fs[3] - CORE_IN, fs[3], -BALC_D, 0.0, gf, h - ROOF_T, "dorm_white")
     units = _balconies(trim, ff, CORE_IN, core_t, z_floors, t_open=0.0)
