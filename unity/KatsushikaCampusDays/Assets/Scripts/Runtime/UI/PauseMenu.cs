@@ -83,6 +83,13 @@ namespace KCD
 
         private void Update()
         {
+            // タイトルへ戻る読み込みの間もキャンパスは残っていて、時間を止めてある。ここで開閉させると、
+            // 閉じたときの SetOpen(false) が Time.timeScale = 1 に戻して読み込みの裏で時計が進む (#15)。
+            if (SceneLoader.IsAnyLoading)
+            {
+                return;
+            }
+
             // DormEnding.IsAnyShowing: 裏エンド (#41) の暗転中と結果表示中は Esc を食わせない。
             // 食わせると暗転の裏でポーズが開き、閉じたときの SetOpen(false) が
             // Time.timeScale = 1 に戻してしまう（裏エンドの最中に時間が動き出す）。
