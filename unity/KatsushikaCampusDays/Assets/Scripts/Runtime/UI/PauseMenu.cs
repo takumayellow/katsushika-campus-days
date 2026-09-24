@@ -25,8 +25,16 @@ namespace KCD
 
         private int _index;
 
+        /// <summary>時間を止めて封鎖を掛けているか。設定パネルを出している間（本体は隠れている）も true。</summary>
+        private bool _paused;
+
         /// <summary>開いているか。</summary>
         public bool IsOpen => _root != null && _root.activeSelf;
+
+        /// <summary>
+        /// ポーズで時間を止めているか。<see cref="IsOpen"/> と違い、ポーズから開いた設定パネルの間も true。
+        /// </summary>
+        public bool IsPaused => _paused;
 
         /// <summary>設定パネル。SceneBuilder が差し込む。</summary>
         public SettingsView Settings
@@ -48,6 +56,29 @@ namespace KCD
             {
                 _root.SetActive(false);
             }
+        }
+
+        /// <summary>開いたまま無効にされたり、シーンごと消されたりしても、止めた時間と封鎖を残さない (#62)。</summary>
+        private void OnDisable()
+        {
+            Abandon();
+        }
+
+        /// <summary>
+        /// 開いたまま片付けられるときの後始末。自分が止めた時間と自分の封鎖だけを戻す。
+        /// 開いていなければ何もしない（ほかの画面が止めた timeScale を 1 に戻さない）。
+        /// 音とカーソルは次の画面に任せる。<see cref="OnDisable"/> が呼ぶ。
+        /// </summary>
+        public void Abandon()
+        {
+            if (!_paused)
+            {
+                return;
+            }
+
+            _paused = false;
+            Time.timeScale = 1f;
+            KCDInput.Unblock(this);
         }
 
         private void Update()
@@ -93,7 +124,7 @@ namespace KCD
             }
         }
 
-        /// <summary>開閉する。開いている間は時間を止める。</summary>
+        /// <summary>開閉する。開いている間は時間を止め、自分の名前で操作を封鎖する。</summary>
         public void SetOpen(bool open)
         {
             if (_root == null)
@@ -108,7 +139,19 @@ namespace KCD
 
             _root.SetActive(open);
             Time.timeScale = open ? 0f : 1f;
-            KCDInput.GameplayBlocked = open;
+            _paused = open;
+
+            // 自分の封鎖だけを掛け外しする。共有の GameplayBlocked への代入だと、ポーズ中に開いた
+            // クエストログを閉じたときにポーズの封鎖まで外れていた (#62)。
+            if (open)
+            {
+                KCDInput.Block(this);
+            }
+            else
+            {
+                KCDInput.Unblock(this);
+            }
+
             Cursor.lockState = open ? CursorLockMode.None : CursorLockMode.Locked;
             Cursor.visible = open;
 
@@ -145,10 +188,15 @@ namespace KCD
                     SetOpen(false);
                     break;
                 case 1:
-                    SaveSystem.Save();
-                    HUD.Instance?.ShowToast(L.Get("ui.hud.saved", "セーブしました"));
+                {
+                    // 書けなかったのに「セーブしました」と出すと、次に遊ぶときまで気づけない (#61)。
+                    bool saved = SaveSystem.Save();
+                    HUD.Instance?.ShowToast(saved
+                        ? L.Get("ui.hud.saved", "セーブしました")
+                        : L.Get("ui.hud.save_failed", "セーブできませんでした"));
                     SetOpen(false);
                     break;
+                }
                 case 2:
                     SetOpen(false);
                     SaveSystem.Load();

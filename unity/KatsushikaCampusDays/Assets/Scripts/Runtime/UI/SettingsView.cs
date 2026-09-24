@@ -170,7 +170,7 @@ namespace KCD
             AppendRow(builder, RowClose, L.Pick("閉じる", "Close"), string.Empty);
             builder.Append("\n<size=70%><alpha=#99>");
             builder.Append(L.Pick("↑↓ で選択　←→ で変更　Esc で戻る", "Up/Down: select   Left/Right: change   Esc: back"));
-            builder.Append("</alpha></size>");
+            builder.Append("<alpha=#FF></size>");
             _body.text = builder.ToString();
         }
 

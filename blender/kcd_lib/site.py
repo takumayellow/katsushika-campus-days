@@ -43,7 +43,11 @@ BED_WALL = 0.2       # 縁石の厚み
 BED_TOP = 0.45       # 縁石の天端。stepOffset 0.40 より高いので、歩いては上がれない
 BED_SOIL = 0.38      # 土の面
 BED_KEEP = 1.5       # 通路・入口の脇に空ける幅
-FLOWERS = ("flower_red", "flower_yellow", "flower_white", "flower_pink")
+# 花の色。実物の季節の花壇（パンジー・ビオラ・マリーゴールド）の 6 色を、隣どうしが馴染む順
+# （紫→白→桃→赤→橙→黄→紫）に並べる。株ごとにこの並びの 1 色を主にし、次の色を差し色に混ぜる（#58）。
+FLOWERS = ("flower_purple", "flower_white", "flower_pink", "flower_red", "flower_orange", "flower_yellow")
+# 花の中心の色（パンジー・ビオラの黄色い目、マリーゴールドの芯）。載っていない色は flower_yellow。
+FLOWER_EYES = {"flower_yellow": "flower_orange", "flower_orange": "flower_red"}
 
 # 図書館を囲む堀のような水盤（水面の矩形 (u0, v0, u1, v1) のリスト）。
 # 実物は図書館の東面と南面に沿う幅 約 10 m の帯で、モール（v -30..-18）が橋になって
@@ -58,6 +62,9 @@ BASINS = [
     (-100.0, -78.0, -59.5, -66.0),  # 南の池（図書館の南面）
 ]
 BASIN_RIM = 1.6     # 縁石の幅（腰かけられる）
+# basin_edges の許容差（m）。辺が同じ直線上にあるとみなす差と、捨てる切れ端の長さ。
+# CampusStage.UncoveredSpans と同じ値にする（blender/tests/fixtures/basin_edges.json で突き合わせる）
+BASIN_EDGE_EPS = 1e-4
 # 図書館の東の芝生広場 (u0, v0, u1, v1)。以前の池の跡。実物も木の無い芝生
 LIBRARY_LAWN = (-46.0, -100.0, 8.0, -32.0)
 
@@ -221,7 +228,9 @@ def basin_edges(rects=None, rim=BASIN_RIM):
       out  : 水の外へ向かう側（+1 / -1）
       ext0 / ext1: 端を縁石の幅だけ延ばすか。出隅は延ばして角を埋める。入隅（L 字の内側）の
                    ように、延ばした先が隣の水面に掛かる所は延ばさない。
-    矩形が 1 枚なら 4 辺そのまま。Unity 側の CampusStage.BasinEdges が同じ計算をする。"""
+    矩形が 1 枚なら 4 辺そのまま。Unity 側の CampusStage.BasinEdges が同じ計算をする
+    （ext0 / ext1 を除く）。両者の一致は blender/tests/fixtures/basin_edges.json を介して
+    pytest（test_site.py）と EditMode テスト（BasinEdgeAgreementTests）が確かめる。"""
     rects = list(BASINS if rects is None else rects)
     edges = []
     for i, r in enumerate(rects):
@@ -237,7 +246,7 @@ def basin_edges(rects=None, rim=BASIN_RIM):
                     face, a, b = (o[1] if out > 0 else o[3]), o[0], o[2]
                 else:
                     face, a, b = (o[0] if out > 0 else o[2]), o[1], o[3]
-                if abs(face - c) > 1e-6:
+                if abs(face - c) > BASIN_EDGE_EPS:
                     continue
                 nxt = []
                 for s0, s1 in spans:
@@ -250,7 +259,7 @@ def basin_edges(rects=None, rim=BASIN_RIM):
                         nxt.append((b, s1))
                 spans = nxt
             for s0, s1 in spans:
-                if s1 - s0 < 1e-6:
+                if s1 - s0 <= BASIN_EDGE_EPS:
                     continue
                 ext = []
                 for t, sgn in ((s0, -1), (s1, +1)):
@@ -325,38 +334,74 @@ def build_mall_beds(mb, frame, occ, data, ctx):
 
 
 def _flowers(mb, frame, u0, v0, u1, v1, k):
-    """花壇の植え込み。葉の丸い株を隙間なく 3 列に並べ、株の上と肩に小さな花を散らす。
+    """花壇の植え込み。葉の丸い株を隙間なく 3 列に並べ、株の表面に平たい 5 弁の花を散らす。
 
-    株は隣と少し重なる大きさにして土を隠す。花の色は株ごとに 1 色で、3 株ずつの塊にして
-    列と花壇でずらす（一色の帯にしない）。"""
+    株は隣と少し重なる大きさにして土を隠す。株ごとに FLOWERS の 1 色を主にして、3 株ずつの塊を
+    列と花壇でずらす（一色の帯にしない）。花は株の面に沿わせつつモール（-v）の側へ少し向ける。
+    実物の花壇は南のモールに面していて、花は日の当たる側を向く。"""
     rows = 3
     n = max(1, int(round((u1 - u0) / 0.95)))
     du = (u1 - u0) / n
     dv = (v1 - v0) / rows
-    rad = 0.52 * max(du, dv)
+    rad = 0.56 * max(du, dv)
+    toward = (-frame.v[0], -frame.v[1])
     for r in range(rows):
         v = v0 + dv * (r + 0.5)
         for i in range(n):
             j = i * 7 + r * 13 + k * 5
             x, y = frame.xy(u0 + du * (i + 0.5) + 0.1 * ((j % 3) - 1), v)
             h = 0.20 + 0.05 * (j % 3)
-            _plant(mb, x, y, rad, h, j, FLOWERS[(k + r + i // 3) % len(FLOWERS)])
+            c = (k + r + i // 3) % len(FLOWERS)
+            _plant(mb, x, y, rad, h, j, (FLOWERS[c], FLOWERS[(c + 1) % len(FLOWERS)]), toward)
 
 
 # 株の断面（半径の割合, 高さの割合）。下から順に
 _PLANT_RINGS = ((1.0, 0.0), (0.8, 0.6), (0.4, 1.0))
 
+BLOOMS = 12            # 1 株の花の数（以前は 3 角錐 7 個）
+BLOOM_REACH = 0.84     # 花を置く範囲（株の半径の割合）。肩まで咲かせる
+BLOOM_R = (0.085, 0.105)   # 花冠の半径 [m]。実物のパンジー（3 cm）より大きく、3〜6 m 先で花の形に見える
+ACCENT = 0.28          # 差し色（並びの次の色）になる花の割合
+PETAL_CUP = math.radians(25.0)   # 花びらの付け根から先への反り（浅い杯形。低い視点でも奥の花びらが見える）
+PETAL_W = math.radians(33.0)     # 花びらの肩の開き（花びらの軸から左右へ。5 弁で 72 度おき）
+PETAL_SHOULDER = 0.72            # 肩の位置（花冠の半径の割合）。幅の広い丸みのある花びらにする
+BLOOM_LIFT = 0.015     # 株の面から花の中心までの浮き [m]
+LEAN_SLOPE = 0.6       # 株の面の傾きにどれだけ沿わせるか
+LEAN_TOWARD = 0.22     # モールの側へ向ける強さ（水平成分）
 
-def _plant_z(t):
-    """株の中心から半径の割合 t の所の表面の高さ（高さの割合）。"""
+
+def _plant_profile(t):
+    """株の中心から半径の割合 t の所の表面の高さ（高さの割合）と、その t での傾き d高さ/dt。"""
     for (ta, za), (tb, zb) in zip(_PLANT_RINGS[::-1], _PLANT_RINGS[-2::-1]):
         if t <= tb:
-            return za if t <= ta else za + (zb - za) * (t - ta) / (tb - ta)
-    return 0.0
+            if t <= ta:
+                return za, 0.0
+            slope = (zb - za) / (tb - ta)
+            return za + slope * (t - ta), slope
+    return 0.0, 0.0
 
 
-def _plant(mb, x, y, rad, h, j, col, seg=7, blooms=7):
-    """葉の丸い株（7 角の 2 段）と、その表面に付く小さな 3 角錐の花。"""
+def _plant_surface(px, py, x, y, rad, h, rot, seg):
+    """株 (x, y) の面の上で、点 (px, py) の真上の高さと、面の法線（単位ベクトル）。
+
+    株は seg 角形の輪を積んだもので、扇形 1 つの中の面は平ら（上下の輪の辺が平行な台形）。
+    高さは扇形の二等分線への射影だけで決まるので、多角形の辺の間でも面にぴったり載せられる。"""
+    dx, dy = px - x, py - y
+    step = 2.0 * math.pi / seg
+    mid = rot + (math.floor((math.atan2(dy, dx) - rot) / step) + 0.5) * step
+    bx, by = math.cos(mid), math.sin(mid)
+    edge = rad * math.cos(math.pi / seg)   # 輪 t = 1 の辺までの距離
+    zf, dzf = _plant_profile((dx * bx + dy * by) / edge)
+    g = h * dzf / edge                     # 二等分線の向きの高さの傾き（外へ下がると負）
+    ln = math.sqrt(1.0 + g * g)
+    return BED_SOIL + h * zf, (-g * bx / ln, -g * by / ln, 1.0 / ln)
+
+
+def _plant(mb, x, y, rad, h, j, cols, toward, seg=7, blooms=BLOOMS):
+    """葉の丸い株（7 角の 2 段）と、その表面に咲く平たい 5 弁の花。
+
+    cols は（主の色, 差し色）、toward は花を向ける水平の向き（単位ベクトル）。"""
+    rng = random.Random(9173 + j)
     rot = j * 0.9
     rings = [[(x + rad * t * math.cos(rot + math.pi * 2 * q / seg),
                y + rad * t * math.sin(rot + math.pi * 2 * q / seg),
@@ -368,16 +413,46 @@ def _plant(mb, x, y, rad, h, j, col, seg=7, blooms=7):
     mb.add_face(rings[-1], "flower_leaf")
     for q in range(blooms):
         # 黄金角で散らし、半径は外ほど疎に（肩にも咲く）
-        a = rot + q * 2.39996
-        t = 0.82 * math.sqrt((q + 0.5) / blooms)
+        a = rot + q * 2.39996 + rng.uniform(-0.25, 0.25)
+        t = BLOOM_REACH * math.sqrt((q + 0.5) / blooms)
         fx, fy = x + rad * t * math.cos(a), y + rad * t * math.sin(a)
-        fz = BED_SOIL + h * _plant_z(t) + 0.01
-        br = 0.09
-        base = [(fx + br * math.cos(a + math.pi * 2 * m / 3),
-                 fy + br * math.sin(a + math.pi * 2 * m / 3), fz) for m in range(3)]
-        top = (fx, fy, fz + 0.06)
-        for m in range(3):
-            mb.add_face([base[m], base[(m + 1) % 3], top], col)
+        fz, nrm = _plant_surface(fx, fy, x, y, rad, h, rot, seg)
+        lean = (LEAN_SLOPE * nrm[0] + LEAN_TOWARD * toward[0] + rng.uniform(-0.12, 0.12),
+                LEAN_SLOPE * nrm[1] + LEAN_TOWARD * toward[1] + rng.uniform(-0.12, 0.12),
+                1.0)
+        ln = math.sqrt(sum(c * c for c in lean))
+        n = (lean[0] / ln, lean[1] / ln, lean[2] / ln)
+        col = cols[1] if rng.random() < ACCENT else cols[0]
+        centre = (fx + n[0] * BLOOM_LIFT, fy + n[1] * BLOOM_LIFT, fz + n[2] * BLOOM_LIFT)
+        _bloom(mb, centre, n, rng.uniform(*BLOOM_R), rng.uniform(0.0, 2.0 * math.pi),
+               col, FLOWER_EYES.get(col, "flower_yellow"))
+
+
+def _bloom(mb, c, n, size, spin, col, eye):
+    """平たい 5 弁の花（1 輪 11 三角形）。c は中心、n は花の向き（単位ベクトル）、size は花冠の半径。
+
+    花びらは付け根・左の肩・先・右の肩の 4 点の菱形で、付け根から先へ PETAL_CUP だけ反る。
+    高さを花びらの軸方向の距離だけで決めるので、4 点は同じ平面に載る。中心に目の三角形を 1 枚。"""
+    ref = (1.0, 0.0, 0.0) if abs(n[0]) < 0.9 else (0.0, 1.0, 0.0)
+    d = ref[0] * n[0] + ref[1] * n[1] + ref[2] * n[2]
+    e1 = (ref[0] - d * n[0], ref[1] - d * n[1], ref[2] - d * n[2])
+    l1 = math.sqrt(sum(v * v for v in e1))
+    e1 = (e1[0] / l1, e1[1] / l1, e1[2] / l1)
+    e2 = (n[1] * e1[2] - n[2] * e1[1], n[2] * e1[0] - n[0] * e1[2], n[0] * e1[1] - n[1] * e1[0])
+    cup = math.tan(PETAL_CUP)
+    r0, r1 = 0.10 * size, PETAL_SHOULDER * size
+
+    def at(rho, psi, z):
+        cx, sx = rho * math.cos(psi), rho * math.sin(psi)
+        return tuple(c[i] + cx * e1[i] + sx * e2[i] + z * n[i] for i in range(3))
+
+    for p in range(5):
+        a = spin + p * 2.0 * math.pi / 5.0
+        z1 = (r1 * math.cos(PETAL_W) - r0) * cup
+        mb.add_face([at(r0, a, 0.0), at(r1, a - PETAL_W, z1),
+                     at(size, a, (size - r0) * cup), at(r1, a + PETAL_W, z1)], col)
+    re = 0.30 * size
+    mb.add_face([at(re, spin + math.pi / 5.0 + m * 2.0 * math.pi / 3.0, 0.14 * size) for m in range(3)], eye)
 
 
 def build_basin(mb, frame, occ):

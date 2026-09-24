@@ -37,6 +37,12 @@ namespace KCD
             }
         }
 
+        /// <summary>開いたまま無効にされても、自分の封鎖を残さない。</summary>
+        private void OnDisable()
+        {
+            KCDInput.Unblock(this);
+        }
+
         private void Update()
         {
             // DormEnding.IsAnyShowing: 裏エンド (#41) の最中は Tab でログを開かせない。
@@ -56,10 +62,32 @@ namespace KCD
             }
         }
 
-        /// <summary>開閉を切り替える。</summary>
-        public void Toggle() => SetOpen(!IsOpen);
+        /// <summary>
+        /// ログを開いてよいか。ほかの封鎖（ポーズ・会話・写真モード・建物の出入りの暗転など）があるときは開かない (#62)。
+        /// 自分の封鎖は数えない（開いているログを閉じるのはいつでもできる）。
+        /// </summary>
+        public static bool CanOpen(bool blocked, bool blockedBySelf, bool photoMode)
+        {
+            return !photoMode && (!blocked || blockedBySelf);
+        }
 
-        /// <summary>開閉する。開いている間はゲームプレイ入力を止める。</summary>
+        /// <summary>開閉を切り替える。閉じるのはいつでも、開くのは <see cref="CanOpen"/> のときだけ。</summary>
+        public void Toggle()
+        {
+            if (IsOpen)
+            {
+                SetOpen(false);
+            }
+            else if (CanOpen(KCDInput.GameplayBlocked, KCDInput.IsBlockedBy(this), KCDInput.PhotoMode))
+            {
+                SetOpen(true);
+            }
+        }
+
+        /// <summary>
+        /// 開閉する。開いている間は自分の名前で操作を封鎖する。
+        /// 共有の GameplayBlocked への代入だと、ポーズ中に開いて閉じたときにポーズの封鎖まで外れていた (#62)。
+        /// </summary>
         public void SetOpen(bool open)
         {
             if (_root == null)
@@ -78,7 +106,14 @@ namespace KCD
             }
 
             _root.SetActive(open);
-            KCDInput.GameplayBlocked = open;
+            if (open)
+            {
+                KCDInput.Block(this);
+            }
+            else
+            {
+                KCDInput.Unblock(this);
+            }
         }
 
         private void Rebuild()

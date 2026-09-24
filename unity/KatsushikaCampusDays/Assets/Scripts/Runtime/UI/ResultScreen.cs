@@ -57,7 +57,8 @@ namespace KCD
             _openedAt = Time.unscaledTime;
 
             HUD.Instance?.SetGameplayUIVisible(false);
-            KCDInput.GameplayBlocked = true;
+            // 自分の名前で封鎖する。閉じるときに、ほかの画面の封鎖まで外さない (#62)。
+            KCDInput.Block(this);
             Time.timeScale = 0f;
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
@@ -80,7 +81,7 @@ namespace KCD
             _root.SetActive(false);
             IsAnyOpen = false;
             Time.timeScale = 1f;
-            KCDInput.GameplayBlocked = false;
+            KCDInput.Unblock(this);
             KCDInput.MarkModalClosed();
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
@@ -94,8 +95,9 @@ namespace KCD
             {
                 IsAnyOpen = false;
                 Time.timeScale = 1f;
-                KCDInput.GameplayBlocked = false;
             }
+
+            KCDInput.Unblock(this);
         }
 
         private void Update()
@@ -116,10 +118,25 @@ namespace KCD
             if (KCDInput.SubmitPressed)
             {
                 AudioManager.Instance?.PlayUi("ui_confirm");
-                Action chosen = _index == 0 ? _onContinue : _onToTitle;
-                Close();
-                chosen?.Invoke();
+                Choose(_index);
             }
+        }
+
+        /// <summary>
+        /// 選択肢を選んで閉じる（0 = もう一日歩く、1 = タイトルへ）。決定キーと同じ道で、テストとスモークからも呼ぶ。
+        /// 開いていないときと範囲外の番号は何もしない。
+        /// </summary>
+        public void Choose(int index)
+        {
+            if (!IsOpen || index < 0 || index >= ChoiceKeys.Length)
+            {
+                return;
+            }
+
+            _index = index;
+            Action chosen = index == 0 ? _onContinue : _onToTitle;
+            Close();
+            chosen?.Invoke();
         }
 
         private void Redraw()

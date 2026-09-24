@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Globalization;
 using System.IO;
 using TMPro;
 using UnityEngine;
@@ -9,7 +10,7 @@ namespace KCD
 {
     /// <summary>
     /// フォトモード。P で HUD を隠してカメラだけ動かせる状態にし、Enter で PNG を保存する。
-    /// 保存先は persistentDataPath/Photos。撮影は PhotoTaken で通知し、収集や実績が拾う。
+    /// 保存先は persistentDataPath/Photos（Web 版はブラウザのダウンロード）。撮影は PhotoTaken で通知し、収集や実績が拾う。
     /// </summary>
     public sealed class PhotoSystem : MonoBehaviour
     {
@@ -66,8 +67,9 @@ namespace KCD
             if (KCDInput.PhotoMode)
             {
                 KCDInput.PhotoMode = false;
-                KCDInput.GameplayBlocked = false;
             }
+
+            KCDInput.Unblock(this);
         }
 
         private void Update()
@@ -121,10 +123,36 @@ namespace KCD
             }
         }
 
+        /// <summary>
+        /// 撮影のトーストに出す名前。写真スポットならその名前（「モールの見通し」など）、
+        /// 一覧に無い id ならその id、自由撮影ならファイル名。
+        /// </summary>
+        public static string LabelFor(string spotId, string fileName)
+        {
+            if (string.IsNullOrEmpty(spotId))
+            {
+                return fileName ?? string.Empty;
+            }
+
+            CatalogPhotoSpot spot = CollectibleCatalog.Instance?.FindPhotoSpot(spotId);
+            return spot != null ? spot.DisplayName : spotId;
+        }
+
         private void SetActive(bool active)
         {
             KCDInput.PhotoMode = active;
-            KCDInput.GameplayBlocked = active;
+
+            // 自分の名前で封鎖する。共有の GameplayBlocked への代入だと、写真モードを抜けたときに
+            // ほかの画面の封鎖まで外していた (#62)。
+            if (active)
+            {
+                KCDInput.Block(this);
+            }
+            else
+            {
+                KCDInput.Unblock(this);
+            }
+
             HUD.Instance?.SetGameplayUIVisible(!active);
             SetOverlay(active);
             AudioManager.Instance?.PlayUi(active ? "ui_open" : "ui_close");
@@ -150,14 +178,11 @@ namespace KCD
             SetOverlay(false);
             yield return new WaitForEndOfFrame();
 
-            string fileName = "kcd_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".png";
-            string folder = Path.Combine(Application.persistentDataPath, FolderName);
+            string fileName = FileNameFor(DateTime.Now);
             bool saved;
             try
             {
-                Directory.CreateDirectory(folder);
-                ScreenCapture.CaptureScreenshot(Path.Combine(folder, fileName));
-                saved = true;
+                saved = SavePhoto(fileName);
             }
             catch (Exception error)
             {
@@ -187,11 +212,45 @@ namespace KCD
                 SetOverlay(true);
             }
 
-            string label = string.IsNullOrEmpty(spotId) ? fileName : spotId;
-            HUD.Instance?.ShowToast(L.Format("ui.hud.photo_taken", label));
+            HUD.Instance?.ShowToast(L.Format("ui.hud.photo_taken", LabelFor(spotId, fileName)));
             DayStats.NotePhoto(string.IsNullOrEmpty(spotId) ? fileName : spotId);
             PhotoTaken?.Invoke(string.IsNullOrEmpty(spotId) ? fileName : spotId);
             _capturing = false;
+        }
+
+        /// <summary>
+        /// 写真のファイル名。撮った日時から作る。端末の言語設定に依らず西暦で書く
+        /// （その地域の暦で書くと、タイ語の設定では年が仏暦の 2569 になる）。
+        /// </summary>
+        public static string FileNameFor(DateTime time)
+        {
+            return "kcd_" + time.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture) + ".png";
+        }
+
+        /// <summary>
+        /// 今の画面を 1 枚置く。フレームの描画が終わったあと（WaitForEndOfFrame のあと）に呼ぶ。
+        /// デスクトップは persistentDataPath/Photos。Web 版の persistentDataPath は IndexedDB の中で取り出せないので、
+        /// PNG にしてブラウザにダウンロードさせる (#61)。置けなければ false か例外。
+        /// </summary>
+        private static bool SavePhoto(string fileName)
+        {
+            if (WebDownload.Supported)
+            {
+                Texture2D shot = ScreenCapture.CaptureScreenshotAsTexture();
+                try
+                {
+                    return WebDownload.Send(fileName, shot.EncodeToPNG(), "image/png");
+                }
+                finally
+                {
+                    Destroy(shot);
+                }
+            }
+
+            string folder = Path.Combine(Application.persistentDataPath, FolderName);
+            Directory.CreateDirectory(folder);
+            ScreenCapture.CaptureScreenshot(Path.Combine(folder, fileName));
+            return true;
         }
 
         private IEnumerator Flash()
