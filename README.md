@@ -8,7 +8,7 @@
 
 - エンジン: Unity 6 (6000.6.2f1, URP)
 - アセット生成: Blender 4.5 LTS を headless Python で駆動（手作業ゼロで再生成できる）
-- 音声: numpy で手続き合成した BGM 9 / SE 37 / 環境音 7（外部素材なし）
+- 音声: BGM 8 / ジングル 2 / SE 41 / 環境音 7。タイトルとキャンパスの BGM 5 曲は東京理科大学校歌（タイトルは東北きりたんの歌唱 + ピアノ伴奏、キャンパスはピアノ伴奏）。ほかは numpy で合成したオリジナル
 - 設計書: [docs/DESIGN.md](docs/DESIGN.md)、データ仕様: [docs/CONTENT_SPEC.md](docs/CONTENT_SPEC.md)
 - 遊び方: [docs/HOW_TO_PLAY.md](docs/HOW_TO_PLAY.md)
 - 複数のエージェントで分担するときの決まり: [docs/AGENT_COORDINATION.md](docs/AGENT_COORDINATION.md)
@@ -56,6 +56,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/smoke_run.ps1 -Wai
 python tools/package_zip.py
 
 # 6. ブラウザ版を GitHub Pages に載せる（WebGL ビルド → Release web-latest → pages.yml）
+#    unity/KatsushikaCampusDays の下に未コミットの変更があると止まる（--allow-dirty で通す）。
+#    ビルド元のコミットは index.html の <meta name="kcd-build"> とページ右下に出る。
 python tools/deploy_pages.py --build --smoke   # --smoke: 載せる前に build/WebGL を E2E スモーク
 
 # 7. ブラウザ版の E2E スモーク（Playwright。初回だけ pip install -r e2e/requirements.txt）
@@ -111,6 +113,11 @@ Overpass の生データ 2 つは大きいので gitignore。寮への道の分�
 
 ## クレジット
 
-- 地図データ © OpenStreetMap contributors (ODbL)。詳細は [docs/CREDITS.md](docs/CREDITS.md)
-- 「坊っちゃん」「マドンナちゃん」は東京理科大学の公式キャラクター。本作は非公式・非営利のファンメイドで、独自にモデリングしている。
-- フォント: Noto Sans JP (SIL Open Font License 1.1)
+素材ごとの出所・権利・確認状況は [docs/CREDITS.md](docs/CREDITS.md)。ゲーム内のクレジット画面も同じ内容。
+
+- 地図データ © OpenStreetMap contributors (ODbL)。https://www.openstreetmap.org/copyright
+- 音楽: 東京理科大学校歌（作詞 佐治巌 / 作曲 大和憲史）。歌唱は東北きりたん（NEUTRINO）、ピアノ伴奏はヤマハの自動採譜（Piano Sheet Converter）を手直ししたもの。校歌の権利は未確認で、配布前に確かめる項目を CREDITS.md に並べている
+- 効果音・環境音・ジングルは numpy で合成したオリジナル
+- 「坊っちゃん」「マドンナちゃん」は東京理科大学の公式キャラクター。本作は非公式・非営利のファンメイドで、3D モデルは独自に制作している
+- フォント: Noto Sans JP（© Adobe）、Liberation Sans（© Google, Red Hat）。どちらも SIL Open Font License 1.1 で、本文は `Assets/StreamingAssets/Licenses` に同梱
+- `docs/ref` の参考画像（大学の公式イラスト・鳥瞰図、日建設計の写真など）は各権利者のもので、ゲームには入っていない

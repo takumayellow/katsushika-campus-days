@@ -70,6 +70,7 @@ namespace KCD.Editor
         /// <summary>
         /// GitHub Pages に置く WebGL ビルド。Pages は .gz に Content-Encoding を付けないので、
         /// Gzip + 復元フォールバック（ローダーが JS で展開する）にする。
+        /// ビルド元のコミットは tools/deploy_pages.py --build が index.html に書き込む (#75)。
         /// </summary>
         [MenuItem("KCD/WebGL ビルド")]
         public static void BuildWebGL()
@@ -164,6 +165,10 @@ namespace KCD.Editor
             PlayerSettings.WebGL.decompressionFallback = true;
             PlayerSettings.WebGL.threadsSupport = false;
             PlayerSettings.WebGL.dataCaching = true;
+            // Build/ のファイル名を内容のハッシュにする (#75)。Pages は max-age=600 を返すので,
+            // 名前が毎回同じだと, 配信直後に新しい index.html と古い wasm / framework が混ざり得る。
+            // zip に入れるのは index.html が参照するものだけ (tools/deploy_pages.py)。
+            PlayerSettings.WebGL.nameFilesAsHashes = true;
             PlayerSettings.WebGL.exceptionSupport = WebGLExceptionSupport.ExplicitlyThrownExceptionsOnly;
             // 自前のテンプレート（Assets/WebGLTemplates/KCD）。大きな全画面ボタンと、
             // 「Esc でマウスを解放 / F で全画面」の案内をページに常に出す (#48)。

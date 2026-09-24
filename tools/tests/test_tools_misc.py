@@ -133,14 +133,23 @@ def test_build_zip_without_exe(tmp_path):
 def test_make_zip_stores_webgl_build(tmp_path, capsys):
     build = tmp_path / "WebGL"
     (build / "Build").mkdir(parents=True)
-    (build / "index.html").write_text("<html></html>", encoding="utf-8")
-    (build / "Build" / "WebGL.wasm.gz").write_bytes(b"\x1f\x8b" + b"0" * 64)
+    # zip に入れる Build/ のファイルは、index.html が参照しているものだけ (#75)。
+    (build / "index.html").write_text(
+        '<script>var buildUrl = "Build"; var loaderUrl = buildUrl + "/WebGL.loader.js";\n'
+        'var config = { dataUrl: buildUrl + "/WebGL.data.gz", frameworkUrl: buildUrl + "/WebGL.framework.js.gz",\n'
+        'codeUrl: buildUrl + "/WebGL.wasm.gz" };</script>',
+        encoding="utf-8")
+    for name in ("WebGL.loader.js", "WebGL.data.gz", "WebGL.framework.js.gz", "WebGL.wasm.gz"):
+        (build / "Build" / name).write_bytes(b"\x1f\x8b" + b"0" * 64)
+    (build / "Build" / "old.wasm.gz").write_bytes(b"\x1f\x8b")  # 前のビルドの残り
     out = tmp_path / "dist" / "webgl.zip"
     assert deploy_pages.make_zip(build, out) == 0
     with zipfile.ZipFile(out) as zf:
-        assert zf.namelist() == ["Build/WebGL.wasm.gz", "index.html"]
+        assert sorted(zf.namelist()) == [
+            "Build/WebGL.data.gz", "Build/WebGL.framework.js.gz", "Build/WebGL.loader.js",
+            "Build/WebGL.wasm.gz", "index.html"]
         assert all(i.compress_type == zipfile.ZIP_STORED for i in zf.infolist())
-    assert "2 files" in capsys.readouterr().out
+    assert "5 files" in capsys.readouterr().out
 
 
 def test_make_zip_without_index(tmp_path):
