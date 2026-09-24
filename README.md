@@ -11,6 +11,7 @@
 - 音声: numpy で手続き合成した BGM 9 / SE 37 / 環境音 7（外部素材なし）
 - 設計書: [docs/DESIGN.md](docs/DESIGN.md)、データ仕様: [docs/CONTENT_SPEC.md](docs/CONTENT_SPEC.md)
 - 遊び方: [docs/HOW_TO_PLAY.md](docs/HOW_TO_PLAY.md)
+- 複数のエージェントで分担するときの決まり: [docs/AGENT_COORDINATION.md](docs/AGENT_COORDINATION.md)
 
 ## 遊ぶ（ブラウザ版）
 
