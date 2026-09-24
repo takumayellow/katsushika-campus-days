@@ -49,6 +49,7 @@ python tools/check_unity_log.py unity/logs/import.log unity/logs/scene.log unity
 
 # 4. テストとスモーク
 python tools/run_tests.py   # EditMode → PlayMode → pytest。Unity が動いていたら止まる（--wait で待つ）
+python -m pytest -q         # pytest だけ（tests/, tools/, blender/kcd_lib の純 Python 部分。bpy は差し替え。数秒。pip install -r requirements-test.txt）
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/smoke_run.ps1 -WaitSec 25 -Out docs/screenshots/smoke_title.png
 
 # 5. 配布 zip
