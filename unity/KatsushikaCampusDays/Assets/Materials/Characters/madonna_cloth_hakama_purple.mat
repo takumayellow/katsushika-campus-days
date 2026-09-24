@@ -27,12 +27,22 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _PatternMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
     - _Cull: 0
     - _Cutoff: 0.5
     - _DstBlend: 0
+    - _OutlineFadeEnd: 60
+    - _OutlineFadeStart: 30
+    - _OutlineNearDistance: 5
     - _OutlineWidth: 0.005
+    - _Pattern: 0
+    - _PatternBlend: 0.25
+    - _PatternScale: 1
     - _RimIntensity: 0.35
     - _RimPower: 4
     - _ShadeSoftness: 0.03
@@ -44,12 +54,12 @@ Material:
     - _Surface: 0
     - _ZWrite: 1
     m_Colors:
-    - _BaseColor: {r: 0.41568628, g: 0.24705882, b: 0.627451, a: 1}
+    - _BaseColor: {r: 0.5647059, g: 0.4, b: 0.65882355, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _OutlineColor: {r: 0.11999995, g: 0.09999997, b: 0.13999996, a: 1}
     - _RimColor: {r: 1, g: 1, b: 1, a: 1}
-    - _ShadeColor: {r: 0.43009803, g: 0.3196941, b: 0.6075216, a: 1}
-    - _ShadeColor2: {r: 0.35205883, g: 0.26517648, b: 0.52435297, a: 1}
+    - _ShadeColor: {r: 0.51652944, g: 0.4084, b: 0.62571764, a: 1}
+    - _ShadeColor2: {r: 0.41911766, g: 0.334, b: 0.53847057, a: 1}
     - _SpecularColor: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

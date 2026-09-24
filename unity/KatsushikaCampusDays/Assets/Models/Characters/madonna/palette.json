@@ -1,0 +1,42 @@
+{
+  "materials": [
+    {
+      "name": "boots_brown",
+      "hex": "AE7D25"
+    },
+    {
+      "name": "cloth_hakama_himo_purple",
+      "hex": "6F4E81"
+    },
+    {
+      "name": "cloth_hakama_purple",
+      "hex": "9066A8"
+    },
+    {
+      "name": "cloth_kimono_heart_pink",
+      "hex": "F4C8CB",
+      "pattern": "heart",
+      "pattern_scale": 5.0
+    },
+    {
+      "name": "collar_white",
+      "hex": "F6F1E6"
+    },
+    {
+      "name": "hair",
+      "hex": "AA6D26"
+    },
+    {
+      "name": "metal",
+      "hex": "8A6218"
+    },
+    {
+      "name": "ribbon_red",
+      "hex": "E4475B"
+    },
+    {
+      "name": "skin",
+      "hex": "F5CDBA"
+    }
+  ]
+}

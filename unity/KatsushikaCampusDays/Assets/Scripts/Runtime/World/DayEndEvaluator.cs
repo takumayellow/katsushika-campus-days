@@ -1,5 +1,7 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace KCD
 {
@@ -23,12 +25,12 @@ namespace KCD
 
     /// <summary>
     /// 一日の終わり。Ending/result.json の day_end_hour を過ぎたら集計してリザルト画面を出す。
-    /// 「もう一日歩く」で時刻を朝に戻すと再び監視に戻る。
+    /// 「もう一日歩く」を選んだら、暗転して最初と同じスポーンへ戻し、時刻と一日ごとの状態を朝に戻してから再び監視に戻る (#16)。
     /// </summary>
     public sealed class DayEndEvaluator : MonoBehaviour
     {
         private const string ResourcePath = "KCD/Ending/result";
-        private const float DayStartHour = 8.5f;
+        private const float DayStartHour = DayRestart.DayStartHour;
 
         private sealed class RankEntry
         {
@@ -41,6 +43,13 @@ namespace KCD
         }
 
         [SerializeField] private ResultScreen _screen;
+        [SerializeField] private float _fadeSeconds = 0.35f;
+
+        private CanvasGroup _fade;
+        private bool _restarting;
+        private bool _hasSpawn;
+        private Vector3 _spawnPosition;
+        private float _spawnYaw;
 
         private float _dayEndHour = 20f;
         private float _wQuests = 0.45f;
@@ -76,9 +85,44 @@ namespace KCD
             _screen.Show(data, OnContinue, OnToTitle);
         }
 
+        private void Awake()
+        {
+            _fade = BuildFadeOverlay();
+            CaptureSpawn();
+        }
+
+        /// <summary>
+        /// シーンに置かれたままのプレイヤーの位置＝はじめてキャンパスへ入ったときのスポーン（正門側、u = 210）。
+        /// セーブの読み込みやワープで動く前に覚える。WorldBounds も同じ手で起動時の位置を覚えている。
+        /// </summary>
+        private void CaptureSpawn()
+        {
+            GameObject tagged = GameObject.FindWithTag("Player");
+            if (tagged == null)
+            {
+                return;
+            }
+
+            _spawnPosition = tagged.transform.position;
+            _spawnYaw = tagged.transform.eulerAngles.y;
+            _hasSpawn = true;
+        }
+
+        /// <summary>暗転の途中で止められたら、封鎖と暗幕を残さない（InteriorLoader・WorldBounds と同じ）。</summary>
+        private void OnDisable()
+        {
+            KCDInput.Unblock(this);
+            if (_restarting && _fade != null)
+            {
+                _fade.alpha = 0f;
+            }
+
+            _restarting = false;
+        }
+
         private void Update()
         {
-            if (!_armed || _screen == null || _screen.IsOpen)
+            if (!_armed || _restarting || _screen == null || _screen.IsOpen)
             {
                 return;
             }
@@ -100,6 +144,82 @@ namespace KCD
 
         private void OnContinue()
         {
+            if (_restarting)
+            {
+                return;
+            }
+
+            StartCoroutine(RestartDay());
+        }
+
+        private void OnToTitle()
+        {
+            // 次に入るときは朝から。位置はシーンを読み直すのでスポーンに戻る。
+            // 一日ごとの状態も「もう一日歩く」と同じように戻し、進行（クエスト・拾った物・写真）はメモリに残す。
+            BeginNextDay();
+            GameManager.Instance.ReturnToTitle();
+        }
+
+        /// <summary>
+        /// 翌朝から歩き直す。暗転 → 屋内なら外へ → 最初と同じスポーンへ戻す → 時計と一日ごとの状態を朝に戻す → 明転。
+        /// その場で朝にすると時間だけ飛んだように見えるので、入口から歩き直させる (#16)。
+        /// </summary>
+        private IEnumerator RestartDay()
+        {
+            _restarting = true;
+
+            // 自分の封鎖だけを掛けて外す。暗転中に開いた画面の封鎖は残す (#40)。
+            KCDInput.Block(this);
+
+            yield return Fade(1f);
+
+            PlayerController player = FindAnyObjectByType<PlayerController>();
+            if (player != null && player.IsSitting)
+            {
+                player.StandUp();
+            }
+
+            InteriorLoader interior = InteriorLoader.Instance;
+            if (DayRestart.NeedsInteriorExit(interior != null, interior != null && interior.IsInside))
+            {
+                // 出入り係も自前で暗転するが、こちらが先に真っ黒にしてあるので画面は黒いまま。
+                // 出入りの最中だと Exit は空振りするので、外に出るまで毎フレーム頼む。
+                float waited = 0f;
+                while (interior != null && interior.IsInside && waited < DayRestart.ExitTimeoutSeconds)
+                {
+                    interior.Exit();
+                    waited += Time.unscaledDeltaTime;
+                    yield return null;
+                }
+            }
+
+            if (player != null)
+            {
+                Vector3 position = DayRestart.ReturnPoint(_hasSpawn, _spawnPosition, player.transform.position);
+                float yaw = DayRestart.ReturnYaw(_hasSpawn, _spawnYaw, player.transform.eulerAngles.y);
+                player.Teleport(position, yaw);
+                Physics.SyncTransforms();
+                CameraRig.SnapBehind(player.transform);
+            }
+
+            int day = BeginNextDay();
+
+            yield return null;
+            yield return Fade(0f);
+
+            KCDInput.Unblock(this);
+            _restarting = false;
+            HUD.Instance?.ShowToast(L.Format("ui.hud.new_day", day));
+        }
+
+        /// <summary>
+        /// 時計と一日ごとの状態を朝に戻し、何日目かを 1 つ進める。
+        /// チャイムは AudioManager.ShouldChime が時刻の巻き戻しでは鳴らさないので、ここでは触らない。
+        /// </summary>
+        private int BeginNextDay()
+        {
+            GameManager manager = GameManager.Instance;
+
             DayNightCycle cycle = FindAnyObjectByType<DayNightCycle>();
             if (cycle != null)
             {
@@ -107,18 +227,99 @@ namespace KCD
             }
             else
             {
-                GameManager.Instance.GameTimeHours = DayStartHour;
+                manager.GameTimeHours = DayStartHour;
             }
 
+            ResetChallengeTimers(manager.Quests);
+            // 戻したことを追跡表示に伝える。呼ばないと前日の赤い「時間切れ」が残る。
+            manager.Quests?.NotifyChanged();
+            manager.DayNumber = DayRestart.NextDay(manager.DayNumber);
             _armed = true;
+            return manager.DayNumber;
         }
 
-        private void OnToTitle()
+        /// <summary>
+        /// 制限時間つきステップ（体育館まで 60 秒）は一日ごとの挑戦。数えかけと時間切れを朝に戻す。
+        /// 依頼主がいるものは数える前に戻して「話しかけたら再挑戦」に、いないものはその場で数え直す。
+        /// </summary>
+        private static void ResetChallengeTimers(QuestSystem quests)
         {
-            // 次に入るときは朝から。進行（クエスト・拾った物）はメモリに残す。
-            GameManager.Instance.GameTimeHours = DayStartHour;
-            _armed = true;
-            GameManager.Instance.ReturnToTitle();
+            if (quests == null)
+            {
+                return;
+            }
+
+            foreach (QuestData quest in quests.All)
+            {
+                foreach (QuestStep step in quest.Steps)
+                {
+                    DayTimerAction action = DayRestart.TimerAction(
+                        step.IsTimed, step.Completed, step.Timer.IsRunning, step.Timer.HasFailed,
+                        !string.IsNullOrEmpty(step.Giver));
+                    if (action == DayTimerAction.Keep)
+                    {
+                        continue;
+                    }
+
+                    step.Progress = 0;
+                    if (action == DayTimerAction.Reset)
+                    {
+                        step.Timer.Reset();
+                    }
+                    else
+                    {
+                        step.Timer.Start(step.TimeLimit);
+                    }
+                }
+            }
+        }
+
+        private IEnumerator Fade(float target)
+        {
+            if (_fade == null)
+            {
+                yield break;
+            }
+
+            float start = _fade.alpha;
+            float elapsed = 0f;
+            while (elapsed < _fadeSeconds)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                _fade.alpha = Mathf.Lerp(start, target, elapsed / _fadeSeconds);
+                yield return null;
+            }
+
+            _fade.alpha = target;
+        }
+
+        /// <summary>暗転用の真っ黒な板。InteriorLoader・WorldBounds のものと同じ作り。</summary>
+        private CanvasGroup BuildFadeOverlay()
+        {
+            var go = new GameObject("DayEndFadeCanvas");
+            go.transform.SetParent(transform, false);
+
+            Canvas canvas = go.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 100;
+
+            CanvasGroup group = go.AddComponent<CanvasGroup>();
+            group.alpha = 0f;
+            group.blocksRaycasts = false;
+            group.interactable = false;
+
+            var panel = new GameObject("Black", typeof(RectTransform));
+            panel.transform.SetParent(go.transform, false);
+            var rect = (RectTransform)panel.transform;
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+
+            Image image = panel.AddComponent<Image>();
+            image.color = Color.black;
+            image.raycastTarget = false;
+            return group;
         }
 
         /// <summary>達成率 = Σ weight × (達成 / 総数) × 100。ranks を上から見て最初に届いたものを採る。</summary>

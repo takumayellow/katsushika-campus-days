@@ -6,6 +6,11 @@
   2. ドローン / ハムの周波数は `pfreq` でループ長の整数倍に丸める.
   3. 鳥・水滴などの単発イベントは `wrap=True` で置く (末尾で鳴り始めた音が
      先頭へ回り込む).
+
+屋内 (図書館・体育館・温室・カフェ・食堂) は「静かな部屋」にする. 以前は屋外と同じく
+帯域ノイズのベッドを LFO でうねらせ, 食器の金属音 (dish_clink) を散らしていたので,
+建物の中で風の音と「チンカン」が鳴っていた. いまは 150 Hz 以下でうねらない空調音
+(`room_tone`) に, 部屋に合った金属でない音をまばらに置くだけで, 書き出しも小さくする.
 """
 from __future__ import annotations
 
@@ -13,6 +18,16 @@ import numpy as np
 
 import synth as S
 from synth import SR, add_at, pan
+
+# 書き出しピーク (dBFS). 屋外 2 本は build_audio.PEAK_DB["Ambient"] (-3) のまま.
+# 屋内は BGM の下でほとんど気にならない大きさまで下げる (屋外より RMS で 20 dB ほど小さい).
+PEAK_DB = {
+    "amb_library": -21.0,
+    "amb_gym": -15.0,
+    "amb_greenhouse": -20.0,
+    "amb_cafe": -21.0,
+    "amb_cafeteria": -19.0,
+}
 
 
 def pfreq(f: float, dur: float) -> float:
@@ -42,6 +57,24 @@ def drone(dur: float, freq: float, harmonics, rng) -> np.ndarray:
     for k, a in harmonics:
         out += a * np.sin(2 * np.pi * f0 * k * t + rng.uniform(0, 2 * np.pi))
     return out
+
+
+def sprinkle(buf: np.ndarray, factory, count: int, dur: float, rng,
+             spread: float = 0.8, gain: float = 1.0) -> None:
+    """ループを count 個の枠に分け, 1 枠に 1 つずつずらして置く (scatter と違って固まらない)."""
+    slot = dur / count
+    for i in range(count):
+        sig = factory(i, rng)
+        g = gain * rng.uniform(0.6, 1.0)
+        add_at(buf, pan(sig * g, rng.uniform(-spread, spread)),
+               S.n_samples((i + rng.uniform(0.1, 0.9)) * slot), wrap=True)
+
+
+def room_tone(dur: float, rng, cut: float = 130.0) -> np.ndarray:
+    """屋内の空調の気配 (RMS 1). cut より上を急に落とし, LFO も掛けないので風のようにうねらない."""
+    y = bed(dur, lambda f: 1.0 / (1.0 + (np.maximum(f, 1.0) / cut) ** 4)
+            / (1.0 + (28.0 / np.maximum(f, 1.0)) ** 4), rng)
+    return y / np.sqrt(np.mean(y ** 2))
 
 
 # --------------------------------------------------------------------------
@@ -79,48 +112,33 @@ def higurashi(_i, rng) -> np.ndarray:
     return S.bandpass(tone * am * env, 2000.0, 9500.0) * 0.3
 
 
-def dish_clink(_i, rng) -> np.ndarray:
-    """食器: 高い金属モード + 立ち上がりのノイズ."""
-    dur = 0.35
-    t = S.tline(dur)
-    out = np.zeros_like(t)
-    f0 = rng.uniform(2200.0, 5200.0)
-    for r, a, tau in ((1.0, 1.0, 0.13), (1.73, 0.5, 0.08), (2.61, 0.28, 0.05)):
-        if f0 * r < SR * 0.45:
-            out += a * np.exp(-t / tau) * np.sin(2 * np.pi * f0 * r * t)
-    tick = S.bandpass(rng.standard_normal(len(t)), 2500.0, 13000.0)
-    out += tick * S.perc_env(dur, 0.0004, 0.004) * 0.8
-    return out * 0.22
-
-
 def page_turn(_i, rng) -> np.ndarray:
-    """紙をめくる: 2 度に分かれた擦れ音."""
-    dur = 0.45
+    """紙をめくる: 2 度に分かれた擦れ音. 高域を落として柔らかく."""
+    dur = 0.5
     t = S.tline(dur)
-    nz = S.bandpass(rng.standard_normal(len(t)), 1400.0, 9000.0)
-    env = (np.exp(-((t - 0.05) / 0.035) ** 2) * 0.9
-           + np.exp(-((t - 0.19) / 0.06) ** 2) * 0.7)
+    nz = S.bandpass(rng.standard_normal(len(t)), 600.0, 4500.0)
+    env = (np.exp(-((t - 0.06) / 0.04) ** 2) * 0.9
+           + np.exp(-((t - 0.22) / 0.07) ** 2) * 0.7)
     return nz * env * 0.3
 
 
 def water_drop(_i, rng) -> np.ndarray:
-    """水滴: 落ちた直後にピッチが上がる短いピング."""
-    dur = 0.3
+    """水滴: 葉から落ちる小さな「ポト」. 打撃のノイズは入れず, 低めのピッチが少し上がるだけ."""
+    dur = 0.25
     t = S.tline(dur)
-    f = rng.uniform(550.0, 1100.0) * (1.0 + 1.6 * np.clip(t / 0.045, 0, 1))
-    y = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-t / 0.05)
-    nz = S.bandpass(rng.standard_normal(len(t)), 1500.0, 8000.0) * S.perc_env(dur, 0.0005, 0.005)
-    return (y * 0.6 + nz * 0.25) * 0.5
+    f = rng.uniform(420.0, 780.0) * (1.0 + 0.8 * np.clip(t / 0.04, 0, 1))
+    y = np.sin(2 * np.pi * np.cumsum(f) / SR) * S.perc_env(dur, 0.002, 0.035)
+    return y * 0.3
 
 
 def ball_bounce(_i, rng) -> np.ndarray:
-    """バスケットボールのバウンド (低い胴鳴り + 床のスラップ)."""
+    """バスケットボールのバウンド (低い胴鳴り + 鈍い床のスラップ)."""
     dur = 0.4
     t = S.tline(dur)
     f = 150.0 * np.exp(-t / 0.02) + 82.0
     body = np.sin(2 * np.pi * np.cumsum(f) / SR) * S.perc_env(dur, 0.001, 0.055)
-    slap = S.bandpass(rng.standard_normal(len(t)), 900.0, 7000.0) * S.perc_env(dur, 0.0005, 0.012)
-    return (body * 0.8 + slap * 0.45) * 0.55
+    slap = S.bandpass(rng.standard_normal(len(t)), 500.0, 3000.0) * S.perc_env(dur, 0.001, 0.012)
+    return (body * 0.8 + slap * 0.35) * 0.55
 
 
 def shoe_squeak(_i, rng) -> np.ndarray:
@@ -145,13 +163,31 @@ def voice_blob(_i, rng) -> np.ndarray:
     return y * 0.18
 
 
-def tray_clatter(_i, rng) -> np.ndarray:
-    dur = 0.5
-    buf = np.zeros(S.n_samples(dur))
-    for k in range(int(rng.integers(2, 5))):
-        add_at(buf, dish_clink(0, rng) * rng.uniform(0.6, 1.2),
-               S.n_samples(rng.uniform(0.0, 0.16)))
-    return buf * 0.9
+# 日本語の 5 母音 (あ い う え お) の第 1 / 第 2 フォルマント (Hz)
+_VOWELS = ((800.0, 1200.0), (300.0, 2200.0), (350.0, 1300.0), (500.0, 1900.0), (500.0, 850.0))
+
+
+def murmur(_i, rng) -> np.ndarray:
+    """離れた席の話し声: 声の高さを持つ倍音を母音のフォルマントで 3〜7 音節ぶん鳴らし, 壁越しにこもらせる.
+    ノイズでなく声帯の音なので, 小さく鳴らしても風や空調には聞こえない."""
+    n_syl = int(rng.integers(3, 8))
+    syl = float(rng.uniform(0.14, 0.21))
+    dur = n_syl * syl + 0.25
+    t = S.tline(dur)
+    base = float(rng.choice((115.0, 130.0, 205.0, 230.0))) * rng.uniform(0.94, 1.06)
+    f0 = base * (1.06 - 0.14 * t / dur) * (1.0 + 0.025 * np.sin(2 * np.pi * 2.7 * t + rng.uniform(0, 6.2)))
+    ph = 2 * np.pi * np.cumsum(f0) / SR
+    src = sum(np.sin(k * ph) / k for k in range(1, 26))
+    out = np.zeros_like(t)
+    for s in range(n_syl):
+        f1, f2 = _VOWELS[int(rng.integers(len(_VOWELS)))]
+        voiced = S.fft_filter(src, lambda f: (np.exp(-((f - f1) / 110.0) ** 2)
+                                              + 0.5 * np.exp(-((f - f2) / 160.0) ** 2) + 0.03))
+        u = np.clip((t - s * syl) / (syl * 1.35), 0.0, 1.0)
+        out += voiced * np.sin(np.pi * u) ** 1.5 * rng.uniform(0.55, 1.0)
+    # 壁越し・離れた席なので 1.6 kHz より上をなだらかに落とす
+    out = S.fft_filter(out, lambda f: 1.0 / (1.0 + (np.maximum(f, 1.0) / 1600.0) ** 4))
+    return out / (np.max(np.abs(out)) + 1e-9) * 0.2
 
 
 # --------------------------------------------------------------------------
@@ -192,82 +228,67 @@ def build_campus_evening(dur: float = 24.0) -> np.ndarray:
     return S.normalize(out, -3.0)
 
 
+def indoor(buf: np.ndarray, dur: float, rng, name: str, tone_db: float, cut: float = 130.0,
+           room: float = 0.75, damp: float = 0.6, mix: float = 0.18, pre: float = 3.0) -> np.ndarray:
+    """屋内の仕上げ: イベントに部屋の残響を掛け, ピークより tone_db 小さい RMS で空調音を敷き,
+    書き出しピーク PEAK_DB[name] へ揃える."""
+    out = S.preroll(buf, lambda y: S.reverb(y, room=room, damp=damp, mix=mix), pre=pre)
+    peak = float(np.max(np.abs(out)))
+    out = out + room_tone(dur, rng, cut) * peak * S.db_to_lin(-tone_db)
+    return S.normalize(out, PEAK_DB[name])
+
+
 def build_cafe(dur: float = 22.0) -> np.ndarray:
-    """カフェ: ざわめきの帯域ノイズ + 食器の高音 + エスプレッソの蒸気."""
+    """カフェ (共創棟): 静かな空調 + 離れた席の小さな話し声. 食器の金属音・蒸気・ざわめきのノイズは入れない."""
     rng = np.random.default_rng(1003)
-    babble = bed(dur, lambda f: np.exp(-((np.log(np.maximum(f, 20.0) / 620.0)) ** 2) / 1.1), rng)
-    buf = babble * (0.35 + 0.2 * S.periodic_lfo(dur, (1, 2, 5), [1.0, 0.5, 0.3], rng))[:, None]
-    buf += bed(dur, lambda f: 1.0 / (1.0 + (np.maximum(f, 15.0) / 70.0) ** 2.0), rng) * 0.22
-    scatter(buf, voice_blob, 48, dur, rng, spread=0.8, gain=0.9)
-    scatter(buf, dish_clink, 20, dur, rng, spread=0.7, gain=0.8)
-    steam = bed(dur, lambda f: np.exp(-((np.log(np.maximum(f, 20.0) / 3400.0)) ** 2) / 0.8), rng)
-    gate = S.periodic_lfo(dur, (1,), [1.0], rng)
-    buf += steam * np.clip((gate - 0.72) * 3.6, 0, 1)[:, None] * 0.22
-    out = S.preroll(buf, lambda y: S.reverb(y, room=0.72, damp=0.55, mix=0.18), pre=3.0)
-    return S.normalize(out, -3.0)
+    buf = np.zeros((S.n_samples(dur), 2))
+    sprinkle(buf, murmur, 8, dur, rng, spread=0.7)
+    return indoor(buf, dur, rng, "amb_cafe", tone_db=32.0, room=0.7, damp=0.65, mix=0.22)
 
 
 def build_library(dur: float = 26.0) -> np.ndarray:
-    """図書館: ほぼ無音の空調 + 低いハム + たまにページをめくる音."""
+    """図書館 (ほかの建物の既定): ほぼ無音の空調 + たまにページをめくる音."""
     rng = np.random.default_rng(1004)
-    buf = bed(dur, lambda f: 1.0 / (1.0 + (np.maximum(f, 12.0) / 180.0) ** 2.6), rng) * 0.5
-    hum = drone(dur, 100.0, ((1, 0.5), (2, 0.18), (3, 0.06)), rng)
-    buf += np.stack([hum, hum * 0.9], axis=1) * 0.06
-    air = bed(dur, lambda f: np.exp(-((np.log(np.maximum(f, 20.0) / 1500.0)) ** 2) / 1.6), rng)
-    buf += air * (0.035 + 0.02 * S.periodic_lfo(dur, (1, 2), [1.0, 0.4], rng))[:, None]
-    scatter(buf, page_turn, 7, dur, rng, spread=0.75, gain=0.55)
-    scatter(buf, dish_clink, 2, dur, rng, spread=0.6, gain=0.12)
-    out = S.preroll(buf, lambda y: S.reverb(y, room=0.8, damp=0.6, mix=0.16), pre=3.0)
-    return S.normalize(out, -6.0)
+    buf = np.zeros((S.n_samples(dur), 2))
+    sprinkle(buf, page_turn, 4, dur, rng, spread=0.75)
+    return indoor(buf, dur, rng, "amb_library", tone_db=32.0, cut=110.0, room=0.8, damp=0.6, mix=0.16)
 
 
 def build_gym(dur: float = 24.0) -> np.ndarray:
-    """体育館: 残響の強いボールのバウンドとシューズのキュッ."""
+    """体育館: 静かな空調 + ときどき誰かがボールをつく音とシューズのキュッ (広い残響)."""
     rng = np.random.default_rng(1005)
-    buf = bed(dur, lambda f: 1.0 / (1.0 + (np.maximum(f, 12.0) / 150.0) ** 2.2), rng) * 0.32
-    hum = drone(dur, 62.0, ((1, 0.4), (2, 0.15)), rng)
-    buf += np.stack([hum, hum], axis=1) * 0.05
-    # 3 人ぶんのドリブル (テンポ違い) をループ同期の間隔で置く
-    for player, (period, gain_) in enumerate(((0.62, 0.9), (0.85, 0.6), (1.2, 0.45))):
-        k = max(1, round(dur / period))
-        step = dur / k
-        p = rng.uniform(-0.7, 0.7)
-        for j in range(k):
-            sig = ball_bounce(0, rng) * gain_ * rng.uniform(0.8, 1.15)
-            add_at(buf, pan(sig, p + rng.uniform(-0.12, 0.12)),
-                   S.n_samples((j + 0.13 * player) * step), wrap=True)
-    scatter(buf, shoe_squeak, 9, dur, rng, spread=0.85, gain=0.7)
-    scatter(buf, voice_blob, 10, dur, rng, spread=0.9, gain=0.3)
-    out = S.preroll(buf, lambda y: S.reverb(y, room=0.93, damp=0.18, mix=0.42), pre=6.0)
-    return S.normalize(out, -3.0)
+    buf = np.zeros((S.n_samples(dur), 2))
+    # ドリブルは 3 回だけ, 4〜6 回ずつ続けてつく (ずっと鳴らし続けない)
+    for k in range(3):
+        start = (k + rng.uniform(0.1, 0.45)) * dur / 3
+        period = rng.uniform(0.55, 0.75)
+        p = rng.uniform(-0.6, 0.6)
+        for j in range(int(rng.integers(4, 7))):
+            sig = ball_bounce(0, rng) * rng.uniform(0.8, 1.0)
+            add_at(buf, pan(sig, p), S.n_samples(start + j * period), wrap=True)
+    sprinkle(buf, shoe_squeak, 4, dur, rng, spread=0.85, gain=0.5)
+    return indoor(buf, dur, rng, "amb_gym", tone_db=38.0, cut=110.0,
+                  room=0.9, damp=0.35, mix=0.3, pre=6.0)
 
 
 def build_cafeteria(dur: float = 22.0) -> np.ndarray:
-    """食堂: 密度の高いざわめき + トレイと椅子の音."""
+    """食堂 (第 2 研究棟): 静かな空調 + あちこちの席の小さな話し声. トレイや食器の金属音は入れない."""
     rng = np.random.default_rng(1006)
-    babble = bed(dur, lambda f: np.exp(-((np.log(np.maximum(f, 20.0) / 700.0)) ** 2) / 1.3), rng)
-    buf = babble * (0.45 + 0.22 * S.periodic_lfo(dur, (1, 2, 3, 7), [1, 0.6, 0.4, 0.2], rng))[:, None]
-    buf += bed(dur, lambda f: 1.0 / (1.0 + (np.maximum(f, 15.0) / 85.0) ** 2.0), rng) * 0.26
-    scatter(buf, voice_blob, 90, dur, rng, spread=0.9, gain=1.0)
-    scatter(buf, tray_clatter, 12, dur, rng, spread=0.8, gain=0.7)
-    scatter(buf, dish_clink, 26, dur, rng, spread=0.85, gain=0.6)
-    out = S.preroll(buf, lambda y: S.reverb(y, room=0.85, damp=0.4, mix=0.26), pre=4.0)
-    return S.normalize(out, -3.0)
+    buf = np.zeros((S.n_samples(dur), 2))
+    sprinkle(buf, murmur, 13, dur, rng, spread=0.9)
+    return indoor(buf, dur, rng, "amb_cafeteria", tone_db=32.0,
+                  room=0.82, damp=0.55, mix=0.26, pre=4.0)
 
 
 def build_greenhouse(dur: float = 24.0) -> np.ndarray:
-    """温室: 換気扇のうなりと, 葉から落ちる水滴."""
+    """温室: 小さな換気扇のうなり + ときどき葉から落ちる水滴."""
     rng = np.random.default_rng(1007)
-    buf = bed(dur, lambda f: 1.0 / (1.0 + (np.maximum(f, 12.0) / 260.0) ** 2.0), rng) * 0.34
-    fan = drone(dur, 118.0, ((1, 0.5), (2, 0.28), (3, 0.14), (5, 0.07)), rng)
-    blade = 0.75 + 0.25 * np.sin(2 * np.pi * pfreq(23.0, dur) * S.tline(dur))
-    fan = fan * blade
-    buf += np.stack([fan, np.roll(fan, 97)], axis=1) * 0.09
-    hiss = bed(dur, lambda f: np.exp(-((np.log(np.maximum(f, 20.0) / 2600.0)) ** 2) / 1.2), rng)
-    buf += hiss * (0.05 + 0.03 * S.periodic_lfo(dur, (1, 4), [1.0, 0.4], rng))[:, None]
-    scatter(buf, water_drop, 26, dur, rng, spread=0.9, gain=0.75)
-    out = S.preroll(buf, lambda y: S.reverb(y, room=0.86, damp=0.3, mix=0.3), pre=4.0)
-    return S.normalize(out, -4.0)
+    fan = drone(dur, 118.0, ((1, 0.5), (2, 0.2)), rng)
+    fan = fan * (0.85 + 0.15 * np.sin(2 * np.pi * pfreq(23.0, dur) * S.tline(dur)))
+    buf = np.stack([fan, np.roll(fan, 97)], axis=1) * 0.015
+    sprinkle(buf, water_drop, 8, dur, rng, spread=0.9)
+    return indoor(buf, dur, rng, "amb_greenhouse", tone_db=34.0, cut=150.0,
+                  room=0.8, damp=0.5, mix=0.22, pre=4.0)
 
 
 AMBIENTS = {

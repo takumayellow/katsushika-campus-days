@@ -20,7 +20,7 @@ WebGL 2 対応 GPU。初回は約 100 MB を読み込む。セーブはブラウ
 ## 遊ぶ（配布版）
 
 `dist/KatsushikaCampusDays_win64.zip` を展開して `KatsushikaCampusDays.exe` を起動する。
-Windows 10/11 64bit、インストール不要。操作は WASD 移動、マウス視点、Shift ダッシュ、Space ジャンプ、
+Windows 10/11 64bit、インストール不要。操作は WASD / 矢印キー移動、マウス視点、Shift ダッシュ、Space ジャンプ、
 E で話す/入る、Tab クエストログ、Esc メニュー。詳細は [docs/HOW_TO_PLAY.md](docs/HOW_TO_PLAY.md)。
 
 ## 自分でビルドする
@@ -64,6 +64,7 @@ Unity のライセンスは Hub でサインインしてから batchmode を使�
 
 ```
 data/osm/raw_overpass.json ─ tools/osm_extract.py ─▶ data/osm/campus.json
+data/osm/raw_route.json    ─ tools/osm_route.py   ─▶ data/osm/route.json（寮への道。隠しエンド #41 用）
                                                         │
 blender/build_campus.py     ◀───────────────────────────┘  ─▶ unity/.../Assets/Models/Campus/*.fbx
 blender/build_characters.py                                  ─▶ unity/.../Assets/Models/Characters/<id>/
@@ -73,12 +74,16 @@ Unity -batchmode -executeMethod KCD.Editor.SceneBuilder.BuildAll   ─▶ Scenes
 Unity -batchmode -executeMethod KCD.Editor.BuildPlayer.BuildWindows ─▶ build/Windows/
 ```
 
+原点と投影（敷地ポリゴン way 175463006 の重心、x = 東 m / z = 北 m）は `tools/osm_common.py` で共有していて、
+`python tools/osm_common.py --selfcheck` で `data/osm/campus.json` と照合できる。
+Overpass の生データ 2 つは大きいので gitignore。寮への道の分は `data/osm/route_query.ql` を投げれば取り直せる。
+
 ## フォルダ
 
 | 場所 | 内容 |
 | --- | --- |
 | `blender/` | 外構・キャラ 7 体・建物内部 9 棟の生成スクリプト（`kcd_lib` / `kcd_chara` / `kcd_interior`） |
-| `tools/` | OSM 抽出、ミニマップ描画、音声合成、Unity ログ検査、スモーク起動、zip 化 |
+| `tools/` | OSM 抽出（キャンパス／寮への道）、ミニマップ描画、音声合成、Unity ログ検査、スモーク起動、zip 化 |
 | `unity/KatsushikaCampusDays/` | Unity プロジェクト。`Assets/Scripts/Editor` がシーンを組み立て、`Runtime` がゲーム本体 |
 | `unity/KatsushikaCampusDays/Assets/Data/` | クエスト・会話・収集物・ローカライズ・モブ・リザルトの JSON |
 | `docs/` | 設計書、データ仕様、クレジット、プレビュー画像、スクリーンショット |

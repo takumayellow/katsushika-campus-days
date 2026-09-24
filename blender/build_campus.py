@@ -24,7 +24,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import bpy  # noqa: E402
 
-from kcd_lib import buildings, geom, mats, props, render, site  # noqa: E402
+from kcd_lib import buildings, entrances, geom, mats, props, render, site  # noqa: E402
 from kcd_lib.mesh import MeshBuilder  # noqa: E402
 
 FBX_OPTS = dict(
@@ -45,6 +45,10 @@ FBX_OPTS = dict(
 
 # プレビュー 4 枚。(名前, 視点 (u, v, z), 注視点 (u, v, z), 焦点距離, 樹木の除外半径)
 BG_WINDOW_BUDGET = 24000   # 背景建物の窓（四角 1 枚 = 三角 2）の上限
+
+# site_ground を切り分ける格子の間隔。どの三角形の辺も対角線 42 m 以下になる（#30）
+SITE_GRID = 30.0
+SITE_MAX_EDGE = 50.0
 
 CAM_SPECS = [
     ("campus_overview", (-30.0, -300.0, 205.0), (28.0, -8.0, 18.0), 35.0, 0.0),
@@ -136,6 +140,31 @@ def export_fbx(path):
     return os.path.getsize(path)
 
 
+def check_site_ground(obj):
+    """site_ground の面の向きと大きさを確かめる。崩れていたらビルドを止める（#30）。
+
+    - 水平な面（|法線 z| > 0.99）はすべて上向き。下向きの床は Unity で描画されず、
+      CharacterController の床にもならない（add_ribbon の巻き方向が逆だった不具合の再発防止）
+    - 辺の長さは SITE_MAX_EDGE 以下（PhysX の巨大三角形の警告と接地の不安定を防ぐ）"""
+    me = obj.data
+    down = [p for p in me.polygons if p.normal.z < -0.99]
+    if down:
+        c = down[0].center
+        raise RuntimeError("[site] site_ground に下向きの水平面が %d 枚あります（例: %s @ (%.1f, %.1f, %.3f)）"
+                           % (len(down), me.materials[down[0].material_index].name, c.x, c.y, c.z))
+    # Unity は多角形を三角形に割って取り込むので、対角線も含めて三角形の辺で測る
+    me.calc_loop_triangles()
+    longest = 0.0
+    for t in me.loop_triangles:
+        a, b, c = (me.vertices[i].co for i in t.vertices)
+        longest = max(longest, (a - b).length, (b - c).length, (c - a).length)
+    if longest > SITE_MAX_EDGE:
+        raise RuntimeError("[site] site_ground に %.1f m の辺があります（上限 %.0f m）" % (longest, SITE_MAX_EDGE))
+    up = sum(1 for p in me.polygons if p.normal.z > 0.99)
+    print("[site] check ok: up-facing %d / %d faces, no down-facing, longest edge %.1f m"
+          % (up, len(me.polygons), longest))
+
+
 # --------------------------------------------------------------------------- #
 #  キャンパス本体
 # --------------------------------------------------------------------------- #
@@ -150,12 +179,14 @@ def build_campus(data, frame, rng, max_trees):
     site_mb = MeshBuilder("site_ground")
     site.build_ground(site_mb, data, frame, occ)
     site.build_paths(site_mb, data, occ)
-    roads = site.Occupancy()     # 道路・歩道だけ（駐輪場の配置判定に使う）
-    site.build_paths(MeshBuilder("_discard_roads"), data, roads)
     site.build_mall(site_mb, frame, occ)
     site.build_basin(site_mb, frame, occ)
     site.build_basin_keepout(frame, hard)
-    objects.append(site_mb.to_object(scene_coll))
+    n_cut, n_faces = site_mb.split_by_grid(SITE_GRID)
+    print("[site] split %d faces by %.0f m grid -> %d faces" % (n_cut, SITE_GRID, n_faces))
+    site_obj = site_mb.to_object(scene_coll)
+    check_site_ground(site_obj)
+    objects.append(site_obj)
     water_mb = MeshBuilder("site_water")
     site.build_water(water_mb, frame)
     objects.append(water_mb.to_object(scene_coll))
@@ -210,28 +241,50 @@ def build_campus(data, frame, rng, max_trees):
         occ.stamp_poly(ctx["kyoso_rect"], margin=3.0)
         hard.stamp_poly(ctx["kyoso_rect"], margin=2.0)
 
+    # --- 入口（風除室・ガラス扉・庇・足元の石張り）---
+    # 扉の前の通り道は、ベンチ・照明柱・列植・散布の木より先に空けておく（#39）。
+    # 名前が bld_ で始まるので Unity では Building レイヤー（カメラが突き抜けない）になる。
+    doors = entrances.plan(data, frame, ctx)
+    for dr in doors:
+        lane = entrances.corridor(dr)
+        occ.stamp_poly(lane, margin=1.0)
+        hard.stamp_poly(lane, margin=1.0)
+    ent_mb = MeshBuilder("bld_entrances")
+    entrances.build(ent_mb, doors)
+    objects.append(ent_mb.to_object(scene_coll))
+    for dr in doors:
+        u, v = frame.uv(dr["origin"])
+        print("[entrance] %-10s wall (u%.1f, v%.1f)  facing %+.0f deg"
+              % (dr["id"], u, v, math.degrees(dr["yaw"])))
+
     # --- ベンチ・照明柱 ---
     fur_mb = MeshBuilder("site_furniture")
     site.build_street_furniture(fur_mb, frame, hard)
     objects.append(fur_mb.to_object(scene_coll))
 
-    # --- 看板・駐輪場・自販機・ゴミ箱 ---
+    # --- 看板・花壇・自販機・ゴミ箱 ---
     sign_mb = MeshBuilder("site_props_signs")
     site.build_signs(sign_mb, frame, ctx)
     objects.append(sign_mb.to_object(scene_coll))
-    shed_mb = MeshBuilder("site_props_bikeshed")
-    site.build_bike_sheds(shed_mb, frame, occ, hard, ctx, roads=roads)
-    objects.append(shed_mb.to_object(scene_coll))
-    print("[props] bike sheds: %s" % ", ".join("%s@(u%.0f,v%.0f)" % s for s in ctx["bike_sheds"]))
+    # 入口の駐輪場は実物に無いので置かない（#56）。代わりにモール北側の花壇
+    beds_mb = MeshBuilder("site_props_beds")
+    site.build_mall_beds(beds_mb, frame, occ, data, ctx)
+    objects.append(beds_mb.to_object(scene_coll))
+    print("[props] mall beds: %d (%s)" % (len(ctx["mall_beds"]),
+                                          ", ".join("u%.0f..%.0f" % b for b in ctx["mall_beds"])))
     vend_mb = MeshBuilder("site_props_vending")
     trash_mb = MeshBuilder("site_props_trash")
     site.build_amenities(vend_mb, trash_mb, frame, ctx)
     objects.append(vend_mb.to_object(scene_coll))
     objects.append(trash_mb.to_object(scene_coll))
 
-    # --- Empty（入口・看板・プレイヤー初期位置）---
+    # --- Empty（入口・扉・看板・プレイヤー初期位置）---
+    # entrance_<id> は扉の前の床（Unity の入口トリガーの位置）、door_<id> は扉の外面の中心。
+    # Unity は door → entrance を「建物の外へ向かう向き」として使う。
     for eid, pos, z in ctx["entrance"]:
         add_empty("entrance_%s" % eid, (pos[0], pos[1], z), kind="ARROWS")
+    for eid, pos, z in ctx.get("door", []):
+        add_empty("door_%s" % eid, (pos[0], pos[1], z), kind="PLAIN_AXES", size=1.0)
     # 看板 Empty は板の位置に置き、+X が板の正面（法線）になるよう回す
     for sid, pos, z, yaw in ctx.get("sign_placed") or [(s, p, z, 0.0) for s, p, z in ctx["sign"]]:
         add_empty("sign_%s" % sid, (pos[0], pos[1], z), kind="SINGLE_ARROW")
@@ -390,7 +443,8 @@ def main():
     print("tree  verts  : %d x %d instances" % (tree_verts, len(trees)))
     print("campus.fbx   : %.2f MB" % (size_campus / 1048576.0))
     print("trees.fbx    : %.2f MB" % (size_trees / 1048576.0))
-    print("entrances    : %d   signs: %d" % (len(ctx["entrance"]), len(ctx["sign"])))
+    print("entrances    : %d   doors: %d   signs: %d"
+          % (len(ctx["entrance"]), len(ctx.get("door", [])), len(ctx["sign"])))
     print("engine       : %s" % engine)
     print("time         : build %.1fs / preview %.1fs / total %.1fs"
           % (t_build - t0, t_preview - t_build, total - t0))

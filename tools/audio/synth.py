@@ -658,6 +658,18 @@ def marimba(freq: float, dur: float, vel: float = 1.0) -> np.ndarray:
     return out * 0.5 * vel
 
 
+def soft_mallet(freq: float, dur: float, vel: float = 1.0) -> np.ndarray:
+    """高い音域 (F5〜A6) 用の木琴の「ポン」. marimba と同じ基音に, 整数倍 (4 倍) の短い倍音だけを足す.
+    marimba の 3.93 倍・9.2 倍の非整数倍音は, この音域だと 2.7〜13 kHz に突出 25〜64 dB の山を作って
+    0.28 秒ほど残り, 鈴やグロッケンのような金属音に聞こえていた (#28). 4 倍は本物のマリンバの調律で, 25 ms で消す."""
+    t = tline(dur)
+    out = (np.sin(2 * np.pi * freq * t) * np.exp(-t / 0.45)
+           + 0.2 * np.sin(2 * np.pi * freq * 4.0 * t) * np.exp(-t / 0.025))
+    na = min(n_samples(0.002), len(out))
+    out[:na] *= np.linspace(0, 1, na) ** 2
+    return out * 0.5 * vel
+
+
 def bass(freq: float, dur: float, vel: float = 1.0) -> np.ndarray:
     """サイン基音 + 低次倍音のエレキベース風."""
     t = tline(dur)
@@ -770,8 +782,9 @@ def chime_bell(freq: float, dur: float, vel: float = 1.0) -> np.ndarray:
     """教会鐘 / チャイム. ハム音 (基音の 1 オクターブ下) と
     短三度のタース音を含む実物に近い部分音構成."""
     t = tline(dur)
+    # 短三度のタース (1.19) は長調の BGM に重なると濁るので控えめにしてある (#38)
     ratios = [0.5, 1.0, 1.19, 1.5, 2.0, 2.5, 2.66, 3.01, 4.07, 5.43]
-    amps = [0.42, 1.0, 0.34, 0.26, 0.55, 0.18, 0.12, 0.16, 0.09, 0.05]
+    amps = [0.42, 1.0, 0.16, 0.26, 0.55, 0.14, 0.08, 0.12, 0.07, 0.04]
     taus = [3.6, 2.9, 1.5, 1.4, 1.9, 0.9, 0.7, 0.8, 0.45, 0.3]
     out = np.zeros_like(t)
     for r, a, tau in zip(ratios, amps, taus):

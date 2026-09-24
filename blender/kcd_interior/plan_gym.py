@@ -125,7 +125,9 @@ def _court(c, cx, hall_y1):
                 (bx0, by1 - 1.98 - lw, bx1, by1 - 1.98 + lw)):
             kit.plate(mb, a0, b0, a1, b1, Z + 0.008, "court_line")
 
-    c.poi("court", cx, cy, 0.0)
+    # バレーのネット（y=cy・高さ 1.43〜2.43 m）の真下だと体のまわりの空きが
+    # 0.02 m しか無いので、コートの中で 2.4 m 手前へずらす（#42）
+    c.poi("court", cx, cy - 2.4, 0.0)
     c.npc(cx - 4.0, cy - 6.0, 0.0)
     c.npc(cx + 3.5, cy + 4.0, 0.0)
     c.npc(cx, cy - 11.0, 0.0)
@@ -163,7 +165,10 @@ def _stage(c, x0, x1, y1):
     # 校章代わりのパネル
     kit.vplate(c.wall, (sx1 - 2.0, sy1 - 0.28), (sx0 + 2.0, sy1 - 0.28),
                4.20, 6.60, "wall_accent_navy")
-    F.podium(mb, (sx0 + sx1) * 0.5 - 2.0, sy0 + 1.6, ang=0.0)
+    # 演台は客席（-Y）へ向け、舞台の高さ（0.90 m）まで持ち上げる
+    base_pd = len(mb.verts)
+    F.podium(mb, (sx0 + sx1) * 0.5 - 2.0, sy0 + 1.6, ang=math.pi)
+    kit.lift(mb, base_pd, 0.90)
     for i in range(3):
         shell.column(c.wall, sx0 - 1.2, sy0 + 1.0 + i * 2.4, 0.0, CEIL,
                      size=0.50, mat="concrete_light")
@@ -186,24 +191,53 @@ def _bleachers(c, x0, x1, y0, y1, cx, hall_y1):
     by1 = y1 - 8.0
     rows = 10
     run = 0.82
-    rise = 0.42
-    # ang=-90°: ローカル (dx, dy) -> ワールド (dy, -dx)。
-    # つまり観覧席は -X 側の壁に接して +X 方向へせり上がる。
-    seats = F.bleachers(mb, -by1, -by0, x0 + 0.6, rows=rows, rise=rise,
-                        run=run, ang=-math.pi * 0.5,
+    # 蹴上は CharacterController の stepOffset（0.40 m）より低くする。
+    # 0.42 だとコートから最前列にも、段から段にも上がれなかった（#42）。
+    rise = 0.35
+    # ang=+90°: ローカル (dx, dy) -> ワールド (-dy, dx)。
+    # 最前列をコート側に置き、-X 側の壁へ向かってせり上がる（客はコート = +X を向く）。
+    seats = F.bleachers(mb, by0, by1, -(x0 + 0.6 + rows * run), rows=rows, rise=rise,
+                        run=run, ang=math.pi * 0.5,
                         seat_mat="chair_hall_red", seats_every=0.52)
     c.seats += seats
     c.note("観覧席 %d 席" % seats)
-    top_x = x0 + 0.6 + rows * run
+    top_x = x0 + 0.6            # 最上段の背（壁との隙間 0.6 m に落ちないよう）
     shell.railing(c.wall, [(top_x, by0), (top_x, by1)], rise * rows,
                   h=1.05, mat="metal_white")
-    # 観覧席へ上がる階段
-    shell.stair_flight(c.wall, x0 + 0.6 + rows * run * 0.5, by0 - 3.4, by0 - 0.4,
-                       0.0, rise * rows * 0.5, width=1.8,
+    # 観覧席へ上がる階段。上り切りの z は段 r=4 の天端（rise * 5）と同じ高さ。
+    # 上り切り（by0 - 0.4）から観覧席の最前列（by0）までは床が無かったので、
+    # 段 r=5 と r=4 に跨る幅（run の左右 1 段ぶん）の踊り場でつなぐ。
+    st_x = x0 + 0.6 + rows * run * 0.5
+    st_z = rise * rows * 0.5
+    shell.stair_flight(c.wall, st_x, by0 - 3.4, by0 - 0.4, 0.0, st_z, width=1.8,
                        tread_mat="concrete_light", rail=True)
-    c.poi("bleachers", x0 + 3.0, (by0 + by1) * 0.5, rise * 3)
-    c.npc(x0 + 2.4, by0 + 6.0, rise * 3)
-    c.npc(x0 + 3.2, by0 + 12.0, rise * 4)
+    shell.landing(c.wall, st_x - run, by0 - 0.4, st_x + run, by0, st_z,
+                  mat="concrete_light")
+    # 南北の端の腰壁。蹴上を 0.35 m にして段を上れるようにしたぶん、段の上を
+    # 南北に歩くと端からコートへ落ちられるようになった（最大 3.5 m）ので、
+    # 段なりの壁でふさぐ。南側は踊り場から入る 2 段ぶんだけ開ける（#42）
+    front_x = x0 + 0.6 + rows * run
+    for r in range(rows):
+        ex0 = front_x - (r + 1) * run
+        ex1 = front_x - r * run
+        ez = rise * (r + 1)
+        for yy, sgn in ((by0, -1.0), (by1, 1.0)):
+            if sgn < 0 and ex0 > st_x - run - 0.01 and ex1 < st_x + run + 0.01:
+                continue
+            ya, yb = min(yy, yy + sgn * 0.10), max(yy, yy + sgn * 0.10)
+            kit.box(c.wall, ex0, ya, 0.0, ex1, yb, ez, "concrete_light")
+            kit.box(c.wall, ex0, ya, ez, ex1, yb, ez + 1.00, "metal_white")
+    # POI / NPC は段の踏面の中心へ。段の端だと次の段の蹴上に食い込む
+    x_r2 = x0 + 0.6 + run * (rows - 2.5)      # 天端 rise * 3 の段
+    x_r3 = x0 + 0.6 + run * (rows - 3.5)      # 天端 rise * 4 の段
+    c.poi("bleachers", x_r2, (by0 + by1) * 0.5, rise * 3)
+    c.npc(x_r2, by0 + 6.0, rise * 3)
+    c.npc(x_r3, by0 + 12.0, rise * 4)
+    # 撮影スポット ps_gym_catwalk の立ち位置。キャットウォーク (z=8.50) は
+    # 上がる階段もはしごも無く BFS 到達 0 だったので、観覧席の最上段
+    # （天端 rise*rows = 3.50 m・背は手すり）へ振り替える。+Y を向くと
+    # アリーナを長手に見下ろせる (#42)
+    c.poi("catwalk", x0 + 0.6 + run * 0.5, by0 + 2.0, rise * rows)
 
     # 反対側の壁に肋木と用具
     F.wall_bars(mb, -(by0 + 14.0), -(by0 + 2.0), x1 - 0.3, z0=0.4, z1=2.60,
@@ -259,7 +293,7 @@ def _storage(c, x0, x1, y0, y1, cx, hall_y1):
                       w=1.4, h=0.40)
     # 棚とボールかご
     for i in range(3):
-        F.bookshelf(mb, sx1 - 0.7, sy0 + 1.2 + i * 2.2, ang=-math.pi * 0.5,
+        F.bookshelf(mb, sx1 - 0.7, sy0 + 1.2 + i * 2.2, ang=math.pi * 0.5,
                     w=2.0, h=2.10, shelves=4, rng=rng, body="metal_gray",
                     depth=0.60, books=False)
     for i in range(6):
@@ -274,7 +308,9 @@ def _storage(c, x0, x1, y0, y1, cx, hall_y1):
             kit.blob(mb, bx - 0.34 + (k % 3) * 0.34,
                      by - 0.22 + (k // 3) * 0.34, 0.24, 0.12, 0.12, 0.12,
                      "chair_orange", seg=6, rings=3)
-    c.poi("storage", sx0 + 3.6, sy0 + 4.0, 0.0)
+    # ボールかご（x = sx0+1.05..2.15 と 3.45..4.55）と棚（sx1-1.0 から）の間の
+    # 通路。sx0+3.6 だとかごまで 0.17 m しか空いていなかった（#42）
+    c.poi("storage", sx0 + 5.4, sy0 + 3.6, 0.0)
 
     # --- 体操器具（コート脇に並べる） ---
     ey = hall_y1 + 1.6
@@ -392,4 +428,5 @@ def _extras(c, x0, x1, y0, y1, cx, hall_y1):
         mx = x0 + 3.0 + j * 2.2
         kit.box(mb, mx - 0.95, y0 + 0.40, 0.0, mx + 0.95, y0 + 0.46, 1.90,
                 "cushion_red" if j % 2 else "fabric_green")
-    c.poi("catwalk", cx, hall_y1 + 3.0, 8.50)
+    # poi_gym_catwalk は _bleachers() が観覧席の最上段に置く（ここのキャット
+    # ウォークには上がる手段が無く、立てないため）

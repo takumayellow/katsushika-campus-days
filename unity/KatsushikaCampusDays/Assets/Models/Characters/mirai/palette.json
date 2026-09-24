@@ -1,0 +1,56 @@
+{
+  "materials": [
+    {
+      "name": "bag_tote",
+      "hex": "8D6A4B"
+    },
+    {
+      "name": "brow",
+      "hex": "A9835F"
+    },
+    {
+      "name": "cloth_blouse",
+      "hex": "FDFDFA"
+    },
+    {
+      "name": "cloth_ribbon_green",
+      "hex": "00843D"
+    },
+    {
+      "name": "cloth_skirt_navy",
+      "hex": "26304E"
+    },
+    {
+      "name": "cloth_socks_black",
+      "hex": "2A2A30"
+    },
+    {
+      "name": "collar_white",
+      "hex": "F6F1E6"
+    },
+    {
+      "name": "eye_rim",
+      "hex": "756464"
+    },
+    {
+      "name": "hair",
+      "hex": "C9A27E"
+    },
+    {
+      "name": "lash",
+      "hex": "4A2B2B"
+    },
+    {
+      "name": "metal",
+      "hex": "4FA3E8"
+    },
+    {
+      "name": "shoes_loafer",
+      "hex": "4A2F22"
+    },
+    {
+      "name": "skin",
+      "hex": "F4C9B2"
+    }
+  ]
+}

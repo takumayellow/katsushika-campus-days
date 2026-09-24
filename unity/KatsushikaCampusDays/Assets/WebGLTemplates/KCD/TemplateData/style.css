@@ -1,0 +1,172 @@
+/* 葛飾キャンパスデイズ 専用の WebGL テンプレート (#48)。
+   Unity 既定テンプレートの構造はそのままに、案内文と大きな全画面ボタンを足した。 */
+
+:root {
+  --kcd-bg: #12151b;
+  --kcd-panel: #1b2029;
+  --kcd-ink: #f2efe6;
+  --kcd-muted: #a7b0bf;
+  --kcd-accent: #3f7ad6;
+}
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--kcd-bg);
+  color: var(--kcd-ink);
+  font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+  -webkit-text-size-adjust: 100%;
+}
+
+#unity-container {
+  position: relative;
+  box-sizing: border-box;
+  min-height: 100%;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+#kcd-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--kcd-muted);
+}
+
+/* キャンバスの箱。画面の縦幅に収まる範囲で、ビルド設定の縦横比を保って広げる。 */
+#unity-fullscreen-container {
+  position: relative;
+  width: min(100%, 1280px, calc((100vh - 190px) * {{{ WIDTH }}} / {{{ HEIGHT }}}));
+  aspect-ratio: {{{ WIDTH }}} / {{{ HEIGHT }}};
+  background: {{{ BACKGROUND_COLOR }}};
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+#unity-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: {{{ BACKGROUND_COLOR }}};
+}
+
+/* ブラウザの全画面表示では縦横比の縛りを外して画面いっぱいにする。 */
+#unity-fullscreen-container:fullscreen,
+#unity-fullscreen-container:-webkit-full-screen {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  aspect-ratio: auto;
+  border-radius: 0;
+}
+
+/* 読み込み中 */
+#unity-loading-container {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(18, 21, 27, 0.72);
+}
+
+#unity-loading-bar { width: min(60%, 320px); text-align: center; }
+#unity-loading-text { margin-bottom: 10px; font-size: 13px; color: var(--kcd-muted); }
+#unity-progress-bar-empty { height: 10px; border-radius: 5px; background: rgba(255, 255, 255, 0.16); overflow: hidden; }
+#unity-progress-bar-full { width: 0%; height: 100%; background: var(--kcd-accent); transition: width 0.15s linear; }
+
+/* マウスが解放されている間だけ出す、キャンバスの中の案内。文字は素通しにして、
+   キャンバスのクリック（操作開始）を邪魔しない。 */
+#kcd-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: linear-gradient(rgba(18, 21, 27, 0.86), rgba(18, 21, 27, 0));
+  font-size: 13px;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
+}
+
+#kcd-overlay.kcd-hidden { opacity: 0; visibility: hidden; }
+#kcd-overlay button { pointer-events: auto; }
+
+/* キャンバスの下の案内。常に出しておき、マウスが取られている間だけ薄くする。 */
+#kcd-guide {
+  box-sizing: border-box;
+  width: min(100%, 1280px);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 16px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--kcd-panel);
+  transition: opacity 0.18s ease;
+}
+
+#kcd-guide.kcd-dim { opacity: 0.45; }
+#kcd-guide .kcd-line { margin: 0; font-size: 13px; line-height: 1.7; }
+#kcd-guide .kcd-sub { color: var(--kcd-muted); }
+#kcd-guide b { color: var(--kcd-accent); font-weight: 700; }
+
+.kcd-fullscreen {
+  flex: none;
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--kcd-accent);
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.kcd-fullscreen:hover { background: #4f8ae8; }
+.kcd-fullscreen:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+#unity-warning {
+  position: absolute;
+  left: 50%;
+  top: 8px;
+  transform: translateX(-50%);
+  max-width: 90vw;
+  display: none;
+  border-radius: 6px;
+  overflow: hidden;
+  font-size: 13px;
+}
+
+/* スマホ・タブレットは画面いっぱい。下の案内は場所を取るので隠す。 */
+#unity-container.unity-mobile { padding: 0; gap: 0; }
+#unity-container.unity-mobile #kcd-title,
+#unity-container.unity-mobile #kcd-guide { display: none; }
+#unity-container.unity-mobile #unity-fullscreen-container {
+  width: 100%;
+  height: 100vh;
+  aspect-ratio: auto;
+  border-radius: 0;
+}
+
+@media (max-width: 560px) {
+  #kcd-guide { font-size: 12px; }
+  /* 狭い画面ではキャンバスの中の文字が場所を取りすぎる。すぐ下に同じ案内が出ているので、ボタンだけ残す。 */
+  #kcd-overlay { justify-content: flex-end; padding: 6px; background: none; }
+  #kcd-overlay-text { display: none; }
+  .kcd-fullscreen { padding: 6px 12px; font-size: 13px; }
+}

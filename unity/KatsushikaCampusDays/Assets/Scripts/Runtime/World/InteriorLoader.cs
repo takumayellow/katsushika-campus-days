@@ -60,8 +60,24 @@ namespace KCD
             _fade = BuildFadeOverlay();
         }
 
+        /// <summary>
+        /// 暗転の途中で止められた（シーンの切り替え・オブジェクトの無効化）ときは、コルーチンも止まるので
+        /// 自分の封鎖と暗転をここで外す。外さないと操作が止まったままになる (#40)。
+        /// </summary>
+        private void OnDisable()
+        {
+            KCDInput.Unblock(this);
+            if (_busy && _fade != null)
+            {
+                _fade.alpha = 0f;
+            }
+
+            _busy = false;
+        }
+
         private void OnDestroy()
         {
+            KCDInput.Unblock(this);
             if (Instance == this)
             {
                 Instance = null;
@@ -142,7 +158,9 @@ namespace KCD
         private IEnumerator Travel(PlayerController player, Vector3 position, float yaw, System.Action arrived)
         {
             _busy = true;
-            KCDInput.GameplayBlocked = true;
+
+            // 自分の封鎖だけを掛けて外す。暗転中に開いた会話・ポーズ・落下からの復帰の封鎖は残す (#40)。
+            KCDInput.Block(this);
             AudioManager.Instance?.PlaySe("door_open");
 
             yield return Fade(1f);
@@ -156,7 +174,7 @@ namespace KCD
             yield return null;
             yield return Fade(0f);
 
-            KCDInput.GameplayBlocked = false;
+            KCDInput.Unblock(this);
             _busy = false;
         }
 

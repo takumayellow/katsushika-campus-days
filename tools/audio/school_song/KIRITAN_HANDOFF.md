@@ -1,5 +1,7 @@
 # 校歌 歌唱版の依頼（きりたん歌唱ペインへ）
 
+> 2026-09-21 に書いた最初の依頼文で, 済んでいる。パスは当時のもの（`out/` はいま `score/` と `audio/` に分けた）。現状は `README.md` を参照。
+
 下の「依頼文」をそのまま貼る。譜面ファイルは `tools/audio/school_song/out/school_song_vocal.musicxml`。
 
 ## 依頼文

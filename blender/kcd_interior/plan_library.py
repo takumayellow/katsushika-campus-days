@@ -8,6 +8,11 @@ CEIL = 3.60          # 一般部の天井
 SLAB = 4.40          # 2F 床
 CEIL2 = 8.00         # 2F 天井（＝吹き抜けの天井）
 Z_TOP = 8.80
+# 2F 回廊へ上がる階段。天井 CEIL の下に置くと 2F 床（SLAB）まで上がれないので、
+# 天井の高い閲覧室の吹き抜けに置き、上端を北側の回廊スラブの縁にそろえる
+STAIR_DX = 8.0       # 東の内壁から階段の中心線まで
+STAIR_W = 2.2
+STAIR_RUN = 8.6      # 水平の長さ（25 段 x 0.344 m）
 
 
 def build(c):
@@ -51,8 +56,10 @@ def _entrance_zone(c, x0, y0, x1, y1):
     F.monitor(mb, -13.6, y0 + 7.4, 1.10, ang=math.pi)
     F.monitor(mb, -10.4, y0 + 7.4, 1.10, ang=math.pi)
     c.poi("counter", -12.0, y0 + 6.2, 0.0)
-    c.npc(-13.2, y0 + 8.2, 0.0)
-    c.npc(-10.6, y0 + 8.2, 0.0)
+    # 司書はカウンター（奥行 1.0、背面は y0+8.1）から 0.8 m 離す。
+    # y0+8.2 だとカウンターに埋まっていた（空き 0.04 m・#42）
+    c.npc(-13.2, y0 + 8.9, 0.0)
+    c.npc(-10.6, y0 + 8.9, 0.0)
     common.sign_board(c, mb, -12.0, y0 + 8.4, 2.45, ang=math.pi, w=3.2, h=0.62)
 
     # ゲート（入退館）
@@ -77,16 +84,18 @@ def _entrance_zone(c, x0, y0, x1, y1):
     # 入口ホールのラウンジと新聞架
     F.round_table(mb, 4.2, y0 + 8.6, r=0.62, h=0.70)
     F.round_table(mb, 10.6, y0 + 9.4, r=0.62, h=0.70)
-    for ax, ay in ((4.2, 8.6), (10.6, 9.4)):
+    # 椅子はテーブルを向く。座って立つと前へ 0.55 m 出るので、立ち位置が
+    # テーブル（半径 0.62）に掛からないよう中心から 1.65 m 離す
+    for ax, ay in ((4.2, y0 + 8.6), (10.6, y0 + 9.4)):
         for k in range(4):
             a = math.pi * 0.5 * k
-            F.lounge_chair(mb, ax + math.sin(a) * 1.02,
-                           ay - math.cos(a) * 1.02, ang=a,
+            F.lounge_chair(mb, ax + math.sin(a) * 1.65,
+                           ay - math.cos(a) * 1.65, ang=a,
                            mat="chair_blue" if k % 2 == 0 else "chair_green")
             c.seats += 1
     shell.planter(mb, 7.4, y0 + 9.0, r=0.60, h=0.58, leaf_h=2.3)
     for i in range(3):
-        F.bookshelf(mb, 1.2 + i * 1.1, y0 + 10.8, ang=0.0, w=1.0, h=1.35,
+        F.bookshelf(mb, 1.2 + i * 1.1, y0 + 10.8, ang=math.pi, w=1.0, h=1.35,
                     shelves=3, rng=c.rng)
     F.bench(mb, -5.0, y0 + 10.6, ang=math.pi, w=2.4, back=True)
     F.bench(mb, -8.0, y0 + 10.6, ang=math.pi, w=2.4, back=True)
@@ -96,12 +105,6 @@ def _entrance_zone(c, x0, y0, x1, y1):
     for i in range(4):
         F.bookshelf(mb, x0 + 2.2 + i * 1.1, y0 + 2.0, ang=0.0, w=1.0, h=1.50,
                     shelves=4, rng=c.rng)
-
-    # 階段（2F 回廊へ）
-    shell.stair_flight(w, x1 - 4.0, y0 + 3.0, y0 + 11.6, 0.0, SLAB, width=2.2,
-                       tread_mat="floor_tile_grey")
-    shell.railing(w, [(x1 - 2.8, y0 + 3.0), (x1 - 2.8, y0 + 11.6)], SLAB,
-                  h=1.05, mat="metal_white")
 
 
 def _stacks(c, x0, y0, x1, y1):
@@ -135,9 +138,11 @@ def _stacks(c, x0, y0, x1, y1):
     c.note("開架書架 %d 連" % ranges)
     aisle_i = max(0, ranges // 4)
     aisle_x = x0 + 0.9 + aisle_i * pitch + pitch * 0.5
-    c.poi("stacks", (x0 + x1) * 0.5, y0 + 6.0, 0.0)
-    c.npc(x0 + 3.0, y0 + 8.0, 0.0)
-    c.npc(x0 + 8.0, y0 + 16.0, 0.0)
+    # POI と NPC は書架の列（cx = x0+0.9+i*pitch）ではなく、その間の通路
+    # （aisle_x = 列の中間）に置く。以前は書架の中で空きが 0.00〜0.04 m だった（#42）
+    c.poi("stacks", aisle_x, y0 + 6.0, 0.0)
+    c.npc(aisle_x - pitch, y0 + 8.0, 0.0)
+    c.npc(aisle_x + pitch, y0 + 16.0, 0.0)
 
     # 書架の間のスツール
     for i in range(3):
@@ -171,8 +176,9 @@ def _reading(c, x0, y0, x1, y1):
             tx = x0 + 5.0 + i * 10.0
             if tx + 4.0 > x1 - 1.0:
                 break
+            # 両側に座るので幕板は天板の中央に（+Y 側だけだと膝に当たる）
             F.long_desk(mb, tx, ty, ang=0.0, w=7.2, d=1.30, h=0.73,
-                        top="desk_wood")
+                        top="desk_wood", two_sided=True)
             # 中央の仕切り板とランプ
             kit.box(mb, tx - 3.5, ty - 0.03, 0.73, tx + 3.5, ty + 0.03, 1.12,
                     "glass_partition")
@@ -181,7 +187,7 @@ def _reading(c, x0, y0, x1, y1):
             for sgn in (-1, 1):
                 for k in range(4):
                     F.chair_min(mb, F.T(tx - 2.7 + k * 1.8, ty + sgn * 0.95,
-                                        0.0, 0.0 if sgn > 0 else math.pi),
+                                        0.0, math.pi if sgn > 0 else 0.0),
                                 mat="chair_blue")
                     c.seats += 1
         rows += 1
@@ -195,8 +201,9 @@ def _reading(c, x0, y0, x1, y1):
         sy = y0 + 4.0 + i * 11.0
         if sy > y1 - 2.0:
             break
-        F.sofa(mb, x1 - 1.6, sy, ang=-math.pi * 0.5, w=2.4)
-        F.table(mb, x1 - 3.0, sy, ang=0.0, w=1.2, d=0.6, h=0.42, top="sb_wood")
+        F.sofa(mb, x1 - 1.6, sy, ang=math.pi * 0.5, w=2.4)
+        F.table(mb, x1 - 3.15, sy, ang=math.pi * 0.5, w=1.2, d=0.6, h=0.42,
+                top="sb_wood")
         c.seats += 3
 
 
@@ -222,15 +229,17 @@ def _booths(c, x0, y0, x1, y1):
             bx = x0 + 1.4 + i * 1.32
             if bx > x1 - 1.0:
                 break
-            F.study_booth(mb, bx, by, ang=0.0 if r % 2 == 0 else math.pi)
+            F.study_booth(mb, bx, by, ang=math.pi if r % 2 == 0 else 0.0)
             F.chair_min(mb, F.T(bx, by - 0.62 if r % 2 == 0 else by + 0.62,
                                 0.0, 0.0 if r % 2 == 0 else math.pi),
                         mat="chair_grey")
             c.seats += 1
             n += 1
     c.note("個人閲覧ブース %d 席" % n)
-    c.poi("desk", x0 + 3.0, y0 + 2.0, 0.0)
-    c.npc(x0 + 6.0, y0 + 3.9, 0.0)
+    # ブースの列（y0+2.0 と y0+3.85）の背中合わせの通路。列の上だと
+    # 空きが 0.09〜0.23 m しか無かった（#42）
+    c.poi("desk", x0 + 3.0, y0 + 2.93, 0.0)
+    c.npc(x0 + 6.6, y0 + 2.93, 0.0)
     shell.exit_sign(w, x0 + 2.8, y0 + 0.05, 2.90, ang=0.0)
 
 
@@ -246,8 +255,19 @@ def _gallery(c, x0, y0, x1, y1, stk_x1, read_y1):
                 thickness=0.45, side_mat="concrete_light")
     shell.railing(w, [(stk_x1 + 1.0, y0), (stk_x1 + 1.0, read_y1)], SLAB,
                   h=1.10, mat="metal_white", glass="glass_partition", post=2.4)
-    shell.railing(w, [(stk_x1 + 1.0, read_y1), (gx1, read_y1)], SLAB, h=1.10,
-                  mat="metal_white", glass="glass_partition", post=2.4)
+    # 南の縁（入口ホールの上）。階段で 2F へ上がれるようになって、ここから
+    # 入口ホールへ 4.4 m 落ちられるようになったのでふさぐ（#42）
+    shell.railing(w, [(x0, y0), (stk_x1 + 1.0, y0)], SLAB,
+                  h=1.10, mat="metal_white", glass="glass_partition", post=2.4)
+    # 閲覧室から北の回廊へ上がる階段。手すりは階段の上がり口だけ切る
+    scx = x1 - STAIR_DX
+    shell.stair_flight(w, scx, read_y1 - STAIR_RUN, read_y1, 0.0, SLAB,
+                       width=STAIR_W, tread_mat="floor_tile_grey")
+    shell.railing(w, [(stk_x1 + 1.0, read_y1), (scx - STAIR_W * 0.5, read_y1)],
+                  SLAB, h=1.10, mat="metal_white", glass="glass_partition",
+                  post=2.4)
+    shell.railing(w, [(scx + STAIR_W * 0.5, read_y1), (gx1, read_y1)], SLAB,
+                  h=1.10, mat="metal_white", glass="glass_partition", post=2.4)
     shell.ceiling(w, x0, y0, stk_x1 + 1.0, y1, SLAB + 3.20, "ceiling_white",
                   grid=1.8)
     pts = shell.ceiling_lights(w, x0 + 2.0, y0 + 2.0, stk_x1 - 1.0, y1 - 2.0,
@@ -266,14 +286,17 @@ def _gallery(c, x0, y0, x1, y1, stk_x1, read_y1):
         tx = x0 + 3.0 + i * 5.2
         if tx > stk_x1 - 2.0:
             break
-        F.long_desk(mb, tx, y1 - 4.0, ang=0.0, w=4.0, d=1.20, h=0.73)
+        F.long_desk(mb, tx, y1 - 4.0, ang=0.0, w=4.0, d=1.20, h=0.73,
+                    two_sided=True)
         for sgn in (-1, 1):
             for k in range(3):
                 F.chair_min(mb, F.T(tx - 1.3 + k * 1.3, y1 - 4.0 + sgn * 0.9,
-                                    0.0, 0.0 if sgn > 0 else math.pi),
+                                    0.0, math.pi if sgn > 0 else 0.0),
                             mat="chair_green")
                 c.seats += 1
     kit.lift(mb, base2f, SLAB)
     c.poi("gallery", x0 + 6.0, y0 + 12.0, SLAB)
-    c.npc(x0 + 5.0, y0 + 20.0, SLAB)
+    # 2F の書架は cx = x0+2.4+i*2.4。x0+5.0 は書架の中（空き 0.03 m）だったので
+    # 列の間（x0+6.0）へ（#42）
+    c.npc(x0 + 6.0, y0 + 20.0, SLAB)
     shell.exit_sign(w, x1 - 3.0, y0 + 0.8, SLAB + 2.80)

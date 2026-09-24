@@ -2,8 +2,8 @@
   "id": "q_gym",
   "title": "体育館まで 60 秒",
   "title_en": "Sixty Seconds to the Gym",
-  "summary": "教授いわく、体育館の鍵を閉めるまであと 1 分。モールを北へ折れて、Shift でダッシュすれば間に合うはず。",
-  "summary_en": "According to the professor, the gym gets locked in one minute. Turn north off the mall and sprint with Shift and you should make it.",
+  "summary": "教授いわく、体育館の鍵を閉めるまであと 1 分。モールを北へ折れて、Shift でダッシュすれば間に合うはず。間に合わなかったら、教授に話しかければもう一度挑戦できる。",
+  "summary_en": "According to the professor, the gym gets locked in one minute. Turn north off the mall and sprint with Shift and you should make it. If you miss it, talk to the professor to try again.",
   "order": 5,
   "autoStart": false,
   "prerequisites": [
@@ -11,6 +11,9 @@
   ],
   "rewardText": "体育館のアリーナを覗かせてもらえた",
   "rewardText_en": "You got a look inside the gymnasium arena",
+  "rewardType": "achievement",
+  "rewardId": "ach_sprinter",
+  "giver": "prof",
   "steps": [
     {
       "id": "s1",

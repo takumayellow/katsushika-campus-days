@@ -1,0 +1,44 @@
+{
+  "materials": [
+    {
+      "name": "brow",
+      "hex": "C8C8CE"
+    },
+    {
+      "name": "cloth_blouse",
+      "hex": "FDFDFA"
+    },
+    {
+      "name": "cloth_pants_gray",
+      "hex": "4C4F58"
+    },
+    {
+      "name": "eye_rim",
+      "hex": "6C6C72"
+    },
+    {
+      "name": "glasses",
+      "hex": "AEB4BE"
+    },
+    {
+      "name": "hair",
+      "hex": "DCDCE0"
+    },
+    {
+      "name": "labcoat",
+      "hex": "F5F6F7"
+    },
+    {
+      "name": "lash",
+      "hex": "3A3A44"
+    },
+    {
+      "name": "shoes_loafer",
+      "hex": "4A2F22"
+    },
+    {
+      "name": "skin",
+      "hex": "E4BA9E"
+    }
+  ]
+}

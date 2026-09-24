@@ -1,14 +1,61 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace KCD.Editor
 {
     /// <summary>
-    /// 座れるベンチ。FBX に椅子メッシュが無いのでプリミティブで組み、SeatInteractable を付ける。
-    /// 屋外はモールと図書館の水盤、屋内はラウンジ等の POI の脇に置く。
+    /// 座れるベンチ。屋外は FBX に椅子メッシュが無いのでプリミティブで組み、SeatInteractable を付ける。
+    /// 屋内は FBX のソファ・ベンチ・ラウンジチェア（seat_ Empty）に座る操作を付ける。
     /// </summary>
     public static class SeatFactory
     {
         private const float SeatHeight = 0.45f;
+
+        /// <summary>
+        /// 屋内の座れる家具に被せる見えない壁の高さ。座面（0.38〜0.46 m）は CharacterController の
+        /// stepOffset（0.4 m）とほぼ同じなので、メッシュの当たり判定だけだと段差として上ってしまう。
+        /// ジャンプ（1.1 m）+ stepOffset でも越えない高さにする。
+        /// </summary>
+        private const float BlockerHeight = 1.9f;
+
+        /// <summary>屋外ベンチ 1 脚ぶん。座標は CampusProps のローカル軸 (u, v)。</summary>
+        private readonly struct BenchSpot
+        {
+            public BenchSpot(string id, float u, float v, float faceU, float faceV)
+            {
+                Id = id;
+                U = u;
+                V = v;
+                FaceU = faceU;
+                FaceV = faceV;
+            }
+
+            public string Id { get; }
+
+            public float U { get; }
+
+            public float V { get; }
+
+            public float FaceU { get; }
+
+            public float FaceV { get; }
+        }
+
+        /// <summary>
+        /// 屋外ベンチの置き場所と向く先（CampusProps のローカル座標 u, v）。
+        ///
+        /// pond_a / pond_b は図書館を囲む堀の東岸の芝生（u = -46）に置き、堀と図書館の方（-u）を向ける。
+        /// 堀の東の帯は site.py の BASINS[1]（u -59.5..-50）で、縁石の外端は u = -48.4。
+        /// 水際までは 4 m あるので、背もたれ（天端 0.90 m）に乗っても見えない壁
+        /// （天端 2.6 m）は越えられない。
+        /// </summary>
+        private static readonly BenchSpot[] CampusBenches =
+        {
+            new BenchSpot("mall_a", 65f, -27.6f, 65f, -24f),
+            new BenchSpot("mall_b", 73f, -27.6f, 73f, -24f),
+            new BenchSpot("pond_a", -46f, -40f, -50f, -40f),
+            new BenchSpot("pond_b", -46f, -55f, -50f, -55f),
+        };
 
         /// <summary>屋外ベンチ。位置は CampusProps のローカル座標系（u, v）。</summary>
         public static int PlaceCampus(Transform parent)
@@ -17,15 +64,153 @@ namespace KCD.Editor
             group.transform.SetParent(parent, false);
 
             int count = 0;
-            count += CreateAt(group.transform, "mall_a", CampusProps.Local(65f, -27.6f), CampusProps.Local(65f, -24f));
-            count += CreateAt(group.transform, "mall_b", CampusProps.Local(73f, -27.6f), CampusProps.Local(73f, -24f));
-            count += CreateAt(group.transform, "pond_a", CampusProps.Local(-42f, -37f), CampusProps.Local(-30f, -31.6f));
-            count += CreateAt(group.transform, "pond_b", CampusProps.Local(-18f, -37f), CampusProps.Local(-30f, -31.6f));
+            foreach (BenchSpot spot in CampusBenches)
+            {
+                count += CreateAt(group.transform, spot.Id, CampusProps.Local(spot.U, spot.V),
+                    CampusProps.Local(spot.FaceU, spot.FaceV));
+            }
+
             return count;
         }
 
-        /// <summary>屋内ベンチ。poi_&lt;id&gt;_&lt;name&gt; の脇に、POI の方を向けて置く。</summary>
+        /// <summary>
+        /// 屋内の座れる家具。FBX の seat_&lt;id&gt;_&lt;nn&gt; Empty（Blender の Ctx.flush_seats が書く）ごとに、
+        /// E で座る操作と、上に乗り上げないための見えない壁を付ける。
+        /// 座れる家具が 1 つも無い棟（食堂など）は、これまでどおり POI の脇にベンチを置く。
+        /// </summary>
         public static int PlaceInterior(Transform interior, string id)
+        {
+            string prefix = "seat_" + id + "_";
+            var empties = new Dictionary<string, Transform>();
+            var seats = new List<string>();
+            foreach (Transform child in interior.GetComponentsInChildren<Transform>(true))
+            {
+                string name = child.name;
+                if (!name.StartsWith(prefix) || empties.ContainsKey(name))
+                {
+                    continue;
+                }
+
+                empties.Add(name, child);
+                // seat_<id>_<nn> が家具 1 つ。_f / _s / _a<k> はその付属。
+                if (IsDigits(name.Substring(prefix.Length)))
+                {
+                    seats.Add(name);
+                }
+            }
+
+            if (seats.Count == 0)
+            {
+                return PlacePoiBenches(interior, id);
+            }
+
+            seats.Sort(System.StringComparer.Ordinal);
+            var group = new GameObject("Seats");
+            group.transform.SetParent(interior, false);
+            int count = 0;
+            foreach (string name in seats)
+            {
+                if (CreateInteriorSeat(group.transform, name, empties))
+                {
+                    count++;
+                }
+                else
+                {
+                    EditorPaths.Report("屋内 " + id + " の " + name + " は _f / _s / _a0 が欠けているので座れません。");
+                }
+            }
+
+            return count;
+        }
+
+        /// <summary>
+        /// FBX の家具 1 つぶん。Empty はワールド座標で読む（屋内は 180° 回して置くので、向きも座標から出す）。
+        ///   seat_&lt;id&gt;_&lt;nn&gt;    家具の外形の中心（床の高さ）
+        ///   ..._f               正面の辺の中点（中心からの向きが座ったときの正面）
+        ///   ..._s               側面の辺の中点（中心からの距離が幅の半分）
+        ///   ..._a&lt;k&gt;            座る位置（床の高さ）
+        /// </summary>
+        private static bool CreateInteriorSeat(Transform parent, string name, Dictionary<string, Transform> empties)
+        {
+            if (!empties.TryGetValue(name, out Transform centre)
+                || !empties.TryGetValue(name + "_f", out Transform front)
+                || !empties.TryGetValue(name + "_s", out Transform side)
+                || !empties.ContainsKey(name + "_a0"))
+            {
+                return false;
+            }
+
+            Vector3 origin = centre.position;
+            Vector3 forward = front.position - origin;
+            forward.y = 0f;
+            Vector3 lateral = side.position - origin;
+            lateral.y = 0f;
+            float halfDepth = forward.magnitude;
+            float halfWidth = lateral.magnitude;
+            if (halfDepth < 0.05f || halfWidth < 0.05f)
+            {
+                return false;
+            }
+
+            var seat = new GameObject("Seat_" + name.Substring("seat_".Length));
+            seat.transform.SetParent(parent, false);
+            seat.transform.SetPositionAndRotation(origin, Quaternion.LookRotation(forward / halfDepth, Vector3.up));
+
+            // 座る位置。向きは家具の正面にそろえる（SitAt は anchor.forward を見る）。
+            var anchors = new List<Transform>();
+            for (int k = 0; empties.TryGetValue(name + "_a" + k, out Transform point); k++)
+            {
+                anchors.Add(Anchor(seat.transform, "Anchor" + k, seat.transform.InverseTransformPoint(point.position)));
+            }
+
+            // 乗り上げ防止の見えない壁。家具の外形いっぱいに立てる。
+            // Default レイヤーのままにして、カメラ（Ground / Building だけを見る）には当たらないようにする。
+            var blocker = new GameObject("Blocker");
+            blocker.transform.SetParent(seat.transform, false);
+            BoxCollider solid = blocker.AddComponent<BoxCollider>();
+            solid.center = new Vector3(0f, BlockerHeight * 0.5f, 0f);
+            solid.size = new Vector3(halfWidth * 2f, BlockerHeight, halfDepth * 2f);
+
+            // 座る操作の判定は正面の辺の前に置く。幅の広いソファでも端から座れるよう、反応距離を幅に合わせる。
+            var trigger = new GameObject("SeatTrigger");
+            trigger.transform.SetParent(seat.transform, false);
+            trigger.transform.localPosition = new Vector3(0f, 0.8f, halfDepth);
+            int layer = LayerMask.NameToLayer("Interactable");
+            if (layer >= 0)
+            {
+                trigger.layer = layer;
+            }
+
+            BoxCollider box = trigger.AddComponent<BoxCollider>();
+            box.isTrigger = true;
+            box.size = new Vector3(halfWidth * 2f + 0.4f, 1.6f, 1.2f);
+
+            SeatInteractable interactable = trigger.AddComponent<SeatInteractable>();
+            interactable.InteractionRange = Mathf.Max(2.2f, halfWidth + 1.2f);
+            interactable.Anchors = anchors.ToArray();
+            return true;
+        }
+
+        private static bool IsDigits(string text)
+        {
+            if (text.Length == 0)
+            {
+                return false;
+            }
+
+            foreach (char c in text)
+            {
+                if (c < '0' || c > '9')
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>座れる家具の無い棟のベンチ。poi_&lt;id&gt;_&lt;name&gt; の脇に、POI の方を向けて置く。</summary>
+        private static int PlacePoiBenches(Transform interior, string id)
         {
             string[] names = { "lounge", "reading", "foyer", "bleachers", "cafe", "hall" };
             int count = 0;

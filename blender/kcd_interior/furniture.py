@@ -7,7 +7,7 @@
 import math
 
 from . import imats, kit
-from .kit import T
+from .kit import T, face_ang  # noqa: F401  （プラン側が F.face_ang で使う）
 
 
 # --------------------------------------------------------------------------- #
@@ -33,12 +33,17 @@ def desk(mb, x, y, ang=0.0, w=1.40, d=0.70, h=0.72, top="desk_wood",
 
 
 def long_desk(mb, x, y, ang=0.0, w=3.60, d=0.55, h=0.72, top="desk_wood",
-              front="desk_white"):
-    """講義室の長机（前板つき）。"""
+              front="desk_white", two_sided=False):
+    """講義室の長机（前板つき）。
+
+    two_sided=True で前板を天板の中央に寄せる。両側に座る閲覧机で使う
+    （+Y 側だけに幕板があると、そちら側に座る人の膝に当たる）。
+    """
     t = T(x, y, 0.0, ang)
     hw, hd = w * 0.5, d * 0.5
     t.box(mb, -hw, -hd, h - 0.04, hw, hd, h, top)
-    t.box(mb, -hw, hd - 0.05, 0.30, hw, hd, h - 0.04, front)
+    fy0, fy1 = (-0.03, 0.03) if two_sided else (hd - 0.05, hd)
+    t.box(mb, -hw, fy0, 0.30, hw, fy1, h - 0.04, front)
     for sx in (-1, 1):
         t.box_nb(mb, sx * (hw - 0.14) - 0.04, -hd, 0.0,
                  sx * (hw - 0.14) + 0.04, hd, 0.30, "metal_gray")
@@ -103,7 +108,36 @@ def round_table(mb, x, y, r=0.42, h=0.73, top="sb_wood", leg="metal_dark",
     kit.cyl(mb, x, y, z, z + 0.035, r * 0.55, leg, seg=8)
 
 
+SEAT_PITCH = 0.60    # 座る位置（アンカー）の最小間隔
+
+
+def _seat(mb, t, vi, hw, d0, d1, inner, depth):
+    """座れる家具を mb.seats に記録する（Ctx.flush_seats が seat_ Empty にする）。
+
+    Unity の SeatFactory がこれを読んで「E で座る」操作と、上に乗り上げない
+    ための見えない壁を付ける。t のローカルで幅 +-hw・奥行き d0..d1（+Y が正面）が
+    家具の外形。inner は腰掛けられる幅、depth は座面の前端から腰を置く位置
+    （床の高さのアンカー）までの距離。立つと前へ 0.55 m 出るので、depth は
+    0.55 - カプセル半径 0.31 より小さくして立ち位置を家具の外に出す。
+    vi はこの家具の最初の頂点番号（kit.lift で一緒に持ち上げるため）。
+    """
+    seats = getattr(mb, "seats", None)
+    if seats is None:
+        return
+    n = max(1, int(inner / SEAT_PITCH + 1e-6))
+    dm = (d0 + d1) * 0.5
+    seats.append({
+        "vi": vi,
+        "c": t.p(0.0, dm),
+        "f": t.p(0.0, d1),
+        "s": t.p(hw, dm),
+        "anchors": [t.p(inner * ((k + 0.5) / n - 0.5), d1 - depth)
+                    for k in range(n)],
+    })
+
+
 def bench(mb, x, y, ang=0.0, w=1.80, mat="wood", leg="metal_gray", back=False):
+    vi = len(mb.verts)
     t = T(x, y, 0.0, ang)
     hw = w * 0.5
     t.box(mb, -hw, -0.22, 0.40, hw, 0.22, 0.45, mat)
@@ -112,24 +146,31 @@ def bench(mb, x, y, ang=0.0, w=1.80, mat="wood", leg="metal_gray", back=False):
                  sx * (hw - 0.18) + 0.05, 0.20, 0.40, leg)
     if back:
         t.box(mb, -hw, -0.24, 0.45, hw, -0.18, 0.86, mat)
+    _seat(mb, t, vi, hw, -0.24 if back else -0.22, 0.22, w, 0.20)
 
 
 def sofa(mb, x, y, ang=0.0, w=2.0, d=0.85, mat="fabric_beige",
          cushion="cushion_red"):
+    vi = len(mb.verts)
     t = T(x, y, 0.0, ang)
     hw, hd = w * 0.5, d * 0.5
     t.box(mb, -hw, -hd, 0.0, hw, hd, 0.38, mat)
     t.box(mb, -hw + 0.14, -hd + 0.06, 0.38, hw - 0.14, hd - 0.02, 0.46, cushion)
     t.box(mb, -hw, -hd, 0.38, hw, -hd + 0.18, 0.82, mat)
+    # 背クッション。座った腰（前端から 0.22 m）と背もたれの隙間を詰める
+    t.box(mb, -hw + 0.14, -hd + 0.18, 0.46, hw - 0.14, -hd + 0.34, 0.74, cushion)
     for sx in (-1, 1):
         t.box(mb, sx * hw - sx * 0.14, -hd, 0.38, sx * hw, hd, 0.62, mat)
+    _seat(mb, t, vi, hw, -hd, hd, w - 0.28, 0.22)
 
 
 def lounge_chair(mb, x, y, ang=0.0, mat="fabric_green"):
+    vi = len(mb.verts)
     t = T(x, y, 0.0, ang)
     t.box(mb, -0.34, -0.34, 0.0, 0.34, 0.34, 0.36, mat)
     t.box(mb, -0.30, -0.30, 0.36, 0.30, 0.30, 0.43, "cushion_red")
     t.box(mb, -0.34, -0.36, 0.36, 0.34, -0.20, 0.78, mat)
+    _seat(mb, t, vi, 0.34, -0.36, 0.34, 0.60, 0.22)
 
 
 # --------------------------------------------------------------------------- #
@@ -170,7 +211,7 @@ def bookshelf(mb, x, y, ang=0.0, w=0.90, h=1.90, shelves=5, rng=None,
     hw, hd = w * 0.5, depth * 0.5
     t.box(mb, -hw, -hd, 0.0, -hw + 0.03, hd, h, body)
     t.box(mb, hw - 0.03, -hd, 0.0, hw, hd, h, body)
-    t.box(mb, -hw, hd - 0.02, 0.0, hw, hd, h, body)
+    t.box(mb, -hw, -hd, 0.0, hw, -hd + 0.02, h, body)
     t.box(mb, -hw, -hd, 0.0, hw, hd, 0.09, body)
     for k in range(shelves):
         z = 0.09 + (h - 0.20) * k / shelves
@@ -460,9 +501,13 @@ def study_booth(mb, x, y, ang=0.0, w=1.10, d=0.70, h=0.73, panel=1.28):
     t.box(mb, -hw, -hd, 0.02, -hw + 0.04, hd, h - 0.04, "desk_white")
     t.box(mb, hw - 0.04, -hd, 0.02, hw, hd, h - 0.04, "desk_white")
     t.box(mb, -hw, -hd, h, hw, -hd + 0.04, panel, "desk_white")
+    # 側板は天板から 0.45 m 以上高くする。0.31 m（panel-0.24＝1.04）だと
+    # 天板 0.73 -> 側板 1.04 -> 前板 1.28 と伝って登れて、そこから床へ
+    # 1.0〜1.3 m 落ちられた。stepOffset 0.40 で届かない高さにする (#45)
+    side = max(panel - 0.10, h + 0.46)
     for sx in (-1, 1):
         t.box(mb, sx * hw - sx * 0.04, -hd, h, sx * hw, hd - 0.18,
-              panel - 0.24, "desk_white")
+              side, "desk_white")
 
 
 # --------------------------------------------------------------------------- #

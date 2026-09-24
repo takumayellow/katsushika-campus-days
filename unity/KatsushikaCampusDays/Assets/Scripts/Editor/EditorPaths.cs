@@ -34,11 +34,30 @@ namespace KCD.Editor
                 string next = current + "/" + parts[i];
                 if (!AssetDatabase.IsValidFolder(next))
                 {
-                    AssetDatabase.CreateFolder(current, parts[i]);
+                    // batchmode では、ディスクにフォルダがあっても AssetDatabase がまだ
+                    // 取り込んでおらず IsValidFolder が false を返すことがある。そのまま
+                    // CreateFolder を呼ぶと Unity が名前をずらして作り直すので、マテリアルを
+                    // 1 枚書くたびに "Campus 1" "Campus 2" … と空フォルダが増える（#52 で 173 個）。
+                    // 先にディスクを見て、あれば取り込むだけにする。
+                    if (Directory.Exists(Absolute(next)))
+                    {
+                        AssetDatabase.ImportAsset(next, ImportAssetOptions.ForceSynchronousImport);
+                    }
+
+                    if (!AssetDatabase.IsValidFolder(next))
+                    {
+                        AssetDatabase.CreateFolder(current, parts[i]);
+                    }
                 }
 
                 current = next;
             }
+        }
+
+        /// <summary>"Assets/…" をファイルシステムの絶対パスに直す。</summary>
+        public static string Absolute(string assetPath)
+        {
+            return Path.GetFullPath(Path.Combine(Application.dataPath, "..", assetPath));
         }
 
         /// <summary>バッチのログへ 1 行出す。Editor 専用なので Debug は使わない。</summary>

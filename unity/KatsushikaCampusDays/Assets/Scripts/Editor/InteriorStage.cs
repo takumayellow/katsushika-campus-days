@@ -7,7 +7,8 @@ namespace KCD.Editor
     /// <summary>
     /// 建物の屋内。Assets/Models/Interiors/&lt;id&gt;.fbx をキャンパスの遠く（x = 1200 m 以降）に横一列に並べ、
     /// 当たり判定・照明・出口・到達判定を付けて InteriorLoader に登録する。
-    /// FBX の Empty: spawn_&lt;id&gt;（入った直後の立ち位置）, exit_&lt;id&gt;（出口）, poi_&lt;id&gt;_*（クエストの visit 先）。
+    /// FBX の Empty: spawn_&lt;id&gt;（入った直後の立ち位置）, exit_&lt;id&gt;（出口）, poi_&lt;id&gt;_*（クエストの visit 先）,
+    /// seat_&lt;id&gt;_*（座れる家具。SeatFactory.PlaceInterior が読む）。
     /// </summary>
     public static class InteriorStage
     {
@@ -117,13 +118,9 @@ namespace KCD.Editor
 
                 GameObject go = filter.gameObject;
                 string id = go.name.ToLowerInvariant();
-                MeshCollider collider = go.GetComponent<MeshCollider>();
-                if (collider == null)
-                {
-                    collider = go.AddComponent<MeshCollider>();
-                }
-
-                collider.sharedMesh = filter.sharedMesh;
+                // 観葉植物の葉は当たり判定から外す（#30）。
+                CampusStage.AttachMeshCollider(go, filter.sharedMesh,
+                    CampusStage.ColliderAssetPath(interior.name, go.name));
                 go.layer = id.StartsWith("floor") && groundLayer >= 0
                     ? groundLayer
                     : buildingLayer >= 0 ? buildingLayer : go.layer;
@@ -287,11 +284,14 @@ namespace KCD.Editor
                 go.transform.position = child.position + Vector3.up * 1.2f;
                 go.transform.rotation = Quaternion.identity;
                 BoxCollider box = go.AddComponent<BoxCollider>();
-                box.isTrigger = true;
-                box.size = new Vector3(4f, 3f, 4f);
                 VisitZone zone = go.AddComponent<VisitZone>();
                 zone.PlaceId = child.name;
                 zone.DisplayName = string.Empty;
+
+                // 大きさは VisitZone を足したあとに入れる。AddComponent は Reset() を呼ぶので、
+                // 先に入れると既定の 10x6x10 に巻き戻る（#54）。
+                box.isTrigger = true;
+                box.size = new Vector3(4f, 3f, 4f);
                 count++;
             }
 

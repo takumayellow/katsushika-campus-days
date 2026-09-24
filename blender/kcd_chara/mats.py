@@ -10,6 +10,7 @@ from __future__ import annotations
 import math
 
 import bpy
+import numpy as np
 
 
 def srgb_to_linear(c: float) -> float:
@@ -72,7 +73,15 @@ def make_material(name: str, rgb, *, roughness: float = 0.62,
             mp = nt.nodes.new("ShaderNodeMapping")
             mp.location = (-780, 200)
             mp.inputs["Scale"].default_value = (tex_scale, tex_scale, tex_scale)
-            mp.inputs["Rotation"].default_value = (math.pi * 0.5, 0.0, 0.0)
+            # 和柄を 1 枚の平面投影（Rotation=(pi/2,0,0) の Y 軸投影）で貼ると、
+            # 法線が ±X を向く面（袖の外側・肩・胴の真横）はテクスチャの 1 本の
+            # 線を引き伸ばすだけになり、絣の十字が消えて縦縞になる。側面の
+            # プレビューで袖が「白い板」に見えていたのはこれ。
+            # ボックス投影なら面の向きに応じて XZ / YZ / XY の 3 面から選ぶので、
+            # どちらを向いた面にも十字が乗る。FBX には materialのノードは
+            # 入らないので、Unity 側の見え方はこの変更では変わらない。
+            tex.projection = "BOX"
+            tex.projection_blend = 0.25
             nt.links.new(src.outputs["Generated"], mp.inputs[0])
             nt.links.new(mp.outputs[0], tex.inputs[0])
         nt.links.new(tex.outputs["Color"], bsdf.inputs["Base Color"])
@@ -105,8 +114,9 @@ BASE_COLORS: dict[str, str] = {
     "shoes_loafer": "#4A2F22",
     "cloth_kimono_kasuri_blue": "#F4F2EC",
     "cloth_hakama_blue": "#1F4C8F",
-    "cloth_kimono_yagasuri_red": "#FCF6F3",
+    "cloth_kimono_heart_pink": "#FCF9F7",
     "cloth_hakama_purple": "#4C2A70",
+    "cloth_hakama_himo_purple": "#3A1F58",
     "ribbon_red": "#D8222F",
     "collar_white": "#F6F1E6",
     "boots_brown": "#7A4A28",
@@ -131,6 +141,80 @@ BASE_COLORS: dict[str, str] = {
 }
 
 
+def color_of(p: dict, name: str) -> tuple[float, float, float]:
+    """マテリアル 1 枚の sRGB 色。まつ毛・眉・肌はキャラごとの色をそのまま使う。"""
+    over = p.get("mat_colors", {})
+    if name in over:
+        return hexc(over[name])
+    if name in ("skin", "face") and "skin" in p:
+        # 顔テクスチャはキャラ固有の肌色で描く。体だけ共通色にすると
+        # 首から上だけ色が違って見える。
+        return tuple(p["skin"])[:3]  # type: ignore[return-value]
+    if name == "lash" and "lash_color" in p:
+        return tuple(p["lash_color"])[:3]  # type: ignore[return-value]
+    if name == "brow" and "brow_color" in p:
+        return tuple(p["brow_color"])[:3]  # type: ignore[return-value]
+    if name == "eye_rim" and "lash_color" in p:
+        c = tuple(p["lash_color"])[:3]
+        return tuple(min(1.0, v * 0.55 + 0.30) for v in c)  # type: ignore[return-value]
+    return hexc(BASE_COLORS.get(name, "#FF00FF"))
+
+
+#: 和柄のテクスチャを貼るマテリアル → build_textures() の patterns のキー
+PATTERN_OF = {"cloth_kimono_kasuri_blue": "kasuri",
+              "cloth_kimono_heart_pink": "heart"}
+
+#: params に pattern_scale が無いときの柄の倍率
+PATTERN_SCALE_DEFAULT = {"kasuri": 7.0, "heart": 6.0}
+
+
+def pattern_scale(p: dict, key: str) -> float:
+    """柄の Generated 座標に掛ける倍率。Blender と Unity (palette.json) で同じ値を使う。"""
+    return float(p.get("pattern_scale", PATTERN_SCALE_DEFAULT[key]))
+
+
+def _hex8(rgb) -> str:
+    return "".join(f"{min(255, max(0, round(v * 255))):02X}" for v in rgb[:3])
+
+
+def palette(p: dict, names, pattern_arrays: dict) -> dict[str, str]:
+    """Unity に渡す色表 {マテリアル名: "RRGGBB"}（#55）。
+
+    FBX が Unity へ渡すのはマテリアルの名前だけなので、色は別に渡す必要がある。
+    以前は Unity 側が名前の部分一致で色を当てていて（"blue" が入れば青、など）、
+    Blender の色とは 31 色中 22 色がずれていた（まつ毛・眉は既定のベージュ）。
+
+    - 顔テクスチャを貼る 4 枚（face / eye_*）は Unity でも face.png を貼るので載せない
+    - 和柄は柄の平均色（リニアで平均）を載せる。Unity は柄の画像を貼り、
+      この平均色は影色の元にだけ使う（柄の名前と倍率は pattern_entries() が渡す）
+    """
+    out: dict[str, str] = {}
+    for name in names:
+        if name in ("face", "eye_white", "eye_l", "eye_r"):
+            continue
+        key = PATTERN_OF.get(name)
+        if key in pattern_arrays:
+            arr = pattern_arrays[key][..., :3]
+            linear = np.where(arr <= 0.04045, arr / 12.92, ((arr + 0.055) / 1.055) ** 2.4)
+            m = linear.reshape(-1, 3).mean(axis=0)
+            rgb = [v * 12.92 if v <= 0.0031308 else 1.055 * v ** (1 / 2.4) - 0.055
+                   for v in m]
+            out[name] = _hex8(rgb)
+        else:
+            out[name] = _hex8(color_of(p, name))
+    return out
+
+
+def pattern_entries(p: dict, names, pattern_arrays: dict) -> dict[str, dict]:
+    """柄を貼るマテリアル → {"pattern": 画像名, "pattern_scale": 倍率}（Unity の KCD/Toon 用）。"""
+    out: dict[str, dict] = {}
+    for name in names:
+        key = PATTERN_OF.get(name)
+        if key in pattern_arrays:
+            out[name] = {"pattern": key, "pattern_scale": pattern_scale(p, key)}
+    return out
+
+
 def build_materials(p: dict, face_image, pattern_images: dict) -> dict:
     """キャラ 1 体分のマテリアル辞書を作る。"""
     out: dict = {}
@@ -140,21 +224,7 @@ def build_materials(p: dict, face_image, pattern_images: dict) -> dict:
         return hexc(over.get(name, BASE_COLORS.get(name, "#FF00FF")))
 
     def rgb_of(name: str):
-        """まつ毛・眉はキャラごとの色をそのまま使う。"""
-        if name in over:
-            return hexc(over[name])
-        if name in ("skin", "face") and "skin" in p:
-            # 顔テクスチャはキャラ固有の肌色で描く。体だけ共通色にすると
-            # 首から上だけ色が違って見える。
-            return tuple(p["skin"])[:3]
-        if name == "lash" and "lash_color" in p:
-            return tuple(p["lash_color"])[:3]
-        if name == "brow" and "brow_color" in p:
-            return tuple(p["brow_color"])[:3]
-        if name == "eye_rim" and "lash_color" in p:
-            c = tuple(p["lash_color"])[:3]
-            return tuple(min(1.0, v * 0.55 + 0.30) for v in c)
-        return hexc(BASE_COLORS.get(name, "#FF00FF"))
+        return color_of(p, name)
 
     for name in BASE_COLORS:
         if name in ("face", "eye_l", "eye_r", "eye_white"):
@@ -184,11 +254,11 @@ def build_materials(p: dict, face_image, pattern_images: dict) -> dict:
         out["cloth_kimono_kasuri_blue"] = make_material(
             "cloth_kimono_kasuri_blue", col("cloth_kimono_kasuri_blue"),
             roughness=0.7, image=pattern_images["kasuri"], uv=False,
-            tex_scale=p.get("pattern_scale", 7.0))
-    if "yagasuri" in pattern_images:
-        out["cloth_kimono_yagasuri_red"] = make_material(
-            "cloth_kimono_yagasuri_red", col("cloth_kimono_yagasuri_red"),
-            roughness=0.7, image=pattern_images["yagasuri"], uv=False,
-            tex_scale=p.get("pattern_scale", 6.0))
+            tex_scale=pattern_scale(p, "kasuri"))
+    if "heart" in pattern_images:
+        out["cloth_kimono_heart_pink"] = make_material(
+            "cloth_kimono_heart_pink", col("cloth_kimono_heart_pink"),
+            roughness=0.7, image=pattern_images["heart"], uv=False,
+            tex_scale=pattern_scale(p, "heart"))
 
     return out

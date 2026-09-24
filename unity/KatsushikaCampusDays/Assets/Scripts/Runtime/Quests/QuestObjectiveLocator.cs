@@ -28,21 +28,86 @@ namespace KCD
 
             Refresh();
 
-            switch (step.Kind)
+            // 制限時間つきで時間切れ（またはロード直後）なら、目的地ではなく再挑戦を受け付ける依頼主を指す。
+            QuestStepKind kind = step.Kind;
+            string target = step.Target;
+            if (step.AwaitingGiver)
+            {
+                kind = QuestStepKind.Talk;
+                target = step.Giver;
+            }
+
+            switch (kind)
             {
                 case QuestStepKind.Talk:
-                    return Nearest(_npcs, from, n => n.NpcId == step.Target, out position);
+                    return Nearest(_npcs, from, n => n.NpcId == target, out position);
                 case QuestStepKind.Enter:
-                    return Nearest(_entrances, from, e => e.BuildingId == step.Target, out position);
+                    return Nearest(_entrances, from, e => e.BuildingId == target, out position);
                 case QuestStepKind.Visit:
-                    return Nearest(_zones, from, z => z.PlaceId == step.Target, out position);
+                    return LocateVisit(target, from, out position);
                 case QuestStepKind.Collect:
-                    return Nearest(_items, from, i => i.ItemId == step.Target && i.CanInteract, out position);
+                    return Nearest(_items, from, i => i.ItemId == target && i.CanInteract, out position);
                 case QuestStepKind.Flag:
-                    return Nearest(_props, from, p => p.FlagId == step.Target, out position);
+                    return Nearest(_props, from, p => p.FlagId == target, out position);
                 default:
                     return false;
             }
+        }
+
+        /// <summary>屋内を丸ごと入れてある入れ物の名前の接頭辞（InteriorStage が付ける）。</summary>
+        public const string InteriorPrefix = "Interior_";
+
+        /// <summary>"Interior_library" → "library"。屋内の入れ物でなければ null。</summary>
+        public static string InteriorIdFromName(string name)
+        {
+            return !string.IsNullOrEmpty(name) && name.StartsWith(InteriorPrefix)
+                ? name.Substring(InteriorPrefix.Length)
+                : null;
+        }
+
+        /// <summary>
+        /// visit ステップの行き先。屋内のクエスト地点（poi_&lt;建物&gt;_…）は、外にいるあいだは
+        /// その建物の入口を指す。
+        ///
+        /// 屋内はキャンパスから遠く離れた場所に建ててあって、入口を踏むとワープで運ばれる。
+        /// 地点をそのまま指すとミニマップの矢印が誰も歩けない方角を向くので、
+        /// 「図書館で探すミッションの目的地がどこか全く分からない」ことになっていた（#54）。
+        /// </summary>
+        private static bool LocateVisit(string target, Vector3 from, out Vector3 position)
+        {
+            string building = InteriorOwnerOf(target);
+            bool inside = InteriorLoader.Instance != null && InteriorLoader.Instance.CurrentId == building;
+            if (building != null && !inside)
+            {
+                return Nearest(_entrances, from, e => e.BuildingId == building, out position);
+            }
+
+            return Nearest(_zones, from, z => z.PlaceId == target, out position);
+        }
+
+        /// <summary>その地点がどの屋内に属しているか。屋外のゾーンなら null。</summary>
+        private static string InteriorOwnerOf(string placeId)
+        {
+            for (int i = 0; i < _zones.Length; i++)
+            {
+                if (_zones[i] == null || _zones[i].PlaceId != placeId)
+                {
+                    continue;
+                }
+
+                for (Transform t = _zones[i].transform; t != null; t = t.parent)
+                {
+                    string id = InteriorIdFromName(t.name);
+                    if (id != null)
+                    {
+                        return id;
+                    }
+                }
+
+                return null;
+            }
+
+            return null;
         }
 
         /// <summary>シーンが変わったときなどに、次回の検索でリストを取り直させる。</summary>

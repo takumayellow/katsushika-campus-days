@@ -230,9 +230,18 @@ def _draw_face_ground(size: int, p: dict) -> np.ndarray:
 
     # --- 頬の赤み -------------------------------------------------------
     blush = p.get("blush_color", (0.99, 0.58, 0.60))
+    # 既定は「目の少し外・目の真下」。目の大きさから決めるので、目が細い
+    # キャラでは頬紅も自動で小さくなる。blush_layout を渡すと 4 値
+    # （dx / y / rx / ry, すべてアトラス UV 単位）で上書きできる。公式の
+    # マドンナちゃんは頬紅が目の真下 15x8px の横長で、目の大きさとは
+    # 無関係なので上書きする。
+    _bl = p.get("blush_layout") or {}
+    b_dx = _bl.get("dx", eye_dx + eye_rx * 0.46)
+    b_y = _bl.get("y", eye_y - eye_ry * 0.82)
+    b_rx = _bl.get("rx", eye_rx * 1.00)
+    b_ry = _bl.get("ry", eye_ry * 0.50)
     for sgn in (-1, 1):
-        radial_blush(arr, 0.5 + sgn * (eye_dx + eye_rx * 0.46),
-                     eye_y - eye_ry * 0.82, eye_rx * 1.00, eye_ry * 0.50,
+        radial_blush(arr, 0.5 + sgn * b_dx, b_y, b_rx, b_ry,
                      blush, p.get("blush_strength", 0.5))
 
     # 額と顎に薄い陰影を入れて立体感を出す
@@ -246,14 +255,21 @@ def _draw_face_ground(size: int, p: dict) -> np.ndarray:
                      tuple(c * 0.90 for c in skin), 0.45)
 
     # --- 鼻 -------------------------------------------------------------
-    # body.build_face_parts の鼻メッシュと同じ高さ（eye_y * 0.66）に置く
-    nose_y = eye_y * 0.66
-    ellipse(arr, 0.5 + 0.004, nose_y - 0.004, 0.0052, 0.0072,
-            tuple(c * 0.82 for c in skin), power=2.4, alpha=0.55, feather=0.004)
+    # body.build_face_parts の鼻メッシュと同じ高さ（eye_y * 0.66）に置く。
+    # nose=False のキャラ（公式に鼻が描かれていないマドンナちゃん）は省く。
+    if p.get("nose", True):
+        nose_y = eye_y * 0.66
+        ellipse(arr, 0.5 + 0.004, nose_y - 0.004, 0.0052, 0.0072,
+                tuple(c * 0.82 for c in skin), power=2.4, alpha=0.55,
+                feather=0.004)
     return arr
 
 
 def _draw_face_brows(arr: np.ndarray, p: dict) -> None:
+    # 公式に眉が描かれていないキャラ（前髪で完全に隠れるマドンナちゃん）は
+    # brow_style="none"。body.build_face_parts 側の眉メッシュも同じ条件で省く。
+    if p.get("brow_style") == "none":
+        return
     fl = p["face_layout"]
     eye_y, eye_dx, eye_rx, eye_ry = (fl["eye_y"], fl["eye_dx"], fl["eye_rx"],
                                      fl["eye_ry"])
@@ -293,6 +309,8 @@ def _draw_face_features(arr: np.ndarray, p: dict) -> None:
         cx = 0.5 + sgn * eye_dx
         if p.get("eye_style") == "dot":
             _draw_dot_eye(arr, cx, eye_y, eye_rx, eye_ry, sgn, lash)
+        elif p.get("eye_style") == "ink":
+            _draw_ink_eye(arr, cx, eye_y, eye_rx, eye_ry, sgn, lash, p)
         else:
             _draw_eye(arr, cx, eye_y, eye_rx, eye_ry, sgn, iris, iris_dark,
                       iris_light, lash, p)
@@ -314,10 +332,28 @@ def _draw_face_features(arr: np.ndarray, p: dict) -> None:
         ellipse(arr, 0.5, mouth_y - mw * 0.52, mw * 0.34, mw * 0.13,
                 (1.0, 0.90, 0.88), power=2.0, alpha=0.40, feather=0.005)
     elif p.get("mouth_style") == "frown":
-        # への字。両端を下げる（坊っちゃん）
-        arc(arr, (0.5 - mw, mouth_y - mw * 0.42), (0.5, mouth_y + mw * 0.30),
-            (0.5 + mw, mouth_y - mw * 0.42), 0.0050, mcol,
-            taper=(0.0026, 0.0026))
+        # への字。両端を下げる（坊っちゃん）。公式の口は唇でなく 1 本の濃い線
+        # （実測 RGB 38,26,15）なので、mouth_color をそのまま使わず暗く落とす。
+        ink = tuple(c * 0.52 for c in mcol)
+        # 幅は口の円盤（_disc の rx = mw*1.35）いっぱいまで使う。mw のままだと
+        # 円盤の 74% しか塗らず、公式の横長な口にならない。
+        hx = mw * 1.15
+        # 反りは公式の「幅の 0.26 だけ持ち上がる」に合わせる。u と v で
+        # uv_box のスケールが 1.25 違うので、v 側はその分だけ大きく取る。
+        # 線の太さも mw 基準にしておく。絶対値で持つと mouth_w を広げたときに
+        # 口だけ細い線になって、公式の「太い 1 本線」から外れる。
+        arc(arr, (0.5 - hx, mouth_y - mw * 0.36), (0.5, mouth_y + mw * 1.08),
+            (0.5 + hx, mouth_y - mw * 0.36), mw * 0.26, ink,
+            taper=(mw * 0.14, mw * 0.14))
+    elif p.get("mouth_style") == "ink_smile":
+        # 公式 tus_chara02.jpg のマドンナちゃんの口は、唇の塗りも下唇の
+        # ハイライトも無く「黒い弧が 1 本」だけ（幅 20px = 頭蓋の 0.29）。
+        # 口の円盤（_disc の rx = mw*1.35）いっぱいまで使い、線の太さも
+        # mw 基準にして mouth_w を変えても比が崩れないようにする。
+        hx = mw * 1.20
+        arc(arr, (0.5 - hx, mouth_y + mw * 0.34), (0.5, mouth_y - mw * 0.40),
+            (0.5 + hx, mouth_y + mw * 0.34), mw * 0.17, mcol,
+            taper=(mw * 0.09, mw * 0.09))
     else:  # 真一文字（教授）
         arc(arr, (0.5 - mw, mouth_y + mw * 0.16), (0.5, mouth_y - mw * 0.06),
             (0.5 + mw, mouth_y + mw * 0.16), 0.0040, mcol,
@@ -325,11 +361,80 @@ def _draw_face_features(arr: np.ndarray, p: dict) -> None:
 
 
 def _draw_dot_eye(arr, cx, cy, rx, ry, sgn, lash):
-    """点目。白目も虹彩も無く、黒い楕円と小さなハイライトだけ。"""
+    """点目。白目も虹彩も無く、黒い楕円と小さなハイライトだけ。
+
+    `feather` は「中心 1.0 → 外周 0.0」の放射グラデーションを作る指定なので、
+    点目に使うと黒目全体が半透明になり、灰色の球に見えてしまう。公式イラストの
+    目は輪郭のはっきりした真っ黒な楕円なので、ここは feather を使わず
+    `soft`（アンチエイリアス幅だけのぼかし）で縁を締める。
+    """
     ink = tuple(c * 0.55 for c in lash)
-    ellipse(arr, cx, cy, rx, ry, ink, power=2.2, feather=0.004)
-    ellipse(arr, cx - sgn * rx * 0.30, cy + ry * 0.34, rx * 0.26, ry * 0.22,
-            (1.0, 1.0, 1.0), power=2.0, alpha=0.85)
+    # メッシュの白目円盤は rx*0.985 x ry*0.965。これより内側に描くと、はみ出た
+    # 円盤の縁が肌色のまま明るく光り、黒目の外周に三日月形のフチが出る。
+    # 円盤より一回り大きく塗って、縁まで黒で埋める。
+    # power は 2.0（真の楕円）。uv_box の縦横比の都合で u と v の 1 単位は
+    # ワールドで 1.26 倍ちがうので、2.3 にすると角の立った四角に見える。
+    ellipse(arr, cx, cy, rx * 1.02, ry * 1.00, ink, power=2.0, soft=0.0012)
+    # 公式にハイライトは無い。ただし黒目はドーム（dome=hd*0.012）なので
+    # 真っ黒だと穴に見える。上外側に 2px 相当だけ置いて艶を残す。
+    ellipse(arr, cx - sgn * rx * 0.36, cy + ry * 0.42, rx * 0.12, ry * 0.10,
+            (1.0, 1.0, 1.0), power=2.0, alpha=0.85, soft=0.0010)
+
+
+def _sparkle4(arr, cx, cy, rx, ry, rgb, alpha=1.0):
+    """4 方向のキラ星。辺が内側にくびれた菱形で、少女漫画の「きらり」。
+
+    `_star`（5 芒星）は頂点が 5 つあるので公式の 4 方向のキラには使えない。
+    u と v でワールドのスケールが違うので rx / ry を別に取る。
+    """
+    pts = []
+    for i in range(17):
+        a = math.pi / 2 + i * math.pi / 8
+        k = 1.0 if i % 4 == 0 else (0.17 if i % 2 == 0 else 0.42)
+        pts.append((cx + math.cos(a) * rx * k, cy + math.sin(a) * ry * k))
+    polyline(arr, pts, min(rx, ry) * 0.24, rgb, alpha=alpha)
+    ellipse(arr, cx, cy, rx * 0.30, ry * 0.30, rgb, alpha=alpha)
+
+
+def _draw_ink_eye(arr, cx, cy, rx, ry, sgn, lash, p):
+    """公式のマドンナちゃんの目。真っ黒な縦長楕円 + キラ星 1 個 + 睫毛 3 本。
+
+    `_draw_eye`（アニメ目）は白目・虹彩のグラデ・放射線・瞳孔・ハイライト
+    2〜3 個を重ねるが、公式 tus_chara02.jpg にはそのどれも無い。実測では
+    12 x 22px の塗りつぶした黒い楕円に、白い 4 方向のキラが 1 個、外側の
+    上に短い睫毛が 3 本あるだけ。`_draw_dot_eye`（坊っちゃん）との違いは
+    キラと睫毛の有無なので、そちらは触らずこちらを足す。
+    """
+    ink = tuple(c * 0.92 for c in lash)
+    # メッシュの白目円盤は rx*0.985 x ry*0.965。これより内側に塗ると円盤の
+    # 縁が肌色で光り、黒目の外周に三日月形のフチが出る。一回り大きく塗る。
+    ellipse(arr, cx, cy, rx * 1.02, ry * 1.00, ink, power=2.0, soft=0.0012)
+    # 黒目の上端に沿って一段明るい縁を残すと、真っ黒な穴に見えない
+    ellipse(arr, cx, cy + ry * 0.62, rx * 0.72, ry * 0.26,
+            tuple(min(1.0, c * 1.9 + 0.10) for c in ink),
+            power=2.0, alpha=0.40, feather=0.004)
+    # キラ星は内側の上寄りに 1 個だけ。公式は目の幅の 0.55 ほど。
+    if p.get("star_eyes", False):
+        _sparkle4(arr, cx + sgn * rx * 0.26, cy + ry * 0.30,
+                  rx * 0.62, ry * 0.36, (1.0, 1.0, 1.0), alpha=0.97)
+    else:
+        ellipse(arr, cx + sgn * rx * 0.30, cy + ry * 0.34, rx * 0.30,
+                ry * 0.17, (1.0, 1.0, 1.0), power=2.0, alpha=0.92)
+    # 下側に小さな反射をもう 1 個（公式にもある薄い点）
+    ellipse(arr, cx - sgn * rx * 0.34, cy - ry * 0.46, rx * 0.22, ry * 0.12,
+            (1.0, 1.0, 1.0), power=2.0, alpha=0.55)
+    # 外側の上に睫毛 3 本。メッシュの帯は作らない（body 側で ink は dot と
+    # 同じく省く）ので、ここで直接描く。
+    for k, (t0, t1, w) in enumerate(((0.62, 1.30, 0.34),
+                                     (0.88, 1.16, 0.28),
+                                     (1.02, 0.92, 0.22))):
+        x0 = cx + sgn * rx * t0
+        y0 = cy + ry * (0.52 - 0.16 * k)
+        polyline(arr,
+                 [(x0, y0),
+                  (x0 + sgn * rx * 0.34, y0 + ry * (0.22 + 0.10 * k)),
+                  (x0 + sgn * rx * t1 * 0.62, y0 + ry * (0.40 + 0.16 * k))],
+                 rx * w * 0.42, ink, taper=(rx * w * 0.48, rx * w * 0.10))
 
 
 def _draw_eye(arr, cx, cy, rx, ry, sgn, iris, iris_dark, iris_light, lash, p):
@@ -419,21 +524,36 @@ def _star(arr, cx, cy, r, rgb, alpha=1.0):
 # --------------------------------------------------------------------------
 
 
-def draw_kasuri(size: int = 256, base=(0.97, 0.96, 0.93),
-                ink=(0.16, 0.34, 0.62)) -> np.ndarray:
-    """十字絣（坊っちゃんの着物）。白地に青の小さな十字。"""
+def draw_kasuri(size: int = 256, base=(0.89, 0.895, 0.905),
+                ink=(0.32, 0.47, 0.73)) -> np.ndarray:
+    """十字絣（坊っちゃんの着物）。薄い灰白地に青の十字。
+
+    公式イラストの十字は一辺 13px・周期 24px（胴幅 130px に 5〜6 個）の大きな
+    柄で、腕の太さは十字の一辺の 0.38 もある。1 タイルに 4x4 で敷くと 1 個が
+    1/6 の細かさになり、遠目にはただの点々になる。タイルの繰り返し回数
+    （params の pattern_scale）はこのファイルからは触れないので、
+    「1 タイル = 十字 1 個」にして大きさを稼ぐ。
+
+    色はレンダ結果を公式の実測値（地 RGB 213,214,217 / 十字 80,117,179）に
+    合わせ込んだもの。テクスチャの値をそのまま置くとライティングで 6% ほど
+    暗く青が浅く出るので、その分だけ明るく・青く振ってある。旧値の
+    地 #F7F5ED は白く黄色すぎ、十字 #29579E は袴の濃紺で、着物の柄としては
+    暗すぎた。
+    """
     arr = canvas(size, base)
-    n = 4
-    for iy in range(n):
-        for ix in range(n):
-            cx = (ix + 0.5) / n
-            cy = (iy + 0.5) / n
-            if (ix + iy) % 2:
-                cx += 0.5 / n
-            w, h = 0.036, 0.0165
-            ellipse(arr, cx, cy, w, h, ink, power=3.4)
-            ellipse(arr, cx, cy, h, w, ink, power=3.4)
-            ellipse(arr, cx, cy, 0.006, 0.006, base, power=2.0, alpha=0.5)
+    # このタイルは Generated 座標（mats.py, uv=False）で貼るので、正方形の
+    # タイルがオブジェクトのバウンディングボックス（身長 1.15m x 肩幅）の
+    # 縦横比のぶんだけ縦に伸びる。前面レンダで柄の周期を実測すると
+    # 横 46.7px に対して縦 78px = 1.67 倍だった。縦向きの辺をこれで割って置き、
+    # レンダ上で公式どおりの正方形の十字になるようにする。
+    # ※ バウンディングボックス依存なので、髪や下駄でシルエットが大きく
+    #    変わったら周期を測り直すこと。
+    aniso = 1.67
+    # 十字の一辺 0.54 タイル / 腕の太さ 0.104*2 = 0.21 タイル。公式実測の
+    # 十字 13px・周期 24px（0.54）、腕 5px（十字の 0.38）に合わせてある。
+    arm, th = 0.27, 0.104
+    ellipse(arr, 0.5, 0.5, arm, th / aniso, ink, power=3.4)
+    ellipse(arr, 0.5, 0.5, th, arm / aniso, ink, power=3.4)
     return arr
 
 
@@ -471,6 +591,55 @@ def draw_yagasuri(size: int = 256, base=(0.99, 0.97, 0.96),
         arr[..., c] = np.where(paint, ink[c], base[c])
     # 着物の UV は縦方向が u なので、矢羽根が立つよう入れ替える
     return np.ascontiguousarray(arr.transpose(1, 0, 2))
+
+
+def draw_hearts(size: int = 256, base=(0.988, 0.976, 0.972),
+                ink=(0.910, 0.275, 0.360), edge=(0.957, 0.659, 0.706),
+                cols: int = 4, rows: int = 4) -> np.ndarray:
+    """ハート柄（マドンナちゃんの振袖）。
+
+    公式 tus_chara02.jpg の袖を 16 倍に拡大して確かめた文様。1 個ずつ離れた
+    赤いハートが千鳥（段ごとに半ピッチずらし）に並び、まわりに薄桃色の
+    フチが付く。実測は袖の上で 1 個 10x11px・ピッチ 14x16px、胴幅 76px に
+    横 5.4 個。以前ここは矢絣（`draw_yagasuri`）だったが、縮小したサムネイル
+    で矢羽根に見えていただけで、拡大すると「上に V 字の切れ込み・下が尖る」
+    ハートだった。
+
+    ハートは陰関数 (x^2+y^2-1)^3 - x^2 y^3 < 0 で描く。しきい値だけだと縁が
+    階段状になるので 3x3 でスーパーサンプリングして被覆率に落とす。
+    """
+    ss = 3
+    n = size * ss
+    u = (np.arange(n) + 0.5) / n
+    uu, vv = np.meshgrid(u, u)
+
+    fy = vv * rows
+    row = np.floor(fy).astype(np.int32)
+    ly = fy - row - 0.5                        # 段の中での縦位置 -0.5..0.5
+    fx = uu * cols + np.where(row % 2 == 1, 0.5, 0.0)
+    lx = fx - np.floor(fx) - 0.5               # 桝の中での横位置 -0.5..0.5
+
+    def heart(kx: float, ky: float) -> np.ndarray:
+        x = lx * kx
+        y = ly * ky + 0.125                    # 陰関数の重心を桝の中央へ
+        q = x * x + y * y - 1.0
+        return q * q * q - x * x * y * y * y
+
+    def cover(mask: np.ndarray) -> np.ndarray:
+        return (mask.reshape(size, ss, size, ss).mean(axis=(1, 3))
+                .astype(np.float32))
+
+    # 3.19 / 3.40 は陰関数の外接箱（横 2.30 / 縦 2.35）を桝の 0.72 / 0.69 に
+    # 収める係数。公式の「ピッチ 14x16 に 10x11 の柄」がこの比。
+    fill = cover((heart(3.19, 3.40) < 0.0).astype(np.float32))
+    ring = cover((heart(2.72, 2.90) < 0.0).astype(np.float32))
+
+    arr = np.empty((size, size, 4), dtype=np.float32)
+    arr[..., 3] = 1.0
+    for c in range(3):
+        col = base[c] * (1.0 - ring) + edge[c] * ring
+        arr[..., c] = col * (1.0 - fill) + ink[c] * fill
+    return arr
 
 
 def draw_check(size: int = 256, a=(0.95, 0.95, 0.95), b=(0.72, 0.74, 0.80),

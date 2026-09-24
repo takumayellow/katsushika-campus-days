@@ -1,0 +1,8506 @@
+{
+ "meta": {
+  "source": "OpenStreetMap (ODbL) via Overpass API, 2026-09-23 (timestamp_osm_base 2026-09-22T08:45:51Z)",
+  "raw": "data/osm/raw_route.json",
+  "query": "data/osm/route_query.ql",
+  "generator": "tools/osm_route.py",
+  "bbox_latlon": [
+   35.7678,
+   139.8543,
+   35.7762,
+   139.8682
+  ],
+  "origin": {
+   "lat": 35.771909746153845,
+   "lon": 139.86296726153847
+  },
+  "axes": "x=east(m), z=north(m); Unity: (x, y=up, z); Blender: (x, y=z_north, z=up)",
+  "campus_osm_way": 175463006,
+  "transform": "tools/osm_extract.py と同一 (tools/osm_common.py で共有)。campus.json の 239 棟 + 敷地ポリゴン 1575 頂点で最大誤差 0.000000 m (python tools/osm_common.py --selfcheck)",
+  "corridor_m": {
+   "roads": 32.0,
+   "buildings": 45.0,
+   "road_clip": 60.0
+  },
+  "license": "OpenStreetMap contributors, ODbL 1.0 (建物の高さ・階数は MLIT PLATEAU 由来)",
+  "notes": [
+   "座標は小数 2 桁 (1 cm)。campus.json は 3 桁 (1 mm)。同じ way が両方に入っていても座標は一致しないので、突き合わせるときは必ず round(v, 2) してから比べる。",
+   "routes[].straight_m は『門 → 寮の重心』の直線距離。経路の両端 (points[0] と points[-1]) の距離ではない (そちらは nw_gate 339.8 m / east_gate 698.2 m)。",
+   "routes[].length_m はグラフ上の実距離。丸めた points から折れ線長を測り直すと east_gate は 846.3 になる。",
+   "stats.end_node_gap_m は経路の終点 (道の上の節点) から寮の重心までの距離。玄関 (dormitory.entrance.point) までは 8.7 m、footprint までは 8.6 m。",
+   "areas のポリゴンは道と違って切っていない。industrial way 153722332 は南へ z=-387 まで伸びる。地面や NavMesh の大きさは stats.content_bbox (areas 込み) で決める。",
+   "roads は 1 つの way が複数の part に分かれることがある (roads 64 本 / road_osm_ways 63)。id で突き合わせるときは (osm_id, part) で見る。",
+   "roads[].in_campus_json が true の道は campus.json の paths と頂点が全部重なる。敷くと z ファイティングするので敷かない。0 < campus_shared_vertices < 頂点数 の道は一部だけ重なっている (ROI と ROAD_CLIP の切り方が違うため)。campus.json の paths には osm_id が無いので、この照合は頂点でやるしかない。"
+  ]
+ },
+ "stats": {
+  "routes": {
+   "nw_gate": {
+    "length_m": 452.9,
+    "straight_m": 359.9,
+    "nodes": 26,
+    "ways": 8,
+    "from": [
+     -124.6,
+     83.78
+    ]
+   },
+   "east_gate": {
+    "length_m": 846.2,
+    "straight_m": 718.6,
+    "nodes": 49,
+    "ways": 14,
+    "from": [
+     214.98,
+     -31.67
+    ]
+   }
+  },
+  "route_bbox": [
+   -451.8,
+   -33.4,
+   215.0,
+   260.8
+  ],
+  "content_bbox": [
+   -520.7,
+   -387.7,
+   274.3,
+   328.8
+  ],
+  "content_bbox_no_areas": [
+   -520.7,
+   -93.3,
+   271.8,
+   328.8
+  ],
+  "area_bbox": [
+   -505.8,
+   -387.7,
+   274.3,
+   308.6
+  ],
+  "outside_bounds_m": {
+   "half_extent": 340.0,
+   "note": "今の WorldBounds.HalfExtent=340 の正方形 (x,z とも -340..340) から何 m はみ出すか。all_content_* は areas を含む (面を敷かないなら no_areas_* を見る)",
+   "route_polyline_west": 111.8,
+   "route_polyline_north": 0.0,
+   "dorm_footprint_west": 134.9,
+   "all_content_west": 180.7,
+   "all_content_north": 0.0,
+   "all_content_east": 0.0,
+   "all_content_south": 47.7,
+   "no_areas_west": 180.7,
+   "no_areas_north": 0.0,
+   "no_areas_east": 0.0,
+   "no_areas_south": 0.0
+  },
+  "roads": 64,
+  "road_osm_ways": 63,
+  "roads_on_route": 19,
+  "road_osm_ways_on_route": 18,
+  "roads_in_campus_json": 24,
+  "roads_partly_in_campus_json": 16,
+  "roads_new": 24,
+  "roads_total_length_m": 4468.2,
+  "road_vertex_count": 361,
+  "areas": 12,
+  "area_vertex_count": 111,
+  "buildings": 82,
+  "buildings_new": 46,
+  "buildings_outside_bounds": 15,
+  "building_vertex_count": 642,
+  "footprint_vertex_count_incl_dorm": 648,
+  "dorm_size": [
+   26.81,
+   45.08
+  ],
+  "dorm_height": 17.8,
+  "dorm_levels": 5,
+  "dorm_area": 612.8,
+  "dorm_centroid": [
+   -464.52,
+   202.0
+  ],
+  "dorm_entrance": [
+   -455.83,
+   183.24
+  ],
+  "end_node_gap_m": 29.3
+ },
+ "routes": [
+  {
+   "key": "nw_gate",
+   "from": {
+    "name": "キャンパス北西口 (敷地内の対角プロムナード way 565475714 の西端)",
+    "osm_node": 700638663,
+    "x": -124.6,
+    "z": 83.78
+   },
+   "to": {
+    "name": "葛飾コミュニティハウス 前の道 (58360717)",
+    "osm_node": 1860472010,
+    "x": -451.79,
+    "z": 175.57
+   },
+   "length_m": 452.9,
+   "straight_m": 359.9,
+   "way_ids": [
+    175463024,
+    1014297354,
+    1014297355,
+    1014297357,
+    1014303713,
+    1014303721,
+    1014303720,
+    58360717
+   ],
+   "points": [
+    [
+     -124.6,
+     83.78
+    ],
+    [
+     -130.16,
+     92.73
+    ],
+    [
+     -132.69,
+     91.01
+    ],
+    [
+     -134.39,
+     89.92
+    ],
+    [
+     -146.88,
+     111.42
+    ],
+    [
+     -190.46,
+     180.57
+    ],
+    [
+     -213.75,
+     218.37
+    ],
+    [
+     -222.35,
+     234.18
+    ],
+    [
+     -228.9,
+     248.54
+    ],
+    [
+     -230.96,
+     254.34
+    ],
+    [
+     -232.66,
+     255.55
+    ],
+    [
+     -236.66,
+     256.03
+    ],
+    [
+     -236.9,
+     257.23
+    ],
+    [
+     -237.18,
+     260.59
+    ],
+    [
+     -242.89,
+     260.56
+    ],
+    [
+     -260.24,
+     260.84
+    ],
+    [
+     -271.63,
+     260.22
+    ],
+    [
+     -288.02,
+     258.0
+    ],
+    [
+     -301.49,
+     254.9
+    ],
+    [
+     -311.82,
+     251.55
+    ],
+    [
+     -333.67,
+     243.02
+    ],
+    [
+     -344.02,
+     237.8
+    ],
+    [
+     -396.94,
+     211.12
+    ],
+    [
+     -423.32,
+     197.65
+    ],
+    [
+     -438.24,
+     186.62
+    ],
+    [
+     -451.79,
+     175.57
+    ]
+   ]
+  },
+  {
+   "key": "east_gate",
+   "from": {
+    "name": "交差点「理科大学前」(正門 / 東門の前)",
+    "osm_node": 700638657,
+    "x": 214.98,
+    "z": -31.67
+   },
+   "to": {
+    "name": "葛飾コミュニティハウス 前の道 (58360717)",
+    "osm_node": 1860472010,
+    "x": -451.79,
+    "z": 175.57
+   },
+   "length_m": 846.2,
+   "straight_m": 718.6,
+   "way_ids": [
+    188285122,
+    1011376481,
+    684568040,
+    1014297353,
+    1014297351,
+    1014297352,
+    1012113683,
+    1014303716,
+    1014303714,
+    1014303715,
+    1014303713,
+    1014303721,
+    1014303720,
+    58360717
+   ],
+   "points": [
+    [
+     214.98,
+     -31.67
+    ],
+    [
+     205.24,
+     -27.1
+    ],
+    [
+     203.48,
+     -31.0
+    ],
+    [
+     201.03,
+     -33.35
+    ],
+    [
+     178.35,
+     -19.75
+    ],
+    [
+     134.06,
+     21.05
+    ],
+    [
+     110.8,
+     43.71
+    ],
+    [
+     87.07,
+     62.21
+    ],
+    [
+     79.48,
+     65.44
+    ],
+    [
+     40.27,
+     82.1
+    ],
+    [
+     29.82,
+     85.97
+    ],
+    [
+     -4.5,
+     98.68
+    ],
+    [
+     -31.5,
+     101.98
+    ],
+    [
+     -59.69,
+     100.32
+    ],
+    [
+     -91.56,
+     92.17
+    ],
+    [
+     -103.41,
+     85.89
+    ],
+    [
+     -110.37,
+     81.45
+    ],
+    [
+     -112.2,
+     84.61
+    ],
+    [
+     -114.67,
+     89.09
+    ],
+    [
+     -116.93,
+     93.19
+    ],
+    [
+     -118.5,
+     95.47
+    ],
+    [
+     -122.87,
+     94.99
+    ],
+    [
+     -125.67,
+     97.4
+    ],
+    [
+     -182.29,
+     187.95
+    ],
+    [
+     -183.58,
+     190.31
+    ],
+    [
+     -202.91,
+     219.83
+    ],
+    [
+     -212.49,
+     239.87
+    ],
+    [
+     -216.69,
+     252.52
+    ],
+    [
+     -219.2,
+     251.56
+    ],
+    [
+     -222.99,
+     250.34
+    ],
+    [
+     -227.81,
+     248.79
+    ],
+    [
+     -228.9,
+     248.54
+    ],
+    [
+     -230.96,
+     254.34
+    ],
+    [
+     -232.66,
+     255.55
+    ],
+    [
+     -236.66,
+     256.03
+    ],
+    [
+     -236.9,
+     257.23
+    ],
+    [
+     -237.18,
+     260.59
+    ],
+    [
+     -242.89,
+     260.56
+    ],
+    [
+     -260.24,
+     260.84
+    ],
+    [
+     -271.63,
+     260.22
+    ],
+    [
+     -288.02,
+     258.0
+    ],
+    [
+     -301.49,
+     254.9
+    ],
+    [
+     -311.82,
+     251.55
+    ],
+    [
+     -333.67,
+     243.02
+    ],
+    [
+     -344.02,
+     237.8
+    ],
+    [
+     -396.94,
+     211.12
+    ],
+    [
+     -423.32,
+     197.65
+    ],
+    [
+     -438.24,
+     186.62
+    ],
+    [
+     -451.79,
+     175.57
+    ]
+   ]
+  }
+ ],
+ "dormitory": {
+  "id": "bld_community_house",
+  "osm_id": 1552203022,
+  "name": null,
+  "kind": "apartments",
+  "levels": 5,
+  "height": 17.8,
+  "area": 612.8,
+  "bbox": [
+   -474.92,
+   180.35,
+   -448.11,
+   225.43
+  ],
+  "in_campus_json": false,
+  "footprint": [
+   [
+    -462.82,
+    225.43
+   ],
+   [
+    -474.92,
+    220.91
+   ],
+   [
+    -467.17,
+    200.22
+   ],
+   [
+    -470.52,
+    198.98
+   ],
+   [
+    -463.54,
+    180.35
+   ],
+   [
+    -448.11,
+    186.13
+   ]
+  ],
+  "display": "葛飾コミュニティハウス",
+  "official_name": "東京理科大学 葛飾コミュニティハウス",
+  "address": "東京都葛飾区南水元1-8-13",
+  "operator": "株式会社共立メンテナンス (学生会館ドーミー)",
+  "note": "大学直営ではなく大学提携の学生寮。RC 5 階建、全 100 室 (女子 23 / 男子 77)、朝夕食付。2013 年 4 月開設。",
+  "centroid": [
+   -464.52,
+   202.0
+  ],
+  "size": [
+   26.81,
+   45.08
+  ],
+  "long_axis_bearing": 159.5,
+  "entrance": {
+   "edge_index": 4,
+   "point": [
+    -455.83,
+    183.24
+   ],
+   "edge_length": 16.47,
+   "facing_bearing": 159.5,
+   "facing": "南南東",
+   "faces_osm_way": 58360717,
+   "faces_road_kind": "tertiary",
+   "dist_to_road_center": 8.5,
+   "how": "フットプリントの各辺の中点から沿道の道の中心線までの距離を測り、長い辺を少し優遇して一番近い辺を玄関とした。"
+  }
+ },
+ "intl_dormitory": {
+  "id": "bld_intl_dorm",
+  "osm_id": 1092671162,
+  "name": "東京理科大学 葛飾国際学生寮",
+  "kind": "dormitory",
+  "levels": 6,
+  "height": 17.9,
+  "area": 622.2,
+  "bbox": [
+   365.77,
+   10.41,
+   396.64,
+   40.52
+  ],
+  "in_campus_json": false,
+  "footprint": [
+   [
+    366.4,
+    16.03
+   ],
+   [
+    394.47,
+    10.41
+   ],
+   [
+    396.64,
+    21.25
+   ],
+   [
+    392.6,
+    22.05
+   ],
+   [
+    395.51,
+    36.61
+   ],
+   [
+    376.04,
+    40.52
+   ],
+   [
+    373.17,
+    26.18
+   ],
+   [
+    366.83,
+    27.45
+   ],
+   [
+    365.77,
+    22.16
+   ],
+   [
+    367.55,
+    21.81
+   ]
+  ],
+  "display": "東京理科大学 葛飾国際学生寮",
+  "address": "東京都葛飾区東金町2-17-22",
+  "operator": "東京理科大学",
+  "note": "大学直営の国際寮。OSM 上は building=dormitory で名前付き。キャンパスのすぐ東。"
+ },
+ "roads": [
+  {
+   "osm_id": 58360717,
+   "part": 0,
+   "kind": "tertiary",
+   "name": null,
+   "width": 9.0,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": true,
+   "in_campus_json": false,
+   "campus_shared_vertices": 0,
+   "dist_to_route": 0.0,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "length": 306.2,
+   "points": [
+    [
+     -488.99,
+     128.49
+    ],
+    [
+     -477.75,
+     144.8
+    ],
+    [
+     -465.38,
+     161.89
+    ],
+    [
+     -451.79,
+     175.57
+    ],
+    [
+     -438.24,
+     186.62
+    ],
+    [
+     -423.32,
+     197.65
+    ],
+    [
+     -396.94,
+     211.12
+    ],
+    [
+     -344.02,
+     237.8
+    ],
+    [
+     -333.67,
+     243.02
+    ],
+    [
+     -311.82,
+     251.55
+    ],
+    [
+     -301.49,
+     254.9
+    ],
+    [
+     -288.02,
+     258.0
+    ],
+    [
+     -271.63,
+     260.22
+    ],
+    [
+     -260.24,
+     260.84
+    ],
+    [
+     -242.89,
+     260.56
+    ],
+    [
+     -237.18,
+     260.59
+    ],
+    [
+     -233.7,
+     260.58
+    ],
+    [
+     -226.95,
+     262.06
+    ]
+   ]
+  },
+  {
+   "osm_id": 175463024,
+   "part": 0,
+   "kind": "tertiary",
+   "name": null,
+   "width": 9.0,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": true,
+   "in_campus_json": false,
+   "campus_shared_vertices": 2,
+   "dist_to_route": 0.0,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "length": 264.7,
+   "points": [
+    [
+     -124.6,
+     83.78
+    ],
+    [
+     -130.16,
+     92.73
+    ],
+    [
+     -188.7,
+     186.9
+    ],
+    [
+     -208.57,
+     218.5
+    ],
+    [
+     -214.86,
+     230.18
+    ],
+    [
+     -221.29,
+     245.31
+    ],
+    [
+     -222.99,
+     250.34
+    ],
+    [
+     -226.95,
+     262.06
+    ],
+    [
+     -228.83,
+     271.96
+    ],
+    [
+     -230.04,
+     278.32
+    ],
+    [
+     -231.14,
+     290.1
+    ],
+    [
+     -231.01,
+     297.28
+    ],
+    [
+     -230.87,
+     299.02
+    ],
+    [
+     -230.3,
+     311.87
+    ],
+    [
+     -230.79,
+     320.25
+    ]
+   ]
+  },
+  {
+   "osm_id": 188285122,
+   "part": 0,
+   "kind": "tertiary",
+   "name": null,
+   "width": 9.0,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": true,
+   "in_campus_json": false,
+   "campus_shared_vertices": 24,
+   "dist_to_route": 0.0,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "length": 450.0,
+   "points": [
+    [
+     214.98,
+     -31.67
+    ],
+    [
+     205.24,
+     -27.1
+    ],
+    [
+     202.38,
+     -25.71
+    ],
+    [
+     186.47,
+     -16.0
+    ],
+    [
+     172.64,
+     -6.5
+    ],
+    [
+     159.77,
+     4.21
+    ],
+    [
+     143.57,
+     21.11
+    ],
+    [
+     118.59,
+     45.96
+    ],
+    [
+     101.76,
+     59.02
+    ],
+    [
+     82.48,
+     71.36
+    ],
+    [
+     63.05,
+     80.19
+    ],
+    [
+     38.88,
+     90.78
+    ],
+    [
+     16.35,
+     99.94
+    ],
+    [
+     -2.77,
+     105.37
+    ],
+    [
+     -28.61,
+     108.91
+    ],
+    [
+     -52.61,
+     108.35
+    ],
+    [
+     -67.84,
+     105.76
+    ],
+    [
+     -88.5,
+     100.9
+    ],
+    [
+     -108.79,
+     92.23
+    ],
+    [
+     -114.67,
+     89.09
+    ],
+    [
+     -124.6,
+     83.78
+    ],
+    [
+     -133.23,
+     77.81
+    ],
+    [
+     -141.03,
+     72.42
+    ],
+    [
+     -160.51,
+     54.06
+    ],
+    [
+     -170.18,
+     41.77
+    ]
+   ]
+  },
+  {
+   "osm_id": 684568040,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": true,
+   "in_campus_json": false,
+   "campus_shared_vertices": 3,
+   "dist_to_route": 0.0,
+   "near_route": [
+    "east_gate"
+   ],
+   "length": 63.9,
+   "points": [
+    [
+     203.48,
+     -31.0
+    ],
+    [
+     201.03,
+     -33.35
+    ],
+    [
+     200.89,
+     -40.36
+    ],
+    [
+     178.37,
+     -88.91
+    ]
+   ]
+  },
+  {
+   "osm_id": 684568040,
+   "part": 1,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": true,
+   "in_campus_json": false,
+   "campus_shared_vertices": 18,
+   "dist_to_route": 0.0,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "length": 427.4,
+   "points": [
+    [
+     -162.72,
+     37.04
+    ],
+    [
+     -144.04,
+     59.91
+    ],
+    [
+     -138.46,
+     63.47
+    ],
+    [
+     -127.66,
+     70.37
+    ],
+    [
+     -118.65,
+     75.52
+    ],
+    [
+     -110.37,
+     81.45
+    ],
+    [
+     -103.41,
+     85.89
+    ],
+    [
+     -91.56,
+     92.17
+    ],
+    [
+     -59.69,
+     100.32
+    ],
+    [
+     -31.5,
+     101.98
+    ],
+    [
+     -4.5,
+     98.68
+    ],
+    [
+     29.82,
+     85.97
+    ],
+    [
+     40.27,
+     82.1
+    ],
+    [
+     79.48,
+     65.44
+    ],
+    [
+     87.07,
+     62.21
+    ],
+    [
+     110.8,
+     43.71
+    ],
+    [
+     134.06,
+     21.05
+    ],
+    [
+     178.35,
+     -19.75
+    ],
+    [
+     201.03,
+     -33.35
+    ]
+   ]
+  },
+  {
+   "osm_id": 1011376481,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": true,
+   "in_campus_json": true,
+   "campus_shared_vertices": 3,
+   "dist_to_route": 0.0,
+   "near_route": [
+    "east_gate"
+   ],
+   "length": 8.9,
+   "points": [
+    [
+     207.13,
+     -22.86
+    ],
+    [
+     205.24,
+     -27.1
+    ],
+    [
+     203.48,
+     -31.0
+    ]
+   ]
+  },
+  {
+   "osm_id": 1012113683,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": true,
+   "in_campus_json": true,
+   "campus_shared_vertices": 30,
+   "dist_to_route": 0.0,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "length": 609.5,
+   "points": [
+    [
+     214.28,
+     -10.62
+    ],
+    [
+     201.64,
+     -14.51
+    ],
+    [
+     197.03,
+     -13.19
+    ],
+    [
+     182.12,
+     -4.37
+    ],
+    [
+     162.95,
+     11.45
+    ],
+    [
+     134.34,
+     39.82
+    ],
+    [
+     116.5,
+     57.08
+    ],
+    [
+     95.05,
+     71.94
+    ],
+    [
+     85.24,
+     77.04
+    ],
+    [
+     66.79,
+     86.66
+    ],
+    [
+     36.72,
+     99.25
+    ],
+    [
+     9.06,
+     109.36
+    ],
+    [
+     -13.01,
+     114.31
+    ],
+    [
+     -34.1,
+     115.4
+    ],
+    [
+     -52.78,
+     114.31
+    ],
+    [
+     -70.12,
+     112.38
+    ],
+    [
+     -93.4,
+     106.58
+    ],
+    [
+     -118.5,
+     95.47
+    ],
+    [
+     -122.87,
+     94.99
+    ],
+    [
+     -125.67,
+     97.4
+    ],
+    [
+     -182.29,
+     187.95
+    ],
+    [
+     -183.58,
+     190.31
+    ],
+    [
+     -202.91,
+     219.83
+    ],
+    [
+     -212.49,
+     239.87
+    ],
+    [
+     -216.69,
+     252.52
+    ],
+    [
+     -218.68,
+     258.45
+    ],
+    [
+     -221.52,
+     272.98
+    ],
+    [
+     -222.92,
+     280.07
+    ],
+    [
+     -224.17,
+     292.37
+    ],
+    [
+     -224.65,
+     296.18
+    ]
+   ]
+  },
+  {
+   "osm_id": 1014297351,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": true,
+   "in_campus_json": true,
+   "campus_shared_vertices": 3,
+   "dist_to_route": 0.0,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "length": 9.8,
+   "points": [
+    [
+     -112.2,
+     84.61
+    ],
+    [
+     -114.67,
+     89.09
+    ],
+    [
+     -116.93,
+     93.19
+    ]
+   ]
+  },
+  {
+   "osm_id": 1014297352,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": true,
+   "in_campus_json": true,
+   "campus_shared_vertices": 2,
+   "dist_to_route": 0.0,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "length": 2.8,
+   "points": [
+    [
+     -116.93,
+     93.19
+    ],
+    [
+     -118.5,
+     95.47
+    ]
+   ]
+  },
+  {
+   "osm_id": 1014297353,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": true,
+   "in_campus_json": true,
+   "campus_shared_vertices": 2,
+   "dist_to_route": 0.0,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "length": 3.7,
+   "points": [
+    [
+     -110.37,
+     81.45
+    ],
+    [
+     -112.2,
+     84.61
+    ]
+   ]
+  },
+  {
+   "osm_id": 1014297354,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": true,
+   "in_campus_json": true,
+   "campus_shared_vertices": 3,
+   "dist_to_route": 0.0,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "length": 6.4,
+   "points": [
+    [
+     -127.36,
+     94.63
+    ],
+    [
+     -130.16,
+     92.73
+    ],
+    [
+     -132.69,
+     91.01
+    ]
+   ]
+  },
+  {
+   "osm_id": 1014297355,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": true,
+   "in_campus_json": true,
+   "campus_shared_vertices": 2,
+   "dist_to_route": 0.0,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "length": 2.0,
+   "points": [
+    [
+     -132.69,
+     91.01
+    ],
+    [
+     -134.39,
+     89.92
+    ]
+   ]
+  },
+  {
+   "osm_id": 1014297357,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": true,
+   "in_campus_json": false,
+   "campus_shared_vertices": 7,
+   "dist_to_route": 0.0,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "length": 86.5,
+   "points": [
+    [
+     -146.88,
+     111.42
+    ],
+    [
+     -134.39,
+     89.92
+    ],
+    [
+     -134.03,
+     85.57
+    ],
+    [
+     -137.05,
+     83.0
+    ],
+    [
+     -148.22,
+     73.5
+    ],
+    [
+     -161.31,
+     60.34
+    ],
+    [
+     -171.14,
+     48.64
+    ],
+    [
+     -173.85,
+     44.72
+    ]
+   ]
+  },
+  {
+   "osm_id": 1014303713,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": true,
+   "in_campus_json": false,
+   "campus_shared_vertices": 1,
+   "dist_to_route": 0.0,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "length": 463.4,
+   "points": [
+    [
+     -484.31,
+     125.14
+    ],
+    [
+     -477.26,
+     134.69
+    ],
+    [
+     -463.79,
+     153.89
+    ],
+    [
+     -448.88,
+     170.19
+    ],
+    [
+     -430.2,
+     183.96
+    ],
+    [
+     -409.22,
+     197.84
+    ],
+    [
+     -338.76,
+     234.66
+    ],
+    [
+     -319.37,
+     244.07
+    ],
+    [
+     -301.67,
+     250.47
+    ],
+    [
+     -280.2,
+     254.95
+    ],
+    [
+     -264.67,
+     256.75
+    ],
+    [
+     -236.66,
+     256.03
+    ],
+    [
+     -232.66,
+     255.55
+    ],
+    [
+     -230.96,
+     254.34
+    ],
+    [
+     -228.9,
+     248.54
+    ],
+    [
+     -222.35,
+     234.18
+    ],
+    [
+     -213.75,
+     218.37
+    ],
+    [
+     -190.46,
+     180.57
+    ],
+    [
+     -146.88,
+     111.42
+    ]
+   ]
+  },
+  {
+   "osm_id": 1014303714,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": true,
+   "in_campus_json": false,
+   "campus_shared_vertices": 0,
+   "dist_to_route": 0.0,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "length": 9.0,
+   "points": [
+    [
+     -219.2,
+     251.56
+    ],
+    [
+     -222.99,
+     250.34
+    ],
+    [
+     -227.81,
+     248.79
+    ]
+   ]
+  },
+  {
+   "osm_id": 1014303715,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": true,
+   "in_campus_json": false,
+   "campus_shared_vertices": 0,
+   "dist_to_route": 0.0,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "length": 1.1,
+   "points": [
+    [
+     -227.81,
+     248.79
+    ],
+    [
+     -228.9,
+     248.54
+    ]
+   ]
+  },
+  {
+   "osm_id": 1014303716,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": true,
+   "in_campus_json": false,
+   "campus_shared_vertices": 1,
+   "dist_to_route": 0.0,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "length": 2.7,
+   "points": [
+    [
+     -216.69,
+     252.52
+    ],
+    [
+     -219.2,
+     251.56
+    ]
+   ]
+  },
+  {
+   "osm_id": 1014303720,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": true,
+   "in_campus_json": false,
+   "campus_shared_vertices": 0,
+   "dist_to_route": 0.0,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "length": 7.5,
+   "points": [
+    [
+     -237.51,
+     264.72
+    ],
+    [
+     -237.18,
+     260.59
+    ],
+    [
+     -236.9,
+     257.23
+    ]
+   ]
+  },
+  {
+   "osm_id": 1014303721,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": true,
+   "in_campus_json": false,
+   "campus_shared_vertices": 0,
+   "dist_to_route": 0.0,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "length": 1.2,
+   "points": [
+    [
+     -236.9,
+     257.23
+    ],
+    [
+     -236.66,
+     256.03
+    ]
+   ]
+  },
+  {
+   "osm_id": 55762791,
+   "part": 0,
+   "kind": "tertiary",
+   "name": null,
+   "width": 9.0,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": false,
+   "campus_shared_vertices": 2,
+   "dist_to_route": 0.0,
+   "near_route": [
+    "east_gate"
+   ],
+   "length": 60.0,
+   "points": [
+    [
+     238.77,
+     23.44
+    ],
+    [
+     223.38,
+     -13.6
+    ],
+    [
+     220.88,
+     -18.97
+    ],
+    [
+     214.98,
+     -31.67
+    ]
+   ]
+  },
+  {
+   "osm_id": 98854044,
+   "part": 0,
+   "kind": "unclassified",
+   "name": null,
+   "width": 6.0,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": true,
+   "on_route": false,
+   "in_campus_json": false,
+   "campus_shared_vertices": 0,
+   "dist_to_route": 0.0,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "length": 60.1,
+   "points": [
+    [
+     -333.67,
+     243.02
+    ],
+    [
+     -335.37,
+     247.1
+    ],
+    [
+     -342.36,
+     262.2
+    ],
+    [
+     -347.83,
+     273.82
+    ],
+    [
+     -356.27,
+     297.96
+    ],
+    [
+     -356.44,
+     298.53
+    ]
+   ]
+  },
+  {
+   "osm_id": 98854121,
+   "part": 0,
+   "kind": "residential",
+   "name": null,
+   "width": 6.0,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": false,
+   "campus_shared_vertices": 0,
+   "dist_to_route": 0.0,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "length": 60.9,
+   "points": [
+    [
+     -423.32,
+     197.65
+    ],
+    [
+     -427.03,
+     203.43
+    ],
+    [
+     -437.28,
+     224.18
+    ],
+    [
+     -438.46,
+     232.21
+    ],
+    [
+     -444.86,
+     254.02
+    ]
+   ]
+  },
+  {
+   "osm_id": 560557714,
+   "part": 0,
+   "kind": "residential",
+   "name": null,
+   "width": 6.0,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": false,
+   "campus_shared_vertices": 1,
+   "dist_to_route": 0.0,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "length": 133.6,
+   "points": [
+    [
+     -188.7,
+     186.9
+    ],
+    [
+     -183.58,
+     190.31
+    ],
+    [
+     -170.9,
+     198.98
+    ],
+    [
+     -191.6,
+     238.72
+    ],
+    [
+     -197.13,
+     250.86
+    ],
+    [
+     -199.95,
+     257.6
+    ],
+    [
+     -201.87,
+     265.39
+    ],
+    [
+     -203.18,
+     273.38
+    ],
+    [
+     -203.88,
+     279.97
+    ],
+    [
+     -204.59,
+     291.8
+    ],
+    [
+     -205.68,
+     298.77
+    ],
+    [
+     -207.07,
+     303.55
+    ]
+   ]
+  },
+  {
+   "osm_id": 565475712,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": false,
+   "campus_shared_vertices": 2,
+   "dist_to_route": 0.0,
+   "near_route": [
+    "east_gate"
+   ],
+   "length": 62.2,
+   "points": [
+    [
+     110.8,
+     43.71
+    ],
+    [
+     84.11,
+     -4.82
+    ],
+    [
+     80.8,
+     -10.83
+    ]
+   ]
+  },
+  {
+   "osm_id": 565475713,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": false,
+   "campus_shared_vertices": 2,
+   "dist_to_route": 0.0,
+   "near_route": [
+    "east_gate"
+   ],
+   "length": 62.3,
+   "points": [
+    [
+     -4.5,
+     98.68
+    ],
+    [
+     -23.89,
+     50.72
+    ],
+    [
+     -28.35,
+     41.15
+    ]
+   ]
+  },
+  {
+   "osm_id": 565475714,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": true,
+   "campus_shared_vertices": 13,
+   "dist_to_route": 0.0,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "length": 231.8,
+   "points": [
+    [
+     -124.6,
+     83.78
+    ],
+    [
+     -118.65,
+     75.52
+    ],
+    [
+     -113.36,
+     72.52
+    ],
+    [
+     -106.29,
+     71.28
+    ],
+    [
+     -92.31,
+     71.89
+    ],
+    [
+     -84.03,
+     70.93
+    ],
+    [
+     -75.7,
+     67.7
+    ],
+    [
+     -58.16,
+     57.16
+    ],
+    [
+     -52.08,
+     55.87
+    ],
+    [
+     -45.4,
+     56.12
+    ],
+    [
+     -35.92,
+     54.96
+    ],
+    [
+     -23.89,
+     50.72
+    ],
+    [
+     84.11,
+     -4.82
+    ]
+   ]
+  },
+  {
+   "osm_id": 1012464392,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": false,
+   "campus_shared_vertices": 0,
+   "dist_to_route": 0.0,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "length": 64.2,
+   "points": [
+    [
+     -365.4,
+     294.22
+    ],
+    [
+     -364.76,
+     292.57
+    ],
+    [
+     -362.56,
+     289.8
+    ],
+    [
+     -357.71,
+     287.5
+    ],
+    [
+     -348.61,
+     265.17
+    ],
+    [
+     -341.33,
+     251.28
+    ],
+    [
+     -343.03,
+     243.44
+    ],
+    [
+     -344.02,
+     237.8
+    ]
+   ]
+  },
+  {
+   "osm_id": 1014297349,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": true,
+   "campus_shared_vertices": 2,
+   "dist_to_route": 0.0,
+   "near_route": [
+    "east_gate"
+   ],
+   "length": 2.4,
+   "points": [
+    [
+     80.61,
+     67.59
+    ],
+    [
+     79.48,
+     65.44
+    ]
+   ]
+  },
+  {
+   "osm_id": 1014297356,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": true,
+   "campus_shared_vertices": 2,
+   "dist_to_route": 0.0,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "length": 3.2,
+   "points": [
+    [
+     -125.67,
+     97.4
+    ],
+    [
+     -127.36,
+     94.63
+    ]
+   ]
+  },
+  {
+   "osm_id": 1016758142,
+   "part": 0,
+   "kind": "tertiary",
+   "name": null,
+   "width": 9.0,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": false,
+   "campus_shared_vertices": 3,
+   "dist_to_route": 0.0,
+   "near_route": [
+    "east_gate"
+   ],
+   "length": 65.7,
+   "points": [
+    [
+     214.98,
+     -31.67
+    ],
+    [
+     209.03,
+     -43.93
+    ],
+    [
+     203.21,
+     -56.44
+    ],
+    [
+     189.64,
+     -92.25
+    ]
+   ]
+  },
+  {
+   "osm_id": 1016758143,
+   "part": 0,
+   "kind": "tertiary",
+   "name": "理科大通り",
+   "width": 9.0,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": false,
+   "campus_shared_vertices": 4,
+   "dist_to_route": 0.0,
+   "near_route": [
+    "east_gate"
+   ],
+   "length": 60.0,
+   "points": [
+    [
+     271.78,
+     -51.0
+    ],
+    [
+     271.01,
+     -50.83
+    ],
+    [
+     251.71,
+     -45.14
+    ],
+    [
+     226.25,
+     -36.04
+    ],
+    [
+     225.26,
+     -35.67
+    ],
+    [
+     214.98,
+     -31.67
+    ]
+   ]
+  },
+  {
+   "osm_id": 1014297348,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": true,
+   "campus_shared_vertices": 3,
+   "dist_to_route": 2.4,
+   "near_route": [
+    "east_gate"
+   ],
+   "length": 7.9,
+   "points": [
+    [
+     84.13,
+     74.71
+    ],
+    [
+     82.48,
+     71.36
+    ],
+    [
+     80.61,
+     67.59
+    ]
+   ]
+  },
+  {
+   "osm_id": 1014303722,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": false,
+   "campus_shared_vertices": 0,
+   "dist_to_route": 4.1,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "length": 1.9,
+   "points": [
+    [
+     -237.78,
+     266.64
+    ],
+    [
+     -237.51,
+     264.72
+    ]
+   ]
+  },
+  {
+   "osm_id": 565475723,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": false,
+   "campus_shared_vertices": 0,
+   "dist_to_route": 4.4,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "length": 116.7,
+   "points": [
+    [
+     -335.37,
+     247.1
+    ],
+    [
+     -327.03,
+     251.16
+    ],
+    [
+     -314.33,
+     257.36
+    ],
+    [
+     -264.92,
+     281.42
+    ],
+    [
+     -260.25,
+     283.85
+    ],
+    [
+     -246.1,
+     291.16
+    ],
+    [
+     -236.25,
+     296.24
+    ],
+    [
+     -230.87,
+     299.02
+    ]
+   ]
+  },
+  {
+   "osm_id": 565475724,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": false,
+   "campus_shared_vertices": 0,
+   "dist_to_route": 4.4,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "length": 18.6,
+   "points": [
+    [
+     -260.25,
+     283.85
+    ],
+    [
+     -260.6,
+     265.24
+    ]
+   ]
+  },
+  {
+   "osm_id": 1014303712,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": false,
+   "campus_shared_vertices": 0,
+   "dist_to_route": 4.4,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "length": 113.8,
+   "points": [
+    [
+     -236.08,
+     301.75
+    ],
+    [
+     -235.81,
+     298.64
+    ],
+    [
+     -236.25,
+     296.24
+    ],
+    [
+     -236.66,
+     290.8
+    ],
+    [
+     -236.9,
+     287.78
+    ],
+    [
+     -235.33,
+     270.39
+    ],
+    [
+     -236.3,
+     268.34
+    ],
+    [
+     -237.78,
+     266.64
+    ],
+    [
+     -238.72,
+     265.56
+    ],
+    [
+     -242.24,
+     264.97
+    ],
+    [
+     -256.31,
+     265.44
+    ],
+    [
+     -260.6,
+     265.24
+    ],
+    [
+     -271.46,
+     264.72
+    ],
+    [
+     -289.17,
+     262.55
+    ],
+    [
+     -308.08,
+     258.44
+    ],
+    [
+     -314.33,
+     257.36
+    ]
+   ]
+  },
+  {
+   "osm_id": 1011376480,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": false,
+   "campus_shared_vertices": 5,
+   "dist_to_route": 4.6,
+   "near_route": [
+    "east_gate"
+   ],
+   "length": 56.2,
+   "points": [
+    [
+     230.31,
+     27.41
+    ],
+    [
+     214.28,
+     -10.62
+    ],
+    [
+     212.46,
+     -14.93
+    ],
+    [
+     210.28,
+     -20.1
+    ],
+    [
+     209.26,
+     -22.29
+    ],
+    [
+     207.13,
+     -22.86
+    ]
+   ]
+  },
+  {
+   "osm_id": 1012464391,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": false,
+   "campus_shared_vertices": 0,
+   "dist_to_route": 5.2,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "length": 59.5,
+   "points": [
+    [
+     -327.03,
+     251.16
+    ],
+    [
+     -333.46,
+     254.9
+    ],
+    [
+     -345.94,
+     279.9
+    ],
+    [
+     -349.95,
+     290.88
+    ],
+    [
+     -349.1,
+     295.11
+    ],
+    [
+     -346.31,
+     299.22
+    ],
+    [
+     -347.23,
+     301.53
+    ],
+    [
+     -347.69,
+     301.96
+    ]
+   ]
+  },
+  {
+   "osm_id": 1011376478,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": true,
+   "campus_shared_vertices": 2,
+   "dist_to_route": 7.0,
+   "near_route": [
+    "east_gate"
+   ],
+   "length": 3.1,
+   "points": [
+    [
+     200.89,
+     -40.36
+    ],
+    [
+     203.76,
+     -41.65
+    ]
+   ]
+  },
+  {
+   "osm_id": 1014299184,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": true,
+   "campus_shared_vertices": 2,
+   "dist_to_route": 7.4,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "length": 1.8,
+   "points": [
+    [
+     -137.05,
+     83.0
+    ],
+    [
+     -136.01,
+     81.58
+    ]
+   ]
+  },
+  {
+   "osm_id": 1014299183,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": true,
+   "campus_shared_vertices": 3,
+   "dist_to_route": 8.5,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "length": 9.6,
+   "points": [
+    [
+     -136.01,
+     81.58
+    ],
+    [
+     -133.23,
+     77.81
+    ],
+    [
+     -130.31,
+     73.85
+    ]
+   ]
+  },
+  {
+   "osm_id": 1011376477,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": true,
+   "campus_shared_vertices": 3,
+   "dist_to_route": 8.7,
+   "near_route": [
+    "east_gate"
+   ],
+   "length": 12.2,
+   "points": [
+    [
+     203.76,
+     -41.65
+    ],
+    [
+     209.03,
+     -43.93
+    ],
+    [
+     214.92,
+     -46.48
+    ]
+   ]
+  },
+  {
+   "osm_id": 1014303718,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": false,
+   "campus_shared_vertices": 0,
+   "dist_to_route": 10.0,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "length": 1.9,
+   "points": [
+    [
+     -233.63,
+     271.12
+    ],
+    [
+     -235.33,
+     270.39
+    ]
+   ]
+  },
+  {
+   "osm_id": 1014297350,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": true,
+   "campus_shared_vertices": 2,
+   "dist_to_route": 10.4,
+   "near_route": [
+    "east_gate"
+   ],
+   "length": 2.6,
+   "points": [
+    [
+     85.24,
+     77.04
+    ],
+    [
+     84.13,
+     74.71
+    ]
+   ]
+  },
+  {
+   "osm_id": 1011376474,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": true,
+   "campus_shared_vertices": 3,
+   "dist_to_route": 11.0,
+   "near_route": [
+    "east_gate"
+   ],
+   "length": 11.1,
+   "points": [
+    [
+     223.28,
+     -40.8
+    ],
+    [
+     225.26,
+     -35.67
+    ],
+    [
+     227.28,
+     -30.42
+    ]
+   ]
+  },
+  {
+   "osm_id": 1014303717,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": false,
+   "campus_shared_vertices": 0,
+   "dist_to_route": 11.1,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "length": 9.1,
+   "points": [
+    [
+     -224.66,
+     272.69
+    ],
+    [
+     -228.83,
+     271.96
+    ],
+    [
+     -233.63,
+     271.12
+    ]
+   ]
+  },
+  {
+   "osm_id": 1014299185,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": true,
+   "campus_shared_vertices": 2,
+   "dist_to_route": 11.5,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "length": 4.4,
+   "points": [
+    [
+     -130.31,
+     73.85
+    ],
+    [
+     -127.66,
+     70.37
+    ]
+   ]
+  },
+  {
+   "osm_id": 1011376475,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": true,
+   "campus_shared_vertices": 2,
+   "dist_to_route": 12.3,
+   "near_route": [
+    "east_gate"
+   ],
+   "length": 3.3,
+   "points": [
+    [
+     222.43,
+     -43.94
+    ],
+    [
+     223.28,
+     -40.8
+    ]
+   ]
+  },
+  {
+   "osm_id": 1011376476,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": true,
+   "campus_shared_vertices": 2,
+   "dist_to_route": 12.4,
+   "near_route": [
+    "east_gate"
+   ],
+   "length": 4.8,
+   "points": [
+    [
+     227.28,
+     -30.42
+    ],
+    [
+     229.83,
+     -26.31
+    ]
+   ]
+  },
+  {
+   "osm_id": 1011376472,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": true,
+   "campus_shared_vertices": 3,
+   "dist_to_route": 13.9,
+   "near_route": [
+    "east_gate"
+   ],
+   "length": 9.8,
+   "points": [
+    [
+     226.56,
+     -21.49
+    ],
+    [
+     220.88,
+     -18.97
+    ],
+    [
+     217.59,
+     -17.5
+    ]
+   ]
+  },
+  {
+   "osm_id": 1011376473,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": true,
+   "campus_shared_vertices": 2,
+   "dist_to_route": 13.9,
+   "near_route": [
+    "east_gate"
+   ],
+   "length": 5.7,
+   "points": [
+    [
+     217.59,
+     -17.5
+    ],
+    [
+     212.46,
+     -14.93
+    ]
+   ]
+  },
+  {
+   "osm_id": 1011348589,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": false,
+   "campus_shared_vertices": 6,
+   "dist_to_route": 14.4,
+   "near_route": [
+    "east_gate"
+   ],
+   "length": 81.2,
+   "points": [
+    [
+     200.01,
+     -93.34
+    ],
+    [
+     212.6,
+     -59.27
+    ],
+    [
+     215.53,
+     -52.4
+    ],
+    [
+     218.43,
+     -48.29
+    ],
+    [
+     222.43,
+     -43.94
+    ],
+    [
+     230.19,
+     -46.24
+    ],
+    [
+     247.78,
+     -51.68
+    ]
+   ]
+  },
+  {
+   "osm_id": 1011376479,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": true,
+   "campus_shared_vertices": 2,
+   "dist_to_route": 14.8,
+   "near_route": [
+    "east_gate"
+   ],
+   "length": 3.9,
+   "points": [
+    [
+     214.92,
+     -46.48
+    ],
+    [
+     218.43,
+     -48.29
+    ]
+   ]
+  },
+  {
+   "osm_id": 565475716,
+   "part": 0,
+   "kind": "path",
+   "name": null,
+   "width": 2.0,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": false,
+   "campus_shared_vertices": 3,
+   "dist_to_route": 14.9,
+   "near_route": [
+    "east_gate"
+   ],
+   "length": 53.4,
+   "points": [
+    [
+     69.45,
+     134.89
+    ],
+    [
+     56.45,
+     113.04
+    ],
+    [
+     46.53,
+     114.29
+    ],
+    [
+     36.72,
+     99.25
+    ]
+   ]
+  },
+  {
+   "osm_id": 1011376950,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": true,
+   "campus_shared_vertices": 2,
+   "dist_to_route": 15.4,
+   "near_route": [
+    "east_gate"
+   ],
+   "length": 2.1,
+   "points": [
+    [
+     228.13,
+     -22.82
+    ],
+    [
+     226.56,
+     -21.49
+    ]
+   ]
+  },
+  {
+   "osm_id": 1011376483,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": false,
+   "campus_shared_vertices": 6,
+   "dist_to_route": 15.7,
+   "near_route": [
+    "east_gate"
+   ],
+   "length": 76.8,
+   "points": [
+    [
+     252.15,
+     -38.15
+    ],
+    [
+     248.63,
+     -37.66
+    ],
+    [
+     232.86,
+     -31.87
+    ],
+    [
+     229.83,
+     -26.31
+    ],
+    [
+     228.13,
+     -22.82
+    ],
+    [
+     236.75,
+     0.36
+    ],
+    [
+     245.3,
+     20.1
+    ]
+   ]
+  },
+  {
+   "osm_id": 1014303719,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": false,
+   "campus_shared_vertices": 1,
+   "dist_to_route": 17.4,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "length": 3.2,
+   "points": [
+    [
+     -221.52,
+     272.98
+    ],
+    [
+     -224.66,
+     272.69
+    ]
+   ]
+  },
+  {
+   "osm_id": 589833121,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": false,
+   "campus_shared_vertices": 0,
+   "dist_to_route": 20.8,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "length": 6.7,
+   "points": [
+    [
+     -270.23,
+     285.58
+    ],
+    [
+     -264.92,
+     281.42
+    ]
+   ]
+  },
+  {
+   "osm_id": 589833119,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": false,
+   "campus_shared_vertices": 0,
+   "dist_to_route": 22.6,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "length": 31.1,
+   "points": [
+    [
+     -264.42,
+     289.18
+    ],
+    [
+     -270.23,
+     285.58
+    ],
+    [
+     -288.19,
+     283.08
+    ],
+    [
+     -293.48,
+     279.89
+    ]
+   ]
+  },
+  {
+   "osm_id": 589833117,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": false,
+   "campus_shared_vertices": 0,
+   "dist_to_route": 23.0,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "length": 40.8,
+   "points": [
+    [
+     -263.5,
+     320.75
+    ],
+    [
+     -260.01,
+     308.02
+    ],
+    [
+     -264.42,
+     304.18
+    ],
+    [
+     -264.42,
+     289.18
+    ],
+    [
+     -260.25,
+     283.85
+    ]
+   ]
+  },
+  {
+   "osm_id": 556082278,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": false,
+   "campus_shared_vertices": 2,
+   "dist_to_route": 24.6,
+   "near_route": [
+    "nw_gate"
+   ],
+   "length": 36.7,
+   "points": [
+    [
+     -147.56,
+     28.34
+    ],
+    [
+     -148.18,
+     33.88
+    ],
+    [
+     -138.46,
+     63.47
+    ]
+   ]
+  },
+  {
+   "osm_id": 589833124,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": false,
+   "campus_shared_vertices": 0,
+   "dist_to_route": 24.9,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "length": 6.0,
+   "points": [
+    [
+     -288.19,
+     283.08
+    ],
+    [
+     -291.05,
+     288.32
+    ]
+   ]
+  },
+  {
+   "osm_id": 565475688,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": false,
+   "campus_shared_vertices": 5,
+   "dist_to_route": 27.7,
+   "near_route": [
+    "east_gate"
+   ],
+   "length": 44.7,
+   "points": [
+    [
+     212.6,
+     -59.27
+    ],
+    [
+     216.2,
+     -60.98
+    ],
+    [
+     240.03,
+     -71.88
+    ],
+    [
+     244.72,
+     -74.03
+    ],
+    [
+     248.11,
+     -75.58
+    ],
+    [
+     253.19,
+     -77.93
+    ]
+   ]
+  },
+  {
+   "osm_id": 1012464393,
+   "part": 0,
+   "kind": "footway",
+   "name": null,
+   "width": 2.5,
+   "surface": "asphalt",
+   "bridge": false,
+   "oneway": false,
+   "on_route": false,
+   "in_campus_json": false,
+   "campus_shared_vertices": 0,
+   "dist_to_route": 30.5,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "length": 34.5,
+   "points": [
+    [
+     -235.19,
+     320.56
+    ],
+    [
+     -234.74,
+     316.71
+    ],
+    [
+     -235.35,
+     304.41
+    ],
+    [
+     -236.08,
+     301.75
+    ],
+    [
+     -246.39,
+     293.54
+    ],
+    [
+     -246.1,
+     291.16
+    ]
+   ]
+  }
+ ],
+ "buildings": [
+  {
+   "id": "rt_1552201202",
+   "osm_id": 1552201202,
+   "name": null,
+   "kind": "house",
+   "levels": 2,
+   "height": 7.2,
+   "area": 68.1,
+   "bbox": [
+    -187.57,
+    195.68,
+    -175.92,
+    205.17
+   ],
+   "in_campus_json": true,
+   "footprint": [
+    [
+     -182.42,
+     202.64
+    ],
+    [
+     -183.62,
+     204.84
+    ],
+    [
+     -187.57,
+     202.7
+    ],
+    [
+     -185.93,
+     199.66
+    ],
+    [
+     -186.58,
+     199.3
+    ],
+    [
+     -184.61,
+     195.68
+    ],
+    [
+     -180.93,
+     197.67
+    ],
+    [
+     -180.47,
+     196.82
+    ],
+    [
+     -176.69,
+     198.87
+    ],
+    [
+     -175.92,
+     201.79
+    ],
+    [
+     -177.76,
+     205.17
+    ]
+   ],
+   "dist_to_route": 2.1,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552203374",
+   "osm_id": 1552203374,
+   "name": null,
+   "kind": "house",
+   "levels": 2,
+   "height": 7.3,
+   "area": 63.6,
+   "bbox": [
+    -193.08,
+    203.72,
+    -180.72,
+    213.45
+   ],
+   "in_campus_json": true,
+   "footprint": [
+    [
+     -193.08,
+     209.57
+    ],
+    [
+     -191.25,
+     205.91
+    ],
+    [
+     -190.15,
+     206.46
+    ],
+    [
+     -188.78,
+     203.72
+    ],
+    [
+     -184.02,
+     206.08
+    ],
+    [
+     -184.92,
+     207.9
+    ],
+    [
+     -180.72,
+     209.99
+    ],
+    [
+     -182.41,
+     213.35
+    ],
+    [
+     -184.66,
+     212.23
+    ],
+    [
+     -185.26,
+     213.45
+    ]
+   ],
+   "dist_to_route": 2.1,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552203179",
+   "osm_id": 1552203179,
+   "name": null,
+   "kind": "house",
+   "levels": 2,
+   "height": 7.2,
+   "area": 71.6,
+   "bbox": [
+    -205.26,
+    225.1,
+    -191.72,
+    234.16
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -202.82,
+     225.1
+    ],
+    [
+     -191.72,
+     229.5
+    ],
+    [
+     -193.31,
+     233.5
+    ],
+    [
+     -194.6,
+     232.99
+    ],
+    [
+     -194.82,
+     233.54
+    ],
+    [
+     -197.88,
+     232.33
+    ],
+    [
+     -198.6,
+     234.16
+    ],
+    [
+     -205.26,
+     231.51
+    ]
+   ],
+   "dist_to_route": 2.3,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552203358",
+   "osm_id": 1552203358,
+   "name": null,
+   "kind": "house",
+   "levels": 2,
+   "height": 7.4,
+   "area": 71.0,
+   "bbox": [
+    -179.39,
+    182.41,
+    -166.38,
+    193.3
+   ],
+   "in_campus_json": true,
+   "footprint": [
+    [
+     -175.39,
+     182.41
+    ],
+    [
+     -166.38,
+     188.12
+    ],
+    [
+     -167.92,
+     190.56
+    ],
+    [
+     -169.69,
+     189.44
+    ],
+    [
+     -171.89,
+     192.91
+    ],
+    [
+     -172.66,
+     192.42
+    ],
+    [
+     -173.21,
+     193.3
+    ],
+    [
+     -176.67,
+     191.1
+    ],
+    [
+     -175.9,
+     189.88
+    ],
+    [
+     -179.39,
+     187.68
+    ],
+    [
+     -177.34,
+     184.45
+    ],
+    [
+     -176.87,
+     184.75
+    ]
+   ],
+   "dist_to_route": 2.3,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552202593",
+   "osm_id": 1552202593,
+   "name": null,
+   "kind": "house",
+   "levels": 2,
+   "height": 7.4,
+   "area": 63.9,
+   "bbox": [
+    -196.42,
+    210.95,
+    -183.74,
+    219.95
+   ],
+   "in_campus_json": true,
+   "footprint": [
+    [
+     -183.74,
+     216.18
+    ],
+    [
+     -185.64,
+     219.95
+    ],
+    [
+     -187.5,
+     219.03
+    ],
+    [
+     -187.81,
+     219.67
+    ],
+    [
+     -191.18,
+     218.0
+    ],
+    [
+     -191.91,
+     219.45
+    ],
+    [
+     -196.42,
+     217.2
+    ],
+    [
+     -195.35,
+     215.08
+    ],
+    [
+     -196.04,
+     214.74
+    ],
+    [
+     -194.14,
+     210.95
+    ]
+   ],
+   "dist_to_route": 2.5,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552201703",
+   "osm_id": 1552201703,
+   "name": null,
+   "kind": "house",
+   "levels": 2,
+   "height": 7.0,
+   "area": 71.0,
+   "bbox": [
+    -208.5,
+    232.6,
+    -195.87,
+    243.11
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -208.5,
+     238.96
+    ],
+    [
+     -206.94,
+     234.85
+    ],
+    [
+     -205.76,
+     235.31
+    ],
+    [
+     -204.73,
+     232.6
+    ],
+    [
+     -199.04,
+     234.78
+    ],
+    [
+     -199.88,
+     236.98
+    ],
+    [
+     -195.87,
+     238.51
+    ],
+    [
+     -197.62,
+     243.11
+    ]
+   ],
+   "dist_to_route": 2.8,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552202462",
+   "osm_id": 1552202462,
+   "name": null,
+   "kind": "house",
+   "levels": 2,
+   "height": 6.9,
+   "area": 69.7,
+   "bbox": [
+    -201.59,
+    218.28,
+    -189.01,
+    229.45
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -191.11,
+     229.45
+    ],
+    [
+     -201.59,
+     224.12
+    ],
+    [
+     -199.51,
+     220.05
+    ],
+    [
+     -198.42,
+     220.61
+    ],
+    [
+     -197.24,
+     218.28
+    ],
+    [
+     -191.9,
+     221.0
+    ],
+    [
+     -193.04,
+     223.25
+    ],
+    [
+     -189.01,
+     225.3
+    ]
+   ],
+   "dist_to_route": 3.0,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_560557713",
+   "osm_id": 560557713,
+   "name": null,
+   "kind": "apartments",
+   "levels": 5,
+   "height": 15.6,
+   "area": 2696.6,
+   "bbox": [
+    -167.23,
+    100.03,
+    -54.22,
+    186.5
+   ],
+   "in_campus_json": true,
+   "footprint": [
+    [
+     -63.08,
+     158.13
+    ],
+    [
+     -70.09,
+     153.77
+    ],
+    [
+     -78.24,
+     148.7
+    ],
+    [
+     -79.84,
+     151.27
+    ],
+    [
+     -82.04,
+     149.91
+    ],
+    [
+     -80.28,
+     147.1
+    ],
+    [
+     -88.67,
+     141.9
+    ],
+    [
+     -90.92,
+     145.5
+    ],
+    [
+     -94.35,
+     143.36
+    ],
+    [
+     -92.11,
+     139.75
+    ],
+    [
+     -114.44,
+     125.86
+    ],
+    [
+     -127.96,
+     147.62
+    ],
+    [
+     -124.89,
+     149.53
+    ],
+    [
+     -126.39,
+     151.95
+    ],
+    [
+     -129.7,
+     149.9
+    ],
+    [
+     -131.57,
+     152.9
+    ],
+    [
+     -132.85,
+     154.95
+    ],
+    [
+     -134.92,
+     158.29
+    ],
+    [
+     -132.36,
+     159.89
+    ],
+    [
+     -133.59,
+     161.88
+    ],
+    [
+     -136.38,
+     160.14
+    ],
+    [
+     -152.78,
+     186.5
+    ],
+    [
+     -167.23,
+     177.51
+    ],
+    [
+     -130.78,
+     118.89
+    ],
+    [
+     -129.41,
+     119.75
+    ],
+    [
+     -129.06,
+     119.19
+    ],
+    [
+     -117.64,
+     126.3
+    ],
+    [
+     -116.6,
+     124.63
+    ],
+    [
+     -132.72,
+     114.6
+    ],
+    [
+     -124.31,
+     101.08
+    ],
+    [
+     -123.66,
+     101.47
+    ],
+    [
+     -122.76,
+     100.03
+    ],
+    [
+     -64.69,
+     136.12
+    ],
+    [
+     -61.59,
+     138.06
+    ],
+    [
+     -54.22,
+     142.64
+    ],
+    [
+     -54.82,
+     143.6
+    ],
+    [
+     -54.27,
+     143.94
+    ]
+   ],
+   "dist_to_route": 3.1,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552203467",
+   "osm_id": 1552203467,
+   "name": null,
+   "kind": "house",
+   "levels": 2,
+   "height": 7.8,
+   "area": 62.6,
+   "bbox": [
+    -210.2,
+    239.63,
+    -197.84,
+    248.37
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -197.84,
+     243.74
+    ],
+    [
+     -199.33,
+     247.74
+    ],
+    [
+     -201.32,
+     246.98
+    ],
+    [
+     -201.52,
+     247.52
+    ],
+    [
+     -204.87,
+     246.27
+    ],
+    [
+     -205.65,
+     248.37
+    ],
+    [
+     -209.44,
+     246.95
+    ],
+    [
+     -208.33,
+     243.96
+    ],
+    [
+     -210.2,
+     243.26
+    ],
+    [
+     -208.85,
+     239.63
+    ]
+   ],
+   "dist_to_route": 3.2,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552203019",
+   "osm_id": 1552203019,
+   "name": null,
+   "kind": "house",
+   "levels": 2,
+   "height": 7.4,
+   "area": 65.6,
+   "bbox": [
+    -215.89,
+    255.4,
+    -205.13,
+    265.04
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -215.89,
+     263.22
+    ],
+    [
+     -214.84,
+     259.89
+    ],
+    [
+     -215.61,
+     259.66
+    ],
+    [
+     -214.28,
+     255.4
+    ],
+    [
+     -206.9,
+     257.71
+    ],
+    [
+     -207.5,
+     259.61
+    ],
+    [
+     -205.13,
+     260.34
+    ],
+    [
+     -206.2,
+     263.79
+    ],
+    [
+     -209.38,
+     262.79
+    ],
+    [
+     -210.09,
+     265.04
+    ]
+   ],
+   "dist_to_route": 3.8,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552203617",
+   "osm_id": 1552203617,
+   "name": null,
+   "kind": "house",
+   "levels": 2,
+   "height": 7.4,
+   "area": 62.4,
+   "bbox": [
+    -213.28,
+    247.72,
+    -202.33,
+    257.78
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -213.28,
+     254.78
+    ],
+    [
+     -211.07,
+     247.72
+    ],
+    [
+     -205.51,
+     249.47
+    ],
+    [
+     -206.35,
+     252.14
+    ],
+    [
+     -202.33,
+     253.41
+    ],
+    [
+     -203.7,
+     257.78
+    ]
+   ],
+   "dist_to_route": 3.8,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552202443",
+   "osm_id": 1552202443,
+   "name": null,
+   "kind": "yes",
+   "levels": null,
+   "height": 9.3,
+   "area": 17.8,
+   "bbox": [
+    -449.89,
+    186.85,
+    -445.17,
+    194.88
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -449.89,
+     194.11
+    ],
+    [
+     -447.35,
+     186.85
+    ],
+    [
+     -445.17,
+     187.62
+    ],
+    [
+     -447.71,
+     194.88
+    ]
+   ],
+   "dist_to_route": 5.2,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_565475707",
+   "osm_id": 565475707,
+   "name": "体育館",
+   "kind": "sports_hall",
+   "levels": 6,
+   "height": 21.8,
+   "area": 2136.3,
+   "bbox": [
+    -11.57,
+    22.77,
+    54.37,
+    86.17
+   ],
+   "in_campus_json": true,
+   "footprint": [
+    [
+     21.7,
+     31.21
+    ],
+    [
+     23.85,
+     35.78
+    ],
+    [
+     27.71,
+     33.98
+    ],
+    [
+     25.28,
+     28.81
+    ],
+    [
+     38.22,
+     22.77
+    ],
+    [
+     54.37,
+     57.1
+    ],
+    [
+     41.62,
+     63.04
+    ],
+    [
+     30.2,
+     38.78
+    ],
+    [
+     26.0,
+     40.75
+    ],
+    [
+     36.14,
+     62.31
+    ],
+    [
+     34.45,
+     63.09
+    ],
+    [
+     38.41,
+     71.53
+    ],
+    [
+     6.99,
+     86.17
+    ],
+    [
+     -11.57,
+     46.72
+    ]
+   ],
+   "dist_to_route": 7.7,
+   "near_route": [
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_565475709",
+   "osm_id": 565475709,
+   "name": "第二実験棟",
+   "kind": "university",
+   "levels": null,
+   "height": 8.0,
+   "area": 302.6,
+   "bbox": [
+    71.64,
+    33.31,
+    97.42,
+    56.38
+   ],
+   "in_campus_json": true,
+   "footprint": [
+    [
+     77.69,
+     56.38
+    ],
+    [
+     71.64,
+     41.75
+    ],
+    [
+     92.87,
+     33.31
+    ],
+    [
+     97.42,
+     42.46
+    ]
+   ],
+   "dist_to_route": 9.0,
+   "near_route": [
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552188506",
+   "osm_id": 1552188506,
+   "name": null,
+   "kind": "yes",
+   "levels": null,
+   "height": 3.4,
+   "area": 72.0,
+   "bbox": [
+    105.32,
+    15.45,
+    115.7,
+    28.25
+   ],
+   "in_campus_json": true,
+   "footprint": [
+    [
+     112.02,
+     15.45
+    ],
+    [
+     115.7,
+     23.32
+    ],
+    [
+     112.54,
+     24.79
+    ],
+    [
+     113.38,
+     26.6
+    ],
+    [
+     109.84,
+     28.25
+    ],
+    [
+     105.32,
+     18.58
+    ]
+   ],
+   "dist_to_route": 10.5,
+   "near_route": [
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552203133",
+   "osm_id": 1552203133,
+   "name": null,
+   "kind": "house",
+   "levels": 2,
+   "height": 7.0,
+   "area": 66.3,
+   "bbox": [
+    -218.02,
+    263.96,
+    -207.09,
+    274.24
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -218.02,
+     271.3
+    ],
+    [
+     -215.73,
+     263.96
+    ],
+    [
+     -209.77,
+     265.83
+    ],
+    [
+     -210.56,
+     268.35
+    ],
+    [
+     -207.09,
+     269.43
+    ],
+    [
+     -208.6,
+     274.24
+    ]
+   ],
+   "dist_to_route": 11.5,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552201968",
+   "osm_id": 1552201968,
+   "name": null,
+   "kind": "commercial",
+   "levels": 1,
+   "height": 5.3,
+   "area": 144.8,
+   "bbox": [
+    -479.76,
+    173.73,
+    -465.91,
+    193.02
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -473.66,
+     173.73
+    ],
+    [
+     -465.91,
+     176.6
+    ],
+    [
+     -472.01,
+     193.02
+    ],
+    [
+     -479.76,
+     190.14
+    ]
+   ],
+   "dist_to_route": 14.2,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552201667",
+   "osm_id": 1552201667,
+   "name": null,
+   "kind": "house",
+   "levels": 2,
+   "height": 7.2,
+   "area": 57.3,
+   "bbox": [
+    -167.09,
+    189.83,
+    -157.59,
+    199.78
+   ],
+   "in_campus_json": true,
+   "footprint": [
+    [
+     -157.59,
+     192.97
+    ],
+    [
+     -160.41,
+     199.78
+    ],
+    [
+     -167.09,
+     197.01
+    ],
+    [
+     -165.86,
+     194.02
+    ],
+    [
+     -166.75,
+     193.67
+    ],
+    [
+     -165.15,
+     189.83
+    ]
+   ],
+   "dist_to_route": 15.5,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_565475703",
+   "osm_id": 565475703,
+   "name": "講義棟",
+   "kind": "university",
+   "levels": null,
+   "height": 8.0,
+   "area": 3621.5,
+   "bbox": [
+    78.2,
+    -79.02,
+    170.27,
+    -8.13
+   ],
+   "in_campus_json": true,
+   "footprint": [
+    [
+     157.06,
+     -30.92
+    ],
+    [
+     155.59,
+     -35.31
+    ],
+    [
+     97.21,
+     -8.13
+    ],
+    [
+     90.03,
+     -23.53
+    ],
+    [
+     86.02,
+     -22.07
+    ],
+    [
+     85.06,
+     -26.17
+    ],
+    [
+     87.92,
+     -27.94
+    ],
+    [
+     78.2,
+     -50.22
+    ],
+    [
+     129.6,
+     -74.17
+    ],
+    [
+     131.86,
+     -70.95
+    ],
+    [
+     151.26,
+     -79.02
+    ],
+    [
+     170.27,
+     -36.76
+    ]
+   ],
+   "dist_to_route": 18.7,
+   "near_route": [
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552202456",
+   "osm_id": 1552202456,
+   "name": null,
+   "kind": "house",
+   "levels": 2,
+   "height": 7.3,
+   "area": 53.3,
+   "bbox": [
+    -171.09,
+    201.12,
+    -161.44,
+    210.23
+   ],
+   "in_campus_json": true,
+   "footprint": [
+    [
+     -161.44,
+     203.83
+    ],
+    [
+     -163.96,
+     209.91
+    ],
+    [
+     -165.05,
+     209.44
+    ],
+    [
+     -165.39,
+     210.23
+    ],
+    [
+     -170.79,
+     207.99
+    ],
+    [
+     -170.57,
+     207.46
+    ],
+    [
+     -171.09,
+     207.24
+    ],
+    [
+     -169.8,
+     204.12
+    ],
+    [
+     -169.3,
+     204.32
+    ],
+    [
+     -167.97,
+     201.12
+    ]
+   ],
+   "dist_to_route": 19.0,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_565475708",
+   "osm_id": 565475708,
+   "name": "第一実験棟",
+   "kind": "university",
+   "levels": null,
+   "height": 8.0,
+   "area": 793.3,
+   "bbox": [
+    51.19,
+    9.14,
+    96.78,
+    43.12
+   ],
+   "in_campus_json": true,
+   "footprint": [
+    [
+     96.78,
+     30.15
+    ],
+    [
+     64.7,
+     43.12
+    ],
+    [
+     59.13,
+     29.6
+    ],
+    [
+     54.71,
+     30.87
+    ],
+    [
+     51.19,
+     22.48
+    ],
+    [
+     55.27,
+     20.83
+    ],
+    [
+     57.09,
+     24.72
+    ],
+    [
+     62.4,
+     22.43
+    ],
+    [
+     61.74,
+     20.5
+    ],
+    [
+     86.0,
+     9.14
+    ]
+   ],
+   "dist_to_route": 19.3,
+   "near_route": [
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552188507",
+   "osm_id": 1552188507,
+   "name": null,
+   "kind": "yes",
+   "levels": null,
+   "height": 3.0,
+   "area": 13.9,
+   "bbox": [
+    103.38,
+    71.59,
+    109.04,
+    76.67
+   ],
+   "in_campus_json": true,
+   "footprint": [
+    [
+     104.96,
+     76.67
+    ],
+    [
+     103.38,
+     74.31
+    ],
+    [
+     107.48,
+     71.59
+    ],
+    [
+     109.04,
+     73.95
+    ]
+   ],
+   "dist_to_route": 19.6,
+   "near_route": [
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552188503",
+   "osm_id": 1552188503,
+   "name": null,
+   "kind": "yes",
+   "levels": null,
+   "height": 3.0,
+   "area": 15.0,
+   "bbox": [
+    87.61,
+    81.62,
+    93.42,
+    86.83
+   ],
+   "in_campus_json": true,
+   "footprint": [
+    [
+     89.22,
+     86.83
+    ],
+    [
+     87.61,
+     84.27
+    ],
+    [
+     91.79,
+     81.62
+    ],
+    [
+     93.42,
+     84.21
+    ]
+   ],
+   "dist_to_route": 19.7,
+   "near_route": [
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552203295",
+   "osm_id": 1552203295,
+   "name": null,
+   "kind": "house",
+   "levels": 2,
+   "height": 7.5,
+   "area": 62.8,
+   "bbox": [
+    -219.21,
+    272.25,
+    -207.87,
+    280.92
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -218.93,
+     279.31
+    ],
+    [
+     -217.94,
+     276.18
+    ],
+    [
+     -219.21,
+     275.78
+    ],
+    [
+     -218.1,
+     272.25
+    ],
+    [
+     -207.87,
+     275.44
+    ],
+    [
+     -209.18,
+     279.61
+    ],
+    [
+     -211.42,
+     278.91
+    ],
+    [
+     -211.92,
+     280.48
+    ],
+    [
+     -213.5,
+     279.99
+    ],
+    [
+     -213.79,
+     280.92
+    ]
+   ],
+   "dist_to_route": 19.8,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552203652",
+   "osm_id": 1552203652,
+   "name": null,
+   "kind": "house",
+   "levels": 2,
+   "height": 7.3,
+   "area": 70.4,
+   "bbox": [
+    -177.1,
+    214.2,
+    -166.73,
+    226.59
+   ],
+   "in_campus_json": true,
+   "footprint": [
+    [
+     -174.41,
+     214.2
+    ],
+    [
+     -166.73,
+     217.39
+    ],
+    [
+     -170.53,
+     226.59
+    ],
+    [
+     -174.31,
+     225.01
+    ],
+    [
+     -173.18,
+     222.29
+    ],
+    [
+     -177.1,
+     220.67
+    ]
+   ],
+   "dist_to_route": 20.8,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552188517",
+   "osm_id": 1552188517,
+   "name": null,
+   "kind": "yes",
+   "levels": null,
+   "height": 1.6,
+   "area": 13.8,
+   "bbox": [
+    95.16,
+    77.5,
+    102.93,
+    83.34
+   ],
+   "in_campus_json": true,
+   "footprint": [
+    [
+     96.1,
+     83.34
+    ],
+    [
+     95.16,
+     81.92
+    ],
+    [
+     102.02,
+     77.5
+    ],
+    [
+     102.93,
+     78.92
+    ]
+   ],
+   "dist_to_route": 21.0,
+   "near_route": [
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552202732",
+   "osm_id": 1552202732,
+   "name": null,
+   "kind": "house",
+   "levels": 2,
+   "height": 7.2,
+   "area": 66.0,
+   "bbox": [
+    -183.52,
+    226.52,
+    -172.52,
+    237.21
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -181.67,
+     226.52
+    ],
+    [
+     -177.89,
+     228.09
+    ],
+    [
+     -177.59,
+     227.33
+    ],
+    [
+     -172.72,
+     229.34
+    ],
+    [
+     -173.27,
+     230.67
+    ],
+    [
+     -172.52,
+     230.98
+    ],
+    [
+     -175.09,
+     237.21
+    ],
+    [
+     -179.89,
+     235.22
+    ],
+    [
+     -178.93,
+     232.9
+    ],
+    [
+     -183.52,
+     230.99
+    ]
+   ],
+   "dist_to_route": 21.4,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_565475710",
+   "osm_id": 565475710,
+   "name": "図書館",
+   "kind": "university",
+   "levels": null,
+   "height": 8.0,
+   "area": 4840.4,
+   "bbox": [
+    -133.53,
+    -34.67,
+    -43.99,
+    63.72
+   ],
+   "in_campus_json": true,
+   "footprint": [
+    [
+     -53.39,
+     52.19
+    ],
+    [
+     -57.87,
+     45.24
+    ],
+    [
+     -97.92,
+     63.72
+    ],
+    [
+     -109.07,
+     40.55
+    ],
+    [
+     -112.01,
+     42.29
+    ],
+    [
+     -121.29,
+     30.06
+    ],
+    [
+     -124.92,
+     14.25
+    ],
+    [
+     -122.19,
+     13.28
+    ],
+    [
+     -133.53,
+     -10.3
+    ],
+    [
+     -82.12,
+     -34.67
+    ],
+    [
+     -65.16,
+     3.62
+    ],
+    [
+     -43.99,
+     48.3
+    ]
+   ],
+   "dist_to_route": 21.6,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552202375",
+   "osm_id": 1552202375,
+   "name": null,
+   "kind": "house",
+   "levels": 2,
+   "height": 7.0,
+   "area": 60.2,
+   "bbox": [
+    -197.15,
+    258.2,
+    -185.15,
+    268.08
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -187.48,
+     268.08
+    ],
+    [
+     -193.25,
+     265.69
+    ],
+    [
+     -192.66,
+     264.27
+    ],
+    [
+     -197.15,
+     262.41
+    ],
+    [
+     -195.41,
+     258.2
+    ],
+    [
+     -185.15,
+     262.45
+    ]
+   ],
+   "dist_to_route": 21.8,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552202660",
+   "osm_id": 1552202660,
+   "name": null,
+   "kind": "house",
+   "levels": 2,
+   "height": 6.9,
+   "area": 65.8,
+   "bbox": [
+    -188.78,
+    237.19,
+    -176.68,
+    247.49
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -187.08,
+     237.19
+    ],
+    [
+     -182.59,
+     239.06
+    ],
+    [
+     -182.39,
+     238.57
+    ],
+    [
+     -176.68,
+     240.93
+    ],
+    [
+     -179.21,
+     247.06
+    ],
+    [
+     -180.38,
+     246.58
+    ],
+    [
+     -180.76,
+     247.49
+    ],
+    [
+     -183.67,
+     246.29
+    ],
+    [
+     -183.26,
+     245.33
+    ],
+    [
+     -184.96,
+     244.64
+    ],
+    [
+     -184.35,
+     243.15
+    ],
+    [
+     -188.78,
+     241.32
+    ]
+   ],
+   "dist_to_route": 21.8,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552201945",
+   "osm_id": 1552201945,
+   "name": null,
+   "kind": "yes",
+   "levels": 1,
+   "height": 2.6,
+   "area": 12.4,
+   "bbox": [
+    -336.99,
+    266.18,
+    -332.04,
+    270.8
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -336.99,
+     268.95
+    ],
+    [
+     -335.52,
+     266.18
+    ],
+    [
+     -332.04,
+     268.04
+    ],
+    [
+     -333.52,
+     270.8
+    ]
+   ],
+   "dist_to_route": 22.2,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552188512",
+   "osm_id": 1552188512,
+   "name": null,
+   "kind": "yes",
+   "levels": null,
+   "height": 3.0,
+   "area": 22.4,
+   "bbox": [
+    129.21,
+    53.15,
+    137.37,
+    59.83
+   ],
+   "in_campus_json": true,
+   "footprint": [
+    [
+     130.76,
+     59.83
+    ],
+    [
+     129.21,
+     57.45
+    ],
+    [
+     135.81,
+     53.15
+    ],
+    [
+     137.37,
+     55.54
+    ]
+   ],
+   "dist_to_route": 22.7,
+   "near_route": [
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_687969466",
+   "osm_id": 687969466,
+   "name": null,
+   "kind": "yes",
+   "levels": null,
+   "height": 8.0,
+   "area": 735.3,
+   "bbox": [
+    155.7,
+    13.92,
+    202.98,
+    42.42
+   ],
+   "in_campus_json": true,
+   "footprint": [
+    [
+     157.93,
+     42.42
+    ],
+    [
+     155.7,
+     32.16
+    ],
+    [
+     199.24,
+     13.92
+    ],
+    [
+     202.98,
+     35.13
+    ]
+   ],
+   "dist_to_route": 22.8,
+   "near_route": [
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552203698",
+   "osm_id": 1552203698,
+   "name": null,
+   "kind": "house",
+   "levels": 2,
+   "height": 6.9,
+   "area": 62.9,
+   "bbox": [
+    -192.43,
+    247.69,
+    -181.38,
+    258.09
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -190.72,
+     247.69
+    ],
+    [
+     -182.31,
+     251.17
+    ],
+    [
+     -182.71,
+     252.18
+    ],
+    [
+     -181.38,
+     252.74
+    ],
+    [
+     -183.59,
+     258.09
+    ],
+    [
+     -185.96,
+     257.11
+    ],
+    [
+     -186.29,
+     257.93
+    ],
+    [
+     -188.44,
+     257.06
+    ],
+    [
+     -187.8,
+     255.52
+    ],
+    [
+     -189.8,
+     254.7
+    ],
+    [
+     -189.16,
+     253.13
+    ],
+    [
+     -192.43,
+     251.78
+    ]
+   ],
+   "dist_to_route": 22.8,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552188508",
+   "osm_id": 1552188508,
+   "name": null,
+   "kind": "yes",
+   "levels": null,
+   "height": 3.0,
+   "area": 14.1,
+   "bbox": [
+    120.18,
+    61.16,
+    128.13,
+    67.11
+   ],
+   "in_campus_json": true,
+   "footprint": [
+    [
+     121.1,
+     67.11
+    ],
+    [
+     120.18,
+     65.69
+    ],
+    [
+     127.22,
+     61.16
+    ],
+    [
+     128.13,
+     62.57
+    ]
+   ],
+   "dist_to_route": 23.1,
+   "near_route": [
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_560557716",
+   "osm_id": 560557716,
+   "name": null,
+   "kind": "apartments",
+   "levels": 12,
+   "height": 35.9,
+   "area": 2020.9,
+   "bbox": [
+    -62.13,
+    124.9,
+    28.27,
+    201.7
+   ],
+   "in_campus_json": true,
+   "footprint": [
+    [
+     -37.67,
+     180.5
+    ],
+    [
+     -47.78,
+     199.76
+    ],
+    [
+     -48.81,
+     201.7
+    ],
+    [
+     -57.75,
+     197.01
+    ],
+    [
+     -56.36,
+     194.37
+    ],
+    [
+     -62.13,
+     191.32
+    ],
+    [
+     -27.24,
+     124.9
+    ],
+    [
+     28.27,
+     154.04
+    ],
+    [
+     20.77,
+     168.34
+    ],
+    [
+     -4.83,
+     154.9
+    ],
+    [
+     -20.03,
+     146.91
+    ],
+    [
+     -25.73,
+     157.76
+    ]
+   ],
+   "dist_to_route": 23.3,
+   "near_route": [
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552202435",
+   "osm_id": 1552202435,
+   "name": null,
+   "kind": "house",
+   "levels": 2,
+   "height": 7.2,
+   "area": 62.2,
+   "bbox": [
+    -159.91,
+    193.04,
+    -150.5,
+    205.08
+   ],
+   "in_campus_json": true,
+   "footprint": [
+    [
+     -159.91,
+     200.8
+    ],
+    [
+     -156.7,
+     193.04
+    ],
+    [
+     -150.5,
+     195.61
+    ],
+    [
+     -154.42,
+     205.08
+    ],
+    [
+     -157.35,
+     203.87
+    ],
+    [
+     -156.63,
+     202.14
+    ]
+   ],
+   "dist_to_route": 24.4,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552208783",
+   "osm_id": 1552208783,
+   "name": null,
+   "kind": "yes",
+   "levels": null,
+   "height": 6.5,
+   "area": 47.7,
+   "bbox": [
+    -133.71,
+    152.9,
+    -125.11,
+    165.69
+   ],
+   "in_campus_json": true,
+   "footprint": [
+    [
+     -132.85,
+     154.95
+    ],
+    [
+     -131.57,
+     152.9
+    ],
+    [
+     -125.11,
+     156.92
+    ],
+    [
+     -130.57,
+     165.69
+    ],
+    [
+     -133.71,
+     163.73
+    ],
+    [
+     -129.54,
+     157.02
+    ]
+   ],
+   "dist_to_route": 24.4,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552201662",
+   "osm_id": 1552201662,
+   "name": null,
+   "kind": "house",
+   "levels": 2,
+   "height": 7.6,
+   "area": 60.3,
+   "bbox": [
+    -200.2,
+    269.67,
+    -189.83,
+    279.47
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -192.38,
+     279.47
+    ],
+    [
+     -200.2,
+     276.23
+    ],
+    [
+     -199.05,
+     273.45
+    ],
+    [
+     -200.02,
+     273.06
+    ],
+    [
+     -198.63,
+     269.67
+    ],
+    [
+     -189.83,
+     273.31
+    ]
+   ],
+   "dist_to_route": 24.9,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552188505",
+   "osm_id": 1552188505,
+   "name": null,
+   "kind": "yes",
+   "levels": null,
+   "height": 3.0,
+   "area": 13.6,
+   "bbox": [
+    70.08,
+    93.83,
+    77.93,
+    99.73
+   ],
+   "in_campus_json": true,
+   "footprint": [
+    [
+     70.97,
+     99.73
+    ],
+    [
+     70.08,
+     98.37
+    ],
+    [
+     77.03,
+     93.83
+    ],
+    [
+     77.93,
+     95.2
+    ]
+   ],
+   "dist_to_route": 25.2,
+   "near_route": [
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552202125",
+   "osm_id": 1552202125,
+   "name": null,
+   "kind": "commercial",
+   "levels": 2,
+   "height": 9.2,
+   "area": 289.5,
+   "bbox": [
+    -459.22,
+    212.75,
+    -439.47,
+    237.98
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -451.8,
+     212.75
+    ],
+    [
+     -439.47,
+     217.14
+    ],
+    [
+     -446.88,
+     237.98
+    ],
+    [
+     -459.22,
+     233.58
+    ]
+   ],
+   "dist_to_route": 25.3,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552188513",
+   "osm_id": 1552188513,
+   "name": null,
+   "kind": "yes",
+   "levels": null,
+   "height": 3.0,
+   "area": 14.1,
+   "bbox": [
+    60.88,
+    99.17,
+    66.58,
+    104.23
+   ],
+   "in_campus_json": true,
+   "footprint": [
+    [
+     62.41,
+     104.23
+    ],
+    [
+     60.88,
+     101.82
+    ],
+    [
+     65.05,
+     99.17
+    ],
+    [
+     66.58,
+     101.57
+    ]
+   ],
+   "dist_to_route": 25.4,
+   "near_route": [
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552203483",
+   "osm_id": 1552203483,
+   "name": null,
+   "kind": "house",
+   "levels": 2,
+   "height": 7.4,
+   "area": 61.9,
+   "bbox": [
+    -220.41,
+    279.75,
+    -208.36,
+    289.49
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -220.41,
+     286.04
+    ],
+    [
+     -218.44,
+     279.75
+    ],
+    [
+     -211.83,
+     281.81
+    ],
+    [
+     -212.75,
+     284.75
+    ],
+    [
+     -208.36,
+     286.12
+    ],
+    [
+     -209.41,
+     289.49
+    ]
+   ],
+   "dist_to_route": 26.8,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552203123",
+   "osm_id": 1552203123,
+   "name": null,
+   "kind": "house",
+   "levels": 2,
+   "height": 7.0,
+   "area": 70.0,
+   "bbox": [
+    -164.41,
+    205.84,
+    -154.77,
+    218.4
+   ],
+   "in_campus_json": true,
+   "footprint": [
+    [
+     -159.27,
+     218.4
+    ],
+    [
+     -162.66,
+     217.0
+    ],
+    [
+     -162.07,
+     215.58
+    ],
+    [
+     -164.41,
+     214.6
+    ],
+    [
+     -163.03,
+     211.25
+    ],
+    [
+     -163.56,
+     211.03
+    ],
+    [
+     -161.43,
+     205.84
+    ],
+    [
+     -158.71,
+     206.97
+    ],
+    [
+     -158.34,
+     206.08
+    ],
+    [
+     -154.77,
+     207.57
+    ]
+   ],
+   "dist_to_route": 27.0,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552201822",
+   "osm_id": 1552201822,
+   "name": null,
+   "kind": "yes",
+   "levels": null,
+   "height": 3.0,
+   "area": 20.6,
+   "bbox": [
+    -152.0,
+    182.52,
+    -144.96,
+    192.12
+   ],
+   "in_campus_json": true,
+   "footprint": [
+    [
+     -146.7,
+     182.52
+    ],
+    [
+     -144.96,
+     183.6
+    ],
+    [
+     -150.26,
+     192.12
+    ],
+    [
+     -152.0,
+     191.04
+    ]
+   ],
+   "dist_to_route": 27.3,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552203127",
+   "osm_id": 1552203127,
+   "name": null,
+   "kind": "yes",
+   "levels": null,
+   "height": 2.4,
+   "area": 35.8,
+   "bbox": [
+    -145.54,
+    177.1,
+    -134.71,
+    184.31
+   ],
+   "in_campus_json": true,
+   "footprint": [
+    [
+     -143.1,
+     177.1
+    ],
+    [
+     -134.71,
+     182.32
+    ],
+    [
+     -135.95,
+     184.31
+    ],
+    [
+     -139.63,
+     182.03
+    ],
+    [
+     -140.82,
+     183.95
+    ],
+    [
+     -145.54,
+     181.01
+    ]
+   ],
+   "dist_to_route": 27.5,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552203857",
+   "osm_id": 1552203857,
+   "name": null,
+   "kind": "yes",
+   "levels": null,
+   "height": 2.6,
+   "area": 10.5,
+   "bbox": [
+    -135.78,
+    163.6,
+    -130.65,
+    167.97
+   ],
+   "in_campus_json": true,
+   "footprint": [
+    [
+     -130.65,
+     166.04
+    ],
+    [
+     -131.84,
+     167.97
+    ],
+    [
+     -135.78,
+     165.53
+    ],
+    [
+     -134.57,
+     163.6
+    ]
+   ],
+   "dist_to_route": 27.5,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552202872",
+   "osm_id": 1552202872,
+   "name": null,
+   "kind": "yes",
+   "levels": null,
+   "height": 2.3,
+   "area": 69.7,
+   "bbox": [
+    -142.09,
+    171.99,
+    -124.03,
+    183.69
+   ],
+   "in_campus_json": true,
+   "footprint": [
+    [
+     -139.75,
+     171.99
+    ],
+    [
+     -124.03,
+     181.76
+    ],
+    [
+     -125.24,
+     183.69
+    ],
+    [
+     -130.0,
+     180.74
+    ],
+    [
+     -131.12,
+     182.55
+    ],
+    [
+     -142.09,
+     175.72
+    ]
+   ],
+   "dist_to_route": 27.6,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552203425",
+   "osm_id": 1552203425,
+   "name": null,
+   "kind": "yes",
+   "levels": null,
+   "height": 2.4,
+   "area": 116.2,
+   "bbox": [
+    -138.94,
+    166.72,
+    -113.14,
+    183.55
+   ],
+   "in_campus_json": true,
+   "footprint": [
+    [
+     -136.51,
+     166.72
+    ],
+    [
+     -113.14,
+     181.24
+    ],
+    [
+     -114.58,
+     183.55
+    ],
+    [
+     -119.36,
+     180.57
+    ],
+    [
+     -120.36,
+     182.18
+    ],
+    [
+     -138.94,
+     170.63
+    ]
+   ],
+   "dist_to_route": 27.6,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552201593",
+   "osm_id": 1552201593,
+   "name": null,
+   "kind": "yes",
+   "levels": null,
+   "height": 3.0,
+   "area": 15.5,
+   "bbox": [
+    -480.36,
+    191.04,
+    -473.63,
+    195.49
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -479.52,
+     191.04
+    ],
+    [
+     -473.63,
+     193.16
+    ],
+    [
+     -474.47,
+     195.49
+    ],
+    [
+     -480.36,
+     193.37
+    ]
+   ],
+   "dist_to_route": 28.0,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552208784",
+   "osm_id": 1552208784,
+   "name": null,
+   "kind": "yes",
+   "levels": null,
+   "height": 4.8,
+   "area": 53.2,
+   "bbox": [
+    -64.69,
+    129.68,
+    -49.56,
+    138.89
+   ],
+   "in_campus_json": true,
+   "footprint": [
+    [
+     -61.59,
+     138.06
+    ],
+    [
+     -64.69,
+     136.12
+    ],
+    [
+     -60.69,
+     129.68
+    ],
+    [
+     -49.56,
+     136.6
+    ],
+    [
+     -50.99,
+     138.89
+    ],
+    [
+     -59.02,
+     133.9
+    ]
+   ],
+   "dist_to_route": 29.4,
+   "near_route": [
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552203304",
+   "osm_id": 1552203304,
+   "name": null,
+   "kind": "house",
+   "levels": 2,
+   "height": 7.1,
+   "area": 64.4,
+   "bbox": [
+    -169.87,
+    218.37,
+    -160.77,
+    230.95
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -164.46,
+     230.95
+    ],
+    [
+     -168.65,
+     229.22
+    ],
+    [
+     -167.86,
+     227.33
+    ],
+    [
+     -169.87,
+     226.5
+    ],
+    [
+     -166.48,
+     218.37
+    ],
+    [
+     -163.25,
+     219.7
+    ],
+    [
+     -163.72,
+     220.83
+    ],
+    [
+     -160.77,
+     222.05
+    ]
+   ],
+   "dist_to_route": 29.7,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552202147",
+   "osm_id": 1552202147,
+   "name": null,
+   "kind": "apartments",
+   "levels": 2,
+   "height": 8.0,
+   "area": 165.6,
+   "bbox": [
+    -487.81,
+    194.81,
+    -472.78,
+    220.28
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -472.78,
+     197.18
+    ],
+    [
+     -481.54,
+     220.28
+    ],
+    [
+     -487.81,
+     217.91
+    ],
+    [
+     -479.05,
+     194.81
+    ]
+   ],
+   "dist_to_route": 30.1,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552202858",
+   "osm_id": 1552202858,
+   "name": null,
+   "kind": "apartments",
+   "levels": 1,
+   "height": 4.4,
+   "area": 42.5,
+   "bbox": [
+    -431.59,
+    230.16,
+    -423.21,
+    239.1
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -426.14,
+     239.1
+    ],
+    [
+     -431.59,
+     236.63
+    ],
+    [
+     -428.66,
+     230.16
+    ],
+    [
+     -423.21,
+     232.63
+    ]
+   ],
+   "dist_to_route": 31.1,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552202548",
+   "osm_id": 1552202548,
+   "name": null,
+   "kind": "house",
+   "levels": 2,
+   "height": 7.3,
+   "area": 65.7,
+   "bbox": [
+    -221.32,
+    287.24,
+    -209.5,
+    297.39
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -219.93,
+     287.24
+    ],
+    [
+     -214.2,
+     289.03
+    ],
+    [
+     -214.47,
+     289.9
+    ],
+    [
+     -212.57,
+     290.5
+    ],
+    [
+     -212.96,
+     291.73
+    ],
+    [
+     -209.5,
+     292.81
+    ],
+    [
+     -210.93,
+     297.39
+    ],
+    [
+     -219.63,
+     294.67
+    ],
+    [
+     -218.93,
+     292.42
+    ],
+    [
+     -221.32,
+     291.66
+    ]
+   ],
+   "dist_to_route": 31.7,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552201304",
+   "osm_id": 1552201304,
+   "name": null,
+   "kind": "apartments",
+   "levels": 1,
+   "height": 4.9,
+   "area": 16.0,
+   "bbox": [
+    -345.12,
+    274.6,
+    -339.94,
+    283.06
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -341.67,
+     274.6
+    ],
+    [
+     -339.94,
+     275.37
+    ],
+    [
+     -343.39,
+     283.06
+    ],
+    [
+     -345.12,
+     282.29
+    ]
+   ],
+   "dist_to_route": 32.3,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552203681",
+   "osm_id": 1552203681,
+   "name": null,
+   "kind": "house",
+   "levels": 2,
+   "height": 7.1,
+   "area": 61.4,
+   "bbox": [
+    -175.22,
+    230.35,
+    -165.99,
+    242.52
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -171.09,
+     242.52
+    ],
+    [
+     -175.22,
+     240.81
+    ],
+    [
+     -174.17,
+     238.26
+    ],
+    [
+     -174.43,
+     238.16
+    ],
+    [
+     -171.2,
+     230.35
+    ],
+    [
+     -168.34,
+     231.53
+    ],
+    [
+     -168.9,
+     232.89
+    ],
+    [
+     -165.99,
+     234.09
+    ],
+    [
+     -168.88,
+     241.08
+    ],
+    [
+     -170.26,
+     240.51
+    ]
+   ],
+   "dist_to_route": 32.3,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_565475728",
+   "osm_id": 565475728,
+   "name": null,
+   "kind": "apartments",
+   "levels": 4,
+   "height": 12.7,
+   "area": 913.7,
+   "bbox": [
+    -430.61,
+    239.68,
+    -359.1,
+    283.77
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -426.94,
+     251.67
+    ],
+    [
+     -427.24,
+     252.34
+    ],
+    [
+     -430.61,
+     250.92
+    ],
+    [
+     -427.33,
+     243.2
+    ],
+    [
+     -424.6,
+     244.36
+    ],
+    [
+     -422.61,
+     239.68
+    ],
+    [
+     -391.86,
+     252.75
+    ],
+    [
+     -395.89,
+     262.21
+    ],
+    [
+     -394.5,
+     262.81
+    ],
+    [
+     -390.53,
+     253.49
+    ],
+    [
+     -359.82,
+     266.54
+    ],
+    [
+     -361.67,
+     270.89
+    ],
+    [
+     -359.1,
+     271.98
+    ],
+    [
+     -362.68,
+     280.41
+    ],
+    [
+     -360.32,
+     281.41
+    ],
+    [
+     -361.33,
+     283.77
+    ],
+    [
+     -366.29,
+     281.67
+    ],
+    [
+     -364.78,
+     278.1
+    ]
+   ],
+   "dist_to_route": 32.8,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552202615",
+   "osm_id": 1552202615,
+   "name": null,
+   "kind": "house",
+   "levels": 2,
+   "height": 7.0,
+   "area": 53.4,
+   "bbox": [
+    -188.33,
+    263.65,
+    -178.93,
+    273.24
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -185.15,
+     263.65
+    ],
+    [
+     -182.55,
+     264.72
+    ],
+    [
+     -182.35,
+     264.22
+    ],
+    [
+     -178.93,
+     265.64
+    ],
+    [
+     -181.62,
+     272.16
+    ],
+    [
+     -183.09,
+     271.55
+    ],
+    [
+     -183.79,
+     273.24
+    ],
+    [
+     -188.33,
+     271.35
+    ]
+   ],
+   "dist_to_route": 33.4,
+   "near_route": [
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552203868",
+   "osm_id": 1552203868,
+   "name": null,
+   "kind": "yes",
+   "levels": null,
+   "height": 2.2,
+   "area": 20.0,
+   "bbox": [
+    -130.58,
+    166.65,
+    -120.77,
+    173.76
+   ],
+   "in_campus_json": true,
+   "footprint": [
+    [
+     -130.58,
+     168.3
+    ],
+    [
+     -129.55,
+     166.65
+    ],
+    [
+     -120.77,
+     172.12
+    ],
+    [
+     -121.78,
+     173.76
+    ]
+   ],
+   "dist_to_route": 33.4,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552203218",
+   "osm_id": 1552203218,
+   "name": null,
+   "kind": "house",
+   "levels": 2,
+   "height": 7.1,
+   "area": 62.1,
+   "bbox": [
+    -183.9,
+    251.91,
+    -174.41,
+    263.61
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -183.9,
+     261.12
+    ],
+    [
+     -180.07,
+     251.91
+    ],
+    [
+     -176.94,
+     253.22
+    ],
+    [
+     -177.28,
+     254.03
+    ],
+    [
+     -174.41,
+     255.21
+    ],
+    [
+     -177.88,
+     263.61
+    ]
+   ],
+   "dist_to_route": 33.8,
+   "near_route": [
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552203470",
+   "osm_id": 1552203470,
+   "name": null,
+   "kind": "house",
+   "levels": 2,
+   "height": 7.9,
+   "area": 97.8,
+   "bbox": [
+    -259.32,
+    294.61,
+    -248.42,
+    305.76
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -256.31,
+     305.05
+    ],
+    [
+     -256.2,
+     303.61
+    ],
+    [
+     -259.32,
+     303.38
+    ],
+    [
+     -258.43,
+     294.61
+    ],
+    [
+     -248.42,
+     295.64
+    ],
+    [
+     -249.46,
+     305.76
+    ]
+   ],
+   "dist_to_route": 33.8,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552201981",
+   "osm_id": 1552201981,
+   "name": null,
+   "kind": "house",
+   "levels": 2,
+   "height": 7.3,
+   "area": 58.6,
+   "bbox": [
+    -179.69,
+    243.12,
+    -170.05,
+    253.31
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -179.69,
+     250.81
+    ],
+    [
+     -176.52,
+     243.13
+    ],
+    [
+     -174.05,
+     244.15
+    ],
+    [
+     -173.62,
+     243.12
+    ],
+    [
+     -170.05,
+     244.59
+    ],
+    [
+     -173.66,
+     253.31
+    ]
+   ],
+   "dist_to_route": 33.9,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552202194",
+   "osm_id": 1552202194,
+   "name": null,
+   "kind": "yes",
+   "levels": null,
+   "height": 4.3,
+   "area": 11.0,
+   "bbox": [
+    -475.91,
+    202.74,
+    -471.99,
+    208.76
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -475.91,
+     208.05
+    ],
+    [
+     -473.77,
+     202.74
+    ],
+    [
+     -471.99,
+     203.45
+    ],
+    [
+     -474.13,
+     208.76
+    ]
+   ],
+   "dist_to_route": 34.4,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552203884",
+   "osm_id": 1552203884,
+   "name": null,
+   "kind": "house",
+   "levels": 2,
+   "height": 7.1,
+   "area": 67.4,
+   "bbox": [
+    -192.19,
+    273.15,
+    -182.79,
+    286.18
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -186.72,
+     286.18
+    ],
+    [
+     -190.42,
+     284.65
+    ],
+    [
+     -189.28,
+     281.9
+    ],
+    [
+     -192.19,
+     280.69
+    ],
+    [
+     -189.07,
+     273.15
+    ],
+    [
+     -185.59,
+     274.59
+    ],
+    [
+     -185.92,
+     275.4
+    ],
+    [
+     -182.79,
+     276.69
+    ]
+   ],
+   "dist_to_route": 34.5,
+   "near_route": [
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552201509",
+   "osm_id": 1552201509,
+   "name": null,
+   "kind": "apartments",
+   "levels": 1,
+   "height": 4.5,
+   "area": 47.9,
+   "bbox": [
+    -300.87,
+    291.74,
+    -291.72,
+    301.23
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -291.72,
+     294.71
+    ],
+    [
+     -295.03,
+     301.23
+    ],
+    [
+     -300.87,
+     298.25
+    ],
+    [
+     -297.56,
+     291.74
+    ]
+   ],
+   "dist_to_route": 35.0,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552201941",
+   "osm_id": 1552201941,
+   "name": null,
+   "kind": "house",
+   "levels": 2,
+   "height": 7.2,
+   "area": 58.3,
+   "bbox": [
+    -200.28,
+    283.75,
+    -187.96,
+    292.63
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -199.08,
+     283.75
+    ],
+    [
+     -187.96,
+     287.24
+    ],
+    [
+     -189.22,
+     291.27
+    ],
+    [
+     -190.51,
+     290.87
+    ],
+    [
+     -191.06,
+     292.63
+    ],
+    [
+     -196.29,
+     290.99
+    ],
+    [
+     -195.67,
+     289.01
+    ],
+    [
+     -200.28,
+     287.56
+    ]
+   ],
+   "dist_to_route": 35.9,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552202382",
+   "osm_id": 1552202382,
+   "name": null,
+   "kind": "residential",
+   "levels": 3,
+   "height": 12.3,
+   "area": 30.6,
+   "bbox": [
+    -248.75,
+    296.7,
+    -244.36,
+    305.7
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -245.07,
+     305.7
+    ],
+    [
+     -248.75,
+     305.35
+    ],
+    [
+     -247.93,
+     296.7
+    ],
+    [
+     -244.36,
+     297.75
+    ]
+   ],
+   "dist_to_route": 36.1,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552202429",
+   "osm_id": 1552202429,
+   "name": null,
+   "kind": "yes",
+   "levels": null,
+   "height": 2.3,
+   "area": 27.2,
+   "bbox": [
+    -126.45,
+    157.79,
+    -118.21,
+    169.17
+   ],
+   "in_campus_json": true,
+   "footprint": [
+    [
+     -126.45,
+     167.96
+    ],
+    [
+     -120.12,
+     157.79
+    ],
+    [
+     -118.21,
+     158.99
+    ],
+    [
+     -124.53,
+     169.17
+    ]
+   ],
+   "dist_to_route": 36.7,
+   "near_route": [
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_217515791",
+   "osm_id": 217515791,
+   "name": "ローソン",
+   "kind": "retail",
+   "levels": null,
+   "height": 8.0,
+   "area": 205.8,
+   "bbox": [
+    246.22,
+    -16.14,
+    261.63,
+    6.02
+   ],
+   "in_campus_json": true,
+   "footprint": [
+    [
+     257.33,
+     -16.14
+    ],
+    [
+     260.4,
+     -7.34
+    ],
+    [
+     258.31,
+     -6.62
+    ],
+    [
+     261.63,
+     2.9
+    ],
+    [
+     252.61,
+     6.02
+    ],
+    [
+     246.22,
+     -12.3
+    ]
+   ],
+   "dist_to_route": 36.8,
+   "near_route": [
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_565475726",
+   "osm_id": 565475726,
+   "name": null,
+   "kind": "apartments",
+   "levels": 4,
+   "height": 15.6,
+   "area": 594.1,
+   "bbox": [
+    -347.35,
+    280.4,
+    -301.67,
+    308.15
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -313.65,
+     304.54
+    ],
+    [
+     -317.32,
+     303.11
+    ],
+    [
+     -335.07,
+     296.13
+    ],
+    [
+     -336.4,
+     299.53
+    ],
+    [
+     -341.39,
+     297.56
+    ],
+    [
+     -340.28,
+     294.76
+    ],
+    [
+     -347.35,
+     291.98
+    ],
+    [
+     -344.36,
+     284.37
+    ],
+    [
+     -341.08,
+     285.67
+    ],
+    [
+     -339.01,
+     280.4
+    ],
+    [
+     -302.19,
+     294.87
+    ],
+    [
+     -304.22,
+     300.01
+    ],
+    [
+     -301.67,
+     301.01
+    ],
+    [
+     -304.48,
+     308.15
+    ]
+   ],
+   "dist_to_route": 36.8,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_771657601",
+   "osm_id": 771657601,
+   "name": null,
+   "kind": "apartments",
+   "levels": 13,
+   "height": 38.1,
+   "area": 1054.9,
+   "bbox": [
+    -140.84,
+    188.96,
+    -66.26,
+    211.56
+   ],
+   "in_campus_json": true,
+   "footprint": [
+    [
+     -79.19,
+     208.07
+    ],
+    [
+     -79.38,
+     203.71
+    ],
+    [
+     -91.42,
+     204.5
+    ],
+    [
+     -127.28,
+     206.86
+    ],
+    [
+     -127.01,
+     211.43
+    ],
+    [
+     -129.62,
+     211.56
+    ],
+    [
+     -129.87,
+     207.03
+    ],
+    [
+     -139.93,
+     207.68
+    ],
+    [
+     -140.84,
+     193.8
+    ],
+    [
+     -67.17,
+     188.96
+    ],
+    [
+     -66.26,
+     202.85
+    ],
+    [
+     -76.29,
+     203.5
+    ],
+    [
+     -76.08,
+     208.63
+    ],
+    [
+     -79.15,
+     208.77
+    ]
+   ],
+   "dist_to_route": 38.2,
+   "near_route": [
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552203207",
+   "osm_id": 1552203207,
+   "name": null,
+   "kind": "house",
+   "levels": 3,
+   "height": 9.9,
+   "area": 39.6,
+   "bbox": [
+    -244.05,
+    299.45,
+    -236.51,
+    307.76
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -238.7,
+     301.1
+    ],
+    [
+     -236.51,
+     304.22
+    ],
+    [
+     -237.46,
+     307.76
+    ],
+    [
+     -244.05,
+     305.99
+    ],
+    [
+     -242.39,
+     299.45
+    ]
+   ],
+   "dist_to_route": 38.9,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552201399",
+   "osm_id": 1552201399,
+   "name": null,
+   "kind": "apartments",
+   "levels": 1,
+   "height": 3.2,
+   "area": 25.6,
+   "bbox": [
+    -488.4,
+    144.38,
+    -482.38,
+    155.59
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -485.55,
+     155.59
+    ],
+    [
+     -488.4,
+     154.5
+    ],
+    [
+     -487.22,
+     151.29
+    ],
+    [
+     -486.52,
+     151.56
+    ],
+    [
+     -483.89,
+     144.38
+    ],
+    [
+     -482.38,
+     146.61
+    ]
+   ],
+   "dist_to_route": 39.2,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552203563",
+   "osm_id": 1552203563,
+   "name": null,
+   "kind": "apartments",
+   "levels": 1,
+   "height": 4.8,
+   "area": 72.4,
+   "bbox": [
+    -500.57,
+    156.18,
+    -486.63,
+    188.65
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -498.56,
+     188.65
+    ],
+    [
+     -500.57,
+     187.91
+    ],
+    [
+     -488.62,
+     156.18
+    ],
+    [
+     -486.63,
+     156.93
+    ]
+   ],
+   "dist_to_route": 39.2,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552202749",
+   "osm_id": 1552202749,
+   "name": null,
+   "kind": "apartments",
+   "levels": 13,
+   "height": 38.2,
+   "area": 532.1,
+   "bbox": [
+    -161.01,
+    209.19,
+    -132.71,
+    248.22
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -136.84,
+     220.21
+    ],
+    [
+     -132.71,
+     221.58
+    ],
+    [
+     -133.48,
+     223.92
+    ],
+    [
+     -137.77,
+     222.5
+    ],
+    [
+     -145.12,
+     240.61
+    ],
+    [
+     -140.32,
+     242.41
+    ],
+    [
+     -141.45,
+     245.39
+    ],
+    [
+     -146.32,
+     243.56
+    ],
+    [
+     -148.2,
+     248.22
+    ],
+    [
+     -161.01,
+     243.03
+    ],
+    [
+     -147.29,
+     209.19
+    ],
+    [
+     -134.48,
+     214.39
+    ]
+   ],
+   "dist_to_route": 40.9,
+   "near_route": [
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552201731",
+   "osm_id": 1552201731,
+   "name": null,
+   "kind": "yes",
+   "levels": null,
+   "height": 6.0,
+   "area": 8.8,
+   "bbox": [
+    -446.31,
+    233.89,
+    -442.61,
+    237.8
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -442.61,
+     234.83
+    ],
+    [
+     -443.67,
+     237.8
+    ],
+    [
+     -446.31,
+     236.86
+    ],
+    [
+     -445.23,
+     233.89
+    ]
+   ],
+   "dist_to_route": 41.9,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552201364",
+   "osm_id": 1552201364,
+   "name": null,
+   "kind": "apartments",
+   "levels": 6,
+   "height": 22.1,
+   "area": 610.5,
+   "bbox": [
+    -520.73,
+    154.67,
+    -490.37,
+    213.52
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -500.18,
+     154.67
+    ],
+    [
+     -490.37,
+     158.35
+    ],
+    [
+     -511.15,
+     213.52
+    ],
+    [
+     -520.73,
+     209.96
+    ]
+   ],
+   "dist_to_route": 42.2,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_565475727",
+   "osm_id": 565475727,
+   "name": null,
+   "kind": "apartments",
+   "levels": 4,
+   "height": 12.9,
+   "area": 398.3,
+   "bbox": [
+    -301.39,
+    300.87,
+    -269.6,
+    328.81
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -277.55,
+     326.77
+    ],
+    [
+     -298.52,
+     312.3
+    ],
+    [
+     -299.07,
+     312.39
+    ],
+    [
+     -301.37,
+     310.79
+    ],
+    [
+     -301.39,
+     310.28
+    ],
+    [
+     -297.31,
+     304.37
+    ],
+    [
+     -296.85,
+     304.27
+    ],
+    [
+     -294.83,
+     305.61
+    ],
+    [
+     -291.65,
+     300.87
+    ],
+    [
+     -290.15,
+     301.88
+    ],
+    [
+     -290.07,
+     302.24
+    ],
+    [
+     -288.44,
+     303.42
+    ],
+    [
+     -287.98,
+     303.43
+    ],
+    [
+     -283.73,
+     306.33
+    ],
+    [
+     -283.72,
+     306.71
+    ],
+    [
+     -282.16,
+     307.83
+    ],
+    [
+     -281.66,
+     307.85
+    ],
+    [
+     -279.52,
+     309.2
+    ],
+    [
+     -279.48,
+     309.61
+    ],
+    [
+     -277.96,
+     310.74
+    ],
+    [
+     -277.39,
+     310.71
+    ],
+    [
+     -273.11,
+     313.61
+    ],
+    [
+     -273.09,
+     314.05
+    ],
+    [
+     -271.09,
+     315.48
+    ],
+    [
+     -270.49,
+     315.41
+    ],
+    [
+     -269.6,
+     316.06
+    ],
+    [
+     -272.77,
+     320.95
+    ],
+    [
+     -270.79,
+     322.44
+    ],
+    [
+     -270.71,
+     322.87
+    ],
+    [
+     -274.74,
+     328.72
+    ],
+    [
+     -275.29,
+     328.81
+    ],
+    [
+     -277.5,
+     327.31
+    ]
+   ],
+   "dist_to_route": 43.0,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_819502937",
+   "osm_id": 819502937,
+   "name": null,
+   "kind": "apartments",
+   "levels": 4,
+   "height": 11.4,
+   "area": 121.8,
+   "bbox": [
+    -224.72,
+    301.5,
+    -211.59,
+    314.91
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -211.59,
+     304.67
+    ],
+    [
+     -214.74,
+     314.91
+    ],
+    [
+     -217.92,
+     313.92
+    ],
+    [
+     -218.27,
+     314.85
+    ],
+    [
+     -224.18,
+     313.04
+    ],
+    [
+     -223.82,
+     311.86
+    ],
+    [
+     -224.59,
+     311.61
+    ],
+    [
+     -224.72,
+     310.24
+    ],
+    [
+     -221.93,
+     301.5
+    ]
+   ],
+   "dist_to_route": 43.7,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552202118",
+   "osm_id": 1552202118,
+   "name": null,
+   "kind": "house",
+   "levels": 2,
+   "height": 7.0,
+   "area": 67.8,
+   "bbox": [
+    -201.8,
+    293.62,
+    -191.19,
+    303.35
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -200.53,
+     293.62
+    ],
+    [
+     -196.86,
+     294.76
+    ],
+    [
+     -196.57,
+     293.86
+    ],
+    [
+     -191.19,
+     295.53
+    ],
+    [
+     -192.8,
+     300.66
+    ],
+    [
+     -193.95,
+     300.31
+    ],
+    [
+     -194.91,
+     303.35
+    ],
+    [
+     -199.88,
+     301.79
+    ],
+    [
+     -199.48,
+     300.5
+    ],
+    [
+     -201.55,
+     299.86
+    ],
+    [
+     -200.97,
+     297.99
+    ],
+    [
+     -201.8,
+     297.73
+    ]
+   ],
+   "dist_to_route": 44.2,
+   "near_route": [
+    "east_gate"
+   ]
+  },
+  {
+   "id": "rt_1552202910",
+   "osm_id": 1552202910,
+   "name": null,
+   "kind": "yes",
+   "levels": null,
+   "height": 3.1,
+   "area": 14.3,
+   "bbox": [
+    -480.12,
+    213.13,
+    -475.74,
+    221.36
+   ],
+   "in_campus_json": false,
+   "footprint": [
+    [
+     -477.39,
+     213.13
+    ],
+    [
+     -475.74,
+     213.72
+    ],
+    [
+     -478.45,
+     221.36
+    ],
+    [
+     -480.12,
+     220.76
+    ]
+   ],
+   "dist_to_route": 44.7,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ]
+  }
+ ],
+ "areas": [
+  {
+   "id": "area_153722332",
+   "osm_id": 153722332,
+   "kind": "industrial",
+   "name": null,
+   "area": 117931.1,
+   "bbox": [
+    -505.8,
+    -387.66,
+    -137.23,
+    254.14
+   ],
+   "dist_to_route": 2.2,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "polygon": [
+    [
+     -211.29,
+     208.93
+    ],
+    [
+     -226.98,
+     235.31
+    ],
+    [
+     -232.85,
+     250.96
+    ],
+    [
+     -237.09,
+     253.5
+    ],
+    [
+     -254.38,
+     254.14
+    ],
+    [
+     -271.39,
+     253.26
+    ],
+    [
+     -299.55,
+     248.5
+    ],
+    [
+     -323.4,
+     240.7
+    ],
+    [
+     -395.43,
+     202.53
+    ],
+    [
+     -458.62,
+     160.18
+    ],
+    [
+     -505.8,
+     84.9
+    ],
+    [
+     -448.94,
+     26.19
+    ],
+    [
+     -391.44,
+     -29.16
+    ],
+    [
+     -363.19,
+     -132.51
+    ],
+    [
+     -318.91,
+     -269.81
+    ],
+    [
+     -265.33,
+     -387.66
+    ],
+    [
+     -159.69,
+     -381.29
+    ],
+    [
+     -199.14,
+     -296.29
+    ],
+    [
+     -207.75,
+     -276.4
+    ],
+    [
+     -212.93,
+     -254.63
+    ],
+    [
+     -214.07,
+     -214.43
+    ],
+    [
+     -213.84,
+     -189.89
+    ],
+    [
+     -211.93,
+     -69.09
+    ],
+    [
+     -209.64,
+     -33.58
+    ],
+    [
+     -205.39,
+     -11.07
+    ],
+    [
+     -198.27,
+     8.8
+    ],
+    [
+     -190.82,
+     23.48
+    ],
+    [
+     -181.08,
+     41.56
+    ],
+    [
+     -167.74,
+     58.65
+    ],
+    [
+     -153.76,
+     72.49
+    ],
+    [
+     -137.74,
+     85.97
+    ],
+    [
+     -137.23,
+     89.44
+    ],
+    [
+     -137.76,
+     91.37
+    ],
+    [
+     -144.02,
+     101.43
+    ]
+   ]
+  },
+  {
+   "id": "area_175463018",
+   "osm_id": 175463018,
+   "kind": "park",
+   "name": "葛飾にいじゅくみらい公園運動場多目的広場",
+   "area": 19591.6,
+   "bbox": [
+    -18.43,
+    -12.5,
+    236.4,
+    180.53
+   ],
+   "dist_to_route": 14.1,
+   "near_route": [
+    "east_gate"
+   ],
+   "polygon": [
+    [
+     1.73,
+     114.64
+    ],
+    [
+     21.63,
+     108.46
+    ],
+    [
+     60.67,
+     93.02
+    ],
+    [
+     87.3,
+     79.13
+    ],
+    [
+     104.61,
+     68.58
+    ],
+    [
+     124.26,
+     52.62
+    ],
+    [
+     151.15,
+     24.56
+    ],
+    [
+     172.35,
+     5.0
+    ],
+    [
+     201.04,
+     -12.5
+    ],
+    [
+     210.87,
+     -9.92
+    ],
+    [
+     236.4,
+     48.45
+    ],
+    [
+     216.79,
+     57.87
+    ],
+    [
+     227.51,
+     77.97
+    ],
+    [
+     100.22,
+     180.53
+    ],
+    [
+     -18.43,
+     117.98
+    ]
+   ]
+  },
+  {
+   "id": "area_771657620",
+   "osm_id": 771657620,
+   "kind": "pitch",
+   "name": null,
+   "area": 7439.4,
+   "bbox": [
+    55.93,
+    52.12,
+    181.49,
+    169.2
+   ],
+   "dist_to_route": 22.8,
+   "near_route": [
+    "east_gate"
+   ],
+   "polygon": [
+    [
+     55.93,
+     109.65
+    ],
+    [
+     144.45,
+     52.12
+    ],
+    [
+     181.49,
+     113.33
+    ],
+    [
+     96.11,
+     169.2
+    ]
+   ]
+  },
+  {
+   "id": "area_565475692",
+   "osm_id": 565475692,
+   "kind": "playground",
+   "name": null,
+   "area": 3638.9,
+   "bbox": [
+    197.66,
+    -199.7,
+    274.29,
+    -62.76
+   ],
+   "dist_to_route": 30.5,
+   "near_route": [
+    "east_gate"
+   ],
+   "polygon": [
+    [
+     209.18,
+     -62.76
+    ],
+    [
+     197.66,
+     -92.08
+    ],
+    [
+     234.32,
+     -102.99
+    ],
+    [
+     220.45,
+     -138.74
+    ],
+    [
+     213.91,
+     -199.07
+    ],
+    [
+     246.64,
+     -179.31
+    ],
+    [
+     265.21,
+     -199.7
+    ],
+    [
+     274.29,
+     -193.6
+    ],
+    [
+     269.86,
+     -187.09
+    ],
+    [
+     256.99,
+     -175.95
+    ],
+    [
+     250.86,
+     -157.24
+    ],
+    [
+     241.78,
+     -118.35
+    ],
+    [
+     240.09,
+     -97.53
+    ],
+    [
+     241.78,
+     -76.73
+    ]
+   ]
+  },
+  {
+   "id": "area_565475729",
+   "osm_id": 565475729,
+   "kind": "parking",
+   "name": null,
+   "area": 1963.6,
+   "bbox": [
+    -432.81,
+    205.54,
+    -343.32,
+    263.85
+   ],
+   "dist_to_route": 4.8,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "polygon": [
+    [
+     -432.81,
+     222.8
+    ],
+    [
+     -426.26,
+     207.53
+    ],
+    [
+     -418.37,
+     205.54
+    ],
+    [
+     -346.4,
+     242.29
+    ],
+    [
+     -343.32,
+     249.97
+    ],
+    [
+     -350.71,
+     263.85
+    ]
+   ]
+  },
+  {
+   "id": "area_565475715",
+   "osm_id": 565475715,
+   "kind": "parking",
+   "name": null,
+   "area": 1906.6,
+   "bbox": [
+    -105.08,
+    57.5,
+    -16.79,
+    94.44
+   ],
+   "dist_to_route": 3.3,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "polygon": [
+    [
+     -26.73,
+     94.44
+    ],
+    [
+     -51.72,
+     94.44
+    ],
+    [
+     -85.67,
+     87.93
+    ],
+    [
+     -105.08,
+     80.92
+    ],
+    [
+     -100.22,
+     75.86
+    ],
+    [
+     -83.97,
+     80.19
+    ],
+    [
+     -59.72,
+     62.33
+    ],
+    [
+     -27.95,
+     57.5
+    ],
+    [
+     -16.79,
+     91.79
+    ]
+   ]
+  },
+  {
+   "id": "area_98854010",
+   "osm_id": 98854010,
+   "kind": "park",
+   "name": null,
+   "area": 1856.3,
+   "bbox": [
+    -340.17,
+    253.53,
+    -261.25,
+    308.59
+   ],
+   "dist_to_route": 6.6,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "polygon": [
+    [
+     -261.25,
+     284.63
+    ],
+    [
+     -263.62,
+     308.59
+    ],
+    [
+     -340.17,
+     272.6
+    ],
+    [
+     -331.47,
+     254.79
+    ],
+    [
+     -324.96,
+     253.53
+    ]
+   ]
+  },
+  {
+   "id": "area_771657598",
+   "osm_id": 771657598,
+   "kind": "parking",
+   "name": null,
+   "area": 1362.7,
+   "bbox": [
+    104.04,
+    -30.23,
+    171.53,
+    18.25
+   ],
+   "dist_to_route": 4.5,
+   "near_route": [
+    "east_gate"
+   ],
+   "polygon": [
+    [
+     115.54,
+     18.25
+    ],
+    [
+     104.04,
+     -6.93
+    ],
+    [
+     154.82,
+     -30.23
+    ],
+    [
+     171.53,
+     -19.61
+    ],
+    [
+     134.76,
+     1.81
+    ],
+    [
+     137.4,
+     7.06
+    ]
+   ]
+  },
+  {
+   "id": "area_771657617",
+   "osm_id": 771657617,
+   "kind": "pitch",
+   "name": null,
+   "area": 1283.1,
+   "bbox": [
+    178.32,
+    43.55,
+    222.81,
+    90.26
+   ],
+   "dist_to_route": 54.4,
+   "near_route": [
+    "east_gate"
+   ],
+   "polygon": [
+    [
+     190.24,
+     90.26
+    ],
+    [
+     178.32,
+     54.3
+    ],
+    [
+     209.59,
+     43.55
+    ],
+    [
+     222.81,
+     79.49
+    ]
+   ]
+  },
+  {
+   "id": "area_771657619",
+   "osm_id": 771657619,
+   "kind": "pitch",
+   "name": null,
+   "area": 644.6,
+   "bbox": [
+    158.25,
+    50.0,
+    187.16,
+    90.25
+   ],
+   "dist_to_route": 41.8,
+   "near_route": [
+    "east_gate"
+   ],
+   "polygon": [
+    [
+     171.16,
+     90.25
+    ],
+    [
+     158.25,
+     55.87
+    ],
+    [
+     175.51,
+     50.0
+    ],
+    [
+     187.16,
+     84.8
+    ]
+   ]
+  },
+  {
+   "id": "area_819472787",
+   "osm_id": 819472787,
+   "kind": "parking",
+   "name": null,
+   "area": 329.3,
+   "bbox": [
+    239.43,
+    -9.8,
+    259.91,
+    27.86
+   ],
+   "dist_to_route": 36.5,
+   "near_route": [
+    "east_gate"
+   ],
+   "polygon": [
+    [
+     251.44,
+     8.04
+    ],
+    [
+     259.91,
+     6.47
+    ],
+    [
+     255.57,
+     27.86
+    ],
+    [
+     251.24,
+     27.86
+    ],
+    [
+     239.43,
+     0.39
+    ],
+    [
+     244.15,
+     -9.8
+    ]
+   ]
+  },
+  {
+   "id": "area_819288725",
+   "osm_id": 819288725,
+   "kind": "parking",
+   "name": null,
+   "area": 311.2,
+   "bbox": [
+    -452.44,
+    187.21,
+    -428.45,
+    210.41
+   ],
+   "dist_to_route": 3.4,
+   "near_route": [
+    "nw_gate",
+    "east_gate"
+   ],
+   "polygon": [
+    [
+     -445.64,
+     187.21
+    ],
+    [
+     -428.45,
+     198.03
+    ],
+    [
+     -435.92,
+     210.41
+    ],
+    [
+     -452.44,
+     204.78
+    ]
+   ]
+  }
+ ]
+}

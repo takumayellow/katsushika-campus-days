@@ -32,6 +32,7 @@ namespace KCD
         private AudioSource _se;
         private AudioSource _ui;
         private AudioSource _voice;
+        private AudioSource _chime;
 
         private string _currentBgm = string.Empty;
         private string _currentAmbient = string.Empty;
@@ -39,8 +40,11 @@ namespace KCD
         private float _seVolume = DefaultSeVolume;
         private float _ambientVolume = DefaultAmbientVolume;
         private float _fade = 1f;
+        private float _levelA;
+        private float _levelB;
         private float _duck = 1f;
         private float _duckUntil;
+        private float _duckLevel = JingleDuckLevel;
 
         /// <summary>いま鳴っている BGM の id。</summary>
         public string CurrentBgm => _currentBgm;
@@ -96,6 +100,7 @@ namespace KCD
             _se = MakeSource("SE", false);
             _ui = MakeSource("UI", false);
             _voice = MakeSource("Voice", false);
+            _chime = MakeSource("Chime", false);
             _ui.ignoreListenerPause = true;
             SubscribeScene();
         }
@@ -138,12 +143,30 @@ namespace KCD
             }
 
             // 鳴っていない方に次の曲を入れ、フェードで入れ替える。
-            AudioSource next = _fade >= 0.5f ? _bgmB : _bgmA;
+            bool useB = NextBgmIsB(_fade);
+            AudioSource next = useB ? _bgmB : _bgmA;
             next.clip = clip;
             next.loop = true;
             next.volume = 0f;
+            if (useB)
+            {
+                _levelB = 0f;
+            }
+            else
+            {
+                _levelA = 0f;
+            }
+
             next.Play();
-            _fade = next == _bgmB ? 0f : 1f;
+            _fade = useB ? 1f : 0f;
+        }
+
+        /// <summary>
+        /// 次の曲を B に入れるか。_fade は 0 = A が鳴る, 1 = B が鳴る なので, いま鳴っていない側を返す。
+        /// </summary>
+        public static bool NextBgmIsB(float fade)
+        {
+            return fade < 0.5f;
         }
 
         /// <summary>BGM を止める（フェードアウト）。</summary>
@@ -216,14 +239,81 @@ namespace KCD
             }
 
             _se.PlayOneShot(clip, _bgmVolume);
-            _duckUntil = Time.unscaledTime + clip.length;
+            Duck(clip.length);
         }
 
-        /// <summary>床の種類に合わせた足音。4 種類からランダム。</summary>
+        /// <summary>
+        /// 時報チャイム。鳴っている間は BGM を止める（校歌の上に鐘を重ねると調が合わず濁る, #38）。
+        /// 最初の鐘はクリップの頭（0 秒）から鳴るので、専用の AudioSource で ChimeLeadSeconds 遅らせて鳴らし、
+        /// その間に BGM を無音まで下げ切る。残響の尾が消えるころに BGM がフェードで戻る。
+        /// </summary>
+        public void PlayChime()
+        {
+            AudioClip clip = Find("se_chime");
+            if (clip == null)
+            {
+                return;
+            }
+
+            // PlayDelayed はオーディオの時計で数えるので timeScale やフレーム落ちに左右されない。
+            _chime.clip = clip;
+            _chime.volume = _seVolume * ChimeScale;
+            _chime.PlayDelayed(ChimeLeadSeconds);
+            Duck(ChimeLeadSeconds + clip.length * ChimeDuckFraction, ChimeDuckLevel);
+        }
+
+        /// <summary>
+        /// seconds の間 BGM を level 倍に下げる。時間は長い方、レベルは低い方を採る（重ねて呼んでも弱くならない）。
+        /// </summary>
+        public void Duck(float seconds, float level = JingleDuckLevel)
+        {
+            float until = Time.unscaledTime + Mathf.Max(0f, seconds);
+            bool active = Time.unscaledTime < _duckUntil;
+            _duckLevel = active ? Mathf.Min(_duckLevel, level) : Mathf.Clamp01(level);
+            _duckUntil = Mathf.Max(_duckUntil, until);
+        }
+
+        /// <summary>ジングルの間の BGM 音量の倍率。</summary>
+        public const float JingleDuckLevel = 0.35f;
+
+        /// <summary>チャイムの間の BGM 音量の倍率。0 = 止める。</summary>
+        public const float ChimeDuckLevel = 0f;
+
+        /// <summary>チャイムの音量（SE 音量に掛ける）。校内放送のスピーカーから遠く聞こえる程度。</summary>
+        public const float ChimeScale = 0.45f;
+
+        /// <summary>チャイムの長さのうち BGM を止める割合。最後の 1 割ほどは残響の尾で、BGM が戻る間に消える。</summary>
+        public const float ChimeDuckFraction = 0.9f;
+
+        /// <summary>チャイムを遅らせる秒数。この間に BGM を DuckAttackSeconds で無音まで下げ切ってから最初の鐘を鳴らす。</summary>
+        public const float ChimeLeadSeconds = 0.4f;
+
+        /// <summary>ダックで BGM を下げ切る秒数（倍率 1 → 0）。クロスフェード（_bgmFadeSeconds）とは別に速くする。</summary>
+        public const float DuckAttackSeconds = 0.25f;
+
+        /// <summary>ダックの後で BGM を戻す秒数（倍率 0 → 1）。これまでどおりクロスフェードと同じ 1.6 秒でなめらかに戻す。</summary>
+        public const float DuckReleaseSeconds = 1.6f;
+
+        /// <summary>
+        /// 床の種類に合わせた足音。4 種類からランダム。
+        /// その床の音が読み込まれていなければ（シーンを作り直す前の carpet など）タイルの音で代える。
+        /// </summary>
         public void PlayFootstep(string surface, bool running)
         {
-            string id = "step_" + surface + "_" + Random.Range(1, 5);
+            int variant = Random.Range(1, 5);
+            string id = FootstepClipId(surface, variant);
+            if (Find(id) == null)
+            {
+                id = FootstepClipId("tile", variant);
+            }
+
             PlaySe(id, running ? 0.75f : 0.5f);
+        }
+
+        /// <summary>足音のクリップ名（step_床_1〜4）。tools/audio/sfx.py の build_steps が書き出す名前と同じ。</summary>
+        public static string FootstepClipId(string surface, int variant)
+        {
+            return "step_" + surface + "_" + variant;
         }
 
         private AudioSource MakeSource(string name, bool loop)
@@ -245,18 +335,41 @@ namespace KCD
             // _fade: 0 = A が鳴る, 1 = B が鳴る。曲が無いときは両方 0 へ。
             float goalA = target * (1f - Mathf.Round(_fade));
             float goalB = target * Mathf.Round(_fade);
-            _duck = Mathf.MoveTowards(_duck, Time.unscaledTime < _duckUntil ? 0.35f : 1f, deltaTime * 2f);
 
-            _bgmA.volume = Mathf.MoveTowards(_bgmA.volume, goalA * _bgmVolume * _duck, speed * _bgmVolume);
-            _bgmB.volume = Mathf.MoveTowards(_bgmB.volume, goalB * _bgmVolume * _duck, speed * _bgmVolume);
-            StopIfSilent(_bgmA);
-            StopIfSilent(_bgmB);
+            // クロスフェードはダック前の音量 _levelA / _levelB を _bgmFadeSeconds でゆっくり動かし、ダックは最後に掛ける。
+            // 音量そのものを 1.6 秒かけて動かすとダックもその速さに縛られ、最初の鐘の下で BGM が鳴り続けていた（#38）。
+            _levelA = Mathf.MoveTowards(_levelA, goalA, speed);
+            _levelB = Mathf.MoveTowards(_levelB, goalB, speed);
+            _duck = StepDuck(_duck, Time.unscaledTime < _duckUntil ? _duckLevel : 1f, deltaTime);
+
+            _bgmA.volume = _levelA * _bgmVolume * _duck;
+            _bgmB.volume = _levelB * _bgmVolume * _duck;
+            StopIfSilent(_bgmA, _levelA, goalA);
+            StopIfSilent(_bgmB, _levelB, goalB);
             _ambient.volume = _ambientVolume;
         }
 
-        private static void StopIfSilent(AudioSource source)
+        /// <summary>
+        /// ダックの倍率を 1 フレーム進める。下げるときは DuckAttackSeconds で速く、戻すときは DuckReleaseSeconds でなめらかに。
+        /// </summary>
+        public static float StepDuck(float duck, float target, float deltaTime)
         {
-            if (source.isPlaying && source.volume <= 0.0001f)
+            float seconds = target < duck ? DuckAttackSeconds : DuckReleaseSeconds;
+            return Mathf.MoveTowards(duck, target, deltaTime / seconds);
+        }
+
+        /// <summary>
+        /// フェードアウトし切った側を止める。level はダック前の音量、goal はダック前の目標なので、
+        /// チャイムで 0 まで下げている間も現在の曲は（無音のまま）流れ続け、戻るときに頭から始まらない。
+        /// </summary>
+        public static bool ShouldStopSilent(bool isPlaying, float level, float goal)
+        {
+            return isPlaying && goal <= 0f && level <= 0.0001f;
+        }
+
+        private static void StopIfSilent(AudioSource source, float level, float goal)
+        {
+            if (ShouldStopSilent(source.isPlaying, level, goal))
             {
                 source.Stop();
             }

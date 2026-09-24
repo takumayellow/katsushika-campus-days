@@ -63,8 +63,14 @@ namespace KCD
 
             hud.ShowToast(L.Pick("東京理科大学 葛飾キャンパス", "Tokyo University of Science, Katsushika Campus"));
             hud.ShowToast(L.Pick(
-                "WASD で移動　Shift でダッシュ　E で話す　Tab でクエスト",
-                "WASD Move   Shift Sprint   E Talk   Tab Quests"));
+                "WASD / 矢印キーで移動　Shift でダッシュ　E で話す　Tab でクエスト",
+                "WASD / Arrows Move   Shift Sprint   E Talk   Tab Quests"));
+
+            // Web 版はカーソルがブラウザのポインターロックに取られる。外し方と全画面の出し方を最初に伝える (#48)。
+            if (Application.platform == RuntimePlatform.WebGLPlayer)
+            {
+                hud.ShowToast(L.Get("ui.hud.web_controls", "Esc でマウスを解放　F で全画面"));
+            }
         }
 
         private void OnApplicationFocus(bool hasFocus)

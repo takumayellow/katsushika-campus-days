@@ -152,14 +152,30 @@ namespace KCD
 
             string fileName = "kcd_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".png";
             string folder = Path.Combine(Application.persistentDataPath, FolderName);
+            bool saved;
             try
             {
                 Directory.CreateDirectory(folder);
                 ScreenCapture.CaptureScreenshot(Path.Combine(folder, fileName));
+                saved = true;
             }
             catch (Exception error)
             {
+                saved = false;
                 Debug.LogWarning("[KCD] 写真の保存に失敗: " + error.Message);
+            }
+
+            if (!saved)
+            {
+                // 保存できなかった撮影は枚数にも収集にも数えない。
+                if (overlayWasVisible)
+                {
+                    SetOverlay(true);
+                }
+
+                HUD.Instance?.ShowToast(L.Pick("写真を保存できませんでした", "Could not save the photo"));
+                _capturing = false;
+                yield break;
             }
 
             _count++;

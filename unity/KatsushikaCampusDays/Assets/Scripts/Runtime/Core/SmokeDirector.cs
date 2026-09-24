@@ -13,6 +13,8 @@ namespace KCD
     ///   -kcd-talk inari        NPC の前へワープして会話を始める
     ///   -kcd-interior kyoso    建物の中へ入る
     ///   -kcd-title-yaw 180     タイトルの立ち姿の向きを試す
+    ///   -kcd-chara botchan     操作するキャラを選んでから本編へ入る（選択は PlayerPrefs に残る）
+    ///   -kcd-wave inari        NPC の斜め後ろ 3.5 m へワープして、Q（手を振る）を 2.5 秒おきに 30 回押す
     /// 通常起動では何も生まれないので、製品版の挙動には影響しない。
     /// </summary>
     public sealed class SmokeDirector : MonoBehaviour
@@ -20,6 +22,8 @@ namespace KCD
         private string _start;
         private string _talk;
         private string _interior;
+        private string _chara;
+        private string _wave;
         private float _hours = -1f;
         private float _titleYaw = float.NaN;
         private float _faceCam = float.NaN;
@@ -72,6 +76,8 @@ namespace KCD
             _start = Arg("-kcd-start");
             _talk = Arg("-kcd-talk");
             _interior = Arg("-kcd-interior");
+            _chara = Arg("-kcd-chara");
+            _wave = Arg("-kcd-wave");
             _hours = ArgFloat("-kcd-time", -1f);
             _titleYaw = ArgFloat("-kcd-title-yaw", float.NaN);
             _faceCam = ArgFloat("-kcd-face-cam", float.NaN);
@@ -136,7 +142,17 @@ namespace KCD
 
             if (_start == "campus")
             {
-                SmokeProbe.Log("EnterCampus");
+                // 知らない id を入れると PlayerPrefs に残り、次の通常起動まで引きずるので弾く。
+                if (Array.IndexOf(GameManager.PlayableCharacterIds, _chara) >= 0)
+                {
+                    GameManager.Instance.SelectedCharacterId = _chara;
+                }
+                else if (!string.IsNullOrEmpty(_chara))
+                {
+                    Debug.LogWarning("[KCD] スモーク: 選べないキャラ: " + _chara);
+                }
+
+                SmokeProbe.Log("EnterCampus as " + GameManager.Instance.SelectedCharacterId);
                 GameManager.Instance.EnterCampus();
             }
         }
@@ -168,6 +184,11 @@ namespace KCD
             if (!string.IsNullOrEmpty(_talk))
             {
                 TalkTo(_talk);
+            }
+
+            if (!string.IsNullOrEmpty(_wave))
+            {
+                StartCoroutine(WaveAt(_wave));
             }
 
             yield return new WaitForSecondsRealtime(1f);
@@ -211,6 +232,45 @@ namespace KCD
             }
 
             SmokeProbe.Log("hide-outline: " + count);
+        }
+
+        /// <summary>
+        /// NPC の斜め後ろに立って手を振り、振り返してくれるかを撮る。
+        /// 撮る瞬間が読めないので、振り返しの長さ（NPCWander.WaveBackSeconds）より少し間を空けて振り続ける。
+        /// </summary>
+        private static IEnumerator WaveAt(string npcId)
+        {
+            PlayerController player = FindAnyObjectByType<PlayerController>();
+            NPCTalker target = null;
+            foreach (NPCTalker talker in FindObjectsByType<NPCTalker>(FindObjectsSortMode.None))
+            {
+                if (talker.NpcId == npcId)
+                {
+                    target = talker;
+                    break;
+                }
+            }
+
+            if (player == null || target == null)
+            {
+                Debug.LogWarning("[KCD] スモーク: NPC が見つかりません: " + npcId);
+                yield break;
+            }
+
+            Vector3 away = -target.transform.forward + target.transform.right;
+            away.y = 0f;
+            away = away.sqrMagnitude < 0.01f ? Vector3.back : away.normalized;
+            Vector3 stand = target.transform.position + away * 3.5f;
+            float yaw = Mathf.Atan2(-away.x, -away.z) * Mathf.Rad2Deg;
+            player.Teleport(stand, yaw);
+            CameraRig.SnapBehind(player.transform);
+            PlayerAnimatorDriver driver = player.GetComponent<PlayerAnimatorDriver>();
+            SmokeProbe.Log("wave at " + npcId);
+            for (int i = 0; i < 30 && driver != null; i++)
+            {
+                driver.WaveHello();
+                yield return new WaitForSecondsRealtime(NPCWander.WaveBackSeconds + 0.5f);
+            }
         }
 
         private static void TalkTo(string npcId)

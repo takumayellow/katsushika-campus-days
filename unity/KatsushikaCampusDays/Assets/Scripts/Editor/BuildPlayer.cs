@@ -37,6 +37,12 @@ namespace KCD.Editor
                 return;
             }
 
+            if (!EnsureActiveTarget(BuildTargetGroup.Standalone, BuildTarget.StandaloneWindows64))
+            {
+                EditorApplication.Exit(1);
+                return;
+            }
+
             Prepare();
 
             var options = new BuildPlayerOptions
@@ -79,6 +85,12 @@ namespace KCD.Editor
                 return;
             }
 
+            if (!EnsureActiveTarget(BuildTargetGroup.WebGL, BuildTarget.WebGL))
+            {
+                EditorApplication.Exit(1);
+                return;
+            }
+
             Prepare();
             PrepareWebGL();
 
@@ -102,6 +114,31 @@ namespace KCD.Editor
             {
                 EditorApplication.Exit(1);
             }
+        }
+
+        /// <summary>
+        /// 作業中のプラットフォームをビルド先に合わせる。
+        /// URP はビルド前処理で EditorUserBuildSettings.activeBuildTarget の品質レベルから URP アセットを集め,
+        /// その設定で Shader のバリアントを絞る。Windows のまま WebGL を出すと PC_RPAsset (Forward+) で絞られ,
+        /// WebGL が実際に使う Mobile_RPAsset (Forward) 用の ForwardLit が 1 つも入らず, 建物と地面が描かれない。
+        /// 起動時に -buildTarget を付ければ切り替えは起きない。
+        /// </summary>
+        private static bool EnsureActiveTarget(BuildTargetGroup group, BuildTarget target)
+        {
+            if (EditorUserBuildSettings.activeBuildTarget == target)
+            {
+                return true;
+            }
+
+            EditorPaths.Report("作業中のプラットフォームを " + EditorUserBuildSettings.activeBuildTarget
+                + " から " + target + " に切り替える (URP の Shader 絞り込みをビルド先に合わせる)");
+            if (EditorUserBuildSettings.SwitchActiveBuildTarget(group, target))
+            {
+                return true;
+            }
+
+            EditorPaths.Report("プラットフォームを " + target + " に切り替えられなかった。モジュールが入っているか確認する。");
+            return false;
         }
 
         /// <summary>-buildOutput があればそれを、無ければリポジトリ直下の build/WebGL を使う。</summary>
@@ -128,7 +165,9 @@ namespace KCD.Editor
             PlayerSettings.WebGL.threadsSupport = false;
             PlayerSettings.WebGL.dataCaching = true;
             PlayerSettings.WebGL.exceptionSupport = WebGLExceptionSupport.ExplicitlyThrownExceptionsOnly;
-            PlayerSettings.WebGL.template = "APPLICATION:Default";
+            // 自前のテンプレート（Assets/WebGLTemplates/KCD）。大きな全画面ボタンと、
+            // 「Esc でマウスを解放 / F で全画面」の案内をページに常に出す (#48)。
+            PlayerSettings.WebGL.template = "PROJECT:KCD";
             PlayerSettings.WebGL.initialMemorySize = 256;
             PlayerSettings.WebGL.maximumMemorySize = 2048;
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.WebGL, ScriptingImplementation.IL2CPP);

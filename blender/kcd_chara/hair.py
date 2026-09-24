@@ -20,8 +20,19 @@ def _angdist(az: np.ndarray) -> np.ndarray:
     return np.abs(((np.asarray(az) - FRONT + math.pi) % (2 * math.pi)) - math.pi)
 
 
-def _el_max(az: np.ndarray, front: float, back: float, power: float = 0.75):
+def _el_max(az: np.ndarray, front: float, back: float, power: float = 0.75,
+            flat_front: float = 0.0):
+    """方位角ごとの地髪の縁（生え際）の仰角。
+
+    d**power は d=0 で傾きが無限大なので、正面の生え際が尖った Λ になり、
+    額の中央だけ髪が下りてくる。flat_front > 0 なら d がその値になるまで
+    front のまま（仰角一定＝正面から見て水平な生え際）にして、そこから
+    同じ形で back へ向かう。公式の生え際は額の上でほぼ水平なので、
+    髪の帯の厚みが額の端まで一定になる。
+    """
     d = _angdist(az) / math.pi
+    if flat_front > 0.0:
+        d = np.clip((d - flat_front) / (1.0 - flat_front), 0.0, 1.0)
     return front + (back - front) * d**power
 
 
@@ -40,10 +51,25 @@ def scalp_pt(head, az, el, off: float) -> np.ndarray:
 
 
 def build_scalp(mb: M.MeshBuilder, p: dict, head, *, front_el: float,
-                back_el: float, thickness: float, part: str = "hair_cap"):
-    nu, nv = 32, 10
+                back_el: float, thickness: float, part: str = "hair_cap",
+                nu: int = 32, flat_front: float = 0.0, jag: float = 0.0,
+                teeth: float = 5.0, jag_span: float = 112.0):
+    """頭皮に沿った地髪の殻。縁が生え際になる。
+
+    jag > 0 なら額側の縁に切れ込みを入れる。真円の縁は水泳帽に見えるので、
+    公式のように髪が額へ尖って食い込む形にするための刻み。
+    """
+    nv = 10
     az = np.linspace(0.0, 2 * math.pi, nu, endpoint=False)
-    emax = _el_max(az, front_el, back_el)
+    emax = _el_max(az, front_el, back_el, flat_front=flat_front)
+    if jag > 0.0:
+        # 正面からの符号付き角度。ギザギザは額側だけで、側頭部へ向けて消す。
+        off = ((az - FRONT + math.pi) % (2 * math.pi)) - math.pi
+        w = _smooth((math.radians(jag_span) - np.abs(off))
+                    / math.radians(jag_span * 0.55))
+        # |cos| の山は尖る。滑らかな正弦だと波打った縁にしかならず、
+        # 髪が額へ「切れ込む」ようには見えない。
+        emax = emax + jag * w * (1.0 - np.abs(np.cos(teeth * off * 0.5)))
     t_hair = p["head_w"] * thickness
     rings = []
     for j in range(nv + 1):
@@ -177,7 +203,7 @@ def _sheet(mb, part: str, ctrl_fn, us, *, seg: int = 11, frac: float = 0.82,
 
 def _bang_ctrl(p, head, u: float, *, span: float, el: float, z_end: float,
                parted: float, sweep: float, jag: float, phase: float,
-               lift: float, tuck: float = 0.0):
+               lift: float, tuck: float = 0.0, droop: float = 1.0):
     hw, hd, hh = p["head_w"], p["head_d"], p["head_h"]
     az = FRONT + u * span
     s = scalp_pt(head, az, el, hw * lift)[0]
@@ -191,7 +217,7 @@ def _bang_ctrl(p, head, u: float, *, span: float, el: float, z_end: float,
     jz = hh * 0.040 * jag * wob - hh * 0.010 * abs(u)
     # 中央を短く、こめかみへ向かって長くする（額の中央から眉が出る）
     e = np.array([x_end, y_end + hd * 0.040 * tuck,
-                  z_end - hh * 0.085 * abs(u) ** 1.6 + jz])
+                  z_end - hh * 0.085 * droop * abs(u) ** 1.6 + jz])
     c1 = s + np.array([0.0, -hd * 0.14, hh * 0.02])
     # 毛先の手前で一度前へ出してから内へ戻すと、房が額に沿って丸く
     # 内巻きになる（板を貼り付けたようにならない）
@@ -204,44 +230,70 @@ def _bang_ctrl(p, head, u: float, *, span: float, el: float, z_end: float,
 
 def _bangs(mb, p, head, *, span: float, count: int, el: float,
            end_v: float, width: float, parted: float = 0.0, sweep: float = 0.0,
-           jag: float = 1.0):
+           jag: float = 1.0, blunt: float = 0.0):
     """前髪。5〜7 房の独立した房で構成する。
 
     - 房は毛先へ向かって細り、先端が尖る（taper）。
     - 房は頭皮から浮かせて（lift）空気層を作る。
     - 房の裏に薄いシェルを張り、房の隙間から地肌が見えないようにする。
+
+    `blunt`（0..1）は「ぱっつん」の度合い。1 に近づけるほど房の長さの散らばり
+    (jag) と中央→こめかみの下がり (droop) を殺し、毛先の半径を残して房どうしを
+    重ねるので、下端が 1 本の水平線になる。公式 tus_chara02.jpg の
+    マドンナちゃんの前髪は真横一文字なので、0 のままだと鋸歯が 9 枚並ぶ。
     """
     hw, hh = p["head_w"], p["head_h"]
     z0 = p["z"]["chin"] - hh * 0.015
     z1 = p["z"]["top"]
     z_end = z0 + (z1 - z0) * end_v
-    n = int(min(7, max(5, round(count * 0.42))))
+    # ぱっつんは「細い房をたくさん並べて下端を揃える」。房を太らせて数を
+    # 据え置くと 1 本が直径 0.59 頭幅の腸詰めになり、6 本が額の上で融合して
+    # 「積み重ねた饅頭」の冠になる（実際そう見えた）。数で埋める。
+    n = int(min(16, max(5, round(count * (0.42 + 0.58 * blunt)))))
+    jag = jag * (1.0 - 0.92 * blunt)
+    droop = 1.0 - 0.72 * blunt
 
     # 裏当て。房より少し長くしておかないと房の隙間から地肌が覗く。
     _sheet(mb, "hair_front",
            lambda u: _bang_ctrl(p, head, u, span=span * 1.02, el=el + 0.03,
                                 z_end=z_end - hh * 0.030, parted=parted,
-                                sweep=sweep, jag=0.0, phase=0.0, lift=0.026),
-           np.linspace(-1.0, 1.0, 23), seg=11, frac=0.90, thick=hw * 0.018)
+                                sweep=sweep, jag=0.0, phase=0.0, lift=0.026,
+                                droop=droop),
+           np.linspace(-1.0, 1.0, 23), seg=11, frac=0.90,
+           thick=hw * (0.018 + 0.022 * blunt))
 
-    r0 = hw * (span / n) * 0.98
+    # ぱっつんでは裏当てのシェルが前髪の本体で、房はその上に乗る細い畝。
+    # 房を太いままにすると側面から額の前へ 0.19 頭高も突き出した庇になる。
+    r0 = hw * (span / n) * (0.98 - 0.30 * blunt)
+    tip = 0.05 + 0.45 * blunt
+    flat_b = 0.74 - 0.45 * blunt
+    # ぱっつんでは房の毛先を裏当てシェルの下端より上で止める。房の丸い
+    # 毛先がシェルより下に出ると、輪郭シェーダが房 1 本ずつを縁取るので
+    # 前髪の下端が「櫛の歯」に見える（レンダ拡大で 9 枚の歯を確認）。
+    z_tip = z_end + hh * 0.060 * blunt
     for i in range(n):
         u = (i + 0.5) / n * 2.0 - 1.0
         # 房ごとに頭皮からの浮きを変える。全部同じだと 1 枚の板に見える。
-        lift = 0.070 + 0.030 * math.sin(i * 2.399 + 0.6)
-        ctrl = _bang_ctrl(p, head, u, span=span, el=el, z_end=z_end,
+        lift = (0.070 - 0.038 * blunt
+                + 0.030 * math.sin(i * 2.399 + 0.6) * (1.0 - blunt))
+        ctrl = _bang_ctrl(p, head, u, span=span, el=el, z_end=z_tip,
                           parted=parted, sweep=sweep, jag=jag, phase=i,
-                          lift=lift, tuck=0.9)
-        strand(mb, "hair_front", ctrl, r0, r0 * 0.05, n=10, flat=0.74,
-               power=2.0, seg=14, taper=2.0, root=0.30)
-        if i < n - 1:
+                          lift=lift, tuck=0.9, droop=droop)
+        strand(mb, "hair_front", ctrl, r0, r0 * tip, n=10, flat=flat_b,
+               power=2.0, seg=14, taper=2.0 - 1.3 * blunt, root=0.30)
+        # ぱっつんでは本数で埋めるので、房の間に差し込む半房は要らない
+        # （入れると房が 2 枚重なって額が団子で埋まる）。
+        if i < n - 1 and blunt < 0.5:
             u2 = u + 1.0 / n
-            ctrl2 = _bang_ctrl(p, head, u2, span=span, el=el - 0.055,
-                               z_end=z_end - hh * 0.048, parted=parted,
-                               sweep=sweep, jag=jag * 1.5, phase=i + 0.5,
-                               lift=0.046, tuck=0.6)
-            strand(mb, "hair_front", ctrl2, r0 * 0.52, r0 * 0.06, n=8,
-                   flat=0.66, power=2.0, seg=12, taper=1.9, root=0.30)
+            ctrl2 = _bang_ctrl(p, head, u2, span=span,
+                               el=el - 0.055 * (1.0 - 0.6 * blunt),
+                               z_end=z_end - hh * 0.048 * (1.0 - 0.85 * blunt),
+                               parted=parted, sweep=sweep, jag=jag * 1.5,
+                               phase=i + 0.5, lift=0.046, tuck=0.6,
+                               droop=droop)
+            strand(mb, "hair_front", ctrl2, r0 * (0.52 + 0.34 * blunt),
+                   r0 * (0.06 + 0.40 * blunt), n=8, flat=0.66, power=2.0,
+                   seg=12, taper=1.9 - 1.2 * blunt, root=0.30)
 
 
 def _side(mb, p, head, *, count: int, az_lo: float, az_hi: float, el: float,
@@ -348,34 +400,62 @@ def _spikes(mb, p, head, *, count: int, span: float, el: float,
                power=2.0, seg=9, taper=taper)
 
 
-def _ridge_spikes(mb, p, head, *, n: int, th_lo: float, th_hi: float,
-                  length: float, lean: float = 0.35, base: float = 0.60,
-                  flat: float = 0.55, zig: float = 0.0, part="hair_front",
-                  phase: float = 0.0, root_off: float = 0.10):
-    """頭頂の稜線（正面→後頭部）に沿って並ぶトゲ房。横から見た輪郭が
-    ギザギザになる。zig で左右に振ると正面から見ても山が並ぶ。"""
+def _crest_tufts(mb, p, head, rows, rim, *, az_span: float, length: float,
+                 lean: float = -0.34, base: float = 0.050,
+                 flat: float = 0.62, out_mix: float = 0.30,
+                 part: str = "hair_front", root_off: float = 0.11):
+    """額の上に立てる跳ねたトゲ房の束（坊っちゃんの逆立てた前髪）。
+
+    頭頂の稜線（正面→後頭部）に並べると、横から見たとき前後に連なる
+    フィンになって鶏冠＝ちょんまげに見える。公式イラストのトゲは額の
+    上だけに 3 つ、しかも前へ倒れながら跳ねているので、稜線ではなく
+    前頭部の「方位角 × 仰角」の面へ散らす。1 本を細くして本数を稼ぐと、
+    大きな三角板ではなく毛束に見える。
+
+    rows は (生え際比, 本数, 長さ倍率, 太さ倍率) の並び。仰角を直接では
+    なく生え際（rim(az)）に対する比で持つのは、生え際の高さを変えても
+    房の根元が地髪の外へ飛び出さないようにするため。1.0 が生え際、
+    0.0 が頭頂。
+    """
     hw, hh = p["head_w"], p["head_h"]
     up = np.array([0.0, 0.0, 1.0])
-    r0 = hw * base * (th_hi - th_lo) / n
-    for i in range(n):
-        t = (i + 0.5 + phase) / n
-        # th < 0 は正面側、th > 0 は後頭部側の頭頂からの角度
-        th = th_lo + (th_hi - th_lo) * t
-        az = (FRONT if th < 0.0 else FRONT + math.pi)             + zig * (1.0 if i % 2 == 0 else -1.0)
-        el = abs(th)
-        # 根元は地髪の殻の表面。頭皮に置くと厚い殻に埋もれて先しか出ない。
-        s = scalp_pt(head, az, el, hw * root_off)[0]
-        d = M.normalize(s - head.center)
-        wob = 0.86 + 0.14 * math.sin(i * 2.399 + 0.4)
-        # 前ほど長く、後ろへ行くほど短い
-        length_i = hh * length * wob * (1.0 - 0.35 * t)
-        direction = M.normalize(up * 1.0 + d * 0.45
-                                + np.array([0.0, lean, 0.0]))
-        e = s + direction * length_i
-        c1 = s + d * length_i * 0.32 + up * length_i * 0.10
-        c2 = s + direction * length_i * 0.68
-        strand(mb, part, (s, c1, c2, e), r0, r0 * 0.04, n=8, flat=flat,
-               power=2.0, seg=9, taper=1.2)
+    for ri, (frac, cnt, lsc, wsc) in enumerate(rows):
+        r0 = hw * base * wsc
+        for i in range(cnt):
+            u = (i + 0.5) / cnt * 2.0 - 1.0
+            # 行ごとに半ピッチずらす。真上から見て格子に揃うと櫛の歯になる。
+            u += (0.5 / cnt) * (1.0 if ri % 2 else -1.0)
+            # 1 本ずつ間隔・長さ・傾きをずらす。等間隔で同じ高さのトゲが
+            # 並ぶと、正面から見て王冠（ノコギリ刃）にしか見えない。公式の
+            # トゲは高さも角度もバラバラ。乱数だとビルドのたびに形が変わって
+            # 差分が出るので、周期の違う sin を足して固定のゆらぎにする。
+            w1 = math.sin(i * 2.399 + ri * 1.31)
+            w2 = math.sin(i * 5.051 + ri * 2.713)
+            u += (0.62 / cnt) * w2
+            az = FRONT + u * az_span * 0.5
+            el = max(0.04, frac * float(rim(az)))
+            # 根元は地髪の殻の中（殻の厚み 0.14hw より内側）。殻の外に
+            # 置くと房の切り口が輪になって浮く。
+            s = scalp_pt(head, az, el, hw * root_off)[0]
+            d = M.normalize(s - head.center)
+            wob = 1.0 + 0.30 * (0.62 * w1 + 0.38 * w2)
+            # 中央を長く、こめかみ側を短く。公式も中央の 1 本が一番高い。
+            li = hh * length * lsc * wob * (1.0 - 0.26 * abs(u) ** 1.5)
+            # lean < 0 は前（-Y）。外向き d の比率 out_mix を小さくすると
+            # 房どうしが平行に近くなって重なり、1 つの束に見える。大きいと
+            # 放射状に開いて、鉄兜に棘を植えたように見える。
+            direction = M.normalize(up + d * out_mix
+                                    + np.array([0.0, lean * (1.0 + 0.30 * w2),
+                                                0.0]))
+            e = s + direction * li
+            c1 = s + d * li * 0.34 + up * li * 0.10
+            c2 = s + direction * li * 0.70
+            # frames() の法線は矢状面（前後）に来るので flat は前後方向を
+            # 潰す。断面を前後に薄く・左右に広い刃にすると、正面から見て
+            # 隣の房と繋がった一群の山になり、円錐の棘が生えた鉄兜に
+            # 見えなくなる。power を上げて角を立てるのも同じ狙い。
+            strand(mb, part, (s, c1, c2, e), r0, r0 * 0.04, n=8, flat=flat,
+                   power=2.8, seg=8, taper=1.25)
 
 
 def _tail(mb, p, head, origin, direction, length: float, *, width: float,
@@ -409,11 +489,19 @@ def _hairpin(mb, p, head):
 
 
 def _bow(mb, p, head, mat: str = "ribbon_red", scale: float | None = None):
-    """頭頂の大きなリボン。`bow_scale` で原作の大きさに合わせて拡大する。"""
+    """頭頂のリボン。`bow_scale` で原作の大きさに合わせる。
+
+    公式 tus_chara02.jpg の実測は 65x32px = 頭の輪郭幅の 0.66 x 見えている
+    頭の高さの 0.39（縦横比 2.03）。羽の端は結び目から左右へ 0.33*head_w*bs、
+    羽そのものの半径が 0.185*head_w*bs なので、全幅はほぼ head_w*bs になる。
+    頭の輪郭は head_w の 1.21 倍まで髪で広がるので bs = 0.66*1.21 = 0.80 前後。
+    結び目の el は 0.46 だと額寄りに落ちて「頭に刺した羽根」に見えたので、
+    公式どおり頭頂へ上げる。
+    """
     hw, hd, hh = p["head_w"], p["head_d"], p["head_h"]
     bs = float(p.get("bow_scale", 1.0) if scale is None else scale)
     az = FRONT + math.radians(10.0)
-    knot = scalp_pt(head, az, 0.46, hw * 0.14)[0]
+    knot = scalp_pt(head, az, 0.26, hw * 0.11)[0]
     with mb.part("hair_acc"):
         mb.add_sphere(tuple(knot), (hw * 0.100 * bs, hw * 0.088 * bs,
                                     hh * 0.082 * bs), mat, nu=12, nv=8)
@@ -429,14 +517,17 @@ def _bow(mb, p, head, mat: str = "ribbon_red", scale: float | None = None):
         c1 = knot + d * hw * 0.16 * bs + up * hh * 0.036 * bs
         c2 = knot + d * hw * 0.28 * bs + up * hh * 0.020 * bs
         c3 = knot + d * hw * 0.33 * bs - up * hh * 0.026 * bs
+        # flat=0.78 だと羽が薄すぎて縦横比 3.5 の「潰れた帯」になる。
+        # 公式の 2.03 に合わせて厚みを残す。
         strand(mb, "hair_acc", (c0, c1, c2, c3),
-               hw * 0.055 * bs, hw * 0.185 * bs, flat=0.78, power=2.2,
+               hw * 0.055 * bs, hw * 0.185 * bs, flat=1.00, power=2.2,
                taper=1.0, mat=mat)
     # 垂れ
     for sgn in (-1, 1):
         st = knot + side * sgn * hw * 0.05 * bs
+        # 垂れは公式では短く、リボンの下にわずかに覗くだけ
         e = st + np.array([side[0] * sgn * hw * 0.10 * bs, hd * 0.04,
-                           -hh * 0.42 * bs])
+                           -hh * 0.26 * bs])
         strand(mb, "hair_acc", (st, st + np.array([0.0, 0.0, -hh * 0.16 * bs]),
                                 e + np.array([0.0, 0.0, hh * 0.14 * bs]), e),
                hw * 0.055 * bs, hw * 0.045 * bs, flat=0.30, power=3.0, mat=mat)
@@ -552,12 +643,16 @@ def build_hair(mb: M.MeshBuilder, p: dict, head, a, fs, uv_box) -> None:
                end_v=0.614, width=0.152)
 
     elif style == "long_blunt":
+        # 公式 tus_chara02.jpg の頭頂はつるりとした 1 枚のドームで、畝も瘤も
+        # 無い。ridge_amp=0.34 / ridges=16 だと正面から団子が 6 個並んで
+        # 「積み重ねた饅頭」に見えたので、畝を細かく・浅くして艶だけ残す。
+        # 毛先の jag も、公式のストレートロングに合わせてほぼ平らにする。
         build_helmet(mb, p, head, front_el=0.70, back_el=1.70, thickness=0.104,
                      z_end_side=z["bust"], z_end_back=z["waist"] - 0.02,
-                     puff=1.25, ridges=16, ridge_amp=0.34, jag=0.028,
+                     puff=1.25, ridges=34, ridge_amp=0.026, jag=0.011,
                      inward=0.74, depth=0.12)
         _bangs(mb, p, head, span=math.radians(80.0), count=15, el=0.62,
-               end_v=0.655, width=0.116)
+               end_v=0.655, width=0.116, blunt=0.88)
 
     elif style == "twintail":
         build_helmet(mb, p, head, front_el=0.64, back_el=1.62, thickness=0.082,
@@ -607,32 +702,64 @@ def build_hair(mb: M.MeshBuilder, p: dict, head, a, fs, uv_box) -> None:
                end_v=0.662, width=0.112)
 
     elif style == "crew":
-        # 坊っちゃん: 逆立てた短い黒髪。地髪は厚めに、生え際から上へ跳ねる
-        # トゲ房を前に並べ、その後ろにもう一列。横髪は作らず耳を出す。
-        build_scalp(mb, p, head, front_el=1.02, back_el=1.92, thickness=0.140)
-        # 頭頂の輪郭に沿って大きく尖った房を 3 列。数を絞って 1 本ずつ
-        # はっきり尖らせる（多いと松かさになる）。
-        # 頭頂の稜線に沿って前から後ろへトゲを並べる。横から見て輪郭が
-        # ギザギザになり、正面からは左右に振った山が並ぶ。
-        _ridge_spikes(mb, p, head, n=6, th_lo=-0.72, th_hi=0.62, length=0.30,
-                      lean=0.30, base=1.10, flat=0.55, zig=math.radians(14.0),
-                      root_off=0.11)
-        _ridge_spikes(mb, p, head, n=5, th_lo=-0.64, th_hi=0.54, length=0.24,
-                      lean=0.40, base=0.95, flat=0.55,
-                      zig=math.radians(46.0), phase=0.5, root_off=0.11)
-        # 正面から見ても頭頂の幅いっぱいに山が並ぶよう、左右にも一列
-        _ridge_spikes(mb, p, head, n=4, th_lo=-0.60, th_hi=0.48, length=0.20,
-                      lean=0.35, base=1.00, flat=0.55,
-                      zig=math.radians(78.0), phase=0.25, root_off=0.11)
-        hd = p["head_d"]
+        # 坊っちゃん: 逆立てた短い黒髪。額の上にトゲ房を散らし、こめかみから
+        # 耳の前へもみあげを 1 本ずつ降ろす。後ろ髪・横髪は作らず耳を出す。
+        # 生え際を上げる。公式は 顎→生え際 が頭シルエットの 0.80 で額が広い
+        # （front_el=1.02 だと 0.70 しかなく、水泳帽を目深に被って見える）。
+        # flat_front で額の上を水平な帯にし、jag で髪が額へ尖って食い込む。
+        # 殻の厚みは 0.140hw だと頭の輪郭から 0.028 はみ出して兜の縁に見えた。
+        # 0.112hw ではみ出しを 0.020 に減らすと頭に貼り付き、jag の刻みも
+        # 縁が薄くなった分はっきり出る（地肌の透けは正面・側面・背面で無し）。
+        # back_el=1.92（頭頂から 110°）だと殻が後頭部の赤道までで終わり、
+        # 背面プレビューで襟足からうなじにかけて素肌が V 字に露出していた
+        # （botchan_back.png で幅 450px・高さ 140px の禿げ）。公式は後ろ髪が
+        # 顎の高さまで下りているので 2.40（138°）まで回す。
+        # front_el も 0.66 では生え際が頭高の 0.92（公式 0.875）で高すぎた。
+        front_el, back_el, flat_front = 0.78, 2.40, 0.25
+        build_scalp(mb, p, head, front_el=front_el, back_el=back_el,
+                    thickness=0.112, nu=64, flat_front=flat_front,
+                    jag=0.075, teeth=9.0)
+
+        def rim(az):
+            return _el_max(np.array([az]), front_el, back_el,
+                           flat_front=flat_front)[0]
+        # トゲ房は額の上だけ。公式では頭シルエットの上 5〜8% しか出ておらず、
+        # 位置も頭頂ではなく前寄り（頭幅の 0.17〜0.41 の帯）に固まっている。
+        # 行は生え際からの比（1.0=生え際, 0.0=頭頂）で、0.86/0.58/0.30 は
+        # 前頭部の下・中・上。細い房を 14 本重ねて 1 つの毛束に見せる。
+        _crest_tufts(mb, p, head,
+                     ((0.86, 6, 0.82, 1.00),   # 生え際寄り。前へ強く寝る
+                      (0.58, 5, 1.00, 0.92),   # 中段。ここが一番高い
+                      (0.30, 3, 0.74, 0.82)),  # 頭頂寄り。短く立てて奥行きを出す
+                     rim, az_span=math.radians(72.0), length=0.150,
+                     lean=-0.46, base=0.056, flat=0.54, out_mix=0.26,
+                     # 殻を 0.112hw に薄くしたので根元も内側へ。既定の
+                     # 0.11hw だと殻の外に出て切り口が輪になって見える。
+                     root_off=0.086)
+        # もみあげ。正面から 98° だと耳より後ろで、房の先が耳の上端
+        # （body.py の耳球 = z chin+0.355..0.565*head_h）へ刺さっていた。
+        # 耳の前面は同じ耳球から y=-0.030*head_d なので、それより前（-Y）
+        # を通る方位角まで回し、耳の高さの中ほどまで降ろす。
         for sgn in (-1, 1):
-            az = FRONT + sgn * math.radians(98.0)
-            s = scalp_pt(head, az, 1.20, hw * 0.02)[0]
-            e = np.array([s[0] * 1.02, s[1] - hd * 0.02, chin + hh * 0.52])
-            c1 = s + np.array([0.0, 0.0, -hh * 0.06])
-            c2 = e + np.array([0.0, 0.0, hh * 0.05])
-            strand(mb, "hair_side", (s, c1, c2, e), hw * 0.055, hw * 0.012,
-                   n=8, flat=0.70, power=2.0, seg=8, taper=1.4)
+            # 根元は地髪の殻の中。76° の生え際は仰角 1.08 なので、それより
+            # 上（仰角が小さい）から始めれば房の切り口が外に出ない。
+            s = scalp_pt(head, FRONT + sgn * math.radians(76.0), 1.00,
+                         hw * 0.03)[0]
+            # 先端を el=1.72（頭高の 0.435 = 目より下）まで落とすと、頬に
+            # 黒いナイフの刃が貼り付いて見えた。公式のもみあげは眉の高さ
+            # （頭高 0.62 前後）で終わる楔なので el=1.38 で止める。
+            e = scalp_pt(head, FRONT + sgn * math.radians(70.0), 1.38,
+                         hw * 0.022)[0]
+            # 制御点も頭の面の上に取る。直線で結ぶと弧を描く頬にめり込む。
+            c1 = scalp_pt(head, FRONT + sgn * math.radians(74.0), 1.13,
+                          hw * 0.03)[0]
+            c2 = scalp_pt(head, FRONT + sgn * math.radians(72.0), 1.26,
+                          hw * 0.026)[0]
+            # flat を小さくして前後に薄い板にする。こめかみに貼り付いた
+            # 帯に見せたいので、丸い房のままだと角から生えた棒に見える。
+            # 細く尖らせると刃になるので、先端も 0.022hw の幅を残す。
+            strand(mb, "hair_side", (s, c1, c2, e), hw * 0.062, hw * 0.026,
+                   n=8, flat=0.62, power=2.4, seg=8, taper=1.1)
 
     elif style in ("slickback", "short_old"):
         # 頭頂を跨ぐ長い房を放射状に並べると房の間が開いてトゲトゲの

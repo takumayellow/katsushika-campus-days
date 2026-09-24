@@ -3,12 +3,14 @@
     python tools/audio/school_song/build_school_song.py            # 譜面 + MIDI + WAV + manifest
     python tools/audio/school_song/build_school_song.py --no-wav   # 譜面と MIDI だけ (MuseScore 不要)
 
-出力 (tools/audio/school_song/out/):
-    school_song_vocal.musicxml   旋律 1 声部 + 1 番の歌詞. きりたん (NEUTRINO) 等に渡す用
+出力 (tools/audio/school_song/score/):
+    school_song_vocal_draft.musicxml  旋律 1 声部 + 1 番の歌詞 (最初の下書き).
+        きりたん用の正本は手で直した score/school_song_vocal.musicxml (1〜3 番) で, これは上書きしない
     school_song_band.musicxml    吹奏楽風 5 声部 (Fl / Tp / Hn / Pf / Tuba). 前奏 + 1 番 + 2 番の形
     school_song_band.mid         同じ内容の MIDI
 WAV は MuseScore 4 の CLI でレンダリングし, 正規化して
-    unity/KatsushikaCampusDays/Assets/Audio/BGM/bgm_school_song.wav
+    tools/audio/school_song/audio/bgm_band.wav
+に書き, install_game_bgm.py でゲームの BGM (いまは bgm_day) に入れる
 に置く. 生成後は tools/audio/manifest.json と Assets/Audio/README.md も更新する.
 
 旋律の出典は tools/audio/README_school_song.md を参照 (F 長調 4/4, 公式音源の実測テンポ ♩≈104).
@@ -22,7 +24,6 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import time
 import wave
 
 import numpy as np
@@ -38,9 +39,11 @@ import build_audio  # noqa: E402
 import synth as S  # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(AUDIO_TOOLS, "..", ".."))
-OUT_DIR = os.path.join(HERE, "out")
-BGM_NAME = "bgm_school_song"
-BGM_PATH = os.path.join(ROOT, "unity", "KatsushikaCampusDays", "Assets", "Audio", "BGM", BGM_NAME + ".wav")
+OUT_DIR = os.path.join(HERE, "score")
+BGM_NAME = "bgm_band"
+BGM_PATH = os.path.join(HERE, "audio", BGM_NAME + ".wav")
+# ゲーム側の書き込み先. install_game_bgm.py が使う
+GAME_BGM_DIR = os.path.join(ROOT, "unity", "KatsushikaCampusDays", "Assets", "Audio", "BGM")
 MUSESCORE_CANDIDATES = (
     os.environ.get("MUSESCORE_EXE", ""),
     r"C:\Program Files\MuseScore 4\bin\MuseScore4.exe",
@@ -398,12 +401,12 @@ def main(argv: list) -> int:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--no-wav", action="store_true", help="MuseScore でのレンダリングを省く")
-    parser.add_argument("--out", default=BGM_PATH, help="BGM の書き出し先 (既定: Assets/Audio/BGM)")
+    parser.add_argument("--out", default=BGM_PATH, help="WAV の書き出し先 (既定: audio/bgm_band.wav)")
+    parser.add_argument("--no-install", action="store_true", help="ゲームの BGM へ入れない (install_game_bgm.py を呼ばない)")
     args = parser.parse_args(argv[1:])
 
-    t0 = time.time()
     os.makedirs(OUT_DIR, exist_ok=True)
-    vocal_xml = os.path.join(OUT_DIR, "school_song_vocal.musicxml")
+    vocal_xml = os.path.join(OUT_DIR, "school_song_vocal_draft.musicxml")
     band_xml = os.path.join(OUT_DIR, "school_song_band.musicxml")
     band_mid = os.path.join(OUT_DIR, "school_song_band.mid")
 
@@ -425,10 +428,12 @@ def main(argv: list) -> int:
         raw = os.path.join(tmp, "band.wav")
         render_wav(band_xml, raw, exe)
         info = finish_bgm(raw, args.out)
-    print(f"  BGM/{BGM_NAME}.wav  {info['duration_sec']:.2f}s peak {info['peak_dbfs']:+.1f} "
+    print(f"  {os.path.relpath(args.out, ROOT)}  {info['duration_sec']:.2f}s peak {info['peak_dbfs']:+.1f} "
           f"rms {info['rms_dbfs']:+.1f} dBFS")
-    build_audio.write_manifest([info], time.time() - t0)
-    return 0
+    if args.no_install:
+        return 0
+    import install_game_bgm
+    return install_game_bgm.main()
 
 
 if __name__ == "__main__":

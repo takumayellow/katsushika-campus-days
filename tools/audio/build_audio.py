@@ -40,6 +40,9 @@ BGM_BUILDERS = {
     "bgm_result": music.build_result,
     "bgm_anthem_original": music.build_anthem_original,
 }
+# 校歌の音源で差し替え中の BGM. ここでは生成せず school_song/install_game_bgm.py が書く
+# (元の曲に戻すときはここから外す)
+SCHOOL_SONG_BGM = {"bgm_day", "bgm_evening", "bgm_night", "bgm_indoor"}
 JINGLE_BUILDERS = {
     "jingle_quest": music.build_jingle_quest,
     "jingle_day_end": music.build_jingle_day_end,
@@ -52,9 +55,10 @@ def _out(category: str, name: str) -> str:
     return os.path.join(d, name + ".wav")
 
 
-def _emit(category: str, name: str, signal, loop: bool, entries: list) -> None:
+def _emit(category: str, name: str, signal, loop: bool, entries: list,
+          peak_dbfs: float | None = None) -> None:
     path = _out(category, name)
-    S.write_wav(path, signal, peak_dbfs=PEAK_DB[category])
+    S.write_wav(path, signal, peak_dbfs=PEAK_DB[category] if peak_dbfs is None else peak_dbfs)
     info = analyze.analyze(path, loop=loop)
     info.update(
         name=name,
@@ -73,6 +77,9 @@ def _emit(category: str, name: str, signal, loop: bool, entries: list) -> None:
 def build_bgm(entries: list) -> None:
     print("[BGM]")
     for name, fn in BGM_BUILDERS.items():
+        if name in SCHOOL_SONG_BGM:
+            print(f"  BGM/{name}.wav  skip (school_song/install_game_bgm.py)")
+            continue
         _emit("BGM", name, fn(), True, entries)
     for name, fn in JINGLE_BUILDERS.items():
         _emit("BGM", name, fn(), False, entries)
@@ -81,7 +88,8 @@ def build_bgm(entries: list) -> None:
 def build_se(entries: list) -> None:
     print("[SE]")
     for name, sig in sfx.build_steps().items():
-        _emit("SE", name, sig, False, entries)
+        # カーペットの足音は sfx.PEAK_DB で小さく書き出す (ほかは PEAK_DB["SE"])
+        _emit("SE", name, sig, False, entries, peak_dbfs=sfx.PEAK_DB.get(name))
     for name, sig in sfx.build_ui_and_game().items():
         _emit("SE", name, sig, False, entries)
 
@@ -89,7 +97,8 @@ def build_se(entries: list) -> None:
 def build_ambient(entries: list) -> None:
     print("[Ambient]")
     for name, fn in ambient.AMBIENTS.items():
-        _emit("Ambient", name, fn(), True, entries)
+        # 屋内の環境音は ambient.PEAK_DB で小さく書き出す (屋外は PEAK_DB["Ambient"])
+        _emit("Ambient", name, fn(), True, entries, peak_dbfs=ambient.PEAK_DB.get(name))
 
 
 CATEGORIES = {"bgm": build_bgm, "se": build_se, "ambient": build_ambient}

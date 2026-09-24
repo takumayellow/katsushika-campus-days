@@ -48,11 +48,12 @@ def build_lab_tower(mb, b, frame, ctx):
                       seg=3.0, sill=1.15, header=0.45, inset=0.45, mullion=0.36)
     facade.add_facade(mb, loop, 0.0, fh, 0, 1,
                       wall="concrete_dark", glass="glass_dark",
-                      seg=3.6, sill=0.55, header=0.55, inset=0.55, mullion=0.30)
+                      seg=3.6, sill=0.9, header=0.55, inset=0.55, mullion=0.30)
 
     # レンガ色の階段コア（南面のみ。北面は共創棟が全長で接していて、出っ張ると
-    # 共創棟の躯体に 2.7 m 食い込む）
-    for t in (0.10, 0.50, 0.90):
+    # 共創棟の躯体に 2.7 m 食い込む）。中央のコアは入口の切り欠き（u 111..127）の口を
+    # 塞がないよう東へずらす（#39）
+    for t in (0.10, 0.58, 0.90):
         uc = u0 + (u1 - u0) * t
         _brick_core(mb, frame, uc, v0 - 1.4, v0 + 6.0, 0.0, h + 2.2, lv, fh)
 
@@ -72,8 +73,7 @@ def build_lab_tower(mb, b, frame, ctx):
     mb.add_ngon_flat(loop, h, "roof_grey")
     facade.add_parapet(mb, loop, h, 1.2, 0.45, "concrete_light")
     _roof_boxes(mb, frame, (u0, v0, u1, v1), h + 1.2, n=3, du=14.0, dv=16.0, h=3.8)
-    ctx["entrance"].append((b["id"], frame.xy((u0 + u1) * 0.5, v0 - 6.5), 0.0))
-    ctx["sign"].append((b["id"], frame.xy((u0 + u1) * 0.5, v0 - 6.5), 3.4))
+    # 入口と看板は kcd_lib.entrances が置く
 
 
 # --------------------------------------------------------------------------- #
@@ -127,7 +127,8 @@ def build_kyoso(mb, b, frame, ctx):
     facade.add_louvers(mb, loop, 0.0, fh, 1, lv, mat="louver_white",
                        depth=0.6, thick=0.10, edges=louver_edges, per_floor=2)
     # 1F: ラーニングスクエア（全面ガラス）
-    facade.add_curtain_wall(mb, loop, 0.0, fh, 0, 1, seg=3.0, inset=0.30, edges=visible)
+    facade.add_curtain_wall(mb, loop, 0.0, fh, 0, 1, seg=3.0, inset=0.30, edges=visible,
+                            ground_sill=0.9)
     # 隠れた辺は、相手の棟より高い部分だけ壁を出す
     for i, other_h in hidden.items():
         if other_h < h - 0.5:
@@ -154,8 +155,7 @@ def build_kyoso(mb, b, frame, ctx):
     facade.add_parapet(mb, loop, h, 1.1, 0.4, "louver_white", edges=visible)
     _roof_boxes(mb, frame, (u0, v0, u1, v1), h + 1.1, n=2, du=10.0, dv=4.0, h=3.2)
 
-    ctx["entrance"].append((b["id"], frame.xy(sb_u - 8.0, v1 + 4.0), 0.0))
-    ctx["sign"].append((b["id"], frame.xy(sb_u - 8.0, v1 + 4.0), 3.4))
+    # 入口と看板は kcd_lib.entrances が置く
     ctx["kyoso_mall_v"] = v1
     ctx["kyoso_rect"] = loop
 
@@ -183,10 +183,11 @@ def build_lecture(mb, b, frame, ctx):
                       edges=other)
     facade.add_facade(mb, loop, 0.0, fh, 0, 1,
                       wall="concrete_dark", glass="glass_clear",
-                      seg=3.6, sill=0.45, header=0.55, inset=0.5, mullion=0.28,
+                      seg=3.6, sill=0.9, header=0.55, inset=0.5, mullion=0.28,
                       edges=other)
-    # 曲面部＝ガラスの階段ホール（全層吹き抜け）
-    facade.add_curtain_wall(mb, loop, 0.0, fh, 0, lv, seg=2.4, edges=arc_edges, inset=0.18)
+    # 曲面部＝ガラスの階段ホール（全層吹き抜け。1F は腰壁を立てて扉に見えないようにする）
+    facade.add_curtain_wall(mb, loop, 0.0, fh, 0, lv, seg=2.4, edges=arc_edges, inset=0.18,
+                            ground_sill=0.9)
 
     for t in (0.22, 0.78):
         uc = u0 + (u1 - u0) * t
@@ -195,10 +196,7 @@ def build_lecture(mb, b, frame, ctx):
     mb.add_ngon_flat(loop, h, "roof_grey")
     facade.add_parapet(mb, loop, h, 1.15, 0.4, "concrete_light")
     _roof_boxes(mb, frame, (u0, v0, u1, v1), h + 1.15, n=2, du=12.0, dv=13.0, h=3.4)
-
-    ent = frame.xy(u0 + (u1 - u0) * 0.40, v0 - 4.0)
-    ctx["entrance"].append((b["id"], ent, 0.0))
-    ctx["sign"].append((b["id"], ent, 3.4))
+    # 入口と看板は kcd_lib.entrances が置く
 
 
 # --------------------------------------------------------------------------- #
@@ -214,9 +212,11 @@ def build_office(mb, b, frame, ctx):
     facade.add_facade(mb, loop, 0.0, fh, 2, lv,
                       wall="concrete_grey", glass="glass_dark",
                       seg=2.9, sill=1.10, header=0.45, inset=0.42, mullion=0.34)
-    facade.add_facade(mb, loop, 0.0, fh, 0, 2,
-                      wall="concrete_light", glass="glass_clear",
-                      seg=3.4, sill=0.55, header=0.40, inset=0.45, mullion=0.26)
+    # 1〜2F の食堂のガラス面。1F は腰壁を高くして扉に見えないようにする（#39）
+    for f, sill in ((0, 0.9), (1, 0.55)):
+        facade.add_facade(mb, loop, 0.0, fh, f, f + 1,
+                          wall="concrete_light", glass="glass_clear",
+                          seg=3.4, sill=sill, header=0.40, inset=0.45, mullion=0.26)
 
     for t in (0.18, 0.80):
         uc = u0 + (u1 - u0) * t
@@ -225,17 +225,14 @@ def build_office(mb, b, frame, ctx):
     # 西へ張り出す低層部（屋上緑化）
     wing = _uv_rect(frame, u0 - 19.0, v0 + 10.0, u0 + 1.0, v1 - 1.0)
     mb.add_slab(wing, 0.0, 7.2, "concrete_light")
-    facade.add_curtain_wall(mb, wing, 0.0, 3.6, 0, 2, seg=3.0, inset=0.25)
+    facade.add_curtain_wall(mb, wing, 0.0, 3.6, 0, 2, seg=3.0, inset=0.25, ground_sill=0.9)
     mb.add_ngon_flat(geom.offset_polygon(wing, -0.6), 7.35, "grass")
     facade.add_parapet(mb, wing, 7.2, 0.7, 0.35, "concrete_light")
 
     mb.add_ngon_flat(loop, h, "roof_grey")
     facade.add_parapet(mb, loop, h, 1.1, 0.4, "concrete_light")
     _roof_boxes(mb, frame, (u0, v0, u1, v1), h + 1.1, n=2, du=9.0, dv=10.0, h=3.0)
-
-    ent = frame.xy((u0 + u1) * 0.5, v0 - 4.0)
-    ctx["entrance"].append((b["id"], ent, 0.0))
-    ctx["sign"].append((b["id"], ent, 3.4))
+    # 入口と看板は kcd_lib.entrances が置く
 
 
 # --------------------------------------------------------------------------- #
@@ -252,7 +249,7 @@ def build_library(mb, b, frame, ctx):
     facade.add_curtain_wall(mb, loop, 0.0, fh, 1, lv, seg=2.6, inset=0.16)
     inner1 = geom.offset_polygon(loop, -2.2)
     facade.add_curtain_wall(mb, inner1, 0.0, fh, 0, 1, seg=3.0, inset=0.20,
-                            glass="glass_dark")
+                            glass="glass_dark", ground_sill=0.9)
     mb.add_ngon_flat(loop, fh, "concrete_light")  # ピロティの天井 / 2F 床
 
     # 深い軒の大屋根（7 m 跳ね出し・見付 2.2 m の厚い版）
@@ -298,8 +295,7 @@ def build_library(mb, b, frame, ctx):
             mb.add_quad(prev[i], prev[j], cur[j], cur[i], "metal_white")
         prev = cur
 
-    ctx["entrance"].append((b["id"], frame.xy(u1 + 4.0, -24.0), 0.0))
-    ctx["sign"].append((b["id"], frame.xy(u1 + 4.0, -24.0), 3.4))
+    # 入口と看板は kcd_lib.entrances が置く（東面・モールの突き当たり）
     ctx["library_uv"] = (u0, v0, u1, v1)
 
 
@@ -325,9 +321,7 @@ def build_gym(mb, b, frame, ctx):
 
     mb.add_ngon_flat(loop, h, "roof_grey")
     facade.add_parapet(mb, loop, h, 0.9, 0.4, "concrete_light")
-    ent = frame.xy(u0 + (u1 - u0) * 0.5, v0 - 3.5)
-    ctx["entrance"].append((b["id"], ent, 0.0))
-    ctx["sign"].append((b["id"], ent, 3.4))
+    # 入口と看板は kcd_lib.entrances が置く
 
 
 # --------------------------------------------------------------------------- #
@@ -350,9 +344,7 @@ def build_lab_low(mb, b, frame, ctx):
     for t in (0.35, 0.55, 0.75):
         p = frame.xy(u0 + (u1 - u0) * t, (v0 + v1) * 0.5)
         mb.add_cylinder(p[0], p[1], h + 0.9, h + 4.2, 0.85, "metal_grey", seg=10)
-    ent = frame.xy((u0 + u1) * 0.5, v0 - 3.0)
-    ctx["entrance"].append((b["id"], ent, 0.0))
-    ctx["sign"].append((b["id"], ent, 3.0))
+    # 入口と看板は kcd_lib.entrances が置く
 
 
 # --------------------------------------------------------------------------- #
@@ -364,7 +356,8 @@ def build_greenhouse(mb, b, frame, ctx):
     rect = _uv_rect(frame, u0, v0, u1, v1)
     wall_h = 2.0
     ridge = b["height"]
-    facade.add_curtain_wall(mb, rect, 0.0, wall_h, 0, 1, seg=1.6, inset=0.08)
+    facade.add_curtain_wall(mb, rect, 0.0, wall_h, 0, 1, seg=1.6, inset=0.08,
+                            ground_sill=0.5)
     vm = (v0 + v1) * 0.5
     a = frame.xy(u0, v0)
     bb = frame.xy(u1, v0)
@@ -380,7 +373,7 @@ def build_greenhouse(mb, b, frame, ctx):
                 "metal_white")
     mb.add_face([(bb[0], bb[1], wall_h), (c[0], c[1], wall_h), (r1[0], r1[1], ridge)],
                 "metal_white")
-    ctx["entrance"].append((b["id"], frame.xy((u0 + u1) * 0.5, v0 - 2.5), 0.0))
+    # 入口は kcd_lib.entrances が置く（西の妻面）
 
 
 # --------------------------------------------------------------------------- #

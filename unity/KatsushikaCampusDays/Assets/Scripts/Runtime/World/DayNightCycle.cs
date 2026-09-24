@@ -10,7 +10,8 @@ namespace KCD
     public sealed class DayNightCycle : MonoBehaviour
     {
         [SerializeField] private float _realSecondsPerGameDay = 720f;
-        [SerializeField] private float _startHour = 8.5f;
+        // 一日の始まりは DayRestart が正。ここに 8.5f と書き直すと「もう一日歩く」の朝とずれる。
+        [SerializeField] private float _startHour = DayRestart.DayStartHour;
         [SerializeField] private float _sunriseHour = 5.5f;
         [SerializeField] private float _sunsetHour = 18.5f;
         [SerializeField] private float _northOffsetDegrees = 20f;
@@ -47,15 +48,22 @@ namespace KCD
             EnsureDefaults();
         }
 
+        /// <summary>
+        /// キャンパスに入ったときの時計の始まり。別シーンから戻ってきた（＝入場済みの）ときは
+        /// GameManager が覚えている時刻を引き継ぎ、そうでなければ朝から始める。
+        ///
+        /// 「つづきから」(#38) は <c>TitleMenu</c> が入場済みにしてからキャンパスへ入るのでセーブの時刻を継ぎ、
+        /// 「はじめから」(#53) は <c>GameManager.BeginNewGame</c> が入場済みを落とすので必ず朝になる。
+        /// </summary>
+        public static float StartingHours(bool hasEnteredCampus, float rememberedHours, float startHour)
+        {
+            return hasEnteredCampus ? rememberedHours : startHour;
+        }
+
         private void Start()
         {
-            // 別シーンから戻ってきたときは GameManager が覚えている時刻を引き継ぐ。
             GameManager manager = GameManager.Instance;
-            if (manager.HasEnteredCampus)
-            {
-                Hours = manager.GameTimeHours;
-            }
-
+            Hours = StartingHours(manager.HasEnteredCampus, manager.GameTimeHours, _startHour);
             manager.HasEnteredCampus = true;
             Apply();
         }

@@ -21,6 +21,9 @@ namespace KCD
         private bool _moved;
         private float _promptAlphaBase = 1f;
 
+        /// <summary>タイトルが出たフレーム。ポーズの「タイトルへ戻る」で押した決定を拾い直さない（#6）。</summary>
+        private int _shownFrame = KCDInput.NoFrame;
+
         /// <summary>SceneBuilder から差し込む。</summary>
         public void Bind(GameObject titleRoot, GameObject selectRoot, TMP_Text prompt, CharacterSelect select)
         {
@@ -85,6 +88,7 @@ namespace KCD
 
         private void Start()
         {
+            _shownFrame = Time.frameCount;
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
             KCDInput.GameplayBlocked = false;
@@ -105,7 +109,8 @@ namespace KCD
         {
             BlinkPrompt();
 
-            if (_moved || IsModalOpen || KCDInput.ModalClosedThisFrame)
+            if (_moved || IsModalOpen || KCDInput.ModalClosedThisFrame ||
+                KCDInput.IgnoresInput(_shownFrame))
             {
                 return;
             }
@@ -133,6 +138,9 @@ namespace KCD
                 {
                     GameManager.Instance.SelectedCharacterId = data.CharacterId;
                     GameManager.Instance.GameTimeHours = data.TimeHours;
+                    // DayNightCycle.Start は初めてキャンパスに入るとき 8:30 から始め、GameTimeHours を見ない。
+                    // セーブはキャンパスに入ったあとのものなので入場済みにして、ロードした時刻を引き継がせる（#38）。
+                    GameManager.Instance.HasEnteredCampus = true;
                     GameManager.Instance.Quests?.Restore(data.Quests);
                     _moved = true;
                     AudioManager.Instance?.PlayUi("ui_confirm");

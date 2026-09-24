@@ -65,7 +65,7 @@ namespace KCD
             IsAnyOpen = true;
 
             AudioManager.Instance?.PlayUi("ui_open");
-            AudioManager.Instance?.PlaySe("se_chime");
+            AudioManager.Instance?.PlayJingle("jingle_day_end");
             Redraw();
         }
 

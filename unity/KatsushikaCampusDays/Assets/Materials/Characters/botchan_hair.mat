@@ -32,6 +32,9 @@ Material:
     - _Cull: 0
     - _Cutoff: 0.5
     - _DstBlend: 0
+    - _OutlineFadeEnd: 60
+    - _OutlineFadeStart: 30
+    - _OutlineNearDistance: 5
     - _OutlineWidth: 0.005
     - _RimIntensity: 0.35
     - _RimPower: 4
@@ -44,12 +47,12 @@ Material:
     - _Surface: 0
     - _ZWrite: 1
     m_Colors:
-    - _BaseColor: {r: 0.16862746, g: 0.16862746, b: 0.2, a: 1}
+    - _BaseColor: {r: 0.101960786, g: 0.101960786, b: 0.13333334, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _OutlineColor: {r: 0.11999995, g: 0.09999997, b: 0.13999996, a: 1}
     - _RimColor: {r: 1, g: 1, b: 1, a: 1}
-    - _ShadeColor: {r: 0.2868039, g: 0.27420393, b: 0.35959998, a: 1}
-    - _ShadeColor2: {r: 0.24088237, g: 0.22988236, b: 0.33200002, a: 1}
+    - _ShadeColor: {r: 0.24813725, g: 0.23553725, b: 0.3209333, a: 1}
+    - _ShadeColor2: {r: 0.21088237, g: 0.19988236, b: 0.30200002, a: 1}
     - _SpecularColor: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

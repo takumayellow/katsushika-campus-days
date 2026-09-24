@@ -42,7 +42,7 @@ namespace KCD.Editor
             new NpcSpot
             {
                 Id = "inari", Name = "花之木 いなり", BuildingId = string.Empty,
-                Distance = 0f, Fallback = new Vector2(-44.97f, -14.2f), WanderRadius = 3f
+                Distance = 0f, Fallback = new Vector2(-59.55f, -24.47f), WanderRadius = 3f
             }
         };
 
@@ -57,6 +57,8 @@ namespace KCD.Editor
             EditorPaths.Report("データを同期しました: " + DataBundler.SyncAll() + " 件");
             EditorPaths.Report("マテリアルを差し替えました: " + CharacterImporter.ResolveMaterials() + " 件");
             EditorPaths.Report("顔テクスチャを貼り直しました: " + CharacterImporter.RefreshFaceTextures() + " 件");
+            EditorPaths.Report("Humanoid の骨格を FBX に合わせました: " + CharacterImporter.SyncSkeletons() + " 体");
+            EditorPaths.Report("キャラの色を palette.json に合わせました: " + MaterialLibrary.RepaintCharacters() + " 件");
 
             BuildCampus();
             BuildTitle();
@@ -78,21 +80,53 @@ namespace KCD.Editor
             Transform root = world.transform;
 
             CampusStage.Build(root);
+            WorldBoundsStage.Build(root);
+
+            // 西の回廊と寮 (#41)。route.fbx が無ければ RouteStage.Build が null を返すので、
+            // 以下の追加はまるごと飛ばす（本編はそのまま動く）。
+            // 置く場所は WorldBoundsStage.Build のあと（Wall_West を作ってから門を開ける）で、
+            // NavMesh を焼く前（回廊は NavMeshModifier で焼かせない）。
+            GameObject route = RouteStage.Build(root);
+            if (route != null)
+            {
+                RouteStage.OpenWestGate(root);
+                RouteStage.BuildAnnexWalls(root);
+            }
+
             Physics.SyncTransforms();
             CampusStage.BakeNavMesh(root);
 
             CampusProps.Build(root);
 
-            string characterId = GameManager.PlayableCharacterIds[0];
+            // 体は選べる 3 人ぶんを焼き込む。どれを出すかは実行時に PlayerAppearance が決めるので、
+            // ここでキャラクターを決め打ちしない（以前は PlayableCharacterIds[0] = mirai 固定で、
+            // タイトルで誰を選んでも本編は mirai のままだった, #6）。
             GameObject player = ActorFactory.CreatePlayer(
-                root, characterId, CampusProps.PlayerSpawn + Vector3.up * 0.15f, CampusProps.PlayerYaw);
+                root, CampusProps.PlayerSpawn + Vector3.up * 0.15f, CampusProps.PlayerYaw);
             ActorFactory.CreateCamera(root, player);
 
             PlaceNpcs(root);
             SeatFactory.PlaceCampus(root);
             PlaceSystems(root);
+            if (route != null)
+            {
+                // 見張りの矩形を増築区画まで広げる。PlaceSystems が WorldBounds を足したあとでないと
+                // 見つからない。広げないと門をくぐった瞬間に引き戻される。
+                RouteStage.WidenWorldBounds();
+            }
+
             InteriorStage.Build(root);
+            if (route != null)
+            {
+                // 寮の屋内と玄関。本編の 9 棟とは別枠で、探索率にも「入った建物」にも数えない。
+                DormStage.Build(root);
+            }
+
             UIFactory.BuildCampusUI(root, player);
+            if (route != null)
+            {
+                DormEndingFactory.Build(root);
+            }
 
             Save(scene, EditorPaths.CampusScene);
         }
@@ -153,6 +187,7 @@ namespace KCD.Editor
             systems.AddComponent<CampusDirector>();
             systems.AddComponent<InteriorLoader>();
             systems.AddComponent<DayEndEvaluator>();
+            systems.AddComponent<WorldBounds>();
             AudioFactory.Place(root);
             PostProcessFactory.Place(root, true);
         }

@@ -41,6 +41,15 @@ namespace KCD
             _active.Clear();
             _completed.Clear();
 
+            // 計時はセーブに載せない。読み込んだら数える前に戻す。
+            for (int i = 0; i < _all.Count; i++)
+            {
+                for (int s = 0; s < _all[i].Steps.Count; s++)
+                {
+                    _all[i].Steps[s].Timer.Reset();
+                }
+            }
+
             for (int i = 0; i < progress.QuestIds.Count && i < progress.StepsDone.Count && i < progress.States.Count; i++)
             {
                 QuestData quest = Find(progress.QuestIds[i]);
@@ -58,6 +67,23 @@ namespace KCD
 
                 if (progress.States[i] == 1) { _active.Add(quest.Id); }
                 else if (progress.States[i] == 2) { _completed.Add(quest.Id); }
+            }
+
+            // 受注中の制限時間つきステップ。依頼主がいれば、話しかけるまで数えずに待つ
+            // （読み込んだ瞬間から減り始めると、どこにいても間に合わない）。依頼主がいなければここから数える。
+            for (int i = 0; i < _all.Count; i++)
+            {
+                QuestData quest = _all[i];
+                if (!_active.Contains(quest.Id))
+                {
+                    continue;
+                }
+
+                QuestStep step = quest.CurrentStep;
+                if (step != null && step.IsTimed && string.IsNullOrEmpty(step.Giver))
+                {
+                    StartTimer(quest, step);
+                }
             }
 
             Changed?.Invoke();

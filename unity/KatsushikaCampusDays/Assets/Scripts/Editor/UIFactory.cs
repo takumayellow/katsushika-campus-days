@@ -81,18 +81,26 @@ namespace KCD.Editor
         /// <summary>左上のクエスト追跡。</summary>
         private static void BuildTracker(GameObject host, RectTransform parent)
         {
+            // 制限時間つきのステップは 2 行目（残り秒・時間切れ・再挑戦の案内）が付くので、
+            // ステップ欄を 96（文字の入る高さ 72）にしてある。以前の 78 では 2 行目が枠の下にはみ出した。
             RectTransform rect = Rect(parent, "QuestTracker", new Vector2(0f, 1f), new Vector2(0f, 1f),
-                new Vector2(40f, -40f), new Vector2(520f, 132f));
+                new Vector2(40f, -40f), new Vector2(520f, 150f));
             Backdrop(rect, Panel);
 
             RectTransform titleRect = Rect(rect, "TitleRow", new Vector2(0f, 1f), new Vector2(0f, 1f),
                 new Vector2(0f, 0f), new Vector2(520f, 54f));
             RectTransform stepRect = Rect(rect, "StepRow", new Vector2(0f, 1f), new Vector2(0f, 1f),
-                new Vector2(0f, -54f), new Vector2(520f, 78f));
+                new Vector2(0f, -54f), new Vector2(520f, 96f));
 
             TMP_Text title = Label(titleRect, "Title", string.Empty, 30f, TextAlignmentOptions.TopLeft);
             title.color = Accent;
             TMP_Text step = Label(stepRect, "Step", string.Empty, 26f, TextAlignmentOptions.TopLeft);
+
+            // 英語で 1 行目が折り返したときなど、それでも収まらなければ文字を小さくし、最後は … で切る（枠の外に出さない）。
+            step.enableAutoSizing = true;
+            step.fontSizeMin = 18f;
+            step.fontSizeMax = 26f;
+            step.overflowMode = TextOverflowModes.Ellipsis;
 
             host.AddComponent<QuestTrackerView>().Bind(rect.gameObject, title, step);
         }

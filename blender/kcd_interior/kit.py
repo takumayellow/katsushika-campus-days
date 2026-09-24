@@ -114,11 +114,34 @@ def blob(mb, cx, cy, cz, rx, ry, rz, mat, seg=6, rings=3):
         prev = ring
 
 
+def face_ang(x, y, tx, ty):
+    """(x, y) の家具を (tx, ty) へ向ける T の ang を返す。
+
+    T の正面は (-sin ang, cos ang) なので ang = atan2(-(tx - x), ty - y)。
+    同じ点を渡したときは +Y 向き（ang = 0）にしておく。
+    """
+    dx, dy = tx - x, ty - y
+    if abs(dx) < 1e-9 and abs(dy) < 1e-9:
+        return 0.0
+    return math.atan2(-dx, dy)
+
+
 class T:
     """回転 + 平行移動のローカルフレーム。家具 1 個ぶんの座標系。
 
     ang は +X 軸からの回転（rad）。家具は「自分の +Y が正面」を向くように
     原点まわりでモデリングし、T が向きと位置を与える。
+
+    正面のワールド方向は **(-sin ang, cos ang)**。間違えやすいので表にしておく:
+
+        ang = 0      -> 正面 +Y
+        ang = +π/2   -> 正面 **-X**（+X ではない）
+        ang = -π/2   -> 正面 +X
+        ang = π      -> 正面 -Y
+
+    「(x, y) にある家具を (tx, ty) へ向ける」角度は face_ang() で出せる。
+    机の両側に椅子を置く・丸テーブルを囲むといった場面では、手で ±π/2 や
+    +π を足さずに face_ang を使うこと（#42 の逆向き 2,250 席はこの取り違え）。
     """
 
     __slots__ = ("x", "y", "z", "c", "s")
@@ -195,9 +218,17 @@ def lift(mb, base, dz):
     上階の什器は 2F の床スラブ上に置きたいが、家具ヘルパの多くは z=0 前提で
     組み立てる。呼ぶ前に base = len(mb.verts) を控えておき、組み終わってから
     これを呼ぶと上階ぶんだけを平行移動できる。
+    家具ヘルパが記録した座面（mb.seats）も、base 以降に積んだぶんは一緒に動かす。
     """
     if dz == 0.0:
         return
     for i in range(base, len(mb.verts)):
         x, y, z = mb.verts[i]
         mb.verts[i] = (x, y, z + dz)
+    for seat in getattr(mb, "seats", None) or ():
+        if seat["vi"] < base:
+            continue
+        for key in ("c", "f", "s"):
+            x, y, z = seat[key]
+            seat[key] = (x, y, z + dz)
+        seat["anchors"] = [(x, y, z + dz) for x, y, z in seat["anchors"]]

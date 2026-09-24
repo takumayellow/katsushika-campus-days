@@ -9,6 +9,22 @@ DESIGN.md §2 の表がここに落ちている。新しい NPC を足すとき�
 `head_w / height` を掛けて従来どおりの「身長比」に直すので、body.py 側は
 変更不要。頭幅基準にすることで「肩幅 = 頭幅 x 1.35」「腕の直径 <= 頭幅 x 0.22」
 「首の直径 = 頭幅 x 0.35」といった作画の約束をそのまま数値で表現できる。
+
+height / heads / silhouette_pad
+-------------------------------
+`height` と `heads` は **仕上がりのシルエット** を指す。すなわち
+
+    height = 履物の底 → 髪の先端 の全高
+    heads  = その全高 / 素体の頭高（顎 → 頭蓋の天端。髪は含まない）
+
+素体は「床 → 頭蓋の天端」しか作らないので、髪が上へ、履物が床下へはみ出す。
+`silhouette_pad = (髪, 履物)` にそのはみ出し量を head_h 比で宣言しておき、
+`resolve()` が素体の高さからそのぶんを引く。これをやらないと宣言値と出来上がりが
+食い違う（坊っちゃんは宣言 1.150m/2.92 頭身に対して実測 1.318m/3.36 頭身だった）。
+
+pad は hair.py と cloth.py の形から決まる **実測値** なので、髪型や履物を変えたら
+「髪パーツの最高 z - 頭蓋の天端 z」と「-（メッシュ最低 z）」を head_h で割って
+測り直す。ずれた分はそのまま全高の誤差になる。
 """
 
 from __future__ import annotations
@@ -39,6 +55,24 @@ BODY_LEVELS_CHIBI = {
     "hip": 0.575,
     "crotch": 0.500,
     "knee": 0.255,
+    "ankle": 0.045,
+}
+
+#: 坊っちゃん専用。マドンナちゃんは公式の体型が違う（長い髪と大リボンで
+#: シルエットが決まる）ので、確かめずに同じ数値へ巻き込まないよう分けてある。
+#:
+#: 公式 tus_chara01.jpg を頭蓋の高さ（78px）を 1 として顎から測ると
+#: 帯の上端 0.60 / 袴の裾 1.26 / 下駄の台の上面 1.36 / 下駄の底 1.67。
+#: 現行は帯 0.62（合っている）に対し 帯→床 が 1.41 と、公式 1.06 の 1.3 倍あった。
+#: 「胴は合っていて、帯から下だけが長い」ので、ここは脚だけを詰める表になる。
+BODY_LEVELS_BOTCHAN = {
+    "shoulder": 0.936,
+    "bust": 0.817,
+    "underbust": 0.725,
+    "waist": 0.570,
+    "hip": 0.433,
+    "crotch": 0.363,
+    "knee": 0.183,
     "ankle": 0.045,
 }
 
@@ -97,21 +131,38 @@ BUILDS = {
         arm_r=(0.108, 0.098, 0.080), hand=0.125,
         leg_r=(0.205, 0.168, 0.128), foot=(0.180, 0.470, 0.140),
         arm_len=(0.112, 0.098, 0.062),
-        head_w=0.862, head_d=0.880,
+        # chibi_f はマドンナちゃん専用。公式 tus_chara02.jpg を実測すると
+        # 頭の輪郭（髪込み）98px x 見えている頭の高さ 82px で、**横のほうが
+        # 広い**（W/H = 1.195）。髪のかぶさるぶんは横 1.21 倍・縦 1.21 倍なので
+        # 素の頭蓋は 81 x 68px = W/H 1.19。0.862 のままだと縦長の卵形になり、
+        # シルエットの中で頭だけが 31% 小さく見えていた（輪郭幅/全高が
+        # 公式 0.465 に対し 0.328）。
+        head_w=1.180, head_d=0.985,
     ),
     # ちび（男子・3 頭身）
     "chibi_m": dict(
-        shoulder_half=0.478, shoulder_ry=0.238,
-        bust_rx=0.362, bust_ry=0.266, bust_bulge=0.000,
-        underbust_rx=0.342, underbust_ry=0.252,
+        # 公式と自分のプレビューを頭高で正規化し、行ごとに幅を比べて決めた。
+        # 公式は「肩が一番広くて帯でくびれる逆台形」（幅/頭高: 肩 1.83 →
+        # 帯 1.35）。こちらは肩 1.12 / 帯 1.65 と上下が逆さまだった。
+        # 一律に太らせると帯から下が先に太くなるので、肩を広げて腰を絞る。
+        # 首だけは公式でもほぼ見えないので太らせない。
+        shoulder_half=0.560, shoulder_ry=0.272,
+        bust_rx=0.412, bust_ry=0.300, bust_bulge=0.000,
+        underbust_rx=0.372, underbust_ry=0.272,
         waist_rx=0.330, waist_ry=0.246,
-        hip_rx=0.352, hip_ry=0.262,
-        crotch_rx=0.338, crotch_ry=0.252,
+        hip_rx=0.400, hip_ry=0.262,
+        crotch_rx=0.390, crotch_ry=0.256,
         neck_r=0.165,
-        arm_r=(0.110, 0.100, 0.082), hand=0.132,
-        leg_r=(0.222, 0.182, 0.140), foot=(0.196, 0.500, 0.150),
+        # 公式の腕と脚は短くて太い。袖と袴から出る部分しか見えないので、
+        # 手首と足首（各タプルの末尾）を優先して太らせる。細いまま残すと
+        # ミトンと下駄だけが大きい、棒に刺さった団子に見える。
+        arm_r=(0.118, 0.110, 0.098), hand=0.142,
+        leg_r=(0.230, 0.196, 0.168), foot=(0.196, 0.500, 0.150),
         arm_len=(0.116, 0.100, 0.064),
-        head_w=0.884, head_d=0.900,
+        # 公式の頭は「角の丸い四角」で、輪郭の幅 91px が頭蓋の高さ 78px の
+        # 1.17 倍ある。髪のかぶさるぶん（実測で頭幅の 1.19 倍に広がる）を
+        # 引いて head_w = 1.17 / 1.19 ≒ 0.98。0.884 のままだと卵形になる。
+        head_w=0.980, head_d=0.900,
     ),
 }
 
@@ -155,7 +206,13 @@ CHARACTERS: dict[str, dict] = {
     "botchan": dict(
         id="botchan",
         jp="坊っちゃん",
-        height=1.15, heads=2.92, build="chibi_m", chibi=True,
+        # 公式 tus_chara01.jpg の実測: 全高 221px / 頭蓋（髪の下）81px = 2.73 頭身。
+        # 2.83 に留めているのは、髪の逆立ちぶんを頭に数えない実装上の都合で
+        # 2.73 まで詰めると胴が潰れて見えるため（見た目は 35% 前後で合う）。
+        # silhouette_pad は組み上げたメッシュの実測値（髪の天端と下駄の底を
+        # head_h で割ったもの）。髪型・履物を変えたら測り直すこと。
+        height=1.15, heads=2.83, silhouette_pad=(0.183, 0.257),
+        build="chibi_m", chibi=True, levels=BODY_LEVELS_BOTCHAN,
         skin=_c("#EBBE9C"),
         hair_color=_c("#1A1A22"),
         eye_color=_c("#4A3324"),
@@ -163,13 +220,26 @@ CHARACTERS: dict[str, dict] = {
         brow_color=_c("#14141C"),
         blush_color=_c("#E98A78"), blush_strength=0.0,
         # 公式イラストどおりの男の子: 点目・太い直線眉・への字口・
-        # 逆立てた短髪。目は小さく、離して置く。
-        mouth_color=_c("#5A2A22"), mouth_style="frown", mouth_w=0.030,
+        # 逆立てた短髪。
+        #
+        # 公式 tus_chara01.jpg を「顎 y=99 / 地髪の天端 y=20（頭高 79px）/
+        # 頭幅 89px」で実測すると
+        #     目の中心  顎から 0.513 頭高   目の大きさ 8 x 13 px
+        #     眉の中心  顎から 0.67  頭高   眉の長さ 16〜26px・太さ 4〜6px
+        #     口の中心  顎から 0.266 頭高   口幅 18px
+        #     目の間隔（中心間）34px = 頭幅の 0.38
+        # これに対し統合前は 目 0.347 頭高・目の高さ 0.082 頭高・口幅 0.10 頭幅・
+        # 目の間隔 0.50 頭幅 と、「小さい目鼻が顔の下半分に寄り、額だけが
+        # 異様に広い」状態だった。額が広く見えた原因は生え際ではなく
+        # 目鼻の位置なので、ここを公式の実測値へ動かす。
+        #   eye_y  0.352 -> 0.510   eye_dx 0.175 -> 0.130
+        #   eye_ry 0.044 -> 0.078   mouth_w 0.030 -> 0.060
+        mouth_color=_c("#5A2A22"), mouth_style="frown", mouth_w=0.060,
         eye_style="dot", eye_tilt=0.0,
-        brow_width=0.032, brow_arch=0.0,
+        brow_width=0.030, brow_arch=0.0,
         hair="crew", hair_accessory=None,
         outfit="kimono_botchan",
-        face_layout=dict(eye_y=0.352, eye_dx=0.175, eye_rx=0.034, eye_ry=0.044),
+        face_layout=dict(eye_y=0.510, eye_dx=0.130, eye_rx=0.034, eye_ry=0.078),
         mat_colors={"hair": "#1A1A22", "eye_l": "#1A1A22", "eye_r": "#1A1A22"},
         pattern_scale=16.0,
         accessories=("furoshiki",),
@@ -180,23 +250,63 @@ CHARACTERS: dict[str, dict] = {
     "madonna": dict(
         id="madonna",
         jp="マドンナちゃん",
-        height=1.14, heads=2.95, build="chibi_f", chibi=True,
+        # 公式 tus_chara02.jpg (332x240) の実測。髪の天端 y=24 / 顎 y=106 /
+        # ブーツの底 y=235 → 全高 211px、見えている頭 82px = 2.57 頭身。
+        # 髪を除いた頭蓋は 68px なので 211/68 = 3.10 …だが heads は
+        # 「素体の頭高」に対する比なので、髪のはみ出しは silhouette_pad で
+        # 別に引く。3.10 のままだと胴が長く見えるので 2.98 に留める。
+        height=1.14, heads=2.98, silhouette_pad=(0.210, 0.018),
+        build="chibi_f", chibi=True,
         skin=_c("#F5CDBA"),
-        hair_color=_c("#8B5A2B"),
-        eye_color=_c("#7E4620"),
-        lash_color=_c("#3A2018"),
-        brow_color=_c("#6E4520"),
-        blush_color=_c("#FF8F9C"), blush_strength=0.58,
-        mouth_color=_c("#C4394A"), mouth_style="smile", mouth_w=0.036,
-        eye_style="round", eye_tilt=2.0, star_eyes=True,
+        # 公式の髪は明るい黄土色 #AA6D26。#8B5A2B は暗くて赤黒い。
+        hair_color=_c("#AA6D26"),
+        # 公式の目は白目も虹彩も無い真っ黒な縦長楕円 12x22px に、
+        # 4 方向の白いキラ星が 1 個だけ。茶色の虹彩は描かれていない。
+        eye_color=_c("#15110F"),
+        lash_color=_c("#15110F"),
+        brow_color=_c("#6E4520"), brow_style="none",  # 公式は眉が 1 本も無い
+        nose=False,                                    # 公式は鼻も無い
+        # 公式の頬紅は実測 (250,196,168)。#FF8F9C を 0.58 で乗せると
+        # (250,169,169) になり、赤すぎるうえに位置が目の真下ではなく
+        # 目の下端に食い込んでいた（レンダを拡大して確認）。
+        blush_color=_c("#FFAF8E"), blush_strength=0.55,
+        # 公式 332x240 実測: 頬紅は幅 15px x 高さ 8px、中心 x は目の中心と
+        # 同じ、中心 y は顎から 12.5px 上。アトラス UV は u 1.0 = 117px /
+        # v 1.0 = 67px なので dx=0.184 / y=0.187 / rx,ry はぼかしぶん 1.12 倍。
+        blush_layout=dict(dx=0.184, y=0.187, rx=0.072, ry=0.066),
+        # 公式の口は唇でも塗りでもなく、黒い弧 1 本（幅 20px = 頭蓋の 0.29）。
+        mouth_color=_c("#241A16"), mouth_style="ink_smile", mouth_w=0.064,
+        eye_style="ink", eye_tilt=2.0, star_eyes=True,
         hair="long_blunt", hair_accessory="bow_red",
         outfit="kimono_madonna",
-        face_layout=dict(eye_y=0.380, eye_dx=0.192, eye_rx=0.090, eye_ry=0.126),
-        mat_colors={"hair": "#8B5A2B", "eye_l": "#8A4B22", "eye_r": "#8A4B22"},
-        bow_scale=1.55,
-        pattern_scale=11.0,
+        # 頭蓋 81x68px 基準。目の中心は顎から 30.8px(0.45 頭高)で、
+        # 0.380 のままでは目鼻が顔の下 1/3 に寄って額だけ広く見えていた。
+        # u の 1 単位は uv_box の都合でワールド 1.44*head_w、v は 1.015*head_h。
+        face_layout=dict(eye_y=0.460, eye_dx=0.184, eye_rx=0.051, eye_ry=0.159),
+        # 公式から色を抜いた実測値（袴 #9066A8 / リボン #E4475B /
+        # ブーツ #AE7D25）。既定の #4C2A70 / #D8222F / #7A4A28 は
+        # どれも 2 段暗く、並べると別人の配色に見えた。
+        mat_colors={"hair": "#AA6D26", "eye_l": "#15110F", "eye_r": "#15110F",
+                    "cloth_hakama_purple": "#9066A8",
+                    # 前紐の蝶結び。袴と同じ色だとゲームで袴に溶けるので 0.77 倍に落とす
+                    "cloth_hakama_himo_purple": "#6F4E81",
+                    "ribbon_red": "#E4475B",
+                    "boots_brown": "#AE7D25", "metal": "#8A6218"},
+        # リボンは公式で 65x32px = 頭幅の 0.66。1.55 では 1.12 頭幅あった。
+        bow_scale=0.80,
+        # 矢羽根 1 個の間隔は公式で胴幅の 1/5.4。11.0 では 1/15 で
+        # 遠目にピンストライプだった。
+        pattern_scale=5.0,
         accessories=("boots",),
-        sign_items=("矢絣の振袖", "頭頂の大きな赤リボン", "編み上げブーツ"),
+        # 公式は腕を斜め下へ開き、振袖の袂が袴の左右に大きな板として垂れて
+        # いる。既定の 26° まで下ろすと袂が袴の後ろへ回り込んで見えなくなり、
+        # ただの着物姿になっていた（上腕は鉛直から 12°）。4° で 34° 開く。
+        arm_drop=4.0,
+        # 行灯袴にブーツなので小股で歩く。既定の歩幅だと前へ出た腿が袴の前を
+        # 押し広げて裂けて見えた（#49）。速さはゲーム側と同じまま、1 歩を
+        # 短くして歩数を増やす（見える素肌 Walk 53 → 38 / Run 85 → 59）。
+        gait={"Walk": dict(reach=0.75), "Run": dict(reach=0.85)},
+        sign_items=("ハート柄の振袖", "頭頂の赤リボン", "編み上げブーツ"),
     ),
     # ----------------------------------------------------------------- inari
     "inari": dict(
@@ -293,8 +403,16 @@ def resolve(char_id: str) -> dict:
     if char_id not in CHARACTERS:
         raise KeyError(f"未知のキャラクター id: {char_id}（有効: {', '.join(ALL_IDS)}）")
     p = dict(CHARACTERS[char_id])
-    h = p["height"]
-    head_h = h / p["heads"]
+    head_h = p["height"] / p["heads"]
+    # 素体は「床 → 頭蓋の天端」しか勘定しないので、そのまま組むと髪が上へ、
+    # 履物が床下へはみ出して、宣言した身長・頭身どおりに仕上がらない。
+    # はみ出しぶんを先に差し引いて素体を縮め、出来上がりが宣言値になるようにする。
+    pad_hair, pad_sole = p.get("silhouette_pad", (0.0, 0.0))
+    h = p["height"] - head_h * (pad_hair + pad_sole)
+    # 以降のモジュール（body/cloth/hair/rig/outline/render）は p["height"] を
+    # 長さの基準に使うので、ここで素体の高さに差し替える。宣言値は別名で残す。
+    p["silhouette_h"] = p["height"]
+    p["height"] = h
     build = dict(BUILDS[p["build"]])
     head_w = head_h * build["head_w"]
 
@@ -306,7 +424,8 @@ def resolve(char_id: str) -> dict:
     p["build_params"] = build
 
     chin_z = h - head_h
-    levels = BODY_LEVELS_CHIBI if p.get("chibi") else BODY_LEVELS
+    levels = p.get("levels") or (BODY_LEVELS_CHIBI if p.get("chibi")
+                                 else BODY_LEVELS)
     lv = {kk: vv * chin_z for kk, vv in levels.items()}
     lv["chin"] = chin_z
     lv["top"] = h
@@ -314,4 +433,5 @@ def resolve(char_id: str) -> dict:
     p["head_h"] = head_h
     p["head_w"] = head_w
     p["head_d"] = head_h * build["head_d"]
+    p["body_height"] = h
     return p

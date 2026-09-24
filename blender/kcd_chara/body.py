@@ -21,13 +21,32 @@ from .tex import TILE_BASE, TILE_FEATURE, tile_uv
 # --------------------------------------------------------------------------
 
 
-def _head_deform(d: np.ndarray) -> np.ndarray:
-    """単位球の方向ベクトル群をアニメ顔のシルエットへ変形する。"""
+def _head_deform(d: np.ndarray, square: float = 0.0) -> np.ndarray:
+    """単位球の方向ベクトル群をアニメ顔のシルエットへ変形する。
+
+    square は輪郭の角張り具合。0 で従来の卵形（高頭身キャラ向け）、
+    1 で「角の丸い四角」（ちびキャラ向け）。間は線形に混ぜる。
+    """
     x, y, z = d[:, 0], d[:, 1], d[:, 2]
-    # 低頭身のアニメ顔は「丸い頭蓋 + 頬の幅を保ったまま顎先だけ細くする」。
-    # 幅の減衰を高次にして、z が -0.75 を下回るまではほとんど細らせない。
-    w = np.where(z >= 0.0, 1.0 - 0.045 * z**2,
-                 1.0 - 0.400 * np.abs(z) ** 5.0)
+    az = np.abs(z)
+    # 卵形: 丸い頭蓋 + 頬の幅を保ったまま顎先だけ細くする
+    w_egg = np.where(z >= 0.0, 1.0 - 0.045 * z**2, 1.0 - 0.400 * az**5.0)
+    # 公式（docs/ref/tus_chara01.jpg）のちびの頭は卵ではない。輪郭の幅は
+    # 頭頂から 2 割下でもう最大の 0.95 まで張り出し、顎の直前まで落ちない
+    # （実測で t=0.22→0.95, t=0.51→0.99, t=0.78→まだ 0.93）。球の断面
+    # sqrt(1-z^2) は t=0.22 で 0.79 しか無く、どれだけ頭幅を広げても卵に
+    # しかならないので、断面そのものを超楕円 (1-|z|^q)^(1/q) に差し替える。
+    r_ball = np.sqrt(np.maximum(1.0 - z * z, 1e-6))
+    q = np.where(z >= 0.0, 3.0, 3.2)     # 顎側をわずかに角張らせる
+    w_box = (1.0 - np.minimum(az, 1.0) ** q) ** (1.0 / q) / r_ball
+    # 顎先だけは絞る。超楕円のままだと顎が四角い箱になる。
+    w_box *= np.where(z >= 0.0, 1.0,
+                      1.0 - 0.62 * np.clip((az - 0.42) / 0.58, 0.0, 1.0) ** 2.2)
+    # 頭頂と顎先の最後の数リングでは超楕円の割り増しが発散する。頭打ちにして
+    # おかないと天辺が真っ平らな板になり、頭皮に乗る髪までその形になる。
+    w_box = np.minimum(w_box, 1.85)
+    s = float(np.clip(square, 0.0, 1.0))
+    w = w_egg * (1.0 - s) + w_box * s
     X = x * w
     Y = y * w
     Z = np.where(z >= 0.0, z, z * 0.94)
@@ -53,7 +72,9 @@ class Head:
         self.p = p
         hw, hd, hh = p["head_w"], p["head_d"], p["head_h"]
         # 変形後の正規化空間でのはみ出し量を数値で測ってスケールを決める
-        probe = _head_deform(_sphere_dirs(48, 32))
+        # ちびは「角の丸い四角」、高頭身はこれまでどおり卵形
+        self.square = 1.0 if p.get("chibi") else 0.0
+        probe = _head_deform(_sphere_dirs(48, 32), self.square)
         self.sx = (hw * 0.5) / float(np.abs(probe[:, 0]).max())
         self.sy = (hd * 0.5) / float(np.abs(probe[:, 1]).max())
         zmin, zmax = float(probe[:, 2].min()), float(probe[:, 2].max())
@@ -68,7 +89,7 @@ class Head:
         e = np.asarray(el, dtype=float)
         se = np.sin(e)
         d = np.stack([np.cos(a) * se, np.sin(a) * se, np.cos(e)], axis=-1)
-        loc = _head_deform(d.reshape(-1, 3))
+        loc = _head_deform(d.reshape(-1, 3), self.square)
         return loc * self.scale + self.center
 
 
@@ -224,14 +245,24 @@ def _brow_curve(cu: float, eye_y: float, rx: float, ry: float, sgn: int,
 
 def _brow_curve_flat(cu: float, eye_y: float, rx: float, ry: float, sgn: int,
                      width: float):
-    """点目キャラの眉。太く短い直線で、内側を下げて眉根を寄せる。"""
+    """点目キャラの眉。太く長い楔で、内側（眉根）を太く低くする。
+
+    位置を ry の倍数で書くと、目を公式どおりの大きさ（ry 0.044 -> 0.078）に
+    した途端に眉が頭の外へ飛ぶ。公式 tus_chara01.jpg の実測では
+    「目の中心 顎から 0.513 頭高 / 眉の中心 0.67 頭高」で、間隔は頭高の
+    0.157 = ry の 1.86 倍しかない（旧式は 3.1 倍だった）。
+    長さも公式は頭幅の 0.18〜0.29 あり、rx*2.45 では半分しかなかったので
+    rx*3.6 へ伸ばす。太さは内側 1.3 倍・外側 0.45 倍の楔にする
+    （公式の眉は眉根が太くて眉尻へすっと細くなる）。
+    """
     n = 8
     t = np.linspace(0.0, 1.0, n)
-    u_in, u_out = cu - sgn * rx * 0.70, cu + sgn * rx * 1.75
+    u_in, u_out = cu - sgn * rx * 0.90, cu + sgn * rx * 2.70
     us = u_in + (u_out - u_in) * t
-    vs = eye_y + ry * 2.9 - ry * 0.25 + ry * 0.95 * t
-    ws = width * (1.05 - 0.25 * t)
-    return us, vs, ws
+    # t=0 が眉根（内側）。外へ向けて持ち上げると「＼ ／」の怒り眉になる。
+    vs = eye_y + ry * 1.55 + ry * 0.62 * t
+    ws = width * (1.30 - 0.85 * t)
+    return us, vs, np.maximum(ws, width * 0.30)
 
 
 def build_face_parts(mb: M.MeshBuilder, p: dict, fs: FaceSurface, uv_box):
@@ -276,7 +307,12 @@ def build_face_parts(mb: M.MeshBuilder, p: dict, fs: FaceSurface, uv_box):
                                                   float(uu[i]), float(vv[i]))
         _ = power
 
-    power_eye = 2.7 if p.get("eye_style", "round") == "round" else 3.1
+    # 点目は「角の丸い縦長の楕円」。power 3.1 は角の立った四角で、公式の
+    # 丸い点目にならない（tus_chara01.jpg の目は 8x13px のほぼ楕円）。
+    # sharp 目（教授）はこれまでどおり角を立てる。
+    _es = p.get("eye_style", "round")
+    power_eye = 2.7 if _es == "round" else (2.2 if _es in ("dot", "ink")
+                                            else 3.1)
     # 輪郭シェル（身長 x outline.THICKNESS）より必ず手前に出す。ここが
     # 内側に入ると頭の膨張シェルが目を黒く覆ってしまう。
     grow = p["height"] * 0.0022
@@ -300,7 +336,9 @@ def build_face_parts(mb: M.MeshBuilder, p: dict, fs: FaceSurface, uv_box):
               _disc(cu, eye_y - eye_ry * 0.04, eye_rx * 0.90, eye_ry * 0.93,
                     2.2, 3, 18),
               offset=off_iris, dome=hd * 0.020, power=2.2)
-        dot = p.get("eye_style") == "dot"
+        # 点目（坊っちゃん）と墨目（マドンナちゃん）はどちらも「黒い楕円
+        # 1 枚」で、まつ毛の帯も二重線も持たない。睫毛は tex 側で描く。
+        dot = p.get("eye_style") in ("dot", "ink")
         if not dot:
             # 点目にはまつ毛も二重線も無い
             up, lo, dl = _eye_curves(cu, eye_y, eye_rx, eye_ry, sgn)
@@ -312,30 +350,40 @@ def build_face_parts(mb: M.MeshBuilder, p: dict, fs: FaceSurface, uv_box):
                     dl[1], dl[2], offset=off_lash * 0.70, thick=thick * 0.46)
         bw = p.get("brow_width", 0.038)
         ba = p.get("brow_arch", 0.030)
+        if p.get("brow_style") == "none":
+            # 公式に眉が無いキャラ（前髪に完全に隠れるマドンナちゃん）。
+            # tex._draw_face_brows も同じ条件で描かない。
+            continue
         if dot:
             bu, bv, bwid = _brow_curve_flat(cu, eye_y, eye_rx, eye_ry, sgn, bw)
         else:
             bu, bv, bwid = _brow_curve(cu, eye_y, eye_rx, eye_ry, sgn, bw, ba)
         side = "l" if sgn > 0 else "r"
+        # 平らな眉（点目キャラ）は帯が 8 枚のフラット面に割れる。頭の丸みで
+        # 1 枚ごとに法線が変わるので、太い眉だと縦縞になって見える
+        # （統合前のプレビューで右眉に 3 本の縞が出ていた）。スムーズに繋ぐ。
         _ribbon(mb, "brow_" + side, "brow", p, fs, uv_box,
-                bu, bv, bwid, offset=off_brow, thick=thick * 0.70)
+                bu, bv, bwid, offset=off_brow, thick=thick * 0.70,
+                smooth=dot)
 
     # 鼻は「あるのが分かる程度」。アニメ顔では点か影で十分なので、
     # 表面からほとんど出さない小さなふくらみにする。
-    nose_v = eye_y * 0.66
-    nx_, nz_ = _uv_to_xz(p, uv_box, np.array([0.5]), np.array([nose_v]))
-    ny = fs.y_at(float(nx_[0]), float(nz_[0]))
-    with mb.part("nose"):
-        mb.add_sphere((0.0, ny + hd * 0.012, float(nz_[0])),
-                      (p["head_w"] * 0.017, hd * 0.014, p["head_h"] * 0.013),
-                      "face", nu=10, nv=6)
-    lo_i, hi_i = mb.parts["nose"][0]
-    for i in range(lo_i, hi_i):
-        x, _y, z = mb.verts[i]
-        u = (x - uv_box[0]) / (uv_box[1] - uv_box[0])
-        v = (z - uv_box[2]) / (uv_box[3] - uv_box[2])
-        uvs[i] = tile_uv(TILE_FEATURE, float(np.clip(u, 0.0, 1.0)),
-                         float(np.clip(v, 0.0, 1.0)))
+    # nose=False のキャラ（公式に鼻が描かれていないマドンナちゃん）は省く。
+    if p.get("nose", True):
+        nose_v = eye_y * 0.66
+        nx_, nz_ = _uv_to_xz(p, uv_box, np.array([0.5]), np.array([nose_v]))
+        ny = fs.y_at(float(nx_[0]), float(nz_[0]))
+        with mb.part("nose"):
+            mb.add_sphere((0.0, ny + hd * 0.012, float(nz_[0])),
+                          (p["head_w"] * 0.017, hd * 0.014,
+                           p["head_h"] * 0.013), "face", nu=10, nv=6)
+        lo_i, hi_i = mb.parts["nose"][0]
+        for i in range(lo_i, hi_i):
+            x, _y, z = mb.verts[i]
+            u = (x - uv_box[0]) / (uv_box[1] - uv_box[0])
+            v = (z - uv_box[2]) / (uv_box[3] - uv_box[2])
+            uvs[i] = tile_uv(TILE_FEATURE, float(np.clip(u, 0.0, 1.0)),
+                             float(np.clip(v, 0.0, 1.0)))
 
     mw = p.get("mouth_w", 0.030)
     # 目線と顎の間の約 45% に置く。眼の半径に紐づけると個体差で顎まで下がる。
@@ -373,15 +421,18 @@ class Anatomy:
         self.foot = tuple(f * h for f in b["foot"])
         self.hand_r = b["hand"] * h
 
-        # A ポーズの腕（水平から 52 度下げ、肘から 60 度）
+        # A ポーズの腕。公式の腕はほぼ真下なので、水平から深めに下げる。
+        # 浅いと腕（と追従する袖）が外へ流れ、帯の高さのシルエットが
+        # 公式 1.66 頭高 に対して 1.80 まで膨らんで逆三角形に見える。
         self.shoulder = np.array([self.shoulder_half * 0.90, 0.0,
                                   z["shoulder"] - h * 0.012])
         al = b.get("arm_len", (0.170, 0.150, 0.088))
         l1, l2, l3 = al[0] * h, al[1] * h, al[2] * h
-        d1 = np.array([math.cos(math.radians(52.0)), 0.0,
-                       -math.sin(math.radians(52.0))])
-        d2 = np.array([math.cos(math.radians(60.0)), 0.0,
-                       -math.sin(math.radians(60.0))])
+        a1, a2 = (62.0, 68.0) if p.get("chibi") else (52.0, 60.0)
+        d1 = np.array([math.cos(math.radians(a1)), 0.0,
+                       -math.sin(math.radians(a1))])
+        d2 = np.array([math.cos(math.radians(a2)), 0.0,
+                       -math.sin(math.radians(a2))])
         self.elbow = self.shoulder + d1 * l1 + np.array([0.0, -0.008, 0.0])
         self.wrist = self.elbow + d2 * l2 + np.array([0.0, -0.012, 0.0])
         self.hand_tip = self.wrist + d2 * l3
@@ -454,15 +505,20 @@ def build_torso(mb: M.MeshBuilder, p: dict, a: Anatomy, mat: str = "skin",
 
 def build_neck(mb: M.MeshBuilder, p: dict, a: Anatomy):
     z = p["z"]
+    h = p["height"]
+    # ここの前後位置と高さは身長比で置く。絶対値 (m) で書くと低頭身のときだけ
+    # 首が長すぎたり短すぎたりする。
     path = np.array([
-        [0.0, 0.0, z["shoulder"] - 0.010],
-        [0.0, -0.004, z["shoulder"] + 0.035],
-        [0.0, -0.008, z["chin"] - 0.012],
+        [0.0, 0.0, z["shoulder"] - h * 0.009],
+        [0.0, -h * 0.003, z["shoulder"] + h * 0.030],
+        # 顎より上で終わらせて頭に埋める。顎の下で終わらせると、顎先が細い
+        # ぶん首が頭からはみ出し、筒の口が黒い穴になって見える。
+        [0.0, -h * 0.007, z["chin"] + p["head_h"] * 0.030],
     ])
     r = a.neck_r
     with mb.part("neck"):
-        mb.add_tube(path, [r * 1.62, r * 1.06, r * 0.94], "skin", n=18,
-                    cap_start=False, cap_end=False)
+        mb.add_tube(path, [r * 1.62, r * 1.06, r * 0.90], "skin", n=18,
+                    cap_start=True, cap_end=True)
 
 
 def _limb(mb: M.MeshBuilder, path, radii, mat: str, part: str, n: int = 20):
@@ -471,7 +527,7 @@ def _limb(mb: M.MeshBuilder, path, radii, mat: str, part: str, n: int = 20):
 
 
 def _finger(mb: M.MeshBuilder, part: str, base, f, n_hat, length: float,
-            radius: float, curl: float) -> None:
+            radius: float, curl: float, n: int = 6) -> None:
     """3 節のカプセル指。curl で手のひら側へ軽く曲げる。"""
     seg = length / 3.0
     pts = [np.asarray(base, dtype=float)]
@@ -482,7 +538,7 @@ def _finger(mb: M.MeshBuilder, part: str, base, f, n_hat, length: float,
         pts.append(pts[-1] + d * seg * (1.0 - 0.10 * k))
     radii = [radius * 1.00, radius * 0.94, radius * 0.84, radius * 0.58]
     with mb.part(part):
-        mb.add_tube(np.array(pts), radii, "skin", n=6,
+        mb.add_tube(np.array(pts), radii, "skin", n=n,
                     cap_start=True, cap_end=True)
 
 
@@ -510,15 +566,26 @@ def build_arms(mb: M.MeshBuilder, p: dict, a: Anatomy):
             n_hat = -n_hat
         spread = np.array([0.0, 1.0, 0.0])
 
-        palm_len = hr * (1.30 if chibi else 1.45)
-        palm_w = hr * (1.85 if chibi else 1.70)
-        palm_t = hr * (1.05 if chibi else 0.86)
+        # 公式（docs/ref/tus_chara01.jpg）の手はミトン。低頭身のまま指を 5 本
+        # 生やすと 1 本が頭幅の 5% しかなく、輪郭線を引いた時点で潰れて
+        # 手の周りの汚れにしかならない。塊そのものの輪郭で手に見せる。
+        mitten = chibi
+        palm_len = hr * (2.05 if mitten else 1.45)
+        palm_w = hr * (1.70 if mitten else 1.70)
+        palm_t = hr * (1.25 if mitten else 0.86)
         rings = []
-        for t in np.linspace(0.0, 1.0, 5):
-            k = 0.62 + 0.38 * math.sin(math.pi * min(1.0, t * 0.92 + 0.08))
+        for t in np.linspace(0.0, 1.0, 7 if mitten else 5):
+            if mitten:
+                # 手首から膨らんで先で閉じる。末尾の t^3 が無いと先が
+                # 平らな板になって、指を作らないぶんだけ目立つ。
+                k = (0.70 + 0.34 * math.sin(math.pi * (0.22 + 0.62 * t))
+                     - 0.50 * t**3)
+            else:
+                k = 0.62 + 0.38 * math.sin(math.pi * min(1.0, t * 0.92 + 0.08))
             c = wr + f * palm_len * t
             for_w = palm_w * 0.5 * k
-            for_t = palm_t * 0.5 * (0.80 + 0.20 * k)
+            for_t = palm_t * 0.5 * ((0.30 + 0.70 * k) if mitten
+                                    else (0.80 + 0.20 * k))
             ring = []
             for ang in np.linspace(0.0, 2 * math.pi, 10, endpoint=False):
                 e = 2.0 / 2.6
@@ -533,18 +600,23 @@ def build_arms(mb: M.MeshBuilder, p: dict, a: Anatomy):
 
         fl_ = hr * (1.25 if chibi else 1.52)
         fr = hr * (0.235 if chibi else 0.200)
-        knuckle = wr + f * palm_len * 0.96
-        for i, (off, lk) in enumerate(zip((-0.34, -0.115, 0.115, 0.34),
-                                          (0.86, 1.00, 0.96, 0.78))):
-            base = knuckle + spread * (palm_w * off) - n_hat * palm_t * 0.06
-            _finger(mb, "hand_" + side, base, f, n_hat, fl_ * lk,
-                    fr * (1.0 - 0.05 * abs(i - 1.5)), curl=0.16)
+        if not mitten:
+            knuckle = wr + f * palm_len * 0.96
+            for i, (off, lk) in enumerate(zip((-0.34, -0.115, 0.115, 0.34),
+                                              (0.86, 1.00, 0.96, 0.78))):
+                base = knuckle + spread * (palm_w * off) - n_hat * palm_t * 0.06
+                _finger(mb, "hand_" + side, base, f, n_hat, fl_ * lk,
+                        fr * (1.0 - 0.05 * abs(i - 1.5)), curl=0.16)
 
+        # 親指だけは残す。これが無いとただの棒になって手に見えない。
         tb = wr + f * palm_len * 0.34 - spread * palm_w * 0.46 - n_hat * palm_t * 0.10
         tdir = f * 0.42 - spread * 0.80 - n_hat * 0.28
         tdir = tdir / np.linalg.norm(tdir)
-        _finger(mb, "hand_" + side, tb, tdir, n_hat, fl_ * 0.66, fr * 1.16,
-                curl=0.12)
+        # ミトンの親指は太いので、6 角のままだと切り口が六角形に見える。
+        _finger(mb, "hand_" + side, tb, tdir, n_hat,
+                fl_ * (0.50 if mitten else 0.66),
+                fr * (1.80 if mitten else 1.16), curl=0.12,
+                n=10 if mitten else 6)
 
 
 def build_legs(mb: M.MeshBuilder, p: dict, a: Anatomy, *, bare: bool = True):
