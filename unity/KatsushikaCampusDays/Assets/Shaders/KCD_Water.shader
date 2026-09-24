@@ -252,7 +252,7 @@ Shader "KCD/Water"
                 skyTint /= max(1.0h, max(skyTint.r, max(skyTint.g, skyTint.b)));
                 half3 sky = lerp(_SkyHorizonColor.rgb, _SkyZenithColor.rgb, skyT) * skyTint;
                 half ndv = half(saturate(dot(normalWS, float3(viewDirWS))));
-                half fresnel = _FresnelBias + (1.0h - _FresnelBias) * pow(max(1.0h - ndv, 1e-4h), _FresnelPower);
+                half fresnel = _FresnelBias + (1.0h - _FresnelBias) * pow(max(1.0h - ndv, half(1e-4)), _FresnelPower);
                 fresnel = saturate(fresnel * _ReflectionStrength);
                 color = lerp(color, sky, fresnel);
                 alpha = lerp(alpha, 1.0h, fresnel);
