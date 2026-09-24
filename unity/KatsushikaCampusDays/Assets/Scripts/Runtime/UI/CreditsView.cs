@@ -69,7 +69,7 @@ namespace KCD
         public static string BuildText()
         {
             var builder = new System.Text.StringBuilder(2048);
-            builder.Append(L.Get("ui.credits.map", "地図データ © OpenStreetMap contributors (ODbL)"));
+            builder.Append(MapAttribution.Line());
             AppendNote(builder, L.Pick(
                 "Open Database License の条件で利用しています。https://www.openstreetmap.org/copyright",
                 "Used under the Open Database License. https://www.openstreetmap.org/copyright"));
