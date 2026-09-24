@@ -1,81 +1,69 @@
 {
   "version": 1,
-  "coordinate_note": "x,z は campus.json 座標 (= Unity のワールド座標, x=東 m, z=北 m)。{entrance: <building id>} は Campus シーンの entrance_<id>（ドア前の床。無ければ Models/Interiors/<id>.json の entrance_world）、{place: <id>} は CampusProps の VisitZone (Zone_<id>) の位置。どの点も NavMesh から 3 m 以内に置く（MobPoolNavMeshTests が確かめる）。",
+  "coordinate_note": "x,z は campus.json 座標 (= Unity のワールド座標, x=東 m, z=北 m)。{entrance: <building id>} は Campus シーンの entrance_<id>（ドア前の床）、{place: <id>} は CampusProps の VisitZone (Zone_<id>) の位置。SceneBuilder（MobStage）がどの点も NavMesh の上に下ろし、下ろせなかった点を通る道は使わない（CampusMobTests が確かめる）。variants は既存のキャラクターの体（body）を、髪（hair）・上着かブラウス（top）・スカートかズボンと胸のリボン（bottom）・靴（shoes）の色だけ変えて使う。",
   "spawn_stagger_seconds": 2.5,
   "respawn_delay_seconds": 6.0,
   "avoid_player_radius": 1.2,
   "variants": [
     {
       "id": "mob_a",
-      "label": "黒髪ショート・白シャツ",
+      "body": "sora",
+      "label": "そらの体・黒髪・白のブラウス・紺のスカート",
       "hair": "#2b2320",
-      "hair_style": "short",
       "top": "#f4f4f2",
       "bottom": "#33405e",
       "shoes": "#ffffff",
-      "skin": "#f3d4bd",
-      "height": 1.62,
-      "bag": "backpack"
+      "height": 1.62
     },
     {
       "id": "mob_b",
-      "label": "茶髪ロング・グレーパーカー",
+      "body": "inari",
+      "label": "いなりの体・茶髪・グレーのブラウス・黒のスカート・黒縁メガネ",
       "hair": "#6b4a2f",
-      "hair_style": "long",
       "top": "#8d8f94",
       "bottom": "#1f2430",
       "shoes": "#2b2b2b",
-      "skin": "#f6dcc7",
-      "height": 1.58,
-      "bag": "tote"
+      "height": 1.58
     },
     {
       "id": "mob_c",
-      "label": "黒髪マッシュ・紺ジャケット",
+      "body": "sora",
+      "label": "そらの体・黒髪・紺のブラウス・ベージュのスカート",
       "hair": "#1c1a1a",
-      "hair_style": "mushroom",
       "top": "#25335a",
       "bottom": "#c9c5b8",
       "shoes": "#5a4634",
-      "skin": "#efcdb2",
-      "height": 1.72,
-      "bag": "shoulder"
+      "height": 1.72
     },
     {
       "id": "mob_d",
-      "label": "明るい茶髪ポニー・理科大グリーンのパーカー",
+      "body": "kaname",
+      "label": "かなめの体・明るい茶髪・理科大グリーンのエプロン・黒のスカート",
       "hair": "#a0703f",
-      "hair_style": "ponytail",
       "top": "#2f7a5a",
       "bottom": "#3a3a3a",
       "shoes": "#ffffff",
-      "skin": "#f6dcc7",
-      "height": 1.6,
-      "bag": "backpack"
+      "height": 1.6
     },
     {
       "id": "mob_e",
-      "label": "黒髪短髪・白衣",
+      "body": "prof",
+      "label": "教授の体・黒髪・白衣・グレーのズボン",
       "hair": "#262222",
-      "hair_style": "crop",
       "top": "#fbfbfb",
       "bottom": "#4b4f57",
       "shoes": "#2b2b2b",
-      "skin": "#e9c6ab",
-      "height": 1.75,
-      "bag": "none"
+      "height": 1.75
     },
     {
       "id": "mob_f",
-      "label": "灰色ボブ・ベージュカーディガン",
+      "body": "mirai",
+      "label": "みらいの体・灰色の髪・ベージュのブラウス・茶色のスカート",
       "hair": "#8a8a8f",
-      "hair_style": "bob",
       "top": "#d9c7a5",
       "bottom": "#5b3d2e",
       "shoes": "#8c6a4f",
-      "skin": "#f3d4bd",
-      "height": 1.55,
-      "bag": "tote"
+      "height": 1.55
     }
   ],
   "bands": [
@@ -84,7 +72,7 @@
       "label_ja": "朝",
       "label_en": "Morning",
       "from_hour": 8.0,
-      "to_hour": 11.0,
+      "to_hour": 11.5,
       "count": 24,
       "walk_speed": 1.4,
       "loop": true,

@@ -106,6 +106,10 @@ namespace KCD.Editor
             ActorFactory.CreateCamera(root, player);
 
             PlaceNpcs(root);
+
+            // モブの学生 (#22)。行き先を VisitZone と entrance_ から NavMesh の上に解決するので、
+            // CampusProps.Build と BakeNavMesh のあと。
+            MobStage.Build(root);
             SeatFactory.PlaceCampus(root);
             PlaceSystems(root);
             if (route != null)
