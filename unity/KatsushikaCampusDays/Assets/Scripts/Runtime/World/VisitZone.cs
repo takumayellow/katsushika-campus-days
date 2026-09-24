@@ -51,6 +51,21 @@ namespace KCD
             return current == Vector3.one;
         }
 
+        /// <summary>
+        /// 入ったときのトースト。写真スポット（ps_*）は「写真スポット: ◯◯」として三脚があることを知らせ、
+        /// それ以外は ui.place.* の名前（無ければ displayName）。
+        /// </summary>
+        public static string PlaceLabel(string placeId, string displayName)
+        {
+            CatalogPhotoSpot spot = CollectibleCatalog.Instance.FindPhotoSpot(placeId);
+            if (spot != null)
+            {
+                return L.Format("ui.hud.photo_spot", spot.DisplayName);
+            }
+
+            return L.Get("ui.place." + placeId, displayName);
+        }
+
         private void Reset()
         {
             var box = GetComponent<BoxCollider>();
@@ -72,7 +87,7 @@ namespace KCD
             if (_announce && !_reportedOnce && !string.IsNullOrEmpty(_displayName))
             {
                 _reportedOnce = true;
-                HUD.Instance?.ShowToast(L.Get("ui.place." + _placeId, _displayName));
+                HUD.Instance?.ShowToast(PlaceLabel(_placeId, _displayName));
             }
 
             // 入った瞬間。時刻の条件より早ければ「◯時ごろにまた来よう」が出る (#66)。

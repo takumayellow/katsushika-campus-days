@@ -116,6 +116,8 @@ namespace KCD.Editor
             }
 
             InteriorStage.Build(root);
+            // 隠しアイテム 20 個と写真スポット 6 箇所（collectibles.json）。屋内の poi に置く物があるので屋内のあと (#65)。
+            CollectibleStage.Build(root);
             if (route != null)
             {
                 // 寮の屋内と玄関。本編の 9 棟とは別枠で、探索率にも「入った建物」にも数えない。

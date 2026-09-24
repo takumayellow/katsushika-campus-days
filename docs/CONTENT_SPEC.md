@@ -10,10 +10,10 @@
 
 | 項目 | 規則 |
 |------|------|
-| 屋外座標 | `campus.json` と同じ。`x` = 東 (m), `z` = 北 (m)。`y` は NavMesh へスナップ（`NavMesh.SamplePosition`）。 |
+| 屋外座標 | `campus.json` と同じ。`x` = 東 (m), `z` = 北 (m)。`y` はシーンを組むときに当たり判定の面へ降ろす（`CollectibleStage.OutdoorFloor`）。 |
 | 屋内位置 | `Models/Interiors/<building>.json` の `empties` にある `poi_*` の名前。Unity 側は同名 Empty（FBX 内 Transform）を `transform.Find` で引き、その **ワールド座標** を使う。 |
 | 建物 id | `campus.json` の `buildings[].id` のうち `on_campus: true` の 9 つ: `research1 research2 lecture kyoso library gym lab1 lab2 greenhouse`。 |
-| 場所 id | `CampusProps.PlaceZones` の VisitZone: `gate_main campus_mall mall_bench library_pond`。写真スポット `ps_*` も VisitZone として生成する（後述）。 |
+| 場所 id | `CampusProps.PlaceZones` の VisitZone: `gate_main campus_mall mall_bench library_pond`。写真スポット `ps_*` も VisitZone と三脚（`PhotoSpot`）として生成する（後述）。 |
 | NPC id | `inari kaname sora prof`。 |
 | 言語 | 日本語が正。既存 JSON は `text` / `title` / `summary` / `rewardText` をそのまま保ち、英語は `text_en` / `title_en` / `summary_en` / `rewardText_en` を **追加** した。ローダは `_en` を読まなくても動く。 |
 
@@ -90,8 +90,8 @@ Assets/Data/Ending       → Assets/Resources/KCD/Ending
 ### Unity 側
 
 - **`CollectibleCatalog`**（static / ScriptableObject 不要）: `Resources.Load<TextAsset>("KCD/Collectibles/collectibles")` を parse。`Get(id)`, `Hidden`, `PhotoSpots`, `Achievements`。
-- **`CollectibleSpawner`**（シーン内 MonoBehaviour、`CampusProps` の後に実行）: `source == "hidden"` ごとに `CollectableItem` プレハブを生成し `ItemId = id`。屋外は `(x, NavMesh y, z)`、屋内は `Interiors` ルート配下の `poi_*` Transform の position。既に入手済み（セーブ）の id は生成しない。写真スポットは `VisitZone` を生成し `PlaceId = ps_*`（半径 2.5 m）、地面に三脚マークの Decal/Quad を置く。
-- **`PhotoSystem`**: 写真スポット VisitZone 内で `E`（`ui.interact.photo`）を押すと `look_dir` へカメラ補間 → 撮影 SE → `ui.hud.photo_taken` トースト → `AchievementSystem.NotifyPhoto(id)`。`ReportVisit(ps_*)` は入っただけで発火させる（サブクエ用）。
+- **`CollectibleStage`**（Editor、`SceneBuilder` が `InteriorStage` の後に呼ぶ）: シーンを組むときに置く。`source == "hidden"` の 20 個は `ActorFactory.CreateCollectable` でレア度の色の宝石（`gem_<rarity>`）として置き、`ItemId = id`。屋外は `(x, z)` の地面（Ground レイヤーの面から 1.2 m までの上向きの面に載せる）、屋内は `Interior_<building>` 配下の `poi_*` の床（2 階の poi は 2 階の床）。写真スポットは同じ場所に `VisitZone`（`PlaceId = ps_*`、5×3×5 m）と三脚（`PhotoSpot`、レンズを `look_dir` へ向ける）を置く。写真スポットから 1 m 以内の隠しアイテム（`c_mall_pin` と `c_dome_key`）は、三脚と E の対象を取り合わないよう横へ 0.9 m ずらす。拾った隠しアイテムは、同じ日のうちにシーンを読み直しても `CollectableItem` が消す。
+- **`PhotoSpot`**（三脚）: `E`（`ui.interact.photo`）でプレイヤーを `look_dir` へ向けてカメラを背後へ回し、`PhotoSystem.CaptureAt(ps_*)` で撮る → 撮影 SE → `ui.hud.photo_taken` トースト（スポットの名前）→ `DayStats.NotePhoto(ps_*)`。`ReportVisit(ps_*)` は `VisitZone` に入っただけで発火する（サブクエ用、`ui.hud.photo_spot` トースト）。
 - **`AchievementBook`**（`GameManager.Achievements`）: `DayStats`（`CollectableItem` / `EntranceTrigger` / `NPCTalker` / `PhotoSystem` が記録する）と `QuestSystem` の達成から `condition` を判定し、新しく満たしたものを `ui.hud.achievement_unlocked` トーストで知らせる。`GameManager` はクエストの `Changed` か `DayStats.Version` が変わったフレームだけ数え直す。報酬が収集物のクエスト（`rewardType: "collectible"`）の `rewardId` は、達成したときに `QuestRewards` が `DayStats` に拾った物として記録する。称号と `DayStats` はまだセーブに載らない（起動中のみ。ロード直後は読み込んだ進行で取れている称号をトーストを出さずに獲得済みにする）。
 
 ---
@@ -119,8 +119,8 @@ Assets/Data/Ending       → Assets/Resources/KCD/Ending
 | `q_sq_night_walk` | 16 | autoStart | q_sunset | visit `gate_main` (minHour 19) | `ach_full_day` |
 
 **屋内 `visit` を動かすために必要なもの**: 屋内 `poi_*` を対象にする `visit` ステップは、その Empty の位置に `VisitZone(PlaceId = poi 名)` が要る。
-`CollectibleSpawner`（または `InteriorPoiZones`）が、全 Interiors の `poi_*` Empty に半径 2 m の VisitZone を自動生成する。
-`q_sq_lab_notebook` の `collect c_lab_goggles` は隠しアイテム `c_lab_goggles`（`poi_lab1_lab_b`）をそのまま拾えばよい（先に拾っていた場合は `QuestSystem` 起動時にインベントリを見て即達成扱いにする）。
+`InteriorStage.AddPoiZones` が、全 Interiors の `poi_*` Empty に 4×3×4 m の VisitZone を自動生成する。
+`q_sq_lab_notebook` の `collect c_lab_goggles` は隠しアイテム `c_lab_goggles`（`poi_lab1_lab_b`）をそのまま拾えばよい（先に拾っていた場合は `QuestHeldItems` が `DayStats` を見て即達成扱いにする）。屋外にいるあいだ、ミニマップの目的地（`QuestObjectiveLocator`）は第1実験棟の入口を指す。
 
 ### Dialogue の追加話題
 

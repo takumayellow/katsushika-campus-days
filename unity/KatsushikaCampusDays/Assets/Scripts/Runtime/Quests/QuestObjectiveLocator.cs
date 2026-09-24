@@ -46,7 +46,7 @@ namespace KCD
                 case QuestStepKind.Visit:
                     return LocateVisit(target, from, out position);
                 case QuestStepKind.Collect:
-                    return Nearest(_items, from, i => i.ItemId == target && i.CanInteract, out position);
+                    return LocateCollect(target, from, out position);
                 case QuestStepKind.Flag:
                     return Nearest(_props, from, p => p.FlagId == target, out position);
                 default:
@@ -85,6 +85,51 @@ namespace KCD
             return Nearest(_zones, from, z => z.PlaceId == target, out position);
         }
 
+        /// <summary>
+        /// collect ステップの行き先。いまいる所（屋内ならその建物、外ならキャンパス）の物を先に指す。
+        /// そこに無ければ、屋内の物はその建物の入口を、外の物はその物を指す。
+        /// 第1実験棟のゴーグル（q_sq_lab_notebook）のように屋内に置いた物を、外から指せるようにする (#65)。
+        /// </summary>
+        private static bool LocateCollect(string target, Vector3 from, out Vector3 position)
+        {
+            string current = InteriorLoader.Instance != null ? InteriorLoader.Instance.CurrentId : null;
+            string here = string.IsNullOrEmpty(current) ? null : current;
+            if (Nearest(_items, from, i => i.ItemId == target && i.CanInteract && InteriorOwnerOf(i.transform) == here,
+                    out position))
+            {
+                return true;
+            }
+
+            position = Vector3.zero;
+            float best = float.MaxValue;
+            bool found = false;
+            for (int i = 0; i < _items.Length; i++)
+            {
+                CollectableItem item = _items[i];
+                if (item == null || item.ItemId != target || !item.CanInteract)
+                {
+                    continue;
+                }
+
+                string owner = InteriorOwnerOf(item.transform);
+                Vector3 goal = item.transform.position;
+                if (owner != null && !Nearest(_entrances, from, e => e.BuildingId == owner, out goal))
+                {
+                    continue;
+                }
+
+                float distance = (goal - from).sqrMagnitude;
+                if (distance < best)
+                {
+                    best = distance;
+                    position = goal;
+                    found = true;
+                }
+            }
+
+            return found;
+        }
+
         /// <summary>その地点がどの屋内に属しているか。屋外のゾーンなら null。</summary>
         private static string InteriorOwnerOf(string placeId)
         {
@@ -95,16 +140,22 @@ namespace KCD
                     continue;
                 }
 
-                for (Transform t = _zones[i].transform; t != null; t = t.parent)
-                {
-                    string id = InteriorIdFromName(t.name);
-                    if (id != null)
-                    {
-                        return id;
-                    }
-                }
+                return InteriorOwnerOf(_zones[i].transform);
+            }
 
-                return null;
+            return null;
+        }
+
+        /// <summary>その物がどの屋内に入っているか（親をたどって Interior_ を探す）。外なら null。</summary>
+        public static string InteriorOwnerOf(Transform transform)
+        {
+            for (Transform t = transform; t != null; t = t.parent)
+            {
+                string id = InteriorIdFromName(t.name);
+                if (id != null)
+                {
+                    return id;
+                }
             }
 
             return null;
