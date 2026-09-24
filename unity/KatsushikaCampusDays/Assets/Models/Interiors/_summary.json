@@ -1,13 +1,13 @@
 {
  "total_tris": 297441,
- "total_ext_tris": 172246,
+ "total_ext_tris": 166260,
  "buildings": [
   {
    "tris": 40439,
-   "ext_tris": 25633,
+   "ext_tris": 24613,
    "ext_stats": {
     "tris": {
-     "bld": 6724,
+     "bld": 5704,
      "site_furniture": 1422,
      "site_ground": 1901,
      "site_props_beds": 6222,
@@ -17,7 +17,7 @@
      "trees": 9172
     },
     "culled_tris": {
-     "site": 5717,
+     "site": 5051,
      "trees": 1466
     },
     "plants": {
@@ -27,6 +27,15 @@
     "trees": {
      "placed": 52,
      "skipped": 3
+    },
+    "own": {
+     "bld": 14004,
+     "door": 68
+    },
+    "entrance": {
+     "props": 0,
+     "prop_faces": 0,
+     "trees": 0
     }
    },
    "objects": [
@@ -130,21 +139,21 @@
    "notes": [
     "1F ロビー（受付・ソファ・掲示板）+ EV3 基 + 廊下 142 m + 研究室2室 + 教授室"
    ],
-   "size": 932956,
+   "size": 916764,
    "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/research1.fbx",
    "previews": [
     "docs/previews/interior_research1.png"
    ],
    "id": "research1",
    "label": "第1研究棟",
-   "sec": 0.6705732345581055
+   "sec": 0.7995154857635498
   },
   {
    "tris": 47429,
-   "ext_tris": 43949,
+   "ext_tris": 43851,
    "ext_stats": {
     "tris": {
-     "bld": 11862,
+     "bld": 11764,
      "site_furniture": 1074,
      "site_ground": 1508,
      "site_props_beds": 12276,
@@ -154,7 +163,7 @@
      "trees": 17017
     },
     "culled_tris": {
-     "site": 4299,
+     "site": 4269,
      "trees": 2963
     },
     "plants": {
@@ -164,6 +173,15 @@
     "trees": {
      "placed": 101,
      "skipped": 10
+    },
+    "own": {
+     "bld": 5576,
+     "door": 68
+    },
+    "entrance": {
+     "props": 0,
+     "prop_faces": 0,
+     "trees": 0
     }
    },
    "objects": [
@@ -352,7 +370,7 @@
     "中教室 60 席",
     "3 層吹き抜けの大階段ホール + 大ホール + ホワイエ + 演習室 3 室 + 中教室"
    ],
-   "size": 1422348,
+   "size": 1420460,
    "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/lecture.fbx",
    "previews": [
     "docs/previews/interior_lecture_hall.png",
@@ -360,32 +378,41 @@
    ],
    "id": "lecture",
    "label": "講義棟",
-   "sec": 0.6716158390045166
+   "sec": 1.3214921951293945
   },
   {
    "tris": 64210,
-   "ext_tris": 27475,
+   "ext_tris": 25385,
    "ext_stats": {
     "tris": {
-     "bld": 5706,
+     "bld": 5310,
      "site_furniture": 1050,
      "site_ground": 1462,
-     "site_props_beds": 11262,
+     "site_props_beds": 9777,
      "site_props_signs": 152,
      "site_water": 4,
-     "trees": 7839
+     "trees": 7630
     },
     "culled_tris": {
-     "site": 3178,
-     "trees": 1401
+     "site": 3063,
+     "trees": 1382
     },
     "plants": {
-     "full": 191,
+     "full": 164,
      "simple": 58
     },
     "trees": {
-     "placed": 46,
+     "placed": 45,
      "skipped": 20
+    },
+    "own": {
+     "bld": 4517,
+     "door": 68
+    },
+    "entrance": {
+     "props": 1,
+     "prop_faces": 993,
+     "trees": 1
     }
    },
    "objects": [
@@ -448,7 +475,7 @@
     "食堂 合計 1400 席",
     "1〜2F 吹き抜けの大食堂。配膳カウンター 38 m・券売機 6 台・返却口・2F 回廊"
    ],
-   "size": 1211804,
+   "size": 1165340,
    "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/research2.fbx",
    "previews": [
     "docs/previews/interior_research2.png",
@@ -456,14 +483,14 @@
    ],
    "id": "research2",
    "label": "第2研究棟",
-   "sec": 0.5908527374267578
+   "sec": 0.9828405380249023
   },
   {
    "tris": 25544,
-   "ext_tris": 26239,
+   "ext_tris": 26221,
    "ext_stats": {
     "tris": {
-     "bld": 9342,
+     "bld": 9324,
      "site_furniture": 1340,
      "site_ground": 1567,
      "site_props_beds": 5961,
@@ -481,6 +508,15 @@
     "trees": {
      "placed": 44,
      "skipped": 7
+    },
+    "own": {
+     "bld": 4166,
+     "door": 68
+    },
+    "entrance": {
+     "props": 0,
+     "prop_faces": 0,
+     "trees": 0
     }
    },
    "objects": [
@@ -589,39 +625,48 @@
    "notes": [
     "1F=カフェ（吹き抜け）+ コンビニ、2F=ラウンジ。q_coffee の舞台"
    ],
-   "size": 817692,
+   "size": 817564,
    "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/kyoso.fbx",
    "previews": [
     "docs/previews/interior_kyoso.png"
    ],
    "id": "kyoso",
    "label": "共創棟",
-   "sec": 0.5096192359924316
+   "sec": 0.8210461139678955
   },
   {
    "tris": 57924,
-   "ext_tris": 14484,
+   "ext_tris": 12969,
    "ext_stats": {
     "tris": {
-     "bld": 1800,
+     "bld": 1204,
      "site_furniture": 292,
      "site_ground": 1205,
-     "site_props_beds": 1412,
+     "site_props_beds": 493,
      "site_props_signs": 46,
      "site_water": 6,
      "trees": 9723
     },
     "culled_tris": {
-     "site": 778,
+     "site": 635,
      "trees": 1467
     },
     "plants": {
-     "full": 15,
-     "simple": 33
+     "full": 0,
+     "simple": 27
     },
     "trees": {
      "placed": 58,
      "skipped": 17
+    },
+    "own": {
+     "bld": 3082,
+     "door": 68
+    },
+    "entrance": {
+     "props": 1,
+     "prop_faces": 609,
+     "trees": 0
     }
    },
    "objects": [
@@ -731,7 +776,7 @@
     "個人閲覧ブース 66 席",
     "開架書架 + 閲覧席 + 2F 回廊の吹き抜け + 個人閲覧ブース"
    ],
-   "size": 905052,
+   "size": 868940,
    "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/library.fbx",
    "previews": [
     "docs/previews/interior_library.png",
@@ -739,21 +784,21 @@
    ],
    "id": "library",
    "label": "図書館",
-   "sec": 0.44591546058654785
+   "sec": 0.8373105525970459
   },
   {
    "tris": 20965,
-   "ext_tris": 12751,
+   "ext_tris": 11721,
    "ext_stats": {
     "tris": {
-     "bld": 7878,
+     "bld": 6848,
      "site_ground": 585,
      "site_props_signs": 44,
      "site_water": 2,
      "trees": 4242
     },
     "culled_tris": {
-     "site": 2964,
+     "site": 2528,
      "trees": 558
     },
     "plants": {
@@ -763,6 +808,15 @@
     "trees": {
      "placed": 25,
      "skipped": 9
+    },
+    "own": {
+     "bld": 2282,
+     "door": 68
+    },
+    "entrance": {
+     "props": 0,
+     "prop_faces": 0,
+     "trees": 0
     }
    },
    "objects": [
@@ -818,27 +872,27 @@
     "用具庫 + 体操器具（跳び箱・マット・平均台）+ 得点板 + 肋木・キャットウォーク",
     "アリーナ（28×15 m コート・ゴール 2 基・ステージ・観覧席・屋根トラス）"
    ],
-   "size": 501788,
+   "size": 487388,
    "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/gym.fbx",
    "previews": [
     "docs/previews/interior_gym.png"
    ],
    "id": "gym",
    "label": "体育館",
-   "sec": 0.3163454532623291
+   "sec": 0.6141691207885742
   },
   {
    "tris": 22502,
-   "ext_tris": 10911,
+   "ext_tris": 10895,
    "ext_stats": {
     "tris": {
-     "bld": 4715,
+     "bld": 4699,
      "site_ground": 363,
      "site_props_signs": 120,
      "trees": 5713
     },
     "culled_tris": {
-     "site": 2621,
+     "site": 2617,
      "trees": 1907
     },
     "plants": {
@@ -848,6 +902,15 @@
     "trees": {
      "placed": 40,
      "skipped": 3
+    },
+    "own": {
+     "bld": 1754,
+     "door": 68
+    },
+    "entrance": {
+     "props": 0,
+     "prop_faces": 0,
+     "trees": 0
     }
    },
    "objects": [
@@ -886,7 +949,7 @@
    "notes": [
     "廊下 + 実験室 3 室（実験台・ドラフト・ボンベ・薬品庫）"
    ],
-   "size": 488412,
+   "size": 488028,
    "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/lab1.fbx",
    "previews": [
     "docs/previews/interior_lab1.png",
@@ -894,20 +957,20 @@
    ],
    "id": "lab1",
    "label": "実験棟1",
-   "sec": 0.31574296951293945
+   "sec": 0.5083370208740234
   },
   {
    "tris": 14300,
-   "ext_tris": 6597,
+   "ext_tris": 6496,
    "ext_stats": {
     "tris": {
-     "bld": 2609,
+     "bld": 2508,
      "site_ground": 363,
      "site_props_signs": 110,
      "trees": 3515
     },
     "culled_tris": {
-     "site": 2070,
+     "site": 2040,
      "trees": 1513
     },
     "plants": {
@@ -917,6 +980,15 @@
     "trees": {
      "placed": 26,
      "skipped": 0
+    },
+    "own": {
+     "bld": 601,
+     "door": 68
+    },
+    "entrance": {
+     "props": 0,
+     "prop_faces": 0,
+     "trees": 0
     }
    },
    "objects": [
@@ -947,7 +1019,7 @@
    "notes": [
     "廊下 + 実験室 2 室（実験台・ドラフト・ボンベ・薬品庫）"
    ],
-   "size": 345772,
+   "size": 343852,
    "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/lab2.fbx",
    "previews": [
     "docs/previews/interior_lab2.png",
@@ -955,20 +1027,20 @@
    ],
    "id": "lab2",
    "label": "実験棟2",
-   "sec": 0.2141127586364746
+   "sec": 0.3465726375579834
   },
   {
    "tris": 4128,
-   "ext_tris": 4207,
+   "ext_tris": 4109,
    "ext_stats": {
     "tris": {
-     "bld": 2714,
+     "bld": 2616,
      "site_ground": 297,
      "site_props_signs": 104,
      "trees": 1092
     },
     "culled_tris": {
-     "site": 1791,
+     "site": 1759,
      "trees": 708
     },
     "plants": {
@@ -978,6 +1050,15 @@
     "trees": {
      "placed": 9,
      "skipped": 0
+    },
+    "own": {
+     "bld": 112,
+     "door": 68
+    },
+    "entrance": {
+     "props": 0,
+     "prop_faces": 0,
+     "trees": 0
     }
    },
    "objects": [
@@ -1001,14 +1082,14 @@
    "notes": [
     "切妻ガラス屋根の温室（栽培ベンチ 2 列・鉢植え・灌水パイプ）"
    ],
-   "size": 199996,
+   "size": 198300,
    "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/greenhouse.fbx",
    "previews": [
     "docs/previews/interior_greenhouse.png"
    ],
    "id": "greenhouse",
    "label": "温室",
-   "sec": 0.13890337944030762
+   "sec": 0.2649052143096924
   }
  ]
 }

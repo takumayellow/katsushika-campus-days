@@ -41,6 +41,7 @@ class Ctx:
         self.cams = []           # [(suffix, loc, target, lens)]
         self.seats = 0           # 数えた座席数（README 用）
         self.notes = []
+        self.door_gap = None     # 入口の開口の (x0, x1)。common.envelope が入れる
         self._npc = 0
         self._sign = 0
         self._seats_flushed = False

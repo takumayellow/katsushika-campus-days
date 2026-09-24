@@ -181,7 +181,7 @@ def build_one(sp, plan, args, eng, ext_src=None):
     if ext_src is not None:
         # 屋内で目が届く一番高い点。屋根より上から外を見ることはない
         top = max((v.co.z for o in objects for v in o.data.vertices), default=0.0)
-        builders, ext_stats = exterior.build(sp, ext_src, top)
+        builders, ext_stats = exterior.build(sp, ext_src, top, c.door_gap)
         ext_objects = [mb.to_object() for mb in builders]
 
     info = {
@@ -360,6 +360,8 @@ def verify_fbx(path, expect_empties, meta=None, max_gap=0.25):
         holes = [g for g in closure.measure(objs, meta) if g["width"] > max_gap]
     return {"empties_found": len(got), "missing": missing,
             "meshes": len(objs), "ext_meshes": len(meshes) - len(objs),
+            "ext_names": sorted(re.sub(r"\.\d{3}$", "", o.name)
+                                for o in meshes if o.name.startswith(EXT_PREFIX)),
             "holes": holes}
 
 
@@ -395,7 +397,7 @@ def main():
     ext_src = None
     if not args.no_ext:
         t0 = time.time()
-        ext_src = exterior.load(args.campus_dir)
+        ext_src = exterior.load(args.campus_dir, data)
         print("[interiors] 近景の元: 面 %d / 木 %d 本 (%.1f s, %s)"
               % (len(ext_src.polys), len(ext_src.trees), time.time() - t0,
                  args.campus_dir))
@@ -426,6 +428,10 @@ def main():
                   % (sum(es["culled_tris"].values()), es["culled_tris"]["trees"],
                      sum(es["plants"].values()), es["plants"]["simple"],
                      es["trees"]["placed"], es["trees"]["skipped"]))
+            print("                   自分の棟: 外装 %d 面・扉 %d 面を除外 / 入口の前: 設備 %d 個"
+                  "（%d 面）・木 %d 本を除外"
+                  % (es["own"]["bld"], es["own"]["door"], es["entrance"]["props"],
+                     es["entrance"]["prop_faces"], es["entrance"]["trees"]))
         for n in info["notes"]:
             print("             - %s" % n)
         report.append(info)
@@ -444,7 +450,7 @@ def main():
         res = verify_fbx(info["fbx"], info["empties"], meta)
         lacking = missing_contract(info["id"], info["empties"], required)
         holes = res["holes"]
-        ext_lost = res["ext_meshes"] != len(info["ext_objects"])
+        ext_lost = res["ext_names"] != sorted(info["ext_objects"])
         bad = bool(res["missing"] or lacking or holes or ext_lost)
         mark = "OK " if not bad else "NG "
         if bad:
@@ -463,8 +469,8 @@ def main():
                  "" if not lacking else
                  "契約違反(データが参照するのに無い): %s" % lacking,
                  "" if not ext_lost else
-                 " 近景が %d/%d しか無い" % (res["ext_meshes"],
-                                            len(info["ext_objects"]))))
+                 " 近景のメッシュが違う %s != %s" % (res["ext_names"],
+                                                    sorted(info["ext_objects"]))))
 
     total = sum(i["tris"] for i in report)
     total_ext = sum(i["ext_tris"] for i in report)
@@ -476,7 +482,7 @@ def main():
     print("\n[interiors] 合計 %d / %d 三角形 + 近景 %d / %d / %d 棟 / %.1f s  (%s)"
           % (total, INT_BUDGET, total_ext, EXT_BUDGET, len(report), time.time() - t_all,
              "OK" if ok else
-             "Empty 欠落 / POI 契約違反 / 外周の穴 / 近景の欠落 / 予算超過あり"))
+             "Empty 欠落 / POI 契約違反 / 外周の穴 / 近景のメッシュ違い / 予算超過あり"))
 
     # 集計を JSON で残す（README 生成の材料）。
     # 一部の棟だけを流したときに上書きすると全棟ぶんの集計が失われるので、

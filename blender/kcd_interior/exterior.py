@@ -6,8 +6,14 @@
 景色と外へ出たときの景色が食い違わない。
 
 - 外周の内側に入る部分は切り落とす（屋内の壁と床の中に埋まるだけ）。
-- 自分の建物の外装は外周から OWN_MARGIN m 以内を落とす。外装の窓割りは屋内の窓割りと
-  別に作っているので、外壁やルーバーが屋内の窓の真ん前をふさぐ。
+- 自分の建物の外装（bld_<id>）と、bld_entrances のうち自分の扉の部材（風除室・ガラス扉・
+  枠・庇・マット）は入れない。屋内は外装と別に作っているので、外装の窓割りやルーバー、
+  外へ張り出した柱・庇・塔が屋内の窓の真ん前をふさぐ。扉の前の石張り（天端 APRON_TOP 以下の
+  面）は地面なので残す。
+- 屋内の入口の前（開口の両脇へ LANE_SIDE m、外周から外へ LANE_DEPTH m）にかかる屋外の
+  設備（花壇・ベンチ・照明柱・看板・自販機・ゴミ箱）は物ごと入れず、幹がそこから
+  LANE_TREE m 以内の木も入れない。自分の棟の立て看板（キャンパスで入口の脇に立てたもの）と、
+  地面・水面・ほかの棟は残す。
 - 木は幹の位置で選び（幹から外周までが RADIUS + 樹冠の半径以内）、切らずに丸ごと入れる。
   樹冠が外周 + TREE_MARGIN にかかるものは入れない（切ると断面が見える）。
 - 建物の中のどこから見ても裏を向いている面は入れない。Unity のキャンパス用マテリアルは
@@ -24,8 +30,11 @@ import math
 import os
 
 import bpy
+from kcd_lib import entrances
 from kcd_lib.mesh import MeshBuilder, _area3, _clip_half, _is_convex, _newell, _triangulate
 from kcd_lib.site import _PLANT_RINGS, _plant_z
+
+from .spec import campus_frame
 
 CAMPUS_FILES = ("campus.fbx", "trees.fbx")
 IMPORT_OPTS = dict(axis_forward="-Z", axis_up="Y")
@@ -34,7 +43,6 @@ RADIUS = 30.0        # 外周を四方へ広げる幅。この矩形の中を入
 DZ = -0.03           # 近景全体を下げる量
 Z_MIN = -0.045       # これより下の頂点は持ち上げる（OuterGround -0.05 / OutsideGround -0.06 より上に置く）
 Z_BURIED = -0.001    # キャンパスでこれより下にしか無い面（車道の帯の埋まった側面）は捨てる
-OWN_MARGIN = 1.5     # 自分の建物の外装を落とす幅（外周から）
 TREE_MARGIN = 0.3    # 樹冠と外周のあいだに空ける幅
 PLANT_FULL = 12.0    # 花壇の株をそのままの形で入れる距離（外周から）。これより遠いと簡略形
 TOP_RING = _PLANT_RINGS[0][0] / _PLANT_RINGS[-1][0]   # 株の天面の輪から下の輪への倍率
@@ -42,6 +50,17 @@ BLOOM_LIFT = (0.01, 0.06)   # 花の底が株の表面から浮く高さ、底�
 PLANT_SEG = 7        # 株の角数（site._plant の seg）
 PLANT_FACES = PLANT_SEG * (len(_PLANT_RINGS) - 1) + 1   # 株 1 つの面数（側面 + 天面）
 EPS = 1e-6
+# 屋内の入口の前の通り道
+LANE_SIDE = 1.0      # 開口の端から通り道の端まで
+# 外周から外への長さ。キャンパスで扉の前に木・ベンチ・照明柱を置かない長さ（風除室の先から）。
+# 屋内の入口には風除室が無いので外周から測る
+LANE_DEPTH = entrances.KEEP_CLEAR
+LANE_TREE = 0.5      # 幹と通り道のあいだに空ける幅（幹の太さぶん）
+SIGN_TOL = 0.05      # 立て看板の位置と看板の外接矩形の照合の余裕
+DOOR_TOL = 0.05      # 扉の部材の範囲の余裕
+APRON_TOP = entrances.APRON_Z + 0.005   # 自分の扉の部材のうち、これより低い面（石張り）は残す
+TOUCH = 0.02         # 外接箱がこれより近い部品は 1 つの物とみなす
+GRID = 2.0           # TOUCH の判定に使う格子の幅
 
 EXT_PREFIX = "ext_"          # 近景のメッシュ名の頭。Unity 側で当たり判定を外す目印（#60）
 TREES_SUFFIX = "_trees"      # 木だけのメッシュ ext_<id>_trees
@@ -49,6 +68,8 @@ TREES_SUFFIX = "_trees"      # 木だけのメッシュ ext_<id>_trees
 TREE_PREFIX = "tree_mesh_"   # trees.fbx の樹種ごとの原型
 TREE_GROUP_PREFIX = "trees_" # trees.fbx の樹種ごとの親 Empty（子が 1 本ずつの木）
 BLD_PREFIX = "bld_"          # campus.fbx の棟の外装
+ENTRANCES = "bld_entrances"  # campus.fbx の全棟の扉まわり（entrances.build）
+GROUND = ("site_ground", "site_water")   # 通り道にかかっても残す面
 BEDS = "site_props_beds"     # campus.fbx の花壇
 
 
@@ -59,7 +80,11 @@ class Source:
         # (出どころ, マテリアル, [(x, y, z)], (xmin, xmax, ymin, ymax), zmax, 株)
         # 株 = None か (株の番号, 簡略形か)。花壇の株の面と花、その簡略形（find_plants）
         self.polys = []
+        # polys と同じ長さ。屋外の設備の面なら物の番号（prop_groups）、ほかは None
+        self.groups = []
         self.plants = []   # 株の中心 (x, y)
+        self.doors = {}    # 棟 -> [entrances.plan の扉]
+        self.signs = {}    # 棟 -> [立て看板の位置 (x, y)]
         self.protos = {}   # 樹種 -> (頂点, [(頂点番号, マテリアル)], 樹冠の半径, 原型の姿勢)
         self.trees = []    # (樹種, 4x4 行列, (x, y), 倍率)
 
@@ -69,9 +94,10 @@ def _mat_name(mat):
     return mat.name.split(".")[0] if mat is not None else "concrete_grey"
 
 
-def load(campus_dir):
+def load(campus_dir, data):
     """今のシーンに 2 つの FBX を読み込み、面と木を Python のデータに写して返す。
 
+    data は campus.json（spec.load_campus）。扉の位置を build_campus と同じ計算で出す。
     読み込む前からシーンにある物（起動時のシーンなど）は使わない。
     呼んだ側はこのあとシーンを初期化してよい（戻り値は bpy のデータを持たない）。"""
     before = {o.name for o in bpy.data.objects}
@@ -97,6 +123,12 @@ def load(campus_dir):
             src.polys.append((o.name, mat, pts, (min(xs), max(xs), min(ys), max(ys)),
                               max(q[2] for q in pts), None))
     src.polys, src.plants = find_plants(src.polys)
+    src.groups = prop_groups(src.polys)
+    ctx = {}
+    for dr in entrances.plan(data, campus_frame(data), ctx):
+        src.doors.setdefault(dr["id"], []).append(dr)
+    for bid, xy, _z, _yaw in ctx["sign"]:
+        src.signs.setdefault(bid, []).append(xy)
 
     for o in loaded:
         if o.type != "MESH" or not o.name.startswith(TREE_PREFIX):
@@ -134,6 +166,80 @@ def _poly(name, mat, pts, plant):
 
 def _key(p):
     return (round(p[0], 4), round(p[1], 4), round(p[2], 4))
+
+
+class _Sets:
+    """union-find。"""
+
+    def __init__(self, items):
+        self.parent = {i: i for i in items}
+
+    def root(self, i):
+        par = self.parent
+        while par[i] != i:
+            par[i] = par[par[i]]
+            i = par[i]
+        return i
+
+    def join(self, a, b):
+        a, b = self.root(a), self.root(b)
+        if a != b:
+            self.parent[a] = b
+
+
+def _join_shared(polys, idx):
+    """idx の面のうち頂点を共有するものを 1 つにまとめた _Sets。"""
+    sets = _Sets(idx)
+    seen = {}
+    for i in idx:
+        for q in polys[i][2]:
+            sets.join(i, seen.setdefault(_key(q), i))
+    return sets
+
+
+def _box3(pts, b=None):
+    """pts を含む軸平行な箱 (xmin, xmax, ymin, ymax, zmin, zmax)。b があれば広げる。"""
+    xs = [q[0] for q in pts]
+    ys = [q[1] for q in pts]
+    zs = [q[2] for q in pts]
+    nb = (min(xs), max(xs), min(ys), max(ys), min(zs), max(zs))
+    if b is None:
+        return nb
+    return (min(b[0], nb[0]), max(b[1], nb[1]), min(b[2], nb[2]), max(b[3], nb[3]),
+            min(b[4], nb[4]), max(b[5], nb[5]))
+
+
+def _touch(a, b, gap):
+    return all(a[k] <= b[k + 1] + gap and b[k] <= a[k + 1] + gap for k in (0, 2, 4))
+
+
+def prop_groups(polys):
+    """屋外の設備（地面・水面・棟の面以外）の面を物ごとにまとめる。
+
+    polys と同じ長さのリストを返す。設備の面には物の番号、ほかは None。
+    頂点を共有する面をまとめたうえで、同じ出どころのまとまりどうしで外接箱が TOUCH 以内に
+    接するものもまとめる（ベンチの座と脚、花壇の縁と株は頂点を共有しない別の箱）。
+    出どころが違うもの（花壇の脇のベンチなど）はまとめない。"""
+    idx = [i for i, p in enumerate(polys)
+           if p[0] not in GROUND and not p[0].startswith(BLD_PREFIX)]
+    sets = _join_shared(polys, idx)
+    boxes = {}
+    for i in idx:
+        r = sets.root(i)
+        boxes[r] = _box3(polys[i][2], boxes.get(r))
+    grid = {}
+    for r, b in boxes.items():
+        name = polys[r][0]
+        for gx, gy in _box_cells(b, TOUCH, GRID):
+            cell = grid.setdefault((name, gx, gy), [])
+            for o in cell:
+                if _touch(b, boxes[o], TOUCH):
+                    sets.join(r, o)
+            cell.append(r)
+    out = [None] * len(polys)
+    for i in idx:
+        out[i] = sets.root(i)
+    return out
 
 
 def find_plants(polys):
@@ -175,25 +281,10 @@ def _plant_groups(polys):
 
     (中心, 天面の頂点, 下の輪の高さ, 面の番号, 半径, 高さ) のリスト。"""
     leaf = [i for i, p in enumerate(polys) if p[0] == BEDS and p[1] == "flower_leaf"]
-    parent = {i: i for i in leaf}
-
-    def root(i):
-        while parent[i] != i:
-            parent[i] = parent[parent[i]]
-            i = parent[i]
-        return i
-
-    seen = {}
-    for i in leaf:
-        for q in polys[i][2]:
-            j = seen.setdefault(_key(q), i)
-            if j != i:
-                a, b = root(i), root(j)
-                if a != b:
-                    parent[a] = b
+    sets = _join_shared(polys, leaf)
     groups = {}
     for i in leaf:
-        groups.setdefault(root(i), []).append(i)
+        groups.setdefault(sets.root(i), []).append(i)
 
     plants = []
     for faces in groups.values():
@@ -212,6 +303,13 @@ def _plant_groups(polys):
 
 def _cell(x, y, size):
     return int(math.floor(x / size)), int(math.floor(y / size))
+
+
+def _box_cells(b, pad, size):
+    """外接矩形 b を四方へ pad 広げた範囲にかかる格子のます。"""
+    gx0, gy0 = _cell(b[0] - pad, b[2] - pad, size)
+    gx1, gy1 = _cell(b[1] + pad, b[3] + pad, size)
+    return [(gx, gy) for gx in range(gx0, gx1 + 1) for gy in range(gy0, gy1 + 1)]
 
 
 def _match_blooms(polys, plants, cell=1.0):
@@ -360,32 +458,105 @@ def _lift(pc):
     return [(p[0], p[1], max(p[2] + DZ, Z_MIN)) for p in pc]
 
 
-def build(sp, src, top, radius=RADIUS):
-    """1 棟ぶんの近景。([MeshBuilder], 集計) を返す。top は屋内の一番高い点の z。
+def entrance_lane(sp, door_gap):
+    """屋内の入口の前の通り道（建物ローカルの矩形 (x0, x1, y0, y1)）。
+
+    door_gap は入口の開口の (x0, x1)（common.envelope）。None なら通り道も None。"""
+    if door_gap is None:
+        return None
+    c = 0.5 * (door_gap[0] + door_gap[1])
+    hw = 0.5 * abs(door_gap[1] - door_gap[0]) + LANE_SIDE
+    return (c - hw, c + hw, sp.y_face - LANE_DEPTH, sp.y_face)
+
+
+def _overlaps(b, rect):
+    return b[0] < rect[1] and b[1] > rect[0] and b[2] < rect[3] and b[3] > rect[2]
+
+
+def _holds(b, pts):
+    return any(b[0] - SIGN_TOL <= x <= b[1] + SIGN_TOL and b[2] - SIGN_TOL <= y <= b[3] + SIGN_TOL
+               for x, y in pts)
+
+
+def in_door(dr, pts):
+    """面（ワールド座標）の重心が扉 dr の部材の範囲に入るか。
+
+    扉の部材（entrances.build_one）は、扉の座標（s = 壁沿い、d = 壁から外へ）で
+    |s| <= 石張り・庇・風除室の半幅、-BURY <= d <= 石張り・庇・風除室の出 に収まる。"""
+    cx = sum(q[0] for q in pts) / len(pts) - dr["origin"][0]
+    cy = sum(q[1] for q in pts) / len(pts) - dr["origin"][1]
+    s = cx * dr["t"][0] + cy * dr["t"][1]
+    d = cx * dr["n"][0] + cy * dr["n"][1]
+    s_max = max(dr["APRON_S"], dr["CAN_S"], dr["WO"]) + DOOR_TOL
+    d_max = max(dr["APRON_D"], dr["CAN_D"], dr["D"]) + DOOR_TOL
+    return abs(s) <= s_max and -entrances.BURY - DOOR_TOL <= d <= d_max
+
+
+def build(sp, src, top, door_gap=None, radius=RADIUS):
+    """1 棟ぶんの近景。([MeshBuilder], 集計) を返す。
+
+    top は屋内の一番高い点の z、door_gap は屋内の入口の開口の (x0, x1)（Ctx.door_gap）。
 
     集計:
       tris        入れた三角数（出どころ別。棟の外装はまとめて bld、木は trees）
       culled_tris 裏を向くので入れなかった三角数（切り出したあとの数。site / trees）
       plants      入れた花壇の株の数（full = 元の形、simple = 簡略形）
-      trees       入れた木の本数（placed）と、樹冠が外周にかかるので入れなかった本数（skipped）"""
+      trees       入れた木の本数（placed）と、樹冠が外周にかかるので入れなかった本数（skipped）
+      own         入れなかった自分の棟の面の数（外装 bld、石張りを除く扉の部材 door）
+      entrance    屋内の入口の前の通り道にかかるので入れなかった設備の数（props）とその面の数
+                  （prop_faces）、木の本数（trees）。自分の棟の立て看板は通り道にかかっても入れる"""
     env = (sp.x0, sp.x1, sp.y_face, sp.y_back)
     box = (sp.x0 - radius, sp.x1 + radius, sp.y_face - radius, sp.y_back + radius)
-    own_hole = (sp.x0 - OWN_MARGIN, sp.x1 + OWN_MARGIN,
-                sp.y_face - OWN_MARGIN, sp.y_back + OWN_MARGIN)
-    wx0, wx1, wy0, wy1 = _world_bbox(sp, box)
-    own = BLD_PREFIX + sp.id
-
+    lane = entrance_lane(sp, door_gap)
     corners = _corners(sp, top)
 
-    mb = MeshBuilder(EXT_PREFIX + sp.id)
-    tris = {}
-    culled = {"site": 0, "trees": 0}
+    cand, gbox, own_faces = _collect(sp, src, env, box)
+    signs = [_to_local(sp, xy + (0.0,))[:2] for xy in src.signs.get(sp.id, [])]
+    blocked = set() if lane is None else {
+        g for g, b in gbox.items() if _overlaps(b, lane) and not _holds(b, signs)}
+    mb, site = _site_mesh(sp, cand, blocked, box, env, corners)
+    tb, forest = _tree_mesh(sp, src, env, lane, corners, radius)
+
+    tris = dict(site["tris"])
+    if forest["tris"]:
+        tris["trees"] = forest["tris"]
+    used = site["used"]
+    stats = {
+        "tris": tris,
+        "culled_tris": {"site": site["culled"], "trees": forest["culled"]},
+        "plants": {"full": sum(1 for v in used.values() if not v),
+                   "simple": sum(1 for v in used.values() if v)},
+        "trees": {"placed": forest["placed"], "skipped": forest["skipped"]},
+        "own": own_faces,
+        "entrance": {"props": len(blocked), "prop_faces": site["lane_faces"],
+                     "trees": forest["lane"]},
+    }
+    return [b for b in (mb, tb) if b.faces], stats
+
+
+def _collect(sp, src, env, box):
+    """範囲 box に入る面を建物ローカルへ写し、設備は物ごとの外接矩形を取る。
+
+    自分の棟の外装と扉の部材、使わないほうの形の株（外周から PLANT_FULL より遠い株は簡略形、
+    近い株は元の形を使う）は入れない。
+    (候補の面 [(name, mat, local, plant, 物の番号)], {物の番号: 外接矩形}, 集計 own) を返す。"""
+    wx0, wx1, wy0, wy1 = _world_bbox(sp, box)
+    own = BLD_PREFIX + sp.id
+    doors = src.doors.get(sp.id, [])
+    cand = []
+    gbox = {}   # 物の番号 -> 建物ローカルの外接矩形
+    own_faces = {"bld": 0, "door": 0}
     far = {}    # 株の番号 -> 外周から PLANT_FULL より遠いか
-    used = {}   # 入れた株の番号 -> 簡略形か
-    for name, mat, pts, bb, zmax, plant in src.polys:
+    for i, (name, mat, pts, bb, zmax, plant) in enumerate(src.polys):
         if bb[1] < wx0 or bb[0] > wx1 or bb[3] < wy0 or bb[2] > wy1:
             continue
         if zmax < Z_BURIED:
+            continue
+        if name == own:
+            own_faces["bld"] += 1
+            continue
+        if name == ENTRANCES and zmax > APRON_TOP and any(in_door(dr, pts) for dr in doors):
+            own_faces["door"] += 1
             continue
         if plant is not None:
             n, simple = plant
@@ -395,12 +566,36 @@ def build(sp, src, top, radius=RADIUS):
             if far[n] != simple:
                 continue
         local = [_to_local(sp, p) for p in pts]
-        pieces = outside_pieces(local, box, own_hole if name == own else env)
+        g = src.groups[i]
+        if g is not None:
+            gbox[g] = _box3(local, gbox.get(g))
+        cand.append((name, mat, local, plant, g))
+    if doors and not own_faces["door"]:
+        print("[exterior] 警告: %s の扉の部材が bld_entrances に見つからない"
+              "（entrances の寸法が変わった？）" % sp.id)
+    return cand, gbox, own_faces
+
+
+def _site_mesh(sp, cand, blocked, box, env, corners):
+    """候補の面を外周の外へ切り出して ext_<id> に入れる。blocked の物の面は入れない。
+
+    (MeshBuilder, 集計) を返す。集計は tris（出どころ別の三角数）、culled（裏向きで
+    入れなかった三角数）、used（{入れた株の番号: 簡略形か}）、lane_faces（blocked で除いた面の数）。"""
+    mb = MeshBuilder(EXT_PREFIX + sp.id)
+    tris = {}
+    culled = 0
+    used = {}
+    lane_faces = 0
+    for name, mat, local, plant, g in cand:
+        if g in blocked:
+            lane_faces += 1
+            continue
+        pieces = outside_pieces(local, box, env)
         if not pieces:
             continue
         n_tris = sum(len(pc) - 2 for pc in pieces)
         if not faces_viewer(local, corners):
-            culled["site"] += n_tris
+            culled += n_tris
             continue
         for pc in pieces:
             mb.add_face(_lift(pc), mat)
@@ -408,9 +603,17 @@ def build(sp, src, top, radius=RADIUS):
         tris[key] = tris.get(key, 0) + n_tris
         if plant is not None:
             used[plant[0]] = plant[1]
+    return mb, {"tris": tris, "culled": culled, "used": used, "lane_faces": lane_faces}
 
+
+def _tree_mesh(sp, src, env, lane, corners, radius):
+    """幹が外周から radius + 樹冠の半径 以内の木を丸ごと ext_<id>_trees に入れる。
+
+    樹冠が外周 + TREE_MARGIN にかかる木と、幹が入口の前の通り道 lane から LANE_TREE 以内の木は
+    入れない。(MeshBuilder, 集計) を返す。集計は tris / culled（三角数）と、木の本数 placed /
+    skipped（樹冠が外周にかかる）/ lane（通り道）。"""
     tb = MeshBuilder(EXT_PREFIX + sp.id + TREES_SUFFIX)
-    placed = skipped = 0
+    tris = culled = placed = skipped = lane_trees = 0
     for species, m, (x, y), scale in src.trees:
         lx, ly, _ = _to_local(sp, (x, y, 0.0))
         verts, faces, crown, _pm = src.protos[species]
@@ -421,24 +624,21 @@ def build(sp, src, top, radius=RADIUS):
         if d < r + TREE_MARGIN:
             skipped += 1
             continue
+        if lane is not None and _rect_dist(lx, ly, lane) <= LANE_TREE:
+            lane_trees += 1
+            continue
         world = [m @ v for v in verts]
         local = [_to_local(sp, (w.x, w.y, w.z)) for w in world]
         n_tris = 0
         for idx, fmat in faces:
             pc = [local[i] for i in idx]
             if not faces_viewer(pc, corners):
-                culled["trees"] += len(idx) - 2
+                culled += len(idx) - 2
                 continue
             tb.add_face(_lift(pc), fmat)
             n_tris += len(idx) - 2
         if n_tris:
-            tris["trees"] = tris.get("trees", 0) + n_tris
+            tris += n_tris
             placed += 1
-    stats = {
-        "tris": tris,
-        "culled_tris": culled,
-        "plants": {"full": sum(1 for v in used.values() if not v),
-                   "simple": sum(1 for v in used.values() if v)},
-        "trees": {"placed": placed, "skipped": skipped},
-    }
-    return [b for b in (mb, tb) if b.faces], stats
+    return tb, {"tris": tris, "culled": culled, "placed": placed, "skipped": skipped,
+                "lane": lane_trees}
