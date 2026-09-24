@@ -221,9 +221,13 @@ namespace KCD.Editor
 
                 GameObject go = filter.gameObject;
                 string id = go.name.ToLowerInvariant();
-                // 観葉植物の葉は当たり判定から外す（#30）。
-                CampusStage.AttachMeshCollider(go, filter.sharedMesh,
-                    CampusStage.ColliderAssetPath(interior.name, go.name));
+                // 観葉植物の葉は当たり判定から外す（#30）。窓の外の近景 ext_* は描くだけ（#60）。
+                if (!InteriorStage.IsExteriorDressing(go.name))
+                {
+                    CampusStage.AttachMeshCollider(go, filter.sharedMesh,
+                        CampusStage.ColliderAssetPath(interior.name, go.name));
+                }
+
                 go.layer = id.StartsWith("floor") && groundLayer >= 0
                     ? groundLayer
                     : buildingLayer >= 0 ? buildingLayer : go.layer;

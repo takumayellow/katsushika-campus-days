@@ -25,6 +25,19 @@ namespace KCD.Editor
         /// <summary>隣の屋内との隙間。</summary>
         private const float Gap = 80f;
 
+        /// <summary>
+        /// 窓のすぐ外の近景（舗装・芝・生垣・木）のメッシュ名の頭。kcd_interior が外周の壁の外にだけ置く (#45)。
+        /// プレイヤーは届かないので当たり判定を付けず、描くだけにする (#60)。
+        /// </summary>
+        public const string ExteriorPrefix = "ext_";
+
+        /// <summary>窓の外の近景のメッシュか（名前が ext_ で始まる。大文字小文字は見ない）。</summary>
+        public static bool IsExteriorDressing(string objectName)
+        {
+            return !string.IsNullOrEmpty(objectName)
+                && objectName.StartsWith(ExteriorPrefix, System.StringComparison.OrdinalIgnoreCase);
+        }
+
         /// <summary>屋内を全部置いて登録する。PlaceSystems（InteriorLoader）のあとに呼ぶ。</summary>
         public static void Build(Transform root)
         {
@@ -118,9 +131,13 @@ namespace KCD.Editor
 
                 GameObject go = filter.gameObject;
                 string id = go.name.ToLowerInvariant();
-                // 観葉植物の葉は当たり判定から外す（#30）。
-                CampusStage.AttachMeshCollider(go, filter.sharedMesh,
-                    CampusStage.ColliderAssetPath(interior.name, go.name));
+                // 観葉植物の葉は当たり判定から外す（#30）。窓の外の近景 ext_* は描くだけ（#60）。
+                if (!IsExteriorDressing(go.name))
+                {
+                    CampusStage.AttachMeshCollider(go, filter.sharedMesh,
+                        CampusStage.ColliderAssetPath(interior.name, go.name));
+                }
+
                 go.layer = id.StartsWith("floor") && groundLayer >= 0
                     ? groundLayer
                     : buildingLayer >= 0 ? buildingLayer : go.layer;
