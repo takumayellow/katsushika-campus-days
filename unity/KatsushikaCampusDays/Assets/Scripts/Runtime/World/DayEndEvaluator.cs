@@ -70,6 +70,14 @@ namespace KCD
         /// </summary>
         private bool _dayEndLatched;
 
+        /// <summary>
+        /// day_end_hour を過ぎたが、まだリザルトを出していない（封鎖が外れるのを待っている）。
+        /// 自動セーブはこの間は書かない。24 時をまたいで待っている間（0 時台）に書いたセーブは、読み直すと掛け金が立たず、
+        /// その夜が翌日の 20 時まで終わらない。GameManager と DayEndEvaluator の Update の順は決まっていないので、
+        /// 見ないと封鎖が外れたフレームでリザルトより先に書くことがある。
+        /// </summary>
+        public static bool IsDayEndPending { get; private set; }
+
         /// <summary>リザルト画面。SceneBuilder が差し込む。</summary>
         public ResultScreen Screen
         {
@@ -88,7 +96,7 @@ namespace KCD
 
             ResultData data = Evaluate();
             _armed = false;
-            _dayEndLatched = false;
+            SetDayEndLatched(false);
             _screen.Show(data, OnContinue, OnToTitle);
         }
 
@@ -159,9 +167,22 @@ namespace KCD
             _hasSpawn = true;
         }
 
+        private void SetDayEndLatched(bool latched)
+        {
+            _dayEndLatched = latched;
+            IsDayEndPending = latched;
+        }
+
+        private void OnEnable()
+        {
+            IsDayEndPending = _dayEndLatched;
+        }
+
         /// <summary>暗転の途中で止められたら、封鎖と暗幕を残さない（InteriorLoader・WorldBounds と同じ）。</summary>
         private void OnDisable()
         {
+            // シーンが消えたあとまで自動セーブを止めない。
+            IsDayEndPending = false;
             KCDInput.Unblock(this);
             if (_restarting && _fade != null)
             {
@@ -187,7 +208,7 @@ namespace KCD
             // 会話やメニューの上には出さない。ただし 20 時を過ぎたことは封鎖中も覚えておき、
             // 封鎖が外れた最初のフレームで出す (#62)。
             EnsureLoaded();
-            _dayEndLatched = LatchDayEnd(_dayEndLatched, manager.GameTimeHours, DayStartHour, _dayEndHour);
+            SetDayEndLatched(LatchDayEnd(_dayEndLatched, manager.GameTimeHours, DayStartHour, _dayEndHour));
             if (ShouldEndDay(_dayEndLatched, KCDInput.GameplayBlocked, DormEnding.IsAnyShowing))
             {
                 EndDayNow();
@@ -293,7 +314,7 @@ namespace KCD
             // 戻したことを追跡表示に伝える。呼ばないと前日の赤い「時間切れ」が残る。
             manager.Quests?.NotifyChanged();
             manager.DayNumber = DayRestart.NextDay(manager.DayNumber);
-            _dayEndLatched = false;
+            SetDayEndLatched(false);
             _armed = true;
             return manager.DayNumber;
         }

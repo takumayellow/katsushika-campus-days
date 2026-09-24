@@ -4,7 +4,8 @@ namespace KCD
     /// 自動セーブ (#61)。クエストを達成したとき、建物に出入りしたとき、「もう一日歩く」で翌朝に戻ったときに頼まれる。
     ///
     /// 頼まれてもその場では書かない。会話・出入りや落下復帰の暗転・ポーズ・写真モード・リザルトの最中
-    /// （どれも KCDInput の封鎖を掛けている）と裏エンドの最中は待ち、封鎖が外れた最初のフレームで 1 回だけ書く。
+    /// （どれも KCDInput の封鎖を掛けている）と裏エンドの最中、20 時を過ぎてリザルトを待っている間は待ち、
+    /// 封鎖が外れた最初のフレームで 1 回だけ書く。
     /// 暗転の途中はプレイヤーを動かす前後で位置と「建物の中か」が食い違っていることがあり、会話の途中は
     /// 進行が書きかけのことがあるため。続けて頼まれても 1 回にまとめる。
     ///
@@ -54,12 +55,15 @@ namespace KCD
         // ---- 純関数（Unity を起動せずにテストする）----
 
         /// <summary>
-        /// いま書くか。頼まれていて、キャンパスにいて、操作の封鎖も裏エンドも無いときだけ。
+        /// いま書くか。頼まれていて、キャンパスにいて、操作の封鎖も裏エンドも無く、一日の終わりを待っていないときだけ。
         /// 裏エンドは閉じるときに封鎖をまとめて外すので、封鎖とは別に見る。
+        /// 一日の終わり（<see cref="DayEndEvaluator.IsDayEndPending"/>）はリザルトが出るまで待つ。封鎖中に 24 時をまたいだ夜に
+        /// 書くと、読み直したときにその夜が終わらない。リザルトのあとは「もう一日歩く」の翌朝か「タイトルへ」の
+        /// <see cref="SaveSystem.SaveAtSpawn"/> が書く。
         /// </summary>
-        public static bool ShouldWrite(bool pending, bool onCampus, bool blocked, bool dormEndingShowing)
+        public static bool ShouldWrite(bool pending, bool onCampus, bool blocked, bool dormEndingShowing, bool dayEndPending)
         {
-            return pending && onCampus && !blocked && !dormEndingShowing;
+            return pending && onCampus && !blocked && !dormEndingShowing && !dayEndPending;
         }
 
         /// <summary>失敗を知らせるか。続けて失敗している間は最初の 1 回だけ。</summary>
@@ -71,7 +75,7 @@ namespace KCD
         /// <summary>毎フレーム呼ぶ。書ける状態なら書く。</summary>
         public static void Tick(bool onCampus)
         {
-            if (!ShouldWrite(_pending, onCampus, KCDInput.GameplayBlocked, DormEnding.IsAnyShowing))
+            if (!ShouldWrite(_pending, onCampus, KCDInput.GameplayBlocked, DormEnding.IsAnyShowing, DayEndEvaluator.IsDayEndPending))
             {
                 return;
             }
