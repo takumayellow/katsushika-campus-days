@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 using UnityEngine;
@@ -12,6 +13,10 @@ namespace KCD.Tests
     /// コードが L.Get / L.Format に渡す辞書キーが ja / en の両方に、しかも Data と Resources/KCD の両方にあること (#17)。
     /// キーが無いと L は fallback（多くは日本語）かキー名そのものを出すので、英語表示に日本語やキー名が漏れる。
     /// 第1引数がリテラルでない呼び出しは DynamicKeyCalls に理由つきで載せ、キーの出どころはデータ側の検査で見る。
+    /// Assets/Scripts の .cs をすべて読むので、どのブランチで足した文字列も対象になる。UI の文字列を足すときは:
+    /// ・キーを 4 つの辞書（Data/Localization と Resources/KCD/Localization の ja.json / en.json）すべてに、同じ接頭辞のキーの隣に足す。
+    /// ・第1引数がリテラルでない呼び出し（キーを組み立てる、定数や配列から取る）を足したら、DynamicKeyCalls に
+    ///   キーの出どころを確かめる検査と一緒に載せる。検査が無ければ書く（下の OtherKeySources_ExistInEveryDictionary など）。
     /// </summary>
     public sealed class LocalizationKeysTests
     {
@@ -22,6 +27,7 @@ namespace KCD.Tests
         /// <summary>
         /// 第1引数がリテラルでない呼び出し。ファイル名、式（空白は 1 つに詰める）、そのキーがどこで担保されているか。
         /// ここに無い呼び出しが増えるとテストが落ちる。キーの出どころを確かめる検査と一緒に足す。
+        /// コードから消えた呼び出しが残っていても落ちる。
         /// </summary>
         private static readonly (string File, string Expression, string Reason)[] DynamicKeyCalls =
         {
@@ -64,6 +70,18 @@ namespace KCD.Tests
                 "定数 ui.hud.returned_to_campus。KeyShapedLiterals_ExistInEveryDictionary が見る")
         };
 
+        /// <summary>
+        /// 並行して進むブランチが持ち込む、第1引数がリテラルでない呼び出し。形は DynamicKeyCalls と同じ。
+        /// そのブランチを取り込む前の木にはまだ無いので、コードに無くても落とさない。取り込んだら DynamicKeyCalls へ移す。
+        /// </summary>
+        private static readonly (string File, string Expression, string Reason)[] IncomingKeyCalls =
+        {
+            ("MobTalker.cs", "LineKey(bandId, Mathf.Clamp(lineIndex, 0, LinesPerBand - 1))",
+                "wf/mob。Data/Mobs/schedule.json の時間帯と 0〜LinesPerBand-1 の ui.mob.line.*。OtherKeySources_ExistInEveryDictionary が見る"),
+            ("SettingsView.cs", "QualityTiers.LabelKey(tier)",
+                "wf/quality-tiers。QualityTiers.All の ui.settings.quality.*。QualityTierTests.Localization_HasTheQualityRowAndEveryTierName が見る")
+        };
+
         private static readonly Regex CallPattern = new Regex(@"\bL\s*\.\s*(Get|Format)\s*\(");
 
         private static readonly Regex StringLiteral = new Regex("^\"((?:[^\"\\\\]|\\\\.)*)\"$");
@@ -95,7 +113,7 @@ namespace KCD.Tests
 
             Assert.Greater(keys.Count, 0, "L.Get / L.Format の呼び出しを 1 つも拾えていない（走査が壊れている）");
             CollectionAssert.Contains(keys, "ui.interact.sit", "SeatInteractable の L.Get(\"ui.interact.sit\") を拾えていない");
-            Assert.IsEmpty(missing, "辞書に無いキー:\n" + string.Join("\n", missing));
+            Assert.IsEmpty(missing, "辞書に無いキー。4 つの辞書すべてに足す:\n" + string.Join("\n", missing));
         }
 
         [Test]
@@ -114,13 +132,17 @@ namespace KCD.Tests
 
                 int index = Array.FindIndex(DynamicKeyCalls,
                     entry => entry.File == call.File && entry.Expression == call.Argument);
-                if (index < 0)
+                if (index >= 0)
                 {
-                    unlisted.Add(call.Where + ": " + call.Argument);
+                    used.Add(index);
                     continue;
                 }
 
-                used.Add(index);
+                if (!Array.Exists(IncomingKeyCalls,
+                        entry => entry.File == call.File && entry.Expression == call.Argument))
+                {
+                    unlisted.Add(call.Where + ": " + call.Argument);
+                }
             }
 
             Assert.IsEmpty(unlisted,
@@ -129,11 +151,12 @@ namespace KCD.Tests
 
             var stale = new List<string>();
             var noPrefix = new SortedSet<string>();
-            for (int i = 0; i < DynamicKeyCalls.Length; i++)
+            (string File, string Expression, string Reason)[] entries = DynamicKeyCalls.Concat(IncomingKeyCalls).ToArray();
+            for (int i = 0; i < entries.Length; i++)
             {
-                (string file, string expression, string reason) = DynamicKeyCalls[i];
+                (string file, string expression, string reason) = entries[i];
                 Assert.IsNotEmpty(reason, file + " の " + expression + " に理由が無い");
-                if (!used.Contains(i))
+                if (i < DynamicKeyCalls.Length && !used.Contains(i))
                 {
                     stale.Add(file + ": " + expression);
                 }
@@ -179,7 +202,7 @@ namespace KCD.Tests
             }
 
             Assert.Greater(checkedCount, 0, "ui.〜 の文字列を 1 つも拾えていない（走査が壊れている）");
-            Assert.IsEmpty(missing, "コードに書いてあるキーが辞書に無い:\n" + string.Join("\n", missing));
+            Assert.IsEmpty(missing, "コードに書いてあるキーが辞書に無い。4 つの辞書すべてに足す:\n" + string.Join("\n", missing));
         }
 
         [Test]
@@ -301,7 +324,48 @@ namespace KCD.Tests
                 Require(dictionaries, "ui.settings.language." + locale, "SettingsView の言語名", missing);
             }
 
+            RequireMobLines(dictionaries, missing);
             Assert.IsEmpty(missing, string.Join("\n", missing));
+        }
+
+        /// <summary>
+        /// モブの一言（MobTalker.LineKey）。時間帯は Data/Mobs/schedule.json の bands、台詞は 0〜LinesPerBand-1。
+        /// MobTalker は wf/mob から入るので、名前で探し、まだ無い木では見ない。
+        /// </summary>
+        private static void RequireMobLines(Dictionary<string, Dictionary<string, object>> dictionaries, SortedSet<string> missing)
+        {
+            Type talker = typeof(L).Assembly.GetType("KCD.MobTalker");
+            if (talker == null)
+            {
+                return;
+            }
+
+            MethodInfo lineKey = talker.GetMethod("LineKey", BindingFlags.Public | BindingFlags.Static, null,
+                new[] { typeof(string), typeof(int) }, null);
+            Assert.IsNotNull(lineKey, "MobTalker.LineKey(string, int) が無い");
+            object linesPerBand = talker.GetField("LinesPerBand", BindingFlags.Public | BindingFlags.Static)?.GetValue(null);
+            Assert.IsTrue(linesPerBand is int, "MobTalker.LinesPerBand が読めない");
+            int perBand = (int)linesPerBand;
+            Assert.Greater(perBand, 0, "MobTalker.LinesPerBand が 0");
+
+            var schedule = MiniJson.Deserialize(File.ReadAllText(Path.Combine(Application.dataPath, "Data", "Mobs", "schedule.json")))
+                as Dictionary<string, object>;
+            Assert.IsNotNull(schedule, "Data/Mobs/schedule.json はオブジェクトとして読めない");
+
+            int bands = 0;
+            foreach (object node in MiniJson.GetArray(schedule, "bands"))
+            {
+                string band = MiniJson.GetString(node as Dictionary<string, object>, "id");
+                Assert.IsNotEmpty(band, "Data/Mobs/schedule.json に id の無い時間帯がある");
+                bands++;
+                for (int i = 0; i < perBand; i++)
+                {
+                    string key = (string)lineKey.Invoke(null, new object[] { band, i });
+                    Require(dictionaries, key, "Data/Mobs/schedule.json の " + band, missing);
+                }
+            }
+
+            Assert.Greater(bands, 0, "Data/Mobs/schedule.json に時間帯が無い");
         }
 
         [Test]
