@@ -18,12 +18,13 @@ namespace KCD.Editor
         /// <summary>取り込み規則を変えたら上げる。既存の FBX が取り込み直される。</summary>
         public override uint GetVersion()
         {
-            return 6;
+            return 7;
         }
 
         /// <summary>
         /// Blender 側の外形ハル（<id>_outline）は本体と同じ巻き方向で出力されていて本体を覆ってしまう。
         /// 輪郭はシェーダの Outline パスで出すので、ハルの描画は止める。
+        /// 体のメッシュには、和柄の座標（柄のあるキャラだけ）と顔の陰に使う頭の向きを焼く。
         /// </summary>
         private void OnPostprocessModel(GameObject root)
         {
@@ -31,6 +32,8 @@ namespace KCD.Editor
             {
                 return;
             }
+
+            string characterId = CharacterIdOf(assetPath);
 
             // 柄の有無は palette.json で決まるので、書き換わったら FBX も取り込み直す。
             string palette = Path.GetDirectoryName(assetPath).Replace('\\', '/') + "/palette.json";
@@ -49,16 +52,150 @@ namespace KCD.Editor
                     + " 枚ある。和柄の Generated 座標はメッシュごとの箱で焼くので、Blender と柄の大きさがずれる");
             }
 
+            int faces = 0;
             foreach (SkinnedMeshRenderer renderer in root.GetComponentsInChildren<SkinnedMeshRenderer>(true))
             {
                 if (renderer.name.EndsWith("_outline", System.StringComparison.Ordinal))
                 {
                     renderer.enabled = false;
+                    continue;
                 }
-                else if (patterned)
+
+                if (patterned)
                 {
                     BakeGeneratedCoordinates(root.transform, renderer);
                 }
+
+                faces += BakeFaceFrame(root.transform, renderer, characterId) ? 1 : 0;
+            }
+
+            if (faces == 0)
+            {
+                Debug.LogWarning("[KCD] " + assetPath + " に顔のマテリアル（face）の面が無いので、頭の向きを焼けなかった。"
+                    + "顔の陰が法線で付き、鼻や頬でまだらになる");
+            }
+        }
+
+        /// <summary>
+        /// 顔の頂点の tangent に、頭の前方向（xyz）と顔の左右の位置（w）を焼く (#14)。
+        ///
+        /// KCD/Toon の _FACE_SHADOW_ON は、顔の明暗を法線ではなくこの 2 つで決める（ToonLook.FaceLit）。
+        /// 法線で塗ると、鼻や頬のふくらみで陰がまだらになり、表情のブレンドシェイプで陰が揺れる。
+        /// xyz はスキニングで頭の骨と一緒に回るので、首を振っても陰が付いてくる。
+        ///
+        /// 左右の位置は、モデルの根元の空間（+Z が正面、+X がキャラの右）で、顔の面の左右の端を
+        /// ±<see cref="ToonLook.FaceEdgeSine"/> にした値。焼いていない頂点の w は Mikk の ±1 のままなので、
+        /// シェーダは |w| &lt; <see cref="ToonLook.FaceFrameMarker"/> で顔の頂点を見分ける。
+        /// 接線を置き換えるだけなので、頂点のデータは増えない（顔のマテリアルは法線マップを使わない）。
+        /// </summary>
+        private static bool BakeFaceFrame(Transform root, SkinnedMeshRenderer renderer, string characterId)
+        {
+            Mesh mesh = renderer.sharedMesh;
+            if (mesh == null || mesh.vertexCount == 0)
+            {
+                return false;
+            }
+
+            Material[] materials = renderer.sharedMaterials;
+            var face = new HashSet<int>();
+            for (int i = 0; i < mesh.subMeshCount && i < materials.Length; i++)
+            {
+                if (materials[i] != null
+                    && ToonLook.RoleOf(ToonLook.MaterialName(materials[i].name, characterId)) == ToonLook.Role.Face)
+                {
+                    face.UnionWith(mesh.GetIndices(i));
+                }
+            }
+
+            if (face.Count == 0)
+            {
+                return false;
+            }
+
+            Matrix4x4 toRoot = root.worldToLocalMatrix * renderer.transform.localToWorldMatrix;
+            Vector3[] vertices = mesh.vertices;
+            float minX = float.PositiveInfinity;
+            float maxX = float.NegativeInfinity;
+            foreach (int index in face)
+            {
+                float x = toRoot.MultiplyPoint3x4(vertices[index]).x;
+                minX = Mathf.Min(minX, x);
+                maxX = Mathf.Max(maxX, x);
+            }
+
+            float center = 0.5f * (minX + maxX);
+            float halfWidth = 0.5f * (maxX - minX);
+            Vector3 forward = toRoot.inverse.MultiplyVector(Vector3.forward).normalized;
+
+            Vector4[] tangents = mesh.tangents;
+            if (tangents.Length != vertices.Length)
+            {
+                tangents = new Vector4[vertices.Length];
+                for (int i = 0; i < tangents.Length; i++)
+                {
+                    tangents[i] = new Vector4(1f, 0f, 0f, 1f);
+                }
+            }
+
+            foreach (int index in face)
+            {
+                float side = ToonLook.FaceSide(toRoot.MultiplyPoint3x4(vertices[index]).x, center, halfWidth);
+                tangents[index] = new Vector4(forward.x, forward.y, forward.z, side);
+            }
+
+            mesh.tangents = tangents;
+            ClearFaceTangentDeltas(mesh, face);
+            return true;
+        }
+
+        /// <summary>
+        /// 表情のブレンドシェイプが顔の頂点の接線を動かさないようにする。
+        /// 接線の差分が残っていると、表情を付けたときに焼いた頭の向きが傾き、顔の陰の境目が動く。
+        /// ブレンドシェイプは差分を書き換える API が無いので、全フレームを読み直して同じ順に入れ直す。
+        /// </summary>
+        private static void ClearFaceTangentDeltas(Mesh mesh, HashSet<int> face)
+        {
+            int shapeCount = mesh.blendShapeCount;
+            if (shapeCount == 0)
+            {
+                return;
+            }
+
+            int vertexCount = mesh.vertexCount;
+            var frames = new List<(string Name, float Weight, Vector3[] Vertices, Vector3[] Normals, Vector3[] Tangents)>();
+            bool touched = false;
+            for (int shape = 0; shape < shapeCount; shape++)
+            {
+                string name = mesh.GetBlendShapeName(shape);
+                int frameCount = mesh.GetBlendShapeFrameCount(shape);
+                for (int frame = 0; frame < frameCount; frame++)
+                {
+                    var deltaVertices = new Vector3[vertexCount];
+                    var deltaNormals = new Vector3[vertexCount];
+                    var deltaTangents = new Vector3[vertexCount];
+                    mesh.GetBlendShapeFrameVertices(shape, frame, deltaVertices, deltaNormals, deltaTangents);
+                    foreach (int index in face)
+                    {
+                        if (deltaTangents[index].sqrMagnitude > 0f)
+                        {
+                            deltaTangents[index] = Vector3.zero;
+                            touched = true;
+                        }
+                    }
+
+                    frames.Add((name, mesh.GetBlendShapeFrameWeight(shape, frame), deltaVertices, deltaNormals, deltaTangents));
+                }
+            }
+
+            if (!touched)
+            {
+                return;
+            }
+
+            mesh.ClearBlendShapes();
+            foreach ((string Name, float Weight, Vector3[] Vertices, Vector3[] Normals, Vector3[] Tangents) frame in frames)
+            {
+                mesh.AddBlendShapeFrame(frame.Name, frame.Weight, frame.Vertices, frame.Normals, frame.Tangents);
             }
         }
 

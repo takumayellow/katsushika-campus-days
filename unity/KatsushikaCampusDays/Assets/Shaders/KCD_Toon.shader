@@ -405,6 +405,8 @@ Shader "KCD/Toon"
             // 球の顔に水平方向から光が当たると、明暗の境目は顔の左右の位置で -(光の前後成分) に来る。
             // 真横からなら顔の中央、正面からなら顔の外（全部明部）、真後ろからなら全部陰。
             // 光が真上に近い（水平成分が小さい）ほど境目を顔の外へ出して、顔全体を明部にする。
+            // _FaceShadowBias は斜めの光で境目を陰の側へずらす量。正面と真後ろでは効かせない
+            // （真後ろからの光で顔の縁に細い明部が残らない）。ToonLook.FaceLit が同じ式を C# で持つ。
             half FaceLit(half4 faceFrame, half3 lightDirWS, half shadowAttenuation)
             {
                 float2 forward = faceFrame.xz;
@@ -414,7 +416,7 @@ Shader "KCD/Toon"
                 float lengthH = length(lightH);
                 float front = dot(forward, lightH) / max(lengthH, 1e-4);
                 float side = dot(right, lightH);
-                float threshold = lerp(-1.0, -front, saturate(lengthH * 2.0)) - _FaceShadowBias;
+                float threshold = lerp(-1.0, -front, saturate(lengthH * 2.0)) - _FaceShadowBias * (1.0 - abs(front));
                 float u = side >= 0.0 ? faceFrame.w : -faceFrame.w;
                 float lit = smoothstep(threshold - _FaceShadowSoftness, threshold + _FaceShadowSoftness, u);
                 return (half)lit * shadowAttenuation;

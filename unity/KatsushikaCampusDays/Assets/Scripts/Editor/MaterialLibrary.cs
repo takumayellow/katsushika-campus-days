@@ -347,20 +347,22 @@ namespace KCD.Editor
                 material.SetFloat("_SpecularIntensity", 0.8f);
             }
 
+            ToonLook.Apply(material, name, color);
             Save(material, path);
             return material;
         }
 
+        /// <summary>陰の色（albedo に掛ける係数）。元の色相のまま暗くする (#14)。肌と顔は ToonLook.Apply が赤みの陰に替える。</summary>
         private static Color ShadeOf(Color color)
         {
-            return Color.Lerp(color, new Color(0.45f, 0.42f, 0.58f), 0.42f);
+            return ToonLook.ClothShade(color);
         }
 
         private static void SetCharacterColor(Material material, Color color)
         {
             material.SetColor("_BaseColor", color);
             material.SetColor("_ShadeColor", ShadeOf(color));
-            material.SetColor("_ShadeColor2", Color.Lerp(color, new Color(0.30f, 0.28f, 0.44f), 0.55f));
+            material.SetColor("_ShadeColor2", ToonLook.ClothShade2(color));
         }
 
         /// <summary>
@@ -566,12 +568,68 @@ namespace KCD.Editor
                 }
             }
 
-            if (repainted > 0)
+            int restyled = RestyleCharacters();
+            if (restyled > 0)
+            {
+                EditorPaths.Report("キャラのトゥーンの設定を役割に合わせました: " + restyled + " 件");
+            }
+
+            if (repainted > 0 || restyled > 0)
             {
                 AssetDatabase.SaveAssets();
             }
 
             return repainted;
+        }
+
+        /// <summary>
+        /// 全キャラの .mat に、役割（肌・顔・髪・服・金属・顔の線）ごとの陰の付け方を入れ、変えた数を返す (#14)。
+        /// 顔テクスチャの 4 枚や輪郭のように palette.json に載らない .mat もあるので、フォルダの .mat を全部見る。
+        /// 服・髪・金属の陰の色は palette.json の色（和柄は柄の平均色）から作る。
+        /// </summary>
+        private static int RestyleCharacters()
+        {
+            string[] ids = AssetDatabase.GetSubFolders(EditorPaths.CharactersFolder);
+            var palettes = new Dictionary<string, Dictionary<string, Color>>();
+            int restyled = 0;
+
+            foreach (string guid in AssetDatabase.FindAssets("t:Material", new[] { CharacterFolder }))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                string file = Path.GetFileNameWithoutExtension(path);
+                string characterId = null;
+                foreach (string folder in ids)
+                {
+                    string id = Path.GetFileName(folder);
+                    if (file.StartsWith(id + "_", System.StringComparison.Ordinal)
+                        && (characterId == null || id.Length > characterId.Length))
+                    {
+                        characterId = id;
+                    }
+                }
+
+                var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+                if (characterId == null || material == null || !material.HasProperty(BaseColorId))
+                {
+                    continue;
+                }
+
+                if (!palettes.TryGetValue(characterId, out Dictionary<string, Color> palette))
+                {
+                    palette = LoadCharacterPalette(characterId);
+                    palettes[characterId] = palette;
+                }
+
+                string name = file.Substring(characterId.Length + 1);
+                Color color = palette.TryGetValue(name, out Color declared) ? declared : material.GetColor(BaseColorId);
+                if (ToonLook.Apply(material, name, color))
+                {
+                    EditorUtility.SetDirty(material);
+                    restyled++;
+                }
+            }
+
+            return restyled;
         }
 
         [System.Serializable]
@@ -623,8 +681,8 @@ namespace KCD.Editor
         /// <summary>顔テクスチャ（face.png）を共有する Blender 側のマテリアル名。</summary>
         public static readonly string[] FaceTexturedNames = { "face", "eye_white", "eye_l", "eye_r" };
 
-        private static readonly Color FaceShade = new Color(0.86f, 0.78f, 0.82f);
-        private static readonly Color FaceShade2 = new Color(0.74f, 0.66f, 0.72f);
+        private static readonly Color FaceShade = ToonLook.SkinShade;
+        private static readonly Color FaceShade2 = ToonLook.SkinShade2;
 
         private static bool IsFaceTextured(string name)
         {
