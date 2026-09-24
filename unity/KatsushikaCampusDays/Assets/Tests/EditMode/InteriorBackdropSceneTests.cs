@@ -39,8 +39,11 @@ namespace KCD.Tests
         /// </summary>
         private const float NearSceneryRadius = 30f;
 
-        /// <summary>近景 ext_* の地面のいちばん低いところ（床から、m。#84）。ドームの地面はこれより下に敷く。</summary>
-        private const float ExteriorGroundLowest = -0.055f;
+        /// <summary>近景 ext_* の地面のいちばん低いところ（床から、m。#84 がこれより下の頂点を持ち上げてある）。</summary>
+        private const float ExteriorGroundLowest = -0.045f;
+
+        /// <summary>重なる地面どうしに要る段差（m）。これより近いとちらつく。</summary>
+        private const float GroundClearance = 0.001f;
 
         /// <summary>SafetyFloor が建物の AABB より広げる幅（InteriorStage・DormStage の AddSafetyFloor）。</summary>
         private const float SafetyFloorPadding = 20f;
@@ -54,6 +57,7 @@ namespace KCD.Tests
         private Scene _scene;
         private readonly Dictionary<string, Transform> _interiors = new Dictionary<string, Transform>();
         private Transform _outsideGround;
+        private Transform _outerGround;
 
         /// <summary>1 棟ぶんの、ワールドに置いたドームと建物の大きさ。</summary>
         private sealed class Dome
@@ -83,6 +87,11 @@ namespace KCD.Tests
                     if (node.name == "OutsideGround" && _outsideGround == null)
                     {
                         _outsideGround = node;
+                    }
+
+                    if (node.name == "OuterGround" && _outerGround == null)
+                    {
+                        _outerGround = node;
                     }
                 }
             }
@@ -221,21 +230,39 @@ namespace KCD.Tests
         public void ドームの地面は近景の地面より下で屋内の並びの地面より上(string id)
         {
             Dome dome = BuildDome(id);
-            float floor = Interior(id).position.y;
-            Assert.Less(dome.WorldBounds.min.y, floor + ExteriorGroundLowest,
+            Transform interior = Interior(id);
+            float floor = interior.position.y;
+            Assert.Less(dome.WorldBounds.min.y, floor + ExteriorGroundLowest - GroundClearance,
                 id + " のドームの地面が近景 ext_* の地面より上にあり、近景を隠す");
             Assert.Greater(dome.WorldBounds.max.y, dome.Building.max.y + 1f, id + " のドームが建物より低い");
 
-            if (_outsideGround == null)
+            // #84 の近景が入っていれば、その実物の地面とも比べる。
+            foreach (MeshFilter filter in interior.GetComponentsInChildren<MeshFilter>(true))
+            {
+                if (filter.sharedMesh != null && InteriorBackdrop.IsExteriorDressing(filter.gameObject.name))
+                {
+                    Assert.Greater(MeshWorldBounds(filter).min.y, dome.WorldBounds.min.y + GroundClearance,
+                        id + " の近景 " + filter.gameObject.name + " がドームの地面より下にもぐる");
+                }
+            }
+
+            // キャンパスの OuterGround（x ±2000 m）は屋内の並びの前半の下にも広がっている。ドームの地面が
+            // その下にあると、窓の外の地面がパノラマでなく一色の芝になる。
+            AssertAboveGround(dome, _outerGround, GroundClearance, id + " のドームの地面が OuterGround の下に隠れる");
+            AssertAboveGround(dome, _outsideGround, 0.01f, id + " のドームの地面が OutsideGround と同じ高さで、ちらつく");
+        }
+
+        private static void AssertAboveGround(Dome dome, Transform ground, float clearance, string message)
+        {
+            if (ground == null)
             {
                 return;
             }
 
-            Bounds outside = MeshWorldBounds(_outsideGround.GetComponent<MeshFilter>());
-            if (InsideXZ(outside, dome.Centre))
+            Bounds plane = MeshWorldBounds(ground.GetComponent<MeshFilter>());
+            if (OverlapsXZ(plane, dome.WorldBounds))
             {
-                Assert.Greater(dome.WorldBounds.min.y, outside.max.y + 0.01f,
-                    id + " のドームの地面が OutsideGround と同じ高さで、ちらつく");
+                Assert.Greater(dome.WorldBounds.min.y, plane.max.y + clearance, message);
             }
         }
 
@@ -252,10 +279,8 @@ namespace KCD.Tests
             {
                 for (int j = i + 1; j < domes.Count; j++)
                 {
-                    Bounds a = domes[i].WorldBounds;
-                    Bounds b = domes[j].WorldBounds;
-                    bool overlap = a.min.x < b.max.x && b.min.x < a.max.x && a.min.z < b.max.z && b.min.z < a.max.z;
-                    Assert.IsFalse(overlap, domes[i].Backdrop.BuildingId + " と " + domes[j].Backdrop.BuildingId
+                    Assert.IsFalse(OverlapsXZ(domes[i].WorldBounds, domes[j].WorldBounds),
+                        domes[i].Backdrop.BuildingId + " と " + domes[j].Backdrop.BuildingId
                         + " のドームが重なる（エディタでは全部見えるので、地面と帯がちらつく）");
                 }
             }
@@ -440,6 +465,12 @@ namespace KCD.Tests
         private static bool InsideXZ(Bounds bounds, Vector3 point)
         {
             return point.x >= bounds.min.x && point.x <= bounds.max.x && point.z >= bounds.min.z && point.z <= bounds.max.z;
+        }
+
+        /// <summary>二つの AABB が上から見て重なるか。</summary>
+        private static bool OverlapsXZ(Bounds a, Bounds b)
+        {
+            return a.min.x < b.max.x && b.min.x < a.max.x && a.min.z < b.max.z && b.min.z < a.max.z;
         }
 
         /// <summary>水平の、矩形（AABB の xz）からの距離。</summary>

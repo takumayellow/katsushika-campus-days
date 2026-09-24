@@ -57,10 +57,17 @@ namespace KCD.Editor
         public const float TopDegrees = 40f;
 
         /// <summary>
-        /// ドームの地面の高さ（屋内の床面から、m）。近景 ext_* の地面（-0.03〜-0.055, #84）より下で、
-        /// 屋内の並びの下の地面（InteriorStage.OutsideGroundY = -0.10）より上。
+        /// 近景 ext_* の地面のいちばん低いところ（屋内の床面から、m）。#84 は近景を 0.03 m 下げ、
+        /// これより下の頂点を持ち上げてある。
         /// </summary>
-        public const float GroundY = -0.07f;
+        public const float ExteriorGroundLowest = -0.045f;
+
+        /// <summary>
+        /// ドームの地面の高さ（屋内の床面から、m）。近景 ext_* の地面より下で、キャンパスの OuterGround
+        /// （CampusStage.OuterGroundY = -0.05。x ±2000 m まで広がるので屋内の並びの前半の下にもある）より上。
+        /// 両者のまん中に置き、どちらとも 2.5 mm 離す。InteriorStage.OutsideGroundY（-0.06）はさらに下。
+        /// </summary>
+        public const float GroundY = (ExteriorGroundLowest + CampusStage.OuterGroundY) * 0.5f;
 
         /// <summary>パノラマの下端を決める距離の下限（m）。小さな建物で真下まで撮らないように。</summary>
         public const float MinGroundReach = 6f;

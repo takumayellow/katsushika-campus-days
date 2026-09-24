@@ -26,10 +26,11 @@ namespace KCD.Editor
         private const float Gap = 80f;
 
         /// <summary>
-        /// 屋内の並びの下に敷く地面の高さ（m）。窓の外の近景 ext_* の地面（床から -0.03〜-0.055, #84）と
-        /// 遠景のドームの地面（InteriorBackdropStage.GroundY）より下に置き、どちらも隠さない (#60)。
+        /// 屋内の並びの下に敷く地面の高さ（m）。窓の外の近景 ext_* の地面（床から -0.03〜-0.045, #84）と
+        /// 遠景のドームの地面（InteriorBackdropStage.GroundY = -0.0475）とキャンパスの OuterGround（-0.05）より下に置き、
+        /// どれも隠さない (#60)。
         /// </summary>
-        public const float OutsideGroundY = -0.10f;
+        public const float OutsideGroundY = -0.06f;
 
         /// <summary>
         /// 窓のすぐ外の近景（舗装・芝・生垣・木）のメッシュ名の頭。kcd_interior が外周の壁の外にだけ置く (#45)。
