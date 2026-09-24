@@ -145,6 +145,8 @@ docs/previews/interior_<building_id>*.png                          検証用レ�
 ```
 
 **座標**: ローカル原点は `entrance_<id>` 直下の床レベル。Unity の +Z が入口から建物の奥へ向く。
+入口の面と面に沿った位置はキャンパスの扉（`blender/kcd_lib/entrances.py` の `DOORS`）と同じにし、
+書き出しの検証（`[verify]`）で棟ごとに照合する。
 近景（`ext_<id>`）は屋外と同じ場所に同じ形を持つので、屋内は屋外から離れた場所に置く
 （Unity の `InteriorStage` は x = 1200 m から棟ごとに並べる）。
 FBX オプションは §3.3 と同じ。
