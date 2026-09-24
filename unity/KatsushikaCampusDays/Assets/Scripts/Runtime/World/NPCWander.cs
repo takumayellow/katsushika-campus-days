@@ -150,8 +150,8 @@ namespace KCD
         }
 
         /// <summary>
-        /// NavMesh に乗り直す。NavMeshSurface が OnEnable でデータを登録するより先に
-        /// NavMeshAgent の OnEnable が走ると agent が作られないので、作り直して足元へ Warp する。
+        /// NavMesh に乗る。agent はシーンでは止めてあり（NavMeshSurface がデータを登録するより先に
+        /// OnEnable が走ると警告が出る, #63）、足もとに NavMesh があるのを確かめてから有効にして Warp する。
         /// </summary>
         private void TryAttachToNavMesh()
         {

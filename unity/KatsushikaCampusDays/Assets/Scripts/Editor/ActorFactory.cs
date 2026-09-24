@@ -245,6 +245,10 @@ namespace KCD.Editor
             agent.autoBraking = true;
             agent.obstacleAvoidanceType = ObstacleAvoidanceType.LowQualityObstacleAvoidance;
 
+            // シーンを開いた直後は NavMeshSurface がデータを登録するより先に agent の OnEnable が走り、
+            // 「有効な NavMesh が無い」と警告が出る。止めて置いておき、NPCWander.Start が NavMesh を確かめてから有効にする (#63)。
+            agent.enabled = false;
+
             CreateBody(npcId, npc.transform);
 
             NPCWander wander = npc.AddComponent<NPCWander>();
