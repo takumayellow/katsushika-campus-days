@@ -493,7 +493,8 @@ def run_pytest(args: argparse.Namespace, out: io.TextIOBase) -> int:
     if not TESTS.is_dir():
         out.write("[PYTEST] tests/ が無いので飛ばします。\n")
         return EXIT_OK
-    command = [sys.executable, "-m", "pytest", "-q", str(TESTS)]
+    # 対象のディレクトリは pytest.ini の testpaths（tests, blender/tests, tools/tests）に従う。
+    command = [sys.executable, "-m", "pytest", "-q"]
     out.write(f"[RUN] pytest: {subprocess.list2cmdline(command)}\n")
     out.flush()
     if args.dry_run:
