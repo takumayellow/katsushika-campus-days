@@ -1,4 +1,5 @@
 using System.Collections;
+using System.IO;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -89,6 +90,10 @@ namespace KCD.Tests
             Vector3 position = player.transform.position;
             Assert.IsTrue(WorldBounds.IsWithin(position, bounds.Area) && position.y > bounds.KillY,
                 "朝に戻した位置 " + position.ToString("F2") + " が WorldBounds " + bounds.Area + " の外");
+
+            // 2 日目の朝のセーブは、テストの置き場に書かれる（その端末で遊んでいるセーブには書かない）。
+            Assert.IsTrue(File.Exists(Path.Combine(SaveDirectory, SaveSystem.FileName)),
+                "2 日目の朝のセーブが " + SaveDirectory + " に無い（SaveSystem.DirectoryOverride を見ていない）");
 
             AssertNoErrors("一日の早送り");
         }

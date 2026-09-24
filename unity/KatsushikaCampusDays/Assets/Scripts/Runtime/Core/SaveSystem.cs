@@ -12,9 +12,17 @@ namespace KCD
     /// </summary>
     public static class SaveSystem
     {
-        private const string FileName = "kcd_save.json";
+        /// <summary>セーブのファイル名。置き場は <see cref="DirectoryOverride"/> か persistentDataPath。</summary>
+        public const string FileName = "kcd_save.json";
 
-        private static string FilePath => Path.Combine(Application.persistentDataPath, FileName);
+        /// <summary>
+        /// セーブを置くフォルダを差し替える（テスト用）。null なら Application.persistentDataPath。
+        /// Editor の persistentDataPath は Windows 版と同じフォルダなので、一日を終えるテストがそのまま書くと、
+        /// その端末で遊んでいるセーブを上書きする。
+        /// </summary>
+        public static string DirectoryOverride { get; set; }
+
+        private static string FilePath => Path.Combine(DirectoryOverride ?? Application.persistentDataPath, FileName);
 
         /// <summary>タイトルの「つづきから」で読んだセーブ。位置と屋内はキャンパスの最初のフレームで当てる。</summary>
         private static SaveData _pending;
