@@ -47,3 +47,10 @@ tools/audio/school_song/__pycache__/
 
 # ambientCG から落とした zip (tools/fetch_textures.py が焼き直す元. 焼いた jpg だけ commit する)
 data/textures/.cache/
+
+# 実物の写真の作業フォルダ (PIXTA・Flickr 全権利留保などを含むのでコミットしない. 測った値だけ docs/ref/*.md に書く)
+docs/ref/**/photos/
+docs/ref/**/street/
+docs/ref/**/commons/
+docs/ref/**/surface_src/
+docs/ref/**/official/
