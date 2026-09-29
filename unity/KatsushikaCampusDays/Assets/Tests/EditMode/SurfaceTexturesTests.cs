@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEngine;
 
 namespace KCD.Tests
@@ -119,6 +120,46 @@ namespace KCD.Tests
                 missing,
                 "tiling.json に載っているのに Assets/Textures/surfaces に無い。その面は単色で塗られる:\n"
                 + string.Join("\n", missing));
+        }
+
+        /// <summary>
+        /// .meta があっても Unity が読めるとは限らない。GUID だけの .meta を Unity 6.6 は版 1 とみなして
+        /// 捨て、LoadAssetAtPath は null を返す (#109)。画像として読めて、マテリアルに実寸の回数で
+        /// 貼られていることまで確かめる。
+        /// </summary>
+        [Test]
+        public void タイリングの画像はマテリアルに実寸で貼られている()
+        {
+            var wrong = new List<string>();
+            foreach (KeyValuePair<string, float> pair in Tiling())
+            {
+                var texture = AssetDatabase.LoadAssetAtPath<Texture2D>(
+                    "Assets/Textures/surfaces/" + pair.Key + ".jpg");
+                var material = AssetDatabase.LoadAssetAtPath<Material>(
+                    "Assets/Materials/Campus/" + pair.Key + ".mat");
+                if (texture == null)
+                {
+                    wrong.Add(pair.Key + ".jpg: Unity が画像として読めない（.meta の TextureImporter を確かめる）");
+                }
+                else if (material == null)
+                {
+                    wrong.Add(pair.Key + ".mat が無い");
+                }
+                else if (material.GetTexture("_BaseMap") != texture)
+                {
+                    wrong.Add(pair.Key + ".mat の _BaseMap が " + pair.Key + ".jpg でない");
+                }
+                else if (!Mathf.Approximately(material.GetTextureScale("_BaseMap").x, 100f / pair.Value))
+                {
+                    wrong.Add(pair.Key + ".mat の _BaseMap の回数 " + material.GetTextureScale("_BaseMap").x
+                        + " が 100 / " + pair.Value + " cm でない");
+                }
+            }
+
+            Assert.IsEmpty(
+                wrong,
+                "面が単色で塗られるか、違う大きさで並ぶ。SceneBuilder.BuildAll を流し直す:\n"
+                + string.Join("\n", wrong));
         }
 
         [Test]
