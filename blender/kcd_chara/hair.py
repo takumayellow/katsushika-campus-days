@@ -79,7 +79,8 @@ def build_scalp(mb: M.MeshBuilder, p: dict, head, *, front_el: float,
         pts = head.surface(az, el)
         rings.append(_outward(head, pts, np.full(nu, off)))
     with mb.part(part):
-        mb.add_grid(rings, "hair", smooth=True, cap_start=True, cap_end=False)
+        mb.add_grid(rings, "hair", smooth=True, cap_start=True, cap_end=False,
+                    flip=bool(p.get("outward_faces")))
     return rings[-1]
 
 

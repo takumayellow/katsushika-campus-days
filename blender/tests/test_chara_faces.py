@@ -5,6 +5,8 @@ add_grid で張った筒を 1 枚ずつ取り出し、隣り合うリング 2 �
 面積の割合を測る。
 """
 
+import functools
+
 import numpy as np
 import pytest
 
@@ -32,9 +34,9 @@ def _outward_share(rings, flip):
     return ok / total
 
 
-@pytest.fixture(scope="module")
-def mirai_grids():
-    """mirai を組み立て、部位ごとに add_grid の呼び出し順で外向きの割合を返す。"""
+@functools.cache
+def _grids(name):
+    """キャラを組み立て、部位ごとに add_grid の呼び出し順で外向きの割合を返す。"""
     grids = {}
     orig = M.MeshBuilder.add_grid
 
@@ -47,7 +49,7 @@ def mirai_grids():
 
     M.MeshBuilder.add_grid = add_grid
     try:
-        p = params.resolve("mirai")
+        p = params.resolve(name)
         mb = M.MeshBuilder()
         a, head, fs, uv_box, _ = body.build_base(mb, p)
         hair.build_hair(mb, p, head, a, fs, uv_box)
@@ -57,12 +59,22 @@ def mirai_grids():
     return grids
 
 
-@pytest.mark.parametrize("part", ["head", "hand_l", "hand_r", "skirt"])
-def test_mirai_outline_parts_face_outward(mirai_grids, part):
-    assert mirai_grids[part][0] > 0.95
+OUTLINE_PARTS = (
+    [("mirai", part) for part in ("head", "hand_l", "hand_r", "skirt")]
+    + [("botchan", part) for part in ("head", "hand_l", "hand_r", "hakama",
+                                      "hair_cap", "sleeve_l", "sleeve_r")]
+    + [("madonna", part) for part in ("head", "hand_l", "hand_r", "hakama",
+                                      "sleeve_l", "sleeve_r")]
+)
 
 
-def test_mirai_hair_shell_outer_out_inner_in(mirai_grids):
-    outer, inner = mirai_grids["hair_back"][:2]
+@pytest.mark.parametrize("name,part", OUTLINE_PARTS)
+def test_outline_parts_face_outward(name, part):
+    assert min(_grids(name)[part]) > 0.95
+
+
+@pytest.mark.parametrize("name", ["mirai", "madonna"])
+def test_hair_shell_outer_out_inner_in(name):
+    outer, inner = _grids(name)["hair_back"][:2]
     assert outer > 0.95  # 外殻は頭の外を向く
     assert inner < 0.05  # 内殻は頭の側を向く
