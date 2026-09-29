@@ -165,15 +165,20 @@ class MeshBuilder:
     # -- 中レベル ----------------------------------------------------------
     def add_grid(self, rings, mat, *, smooth: bool = True,
                  close_u: bool = True, cap_start: bool = False,
-                 cap_end: bool = False, flip: bool = False) -> int:
+                 cap_end: bool = False, flip: bool = False,
+                 min_area: float = 0.0) -> int:
         """リング列を筒状に張る。rings は同じ頂点数の (n,3) 配列のリスト。
 
         mat は文字列、または `f(i, j) -> マテリアル名` の callable。
+        min_area > 0 なら、面積がそれより小さい四角形を張らない。隣り合うリングが
+        重なって潰れた面は Blender では法線が決まらず（頂点の位置を正規化した
+        向きになる）、Unity の輪郭線の殻がそこでめくれて線になる。
         """
         rings = [np.asarray(r, dtype=float) for r in rings]
         n = len(rings[0])
         m = len(rings)
-        base = self.add_verts(np.concatenate(rings, axis=0))
+        pts = np.concatenate(rings, axis=0)
+        base = self.add_verts(pts)
         pick = mat if callable(mat) else (lambda i, j: mat)
         for j in range(m - 1):
             for i in range(n):
@@ -185,6 +190,10 @@ class MeshBuilder:
                 c = base + (j + 1) * n + i2
                 d = base + (j + 1) * n + i
                 quad = [a, b, c, d]
+                if min_area > 0.0:
+                    P = pts[[a - base, b - base, c - base, d - base]]
+                    if 0.5 * np.linalg.norm(np.cross(P[2] - P[0], P[3] - P[1])) < min_area:
+                        continue
                 if flip:
                     quad = quad[::-1]
                 self.add_face(quad, pick(i, j), smooth)

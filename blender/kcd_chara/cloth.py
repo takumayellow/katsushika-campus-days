@@ -175,7 +175,8 @@ def pleated_skirt(mb: M.MeshBuilder, p, a, mat, part, *, z_top, z_bot,
         rings[-1][:, 2] += lift
         rings[-2][:, 2] += lift
     with mb.part(part):
-        mb.add_grid(rings, mat, smooth=smooth)
+        mb.add_grid(rings, mat, smooth=smooth,
+                    flip=bool(p.get("outward_faces")))
     return rings
 
 
