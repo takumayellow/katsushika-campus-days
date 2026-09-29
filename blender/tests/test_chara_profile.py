@@ -34,10 +34,12 @@ def _stick_out(name):
         rim = surf[np.abs(surf[:, 2] - z) < step]
         if len(near) and len(rim):
             worst = max(worst, rim[:, 1].min() - near[:, 1].min())
+    assert np.isfinite(worst)
     return worst / p["head_d"]
 
 
 @pytest.mark.parametrize("name", ["mirai", "botchan", "madonna"])
 def test_eyes_stay_inside_profile(name):
     assert params.resolve(name).get("outward_faces")
+    # 直す前は mirai 0.083、botchan 0.027。今は 3 体とも 0.014 以下に収まる。
     assert _stick_out(name) < 0.015
