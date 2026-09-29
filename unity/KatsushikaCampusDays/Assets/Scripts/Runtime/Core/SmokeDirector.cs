@@ -16,6 +16,8 @@ namespace KCD
     ///   -kcd-talk inari        NPC の前へワープして会話を始める
     ///   -kcd-interior kyoso    建物の中へ入る
     ///   -kcd-title-yaw 180     タイトルの立ち姿の向きを試す
+    ///   -kcd-face-cam 0.9      画面中央に最も近いキャラの顔を 0.9 m 手前から撮る
+    ///                          （-kcd-face-yaw 90 でカメラを顔の正面から頭のまわりに 90 度回す）
     ///   -kcd-chara botchan     操作するキャラを選んでから本編へ入る（選択は PlayerPrefs に残る）
     ///   -kcd-wave inari        NPC の斜め後ろ 3.5 m へワープして、Q（手を振る）を 2.5 秒おきに 30 回押す
     ///   -kcd-goto Item_c_gate  名前がこれで始まる物の 1.6 m 手前へワープして向く
@@ -39,6 +41,7 @@ namespace KCD
         private float _hours = -1f;
         private float _titleYaw = float.NaN;
         private float _faceCam = float.NaN;
+        private float _faceYaw;
         private bool _campusHandled;
         private bool _titleHandled;
 
@@ -116,6 +119,7 @@ namespace KCD
             _hours = ArgFloat("-kcd-time", -1f);
             _titleYaw = ArgFloat("-kcd-title-yaw", float.NaN);
             _faceCam = ArgFloat("-kcd-face-cam", float.NaN);
+            _faceYaw = ArgFloat("-kcd-face-yaw", 0f);
             SmokeProbe.Open(Arg("-kcd-log"));
             SmokeProbe.Log("args: " + string.Join(" ", Environment.GetCommandLineArgs()));
             string lang = Arg("-kcd-lang");
@@ -176,7 +180,7 @@ namespace KCD
             ApplyOutlineToggle();
             if (_start != "campus")
             {
-                SmokeFaceCam.Apply(_faceCam);
+                SmokeFaceCam.Apply(_faceCam, _faceYaw);
             }
 
             SmokeProbe.Dump("title");
@@ -259,7 +263,7 @@ namespace KCD
 
             yield return new WaitForSecondsRealtime(1f);
             ApplyOutlineToggle();
-            SmokeFaceCam.Apply(_faceCam);
+            SmokeFaceCam.Apply(_faceCam, _faceYaw);
             SmokeProbe.Dump("campus");
         }
 
