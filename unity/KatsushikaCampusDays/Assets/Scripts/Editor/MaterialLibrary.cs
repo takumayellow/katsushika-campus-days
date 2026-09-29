@@ -704,9 +704,10 @@ namespace KCD.Editor
         }
 
         /// <summary>
-        /// 輪郭線を付けない顔のパーツ（目・まつ毛・二重線・眉）。どれも顔の表面すれすれに貼った
+        /// 輪郭線を付けない顔のパーツの材質（目・まつ毛・二重線・眉）。どれも顔の表面すれすれに貼った
         /// 薄い板か細い帯で、殻を押し出すと帯の縁がぎざぎざの黒い線になる。
-        /// Blender の輪郭（kcd_chara/outline.py の SKIP_PARTS）も同じパーツを除いている。
+        /// Blender の輪郭（kcd_chara/outline.py の SKIP_PARTS）もこれらのパーツを除いている。
+        /// SKIP_PARTS にある鼻と口は face 材質に載るので、線の有無は <see cref="ApplyFaceLook"/> が決める。
         /// </summary>
         private static bool IsFaceDetail(string name)
         {

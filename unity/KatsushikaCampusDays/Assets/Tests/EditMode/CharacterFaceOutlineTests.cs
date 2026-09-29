@@ -15,7 +15,7 @@ namespace KCD.Tests
     /// ここでは実際に保存されている .mat の _OutlineWidth を突き合わせる。目は常に線なし。
     ///
     /// まつ毛・眉・二重線は顔の表面に貼った細い帯で、殻を押し出すと縁がぎざぎざの黒い線になるので、
-    /// どのキャラでも線を付けない（Blender の kcd_chara/outline.py の SKIP_PARTS と同じ）。
+    /// どのキャラでも線を付けない（Blender の kcd_chara/outline.py の SKIP_PARTS もこれらを除く）。
     /// </summary>
     public sealed class CharacterFaceOutlineTests
     {
@@ -90,7 +90,9 @@ namespace KCD.Tests
             foreach (string palette in Directory.GetFiles(CharactersFolder, "palette.json", SearchOption.AllDirectories))
             {
                 string id = Path.GetFileName(Path.GetDirectoryName(palette));
-                foreach (PaletteEntry entry in JsonUtility.FromJson<PaletteFile>(File.ReadAllText(palette)).materials)
+                PaletteEntry[] entries = JsonUtility.FromJson<PaletteFile>(File.ReadAllText(palette)).materials;
+                Assert.IsNotNull(entries, palette + " に materials が無い");
+                foreach (PaletteEntry entry in entries)
                 {
                     if (entry.name != "lash" && entry.name != "brow" && entry.name != "eye_rim")
                     {
@@ -98,6 +100,7 @@ namespace KCD.Tests
                     }
 
                     string path = Path.Combine(MaterialsFolder, id + "_" + entry.name + ".mat");
+                    Assert.IsTrue(File.Exists(path), id + "_" + entry.name + ".mat が無い");
                     checkedCount++;
                     Assert.AreEqual(0f, ReadOutlineWidth(path), id + "_" + entry.name + " に輪郭線がある");
                 }
