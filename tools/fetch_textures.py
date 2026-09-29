@@ -62,6 +62,11 @@ MATERIAL_LIBRARY = UNITY_PROJECT / "Assets" / "Scripts" / "Editor" / "MaterialLi
 # 同じパスなら誰が何度作っても同じ GUID になる。
 META_GUID_SEED = "katsushika-campus-days/unity/"
 
+# 画像の .meta に書く TextureImporter。Unity 6.6 が water_ripple.png に書いたものを写し、
+# 色の画像なので sRGBTexture だけ 1 にした。
+TEXTURE_IMPORTER = ROOT / "data" / "textures" / "TextureImporter.meta.template"
+IMAGE_SUFFIXES = (".jpg", ".jpeg", ".png")
+
 # 縮める前に外周へ回り込ませる画素数（1024 px の元画像での値）。Lanczos は端で
 # 折り返してくれないので、上下左右に元画像を巻き付けてから縮め、中央を切り出して
 # タイル性を保つ。
@@ -411,6 +416,15 @@ def meta_guid(path: Path) -> str:
     return uuid.uuid5(uuid.NAMESPACE_URL, META_GUID_SEED + relative).hex
 
 
+def read_guid(meta: Path) -> str | None:
+    """.meta に書かれた GUID。取り込み設定が無い（GUID だけの）.meta なら None。"""
+    lines = meta.read_text(encoding="utf-8").splitlines()
+    if len(lines) != 2 or not lines[1].startswith("guid: "):
+        return None
+
+    return lines[1].removeprefix("guid: ")
+
+
 def ensure_meta(path: Path, folder: bool = False, importer: str | None = None) -> bool:
     """.meta が無ければ書く。書いたら True。
 
@@ -419,13 +433,23 @@ def ensure_meta(path: Path, folder: bool = False, importer: str | None = None) -
 
     importer を渡すと、その取り込み設定の既定の 4 行まで書く。TextScriptImporter のように
     短くて Unity の版で変わらないものは、ここで書き切っておけば Unity を開いても .meta が
-    書き換わらない。画像の TextureImporter は長く版で変わるので、GUID だけにしておく。
+    書き換わらない。
+
+    画像（.jpg / .png）は TextureImporter を丸ごと書く。Unity 6.6 は取り込み設定の無い
+    .meta を版 1 とみなして読まず（最低は 10）、画像が無いものとして扱う。
+    GUID だけの .meta が残っていたら、GUID を保ったまま書き直す。
     """
     meta = meta_path(path)
+    is_image = not folder and importer is None and path.suffix.lower() in IMAGE_SUFFIXES
+    guid = meta_guid(path)
     if meta.exists():
-        return False
+        guid = read_guid(meta) if is_image else None
+        if guid is None:
+            return False
 
-    lines = ["fileFormatVersion: 2", f"guid: {meta_guid(path)}"]
+    lines = ["fileFormatVersion: 2", f"guid: {guid}"]
+    if is_image:
+        lines += TEXTURE_IMPORTER.read_text(encoding="utf-8").splitlines()
     if folder:
         # Assets/Audio/Ambient.meta など、Unity がフォルダに書くものと同じ形
         lines.append("folderAsset: yes")
@@ -546,6 +570,9 @@ def finish_material(
         return False
     elif in_unity and not meta_path(path).exists():
         print(f"  NG {material:<16} .meta が無い（--check を外して流すと書く）")
+        return False
+    elif in_unity and read_guid(meta_path(path)) is not None:
+        print(f"  NG {material:<16} .meta に TextureImporter が無く Unity が読まない（--check を外して流すと書き直す）")
         return False
 
     return report(material, path, target_hex)

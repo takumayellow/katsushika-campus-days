@@ -392,12 +392,40 @@ def test_ensure_meta_writes_once(unity_project):
     path.write_bytes(b"")
     assert ft.ensure_meta(path) is True
     meta = ft.meta_path(path)
-    assert meta.read_text(encoding="utf-8") == f"fileFormatVersion: 2\nguid: {ft.meta_guid(path)}\n"
+    lines = meta.read_text(encoding="utf-8").splitlines()
+    assert lines[:3] == ["fileFormatVersion: 2", f"guid: {ft.meta_guid(path)}", "TextureImporter:"]
 
     # Unity が取り込み設定を書き足したあとの .meta は上書きしない
     meta.write_text("fileFormatVersion: 2\nguid: 0123\nTextureImporter:\n", encoding="utf-8")
     assert ft.ensure_meta(path) is False
     assert meta.read_text(encoding="utf-8").endswith("TextureImporter:\n")
+
+
+def test_ensure_meta_image_matches_unity(unity_project):
+    """画像の .meta は、Unity 6.6 が書いた water_ripple.png.meta と GUID・sRGB 以外が同じ。"""
+    path = unity_project / "Assets" / "Textures" / "a.jpg"
+    assert ft.ensure_meta(path) is True
+    ours = ft.meta_path(path).read_text(encoding="utf-8").splitlines()
+    reference = ft.ROOT / "unity" / "KatsushikaCampusDays" / "Assets" / "Generated" / "Textures" / "water_ripple.png.meta"
+    theirs = reference.read_text(encoding="utf-8").splitlines()
+    assert "    sRGBTexture: 1" in ours
+    assert [line.replace("sRGBTexture: 1", "sRGBTexture: 0") for line in ours[2:]] == theirs[2:]
+    assert "  serializedVersion: 13" in ours
+
+
+def test_ensure_meta_upgrades_a_guid_only_image_meta(unity_project):
+    """GUID だけの画像の .meta は Unity 6.6 が読まないので、GUID を保ったまま書き直す。"""
+    path = unity_project / "Assets" / "Textures" / "a.jpg"
+    meta = ft.meta_path(path)
+    meta.write_text("fileFormatVersion: 2\nguid: 371a9dbfea2d5ad7ba5958ad97713536\n", encoding="utf-8")
+    assert ft.ensure_meta(path) is True
+    lines = meta.read_text(encoding="utf-8").splitlines()
+    assert lines[:3] == ["fileFormatVersion: 2", "guid: 371a9dbfea2d5ad7ba5958ad97713536", "TextureImporter:"]
+
+    # GUID だけの .meta でも、画像でなければ書き直さない
+    text = unity_project / "Assets" / "Textures" / "b.json"
+    ft.meta_path(text).write_text("fileFormatVersion: 2\nguid: 0123\n", encoding="utf-8")
+    assert ft.ensure_meta(text, importer="TextScriptImporter") is False
 
 
 def test_ensure_meta_folder(unity_project):
