@@ -115,7 +115,35 @@ class FaceSurface:
         return float((self.pts[idx, 1] * w).sum() / w.sum())
 
 
+# 横顔の竜骨。顎からの高さ（頭高比）ごとの、前への出（鼻先 = 1）と正中からの
+# 幅（頭幅比）。鼻の付け根から鼻先までは横顔でまっすぐな鼻筋になり、鼻先から
+# 上唇へもまっすぐ戻る。口より下は少しだけ出す（下あごが重くなるため）。
+_KEEL_T = np.array([0.00, 0.05, 0.10, 0.15, 0.20, 0.235, 0.265, 0.30, 0.35,
+                    0.40, 0.45, 0.50, 0.55, 0.60])
+_KEEL_D = np.array([0.000, 0.012, 0.024, 0.034, 0.045, 0.066, 0.090, 0.071,
+                    0.052, 0.041, 0.035, 0.032, 0.018, 0.000]) / 0.090
+_KEEL_W = np.array([0.20, 0.19, 0.18, 0.16, 0.13, 0.09, 0.07, 0.065, 0.06,
+                    0.06, 0.06, 0.06, 0.06, 0.06])
+
+
+def _keel(p: dict, pts: np.ndarray) -> np.ndarray:
+    """顔の正中を前（-y）へ出す量。y だけを動かすので正面の外形は変わらない。"""
+    pts = np.asarray(pts, dtype=float)
+    t = (pts[:, 2] - p["z"]["chin"]) / p["head_h"]
+    w = np.interp(t, _KEEL_T, _KEEL_W) * p["head_w"]
+    ridge = np.interp(t, _KEEL_T, _KEEL_D, left=0.0, right=0.0)
+    ridge *= np.exp(-(pts[:, 0] / w) ** 2)
+    front = M.smoothstep(0.0, 0.25, -pts[:, 1] / p["head_d"])
+    return p.get("face_keel", 0.0) * p["head_d"] * ridge * front
+
+
 def build_head(mb: M.MeshBuilder, p: dict) -> Head:
+    """頭のメッシュを張る。
+
+    face_keel のあるキャラは、顔の正中に竜骨を足して目を鼻筋より奥に置く。
+    髪は竜骨の無い head.surface に沿わせ、陰の法線も竜骨の無い頭から写す
+    （正面の塗りを変えず、横顔の輪郭だけを変える）。
+    """
     head = Head(p)
     nu, nv = 56, 40
     chin_z = p["z"]["chin"]
@@ -123,6 +151,10 @@ def build_head(mb: M.MeshBuilder, p: dict) -> Head:
     az = np.linspace(0.0, 2 * math.pi, nu, endpoint=False)
     # 正面 = -Y なので方位角 3pi/2 が顔の中心
     front = 1.5 * math.pi
+    keel = p.get("face_keel", 0.0) > 0.0
+    if keel:
+        # 細い鼻筋を拾えるよう、正面ほど縦の列を密にする（正面で 0.55 倍の間隔）
+        az = az - 0.45 * np.sin(az - front)
     dist = np.abs(((az - front + math.pi) % (2 * math.pi)) - math.pi)
 
     rings = []
@@ -136,9 +168,18 @@ def build_head(mb: M.MeshBuilder, p: dict) -> Head:
             return "face"
         return "skin"
 
+    grid = dict(smooth=True, cap_start=True, cap_end=True,
+                flip=bool(p.get("outward_faces")))
     with mb.part("head"):
-        mb.add_grid(rings, mat_fn, smooth=True, cap_start=True, cap_end=True,
-                    flip=bool(p.get("outward_faces")))
+        if keel:
+            round_head = M.MeshBuilder()
+            round_head.add_grid(rings, "skin", **grid)
+            normals = M.vertex_normals(round_head.verts, round_head.faces)
+            shaped = [r - np.outer(_keel(p, r), (0.0, 1.0, 0.0)) for r in rings]
+            base = mb.add_grid(shaped, mat_fn, **grid)
+            mb.set_normals(base, normals)
+        else:
+            mb.add_grid(rings, mat_fn, **grid)
 
     # 耳
     ear_z = chin_z + p["head_h"] * 0.46
