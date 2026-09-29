@@ -725,7 +725,8 @@ def _furi_sleeve(mb, p, a: B.Anatomy, mat, *, drop=1.0, style="furi"):
                     rx *= 0.26 + 0.74 * s2
                     ry *= 0.26 + 0.74 * s2
                 rings.append(M.ring(16, rx, ry, power=2.1, cx=cx, cy=cy, z=zz))
-            mb.add_grid(rings, mat, smooth=True, cap_start=True, cap_end=True)
+            mb.add_grid(rings, mat, smooth=True, cap_start=True, cap_end=True,
+                        flip=bool(p.get("outward_faces")))
 
 
 def _obi(mb, p, a: B.Anatomy, mat, z_c, width):
