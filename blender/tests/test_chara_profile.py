@@ -55,9 +55,8 @@ def _head(name, keel=True):
     body.build_base(mb, p)
     start, end = mb.parts["head"][0]
     verts = np.asarray(mb.verts)
-    shade = mb.normal_array()
-    unset = np.linalg.norm(shade, axis=1) == 0
-    shade[unset] = M.vertex_normals(verts, mb.faces)[unset]
+    shade = M.merge_normals(mb.normal_array(), np.arange(len(verts)),
+                            M.vertex_normals(verts, mb.faces))
     eyes = np.concatenate([verts[mb.part_indices(k)] for k in mb.parts
                            if k.startswith("eye_")])
     return p, verts[start:end], shade[start:end], eyes
@@ -84,7 +83,9 @@ def test_eyes_sit_behind_nose_bridge():
     for z in np.arange(eyes[:, 2].min(), eyes[:, 2].max(), step):
         eye = eyes[np.abs(eyes[:, 2] - z) < step]
         skin = verts[np.abs(verts[:, 2] - z) < step]
-        margin = min(margin, eye[:, 1].min() - skin[:, 1].min())
+        if len(eye) and len(skin):
+            margin = min(margin, eye[:, 1].min() - skin[:, 1].min())
+    assert np.isfinite(margin)
     # 竜骨が無いと目は頭の輪郭から 0.015 hd 前へ出る。今は鼻筋の後ろに 0.011 hd 引っ込む。
     assert margin / p["head_d"] > 0.005
 
@@ -96,7 +97,8 @@ def test_keel_keeps_front_outline():
     for z in np.arange(flat[:, 2].min() + step, flat[:, 2].max() - step, step):
         a = verts[np.abs(verts[:, 2] - z) < step]
         b = flat[np.abs(flat[:, 2] - z) < step]
-        assert abs(np.abs(a[:, 0]).max() - np.abs(b[:, 0]).max()) < 0.005 * p["head_w"]
+        # 今のずれは 0.0004 hw（縦の列の並びが変わったぶん）
+        assert abs(np.abs(a[:, 0]).max() - np.abs(b[:, 0]).max()) < 0.002 * p["head_w"]
 
 
 def test_keel_shading_follows_round_head():
