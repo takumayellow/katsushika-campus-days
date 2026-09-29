@@ -394,7 +394,7 @@ namespace KCD.Editor
 
             ApplyFaceLook(material, name, face, FacesOutward(characterId));
 
-            if (name.StartsWith("eye"))
+            if (IsFaceDetail(name))
             {
                 material.SetFloat("_OutlineWidth", 0f);
             }
@@ -448,6 +448,12 @@ namespace KCD.Editor
             if (pattern == null && !Same(material.GetColor(BaseColorId), declared))
             {
                 SetCharacterColor(material, declared);
+                changed = true;
+            }
+
+            if (IsFaceDetail(name) && !Mathf.Approximately(material.GetFloat("_OutlineWidth"), 0f))
+            {
+                material.SetFloat("_OutlineWidth", 0f);
                 changed = true;
             }
 
@@ -695,6 +701,17 @@ namespace KCD.Editor
         private static bool IsFaceTextured(string name)
         {
             return System.Array.IndexOf(FaceTexturedNames, name) >= 0;
+        }
+
+        /// <summary>
+        /// 輪郭線を付けない顔のパーツの材質（目・まつ毛・二重線・眉）。どれも顔の表面すれすれに貼った
+        /// 薄い板か細い帯で、殻を押し出すと帯の縁がぎざぎざの黒い線になる。
+        /// Blender の輪郭（kcd_chara/outline.py の SKIP_PARTS）もこれらのパーツを除いている。
+        /// SKIP_PARTS にある鼻と口は face 材質に載るので、線の有無は <see cref="ApplyFaceLook"/> が決める。
+        /// </summary>
+        private static bool IsFaceDetail(string name)
+        {
+            return name.StartsWith("eye") || name == "lash" || name == "brow";
         }
 
         /// <summary>
