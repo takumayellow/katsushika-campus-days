@@ -314,15 +314,22 @@ def build_face_parts(mb: M.MeshBuilder, p: dict, fs: FaceSurface, uv_box):
     _es = p.get("eye_style", "round")
     power_eye = 2.7 if _es == "round" else (2.2 if _es in ("dot", "ink")
                                             else 3.1)
-    # 輪郭シェル（身長 x outline.THICKNESS）より必ず手前に出す。ここが
-    # 内側に入ると頭の膨張シェルが目を黒く覆ってしまう。
+    # 頭の面が内向きのキャラは、輪郭シェル（身長 x outline.THICKNESS）より
+    # 必ず手前に出す。ここが内側に入ると頭の膨張シェルが目を黒く覆ってしまう。
+    # 面が外向きなら殻の手前側は背面カリングで消えるので、表面すれすれに置く。
+    # 前へ出したぶんだけ、横顔で目と眉が顔の輪郭から浮く。
+    outward = bool(p.get("outward_faces"))
     grow = p["height"] * 0.0022
-    unit = max(hd * 0.0075, grow * 1.9)
+    unit = hd * 0.0075 if outward else max(hd * 0.0075, grow * 1.9)
     off_white = unit
     off_iris = unit * 1.50
     off_lash = unit * 2.10
-    off_brow = unit * 2.75
     thick = unit * 1.35
+    # 外向きのキャラは、白目と虹彩のドームのふくらみを半分にし、眉を額に
+    # 寄せる（眉は目と重ならないので、まつ毛より手前に出さなくてよい）。
+    # どちらも横顔ではそのまま頬と額の輪郭の外へ出る。
+    dome_k = 0.5 if outward else 1.0
+    off_brow = unit * (1.60 if outward else 2.75)
 
     for sgn in (-1, 1):
         cu = 0.5 + sgn * eye_dx
@@ -332,11 +339,11 @@ def build_face_parts(mb: M.MeshBuilder, p: dict, fs: FaceSurface, uv_box):
               # まぶたのカーブより内側に収める。外に出ると上まぶたの縁から
               # 白目が三日月形にはみ出して、目が飛び出して見える。
               _disc(cu, eye_y, eye_rx * 0.985, eye_ry * 0.965, power_eye, 3, 20),
-              offset=off_white, dome=hd * 0.012, power=power_eye)
+              offset=off_white, dome=hd * 0.012 * dome_k, power=power_eye)
         place(name + "_iris", mat_iris,
               _disc(cu, eye_y - eye_ry * 0.04, eye_rx * 0.90, eye_ry * 0.93,
                     2.2, 3, 18),
-              offset=off_iris, dome=hd * 0.020, power=2.2)
+              offset=off_iris, dome=hd * 0.020 * dome_k, power=2.2)
         # 点目（坊っちゃん）と墨目（マドンナちゃん）はどちらも「黒い楕円
         # 1 枚」で、まつ毛の帯も二重線も持たない。睫毛は tex 側で描く。
         dot = p.get("eye_style") in ("dot", "ink")
