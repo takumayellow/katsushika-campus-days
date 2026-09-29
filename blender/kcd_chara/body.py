@@ -671,18 +671,48 @@ def build_arms(mb: M.MeshBuilder, p: dict, a: Anatomy):
                 n=10 if mitten else 6)
 
 
-def build_legs(mb: M.MeshBuilder, p: dict, a: Anatomy, *, bare: bool = True):
+#: 脚の筒の周の分割数。靴下は同じ分割で脚の面に沿わせる
+LEG_SEG = 20
+#: 膝から下の脚の筒を割る段の間隔の上限（身長比）
+SHIN_STEP = 0.018
+
+
+def leg_tube(a: Anatomy, sgn):
+    """脚の筒の芯の点列（股から足首へ）と半径。sgn は +1 が +X 側の脚。"""
     r0, r1, r2 = a.leg_r
+    hp = a.hip_joint * np.array([sgn, 1, 1])
+    kn = a.knee * np.array([sgn, 1, 1])
+    an = a.ankle * np.array([sgn, 1, 1])
+    thigh_mid = hp + (kn - hp) * 0.42 + np.array([0.0, -0.004, 0.0])
+    calf_mid = kn + (an - kn) * 0.36 + np.array([0.0, -0.006, 0.0])
+    path = np.array([hp + (hp - kn) * 0.10, thigh_mid, kn, calf_mid, an])
+    return path, [r0 * 1.02, r0 * 0.86, r1, r1 * 1.12, r2]
+
+
+def leg_rings(p: dict, a: Anatomy, sgn):
+    """脚の筒のリング列（股から足首へ）。
+
+    膝から下は、芯の点のあいだを SHIN_STEP 以下の段に割る。割った段は元のリングを
+    線形に内分するので形は変わらない。段が粗いと足首を曲げたとき脛の面が
+    膝下から足首まで一枚の板のまま傾き、骨に付いていく靴下を肌が突き抜ける。
+    """
+    path, radii = leg_tube(a, sgn)
+    rings = M.tube_rings(path, radii, n=LEG_SEG)
+    out = rings[:3]
+    for k in range(2, len(rings) - 1):
+        m = max(1, int(np.ceil(np.linalg.norm(path[k + 1] - path[k])
+                               / (p["height"] * SHIN_STEP))))
+        out += [rings[k] + (rings[k + 1] - rings[k]) * (s / m) for s in range(1, m + 1)]
+    return out
+
+
+def build_legs(mb: M.MeshBuilder, p: dict, a: Anatomy, *, bare: bool = True):
     for sgn in (-1, 1):
         side = "l" if sgn > 0 else "r"
-        hp = a.hip_joint * np.array([sgn, 1, 1])
-        kn = a.knee * np.array([sgn, 1, 1])
-        an = a.ankle * np.array([sgn, 1, 1])
-        thigh_mid = hp + (kn - hp) * 0.42 + np.array([0.0, -0.004, 0.0])
-        calf_mid = kn + (an - kn) * 0.36 + np.array([0.0, -0.006, 0.0])
-        path = np.array([hp + (hp - kn) * 0.10, thigh_mid, kn, calf_mid, an])
-        radii = [r0 * 1.02, r0 * 0.86, r1, r1 * 1.12, r2]
-        _limb(mb, path, radii, "skin", f"leg_{side}")
+        an = leg_tube(a, sgn)[0][-1]
+        with mb.part(f"leg_{side}"):
+            mb.add_grid(leg_rings(p, a, sgn), "skin", smooth=True,
+                        cap_start=True, cap_end=True)
         _ = bare
         # 足
         fw, fl_, fh = a.foot

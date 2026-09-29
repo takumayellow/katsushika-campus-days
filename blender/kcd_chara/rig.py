@@ -466,7 +466,7 @@ def _cloth_leg_weights(obj, mb: M.MeshBuilder, pts: np.ndarray, a: B.Anatomy,
 def _prune_influences(obj, mb: M.MeshBuilder, parts, k: int = 2) -> None:
     """指定した部位のウェイトを上位 k ボーンだけにして正規化する。
 
-    靴下・ズボン・ブーツの筒は距離ウェイトのまま 3 ボーン乗ることがある
+    ズボン・ブーツの筒は距離ウェイトのまま 3 ボーン乗ることがある
     （例: madonna のブーツは LowerLeg / Foot / Toes）。3 本目は距離の裾野が
     たまたま届いただけで、形に効くというより PC と WebGL で食い違う種だった
     （madonna のブーツで Run 時 1.54 cm）。ここで落として両方同じにする。
@@ -491,6 +491,46 @@ def _prune_influences(obj, mb: M.MeshBuilder, parts, k: int = 2) -> None:
             vg.remove([i])
         for w, n in keep:
             obj.vertex_groups[n].add([i], float(w / tot), "REPLACE")
+
+
+def _follow_skin(obj, mb: M.MeshBuilder, pts, part: str, skin: str) -> None:
+    """part の頂点に、すぐ内側にある skin の面のウェイトを写す。
+
+    靴下は脚の筒と同じ列で張り、脚の面から数 mm しか浮かせていない。距離ウェイトを
+    別に付けると肌と少しずつ違う割合になり、膝や足首を曲げたとき肌が靴下を突き抜ける。
+    靴下の各頂点を同じ列の脚の辺へ投影し、その辺の両端のウェイトを内分して付ける。
+    """
+    seg = B.LEG_SEG
+    idx = mb.part_indices(part)
+    # 脚の筒は リング × seg 列の後ろに両端のふたの中心が 1 点ずつ付く
+    sk = mb.part_indices(skin)
+    rows = len(sk) // seg
+    if len(idx) == 0 or rows < 2:
+        return
+    sk = sk[:rows * seg].reshape(rows, seg)
+    gname = {g.index: g.name for g in obj.vertex_groups}
+    verts = obj.data.vertices
+    W = [[{gname[g.group]: g.weight for g in verts[int(i)].groups if g.weight > 0.0}
+          for i in row] for row in sk]
+    for n, i in enumerate(idx.tolist()):
+        j = n % seg
+        a = pts[sk[:-1, j]]
+        ab = pts[sk[1:, j]] - a
+        t = np.clip(np.einsum("ij,ij->i", pts[i] - a, ab)
+                    / np.einsum("ij,ij->i", ab, ab), 0.0, 1.0)
+        k = int(np.argmin(np.linalg.norm(a + ab * t[:, None] - pts[i], axis=1)))
+        mix: dict[str, float] = {}
+        for w, s in ((W[k][j], 1.0 - t[k]), (W[k + 1][j], t[k])):
+            for name, val in w.items():
+                mix[name] = mix.get(name, 0.0) + val * s
+        # Unity は 1 頂点 4 ボーンまで
+        keep = sorted(mix.items(), key=lambda kv: kv[1], reverse=True)[:4]
+        tot = sum(v for _, v in keep) or 1.0
+        for vg in obj.vertex_groups:
+            vg.remove([i])
+        for name, val in keep:
+            if val > 1e-4:
+                obj.vertex_groups[name].add([i], float(val / tot), "REPLACE")
 
 
 def override_weights(obj, mb: M.MeshBuilder, p: dict, a: B.Anatomy) -> None:
@@ -557,9 +597,10 @@ def override_weights(obj, mb: M.MeshBuilder, p: dict, a: B.Anatomy) -> None:
                        knee="boots" not in p.get("accessories", ()))
     _cloth_leg_weights(obj, mb, pts, a, "pants_seat")
 
-    # 靴下・ズボン・ブーツの筒も 2 ボーンに揃える（WebGL と PC で同じ形に）
-    _prune_influences(obj, mb, ("socks_l", "socks_r", "pants_l",
-                                "pants_r", "bootleg_l", "bootleg_r"))
+    # ズボン・ブーツの筒は 2 ボーンに揃える（WebGL と PC で同じ形に）
+    _prune_influences(obj, mb, ("pants_l", "pants_r", "bootleg_l", "bootleg_r"))
+    for side in ("l", "r"):
+        _follow_skin(obj, mb, pts, f"socks_{side}", f"leg_{side}")
     for side in ("l", "r"):
         bone = "LeftFoot" if side == "l" else "RightFoot"
         _set_exclusive(obj, mb.part_indices(f"shoes_{side}", f"foot_{side}"),
