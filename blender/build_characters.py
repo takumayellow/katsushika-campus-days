@@ -176,6 +176,9 @@ def write_palette(p: dict, cdir: str, names, pattern_arrays: dict) -> str:
     pats = kmats.pattern_entries(p, names, pattern_arrays)
     doc = {"materials": [{"name": n, "hex": h, **pats.get(n, {})}
                          for n, h in sorted(pal.items())]}
+    if p.get("outward_faces"):
+        # 顔の面が外向きなら、Unity は顔にも輪郭線を付ける（MaterialLibrary.ApplyFaceLook）
+        doc["outward_faces"] = True
     with open(path, "w", encoding="utf-8", newline="\n") as f:
         json.dump(doc, f, ensure_ascii=False, indent=2)
         f.write("\n")

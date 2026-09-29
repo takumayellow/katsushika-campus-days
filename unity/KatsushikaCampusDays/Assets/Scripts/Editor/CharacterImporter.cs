@@ -412,11 +412,12 @@ namespace KCD.Editor
                     continue;
                 }
 
+                bool outline = MaterialLibrary.FacesOutward(characterId);
                 foreach (string name in MaterialLibrary.FaceTexturedNames)
                 {
                     string path = MaterialLibrary.CharacterFolder + "/" + characterId + "_" + name + ".mat";
                     Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
-                    if (material == null || !MaterialLibrary.ApplyFaceLook(material, name, face))
+                    if (material == null || !MaterialLibrary.ApplyFaceLook(material, name, face, outline))
                     {
                         continue;
                     }

@@ -38,5 +38,6 @@
       "name": "skin",
       "hex": "EBBE9C"
     }
-  ]
+  ],
+  "outward_faces": true
 }
