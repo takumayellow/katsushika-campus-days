@@ -1,8 +1,9 @@
-"""mirai の前髪の位置 (#47)。
+"""mirai の前髪とヘアピンの位置 (#47)。
 
 Unity の輪郭線は法線の向きへ押し出した殻なので、輪郭線を持たない兜のドームより外へ
-前髪の房が出ると、頭頂に輪や角のような線が出る。頭の中心から頂点へ光線を飛ばし、
-その先で一番遠くに当たる髪の面との差で、どれだけ外へ出ているかを測る。
+前髪の房が出ると、頭頂に輪や角のような線が出る。ヘアピンは髪の下に埋もれると見えず、
+髪から浮くと殻の線がピンの下に回り込む。頭の中心から頂点へ光線を飛ばし、その先で
+一番遠くに当たる髪の面との差で、どれだけ外へ出ているかを測る。
 """
 
 import numpy as np
@@ -65,3 +66,11 @@ def test_mirai_bangs_stay_under_the_helmet_dome(mirai):
     assert covered.sum() > 100
     assert ex[covered].max() < 0.002
 
+
+def test_mirai_hairpin_shows_just_above_the_hair(mirai):
+    p, mb, head, V = mirai
+    names = [n for n in mb.parts if n.startswith("hair") and n != "hair_acc"]
+    ex = _excess(head, V[mb.part_indices("hair_acc")], _tris(mb, V, names))
+    assert not np.isnan(ex).any()
+    assert 0.0005 < ex.max() < p["head_w"] * 0.03  # 上面だけが髪から出る
+    assert ex.min() < 0.0  # 下は髪に埋まっていて、浮いた隙間が無い

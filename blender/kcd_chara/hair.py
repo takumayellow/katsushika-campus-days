@@ -495,16 +495,50 @@ def _tail(mb, p, head, origin, direction, length: float, *, width: float,
 # --------------------------------------------------------------------------
 
 
+def _hair_top(mb, head, dirs, cone: float = 0.05):
+    """頭の中心から dirs の各向きに見た、作り終えた髪の一番外側までの距離。"""
+    names = [n for n in mb.parts if n.startswith("hair") and n != "hair_acc"]
+    V = np.asarray(mb.verts, dtype=float)[mb.part_indices(*names)] - head.center
+    r = np.linalg.norm(V, axis=1)
+    U = V / r[:, None]
+    out = []
+    for d in dirs:
+        c = U @ d
+        m = c > math.cos(cone)
+        out.append(float((r[m] * c[m]).max()) if m.any() else 0.0)
+    return np.array(out)
+
+
 def _hairpin(mb, p, head):
-    hw, hh = p["head_w"], p["head_h"]
-    az = FRONT + math.radians(38.0)
-    base = scalp_pt(head, az, 0.72, hw * 0.10)[0]
-    for k in range(3):
-        c = base + np.array([0.0, 0.0, -hh * 0.030 * k])
+    """左の前髪に留めた青いヘアピン 2 本。
+
+    ピンは髪の一番外側の面に寝かせ、上面だけを髪から出す。髪から浮かせると
+    Unity の輪郭線（法線方向に押し出した殻）がピンの下に回り込み、額の上に
+    脚のような線が生える。高さは作り終えた髪の頂点から測るので、髪を
+    作った後に呼ぶ。
+    """
+    hw = p["head_w"]
+    K = 10
+    t = np.linspace(0.0, 1.0, K)
+    w, th, top = hw * 0.0166, hw * 0.0119, hw * 0.0057
+    prof = M.ring(12, w, th, power=3.0)
+    for k in range(2):
+        az = FRONT + np.radians(28.0 + 6.0 * t + 7.0 * k)
+        el = 0.86 + 0.20 * t
+        d = head.surface(az, el) - head.center
+        d = d / np.linalg.norm(d, axis=1, keepdims=True)
+        C = head.center + d * (_hair_top(mb, head, d) + top - th)[:, None]
+        T = np.gradient(C, axis=0)
+        T = T / np.linalg.norm(T, axis=1, keepdims=True)
+        L = np.cross(d, T)
+        L = L / np.linalg.norm(L, axis=1, keepdims=True)
+        N = np.cross(T, L)
+        # 両端だけ細めて、ピンの先を丸く閉じる
+        sc = np.maximum(0.35, np.sin(np.pi * np.clip(t, 0.02, 0.98)) ** 0.3)
+        rings = [C[j] + np.outer(prof[:, 0] * sc[j], L[j]) + np.outer(prof[:, 1], N[j])
+                 for j in range(K)]
         with mb.part("hair_acc"):
-            mb.add_rounded_box((c[0], c[1], c[2]), (hw * 0.055, hw * 0.16, hh * 0.022),
-                               "metal", seg=4, smooth=True,
-                               rot_z=math.radians(12.0))
+            mb.add_grid(rings, "metal", smooth=True, cap_start=True, cap_end=True)
 
 
 def _bow(mb, p, head, mat: str = "ribbon_red", scale: float | None = None):
