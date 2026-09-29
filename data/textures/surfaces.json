@@ -1,0 +1,82 @@
+{
+  "_comment": "キャンパスの面に貼るテクスチャの出所と加工の指定。tools/fetch_textures.py が読む。 saturation / contrast は Color マップの彩度と明暗を残す割合（0..1）。 depth は AO / Displacement を暗くするマスクとして焼き込む強さ（0 で焼かない、1 で凹凸マップそのまま）。 highpass_px を付けると、焼き込む前に凹凸マップからこの半径より大きなムラを抜く。",
+  "source": {
+    "site": "ambientCG",
+    "site_url": "https://ambientcg.com/",
+    "license": "CC0 1.0 Universal",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "license_page": "https://ambientcg.com/license",
+    "license_checked": "2026-09-24",
+    "credit_template": "Created using {asset} from ambientCG.com, licensed under the Creative Commons CC0 1.0 Universal License."
+  },
+  "download": {
+    "variant": "1K-JPG",
+    "maps": [
+      "Color",
+      "AmbientOcclusion",
+      "Displacement"
+    ],
+    "_comment": "Color はそのまま色に、AmbientOcclusion / Displacement は暗くするマスクとして焼き込む。無い素材もある（Concrete034 は AO 無し）。",
+    "api": "https://ambientcg.com/api/v2/full_json?type=Material&id={asset}&include=downloadData"
+  },
+  "output": {
+    "folder": "unity/KatsushikaCampusDays/Assets/Textures/surfaces",
+    "format": "jpg",
+    "quality": 92,
+    "_comment": "Unity が取り込み時に DXT/ETC へ再圧縮するので、リポジトリに置く元は jpg で足りる。png だと約 5 倍になる。.meta が無ければ、パスから決まる GUID と TextureImporter（TextureImporter.meta.template）を書いた .meta を置く。"
+  },
+  "surfaces": [
+    {
+      "asset": "Bricks092",
+      "tile_cm": 230,
+      "size_px": 1024,
+      "saturation": 1.0,
+      "contrast": 1.0,
+      "depth": 0,
+      "materials": [
+        "brick_red"
+      ],
+      "bricks": {
+        "source_grid": [
+          18,
+          5
+        ],
+        "grid": [
+          33,
+          10
+        ],
+        "joint": 0.09,
+        "grain": 1.0,
+        "block": 2,
+        "joint_ratio": 0.38,
+        "palette": [
+          {
+            "hex": "#4E423C",
+            "weight": 0.255
+          },
+          {
+            "hex": "#745445",
+            "weight": 0.219
+          },
+          {
+            "hex": "#595049",
+            "weight": 0.174
+          },
+          {
+            "hex": "#66493C",
+            "weight": 0.173
+          },
+          {
+            "hex": "#6A6056",
+            "weight": 0.122
+          },
+          {
+            "hex": "#8A573F",
+            "weight": 0.056
+          }
+        ]
+      },
+      "note": "葛飾キャンパスの外壁は二丁掛の割肌タイル（227×60 mm）の芋張りで、目地は細く暗い。素材からは肌の粒だけを借り、1 枚ずつの色（曇天の写真で色順応をそろえた 6 色と割合）と暗い目地で組み直す。平均は #654F44。測定は docs/ref/brick/ (#109)。"
+    }
+  ]
+}

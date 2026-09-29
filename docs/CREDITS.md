@@ -64,6 +64,8 @@ StreamingAssets はビルドにそのまま入るので、配布物にもフォ�
 キャラクターの顔・柄（`Assets/Models/Characters/*/`、`blender/kcd_chara/`）、ミニマップ（`tools/render_minimap.py`）、
 ミニマップの印（`Assets/Generated/UI/minimap_*.png`、`Scripts/Editor/MinimapAssets.cs` が描く）だけで、どれもスクリプトの出力。
 
+外壁の煉瓦のテクスチャ（`Assets/Textures/surfaces/brick_red.jpg`、#109）だけは例外で、[ambientCG](https://ambientcg.com/) の Bricks092（CC0 1.0）から煉瓦の肌の粒を借り、`tools/brick_bond.py` で張り方・1 枚ずつの色・目地を組み直したもの。
+
 ## 参考資料（`docs/ref`、ゲームには入らない）
 
 | ファイル | 内容 | 権利者 | 確認状況 |
