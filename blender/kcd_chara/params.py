@@ -201,6 +201,11 @@ CHARACTERS: dict[str, dict] = {
         mat_colors={"hair": "#C9A27E", "eye_l": "#5ED6DE", "eye_r": "#5ED6DE",
                     "metal": "#4FA3E8"},
         accessories=("tote",),
+        # 頭・左手・髪の殻・スカートの面を外向きに張る。Unity の輪郭線は
+        # 法線の向きへ押し出した殻の裏面なので、面が内向きだと殻が体の中へ
+        # 押し込まれて外形の線が 1 本も出ない。他のキャラも同じ面が内向きだが、
+        # 書き出し直してゲームで確かめてから True にする。
+        outward_faces=True,
     ),
     # --------------------------------------------------------------- botchan
     "botchan": dict(

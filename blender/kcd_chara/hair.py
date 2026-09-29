@@ -142,11 +142,14 @@ def build_helmet(mb: M.MeshBuilder, p: dict, head, *, front_el: float,
         ridge = nrm * (t_hair * ridge_amp * crest * hang * (1.0 - 0.55 * v))[:, None]
         outer.append(pos + ridge)
         inner.append(pos + ridge - nrm * (hw * 0.022 * hang)[:, None])
+    # 外殻・内殻・縁の 3 枚は向きが揃っていて、揃って裏返っている
+    # (外殻の面が頭の中を向く)。直すときは 3 枚とも返す。
+    out = bool(p.get("outward_faces"))
     with mb.part(part):
         mb.add_grid(rings + outer, "hair", smooth=True, cap_start=True,
-                    cap_end=False)
-        mb.add_grid(inner, "hair", smooth=True, flip=True)
-        mb.add_grid([outer[-1], inner[-1]], "hair", smooth=False)
+                    cap_end=False, flip=out)
+        mb.add_grid(inner, "hair", smooth=True, flip=not out)
+        mb.add_grid([outer[-1], inner[-1]], "hair", smooth=False, flip=out)
     return rim
 
 

@@ -137,7 +137,8 @@ def build_head(mb: M.MeshBuilder, p: dict) -> Head:
         return "skin"
 
     with mb.part("head"):
-        mb.add_grid(rings, mat_fn, smooth=True, cap_start=True, cap_end=True)
+        mb.add_grid(rings, mat_fn, smooth=True, cap_start=True, cap_end=True,
+                    flip=bool(p.get("outward_faces")))
 
     # 耳
     ear_z = chin_z + p["head_h"] * 0.46
@@ -594,9 +595,12 @@ def build_arms(mb: M.MeshBuilder, p: dict, a: Anatomy):
                 vv = math.copysign(abs(sa) ** e, sa)
                 ring.append(c + spread * uu * for_w + n_hat * vv * for_t)
             rings.append(np.array(ring))
+        # 手の枠のうち spread (前後) だけは左右で鏡に写さないので、左手だけ
+        # 面が内向きになる
         with mb.part("hand_" + side):
             mb.add_grid(rings, "skin", smooth=True, close_u=True,
-                        cap_start=True, cap_end=True)
+                        cap_start=True, cap_end=True,
+                        flip=bool(p.get("outward_faces")) and sgn > 0)
 
         fl_ = hr * (1.25 if chibi else 1.52)
         fr = hr * (0.235 if chibi else 0.200)
