@@ -45,6 +45,14 @@ def vertex_normals(verts, faces) -> np.ndarray:
     return out / np.maximum(length, 1e-12)
 
 
+def merge_normals(custom, index, auto) -> np.ndarray:
+    """custom を index で引いた法線。ゼロ（決めていない）のところは auto を使う。"""
+    out = np.asarray(custom, dtype=float)[index]
+    unset = np.linalg.norm(out, axis=1) == 0
+    out[unset] = np.asarray(auto, dtype=float).reshape(-1, 3)[unset]
+    return out
+
+
 def bezier3(p0, p1, p2, p3, n: int) -> np.ndarray:
     """3 次ベジエを n 点にサンプリングする（髪の房の芯線に使う）。"""
     t = np.linspace(0.0, 1.0, n).reshape(-1, 1)
@@ -165,7 +173,9 @@ class MeshBuilder:
     def set_normals(self, start: int, normals) -> None:
         """start から並ぶ頂点の、陰に使う法線を決める（Blender のカスタム法線）。"""
         n = np.asarray(normals, dtype=float).reshape(-1, 3)
-        self._normals.append((start, n / np.linalg.norm(n, axis=1, keepdims=True)))
+        length = np.linalg.norm(n, axis=1, keepdims=True)
+        # 長さゼロの法線は決めなかったことにする（割ると NaN になる）
+        self._normals.append((start, n / np.maximum(length, 1e-12)))
 
     def normal_array(self) -> np.ndarray:
         """頂点ごとの陰の法線。決めていない頂点はゼロ（面から求める法線のまま）。"""
@@ -351,9 +361,7 @@ class MeshBuilder:
             me.loops.foreach_get("vertex_index", loop_v)
             auto = np.empty(n_loops * 3, dtype=np.float32)
             me.corner_normals.foreach_get("vector", auto)
-            corner = self.normal_array()[loop_v]
-            unset = np.linalg.norm(corner, axis=1) == 0
-            corner[unset] = auto.reshape(-1, 3)[unset]
+            corner = merge_normals(self.normal_array(), loop_v, auto)
             me.normals_split_custom_set(corner.tolist())
             me.update()
 
