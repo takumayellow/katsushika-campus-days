@@ -1,0 +1,147 @@
+"""セーラー服の首まわり (#47)。
+
+身頃を肩ヨークまで高く張ると首の横に白い布の壁が立ち、正面から見ると白い立ち襟に見える。
+身頃は前を V に開けて首を出し、紺の前襟を身頃の面の上に張る（パーカーを羽織る sora は
+パーカーの面の上）。前襟より外に身頃・袖・パーカー・肌の面があると、突き抜けた白や肌色が
+ぎざぎざの斑になるので、前襟の面ごとに外から光線を飛ばし、前襟より手前で当たる面が無い
+ことを確かめる。
+"""
+
+import functools
+
+import numpy as np
+import pytest
+
+from kcd_chara import body, cloth, hair, params
+from kcd_chara import mesh as M
+
+SEIFUKU = [cid for cid in params.ALL_IDS
+           if params.CHARACTERS[cid]["outfit"].startswith("seifuku")]
+
+
+@functools.cache
+def _build(name):
+    """キャラを組み、襟の部位で add_grid が張った格子の (先頭の頂点, 段数, 列数) を返す。"""
+    grids = []
+    orig = M.MeshBuilder.add_grid
+
+    def add_grid(self, rings, mat, **kw):
+        v0 = len(self.verts)
+        out = orig(self, rings, mat, **kw)
+        # 襟の部位の add_tube（白線）も add_grid で筒を張るので、開いた格子だけ拾う
+        if self._stack and self._stack[-1] == "collar" and not kw.get("close_u", True):
+            grids.append((v0, len(rings), len(rings[0])))
+        return out
+
+    M.MeshBuilder.add_grid = add_grid
+    try:
+        p = params.resolve(name)
+        mb = M.MeshBuilder()
+        a, head, fs, uv_box, _ = body.build_base(mb, p)
+        hair.build_hair(mb, p, head, a, fs, uv_box)
+        cloth.build_outfit(mb, p, a)
+    finally:
+        M.MeshBuilder.add_grid = orig
+    return p, a, mb, grids
+
+
+def _front_panels(name):
+    """前襟 2 枚の格子（段, 列, 3）。最後の段は身頃の縁の内側への折り返し。"""
+    _, _, mb, grids = _build(name)
+    V = np.array(mb.verts)
+    # 1 枚目は背面フラップ、続く 2 枚が前襟
+    assert len(grids) == 3
+    return [V[v0:v0 + rows * cols].reshape(rows, cols, 3) for v0, rows, cols in grids[1:]]
+
+
+def _triangles(mb, keep):
+    V = np.array(mb.verts)
+    tri = [(f[0], f[k], f[k + 1]) for f, m in zip(mb.faces, mb.face_mat) if keep(f, m)
+           for k in range(1, len(f) - 1)]
+    return V[np.array(tri)]
+
+
+def _first_hit(orig, d, tri):
+    """光線 orig + t d が三角形の束 tri に最初に当たる t（当たらなければ inf）。"""
+    A, e1, e2 = tri[:, 0], tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0]
+    pv = np.cross(d, e2)
+    det = np.einsum("ij,ij->i", e1, pv)
+    ok = np.abs(det) > 1e-14
+    inv = np.where(ok, 1.0 / np.where(ok, det, 1.0), 0.0)
+    tv = orig - A
+    u = np.einsum("ij,ij->i", tv, pv) * inv
+    qv = np.cross(tv, e1)
+    v = (qv @ d) * inv
+    t = np.einsum("ij,ij->i", e2, qv) * inv
+    hit = ok & (u >= 0) & (v >= 0) & (u + v <= 1) & (t > 0)
+    return float(t[hit].min()) if hit.any() else np.inf
+
+
+@pytest.mark.parametrize("name", SEIFUKU)
+def test_blouse_opens_below_chin(name):
+    p, _, mb, _ = _build(name)
+    V = np.array(mb.verts)[mb.part_indices("blouse")]
+    front = V[(np.abs(V[:, 0]) < p["height"] * 0.01) & (V[:, 1] < 0)]
+    # 前中心の身頃の上端（胸当て）は顎よりずっと下で、首と鎖骨が見える
+    assert front[:, 2].max() < p["z"]["chin"] - p["head_h"] * 0.3
+    # 胸当てが V の奥を塞ぎ、胸までは開かない
+    assert front[:, 2].max() > p["z"]["bust"] + p["height"] * 0.04
+
+
+@pytest.mark.parametrize("name", SEIFUKU)
+def test_blouse_covers_shoulder(name):
+    p, a, mb, _ = _build(name)
+    V = np.array(mb.verts)[mb.part_indices("blouse")]
+    side = V[np.abs(V[:, 0]) > a.shoulder[0] * 0.5]
+    # V に開けても肩の上は身頃が覆う
+    assert side[:, 2].max() > a.shoulder[2] + p["height"] * 0.02
+
+
+@pytest.mark.parametrize("name", SEIFUKU)
+def test_back_flap_corners_stay_inside_shoulders(name):
+    _, a, mb, grids = _build(name)
+    v0, rows, cols = grids[0]
+    flap = np.array(mb.verts)[v0:v0 + rows * cols].reshape(rows, cols, 3)
+    # 上辺の角が肩の外へ出ると、後ろから見て肩章のように見える
+    assert np.all(np.abs(flap[0, [0, -1], 0]) < a.shoulder[0] * 0.62)
+    # 背中へ下りるほど広がる
+    assert np.all(np.abs(flap[-1, [0, -1], 0]) > np.abs(flap[0, [0, -1], 0]))
+
+
+@pytest.mark.parametrize("name", SEIFUKU)
+def test_collar_inner_edge_above_outer_edge(name):
+    for g in _front_panels(name):
+        assert np.all(g[-2, :, 2] >= g[0, :, 2] - 1e-9)
+
+
+@pytest.mark.parametrize("name", SEIFUKU)
+def test_nothing_pokes_through_front_collar(name):
+    p, _, mb, _ = _build(name)
+    panels = _front_panels(name)
+    lo = np.min([g.reshape(-1, 3).min(axis=0) for g in panels], axis=0) - 0.05
+    hi = np.max([g.reshape(-1, 3).max(axis=0) for g in panels], axis=0) + 0.05
+    V = np.array(mb.verts)
+
+    def near(f, m):
+        c = V[list(f)].mean(axis=0)
+        return bool(np.all((c > lo) & (c < hi))) and (
+            m in ("cloth_blouse", "cloth_hoodie") or m.startswith("skin"))
+
+    tri = _triangles(mb, near)
+    reach = p["height"] * 0.03
+    checked = 0
+    for g in panels:
+        # 折り返しの段（最後の 1 段）は身頃の内側へ潜るので除く
+        for j in range(g.shape[0] - 2):
+            for i in range(g.shape[1] - 1):
+                q = np.array([g[j, i], g[j, i + 1], g[j + 1, i + 1], g[j + 1, i]])
+                n = np.cross(q[2] - q[0], q[3] - q[1])
+                if np.linalg.norm(n) < 1e-12:
+                    continue
+                n /= np.linalg.norm(n)
+                c = q.mean(axis=0)
+                t = _first_hit(c + n * reach, -n, tri)
+                checked += 1
+                # 前襟より手前（外）で身頃・袖・パーカー・肌に当たらない
+                assert t > reach - 1e-4, (name, c.round(3).tolist(), reach - t)
+    assert checked > 200
