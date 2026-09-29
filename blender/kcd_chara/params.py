@@ -207,6 +207,8 @@ CHARACTERS: dict[str, dict] = {
         # prof も同じ面が内向きだが、書き出し直してゲームで確かめてから
         # True にする。
         outward_faces=True,
+        # 横顔の鼻先を頭の奥行きの何割だけ前へ出すか（body._keel）。
+        face_keel=0.090,
     ),
     # --------------------------------------------------------------- botchan
     "botchan": dict(

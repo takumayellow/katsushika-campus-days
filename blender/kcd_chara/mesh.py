@@ -33,6 +33,18 @@ def normalize(v):
     return v / n if n > 1e-12 else v
 
 
+def vertex_normals(verts, faces) -> np.ndarray:
+    """面の面積で重み付けした頂点法線（多角形の面の法線は Newell 法）。"""
+    v = np.asarray(verts, dtype=float)
+    out = np.zeros_like(v)
+    for f in faces:
+        q = v[list(f)]
+        n = np.cross(q, np.roll(q, -1, axis=0)).sum(axis=0)
+        out[list(f)] += n
+    length = np.linalg.norm(out, axis=1, keepdims=True)
+    return out / np.maximum(length, 1e-12)
+
+
 def bezier3(p0, p1, p2, p3, n: int) -> np.ndarray:
     """3 次ベジエを n 点にサンプリングする（髪の房の芯線に使う）。"""
     t = np.linspace(0.0, 1.0, n).reshape(-1, 1)
@@ -127,6 +139,7 @@ class MeshBuilder:
         self.face_smooth: list[bool] = []
         self.parts: dict[str, list[tuple[int, int]]] = {}
         self._stack: list[str] = []
+        self._normals: list[tuple[int, np.ndarray]] = []
 
     # -- 部位の記録 --------------------------------------------------------
     @contextmanager
@@ -147,6 +160,19 @@ class MeshBuilder:
             for a, b in self.parts.get(name, []):
                 idx.extend(range(a, b))
         return np.array(sorted(set(idx)), dtype=int)
+
+    # -- 陰の法線 ----------------------------------------------------------
+    def set_normals(self, start: int, normals) -> None:
+        """start から並ぶ頂点の、陰に使う法線を決める（Blender のカスタム法線）。"""
+        n = np.asarray(normals, dtype=float).reshape(-1, 3)
+        self._normals.append((start, n / np.linalg.norm(n, axis=1, keepdims=True)))
+
+    def normal_array(self) -> np.ndarray:
+        """頂点ごとの陰の法線。決めていない頂点はゼロ（面から求める法線のまま）。"""
+        out = np.zeros((len(self.verts), 3))
+        for start, n in self._normals:
+            out[start:start + len(n)] = n
+        return out
 
     # -- 低レベル ----------------------------------------------------------
     def add_verts(self, pts) -> int:
@@ -317,6 +343,19 @@ class MeshBuilder:
         me.polygons.foreach_set("material_index", mi)
         me.polygons.foreach_set("use_smooth", sm)
         me.update()
+        if self._normals:
+            # 決めていない頂点は、Blender が面から求めた角ごとの法線をそのまま渡す。
+            # 頂点単位でゼロを渡すと、フラットな面の角まで頂点の平均法線に変わる。
+            n_loops = len(me.loops)
+            loop_v = np.empty(n_loops, dtype=np.int32)
+            me.loops.foreach_get("vertex_index", loop_v)
+            auto = np.empty(n_loops * 3, dtype=np.float32)
+            me.corner_normals.foreach_get("vector", auto)
+            corner = self.normal_array()[loop_v]
+            unset = np.linalg.norm(corner, axis=1) == 0
+            corner[unset] = auto.reshape(-1, 3)[unset]
+            me.normals_split_custom_set(corner.tolist())
+            me.update()
 
         obj = bpy.data.objects.new(name, me)
         bpy.context.scene.collection.objects.link(obj)
