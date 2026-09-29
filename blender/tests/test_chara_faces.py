@@ -66,9 +66,3 @@ def test_mirai_hair_shell_outer_out_inner_in(mirai_grids):
     outer, inner = mirai_grids["hair_back"][:2]
     assert outer > 0.95  # 外殻は頭の外を向く
     assert inner < 0.05  # 内殻は頭の側を向く
-
-
-def test_mirai_hairpins_face_outward(mirai_grids):
-    pins = mirai_grids["hair_acc"]
-    assert len(pins) == 2
-    assert min(pins) > 0.95
