@@ -228,12 +228,13 @@ namespace KCD.Editor
         {
             if (VertexColored.Contains(name))
             {
-                if (ApplyVertexColor(material))
+                if (!ApplyVertexColor(material))
                 {
-                    EditorUtility.SetDirty(material);
+                    return false;
                 }
 
-                return;
+                EditorUtility.SetDirty(material);
+                return true;
             }
 
             if (!CampusColors.TryGetValue(name, out string hex))
