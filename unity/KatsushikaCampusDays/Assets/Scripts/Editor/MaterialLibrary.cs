@@ -377,7 +377,7 @@ namespace KCD.Editor
             ApplyPattern(material, patterns.TryGetValue(name, out Pattern pattern) ? pattern : null, color);
             material.SetFloat("_OutlineWidth", CharacterOutlineWidth);
 
-            // 顔・目・スカートの面は内向きに出力されているので、両面描画にする（シェーダ側で法線を裏返す）。
+            // 顔・目・スカートの面が内向きに出力されたキャラもあるので、両面描画にする（シェーダ側で法線を裏返す）。
             material.SetFloat("_Cull", 0f);
 
             if (name == "outline")
