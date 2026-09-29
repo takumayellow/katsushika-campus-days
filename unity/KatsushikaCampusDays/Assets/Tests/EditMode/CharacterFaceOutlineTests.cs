@@ -13,12 +13,22 @@ namespace KCD.Tests
     /// 付けると顔の前に殻がかぶる。Blender が顔の面を外向きに出したキャラだけ palette.json に
     /// outward_faces を書き、MaterialLibrary.ApplyFaceLook がそのキャラの face に輪郭線を付ける。
     /// ここでは実際に保存されている .mat の _OutlineWidth を突き合わせる。目は常に線なし。
+    ///
+    /// まつ毛・眉・二重線は顔の表面に貼った細い帯で、殻を押し出すと縁がぎざぎざの黒い線になるので、
+    /// どのキャラでも線を付けない（Blender の kcd_chara/outline.py の SKIP_PARTS と同じ）。
     /// </summary>
     public sealed class CharacterFaceOutlineTests
     {
         [System.Serializable]
+        private sealed class PaletteEntry
+        {
+            public string name;
+        }
+
+        [System.Serializable]
         private sealed class PaletteFile
         {
+            public PaletteEntry[] materials;
             public bool outward_faces;
         }
 
@@ -70,6 +80,30 @@ namespace KCD.Tests
 
             // mirai・坊っちゃん・マドンナちゃんは顔の面が外向き
             Assert.GreaterOrEqual(outward, 3, "outward_faces のキャラが見つからない");
+        }
+
+        [Test]
+        public void まつ毛と眉と二重線には輪郭線が無い()
+        {
+            // palette.json は FBX が使う材質の一覧。顔テクスチャに描いたキャラの古い lash.mat などは見ない
+            int checkedCount = 0;
+            foreach (string palette in Directory.GetFiles(CharactersFolder, "palette.json", SearchOption.AllDirectories))
+            {
+                string id = Path.GetFileName(Path.GetDirectoryName(palette));
+                foreach (PaletteEntry entry in JsonUtility.FromJson<PaletteFile>(File.ReadAllText(palette)).materials)
+                {
+                    if (entry.name != "lash" && entry.name != "brow" && entry.name != "eye_rim")
+                    {
+                        continue;
+                    }
+
+                    string path = Path.Combine(MaterialsFolder, id + "_" + entry.name + ".mat");
+                    checkedCount++;
+                    Assert.AreEqual(0f, ReadOutlineWidth(path), id + "_" + entry.name + " に輪郭線がある");
+                }
+            }
+
+            Assert.Greater(checkedCount, 0, "まつ毛・眉・二重線の材質が見つからない");
         }
     }
 }
