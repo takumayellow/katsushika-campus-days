@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
 
@@ -36,6 +37,8 @@ namespace KCD.Editor
             public TilingEntry[] surfaces;
         }
 
+        private static readonly Regex MaterialName = new Regex("^[a-z0-9_]+$");
+
         /// <summary>tiling.json を読む。{マテリアル名: tile_cm}。ファイルが無ければ空（どの面にも貼らない）。</summary>
         public static Dictionary<string, float> LoadTiling()
         {
@@ -52,6 +55,13 @@ namespace KCD.Editor
                 if (string.IsNullOrEmpty(entry.material) || entry.tile_cm <= 0f)
                 {
                     Debug.LogWarning("[KCD] " + TilingJson + " に名前か tile_cm の無い行がある。その行は貼らない");
+                    continue;
+                }
+
+                // 名前は画像のパスにそのまま使うので、fetch_textures.py の MATERIAL_NAME と同じ字だけ通す
+                if (!MaterialName.IsMatch(entry.material))
+                {
+                    Debug.LogWarning("[KCD] " + TilingJson + " の名前 " + entry.material + " は英小文字・数字・_ でない。その行は貼らない");
                     continue;
                 }
 
