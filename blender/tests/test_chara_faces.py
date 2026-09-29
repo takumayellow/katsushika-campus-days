@@ -6,6 +6,8 @@ add_grid で張った筒を 1 枚ずつ取り出し、隣り合うリング 2 �
 """
 
 import functools
+import json
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -78,3 +80,13 @@ def test_hair_shell_outer_out_inner_in(name):
     outer, inner = _grids(name)["hair_back"][:2]
     assert outer > 0.95  # 外殻は頭の外を向く
     assert inner < 0.05  # 内殻は頭の側を向く
+
+
+CHARACTERS = Path(__file__).resolve().parents[2] / "unity/KatsushikaCampusDays/Assets/Models/Characters"
+
+
+@pytest.mark.parametrize("name", params.ALL_IDS)
+def test_palette_flags_outward_faces(name):
+    # Unity は palette.json の outward_faces を見て顔にも輪郭線を付ける（MaterialLibrary.ApplyFaceLook）
+    doc = json.loads((CHARACTERS / name / "palette.json").read_text(encoding="utf-8"))
+    assert doc.get("outward_faces", False) == bool(params.resolve(name).get("outward_faces"))

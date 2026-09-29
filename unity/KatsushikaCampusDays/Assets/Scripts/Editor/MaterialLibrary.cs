@@ -15,6 +15,9 @@ namespace KCD.Editor
         public const string CampusFolder = "Assets/Materials/Campus";
         public const string CharacterFolder = "Assets/Materials/Characters";
 
+        /// <summary>キャラクターの輪郭線（KCD/Toon の Outline パス）の幅。</summary>
+        public const float CharacterOutlineWidth = 0.005f;
+
         private const string LitShader = "Universal Render Pipeline/Lit";
         private const string ToonShader = "KCD/Toon";
 
@@ -372,7 +375,7 @@ namespace KCD.Editor
 
             SetCharacterColor(material, color);
             ApplyPattern(material, patterns.TryGetValue(name, out Pattern pattern) ? pattern : null, color);
-            material.SetFloat("_OutlineWidth", 0.005f);
+            material.SetFloat("_OutlineWidth", CharacterOutlineWidth);
 
             // 顔・目・スカートの面は内向きに出力されているので、両面描画にする（シェーダ側で法線を裏返す）。
             material.SetFloat("_Cull", 0f);
@@ -389,7 +392,7 @@ namespace KCD.Editor
                 material.SetFloat("_Cull", 2f);
             }
 
-            ApplyFaceLook(material, name, face);
+            ApplyFaceLook(material, name, face, FacesOutward(characterId));
 
             if (name.StartsWith("eye"))
             {
@@ -641,22 +644,31 @@ namespace KCD.Editor
         private sealed class PaletteFile
         {
             public PaletteEntry[] materials;
+            public bool outward_faces;
         }
 
         /// <summary>
-        /// Blender（build_characters.write_palette）が FBX の隣に書く色表を読む。無ければ空。
+        /// Blender（build_characters.write_palette）が FBX の隣に書く色表を読む。無ければ null。
         /// FBX が運ぶのはマテリアル名だけなので、色はこのファイルで受け取る。
         /// </summary>
-        private static PaletteEntry[] LoadPaletteEntries(string characterId)
+        private static PaletteFile LoadPaletteFile(string characterId)
         {
             string path = Path.Combine(EditorPaths.CharactersFolder, characterId, "palette.json");
-            if (!File.Exists(path))
-            {
-                return new PaletteEntry[0];
-            }
+            return File.Exists(path) ? JsonUtility.FromJson<PaletteFile>(File.ReadAllText(path)) : null;
+        }
 
-            PaletteFile file = JsonUtility.FromJson<PaletteFile>(File.ReadAllText(path));
-            return file?.materials ?? new PaletteEntry[0];
+        private static PaletteEntry[] LoadPaletteEntries(string characterId)
+        {
+            return LoadPaletteFile(characterId)?.materials ?? new PaletteEntry[0];
+        }
+
+        /// <summary>
+        /// 顔の面が外向きに出力されたキャラか（palette.json の outward_faces）。
+        /// 輪郭線は法線の向きへ押し出した殻の裏面なので、面が外向きのときだけ顔にも線が出せる。
+        /// </summary>
+        public static bool FacesOutward(string characterId)
+        {
+            return LoadPaletteFile(characterId)?.outward_faces ?? false;
         }
 
         /// <summary>palette.json の色 {マテリアル名: 色}。和柄の色は柄の平均色。</summary>
@@ -691,8 +703,9 @@ namespace KCD.Editor
         /// まつ毛を描いた画像）を平面投影で貼っている。Unity でも同じ 4 面にテクスチャを付け、
         /// ベース色は白にして画像の色をそのまま出す（単色で塗ると目が「水色の円板」になる）。
         /// 目はテクスチャに描いたハイライトを見せたいので、リムと陰影を切って常に明部で描く。
+        /// outline が true なら顔（目は除く）に服と同じ幅の輪郭線を付け、横顔の鼻・口・顎に線を出す。
         /// </summary>
-        public static bool ApplyFaceLook(Material material, string rawName, Texture2D face)
+        public static bool ApplyFaceLook(Material material, string rawName, Texture2D face, bool outline)
         {
             string name = Normalize(rawName);
             if (material == null || face == null || !IsFaceTextured(name))
@@ -701,6 +714,7 @@ namespace KCD.Editor
             }
 
             bool eye = name != "face";
+            float width = outline && !eye ? CharacterOutlineWidth : 0f;
             float rim = eye ? 0f : material.GetFloat("_RimIntensity");
             float threshold = eye ? -1f : material.GetFloat("_ShadeThreshold");
             float threshold2 = eye ? -1f : material.GetFloat("_ShadeThreshold2");
@@ -709,7 +723,7 @@ namespace KCD.Editor
                 && material.GetColor("_BaseColor") == Color.white
                 && material.GetColor("_ShadeColor") == FaceShade
                 && material.GetColor("_ShadeColor2") == FaceShade2
-                && Mathf.Approximately(material.GetFloat("_OutlineWidth"), 0f)
+                && Mathf.Approximately(material.GetFloat("_OutlineWidth"), width)
                 && Mathf.Approximately(material.GetFloat("_RimIntensity"), rim)
                 && Mathf.Approximately(material.GetFloat("_ShadeThreshold"), threshold)
                 && Mathf.Approximately(material.GetFloat("_ShadeThreshold2"), threshold2);
@@ -722,7 +736,7 @@ namespace KCD.Editor
             material.SetColor("_BaseColor", Color.white);
             material.SetColor("_ShadeColor", FaceShade);
             material.SetColor("_ShadeColor2", FaceShade2);
-            material.SetFloat("_OutlineWidth", 0f);
+            material.SetFloat("_OutlineWidth", width);
             material.SetFloat("_RimIntensity", rim);
             material.SetFloat("_ShadeThreshold", threshold);
             material.SetFloat("_ShadeThreshold2", threshold2);
