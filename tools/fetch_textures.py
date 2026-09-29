@@ -30,9 +30,10 @@ CampusSurfaces.cs がそれを読んで、タイリングを 100 / tile_cm に�
 
 画像の横に Unity の .meta が無ければ、パスから決まる GUID で書く。Unity を開いた
 セッションがそれぞれ .meta を作ると GUID がばらばらになり、マテリアルからの参照が
-どちらか片方で切れる。取り込み設定は既定（Default / Repeat / sRGB / ミップマップ有り）の
-ままでよいので、.meta には GUID しか書かない。残りは Unity が取り込むときに書き足す。
-tiling.json の .meta だけは、短い TextScriptImporter の既定まで書く。
+どちらか片方で切れる。画像の .meta には data/textures/TextureImporter.meta.template の
+TextureImporter（Default / Repeat / sRGB / ミップマップ有り）を丸ごと書く。Unity 6.6 は
+取り込み設定の無い .meta を読まず、画像が無いものとして面を単色で塗る。
+tiling.json の .meta は、短い TextScriptImporter の既定まで書く。
 """
 
 from __future__ import annotations
@@ -146,6 +147,9 @@ def load_campus_colors() -> dict[str, str]:
         raise SystemExit(f"CampusColors が見つからない: {MATERIAL_LIBRARY}")
 
     end = text.find("};", start)
+    if end < 0:
+        raise SystemExit(f"CampusColors の終わりの }}; が見つからない: {MATERIAL_LIBRARY}")
+
     colors = {name: hex_text.upper() for name, hex_text in CAMPUS_COLOR_LINE.findall(text[start:end])}
     if not colors:
         raise SystemExit("CampusColors を読めなかった。MaterialLibrary.cs の書き方が変わっている")
@@ -538,6 +542,9 @@ def bake_surface(surface: dict, variant: str) -> Image.Image:
     maps = download_maps(surface["asset"], variant, ["Color", *DETAIL_MAPS])
     if "bricks" in surface:
         # 煉瓦は素材の張り方・目地をそのまま使わず、実物の芋張りに組み直す (#109)
+        if "Displacement" not in maps:
+            raise SystemExit(f"{surface['asset']} に Displacement が無く、煉瓦の目地を測れない")
+
         return brick_bond.compose(maps["Color"], maps["Displacement"], surface["bricks"], size, surface["asset"])
 
     color = resize_tileable(maps["Color"].convert("RGB"), size)

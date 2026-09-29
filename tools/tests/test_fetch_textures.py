@@ -194,13 +194,13 @@ def test_pipeline_meets_report_criteria(tmp_path, monkeypatch):
     side = 256
     color = _color_map(side)
     monkeypatch.setattr(ft, "download_maps", lambda asset, variant, wanted: {"Color": color, **_detail_maps(side)})
-    surface = {"asset": "Bricks101", "size_px": 128, "saturation": 0.4, "contrast": 0.7, "depth": 0.5, "highpass_px": 8}
+    surface = {"asset": "Concrete034", "size_px": 128, "saturation": 0.4, "contrast": 0.7, "depth": 0.5, "highpass_px": 8}
 
     shaped = ft.bake_surface(surface, "1K-JPG")
     assert shaped.size == (128, 128)
 
-    path = tmp_path / "brick_red.jpg"
-    assert ft.finish_material("brick_red", path, "8E3B2F", shaped, 92, in_unity=False)
+    path = tmp_path / "concrete.jpg"
+    assert ft.finish_material("concrete", path, "8E3B2F", shaped, 92, in_unity=False)
     assert path.exists() and not ft.meta_path(path).exists()
 
 
@@ -215,6 +215,41 @@ def test_finish_material_check_mode_flags_what_is_missing(tmp_path, monkeypatch,
 
     out = capsys.readouterr().out
     assert "CampusColors に無い" in out and "まだ焼かれていない" in out and ".meta が無い" in out
+
+
+def test_finish_material_check_mode_rejects_a_guid_only_meta(tmp_path, monkeypatch, capsys):
+    """GUID だけの .meta は Unity 6.6 が読まないので、--check でも NG にする (#109)。"""
+    monkeypatch.setattr(ft, "ROOT", tmp_path)
+    path = tmp_path / "brick_red.jpg"
+    Image.new("RGB", (8, 8)).save(path)
+    ft.meta_path(path).write_text("fileFormatVersion: 2\nguid: 371a9dbfea2d5ad7ba5958ad97713536\n", encoding="utf-8")
+
+    assert not ft.finish_material("brick_red", path, "654F44", None, 92, in_unity=True)
+    assert "TextureImporter が無く" in capsys.readouterr().out
+
+
+def test_bake_surface_hands_bricks_to_brick_bond(monkeypatch):
+    """bricks の指定がある素材は、Color と Displacement を芋張りの組み直しに渡す (#109)。"""
+    color, height = _color_map(64), _periodic(64, 16)
+    monkeypatch.setattr(ft, "download_maps", lambda asset, variant, wanted: {"Color": color, "Displacement": height})
+    calls = []
+
+    def compose(*args):
+        calls.append(args)
+        return Image.new("RGB", (32, 32))
+
+    monkeypatch.setattr(ft.brick_bond, "compose", compose)
+    bricks = {"source_grid": [18, 5], "grid": [33, 10]}
+    surface = {"asset": "Bricks092", "size_px": 32, "bricks": bricks}
+
+    assert ft.bake_surface(surface, "1K-JPG").size == (32, 32)
+    assert calls == [(color, height, bricks, 32, "Bricks092")]
+
+
+def test_bake_surface_needs_displacement_for_bricks(monkeypatch):
+    monkeypatch.setattr(ft, "download_maps", lambda asset, variant, wanted: {"Color": _color_map(64)})
+    with pytest.raises(SystemExit, match="Displacement"):
+        ft.bake_surface({"asset": "Bricks092", "size_px": 32, "bricks": {}}, "1K-JPG")
 
 
 def test_highpass_removes_large_blotches_and_keeps_seam():

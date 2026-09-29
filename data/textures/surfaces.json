@@ -23,7 +23,7 @@
     "folder": "unity/KatsushikaCampusDays/Assets/Textures/surfaces",
     "format": "jpg",
     "quality": 92,
-    "_comment": "Unity が取り込み時に DXT/ETC へ再圧縮するので、リポジトリに置く元は jpg で足りる。png だと約 5 倍になる。.meta が無ければパスから決まる GUID だけを書いた .meta を置く（取り込み設定は Unity の既定のまま）。"
+    "_comment": "Unity が取り込み時に DXT/ETC へ再圧縮するので、リポジトリに置く元は jpg で足りる。png だと約 5 倍になる。.meta が無ければ、パスから決まる GUID と TextureImporter（TextureImporter.meta.template）を書いた .meta を置く。"
   },
   "surfaces": [
     {
