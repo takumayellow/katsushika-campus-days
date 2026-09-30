@@ -605,28 +605,143 @@ def grip_point(a: B.Anatomy, side: int = -1) -> np.ndarray:
     return w + (t - w) * 0.58
 
 
+#: トートの寸法（身長比）。幅は体の前後（y）、マチは左右（x）
+TOTE_W, TOTE_D, TOTE_H = 0.150, 0.050, 0.150
+#: 握りから袋の口までの持ち手の落ち
+TOTE_DROP = 0.070
+#: 口の縁の当て布の幅
+TOTE_HEM = 0.020
+
+
+def _tote_half(h: float, u: float):
+    """高さ u（底 0 〜 口 1）での袋の半幅（y）と半マチ（x）。
+
+    中身で胴がわずかに膨らみ、持ち手に引かれて口のマチは底の 55% に閉じる。
+    """
+    wy = h * TOTE_W * 0.5 * (0.97 + 0.05 * u)
+    dx = (h * TOTE_D * 0.5 * (1.0 - 0.45 * u ** 1.6)
+          * (1.0 + 0.10 * math.sin(math.pi * u)))
+    return wy, dx
+
+
+def _box_ring(c, e1, e2, r1: float, r2: float, n: int, ex: float):
+    """e1・e2 の張る面の角の丸い長方形（超楕円）。ex が小さいほど角張る。"""
+    ang = np.linspace(0.0, 2.0 * math.pi, n, endpoint=False)
+    ca, sa = np.cos(ang), np.sin(ang)
+    u = np.sign(ca) * np.abs(ca) ** ex
+    v = np.sign(sa) * np.abs(sa) ** ex
+    return c + np.outer(u * r1, e1) + np.outer(v * r2, e2)
+
+
+def _tote_body(h: float):
+    """袋の外面 → 口の縁 → 内面のリング列（口の中心が原点）と、面の材質。"""
+    X, Y = np.array([1.0, 0.0, 0.0]), np.array([0.0, 1.0, 0.0])
+    H = h * TOTE_H
+    rings, green = [], []
+    for u, k in ((0.0, 0.80), (0.02, 0.95), (0.06, 1.0), (0.2, 1.0),
+                 (0.35, 1.0), (0.5, 1.0), (0.65, 1.0), (0.8, 1.0),
+                 (1.0 - TOTE_HEM / TOTE_H, 1.0), (0.95, 1.0), (1.0, 1.0)):
+        wy, dx = _tote_half(h, u)
+        rings.append(_box_ring(np.array([0.0, 0.0, (u - 1.0) * H]), X, Y,
+                               dx * k, wy * k, 28, 0.35))
+        green.append(u >= 1.0 - TOTE_HEM / TOTE_H - 1e-9)
+    # 口の縁を折り返して内面へ（布の厚み 0.3%）
+    wy, dx = _tote_half(h, 1.0)
+    t = h * 0.003
+    for z, dz, g in ((t * 0.5, t * 0.5, True), (0.0, t, True),
+                     (-h * TOTE_HEM, t, True), (-H * 0.55, t * 1.4, False)):
+        rings.append(_box_ring(np.array([0.0, 0.0, z]), X, Y,
+                               max(dx - dz, t), wy - dz, 28, 0.35))
+        green.append(g)
+    mats = ["cloth_ribbon_green" if green[j] and green[j + 1] else "bag_tote"
+            for j in range(len(rings) - 1)]
+    return rings, mats
+
+
+def _catmull(ctrl, n: int) -> np.ndarray:
+    """制御点を通る Catmull-Rom 曲線を n 点に取り直す。"""
+    P = np.asarray(ctrl, dtype=float)
+    P = np.vstack([2 * P[0] - P[1], P, 2 * P[-1] - P[-2]])
+    out = []
+    for s in np.linspace(0.0, len(ctrl) - 1.0, n):
+        i = min(int(s), len(ctrl) - 2)
+        t = s - i
+        p0, p1, p2, p3 = P[i], P[i + 1], P[i + 2], P[i + 3]
+        out.append(0.5 * (2 * p1 + (p2 - p0) * t
+                          + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t
+                          + (3 * p1 - p0 - 3 * p2 + p3) * t ** 3))
+    return np.array(out)
+
+
+def _tote_strap(h: float, sx: int, grip_y: float):
+    """片面の持ち手（口の外面 → 握り → 反対の端）のリング列。原点は握りの芯。
+
+    袋に縫い付けた根元は平たい帯（幅 1.4%）、手の中では 2 本が寄り集まる
+    丸い束になる。束は手の幅（grip_y）の外まで伸ばし、指の両脇から出す。
+    """
+    drop = h * TOTE_DROP
+    roll = h * B.GRIP_ROLL
+    ctrl = []
+    for sy in (-1, 1):
+        side = []
+        for u, lift in ((0.80, 0.0), (0.93, 0.0), (1.0, h * 0.006)):
+            wy, dx = _tote_half(h, u)
+            z = (u - 1.0) * h * TOTE_H - drop + lift
+            side.append((sx * (dx + h * 0.0022), sy * h * 0.040, z))
+        side.append((sx * h * 0.010, sy * h * 0.030, -drop * 0.42))
+        side.append((sx * roll * 0.45, sy * (grip_y + h * 0.004), -roll * 0.8))
+        side.append((sx * roll * 0.45, sy * grip_y * 0.5, 0.0))
+        ctrl.append(side)
+    path = _catmull(ctrl[0] + [(sx * roll * 0.45, 0.0, 0.0)] + ctrl[1][::-1],
+                    61)
+    rings = []
+    for k, c in enumerate(path):
+        t = path[min(k + 1, len(path) - 1)] - path[max(k - 1, 0)]
+        t = t / np.linalg.norm(t)
+        e1 = np.array([sx, 0.0, 0.0]) - t * t[0] * sx
+        e1 = e1 / (np.linalg.norm(e1) + 1e-12)
+        e2 = np.cross(t, e1)
+        # 手の中（握りの芯から束の外）で平たい帯から丸い束へ
+        s = float(np.clip((abs(c[1]) - grip_y) / (h * 0.012), 0.0, 1.0))
+        s = s * s * (3.0 - 2.0 * s)
+        thick = roll * 0.55 + (h * 0.0014 - roll * 0.55) * s
+        wide = roll * 0.55 + (h * 0.0070 - roll * 0.55) * s
+        rings.append(_box_ring(c, e1, e2, thick, wide, 10,
+                               1.0 - 0.5 * s))
+    return rings
+
+
 def _tote(mb, p, a: B.Anatomy):
+    """右手に提げたキャンバス地のトートバッグ。
+
+    広い面を体の横へ向けて（幅を前後に取って）脚に当てず、2 本の持ち手は
+    握った指の内側へ通す。腕は全モーションで A ポーズから arm_drop だけ
+    下ろすので、バインドでは握りを中心にその分だけ外へ振って吊り、動作中に
+    真下へ下がるようにする。
+    """
     h = p["height"]
-    grip = grip_point(a)
-    cx = grip[0]
-    cz = grip[2] - h * 0.168
-    body_hw, body_hd, body_hh = h * 0.118, h * 0.040, h * 0.120
+    hd = B.hand_frame(p, a, -1)
+    if hd.mitten:
+        # ミトンの手は指を曲げないので、持ち手の束が拳の前で宙に浮く
+        raise ValueError("トートはミトンの手では握れない")
+    grip = B.grip_hook(p, a)
+    th = math.radians(p.get("arm_drop", B.ARM_DROP))
+    R = np.array([[math.cos(th), 0.0, math.sin(th)],
+                  [0.0, 1.0, 0.0],
+                  [-math.sin(th), 0.0, math.cos(th)]])
+
+    def place(pts):
+        return np.asarray(pts) @ R.T + grip
+
+    body, mats = _tote_body(h)
+    top = np.array([0.0, 0.0, -h * TOTE_DROP])
     with mb.part("bag"):
-        mb.add_rounded_box((cx, grip[1] + h * 0.008, cz),
-                           (body_hw, body_hd, body_hh), "bag_tote",
-                           seg=6, smooth=True)
-        # 口縁（別色の当て布）
-        mb.add_rounded_box((cx, grip[1] + h * 0.008, cz + body_hh * 0.40),
-                           (body_hw * 1.02, body_hd * 1.04, body_hh * 0.22),
-                           "cloth_ribbon_green", seg=6, smooth=True)
-        for sgn in (-1, 1):
-            base = np.array([cx + sgn * body_hw * 0.62, grip[1] + h * 0.008,
-                             cz + body_hh * 0.48])
-            top = np.array([grip[0] + sgn * h * 0.005, grip[1], grip[2]])
-            mid = (base + top) * 0.5 + np.array([sgn * h * 0.018, 0.0,
-                                                 -h * 0.006])
-            mb.add_tube(np.array([base, mid, top]),
-                        [(h * 0.0055, h * 0.0090)] * 3, "bag_tote", n=6)
+        mb.add_grid([place(r + top) for r in body],
+                    lambda i, j: mats[j], cap_start=True, cap_end=True)
+        for sx in (-1, 1):
+            mb.add_grid([place(r) for r in
+                         _tote_strap(h, sx, hd.palm_w * 0.5)],
+                        "bag_tote", cap_start=True, cap_end=True)
 
 
 def _hoodie(mb, p, a: B.Anatomy, z_col, mat="cloth_hoodie"):

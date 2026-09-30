@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import math
+from typing import NamedTuple
 
 import numpy as np
 
@@ -448,6 +449,12 @@ def build_face_parts(mb: M.MeshBuilder, p: dict, fs: FaceSurface, uv_box):
 # --------------------------------------------------------------------------
 
 
+#: レストポーズは A ポーズ（上腕が鉛直から 38° 開く）。動作中は腕を体側に下ろした姿勢を
+#: 基準にしたいので、全 Action の上腕にこの分の内転（ワールド Y 軸回り）を先に入れる。
+#: 残り約 12° が「気をつけ」で自然に見える開き。
+ARM_DROP = 26.0
+
+
 class Anatomy:
     """リグ・衣装・髪が参照する基準点をまとめたもの。"""
 
@@ -575,53 +582,135 @@ def _limb(mb: M.MeshBuilder, path, radii, mat: str, part: str, n: int = 20):
         mb.add_tube(path, radii, mat, n=n, cap_start=True, cap_end=True)
 
 
-def _finger(mb: M.MeshBuilder, part: str, base, f, n_hat, length: float,
-            radius: float, curl: float, n: int = 6) -> None:
-    """3 節のカプセル指。curl で手のひら側へ軽く曲げる。"""
+#: ふだんの指の曲がり
+FINGER_CURL = 0.16
+#: 鞄の持ち手を握る指の、各節の向きの曲がり（度）。指先が手のひらへ戻る鉤にする
+GRIP_ANGLES = (40.0, 95.0, 140.0)
+#: 握った手の親指の各節の曲がり（度）。指の向きへ倒して束の手前に被せる
+GRIP_THUMB = (10.0, 35.0, 60.0)
+#: 握った持ち手の束の半径（身長比）
+GRIP_ROLL = 0.0042
+
+
+def holds_tote(p: dict) -> bool:
+    """右手にトートの持ち手を握るキャラ。"""
+    return "tote" in p.get("accessories", ())
+
+
+class Hand(NamedTuple):
+    """手の枠。f は指の向き、n_hat は手の甲の向き（指は -n_hat へ曲がる）、
+    spread は指の並ぶ向き。"""
+    wr: np.ndarray
+    f: np.ndarray
+    n_hat: np.ndarray
+    spread: np.ndarray
+    palm_len: float
+    palm_w: float
+    palm_t: float
+    finger_len: float
+    finger_r: float
+    mitten: bool
+
+
+def hand_frame(p: dict, a: Anatomy, sgn: int) -> Hand:
+    """sgn の側（+1 で +x の左手、-1 で右手）の手の枠と寸法。"""
+    hr = a.hand_r
+    chibi = bool(p.get("chibi"))
+    wr = a.wrist * np.array([sgn, 1, 1])
+    tip = a.hand_tip * np.array([sgn, 1, 1])
+    f = tip - wr
+    f = f / (np.linalg.norm(f) + 1e-12)
+    n_hat = np.array([-f[2], 0.0, f[0]])
+    n_hat = n_hat / (np.linalg.norm(n_hat) + 1e-12)
+    if n_hat[0] * sgn > 0:
+        n_hat = -n_hat
+    # 公式（docs/ref/tus_chara01.jpg）の手はミトン。低頭身のまま指を 5 本
+    # 生やすと 1 本が頭幅の 5% しかなく、輪郭線を引いた時点で潰れて
+    # 手の周りの汚れにしかならない。塊そのものの輪郭で手に見せる。
+    mitten = chibi
+    return Hand(wr, f, n_hat, np.array([0.0, 1.0, 0.0]),
+                palm_len=hr * (2.05 if mitten else 1.45),
+                palm_w=hr * 1.70,
+                palm_t=hr * (1.25 if mitten else 0.86),
+                finger_len=hr * (1.25 if chibi else 1.52),
+                finger_r=hr * (0.235 if chibi else 0.200),
+                mitten=mitten)
+
+
+#: 4 本の指の付け根の横位置（手の幅比）と長さの比
+_FINGERS = ((-0.34, 0.86), (-0.115, 1.00), (0.115, 0.96), (0.34, 0.78))
+
+
+def _finger_bases(hd: Hand):
+    knuckle = hd.wr + hd.f * hd.palm_len * 0.96
+    return [(knuckle + hd.spread * (hd.palm_w * off)
+             - hd.n_hat * hd.palm_t * 0.06, hd.finger_len * lk)
+            for off, lk in _FINGERS]
+
+
+def finger_path(base, f, n_hat, length: float, curl: float = FINGER_CURL,
+                angles: tuple[float, ...] | None = None) -> np.ndarray:
+    """3 節の指の芯（4 点）。手のひら側（-n_hat）へ曲げる。
+
+    curl は節ごとに -n_hat を足して向きを正規化するだけなので、90° を越えて
+    巻けない。angles（各節の曲がりの度数）を渡すと、その角度どおりに曲げる。
+    """
     seg = length / 3.0
     pts = [np.asarray(base, dtype=float)]
     d = np.asarray(f, dtype=float)
     for k in range(3):
-        d = d - n_hat * curl * (0.35 + 0.35 * k)
-        d = d / (np.linalg.norm(d) + 1e-12)
+        if angles is None:
+            d = d - n_hat * curl * (0.35 + 0.35 * k)
+            d = d / (np.linalg.norm(d) + 1e-12)
+        else:
+            t = math.radians(angles[k])
+            d = f * math.cos(t) - n_hat * math.sin(t)
         pts.append(pts[-1] + d * seg * (1.0 - 0.10 * k))
+    return np.array(pts)
+
+
+def grip_hook(p: dict, a: Anatomy, sgn: int = -1):
+    """握った持ち手の束の芯（手の幅の中央）。
+
+    中指・薬指の真ん中の節の中点から、曲がりの内側へ指の太さと束の半径の
+    ぶんだけ寄せる。
+    """
+    hd = hand_frame(p, a, sgn)
+    t = math.radians(GRIP_ANGLES[1])
+    inward = -hd.f * math.sin(t) - hd.n_hat * math.cos(t)
+    mids = [finger_path(b, hd.f, hd.n_hat, ln, angles=GRIP_ANGLES)[1:3].mean(axis=0)
+            for b, ln in _finger_bases(hd)[1:3]]
+    c = (np.mean(mids, axis=0)
+         + inward * (hd.finger_r * 0.94 + GRIP_ROLL * p["height"]))
+    return c
+
+
+def _finger(mb: M.MeshBuilder, part: str, base, f, n_hat, length: float,
+            radius: float, curl: float = FINGER_CURL, n: int = 6,
+            angles: tuple[float, ...] | None = None) -> None:
+    """3 節のカプセル指。"""
+    pts = finger_path(base, f, n_hat, length, curl, angles)
     radii = [radius * 1.00, radius * 0.94, radius * 0.84, radius * 0.58]
     with mb.part(part):
-        mb.add_tube(np.array(pts), radii, "skin", n=n,
-                    cap_start=True, cap_end=True)
+        mb.add_tube(pts, radii, "skin", n=n, cap_start=True, cap_end=True)
 
 
 def build_arms(mb: M.MeshBuilder, p: dict, a: Anatomy):
     r0, r1, r2 = a.arm_r
-    hr = a.hand_r
-    chibi = bool(p.get("chibi"))
     for sgn in (-1, 1):
         side = "l" if sgn > 0 else "r"
         sh = a.shoulder * np.array([sgn, 1, 1])
         el = a.elbow * np.array([sgn, 1, 1])
         wr = a.wrist * np.array([sgn, 1, 1])
-        tip = a.hand_tip * np.array([sgn, 1, 1])
         mid1 = sh + (el - sh) * 0.50
         mid2 = el + (wr - el) * 0.45
         path = np.array([sh - (el - sh) * 0.06, mid1, el, mid2, wr])
         radii = [r0 * 1.08, r0 * 0.92, r1 * 1.02, r1 * 0.94, r2 * 0.86]
         _limb(mb, path, radii, "skin", "arm_" + side)
 
-        f = tip - wr
-        f = f / (np.linalg.norm(f) + 1e-12)
-        n_hat = np.array([-f[2], 0.0, f[0]])
-        n_hat = n_hat / (np.linalg.norm(n_hat) + 1e-12)
-        if n_hat[0] * sgn > 0:
-            n_hat = -n_hat
-        spread = np.array([0.0, 1.0, 0.0])
-
-        # 公式（docs/ref/tus_chara01.jpg）の手はミトン。低頭身のまま指を 5 本
-        # 生やすと 1 本が頭幅の 5% しかなく、輪郭線を引いた時点で潰れて
-        # 手の周りの汚れにしかならない。塊そのものの輪郭で手に見せる。
-        mitten = chibi
-        palm_len = hr * (2.05 if mitten else 1.45)
-        palm_w = hr * (1.70 if mitten else 1.70)
-        palm_t = hr * (1.25 if mitten else 0.86)
+        hd = hand_frame(p, a, sgn)
+        f, n_hat, spread, mitten = hd.f, hd.n_hat, hd.spread, hd.mitten
+        palm_len, palm_w, palm_t = hd.palm_len, hd.palm_w, hd.palm_t
         rings = []
         for t in np.linspace(0.0, 1.0, 7 if mitten else 5):
             if mitten:
@@ -650,25 +739,32 @@ def build_arms(mb: M.MeshBuilder, p: dict, a: Anatomy):
                         cap_start=True, cap_end=True,
                         flip=bool(p.get("outward_faces")) and sgn > 0)
 
-        fl_ = hr * (1.25 if chibi else 1.52)
-        fr = hr * (0.235 if chibi else 0.200)
+        fl_, fr = hd.finger_len, hd.finger_r
+        grip = not mitten and sgn < 0 and holds_tote(p)
         if not mitten:
-            knuckle = wr + f * palm_len * 0.96
-            for i, (off, lk) in enumerate(zip((-0.34, -0.115, 0.115, 0.34),
-                                              (0.86, 1.00, 0.96, 0.78))):
-                base = knuckle + spread * (palm_w * off) - n_hat * palm_t * 0.06
-                _finger(mb, "hand_" + side, base, f, n_hat, fl_ * lk,
-                        fr * (1.0 - 0.05 * abs(i - 1.5)), curl=0.16)
+            for i, (base, ln) in enumerate(_finger_bases(hd)):
+                _finger(mb, "hand_" + side, base, f, n_hat, ln,
+                        fr * (1.0 - 0.05 * abs(i - 1.5)),
+                        angles=GRIP_ANGLES if grip else None)
 
         # 親指だけは残す。これが無いとただの棒になって手に見えない。
         tb = wr + f * palm_len * 0.34 - spread * palm_w * 0.46 - n_hat * palm_t * 0.10
-        tdir = f * 0.42 - spread * 0.80 - n_hat * 0.28
-        tdir = tdir / np.linalg.norm(tdir)
-        # ミトンの親指は太いので、6 角のままだと切り口が六角形に見える。
-        _finger(mb, "hand_" + side, tb, tdir, n_hat,
-                fl_ * (0.50 if mitten else 0.66),
-                fr * (1.80 if mitten else 1.16), curl=0.12,
-                n=10 if mitten else 6)
+        if grip:
+            # 前へ開いたままだと、持ち手を握った拳から親指だけ突き出して見える
+            tf = f * 0.90 + spread * 0.15
+            tf = tf / np.linalg.norm(tf)
+            tn = n_hat - tf * float(n_hat @ tf)
+            tn = tn / np.linalg.norm(tn)
+            _finger(mb, "hand_" + side, tb, tf, tn, fl_ * 0.66, fr * 1.16,
+                    angles=GRIP_THUMB)
+        else:
+            tdir = f * 0.42 - spread * 0.80 - n_hat * 0.28
+            tdir = tdir / np.linalg.norm(tdir)
+            # ミトンの親指は太いので、6 角のままだと切り口が六角形に見える。
+            _finger(mb, "hand_" + side, tb, tdir, n_hat,
+                    fl_ * (0.50 if mitten else 0.66),
+                    fr * (1.80 if mitten else 1.16), curl=0.12,
+                    n=10 if mitten else 6)
 
 
 #: 脚の筒の周の分割数。靴下は同じ分割で脚の面に沿わせる

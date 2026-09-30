@@ -14,6 +14,8 @@ from mathutils import Matrix, Vector
 
 import bpy
 
+from .body import ARM_DROP
+
 ACTION_NAMES = ("Idle", "Walk", "Run", "Jump", "Wave", "Talk")
 
 #: Action 名 -> {Shape Key 名: [(フレーム比 0..1, 値), ...]}
@@ -162,12 +164,6 @@ def _fcurves(act):
 # --------------------------------------------------------------------------
 
 D = math.radians
-
-
-#: レストポーズは A ポーズ（上腕が鉛直から 38° 開く）。動作中は腕を体側に下ろした姿勢を
-#: 基準にしたいので、全 Action の上腕にこの分の内転（ワールド Y 軸回り）を先に入れる。
-#: 残り約 12° が「気をつけ」で自然に見える開き。
-ARM_DROP = 26.0
 
 
 def _arms_down(spec: dict, drop: float = ARM_DROP) -> dict:
