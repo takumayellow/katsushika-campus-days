@@ -5,6 +5,10 @@ Unity の輪郭線は、面を法線の向きへ押し出した殻の裏面。�
 前髪は兜の外殻をそのまま正面で下ろしたものなので、その殻が 0.9 m と 3.2 m の
 輪郭線の太さで折れ返らないことと、潰れた面を張っていないことを確かめる。
 
+頭の形に沿わせた殻は頭蓋に貼り付いた兜に見え、前髪が 1 枚のなめらかな面だと帽子の
+つばに見える。殻を目より上で頭から離して髪の量を出すことと、前髪を歯ごとの房に
+分ける溝があることも確かめる。
+
 ヘアピンは髪の下に埋もれると見えず、髪から浮くと殻の線がピンの下に回り込む。頭の
 中心から頂点へ光線を飛ばし、その先で一番遠くに当たる髪の面との差で、どれだけ外へ
 出ているかを測る。
@@ -17,9 +21,11 @@ from kcd_chara import body, hair, params
 from kcd_chara import mesh as M
 
 
-@pytest.fixture(scope="module")
-def mirai():
-    """mirai の髪を組み、add_grid で張った面を部位ごとに呼び出し順で返す。"""
+def _build(patch=None):
+    """mirai の髪を組み、add_grid で張った面を部位ごとに呼び出し順で返す。
+
+    patch を渡すと、build_helmet へ渡す引数をそれで書き換えてから組む。
+    """
     grids = {}
     helmets = []
     orig_grid, orig_helmet = M.MeshBuilder.add_grid, hair.build_helmet
@@ -33,6 +39,8 @@ def mirai():
         return out
 
     def build_helmet(*args, **kw):
+        if patch:
+            kw = patch(kw)
         helmets.append(kw)
         return orig_helmet(*args, **kw)
 
@@ -48,7 +56,18 @@ def mirai():
         hair.build_helmet = orig_helmet
     assert len(helmets) == 1
     return dict(p=p, mb=mb, head=head, V=np.asarray(mb.verts, dtype=float),
-                grids=grids, nv=helmets[0]["nv"])
+                grids=grids, nv=helmets[0]["nv"], kw=helmets[0])
+
+
+@pytest.fixture(scope="module")
+def mirai():
+    return _build()
+
+
+def _shell(m):
+    """兜の外殻のグリッド（行は頭頂から縁へのリング、列は方位）。"""
+    g = m["grids"]["hair_back"][0]
+    return m["V"][g["v0"]:g["v0"] + g["rows"] * g["cols"]].reshape(g["rows"], g["cols"], 3)
 
 
 def _area_vec(P):
@@ -109,11 +128,10 @@ def _excess(head, pts, tris):
 
 def test_mirai_bangs_are_the_helmet_shell(mirai):
     """前髪は別の部品にせず、兜の外殻が頭頂から途切れずに額まで下りる。"""
-    mb, V, p = mirai["mb"], mirai["V"], mirai["p"]
+    mb, p = mirai["mb"], mirai["p"]
     assert len(mb.part_indices("hair_front")) == 0
-    g = mirai["grids"]["hair_back"][0]
-    grid = V[g["v0"]:g["v0"] + g["rows"] * g["cols"]].reshape(g["rows"], g["cols"], 3)
-    front = round(hair.FRONT / (2 * np.pi) * g["cols"]) % g["cols"]
+    grid = _shell(mirai)
+    front = round(hair.FRONT / (2 * np.pi) * grid.shape[1]) % grid.shape[1]
     z = grid[:mirai["nv"] + 1, front, 2]
     assert np.all(np.diff(z[np.argmax(z):]) < 0.0)  # 頭頂から毛先まで上り返さずに下りる
     share = (z[-1] - p["z"]["chin"]) / (p["z"]["top"] - p["z"]["chin"])
@@ -156,6 +174,71 @@ def test_mirai_helmet_has_no_collapsed_faces(mirai):
             for f in mb.faces if f[0] in keep and len(f) == 4]
     assert min(area) >= (p["head_w"] * 1e-3) ** 2
 
+
+
+def test_carrier_widens_above_the_eyes_and_keeps_the_face_front(mirai):
+    """髪を載せる形は base より下を動かさず、頭頂の高さで幅と後頭部を gain 倍、
+    高さを (lift - 1) 倍ぶん上げ、顔の前面の奥行きは変えない。"""
+    p, head = mirai["p"], mirai["head"]
+    carry = mirai["kw"]["carry"]
+    c, hd, top = head.center, p["head_d"], p["z"]["top"]
+    z0 = p["z"]["chin"] + (top - p["z"]["chin"]) * carry["base"]
+    pts = np.array([
+        [c[0] + 0.05, c[1] + 0.05, z0 - 0.01],   # base より下
+        [c[0] + 0.05, c[1] - 0.5 * hd, top],     # 頭頂の高さの顔の前面
+        [c[0] + 0.05, c[1] + 0.5 * hd, top],     # 頭頂の高さの後頭部
+    ])
+    q = hair._carrier(p, head, pts, **carry)
+    assert np.array_equal(q[0], pts[0])
+    for k in (1, 2):
+        assert q[k, 0] - c[0] == pytest.approx(0.05 * carry["gain"])
+        assert q[k, 2] == pytest.approx(top + (carry["lift"] - 1.0) * (top - z0))
+    assert q[1, 1] == pytest.approx(pts[1, 1])
+    assert q[2, 1] - c[1] == pytest.approx(0.5 * hd * carry["gain"])
+
+
+def test_mirai_hair_stands_off_the_skull_above_the_eyes(mirai):
+    """殻は目より上で頭から離れ、頭頂・横・後頭部に髪の量が出る。目の高さの
+    横髪は頭に沿ったまま（ここで離すと、目の下の横髪が外へ跳ねる）。"""
+    mb, V, p = mirai["mb"], mirai["V"], mirai["p"]
+    hw = p["head_w"]
+    P = _shell(mirai).reshape(-1, 3)
+    H = V[mb.part_indices("head")]
+    eye = V[mb.part_indices("eye_l_white"), 2].mean()
+
+    def gap(z):
+        s = P[np.abs(P[:, 2] - z) < hw * 0.03]
+        h = H[np.abs(H[:, 2] - z) < hw * 0.03]
+        return ((np.abs(s[:, 0]).max() - np.abs(h[:, 0]).max()) / hw,
+                (s[:, 1].max() - h[:, 1].max()) / hw)
+
+    assert (P[:, 2].max() - H[:, 2].max()) / hw > 0.25
+    side, back = gap(eye + 0.6 * hw)
+    assert side > 0.32 and back > 0.31
+    assert gap(eye)[0] < 0.13
+
+
+def test_mirai_bangs_part_into_clumps(mirai):
+    """前髪の歯と歯の切れ込みの列を毛先へ向けて凹ませ、歯ごとの房に分ける。
+
+    溝の無い前髪と比べ、切れ込みの列は頭の中心へ近づき、歯の先の列と頭頂の
+    リングは動かない（頭頂に溝を入れると、極へ集まってかぼちゃの筋になる）。
+    """
+    p, head, kw = mirai["p"], mirai["head"], mirai["kw"]
+    flat = _build(lambda k: {**k, "bangs": {**k["bangs"], "groove": 0.0}})
+    az = np.linspace(0.0, 2 * np.pi, kw["nu"], endpoint=False)
+    _, _, fw, notch = hair._bang_tips(p, head, az, kw["bangs"])
+
+    def radius(m):
+        return np.linalg.norm(_shell(m)[:kw["nv"] + 1] - head.center, axis=2)
+
+    dip = (radius(flat) - radius(mirai)) / p["head_w"]
+    deep = (notch > 0.9) & (fw > 0.9)
+    tip = (notch < 0.1) & (fw > 0.9)
+    assert deep.sum() >= kw["bangs"]["teeth"] - 1 and tip.any()
+    assert dip[:, deep].max(axis=0).min() > 0.03
+    assert np.abs(dip[:, tip]).max() < 1e-9
+    assert np.abs(dip[:kw["nv"] // 3]).max() < 1e-9
 
 def test_mirai_hairpins_face_into_the_head(mirai):
     """ヘアピンは 2 本とも開いた 1 枚板で、面を頭の中へ向ける。
