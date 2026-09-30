@@ -222,7 +222,10 @@ CHARACTERS: dict[str, dict] = {
         height=1.15, heads=2.83, silhouette_pad=(0.183, 0.257),
         build="chibi_m", chibi=True, levels=BODY_LEVELS_BOTCHAN,
         skin=_c("#EBBE9C"),
-        hair_color=_c("#1A1A22"),
+        # 黒髪の地の色は、色味をわずかに残した明度 L* 30 の灰にする（Homura の黒髪は
+        # #4E494B で L* 31.6）。暗くすると陰も輪郭線（L* 10）と同じ暗さになり、髪の房も
+        # 輪郭も読めない一塊になる。彩度を残すと紫や紺の髪に見える (#47)。
+        hair_color=_c("#46464F"),
         eye_color=_c("#4A3324"),
         lash_color=_c("#171720"),
         brow_color=_c("#14141C"),
@@ -248,7 +251,7 @@ CHARACTERS: dict[str, dict] = {
         hair="crew", hair_accessory=None,
         outfit="kimono_botchan",
         face_layout=dict(eye_y=0.510, eye_dx=0.130, eye_rx=0.034, eye_ry=0.078),
-        mat_colors={"hair": "#1A1A22", "eye_l": "#1A1A22", "eye_r": "#1A1A22"},
+        mat_colors={"hair": "#46464F", "eye_l": "#1A1A22", "eye_r": "#1A1A22"},
         pattern_scale=16.0,
         accessories=("furoshiki",),
         bag_mount="shoulder",
@@ -324,7 +327,8 @@ CHARACTERS: dict[str, dict] = {
         jp="花之木 いなり",
         height=1.53, heads=6.0, build="slim",
         skin=_c("#F3C7B0"),
-        hair_color=_c("#2A2432"),
+        # 黒髪の地の色は、坊っちゃんと同じく L* 30 の低彩度の灰にする (#47)。
+        hair_color=_c("#49454F"),
         eye_color=_c("#8E5FC0"),
         lash_color=_c("#201826"),
         brow_color=_c("#2A2432"),
@@ -335,7 +339,7 @@ CHARACTERS: dict[str, dict] = {
         tail_ribbon=True,
         outfit="seifuku",
         face_layout=dict(eye_y=0.418, eye_dx=0.188, eye_rx=0.078, eye_ry=0.100),
-        mat_colors={"hair": "#2A2432", "eye_l": "#8E5FC0", "eye_r": "#8E5FC0",
+        mat_colors={"hair": "#49454F", "eye_l": "#8E5FC0", "eye_r": "#8E5FC0",
                     "cloth_ribbon_green": "#2E6FBF"},
         accessories=(),
         sign_items=("赤縁メガネ", "ツインテール", "結び目の紫リボン"),
