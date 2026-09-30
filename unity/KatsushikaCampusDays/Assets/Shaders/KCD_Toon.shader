@@ -11,6 +11,7 @@ Shader "KCD/Toon"
         _ShadeSoftness("Shade Softness", Range(0.001, 0.5)) = 0.03
         _ShadeThreshold2("Shade Threshold 2", Range(-1, 1)) = -0.25
         _ShadeColor2("Shade Color 2", Color) = (0.42, 0.40, 0.55, 1)
+        _ShadeCrisp("Shade Crisp", Range(0, 1)) = 0
         _RimColor("Rim Color", Color) = (1, 1, 1, 1)
         _RimPower("Rim Power", Range(0.5, 16)) = 4
         _RimIntensity("Rim Intensity", Range(0, 2)) = 0.35
@@ -60,6 +61,7 @@ Shader "KCD/Toon"
         half   _ShadeThreshold;
         half   _ShadeThreshold2;
         half   _ShadeSoftness;
+        half   _ShadeCrisp;
         half   _RimPower;
         half   _RimIntensity;
         half   _SpecularPower;
@@ -315,11 +317,16 @@ Shader "KCD/Toon"
             // 2 段階のトゥーンランプ。1.0 = 明部, 中間, 0.0 = 最暗部。
             half3 ToonRamp(half ndotl, half shadowAttenuation, half3 albedo)
             {
-                half lambert = ndotl * 0.5h + 0.5h;      // half-lambert にすると顔の陰が硬くなりすぎない
-                lambert *= lerp(0.55h, 1.0h, shadowAttenuation);
+                half halfLambert = ndotl * 0.5h + 0.5h;  // half-lambert にすると顔の陰が硬くなりすぎない
+                half lambert = halfLambert * lerp(0.55h, 1.0h, shadowAttenuation);
 
-                half step1 = smoothstep(_ShadeThreshold - _ShadeSoftness, _ShadeThreshold + _ShadeSoftness, lambert);
-                half step2 = smoothstep(_ShadeThreshold2 - _ShadeSoftness, _ShadeThreshold2 + _ShadeSoftness, lambert);
+                // _ShadeCrisp = 1 では境目の幅を画面の 1 画素にする（アニメの塗り分け）。half-lambert は
+                // 丸い面の上でゆっくり変わるので、幅を ±_ShadeSoftness に固定すると後頭部のような大きな
+                // 丸みで境目が数十画素にぼけ、陰が輪郭の無い斑になる (#47)。画素の幅は影を掛ける前の
+                // 値で測る。影の縁では shadowAttenuation が跳ぶので、掛けた後の値で測るとそこだけ太る。
+                half soft = lerp(_ShadeSoftness, max(fwidth(halfLambert), 1e-3h), _ShadeCrisp);
+                half step1 = smoothstep(_ShadeThreshold - soft, _ShadeThreshold + soft, lambert);
+                half step2 = smoothstep(_ShadeThreshold2 - soft, _ShadeThreshold2 + soft, lambert);
 
                 half3 darkest = albedo * _ShadeColor2.rgb;
                 half3 mid = albedo * _ShadeColor.rgb;
