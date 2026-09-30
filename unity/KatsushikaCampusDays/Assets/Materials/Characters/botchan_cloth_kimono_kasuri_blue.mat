@@ -47,6 +47,7 @@ Material:
     - _PatternScale: 16
     - _RimIntensity: 0.35
     - _RimPower: 4
+    - _ShadeCrisp: 1
     - _ShadeSoftness: 0.03
     - _ShadeThreshold: 0.1
     - _ShadeThreshold2: -0.25

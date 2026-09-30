@@ -321,6 +321,13 @@ class MeshBuilder:
             raise ValueError(f"at は {len(self.verts) - v0} 点のはずが {len(at)} 点です")
         self.set_normals(v0, self._pooled_normals(v0, f0, at, tol))
 
+    def coincident(self, v0: int, tol: float = 1e-6) -> np.ndarray:
+        """v0 番以降の頂点ごとの組の番号。tol の格子で同じ位置に丸まる頂点が同じ組になる。"""
+        V = np.asarray(self.verts[v0:], dtype=float)
+        _, group = np.unique(np.round(V / tol).astype(np.int64), axis=0,
+                             return_inverse=True)
+        return group.reshape(-1)
+
     def _pooled_normals(self, v0: int, f0: int, at, tol: float) -> np.ndarray:
         """f0 番以降の面から求めた v0 番以降の頂点法線。位置 at が None なら今の位置で求め、
         重ならない頂点はゼロ（決めない）にする。at を渡すとその位置で求め、どの頂点にも
@@ -333,9 +340,7 @@ class MeshBuilder:
         # 生え際の細い面の頂点が大きな面の向きになり、輪郭線の殻が細い面で折れ返る。
         vn = (vertex_normals(V, faces) if at is None
               else vertex_normals(at, faces, by_angle=True))
-        _, group = np.unique(np.round(V / tol).astype(np.int64), axis=0,
-                             return_inverse=True)
-        group = group.reshape(-1)
+        group = self.coincident(v0, tol)
         out = np.zeros_like(V) if at is None else vn.copy()
         for g in np.flatnonzero(np.bincount(group) > 1):
             members = np.flatnonzero(group == g)

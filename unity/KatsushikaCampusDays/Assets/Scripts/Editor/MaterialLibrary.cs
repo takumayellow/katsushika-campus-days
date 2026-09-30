@@ -25,6 +25,12 @@ namespace KCD.Editor
         /// </summary>
         public const float CharacterOutlineScreenFlat = 1f;
 
+        /// <summary>
+        /// キャラの陰の境目を画面の 1 画素にする（KCD/Toon の _ShadeCrisp）。境目の幅が固定だと、後頭部のような
+        /// 大きな丸みで境目が数十画素にぼけ、陰が輪郭の無い斑になる (#47)。キャンパスは固定幅のまま。
+        /// </summary>
+        public const float CharacterShadeCrisp = 1f;
+
         private const string LitShader = "Universal Render Pipeline/Lit";
         private const string ToonShader = "KCD/Toon";
 
@@ -314,6 +320,7 @@ namespace KCD.Editor
         private static readonly int ShadeColorId = Shader.PropertyToID("_ShadeColor");
         private static readonly int VertexColorId = Shader.PropertyToID("_VertexColor");
         private static readonly int OutlineScreenFlatId = Shader.PropertyToID("_OutlineScreenFlat");
+        private static readonly int ShadeCrispId = Shader.PropertyToID("_ShadeCrisp");
         private const string VertexColorKeyword = "_VERTEXCOLOR_ON";
 
         /// <summary>
@@ -385,6 +392,7 @@ namespace KCD.Editor
             ApplyPattern(material, patterns.TryGetValue(name, out Pattern pattern) ? pattern : null, color);
             material.SetFloat("_OutlineWidth", CharacterOutlineWidth);
             ApplyOutlineScreenFlat(material);
+            ApplyShadeCrisp(material);
 
             // 顔・目・スカートの面が内向きに出力されたキャラもあるので、両面描画にする（シェーダ側で法線を裏返す）。
             material.SetFloat("_Cull", 0f);
@@ -467,6 +475,7 @@ namespace KCD.Editor
             }
 
             changed |= ApplyOutlineScreenFlat(material);
+            changed |= ApplyShadeCrisp(material);
             changed |= ApplyPattern(material, pattern, declared);
             if (changed)
             {
@@ -754,7 +763,8 @@ namespace KCD.Editor
                 && Mathf.Approximately(material.GetFloat("_RimIntensity"), rim)
                 && Mathf.Approximately(material.GetFloat("_ShadeThreshold"), threshold)
                 && Mathf.Approximately(material.GetFloat("_ShadeThreshold2"), threshold2)
-                && !NeedsOutlineScreenFlat(material);
+                && !NeedsOutlineScreenFlat(material)
+                && !NeedsShadeCrisp(material);
             if (same)
             {
                 return false;
@@ -769,6 +779,7 @@ namespace KCD.Editor
             material.SetFloat("_ShadeThreshold", threshold);
             material.SetFloat("_ShadeThreshold2", threshold2);
             ApplyOutlineScreenFlat(material);
+            ApplyShadeCrisp(material);
             return true;
         }
 
@@ -790,6 +801,24 @@ namespace KCD.Editor
             }
 
             material.SetFloat(OutlineScreenFlatId, CharacterOutlineScreenFlat);
+            return true;
+        }
+
+        private static bool NeedsShadeCrisp(Material material)
+        {
+            return material.HasProperty(ShadeCrispId)
+                && !Mathf.Approximately(material.GetFloat(ShadeCrispId), CharacterShadeCrisp);
+        }
+
+        /// <summary>キャラの材質に <see cref="CharacterShadeCrisp"/> を付ける。変えたら true。</summary>
+        private static bool ApplyShadeCrisp(Material material)
+        {
+            if (!NeedsShadeCrisp(material))
+            {
+                return false;
+            }
+
+            material.SetFloat(ShadeCrispId, CharacterShadeCrisp);
             return true;
         }
 
