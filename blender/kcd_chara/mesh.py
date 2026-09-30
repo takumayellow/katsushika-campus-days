@@ -303,8 +303,10 @@ class MeshBuilder:
                 c, s = math.cos(rot_z), math.sin(rot_z)
                 pts.append((cx + dx * c - dy * s, cy + dx * s + dy * c, cz + dz))
         base = self.add_verts(pts)
+        # どの面も外から見て反時計回りに張り、法線を箱の外へ向ける。輪郭線の殻は
+        # 法線の向きへ押し出すので、内を向いた面の殻は箱の中へ縮み、表の面の際に黒い筋が出る
         f = [(0, 1, 2, 3)[::-1], (4, 7, 6, 5)[::-1],
-             (0, 4, 5, 1), (1, 5, 6, 2), (2, 6, 7, 3), (3, 7, 4, 0)]
+             (0, 1, 5, 4), (1, 2, 6, 5), (2, 3, 7, 6), (3, 0, 4, 7)]
         for quad in f:
             self.add_face([base + i for i in quad], mat, smooth)
         return base

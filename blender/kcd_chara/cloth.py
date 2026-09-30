@@ -511,8 +511,13 @@ def _sailor_collar(mb, p, a, z_top, rings, front, inflate, *, sleeves=(),
         lip = grid[:, -1] - nrm[:, -1] * (h * 0.010)
         grid = np.concatenate([grid, lip[:, None]], axis=1)
         with mb.part("collar"):
-            mb.add_grid([grid[:, k] for k in range(grid.shape[1])], mat,
-                        smooth=True, close_u=False)
+            base = mb.add_grid([grid[:, k] for k in range(grid.shape[1])], mat,
+                               smooth=True, close_u=False)
+            # 折り返しの面は V の中心を向く。その向きのまま輪郭の殻を押し出すと、
+            # 斜めから見たとき奥の襟の内縁から 2 cm ほど離れた黒い線が、首から
+            # リボンまで走る。内縁と折り返しの法線は襟の面の法線にそろえる
+            mb.set_normals(base + (grid.shape[1] - 2) * len(sel),
+                           np.concatenate([nrm[:, -1], nrm[:, -1]]))
             mb.add_tube(grid[:, 0], [h * 0.0030] * len(grid), stripe, n=6,
                         cap_start=True, cap_end=True)
 
@@ -520,8 +525,9 @@ def _sailor_collar(mb, p, a, z_top, rings, front, inflate, *, sleeves=(),
 def _collar(mb, p, a, mat, z, *, drop=0.055):
     """首もとに巻く帯状の襟（セーラー襟でない服向け）。"""
     h = p["height"]
-    zs = np.array([z, z - h * drop])
-    rings, _ = garment_rings(p, a, zs, [h * 0.006, h * 0.020], seg=26)
+    # 身頃と同じく下の輪から上の輪へ張り、面を外へ向ける
+    zs = np.array([z - h * drop, z])
+    rings, _ = garment_rings(p, a, zs, [h * 0.020, h * 0.006], seg=26)
     with mb.part("collar"):
         mb.add_grid(rings, mat, smooth=True)
 

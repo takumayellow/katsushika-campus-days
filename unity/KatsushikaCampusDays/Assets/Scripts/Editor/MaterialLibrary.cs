@@ -18,6 +18,13 @@ namespace KCD.Editor
         /// <summary>キャラクターの輪郭線（KCD/Toon の Outline パス）の幅。</summary>
         public const float CharacterOutlineWidth = 0.005f;
 
+        /// <summary>
+        /// キャラの輪郭線の殻を、法線の向きでなく画面の面に沿って押し出す（KCD/Toon の _OutlineScreenFlat）。
+        /// 服に沿った薄い物（リボンの輪・セーラー襟）は、法線の向きのまま押すと殻の裏が奥の服の後ろへ回り、
+        /// 輪郭が物から離れた弧や、襟の V の底で交差した線になる (#47)。キャンパスは法線の向きのまま。
+        /// </summary>
+        public const float CharacterOutlineScreenFlat = 1f;
+
         private const string LitShader = "Universal Render Pipeline/Lit";
         private const string ToonShader = "KCD/Toon";
 
@@ -306,6 +313,7 @@ namespace KCD.Editor
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int ShadeColorId = Shader.PropertyToID("_ShadeColor");
         private static readonly int VertexColorId = Shader.PropertyToID("_VertexColor");
+        private static readonly int OutlineScreenFlatId = Shader.PropertyToID("_OutlineScreenFlat");
         private const string VertexColorKeyword = "_VERTEXCOLOR_ON";
 
         /// <summary>
@@ -376,6 +384,7 @@ namespace KCD.Editor
             SetCharacterColor(material, color);
             ApplyPattern(material, patterns.TryGetValue(name, out Pattern pattern) ? pattern : null, color);
             material.SetFloat("_OutlineWidth", CharacterOutlineWidth);
+            ApplyOutlineScreenFlat(material);
 
             // 顔・目・スカートの面が内向きに出力されたキャラもあるので、両面描画にする（シェーダ側で法線を裏返す）。
             material.SetFloat("_Cull", 0f);
@@ -457,6 +466,7 @@ namespace KCD.Editor
                 changed = true;
             }
 
+            changed |= ApplyOutlineScreenFlat(material);
             changed |= ApplyPattern(material, pattern, declared);
             if (changed)
             {
@@ -743,7 +753,8 @@ namespace KCD.Editor
                 && Mathf.Approximately(material.GetFloat("_OutlineWidth"), width)
                 && Mathf.Approximately(material.GetFloat("_RimIntensity"), rim)
                 && Mathf.Approximately(material.GetFloat("_ShadeThreshold"), threshold)
-                && Mathf.Approximately(material.GetFloat("_ShadeThreshold2"), threshold2);
+                && Mathf.Approximately(material.GetFloat("_ShadeThreshold2"), threshold2)
+                && !NeedsOutlineScreenFlat(material);
             if (same)
             {
                 return false;
@@ -757,6 +768,28 @@ namespace KCD.Editor
             material.SetFloat("_RimIntensity", rim);
             material.SetFloat("_ShadeThreshold", threshold);
             material.SetFloat("_ShadeThreshold2", threshold2);
+            ApplyOutlineScreenFlat(material);
+            return true;
+        }
+
+        private static bool NeedsOutlineScreenFlat(Material material)
+        {
+            return material.HasProperty(OutlineScreenFlatId)
+                && !Mathf.Approximately(material.GetFloat(OutlineScreenFlatId), CharacterOutlineScreenFlat);
+        }
+
+        /// <summary>
+        /// キャラの材質に <see cref="CharacterOutlineScreenFlat"/> を付ける。変えたら true。
+        /// Blender の反転ハル（outline）は幅 0 なので、付けても何も変わらない。
+        /// </summary>
+        private static bool ApplyOutlineScreenFlat(Material material)
+        {
+            if (!NeedsOutlineScreenFlat(material))
+            {
+                return false;
+            }
+
+            material.SetFloat(OutlineScreenFlatId, CharacterOutlineScreenFlat);
             return true;
         }
 

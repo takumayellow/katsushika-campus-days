@@ -40,6 +40,7 @@ Material:
     - _OutlineFadeEnd: 60
     - _OutlineFadeStart: 30
     - _OutlineNearDistance: 5
+    - _OutlineScreenFlat: 1
     - _OutlineWidth: 0.005
     - _Pattern: 1
     - _PatternBlend: 0.25
@@ -53,6 +54,7 @@ Material:
     - _SpecularPower: 48
     - _SrcBlend: 1
     - _Surface: 0
+    - _VertexColor: 0
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
