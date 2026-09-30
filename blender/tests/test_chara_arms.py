@@ -119,3 +119,18 @@ def test_wave_cancels_the_carry_on_the_waving_arm(name):
             assert np.allclose(_compose(opened[bone]), _compose(bare[bone]), atol=1e-9), (bone, t)
         assert not np.allclose(_compose(opened["RightLowerArm"]),
                                _compose(bare["RightLowerArm"]), atol=1e-3)
+
+
+@pytest.mark.parametrize("name", TALL)
+def test_wave_starts_and_ends_on_the_carrying_arm(name):
+    """振りの出だしと終わり（ramp が 0）では、振る腕も下ろして前腕を開いた形にある。
+
+    打ち消しは振りと一緒に ramp で効くので、振りへ入るときと戻るときに前腕が跳ねない。
+    """
+    p = params.resolve(name)
+    d, e = body.arm_drop(p), body.elbow_open(p)
+    rest = anim._posed(lambda u: {}, d, e)(0.0)
+    for t in (0.0, 1.0):
+        spec = anim._posed(lambda u: anim._wave(u, d, e), d, e)(t)
+        for bone in ("LeftUpperArm", "LeftLowerArm"):
+            assert np.allclose(_compose(spec[bone]), _compose(rest[bone]), atol=1e-9), (bone, t)
