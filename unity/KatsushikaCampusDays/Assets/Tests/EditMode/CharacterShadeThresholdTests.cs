@@ -19,6 +19,11 @@ namespace KCD.Tests
     ///
     /// 陰は「地の色 × _ShadeColor」で塗られる。_ShadeColor を地の色から作ると暗い色ほど二重に暗くなり、紺の
     /// スカートの陰が黒につぶれた。MaterialLibrary.ShadeOf は地の色の色味だけから陰の色を作る。
+    ///
+    /// 環境光（SH）を法線ごとに足すと、陰の中に空の向きの淡い明るみが残り、陰が一色にならない。キャラの材質は
+    /// _FlatAmbient を 1 にして、法線によらない一定の環境光にする。キャンパスは 0 のまま。
+    ///
+    /// リムライトは縁ほど白くなるぼかしで、陰の中にも足されるので、キャラの材質では _RimIntensity を 0 にして切る。
     /// このアセンブリは KCD.Editor を参照していないので、MaterialLibrary はリフレクションで呼ぶ。
     /// </summary>
     public sealed class CharacterShadeThresholdTests
@@ -69,6 +74,10 @@ namespace KCD.Tests
         }
 
         private static float CharacterShadeThreshold => (float)LibraryField("CharacterShadeThreshold");
+
+        private static float CharacterFlatAmbient => (float)LibraryField("CharacterFlatAmbient");
+
+        private static float CharacterRimIntensity => (float)LibraryField("CharacterRimIntensity");
 
         private static Color ShadeOf(Color color)
         {
@@ -156,7 +165,7 @@ namespace KCD.Tests
         public void 保存された顔と目と輪郭の陰の境目は変えない()
         {
             string[] faceTextured = ((string[])LibraryField("FaceTexturedNames")).Append("outline").ToArray();
-            float shaderDefault = ShaderDefaultThreshold();
+            float shaderDefault = ShaderDefault("_ShadeThreshold");
             int checkedCount = 0;
             foreach (string path in Directory.GetFiles(Path.Combine(MaterialsFolder, "Characters"), "*.mat"))
             {
@@ -178,14 +187,14 @@ namespace KCD.Tests
             Assert.Greater(checkedCount, 0, "顔と目と輪郭の材質が見つからない");
         }
 
-        private static float ShaderDefaultThreshold()
+        private static float ShaderDefault(string property)
         {
             Shader toon = Shader.Find("KCD/Toon");
             Assert.IsNotNull(toon, "KCD/Toon シェーダが見つからない");
             var material = new Material(toon);
             try
             {
-                return material.GetFloat("_ShadeThreshold");
+                return material.GetFloat(property);
             }
             finally
             {
@@ -275,6 +284,185 @@ namespace KCD.Tests
                 checkedCount++;
                 Assert.AreNotEqual(CharacterShadeThreshold, ReadFloat(text, "_ShadeThreshold"),
                     Path.GetFileName(path) + " の陰の境目がキャラと同じになった");
+            }
+
+            Assert.Greater(checkedCount, 0, "キャンパスの KCD/Toon の材質が見つからない");
+        }
+
+        /// <summary>palette.json のあるキャラの、顔と目と輪郭（palette.json に載らない材質）の .mat。</summary>
+        private static IEnumerable<(string label, string text)> FaceAndOutlineMaterials()
+        {
+            string[] names = ((string[])LibraryField("FaceTexturedNames")).Append("outline").ToArray();
+            foreach (string palette in Directory.GetFiles(CharactersFolder, "palette.json", SearchOption.AllDirectories))
+            {
+                string id = Path.GetFileName(Path.GetDirectoryName(palette));
+                foreach (string name in names)
+                {
+                    string path = Path.Combine(MaterialsFolder, "Characters", id + "_" + name + ".mat");
+                    if (File.Exists(path))
+                    {
+                        yield return (id + "_" + name, File.ReadAllText(path));
+                    }
+                }
+            }
+        }
+
+        [Test]
+        public void キャラの材質は環境光を法線によらない一定の色にする()
+        {
+            Assert.AreEqual(1f, CharacterFlatAmbient, 1e-6f, "1 で真上と真下の SH の平均だけを使う");
+            float shaderDefault = ShaderDefault("_FlatAmbient");
+            int checkedCount = 0;
+            foreach ((string label, string text, Color _) in PaletteMaterials())
+            {
+                checkedCount++;
+                Assert.AreEqual(CharacterFlatAmbient, ReadFloatOrDefault(text, "_FlatAmbient", shaderDefault), 1e-6f,
+                    label + " の陰の中に環境光の明るみが残る");
+            }
+
+            foreach ((string label, string text) in FaceAndOutlineMaterials())
+            {
+                checkedCount++;
+                Assert.AreEqual(CharacterFlatAmbient, ReadFloatOrDefault(text, "_FlatAmbient", shaderDefault), 1e-6f,
+                    label + " の環境光が服と違う");
+            }
+
+            Assert.Greater(checkedCount, 0, "キャラの材質が見つからない");
+        }
+
+        [Test]
+        public void 環境光を平らにするのは付け直しても変わらない()
+        {
+            MethodInfo apply = MaterialLibraryType().GetMethod("ApplyFlatAmbient", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.IsNotNull(apply, "MaterialLibrary.ApplyFlatAmbient が無い");
+            Shader toon = Shader.Find("KCD/Toon");
+            Assert.IsNotNull(toon, "KCD/Toon シェーダが見つからない");
+            var material = new Material(toon);
+            try
+            {
+                Assert.AreEqual(0f, material.GetFloat("_FlatAmbient"), 1e-6f, "シェーダの既定値でキャンパスの環境光が変わる");
+                Assert.IsTrue((bool)apply.Invoke(null, new object[] { material }), "環境光が平らにならない");
+                Assert.AreEqual(CharacterFlatAmbient, material.GetFloat("_FlatAmbient"), 1e-6f);
+                Assert.IsFalse((bool)apply.Invoke(null, new object[] { material }), "付け直すたびに材質が変わる");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(material);
+            }
+        }
+
+        [Test]
+        public void シェーダは平らな環境光を真上と真下のSHの平均から作る()
+        {
+            string text = File.ReadAllText(Path.Combine(Application.dataPath, "Shaders", "KCD_Toon.shader"));
+            Assert.IsTrue(Regex.IsMatch(text,
+                    @"EvaluateAmbientProbeSRGB\(half3\(0\.0h,\s*1\.0h,\s*0\.0h\)\)\s*\+\s*EvaluateAmbientProbeSRGB\(half3\(0\.0h,\s*-1\.0h,\s*0\.0h\)\)"),
+                "平らな環境光が真上と真下の SH の平均になっていない");
+            Assert.IsTrue(Regex.IsMatch(text, @"lerp\(SampleSHPixel\([^;]*\),\s*\w+,\s*_FlatAmbient\)"),
+                "法線ごとの SH と平らな環境光を _FlatAmbient で切り替えていない");
+        }
+
+        [Test]
+        public void キャラの材質はリムライトを切る()
+        {
+            Assert.AreEqual(0f, CharacterRimIntensity, 1e-6f, "縁ほど白くなるぼかしが陰の中にも足される");
+            float shaderDefault = ShaderDefault("_RimIntensity");
+            int checkedCount = 0;
+            foreach ((string label, string text, Color _) in PaletteMaterials())
+            {
+                checkedCount++;
+                Assert.AreEqual(CharacterRimIntensity, ReadFloatOrDefault(text, "_RimIntensity", shaderDefault), 1e-6f,
+                    label + " の縁が白く光る");
+            }
+
+            foreach ((string label, string text) in FaceAndOutlineMaterials())
+            {
+                checkedCount++;
+                Assert.AreEqual(CharacterRimIntensity, ReadFloatOrDefault(text, "_RimIntensity", shaderDefault), 1e-6f,
+                    label + " の縁が白く光る");
+            }
+
+            Assert.Greater(checkedCount, 0, "キャラの材質が見つからない");
+        }
+
+        [Test]
+        public void リムを切るのは付け直しても変わらない()
+        {
+            MethodInfo apply = MaterialLibraryType().GetMethod("ApplyRim", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.IsNotNull(apply, "MaterialLibrary.ApplyRim が無い");
+            Shader toon = Shader.Find("KCD/Toon");
+            Assert.IsNotNull(toon, "KCD/Toon シェーダが見つからない");
+            var material = new Material(toon);
+            try
+            {
+                Assert.AreNotEqual(CharacterRimIntensity, material.GetFloat("_RimIntensity"), "シェーダの既定値でキャンパスのリムが変わる");
+                Assert.IsTrue((bool)apply.Invoke(null, new object[] { material }), "リムが切れない");
+                Assert.AreEqual(CharacterRimIntensity, material.GetFloat("_RimIntensity"), 1e-6f);
+                Assert.IsFalse((bool)apply.Invoke(null, new object[] { material }), "付け直すたびに材質が変わる");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(material);
+            }
+        }
+
+        [Test]
+        public void 塗り直しと顔の見た目の適用で環境光とリムが付く()
+        {
+            // .mat を読むテストは保存済みの値しか見ないので、呼び出しが抜けても古い .mat のまま通ってしまう。
+            // 新しい材質に塗り直しと顔の見た目を通して、両方の経路が値を付けることを確かめる。
+            Type library = MaterialLibraryType();
+            MethodInfo repaint = library.GetMethod("RepaintCharacter", BindingFlags.NonPublic | BindingFlags.Static);
+            MethodInfo faceLook = library.GetMethod("ApplyFaceLook", BindingFlags.Public | BindingFlags.Static);
+            Assert.IsNotNull(repaint, "MaterialLibrary.RepaintCharacter が無い");
+            Assert.IsNotNull(faceLook, "MaterialLibrary.ApplyFaceLook が無い");
+            Shader toon = Shader.Find("KCD/Toon");
+            Assert.IsNotNull(toon, "KCD/Toon シェーダが見つからない");
+
+            const string cloth = "cloth_skirt_navy";
+            var palette = new Dictionary<string, Color> { { cloth, ParseHex("26304E") } };
+            object patterns = Activator.CreateInstance(repaint.GetParameters()[3].ParameterType);
+            var clothMaterial = new Material(toon);
+            var faceMaterial = new Material(toon);
+            var texture = new Texture2D(2, 2);
+            try
+            {
+                Assert.IsTrue((bool)repaint.Invoke(null, new object[] { clothMaterial, cloth, palette, patterns }),
+                    "服の材質が塗り直されない");
+                Assert.AreEqual(CharacterFlatAmbient, clothMaterial.GetFloat("_FlatAmbient"), 1e-6f, "塗り直しで環境光が平らにならない");
+                Assert.AreEqual(CharacterRimIntensity, clothMaterial.GetFloat("_RimIntensity"), 1e-6f, "塗り直しでリムが切れない");
+
+                Assert.IsTrue((bool)faceLook.Invoke(null, new object[] { faceMaterial, "face", texture, false }),
+                    "顔の見た目が付かない");
+                Assert.AreEqual(CharacterFlatAmbient, faceMaterial.GetFloat("_FlatAmbient"), 1e-6f, "顔の環境光が平らにならない");
+                Assert.AreEqual(CharacterRimIntensity, faceMaterial.GetFloat("_RimIntensity"), 1e-6f, "顔のリムが切れない");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(clothMaterial);
+                UnityEngine.Object.DestroyImmediate(faceMaterial);
+                UnityEngine.Object.DestroyImmediate(texture);
+            }
+        }
+
+        [Test]
+        public void キャンパスの材質の環境光とリムは変えない()
+        {
+            float shaderRim = ShaderDefault("_RimIntensity");
+            int checkedCount = 0;
+            foreach (string path in Directory.GetFiles(Path.Combine(MaterialsFolder, "Campus"), "*.mat"))
+            {
+                string text = File.ReadAllText(path);
+                if (!text.Contains("- _ShadeThreshold:"))
+                {
+                    continue;
+                }
+
+                checkedCount++;
+                Assert.AreEqual(0f, ReadFloatOrDefault(text, "_FlatAmbient", 0f), 1e-6f,
+                    Path.GetFileName(path) + " の環境光までキャラと同じになった");
+                Assert.AreEqual(shaderRim, ReadFloatOrDefault(text, "_RimIntensity", shaderRim), 1e-6f,
+                    Path.GetFileName(path) + " のリムまでキャラと同じになった");
             }
 
             Assert.Greater(checkedCount, 0, "キャンパスの KCD/Toon の材質が見つからない");

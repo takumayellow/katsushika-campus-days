@@ -40,6 +40,20 @@ namespace KCD.Editor
         public const float CharacterShadeThreshold = 0.5f;
 
         /// <summary>
+        /// キャラの環境光を法線によらない一定の色にする割合（KCD/Toon の _FlatAmbient）。1 で真上と真下の SH の平均だけを
+        /// 使う（MToon と同じ）。法線ごとの SH のままだと、陰の中に空の向きの淡い明るみが残り、後ろ髪や紺の襟の陰が
+        /// 一色にならない (#47)。顔・目・輪郭（反転ハル）にも付ける。キャンパスは 0 のまま。
+        /// </summary>
+        public const float CharacterFlatAmbient = 1f;
+
+        /// <summary>
+        /// キャラのリムライトの強さ（KCD/Toon の _RimIntensity）。0 で切る。リムは (1 − N・V)^4 で縁ほど白くなるぼかしで、
+        /// 陰の中にも足されるので、後ろ髪・紺の襟・黒い靴下の縁が白く光り、塗り分けが段階状に崩れる (#47)。
+        /// 輪郭の抜けは輪郭線が受け持つ。目は <see cref="ApplyFaceLook"/> が常に 0 にする。キャンパスは 0.35 のまま。
+        /// </summary>
+        public const float CharacterRimIntensity = 0f;
+
+        /// <summary>
         /// 天使の輪（KCD/Toon の _HAIRRING_ON）を描く材質 (#47)。輪の座標は Blender が髪の頂点の UV の 2 枚目に書く
         /// （blender/kcd_chara/hair.py の RING_MATERIAL と ring_coords）。
         /// </summary>
@@ -341,6 +355,8 @@ namespace KCD.Editor
         private static readonly int OutlineScreenFlatId = Shader.PropertyToID("_OutlineScreenFlat");
         private static readonly int ShadeCrispId = Shader.PropertyToID("_ShadeCrisp");
         private static readonly int ShadeThresholdId = Shader.PropertyToID("_ShadeThreshold");
+        private static readonly int FlatAmbientId = Shader.PropertyToID("_FlatAmbient");
+        private static readonly int RimIntensityId = Shader.PropertyToID("_RimIntensity");
         private const string VertexColorKeyword = "_VERTEXCOLOR_ON";
 
         /// <summary>
@@ -415,6 +431,8 @@ namespace KCD.Editor
             ApplyOutlineScreenFlat(material);
             ApplyShadeCrisp(material);
             ApplyShadeThreshold(material, name);
+            ApplyFlatAmbient(material);
+            ApplyRim(material);
 
             // 顔・目・スカートの面が内向きに出力されたキャラもあるので、両面描画にする（シェーダ側で法線を裏返す）。
             material.SetFloat("_Cull", 0f);
@@ -511,6 +529,8 @@ namespace KCD.Editor
             changed |= ApplyOutlineScreenFlat(material);
             changed |= ApplyShadeCrisp(material);
             changed |= ApplyShadeThreshold(material, name);
+            changed |= ApplyFlatAmbient(material);
+            changed |= ApplyRim(material);
             changed |= ApplyPattern(material, pattern, declared);
             changed |= ApplyHairRing(material, name, declared);
             if (changed)
@@ -659,6 +679,8 @@ namespace KCD.Editor
         /// （外部の .mat に置き換わっている）。そのため ResolveMaterials 経由の
         /// <see cref="EnsureCharacter"/> には既存の .mat がほとんど来ない。
         /// ここでは FBX を通さず、palette.json の名前から .mat を直接引く。
+        /// 顔と目（palette.json に載らない）は <c>CharacterImporter.RefreshFaceTextures</c> が
+        /// <see cref="ApplyFaceLook"/> で塗り直す。SceneBuilder は両方を呼ぶ。
         /// </summary>
         public static int RepaintCharacters()
         {
@@ -681,6 +703,15 @@ namespace KCD.Editor
                     {
                         repainted++;
                     }
+                }
+
+                // 輪郭（反転ハル）は palette.json に載らないので、環境光とリムだけ揃える。
+                Material outline = AssetDatabase.LoadAssetAtPath<Material>(
+                    CharacterFolder + "/" + characterId + "_outline.mat");
+                if (outline != null && (ApplyFlatAmbient(outline) | ApplyRim(outline)))
+                {
+                    EditorUtility.SetDirty(outline);
+                    repainted++;
                 }
             }
 
@@ -775,6 +806,7 @@ namespace KCD.Editor
         /// まつ毛を描いた画像）を平面投影で貼っている。Unity でも同じ 4 面にテクスチャを付け、
         /// ベース色は白にして画像の色をそのまま出す（単色で塗ると目が「水色の円板」になる）。
         /// 目はテクスチャに描いたハイライトを見せたいので、リムと陰影を切って常に明部で描く。
+        /// 顔のリムは服と同じ <see cref="CharacterRimIntensity"/>。環境光は顔も目も服と同じく平らにする。
         /// outline が true なら顔（目は除く）に服と同じ幅の輪郭線を付け、横顔の鼻・口・顎に線を出す。
         /// </summary>
         public static bool ApplyFaceLook(Material material, string rawName, Texture2D face, bool outline)
@@ -787,7 +819,7 @@ namespace KCD.Editor
 
             bool eye = name != "face";
             float width = outline && !eye ? CharacterOutlineWidth : 0f;
-            float rim = eye ? 0f : material.GetFloat("_RimIntensity");
+            float rim = eye ? 0f : CharacterRimIntensity;
             float threshold = eye ? -1f : material.GetFloat("_ShadeThreshold");
             float threshold2 = eye ? -1f : material.GetFloat("_ShadeThreshold2");
 
@@ -800,7 +832,8 @@ namespace KCD.Editor
                 && Mathf.Approximately(material.GetFloat("_ShadeThreshold"), threshold)
                 && Mathf.Approximately(material.GetFloat("_ShadeThreshold2"), threshold2)
                 && !NeedsOutlineScreenFlat(material)
-                && !NeedsShadeCrisp(material);
+                && !NeedsShadeCrisp(material)
+                && !NeedsFlatAmbient(material);
             if (same)
             {
                 return false;
@@ -816,6 +849,7 @@ namespace KCD.Editor
             material.SetFloat("_ShadeThreshold2", threshold2);
             ApplyOutlineScreenFlat(material);
             ApplyShadeCrisp(material);
+            ApplyFlatAmbient(material);
             return true;
         }
 
@@ -855,6 +889,42 @@ namespace KCD.Editor
             }
 
             material.SetFloat(ShadeCrispId, CharacterShadeCrisp);
+            return true;
+        }
+
+        private static bool NeedsFlatAmbient(Material material)
+        {
+            return material.HasProperty(FlatAmbientId)
+                && !Mathf.Approximately(material.GetFloat(FlatAmbientId), CharacterFlatAmbient);
+        }
+
+        /// <summary>キャラの材質に <see cref="CharacterFlatAmbient"/> を付ける。変えたら true。</summary>
+        private static bool ApplyFlatAmbient(Material material)
+        {
+            if (!NeedsFlatAmbient(material))
+            {
+                return false;
+            }
+
+            material.SetFloat(FlatAmbientId, CharacterFlatAmbient);
+            return true;
+        }
+
+        private static bool NeedsRim(Material material)
+        {
+            return material.HasProperty(RimIntensityId)
+                && !Mathf.Approximately(material.GetFloat(RimIntensityId), CharacterRimIntensity);
+        }
+
+        /// <summary>キャラの材質のリムを <see cref="CharacterRimIntensity"/> にする。変えたら true。</summary>
+        private static bool ApplyRim(Material material)
+        {
+            if (!NeedsRim(material))
+            {
+                return false;
+            }
+
+            material.SetFloat(RimIntensityId, CharacterRimIntensity);
             return true;
         }
 

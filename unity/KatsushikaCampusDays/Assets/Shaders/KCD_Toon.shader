@@ -12,6 +12,7 @@ Shader "KCD/Toon"
         _ShadeThreshold2("Shade Threshold 2", Range(-1, 1)) = -0.25
         _ShadeColor2("Shade Color 2", Color) = (0.42, 0.40, 0.55, 1)
         _ShadeCrisp("Shade Crisp", Range(0, 1)) = 0
+        _FlatAmbient("Flat Ambient", Range(0, 1)) = 0
         _RimColor("Rim Color", Color) = (1, 1, 1, 1)
         _RimPower("Rim Power", Range(0.5, 16)) = 4
         _RimIntensity("Rim Intensity", Range(0, 2)) = 0.35
@@ -76,6 +77,7 @@ Shader "KCD/Toon"
         half   _ShadeThreshold2;
         half   _ShadeSoftness;
         half   _ShadeCrisp;
+        half   _FlatAmbient;
         half   _RimPower;
         half   _RimIntensity;
         half   _SpecularPower;
@@ -432,7 +434,12 @@ Shader "KCD/Toon"
                 half3 color = ToonRamp(ndotl, mainLight.shadowAttenuation, albedo) * mainLight.color;
 
                 // 環境光（SH）は明部にも暗部にも乗せて、影が真っ黒になるのを防ぐ。
-                half3 ambient = SampleSHPixel(input.vertexSH, normalWS) * albedo;
+                // _FlatAmbient = 1（キャラ）では、法線によらない一定の色にする（真上と真下の平均。MToon と同じ）。
+                // 法線ごとの SH のままだと、陰の中に空の向きの淡い明るみが残り、セルの塗りが一色にならない (#47)。
+                // SampleSHPixel と同じく負にならないようにする。
+                half3 ambientFlat = max(half3(0.0h, 0.0h, 0.0h), 0.5h * (EvaluateAmbientProbeSRGB(half3(0.0h, 1.0h, 0.0h))
+                    + EvaluateAmbientProbeSRGB(half3(0.0h, -1.0h, 0.0h))));
+                half3 ambient = lerp(SampleSHPixel(input.vertexSH, normalWS), ambientFlat, _FlatAmbient) * albedo;
                 color += ambient * 0.6h;
 
                 // 追加ライト（街灯など）は素朴な 2 値ランプで加算。境目は N・L で測り、上限を 0.1 にする。

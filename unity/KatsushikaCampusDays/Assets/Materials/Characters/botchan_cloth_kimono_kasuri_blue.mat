@@ -37,6 +37,7 @@ Material:
     - _Cull: 0
     - _Cutoff: 0.5
     - _DstBlend: 0
+    - _FlatAmbient: 1
     - _HairRing: 0
     - _HairRingBack: 0.4
     - _HairRingBottom: 0.165
@@ -52,7 +53,7 @@ Material:
     - _Pattern: 1
     - _PatternBlend: 0.25
     - _PatternScale: 16
-    - _RimIntensity: 0.35
+    - _RimIntensity: 0
     - _RimPower: 4
     - _ShadeCrisp: 1
     - _ShadeSoftness: 0.03
