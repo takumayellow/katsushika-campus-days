@@ -55,7 +55,7 @@ def _skull_radius(head, d: np.ndarray, iters: int = 8) -> np.ndarray:
     t1 /= np.linalg.norm(t1, axis=1, keepdims=True)
     t2 = np.cross(u, t1)
 
-    def miss(a, e):
+    def off_axis(a, e):
         s = head.surface(a, e) - head.center
         s /= np.linalg.norm(s, axis=1, keepdims=True)
         return np.stack([(s * t1).sum(axis=1), (s * t2).sum(axis=1)], axis=1)
@@ -64,24 +64,27 @@ def _skull_radius(head, d: np.ndarray, iters: int = 8) -> np.ndarray:
     e = np.clip(np.arccos(np.clip(u[:, 2], -1.0, 1.0)), 1e-3, math.pi - 1e-3)
     h = 1e-5
     for _ in range(iters):
-        f = miss(a, e)
-        ja, je = (miss(a + h, e) - f) / h, (miss(a, e + h) - f) / h
+        f = off_axis(a, e)
+        ja, je = (off_axis(a + h, e) - f) / h, (off_axis(a, e + h) - f) / h
         det = ja[:, 0] * je[:, 1] - ja[:, 1] * je[:, 0]
-        det = np.where(np.abs(det) < 1e-12, 1e-12, det)
+        det = np.where(np.abs(det) < 1e-12, np.copysign(1e-12, det), det)
         da = (je[:, 0] * f[:, 1] - je[:, 1] * f[:, 0]) / det
         de = (ja[:, 1] * f[:, 0] - ja[:, 0] * f[:, 1]) / det
+        # 1 回に 0.3 rad より大きくは動かさない（変形の強い所で別の枝へ飛ばない）。
         step = np.maximum(1.0, np.hypot(da, de) / 0.3)
         a, e = a + da / step, np.clip(e + de / step, 1e-4, math.pi - 1e-4)
     return np.linalg.norm(head.surface(a, e) - head.center, axis=1)
 
 
-def _off_skull(head, pts: np.ndarray, gap, soft) -> np.ndarray:
+def _off_skull(head, pts: np.ndarray, gap) -> np.ndarray:
     """頭の面から gap より内へ入った点を、頭の中心から外へ押し出す。
 
-    gap より外の点は動かさない。内側の点は gap - soft の手前へなめらかに
-    寄せる（押し出す所と押し出さない所の境で面が折れない）。gap と soft は
-    点ごとの配列でもよい。
+    gap より外の点は動かさない。内側の点は面から gap の 0.64 倍の所へ
+    なめらかに寄せる（押し出す所と押し出さない所の境で面が折れない）。
+    深く入った点ほど 0.64 倍に近づき、それより内へは入らない。gap は点ごとの
+    配列でもよい。
     """
+    soft = 0.36 * np.asarray(gap, dtype=float)
     d = pts - head.center
     r = np.linalg.norm(d, axis=1)
     x = r - _skull_radius(head, d) - gap
@@ -111,6 +114,7 @@ def build_scalp(mb: M.MeshBuilder, p: dict, head, *, front_el: float,
     az = np.linspace(0.0, 2 * math.pi, nu, endpoint=False)
     emax = _el_max(az, front_el, back_el, flat_front=flat_front)
     if nape > 0.0:
+        # 正面から 99°（耳のすぐ後ろ）で下げ始め、真後ろ (180°) で nape に届く。
         emax = emax + nape * _smooth((_angdist(az) / math.pi - 0.55) / 0.45)
     if jag > 0.0:
         # 正面からの符号付き角度。ギザギザは額側だけで、側頭部へ向けて消す。
@@ -317,7 +321,7 @@ def _helmet_rows(p: dict, head, *, front_el: float,
         b0, b1, b2, b3 = (1 - v) ** 3, 3 * v * (1 - v) ** 2, 3 * v * v * (1 - v), v ** 3
         pos = b0 * rim + b1 * c1 + b2 * c2 + b3 * e
         # 垂れない列 (hang = 0) は縁の 1 点に潰れたまま残す。
-        pos = np.where(hang[:, None] > 0.0, _off_skull(head, pos, gap, 0.36 * gap), pos)
+        pos = np.where(hang[:, None] > 0.0, _off_skull(head, pos, gap), pos)
         ridge = nrm * (t_hair * ridge_amp * crest * hang * (1.0 - 0.55 * v))[:, None]
         if bangs:
             # 畝の高さは縁で地髪の畝（縁の厚み r_end に比例）から始め、段を作らない。
@@ -627,7 +631,7 @@ def _back_ctrl(p, head, u: float, *, el: float, z_end: float, puff: float,
                    e[2] + (s[2] - e[2]) * 0.34])
     # 毛先を首の方へ寄せると後頭部の張り出しの内側に入る。房は根元と同じ
     # 高さだけ頭の面から浮かせたまま下ろす。
-    c1, c2, e = _off_skull(head, np.array([c1, c2, e]), hw * lift, hw * lift * 0.36)
+    c1, c2, e = _off_skull(head, np.array([c1, c2, e]), hw * lift)
     return s0, c1, c2, e
 
 
