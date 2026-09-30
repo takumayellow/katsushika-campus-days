@@ -18,7 +18,7 @@ namespace KCD.Editor
         /// <summary>取り込み規則を変えたら上げる。既存の FBX が取り込み直される。</summary>
         public override uint GetVersion()
         {
-            return 6;
+            return 7;
         }
 
         /// <summary>
@@ -54,12 +54,67 @@ namespace KCD.Editor
                 if (renderer.name.EndsWith("_outline", System.StringComparison.Ordinal))
                 {
                     renderer.enabled = false;
+                    continue;
                 }
-                else if (patterned)
+
+                BakeOutlineNormals(root.transform, renderer);
+                if (patterned)
                 {
                     BakeGeneratedCoordinates(root.transform, renderer);
                 }
             }
+        }
+
+        /// <summary>tangent の w に入れる印。KCD/Toon の Outline パスは、w がこれの頂点だけ tangent の向きへ押し出す。</summary>
+        public const float OutlineNormalTag = 2f;
+
+        /// <summary>
+        /// Blender が頂点カラー outline_normal（rgb = n * 0.5 + 0.5）に書いた輪郭線の殻の向きを、tangent に移す (#47)。
+        ///
+        /// 輪郭線は、Outline パスが頂点を押し出した殻の裏で描く。陰の法線のまま押すと、スカートのヒダの壁
+        /// （法線が横を向く）で殻が隣のヒダを越えて折れ返り、谷ごとに黒い破線が出る。別々の格子の継ぎ目でも、
+        /// 同じ位置の頂点の法線が分かれて殻が裂ける。なので Blender で殻の向きを別に求めて渡す
+        /// （kcd_chara/mesh.py の MeshBuilder.outline_normals）。
+        /// tangent は法線と同じくスキニングで回るので、動いても殻が服に付いてくる（頂点カラーは回らない）。
+        /// 法線マップは使わないので tangent は空いている（取り込みで tangent を作らない）。
+        /// 頂点カラーは使い終わったら消す。
+        /// </summary>
+        private static void BakeOutlineNormals(Transform root, SkinnedMeshRenderer renderer)
+        {
+            Mesh mesh = renderer.sharedMesh;
+            if (mesh == null || mesh.vertexCount == 0)
+            {
+                return;
+            }
+
+            Color[] colors = mesh.colors;
+            if (colors.Length != mesh.vertexCount)
+            {
+                Debug.LogWarning("[KCD] " + renderer.name + " に輪郭線の向き（頂点カラー outline_normal）が無い。"
+                    + "輪郭線は陰の法線の向きへ押し出す");
+                return;
+            }
+
+            // Blender のオブジェクト軸 → Unity のモデル軸 → このメッシュの軸（BakeGeneratedCoordinates の逆）
+            Matrix4x4 fromRoot = (root.worldToLocalMatrix * renderer.transform.localToWorldMatrix).inverse;
+            Vector3[] normals = mesh.normals;
+            var tangents = new Vector4[colors.Length];
+            for (int i = 0; i < colors.Length; i++)
+            {
+                Color c = colors[i];
+                var blender = new Vector3(c.r * 2f - 1f, c.g * 2f - 1f, c.b * 2f - 1f);
+                Vector3 n = fromRoot.MultiplyVector(FromBlenderAxes(blender)).normalized;
+                if (n == Vector3.zero && normals.Length == colors.Length)
+                {
+                    n = normals[i];
+                }
+
+                // 向きが決まらない頂点には印を付けず、Outline パスに陰の法線の向きで押させる
+                tangents[i] = n == Vector3.zero ? Vector4.zero : new Vector4(n.x, n.y, n.z, OutlineNormalTag);
+            }
+
+            mesh.tangents = tangents;
+            mesh.colors = System.Array.Empty<Color>();
         }
 
         /// <summary>和柄の座標を焼くチャンネル。KCD/Toon の TEXCOORD2 / TEXCOORD3。</summary>
@@ -124,6 +179,12 @@ namespace KCD.Editor
             return new Vector3(-unity.x, -unity.z, unity.y);
         }
 
+        /// <summary>ToBlenderAxes の逆。Blender のオブジェクト空間 → Unity のモデル空間。</summary>
+        public static Vector3 FromBlenderAxes(Vector3 blender)
+        {
+            return new Vector3(-blender.x, blender.z, -blender.y);
+        }
+
         private void OnPreprocessModel()
         {
             if (assetImporter is not ModelImporter importer)
@@ -145,6 +206,9 @@ namespace KCD.Editor
                 importer.importAnimation = true;
                 importer.importBlendShapes = true;
                 importer.importNormals = ModelImporterNormals.Import;
+                // tangent には輪郭線の殻の向きを入れる（BakeOutlineNormals）。取り込みで作ると、
+                // Shape Key の tangent の差分まで付いて、表情を付けた顔で向きがずれる。
+                importer.importTangents = ModelImporterTangents.None;
                 importer.optimizeGameObjects = false;
                 return;
             }

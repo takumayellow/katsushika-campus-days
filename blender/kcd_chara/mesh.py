@@ -250,6 +250,10 @@ def tube_rings(path, radii, n: int = 12, power: float = 2.0,
 # --------------------------------------------------------------------------
 
 
+#: 輪郭線の殻を押し出す向きを入れる頂点カラーの名前（MeshBuilder.outline_normals）。
+OUTLINE_ATTR = "outline_normal"
+
+
 class MeshBuilder:
     """頂点と面を貯めてから一度だけ bpy のメッシュを作るビルダー。"""
 
@@ -261,6 +265,7 @@ class MeshBuilder:
         self.parts: dict[str, list[tuple[int, int]]] = {}
         self._stack: list[str] = []
         self._normals: list[tuple[int, np.ndarray]] = []
+        self._outline: list[tuple[int, np.ndarray]] = []
 
     # -- 部位の記録 --------------------------------------------------------
     @contextmanager
@@ -348,6 +353,45 @@ class MeshBuilder:
             if np.linalg.norm(n) > 1e-9:
                 out[members] = n
         return out
+
+    # -- 輪郭線の殻を押し出す向き -------------------------------------------
+    def set_outline_normals(self, start: int, normals) -> None:
+        """start から並ぶ頂点の、輪郭線の殻を押し出す向きを決める（陰の法線とは別）。"""
+        n = np.asarray(normals, dtype=float).reshape(-1, 3)
+        length = np.linalg.norm(n, axis=1, keepdims=True)
+        self._outline.append((start, n / np.maximum(length, 1e-12)))
+
+    def outline_normals(self, tol: float = 1e-6) -> np.ndarray:
+        """頂点ごとの、輪郭線の殻を押し出す向き（単位ベクトル）。to_object が頂点カラーに書く。
+
+        Unity の輪郭線（KCD_Toon.shader の Outline パス）は、頂点をこの向きへ押し出した殻を
+        裏向きに描く。陰の法線で押すと、スカートのヒダのような細かな凹凸では殻が隣の頂点を
+        越えて折れ返り、谷ごとに黒い破線が出る。別々の格子の継ぎ目では、同じ位置の頂点の
+        向きが分かれて殻が裂ける。
+
+        向きは、set_outline_normals で決めたもの、陰の法線（set_normals）、面から求めた
+        頂点法線（Blender と同じ角の角度の重み）の順に取る。同じ位置に重なった頂点は
+        和の向きにそろえる。和の長さが頂点の数の半分に満たない組（表と裏の面が重なる所
+        など、向きが 120° より開く所）は、それぞれの向きのままにする。
+        """
+        if not self.verts:
+            return np.zeros((0, 3))
+        n = vertex_normals(self.verts, self.faces, by_angle=True)
+        shade = self.normal_array()
+        has = np.linalg.norm(shade, axis=1) > 0
+        n[has] = shade[has]
+        for start, o in self._outline:
+            n[start:start + len(o)] = o
+        group = self.coincident(0, tol)
+        total = np.zeros((group.max() + 1, 3))
+        np.add.at(total, group, n)
+        # 面の無い頂点（法線がゼロ）は数えない
+        count = np.bincount(group, weights=(np.linalg.norm(n, axis=1) > 0).astype(float))
+        pooled = total[group]
+        keep = np.linalg.norm(pooled, axis=1) >= 0.5 * count[group]
+        n = np.where(keep[:, None], pooled, n)
+        length = np.linalg.norm(n, axis=1, keepdims=True)
+        return n / np.maximum(length, 1e-12)
 
     # -- 低レベル ----------------------------------------------------------
     def add_verts(self, pts) -> int:
@@ -531,6 +575,16 @@ class MeshBuilder:
             corner = merge_normals(self.normal_array(), loop_v, auto)
             me.normals_split_custom_set(corner.tolist())
             me.update()
+
+        # 輪郭線の殻を押し出す向きを、FBX の頂点カラー（rgb = n * 0.5 + 0.5）で Unity へ渡す。
+        # 取り込みで tangent に移し（CharacterImporter.BakeOutlineNormals）、Outline パスが読む。
+        outline = np.ones((len(self.verts), 4), dtype=np.float32)
+        outline[:, :3] = self.outline_normals() * 0.5 + 0.5
+        attr = me.color_attributes.new(OUTLINE_ATTR, "FLOAT_COLOR", "POINT")
+        attr.data.foreach_set("color", outline.ravel())
+        # Unity は FBX の最初の色の層を mesh.colors に読む。色の属性を足しても入れ替わらないよう明示する
+        me.color_attributes.active_color = attr
+        me.color_attributes.render_color_index = me.color_attributes.active_color_index
 
         obj = bpy.data.objects.new(name, me)
         bpy.context.scene.collection.objects.link(obj)

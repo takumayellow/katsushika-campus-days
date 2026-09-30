@@ -15,6 +15,8 @@ import bmesh
 import bpy
 import numpy as np
 
+from .mesh import OUTLINE_ATTR
+
 #: 膨らませる量（身長に対する比）。太すぎると顔のパーツが潰れる。
 THICKNESS = 0.0022
 
@@ -54,10 +56,8 @@ def build_outline(obj, mb, p: dict, materials: dict, *,
     nv = len(me.vertices)
     co = np.empty(nv * 3, dtype=np.float64)
     me.vertices.foreach_get("co", co)
-    nrm = np.empty(nv * 3, dtype=np.float64)
-    me.vertex_normals.foreach_get("vector", nrm)
     co = co.reshape(-1, 3)
-    nrm = nrm.reshape(-1, 3)
+    nrm = _outline_normals(me)
 
     grow = np.full(nv, p["height"] * THICKNESS)
     skip = mb.part_indices(*SKIP_PARTS)
@@ -88,6 +88,22 @@ def build_outline(obj, mb, p: dict, materials: dict, *,
     # Eevee で本体を覆い隠さないよう、マテリアル側で背面カリングを効かせる
     mat.use_backface_culling = True
     return dup
+
+
+def _outline_normals(me) -> np.ndarray:
+    """殻を押し出す向き。本体の頂点カラー（MeshBuilder.outline_normals）があればそれを使い、
+    殻からは取り除く（Unity の Outline パスと同じ向きで膨らませる）。"""
+    nv = len(me.vertices)
+    attr = me.color_attributes.get(OUTLINE_ATTR)
+    if attr is None or attr.domain != "POINT":
+        nrm = np.empty(nv * 3, dtype=np.float64)
+        me.vertex_normals.foreach_get("vector", nrm)
+        return nrm.reshape(-1, 3)
+    col = np.empty(nv * 4, dtype=np.float32)
+    attr.data.foreach_get("color", col)
+    me.color_attributes.remove(attr)
+    nrm = col.reshape(-1, 4)[:, :3].astype(np.float64) * 2.0 - 1.0
+    return nrm / np.maximum(np.linalg.norm(nrm, axis=1, keepdims=True), 1e-12)
 
 
 def outline_tris(dup) -> int:

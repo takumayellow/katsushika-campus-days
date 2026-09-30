@@ -51,6 +51,8 @@ FBX_OPTS = dict(
     bake_space_transform=False,
     object_types={"ARMATURE", "MESH"},
     mesh_smooth_type="FACE",
+    # 輪郭線の向き（頂点カラー outline_normal）を、色空間の変換をせずにそのまま書き出す
+    colors_type="LINEAR",
     use_mesh_modifiers=True,
     add_leaf_bones=False,
     primary_bone_axis="Y",

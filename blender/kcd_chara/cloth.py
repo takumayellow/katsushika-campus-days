@@ -168,6 +168,11 @@ def pleated_skirt(mb: M.MeshBuilder, p, a, mat, part, *, z_top, z_bot,
     断面は素体の胴と同じスーパー楕円（power=2.25）にする。真円/楕円で作ると
     斜め 45 度方向だけ服が細くなり、腰がヒダの谷を突き抜けて肌が三角形に
     覗く。さらに谷の最小半径が素体 + clear を下回らないよう半径を押し上げる。
+
+    輪郭線の殻は、ヒダを平らにならした同じ格子の法線の向きへ押し出す
+    （MeshBuilder.set_outline_normals）。ヒダの壁の法線は横を向くので、陰の
+    法線のまま 1〜2 cm 押すと殻が隣のヒダを越えて折れ返り、谷ごとに黒い
+    破線が出ていた（ヒダの間隔は 1.2 cm ほど）。
     """
     h = p["height"]
     n = pleats * 4
@@ -185,6 +190,7 @@ def pleated_skirt(mb: M.MeshBuilder, p, a, mat, part, *, z_top, z_bot,
                    for j in range(levels)])
     env_x, env_y = inner_envelope(p, a, zl)
     rings = []
+    flat = []
     for j in range(levels):
         t = j / (levels - 1)
         z = float(zl[j])
@@ -196,22 +202,32 @@ def pleated_skirt(mb: M.MeshBuilder, p, a, mat, part, *, z_top, z_bot,
         rr = 1.0 + aa * saw
         rings.append(np.stack([bx * rx * rr, by * ry * rr,
                                np.full(n, z)], axis=1))
-    # 裾の折り返し（厚みが見えるように内側へ）
-    last = rings[-1].copy()
-    last[:, 0] *= 0.94
-    last[:, 1] *= 0.94
-    last[:, 2] += (z_top - z_bot) * 0.020
-    rings.append(last)
-    if notch > 0.0:
-        # 馬乗り袴は股下で前後に割れていて、裾の中央が V 字に切れ上がる
-        # （`docs/ref/tus_chara01.jpg` の足元）。裾を水平に切った筒のままだと、
-        # ヒダをいくら深くしてもスカートにしか見えなかった。中央だけ持ち上げる。
-        lift = notch * np.clip(1.0 - (np.abs(ca) / 0.45) ** 2, 0.0, 1.0)
-        rings[-1][:, 2] += lift
-        rings[-2][:, 2] += lift
+        flat.append(np.stack([bx * rx, by * ry, np.full(n, z)], axis=1))
+    for rs in (rings, flat):
+        # 裾の折り返し（厚みが見えるように内側へ）
+        last = rs[-1].copy()
+        last[:, 0] *= 0.94
+        last[:, 1] *= 0.94
+        last[:, 2] += (z_top - z_bot) * 0.020
+        rs.append(last)
+        if notch > 0.0:
+            # 馬乗り袴は股下で前後に割れていて、裾の中央が V 字に切れ上がる
+            # （`docs/ref/tus_chara01.jpg` の足元）。裾を水平に切った筒のままだと、
+            # ヒダをいくら深くしてもスカートにしか見えなかった。中央だけ持ち上げる。
+            # 上の段も、裾から 2 × notch の高さまでで持ち上げを減らしながら持ち上げ、
+            # 段の上下の順を保つ（裾だけ上げると中央で 1 段上の段を越え、間の面が裏返る）。
+            lift = notch * np.clip(1.0 - (np.abs(ca) / 0.45) ** 2, 0.0, 1.0)
+            rs[-1][:, 2] += lift
+            for r in rs[:-1]:
+                above = r[:, 2] - zl[-1]
+                r[:, 2] += lift * np.clip(1.0 - above / (2.0 * notch), 0.0, 1.0)
+    flip = bool(p.get("outward_faces"))
+    proxy = M.MeshBuilder()
+    proxy.add_grid(flat, mat, smooth=smooth, flip=flip)
     with mb.part(part):
-        mb.add_grid(rings, mat, smooth=smooth,
-                    flip=bool(p.get("outward_faces")))
+        base = mb.add_grid(rings, mat, smooth=smooth, flip=flip)
+    mb.set_outline_normals(base, M.vertex_normals(proxy.verts, proxy.faces,
+                                                  by_angle=True))
     return rings
 
 
