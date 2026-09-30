@@ -830,13 +830,14 @@ def build_seifuku(mb, p, a: B.Anatomy, *, apron: bool = False,
     rings, front = _bodice(mb, p, a, "blouse", "cloth_blouse",
                            waist - h * 0.020, z_col, inflate,
                            bib=a.shoulder[2] - h * _SAILOR_BIB_DROP)
-    tubes = _arm_sleeve(mb, p, a, "cloth_blouse", "sleeve", t_end=0.42,
-                        r_scale=1.26, puff=1.00)
     if hoodie:
-        # セーラー襟はパーカーの上に出す
-        rings, front, inflate, hood_tubes = _hoodie(mb, p, a, z_col)
-        tubes += hood_tubes
+        # セーラー襟はパーカーの上に出す。ブラウスの半袖はパーカーの袖に
+        # 隠れるので張らない。張ると肩口のふくらみがパーカーの袖より太く、
+        # 二の腕に白い帯が突き抜ける。
+        rings, front, inflate, tubes = _hoodie(mb, p, a, z_col)
     else:
+        tubes = _arm_sleeve(mb, p, a, "cloth_blouse", "sleeve", t_end=0.42,
+                            r_scale=1.26, puff=1.00)
         _ribbon(mb, p, a, "cloth_ribbon_green", z["bust"] + h * 0.018)
     _sailor_collar(mb, p, a, z_col, rings, front, inflate, sleeves=tubes)
     band(mb, p, a, "cloth_skirt_navy", "waistband", waist - h * 0.026,
