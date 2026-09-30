@@ -5,6 +5,12 @@ import numpy as np
 
 def first_hit(orig, d, tri):
     """光線 orig + t d が三角形の束 tri に最初に当たる t（当たらなければ inf）。"""
+    t = hits(orig, d, tri)
+    return float(t.min()) if len(t) else np.inf
+
+
+def hits(orig, d, tri):
+    """光線 orig + t d が三角形の束 tri に当たる t をすべて返す。"""
     A, e1, e2 = tri[:, 0], tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0]
     pv = np.cross(d, e2)
     det = np.einsum("ij,ij->i", e1, pv)
@@ -15,5 +21,4 @@ def first_hit(orig, d, tri):
     qv = np.cross(tv, e1)
     v = (qv @ d) * inv
     t = np.einsum("ij,ij->i", e2, qv) * inv
-    hit = ok & (u >= 0) & (v >= 0) & (u + v <= 1) & (t > 0)
-    return float(t[hit].min()) if hit.any() else np.inf
+    return t[ok & (u >= 0) & (v >= 0) & (u + v <= 1) & (t > 0)]

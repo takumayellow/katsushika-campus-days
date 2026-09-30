@@ -594,22 +594,30 @@ def build_torso(mb: M.MeshBuilder, p: dict, a: Anatomy, mat: str = "skin",
     return rings
 
 
+#: 首の筒の上端の高さ（顎から頭の高さ比）。筒の口が頭の面より 1 cm 以上
+#: 内側に入る高さ
+NECK_TOP = 0.12
+
+
 def build_neck(mb: M.MeshBuilder, p: dict, a: Anatomy):
     z = p["z"]
     h = p["height"]
     # ここの前後位置と高さは身長比で置く。絶対値 (m) で書くと低頭身のときだけ
     # 首が長すぎたり短すぎたりする。
-    path = np.array([
-        [0.0, 0.0, z["shoulder"] - h * 0.009],
-        [0.0, -h * 0.003, z["shoulder"] + h * 0.030],
-        # 顎より上で終わらせて頭に埋める。顎の下で終わらせると、顎先が細い
-        # ぶん首が頭からはみ出し、筒の口が黒い穴になって見える。
-        [0.0, -h * 0.007, z["chin"] + p["head_h"] * 0.030],
-    ])
+    # (前後位置, 高さ, 半径)。上端は顎より十分上に置き、筒の口を頭の中に埋める。
+    # 筒の口が頭の外に出ると黒い穴になって見える。
     r = a.neck_r
+    rings = [
+        (0.0, z["shoulder"] - h * 0.009, r * 1.62),
+        (-h * 0.003, z["shoulder"] + h * 0.030, r * 1.06),
+        (-h * 0.007, z["chin"] + p["head_h"] * NECK_TOP, r * 0.90),
+    ]
+    # リングは水平に置く。芯線に直角に置くと、前へ傾いた最後の段が前側で
+    # 1 つ下の段より下がり、あごの下で面が折り返す。その折り目に輪郭線の殻が
+    # 寄って、首輪のような横線が出る。
     with mb.part("neck"):
-        mb.add_tube(path, [r * 1.62, r * 1.06, r * 0.90], "skin", n=18,
-                    cap_start=True, cap_end=True)
+        mb.add_grid([M.ring(18, rr, rr, cy=cy, z=cz) for cy, cz, rr in rings],
+                    "skin", cap_start=True, cap_end=True)
 
 
 def _limb(mb: M.MeshBuilder, path, radii, mat: str, part: str, n: int = 20):
