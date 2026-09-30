@@ -172,3 +172,36 @@ def test_blouse_stays_well_inside_hoodie_sleeves(name):
         checked += 1
         assert t_blouse > t_hoodie + gap, (name, c.round(3).tolist(), t_blouse - t_hoodie)
     assert checked > 50
+
+
+@pytest.mark.parametrize("name", HOODIE)
+def test_hood_fills_the_nape_below_the_hair(name):
+    """後ろから見ると、毛先の高さの首の後ろはフードで埋まる。
+
+    髪とフードは同じ水色で、境目には輪郭線しか出ない。毛先がフードの外へ出ると
+    出た所の輪郭線だけが切れ切れの鉤になる。毛先とフードの間に肌や空がのぞくと、
+    遠目では髪の裾とフードの縁の輪郭線が重なって黒い帯になる。"""
+    p, a, mb, _ = _build(name)
+    h = p["height"]
+    V = np.array(mb.verts)
+    c, r = cloth.hood_ellipsoid(p, a)
+
+    def q(idx):
+        return ((((V[idx] - c) / r) ** 2).sum(axis=1))
+
+    def on_hood(f, m):
+        return m == "cloth_hoodie" and bool((np.abs(q(list(f)) - 1.0) < 1e-9).all())
+
+    # 楕円体はメッシュのフードの面そのもの（16 列 10 段）
+    assert sum(on_hood(f, m) for f, m in zip(mb.faces, mb.face_mat)) >= 16 * 10
+    hair = sorted({i for f, m in zip(mb.faces, mb.face_mat) if m == "hair" for i in f})
+    tips = V[hair, 2].min()
+    hood = _triangles(mb, on_hood)
+    rest = _triangles(mb, lambda f, m: not on_hood(f, m))
+    d = np.array([0.0, -1.0, 0.0])
+    # 真後ろから、毛先の高さの上下 身長 × 0.6% を、肩幅の 7 割の幅で光線を並べる
+    half = a.shoulder[0] * 0.7
+    for zc in np.linspace(tips - h * 0.006, tips + h * 0.006, 6):
+        for x in np.linspace(-half, half, 11):
+            o = np.array([x, c[1] + 0.5, zc])
+            assert first_hit(o, d, hood) < first_hit(o, d, rest), (name, round(x, 3), round(zc, 3))

@@ -766,6 +766,25 @@ def _tote(mb, p, a: B.Anatomy):
                         "bag_tote", cap_start=True, cap_end=True)
 
 
+def hood_ellipsoid(p, a: B.Anatomy):
+    """首の後ろに垂れたフードの楕円体の (中心, 半径)。
+
+    後ろ髪（short）の裾は首の後ろから横まで回っている。フードの幅を肩幅の 0.95 倍まで
+    取り、裾の毛先を後ろから横までフードの中に収める。髪とフードは同じ水色なので、
+    毛先がフードの外へ出ると、出た所の輪郭線だけが切れ切れの鉤になる。フードを下げて
+    毛先を外に出すと、遠目では髪の裾とフードの縁の輪郭線が重なって黒い帯になる。
+    いちばん太い段が襟の上端の高さに来ると、襟の両脇からフードが突き出るので、
+    楕円体の中心は襟の上端より上に置き、下の端だけを襟の下へ潜らせる。
+    """
+    h = p["height"]
+    z = p["z"]
+    zz, rx, ry = _profile(p, a)
+    z_h = z["shoulder"] + h * 0.006
+    yy = float(np.interp(z_h, zz, ry))
+    return (np.array([0.0, yy * 0.72, z_h + h * 0.044]),
+            np.array([a.shoulder[0] * 0.95, yy * 0.86, h * 0.040]))
+
+
 def _hoodie(mb, p, a: B.Anatomy, z_col, mat="cloth_hoodie"):
     """羽織ったパーカー。胴＋首の後ろのフード＋前ポケット。
 
@@ -780,15 +799,12 @@ def _hoodie(mb, p, a: B.Anatomy, z_col, mat="cloth_hoodie"):
                            z_col, inflate)
     tubes = _arm_sleeve(mb, p, a, mat, "sleeve", t_end=0.86, r_scale=1.34,
                         puff=0.55)
-    # フード（後頭部の下に垂れる袋）
-    zz, rx, ry = _profile(p, a)
-    z_h = z["shoulder"] + h * 0.006
-    yy = float(np.interp(z_h, zz, ry))
+    # フード（首の後ろに垂れる袋）
+    center, radii = hood_ellipsoid(p, a)
     with mb.part("hoodie"):
-        mb.add_sphere((0.0, yy * 0.72, z_h + h * 0.016),
-                      (a.shoulder[0] * 0.62, yy * 0.86, h * 0.062), mat,
-                      nu=16, nv=10)
+        mb.add_sphere(center, radii, mat, nu=16, nv=10)
     # 前ポケット
+    zz, rx, ry = _profile(p, a)
     z_p = z["waist"] - h * 0.010
     yp = -float(np.interp(z_p, zz, ry)) - h * 0.018
     with mb.part("hoodie"):
