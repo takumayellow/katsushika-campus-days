@@ -142,12 +142,24 @@ def build_armature(p: dict, a: B.Anatomy, name: str):
 # --------------------------------------------------------------------------
 
 
-def _seg_distance(pts: np.ndarray, p0: np.ndarray, p1: np.ndarray) -> np.ndarray:
+#: 付け根より手前（胴の側）の点までの距離を、骨の向きに何倍して数えるか。
+#: 線分までの距離は付け根の点で打ち切るので、そのままだと上腕が首の付け根まで効く
+#: （みらいで付け根から 6.5 cm 胴側の首の横に 35%）。どのアクションも最初に腕を
+#: A ポーズから 36° 下ろす（body.ARM_DROP）ので、首の横の布が 2 cm 動いていた。
+#: 肩の関節より胴の側は肩の骨について動くものなので、上腕を遠く数える。
+BEHIND_HEAD = {"LeftUpperArm": 1.5, "RightUpperArm": 1.5}
+
+
+def _seg_distance(pts: np.ndarray, p0: np.ndarray, p1: np.ndarray,
+                  behind: float = 1.0) -> np.ndarray:
+    """線分 p0→p1 までの距離。p0 より手前の点は、骨の向きの成分を behind 倍して数える。"""
     d = p1 - p0
     ln = float(np.dot(d, d)) + 1e-12
-    t = np.clip(((pts - p0) @ d) / ln, 0.0, 1.0)
+    s = ((pts - p0) @ d) / ln
+    t = np.clip(s, 0.0, 1.0)
     proj = p0[None, :] + t[:, None] * d[None, :]
-    return np.linalg.norm(pts - proj, axis=1)
+    r = pts - proj + (behind - 1.0) * np.minimum(s, 0.0)[:, None] * d[None, :]
+    return np.linalg.norm(r, axis=1)
 
 
 def distance_weights(obj, arm, pos: dict, *, k: int = 3, power: float = 3.0):
@@ -158,8 +170,8 @@ def distance_weights(obj, arm, pos: dict, *, k: int = 3, power: float = 3.0):
     pts = co.reshape(-1, 3)
 
     names = BONE_NAMES
-    dist = np.stack([_seg_distance(pts, pos[n][0], pos[n][1]) for n in names],
-                    axis=1)
+    dist = np.stack([_seg_distance(pts, pos[n][0], pos[n][1], BEHIND_HEAD.get(n, 1.0))
+                     for n in names], axis=1)
     order = np.argsort(dist, axis=1)[:, :k]
     rows = np.arange(len(pts))[:, None]
     d = dist[rows, order]
@@ -582,6 +594,45 @@ def _cover_weights(pts, idx, normals, tris, W, reach: float, k: int = 4) -> list
     return out
 
 
+# 襟を載せる身頃。襟は、いちばん近いこの布（か袖）の点と同じウェイトにする。
+# 着物の衿は着物ごと背骨で動くので入れない（Neck / UpperChest のまま）。
+COLLAR_BASE = ("blouse", "shirt", "shirt_yoke", "hoodie")
+
+
+def _collar_on_cloth(obj, mb: M.MeshBuilder, pts) -> None:
+    """襟の頂点へ、いちばん近い下の布の点のウェイトを写す。
+
+    襟を Neck / UpperChest だけで動かすと、肩について動く身頃が襟を突き抜ける
+    （セーラー服の 4 人とも、休めの形で襟の 6 mm 下にある身頃が、どのアクション
+    でも最大 12〜13 mm 外へ出て、斜めから見ると首の横に白い塊が見えていた）。
+    襟は肩に載っている布なので、下の布と同じ動きにする。肩先では袖山の上に
+    載るので袖も拾う。白いラインや内縁の折り返しのように布から浮いた頂点も
+    あるので、光線ではなく最近点で拾う。拾えなかった頂点と、拾った布に
+    ウェイトが無かった頂点は Neck / UpperChest のまま。
+    """
+    collar = mb.part_indices("collar")
+    if len(collar) == 0 or len(mb.part_indices(*COLLAR_BASE)) == 0:
+        return
+    base = mb.part_indices(*COLLAR_BASE, "sleeve_l", "sleeve_r")
+    tris = M.triangles(mb.faces, base)
+    W = _weights_of(obj, base)
+    for i, (j, u, v, d) in zip(collar.tolist(), M.closest_points(pts[collar], pts, tris)):
+        if j < 0 or not np.isfinite(d):
+            continue
+        a, b, c = (int(x) for x in tris[int(j)])
+        w = _mix(((W[a], 1.0 - u - v), (W[b], u), (W[c], v)))
+        if w:
+            _write_weights(obj, i, w)
+
+
+def _weights_of(obj, idx) -> dict:
+    """idx の各頂点のウェイト（頂点番号 → {ボーン名: 値}）。"""
+    gname = {g.index: g.name for g in obj.vertex_groups}
+    verts = obj.data.vertices
+    return {i: {gname[g.group]: g.weight for g in verts[i].groups if g.weight > 0.0}
+            for i in np.asarray(idx).tolist()}
+
+
 def _hide_under_cloth(obj, mb: M.MeshBuilder, pts, p: dict) -> None:
     """布に隠れた胴の素肌へ、すぐ外の布のウェイトを写す。
 
@@ -600,10 +651,7 @@ def _hide_under_cloth(obj, mb: M.MeshBuilder, pts, p: dict) -> None:
         return
     tris = M.triangles(mb.faces, mb.part_indices(*UNDER_CLOTH, *LEG_CLOTH))
     normals = M.vertex_normals(pts, M.faces_within(mb.faces, skin))
-    gname = {g.index: g.name for g in obj.vertex_groups}
-    verts = obj.data.vertices
-    W = {i: {gname[g.group]: g.weight for g in verts[i].groups if g.weight > 0.0}
-         for i in under.tolist()}
+    W = _weights_of(obj, under)
     new = _cover_weights(pts, skin, normals, tris, W, p["height"] * 0.02)
     for i, w in zip(skin.tolist(), new):
         if w:
@@ -648,6 +696,7 @@ def override_weights(obj, mb: M.MeshBuilder, p: dict, a: B.Anatomy) -> None:
 
     _set_exclusive(obj, mb.part_indices("collar"),
                    {"Neck": 0.35, "UpperChest": 0.65})
+    _collar_on_cloth(obj, mb, pts)
     _set_exclusive(obj, mb.part_indices("ribbon"), {"UpperChest": 1.0})
     _spine_only(obj, mb, pts, p, a, ("kimono", "kimono_yoke"))
     _set_exclusive(obj, mb.part_indices("obi", "himo", "waistband"),

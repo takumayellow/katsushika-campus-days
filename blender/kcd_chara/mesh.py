@@ -103,6 +103,56 @@ def first_hits(origins, dirs, verts, tris, reach: float, chunk: int = 64) -> np.
     return res
 
 
+def closest_points(points, verts, tris, chunk: int = 64) -> np.ndarray:
+    """各点にいちばん近い三角形の上の点（Ericson, Real-Time Collision Detection 5.1.5）。
+
+    返すのは (N, 4) の [三角形番号, u, v, 距離]。近い点は
+    verts[a]·(1-u-v) + verts[b]·u + verts[c]·v（first_hits と同じ並び）。
+    tris が空なら三角形番号が -1。
+    """
+    V = np.asarray(verts, dtype=float)
+    T = np.asarray(tris, dtype=int).reshape(-1, 3)
+    P = np.asarray(points, dtype=float).reshape(-1, 3)
+    res = np.full((len(P), 4), -1.0)
+    if len(T) == 0:
+        return res
+    A = V[T[:, 0]]
+    ab, ac = V[T[:, 1]] - A, V[T[:, 2]] - A
+    for s in range(0, len(P), chunk):
+        ap = P[s:s + chunk, None, :] - A[None]
+        d1 = np.einsum("tk,rtk->rt", ab, ap)
+        d2 = np.einsum("tk,rtk->rt", ac, ap)
+        d3 = d1 - np.einsum("tk,tk->t", ab, ab)          # ab·(p - b)
+        d4 = d2 - np.einsum("tk,tk->t", ac, ab)          # ac·(p - b)
+        d5 = d1 - np.einsum("tk,tk->t", ab, ac)          # ab·(p - c)
+        d6 = d2 - np.einsum("tk,tk->t", ac, ac)          # ac·(p - c)
+        va, vb, vc = d3 * d6 - d5 * d4, d5 * d2 - d1 * d6, d1 * d4 - d3 * d2
+        with np.errstate(divide="ignore", invalid="ignore"):
+            den = va + vb + vc
+            u, v = vb / den, vc / den                     # 面の内側
+            w_bc = (d4 - d3) / ((d4 - d3) + (d5 - d6))
+            w_ac = d2 / (d2 - d6)
+            w_ab = d1 / (d1 - d3)
+        # 上から順に優先する領域（頂点 → 辺 → 面の内側）。後ろから上書きする。
+        regions = (
+            ((d1 <= 0) & (d2 <= 0), 0.0, 0.0),                           # a
+            ((d3 >= 0) & (d4 <= d3), 1.0, 0.0),                          # b
+            ((vc <= 0) & (d1 >= 0) & (d3 <= 0), w_ab, 0.0),              # 辺 ab
+            ((d6 >= 0) & (d5 <= d6), 0.0, 1.0),                          # c
+            ((vb <= 0) & (d2 >= 0) & (d6 <= 0), 0.0, w_ac),              # 辺 ac
+            ((va <= 0) & (d4 - d3 >= 0) & (d5 - d6 >= 0), 1.0 - w_bc, w_bc),  # 辺 bc
+        )
+        for mask, uu, vv in reversed(regions):
+            u, v = np.where(mask, uu, u), np.where(mask, vv, v)
+        q = A[None] + ab[None] * u[..., None] + ac[None] * v[..., None]
+        dist = np.linalg.norm(P[s:s + chunk, None, :] - q, axis=2)
+        dist = np.where(np.isfinite(dist), dist, np.inf)  # 面積 0 の三角形
+        j = np.argmin(dist, axis=1)
+        rows = np.arange(len(j))
+        res[s:s + chunk] = np.stack([j, u[rows, j], v[rows, j], dist[rows, j]], axis=1)
+    return res
+
+
 def bezier3(p0, p1, p2, p3, n: int) -> np.ndarray:
     """3 次ベジエを n 点にサンプリングする（髪の房の芯線に使う）。"""
     t = np.linspace(0.0, 1.0, n).reshape(-1, 1)
