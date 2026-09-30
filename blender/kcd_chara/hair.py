@@ -43,6 +43,52 @@ def _outward(head, pts: np.ndarray, off) -> np.ndarray:
     return pts + d * off
 
 
+def _skull_radius(head, d: np.ndarray, iters: int = 8) -> np.ndarray:
+    """頭の中心から向き d へ進んで頭の面に当たるまでの距離。
+
+    頭の面は極角 (az, el) で張ってあり、変形で点の向きが (az, el) からずれる。
+    面の点の向きが d にそろう (az, el) をニュートン法で探す。
+    """
+    u = d / np.linalg.norm(d, axis=1, keepdims=True)
+    ref = np.where(np.abs(u[:, 2:3]) < 0.9, [[0.0, 0.0, 1.0]], [[1.0, 0.0, 0.0]])
+    t1 = np.cross(u, ref)
+    t1 /= np.linalg.norm(t1, axis=1, keepdims=True)
+    t2 = np.cross(u, t1)
+
+    def miss(a, e):
+        s = head.surface(a, e) - head.center
+        s /= np.linalg.norm(s, axis=1, keepdims=True)
+        return np.stack([(s * t1).sum(axis=1), (s * t2).sum(axis=1)], axis=1)
+
+    a = np.arctan2(u[:, 1], u[:, 0])
+    e = np.clip(np.arccos(np.clip(u[:, 2], -1.0, 1.0)), 1e-3, math.pi - 1e-3)
+    h = 1e-5
+    for _ in range(iters):
+        f = miss(a, e)
+        ja, je = (miss(a + h, e) - f) / h, (miss(a, e + h) - f) / h
+        det = ja[:, 0] * je[:, 1] - ja[:, 1] * je[:, 0]
+        det = np.where(np.abs(det) < 1e-12, 1e-12, det)
+        da = (je[:, 0] * f[:, 1] - je[:, 1] * f[:, 0]) / det
+        de = (ja[:, 1] * f[:, 0] - ja[:, 0] * f[:, 1]) / det
+        step = np.maximum(1.0, np.hypot(da, de) / 0.3)
+        a, e = a + da / step, np.clip(e + de / step, 1e-4, math.pi - 1e-4)
+    return np.linalg.norm(head.surface(a, e) - head.center, axis=1)
+
+
+def _off_skull(head, pts: np.ndarray, gap, soft) -> np.ndarray:
+    """頭の面から gap より内へ入った点を、頭の中心から外へ押し出す。
+
+    gap より外の点は動かさない。内側の点は gap - soft の手前へなめらかに
+    寄せる（押し出す所と押し出さない所の境で面が折れない）。gap と soft は
+    点ごとの配列でもよい。
+    """
+    d = pts - head.center
+    r = np.linalg.norm(d, axis=1)
+    x = r - _skull_radius(head, d) - gap
+    y = np.where(x >= 0.0, x, soft * (np.exp(np.minimum(x, 0.0) / soft) - 1.0))
+    return pts + d * ((y - x) / r)[:, None]
+
+
 def scalp_pt(head, az, el, off: float) -> np.ndarray:
     az = np.atleast_1d(np.asarray(az, dtype=float))
     el = np.atleast_1d(np.asarray(el, dtype=float))
@@ -53,15 +99,19 @@ def scalp_pt(head, az, el, off: float) -> np.ndarray:
 def build_scalp(mb: M.MeshBuilder, p: dict, head, *, front_el: float,
                 back_el: float, thickness: float, part: str = "hair_cap",
                 nu: int = 32, flat_front: float = 0.0, jag: float = 0.0,
-                teeth: float = 5.0, jag_span: float = 112.0):
+                teeth: float = 5.0, jag_span: float = 112.0, nape: float = 0.0):
     """頭皮に沿った地髪の殻。縁が生え際になる。
 
     jag > 0 なら額側の縁に切れ込みを入れる。真円の縁は水泳帽に見えるので、
     公式のように髪が額へ尖って食い込む形にするための刻み。
+    nape > 0 なら耳より後ろの縁だけを、真後ろで nape だけ下げる（耳の上と
+    額の縁は動かさない）。
     """
     nv = 10
     az = np.linspace(0.0, 2 * math.pi, nu, endpoint=False)
     emax = _el_max(az, front_el, back_el, flat_front=flat_front)
+    if nape > 0.0:
+        emax = emax + nape * _smooth((_angdist(az) / math.pi - 0.55) / 0.45)
     if jag > 0.0:
         # 正面からの符号付き角度。ギザギザは額側だけで、側頭部へ向けて消す。
         off = ((az - FRONT + math.pi) % (2 * math.pi)) - math.pi
@@ -233,6 +283,10 @@ def _helmet_rows(p: dict, head, *, front_el: float,
         pts = head.surface(az, el)
         rings.append(_outward(head, pts, off))
     rim = rings[-1]
+    # 垂れは縁の厚み（地髪の厚み、前髪なら毛先の高さ）より頭へ寄せない。
+    # 毛先を顎の高さのまま内へ引くと、後頭部の張り出しの所で垂れが頭蓋の
+    # 内側をくぐり、後ろから見ると髪の縁の下に後頭部の肌が顔のような楕円で出る。
+    gap = np.minimum(t_hair * 0.55, np.broadcast_to(off, az.shape))
     nrm = rim * np.array([1.0, 1.0, 0.0])
     nrm = nrm / (np.linalg.norm(nrm, axis=1, keepdims=True) + 1e-9)
 
@@ -262,6 +316,8 @@ def _helmet_rows(p: dict, head, *, front_el: float,
         v = k / nh
         b0, b1, b2, b3 = (1 - v) ** 3, 3 * v * (1 - v) ** 2, 3 * v * v * (1 - v), v ** 3
         pos = b0 * rim + b1 * c1 + b2 * c2 + b3 * e
+        # 垂れない列 (hang = 0) は縁の 1 点に潰れたまま残す。
+        pos = np.where(hang[:, None] > 0.0, _off_skull(head, pos, gap, 0.36 * gap), pos)
         ridge = nrm * (t_hair * ridge_amp * crest * hang * (1.0 - 0.55 * v))[:, None]
         if bangs:
             # 畝の高さは縁で地髪の畝（縁の厚み r_end に比例）から始め、段を作らない。
@@ -569,6 +625,9 @@ def _back_ctrl(p, head, u: float, *, el: float, z_end: float, puff: float,
     c1 = s + np.array([0.0, hd * 0.05 * puff, -hh * 0.22])
     c2 = np.array([e[0] * 1.06, e[1] + hd * 0.03 * puff,
                    e[2] + (s[2] - e[2]) * 0.34])
+    # 毛先を首の方へ寄せると後頭部の張り出しの内側に入る。房は根元と同じ
+    # 高さだけ頭の面から浮かせたまま下ろす。
+    c1, c2, e = _off_skull(head, np.array([c1, c2, e]), hw * lift, hw * lift * 0.36)
     return s0, c1, c2, e
 
 
@@ -1026,8 +1085,10 @@ def build_hair(mb: M.MeshBuilder, p: dict, head, a, fs, uv_box) -> None:
         # 頭頂を跨ぐ長い房を放射状に並べると房の間が開いてトゲトゲの
         # カツラになる。厚めの地髪＋短い前髪・横髪・襟足で構成する。
         front_el = 0.58 if style == "slickback" else 0.52
+        # 耳の上の縁は 1.80 のまま、後頭部の縁を襟足（顎の 0.13hh 上）まで
+        # 下ろす。1.80 で止めると縁の下に後頭部の肌が出て、後ろから見ると顔に見える。
         build_scalp(mb, p, head, front_el=front_el, back_el=1.80,
-                    thickness=0.108)
+                    thickness=0.108, nape=0.55)
         _bangs(mb, p, head, span=math.radians(88.0), count=11,
                el=front_el - 0.05,
                end_v=0.668 if style == "slickback" else 0.678,
@@ -1036,7 +1097,7 @@ def build_hair(mb: M.MeshBuilder, p: dict, head, a, fs, uv_box) -> None:
         _side(mb, p, head, count=2, az_lo=math.radians(70.0),
               az_hi=math.radians(96.0), el=1.20,
               z_end=chin + hh * 0.70, width=0.058, curl=0.0)
-        _back(mb, p, head, count=9, el=1.72, z_end=chin + hh * 0.48,
+        _back(mb, p, head, count=9, el=1.72, z_end=chin + hh * 0.10,
               width=0.102, puff=0.85)
 
     acc = p.get("hair_accessory")
