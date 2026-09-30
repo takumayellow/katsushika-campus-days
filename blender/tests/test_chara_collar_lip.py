@@ -17,40 +17,41 @@ from kcd_chara import mesh as M
 
 SAILOR = [n for n in params.ALL_IDS
           if params.resolve(n)["outfit"].startswith("seifuku")]
-NAVY = "cloth_skirt_navy"
 # 襟の面の法線からのずれの上限。直す前は内縁も折り返しも 87〜96° ずれていた（直した後は 3〜12°）
 MAX_DEG = 20.0
 
 
 @functools.cache
 def _build(name):
-    p = params.resolve(name)
-    mb = M.MeshBuilder()
-    a, _, _, _, _ = body.build_base(mb, p)
-    cloth.build_outfit(mb, p, a)
-    return mb
+    """キャラを組み、襟の部位で add_grid が張った開いた格子の (先頭の頂点, 段数, 列数) を返す。"""
+    grids = []
+    orig = M.MeshBuilder.add_grid
+
+    def add_grid(self, rings, mat, **kw):
+        v0 = len(self.verts)
+        out = orig(self, rings, mat, **kw)
+        # 襟の部位の add_tube（白線）も add_grid で筒を張るので、開いた格子だけ拾う
+        if self._stack and self._stack[-1] == "collar" and not kw.get("close_u", True):
+            grids.append((v0, len(rings), len(rings[0])))
+        return out
+
+    M.MeshBuilder.add_grid = add_grid
+    try:
+        p = params.resolve(name)
+        mb = M.MeshBuilder()
+        a, _, _, _, _ = body.build_base(mb, p)
+        cloth.build_outfit(mb, p, a)
+    finally:
+        M.MeshBuilder.add_grid = orig
+    return mb, grids
 
 
-def _front_grids(mb):
-    """前の襟の格子ごとに (先頭の頂点番号, 1 行の頂点数, 行数) を返す。
-
-    襟は背面フラップと左右の前の襟を別々の part ブロックで張る。どのブロックも先頭は
-    add_grid の格子で、四角形 (a, b, c, d) の d - a が 1 行の頂点数になる。
-    前の襟は胸の側（-Y）にある。
-    """
-    V = np.array(mb.verts)
-    out = []
-    for start, end in mb.parts["collar"]:
-        quads = [f for f, m in zip(mb.faces, mb.face_mat)
-                 if m == NAVY and start <= f[0] < end and len(f) == 4]
-        if not quads:
-            continue
-        a, _, _, d = quads[0]
-        n = d - a
-        rows = len(quads) // (n - 1) + 1
-        if V[start:start + n * rows, 1].mean() < 0:
-            out.append((start, n, rows))
-    return out
+def _front_grids(name):
+    """前の襟 2 枚の (先頭の頂点, 段数, 列数)。最後の段は身頃の縁の内側への折り返し。"""
+    _, grids = _build(name)
+    # 1 枚目は背面フラップ、続く 2 枚が前の襟
+    assert len(grids) == 3, f"{name}: 襟の格子が {len(grids)} 枚"
+    return grids[1:]
 
 
 def _vertex_normals(mb, lo, hi):
@@ -75,11 +76,9 @@ def _angle_deg(u, v):
 @pytest.mark.parametrize("name", SAILOR)
 def test_collar_lip_follows_collar_normal(name):
     """内縁と折り返しの角の法線が、1 行外側の襟の面の法線から MAX_DEG 以内。"""
-    mb = _build(name)
-    grids = _front_grids(mb)
-    assert len(grids) == 2, f"{name}: 左右の前の襟が見つからない"
+    mb, _ = _build(name)
     custom = mb.normal_array()
-    for start, n, rows in grids:
+    for start, rows, n in _front_grids(name):
         vn = _vertex_normals(mb, start, start + n * rows)
         corner = np.where(np.linalg.norm(custom[start:start + n * rows], axis=1,
                                          keepdims=True) > 0,
@@ -90,12 +89,13 @@ def test_collar_lip_follows_collar_normal(name):
             assert worst < MAX_DEG, f"{name}: {label}の法線が襟の面から {worst:.0f}° ずれている"
 
 
-def test_collar_lip_folds_into_body():
+@pytest.mark.parametrize("name", SAILOR)
+def test_collar_lip_folds_into_body(name):
     """上のテストが空振りしていない。折り返しは内縁から身頃の内側へ 1 cm ほど折れている。"""
-    mb = _build("mirai")
+    mb, _ = _build(name)
     V = np.array(mb.verts)
-    h = params.resolve("mirai")["height"]
-    for start, n, rows in _front_grids(mb):
+    h = params.resolve(name)["height"]
+    for start, rows, n in _front_grids(name):
         edge = V[start + (rows - 2) * n:start + (rows - 1) * n]
         lip = V[start + (rows - 1) * n:start + rows * n]
         depth = np.linalg.norm(lip - edge, axis=1) / h

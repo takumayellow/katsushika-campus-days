@@ -38,6 +38,7 @@ def test_band_collar_faces_point_outward():
     V = np.array(mb.verts)
     blocks = mb.parts["collar"]
     faces = [f for f in mb.faces if any(s <= f[0] < e for s, e in blocks)]
+    # 帯の襟は 1 周 26 分割（cloth._collar の seg）。ブラウスと白衣の 2 本ぶん以上
     assert len(faces) >= 2 * 26
     for f in faces:
         c = V[list(f)].mean(axis=0)
