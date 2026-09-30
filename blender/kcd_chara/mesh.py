@@ -184,6 +184,30 @@ class MeshBuilder:
             out[start:start + len(n)] = n
         return out
 
+    def share_normals(self, v0: int, f0: int, tol: float = 1e-6) -> None:
+        """v0 番以降で同じ位置に重なった頂点へ、1 本にそろえた陰の法線を決める。
+
+        別々の add_grid で張った面の継ぎ目では、位置が同じでも頂点の番号が別なので、
+        FBX の角の法線が面ごとに分かれる。Unity の輪郭線は角の法線の向きへ押し出した
+        殻なので、継ぎ目で殻が裂ける。重なった頂点には、f0 番以降の面から求めた
+        それぞれの頂点法線の平均を渡す。重ならない頂点の法線は決めない。
+        """
+        V = np.asarray(self.verts[v0:], dtype=float)
+        if any(i < v0 for f in self.faces[f0:] for i in f):
+            raise ValueError(f"f0={f0} 以降の面が v0={v0} より前の頂点を使っています")
+        faces = [[i - v0 for i in f] for f in self.faces[f0:]]
+        vn = vertex_normals(V, faces)
+        _, group = np.unique(np.round(V / tol).astype(np.int64), axis=0,
+                             return_inverse=True)
+        group = group.reshape(-1)
+        out = np.zeros_like(V)
+        for g in np.flatnonzero(np.bincount(group) > 1):
+            members = np.flatnonzero(group == g)
+            n = vn[members].sum(axis=0)
+            if np.linalg.norm(n) > 1e-9:
+                out[members] = n
+        self.set_normals(v0, out)
+
     # -- 低レベル ----------------------------------------------------------
     def add_verts(self, pts) -> int:
         base = len(self.verts)

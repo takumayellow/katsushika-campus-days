@@ -280,11 +280,15 @@ def build_helmet(mb: M.MeshBuilder, p: dict, head, *, front_el: float,
     # 輪郭線の殻が生え際に沿ってめくれて頭頂を横切る Λ の線になる）。
     flat = (hw * 1e-3) ** 2 if out else 0.0
     with mb.part(part):
+        v0, f0 = len(mb.verts), len(mb.faces)
         mb.add_grid(rings + outer, "hair", smooth=True, cap_start=True,
                     cap_end=False, flip=out, min_area=flat)
         mb.add_grid(inner, "hair", smooth=True, flip=not out, min_area=flat)
         mb.add_grid([outer[-1], inner[-1]], "hair", smooth=False, flip=out,
                     min_area=flat)
+        # 縁の帯は外殻・内殻と別の頂点で張るので、毛先で頂点が重なる。法線を
+        # そろえないと輪郭線の殻が毛先で裂け、横髪の前の縁に沿った点線になる。
+        mb.share_normals(v0, f0)
     return rim
 
 
@@ -369,12 +373,15 @@ def _sheet(mb, part: str, ctrl_fn, us, *, seg: int = 11, frac: float = 0.82,
     P = P[:, :k, :]
     Q = _thicken(P, thick)
     with mb.part(part):
+        v0, f0 = len(mb.verts), len(mb.faces)
         mb.add_grid([P[:, j, :] for j in range(k)], mat, smooth=True,
                     close_u=False)
         mb.add_grid([Q[:, j, :] for j in range(k)], mat, smooth=True,
                     close_u=False, flip=True)
         mb.add_grid([P[:, k - 1, :], Q[:, k - 1, :]], mat, smooth=False,
                     close_u=False)
+        # 毛先の縁の帯と表裏の面の継ぎ目で、輪郭線の殻を裂けないようにする。
+        mb.share_normals(v0, f0)
 
 
 def _bang_ctrl(p, head, u: float, *, span: float, el: float, z_end: float,
