@@ -27,6 +27,10 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _PatternMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
     - _Cull: 0
@@ -35,7 +39,11 @@ Material:
     - _OutlineFadeEnd: 60
     - _OutlineFadeStart: 30
     - _OutlineNearDistance: 5
+    - _OutlineScreenFlat: 1
     - _OutlineWidth: 0.005
+    - _Pattern: 0
+    - _PatternBlend: 0.25
+    - _PatternScale: 1
     - _RimIntensity: 0.35
     - _RimPower: 4
     - _ShadeSoftness: 0.03
@@ -45,6 +53,7 @@ Material:
     - _SpecularPower: 48
     - _SrcBlend: 1
     - _Surface: 0
+    - _VertexColor: 0
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.78431374, g: 0.627451, b: 0.3882353, a: 1}

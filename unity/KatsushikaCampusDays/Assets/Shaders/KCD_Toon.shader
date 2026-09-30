@@ -22,6 +22,7 @@ Shader "KCD/Toon"
         _OutlineNearDistance("Outline Near Distance (m)", Range(0.5, 30)) = 5
         _OutlineFadeStart("Outline Fade Start (m)", Range(0, 200)) = 30
         _OutlineFadeEnd("Outline Fade End (m)", Range(0, 200)) = 60
+        _OutlineScreenFlat("Outline Screen Flat", Range(0, 1)) = 0
         _EmissionColor("Emission Color", Color) = (0,0,0,1)
         _Cutoff("Alpha Cutoff", Range(0,1)) = 0.5
 
@@ -67,6 +68,7 @@ Shader "KCD/Toon"
         half   _OutlineNearDistance;
         half   _OutlineFadeStart;
         half   _OutlineFadeEnd;
+        half   _OutlineScreenFlat;
         half   _Cutoff;
         half   _Pattern;
         float  _PatternScale;
@@ -140,7 +142,15 @@ Shader "KCD/Toon"
                 float cameraDistance = length(GetCameraPositionWS() - positionInputs.positionWS);
                 float distanceScale = clamp(cameraDistance, 0.5, _OutlineNearDistance);
                 float fade = 1.0 - smoothstep(_OutlineFadeStart, _OutlineFadeEnd, cameraDistance);
-                float3 offsetWS = normalInputs.normalWS * (_OutlineWidth * distanceScale * fade);
+                // _OutlineScreenFlat = 1 では、法線の視線に沿う成分を、手前向きなら消し、奥向きなら 1/4 に縮めて、
+                // 殻を画面の面に沿って押し出す。服に沿った薄い物（リボンの輪・襟）は、
+                // 法線の向きのまま押すと殻の裏が奥の服の後ろへ回り、輪郭が物から離れた弧や交差した線になる。
+                // 奥へ少し残すのは、片面の布の裏で殻が面と重なってちらつかないようにするため。
+                float3 normalWS = normalInputs.normalWS;
+                float3 viewDirWS = normalize(positionInputs.positionWS - GetCameraPositionWS());
+                float viewDot = dot(normalWS, viewDirWS);
+                normalWS -= _OutlineScreenFlat * (viewDot - 0.25 * max(viewDot, 0.0)) * viewDirWS;
+                float3 offsetWS = normalWS * (_OutlineWidth * distanceScale * fade);
 
                 output.positionCS = TransformWorldToHClip(positionInputs.positionWS + offsetWS);
                 output.fogFactor = ComputeFogFactor(output.positionCS.z);
