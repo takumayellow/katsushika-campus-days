@@ -96,13 +96,44 @@ def _el_at_z(head, az: np.ndarray, z: np.ndarray) -> np.ndarray:
                                grid) for a, zz in zip(az, z)])
 
 
+def _carrier(p: dict, head, pts: np.ndarray, *, base: float, gain: float,
+             lift: float, ease: float = 0.3) -> np.ndarray:
+    """髪を載せる形へ、頭の形に沿って作った髪の点 pts を空間ごと移す。
+
+    目の少し下（顎→頭頂の base の高さ）から上で、幅と後頭部の奥行きを頭頂へ
+    向けて 1 → gain 倍へ広げ、目の少し下から頭頂までの高さを lift 倍にする。
+    頭頂より上へ出た殻の頂は同じ勾配のまま広げ続ける（mirai の殻の頂で幅は
+    約 1.3 倍）。
+    顔の前面の奥行きは変えないので、前髪は額から浮かない。頭の形に沿わせた
+    殻は頭蓋に貼り付いた兜に見えるので、殻と頭の間を目より上で空けて髪の
+    量を出す。
+
+    広がり始めは ease の幅で 2 次から直線へつなぎ、base の高さの横髪に
+    折れ目を作らない。広げる倍率は z だけで決まるので、base より下の横髪
+    の毛先は動かない（載せる形ごと広げた根元から毛先が外へ開かない）。
+    """
+    hd = p["head_d"]
+    z0 = p["z"]["chin"] + (p["z"]["top"] - p["z"]["chin"]) * base
+    u = (pts[:, 2] - z0) / (p["z"]["top"] - z0)
+    r = np.where(u <= 0.0, 0.0,
+                 np.where(u < ease, u * u / (2.0 * ease), u - 0.5 * ease)) / (1.0 - 0.5 * ease)
+    k = 1.0 + (gain - 1.0) * r
+    d = pts - head.center
+    back = _smooth((d[:, 1] / hd + 0.15) / 0.30)   # 顔の前面 0 .. 横から後ろ 1
+    return head.center + np.stack([
+        d[:, 0] * k,
+        d[:, 1] * (1.0 + (k - 1.0) * back),
+        d[:, 2] + (lift - 1.0) * (p["z"]["top"] - z0) * r * r], axis=1)
+
+
 def _bang_tips(p: dict, head, az: np.ndarray, bangs: dict):
     """殻から続けて下ろす前髪の、方位ごとの毛先の極角と前髪の重み。
 
     毛先は teeth 枚の歯。歯の先は尖らせ、歯と歯の切れ込みは丸める（切れ込み
     が尖っていると、そこで輪郭線の殻が折れ返って毛先から上へ短い線が出る）。
-    返すのは (歯の先を結んだ包絡の極角, 毛先の極角, 重み)。重みは前髪の
-    範囲の両端で 0 へ落とし、横髪の生え際へ滑らかに戻す。
+    返すのは (歯の先を結んだ包絡の極角, 毛先の極角, 重み, 切れ込みの度合い)。
+    重みは前髪の範囲の両端で 0 へ落とし、横髪の生え際へ滑らかに戻す。
+    切れ込みの度合いは歯の先で 0、歯と歯の切れ込みで 1。
     """
     hh = p["head_h"]
     off = ((az - FRONT + math.pi) % (2 * math.pi)) - math.pi
@@ -116,7 +147,7 @@ def _bang_tips(p: dict, head, az: np.ndarray, bangs: dict):
     el_env = _el_at_z(head, az, z_env)
     el_tip = _el_at_z(head, az, z_env + hh * bangs["notch"] * notch)
     w = _smooth((1.0 - np.abs(us)) / bangs["fade"])
-    return el_env, el_tip, w
+    return el_env, el_tip, w, notch
 
 
 def build_helmet(mb: M.MeshBuilder, p: dict, head, *, front_el: float,
@@ -126,7 +157,8 @@ def build_helmet(mb: M.MeshBuilder, p: dict, head, *, front_el: float,
                  hang_lo: float = 0.26, hang_hi: float = 0.50,
                  inward: float = 0.74, depth: float = 0.10,
                  part: str = "hair_back", nu: int = 72, nv: int = 10,
-                 nh: int = 12, bangs: dict | None = None):
+                 nh: int = 12, bangs: dict | None = None,
+                 carry: dict | None = None):
     """地髪と横髪・後ろ髪を 1 枚の連続した殻で作る。
 
     房を並べる方式だと、地髪の縁から房が垂れる境目が「帽子の下のプリーツ
@@ -150,6 +182,12 @@ def build_helmet(mb: M.MeshBuilder, p: dict, head, *, front_el: float,
     - fade: 前髪の範囲の両端で横髪へ戻す幅（reach 比）。
     - onset: 垂れる割合 hang がこれより小さい垂れ始めの横髪は、外へ膨らま
       せず地髪の面の向きのまま下ろす。
+    - groove: 歯と歯の間の溝の深さ（殻の厚みに対する割合）。0 なら前髪は
+      毛先の歯のほかは 1 枚のなめらかな面になり、帽子に見える。
+    - g_from: 溝を始める極角（最も厚い所の極角に対する倍率）。
+
+    carry を渡すと、作り終えた殻を頭より大きい「髪を載せる形」へ移す
+    （`_carrier` の base / gain / lift / ease）。
     """
     hw, hd, hh = p["head_w"], p["head_d"], p["head_h"]
     az = np.linspace(0.0, 2 * math.pi, nu, endpoint=False)
@@ -163,7 +201,11 @@ def build_helmet(mb: M.MeshBuilder, p: dict, head, *, front_el: float,
     # 曲線。そこから縁（前髪なら毛先）へ向けて高さを落とす。
     el_pk = 0.5 * emax
     if bangs:
-        el_env, el_tip, fw = _bang_tips(p, head, az, bangs)
+        el_env, el_tip, fw, notch = _bang_tips(p, head, az, bangs)
+        # 房の溝。歯と歯の切れ込みの列を、毛先へ向けて深く凹ませる。溝の
+        # 深さは切れ込みの度合いに比例させる（2 乗にして溝を細く深くすると、
+        # 3.2 m の輪郭線の殻が溝の底で折れ返る）。
+        groove = bangs.get("groove", 0.0) * fw * notch
         E = emax + (np.maximum(el_tip, emax) - emax) * fw
         e_ref = el_tip + (el_env - el_tip) * bangs["valley"]
         e_ref = emax + (np.maximum(e_ref, emax) - emax) * fw
@@ -180,6 +222,10 @@ def build_helmet(mb: M.MeshBuilder, p: dict, head, *, front_el: float,
             s = np.clip((el - el_pk) / (e_ref - el_pk), 0.0, 1.0)
             g = (1.0 - fw) * np.cos(s * 0.5 * math.pi) ** 0.5 + fw * (1.0 - s ** fall)
             off = np.where(el <= el_pk, rise, r_end + (t_hair - r_end) * g)
+            # 溝は頭頂を避けて始め、毛先へ向けて深くする。頭頂から溝を
+            # 入れると、溝が極へ集まってかぼちゃの筋に見える。
+            e0 = bangs.get("g_from", 1.0) * el_pk
+            off = off * (1.0 - groove * _smooth((el - e0) / np.maximum(e_ref - e0, 1e-6)))
         else:
             off = t_hair * (0.55 + 0.45 * math.sin(min(1.0, t) * math.pi) ** 0.5)
         el = np.maximum(t * E, 1e-3)
@@ -222,6 +268,10 @@ def build_helmet(mb: M.MeshBuilder, p: dict, head, *, front_el: float,
             ridge = ridge * (r_end / t_hair + (1.0 - r_end / t_hair) * _smooth(v / 0.35))[:, None]
         outer.append(pos + ridge)
         inner.append(pos + ridge - nrm * (hw * 0.022 * hang)[:, None])
+    if carry:
+        rings, outer, inner = ([_carrier(p, head, q, **carry) for q in rows]
+                               for rows in (rings, outer, inner))
+        rim = rings[-1]
     # 外殻・内殻・縁の 3 枚は向きが揃っていて、揃って裏返っている
     # (外殻の面が頭の中を向く)。直すときは 3 枚とも返す。
     out = bool(p.get("outward_faces"))
@@ -818,7 +868,8 @@ def build_hair(mb: M.MeshBuilder, p: dict, head, a, fs, uv_box) -> None:
                      bangs=dict(reach=math.radians(78.75), teeth=7,
                                 notch=0.080, droop=0.085, end_v=0.614,
                                 tip=0.020, fall=3.0, valley=0.5, fade=0.25,
-                                onset=0.5))
+                                onset=0.5, groove=0.40, g_from=1.3),
+                     carry=dict(base=0.36, gain=1.25, lift=1.12))
 
     elif style == "long_blunt":
         # 公式 tus_chara02.jpg の頭頂はつるりとした 1 枚のドームで、畝も瘤も
