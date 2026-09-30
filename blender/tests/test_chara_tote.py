@@ -60,13 +60,20 @@ def _pieces(mb, part):
     return [np.array(g) for g in groups.values()]
 
 
+def _rot_y(deg):
+    c, s = math.cos(math.radians(deg)), math.sin(math.radians(deg))
+    return np.array([[c, 0.0, s], [0.0, 1.0, 0.0], [-s, 0.0, c]])
+
+
 def _arm_down(p, a, pts):
-    """右腕を肩を中心に arm_drop だけ下ろした位置（どのモーションも最初にこれを掛ける）。"""
-    th = math.radians(p.get("arm_drop", body.ARM_DROP))
-    c, s = math.cos(-th), math.sin(-th)
-    rot = np.array([[c, 0.0, s], [0.0, 1.0, 0.0], [-s, 0.0, c]])
-    sh = a.shoulder * np.array([-1.0, 1.0, 1.0])
-    return (np.asarray(pts) - sh) @ rot.T + sh
+    """右手に付いた点を、腕を下ろした姿勢へ動かした位置（どのモーションにも掛かる）。
+
+    前腕を肘を中心に elbow_open だけ外へ開き、腕ごと肩を中心に arm_drop だけ下ろす。
+    """
+    flip = np.array([-1.0, 1.0, 1.0])
+    el, sh = a.elbow * flip, a.shoulder * flip
+    opened = (np.asarray(pts) - el) @ _rot_y(body.elbow_open(p)).T + el
+    return (opened - sh) @ _rot_y(-body.arm_drop(p)).T + sh
 
 
 def _bag_pieces(p, a, mb):

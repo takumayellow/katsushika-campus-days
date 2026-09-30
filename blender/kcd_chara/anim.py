@@ -166,14 +166,20 @@ def _fcurves(act):
 D = math.radians
 
 
-def _arms_down(spec: dict, drop: float = ARM_DROP) -> dict:
-    """上腕の回転リストの先頭に内転を足す（左は +Y、右は -Y が「下ろす」向き）。"""
+def _arms_down(spec: dict, drop: float = ARM_DROP, elbow: float = 0.0) -> dict:
+    """上腕の回転リストの先頭に内転を、前腕の回転リストの最後に外への開きを足す。
+
+    左は +Y、右は -Y が「下ろす」向きで、前腕はその逆向きに elbow だけ開く。開きは
+    モーションの肘の曲げの後に掛けるので、肘を曲げて前腕が前を向くほど効かなくなる。
+    """
     out = dict(spec)
-    for bone, sgn in (("LeftUpperArm", 1.0), ("RightUpperArm", -1.0)):
-        ops = spec.get(bone, [])
-        if isinstance(ops, Matrix):
-            continue
-        out[bone] = [("Y", D(sgn * drop))] + list(ops)
+    for side, sgn in (("Left", 1.0), ("Right", -1.0)):
+        ops = spec.get(side + "UpperArm", [])
+        if not isinstance(ops, Matrix):
+            out[side + "UpperArm"] = [("Y", D(sgn * drop))] + list(ops)
+        ops = spec.get(side + "LowerArm", [])
+        if elbow and not isinstance(ops, Matrix):
+            out[side + "LowerArm"] = list(ops) + [("Y", D(-sgn * elbow))]
     return out
 
 
@@ -608,9 +614,10 @@ class Jump(_Legs):
         return spec
 
 
-def _wave(t, drop=ARM_DROP):
+def _wave(t, drop=ARM_DROP, elbow=0.0):
     # 振る腕の Y は -(104 + drop)。_posed が先頭に足す +drop と打ち消し合い、
     # 腕をどれだけ下ろすキャラでも振る手の高さは同じ -104° になる。
+    # 前腕の最後の +elbow も、_posed が最後に足す -elbow と打ち消し合う。
     swing = math.sin(2 * math.pi * 3.0 * t)
     ramp = min(1.0, t / 0.18) * min(1.0, (1.0 - t) / 0.18 + 0.0 if t > 0.82 else 1.0)
     ramp = max(0.0, min(1.0, ramp))
@@ -621,7 +628,8 @@ def _wave(t, drop=ARM_DROP):
         "Head": [("Z", D(5.0) * ramp), ("Y", D(-4.0) * ramp),
                  ("X", D(-3.0) * ramp)],
         "LeftUpperArm": [("Y", D(-(104.0 + drop)) * ramp), ("X", D(-8.0) * ramp)],
-        "LeftLowerArm": [("Y", D(-26.0) * ramp), ("X", D(-24.0) * ramp * (0.5 + 0.5 * swing))],
+        "LeftLowerArm": [("Y", D(-26.0) * ramp), ("X", D(-24.0) * ramp * (0.5 + 0.5 * swing)),
+                         ("Y", D(elbow) * ramp)],
         "LeftHand": [("Y", D(-18.0) * swing * ramp)],
         "RightUpperArm": [("Y", D(3.0)), ("X", D(4.0) * ramp)],
         "RightLowerArm": [("X", D(-14.0))],
@@ -650,31 +658,32 @@ def _talk(t):
     }
 
 
-def _posed(fn, drop=ARM_DROP):
+def _posed(fn, drop=ARM_DROP, elbow=0.0):
     """poser に腕下ろしを合成する。"""
-    return lambda t: _arms_down(fn(t), drop)
+    return lambda t: _arms_down(fn(t), drop, elbow)
 
 
-def action_specs(arm, arm_drop=ARM_DROP, gait=None):
+def action_specs(arm, arm_drop=ARM_DROP, gait=None, elbow_open=0.0):
     """(名前, フレーム数, poser, ループ, キー数) の一覧。
 
     歩き・走りの長さはキャラの脚長から決まる（速度を合わせるため人によって違う）。
-    arm_drop は A ポーズから上腕を下ろす角度（params の "arm_drop"。既定 ARM_DROP）。
+    arm_drop は A ポーズから上腕を下ろす角度、elbow_open は前腕を外へ開く角度
+    （body.arm_drop / body.elbow_open）。
     gait は {"Walk": {...}, "Run": {...}} で GAIT_TARGET をキャラごとに上書きする
     （params の "gait"。v はゲーム側の閾値なので変えないこと）。
     """
-    d = arm_drop
+    d, e = arm_drop, elbow_open
     gait = gait or {}
     walk = Gait(arm, "Walk", **gait.get("Walk", {}))
     run = Gait(arm, "Run", **gait.get("Run", {}))
     jump = Jump(arm)
     return (
-        ("Idle", 60, _posed(_idle, d), True, 9),
-        ("Walk", walk.nframes, _posed(walk.pose, d), True, walk.nframes + 1),
-        ("Run", run.nframes, _posed(run.pose, d), True, run.nframes + 1),
-        ("Jump", jump.nframes, _posed(jump.pose, d), False, jump.nframes),
-        ("Wave", 40, _posed(lambda t: _wave(t, d), d), False, 17),
-        ("Talk", 60, _posed(_talk, d), True, 13),
+        ("Idle", 60, _posed(_idle, d, e), True, 9),
+        ("Walk", walk.nframes, _posed(walk.pose, d, e), True, walk.nframes + 1),
+        ("Run", run.nframes, _posed(run.pose, d, e), True, run.nframes + 1),
+        ("Jump", jump.nframes, _posed(jump.pose, d, e), False, jump.nframes),
+        ("Wave", 40, _posed(lambda t: _wave(t, d, e), d, e), False, 17),
+        ("Talk", 60, _posed(_talk, d, e), True, 13),
     )
 
 
@@ -741,9 +750,9 @@ def setup_shape_drivers(obj, arm) -> list[str]:
     return made
 
 
-def build_actions(arm, arm_drop=ARM_DROP, gait=None) -> list[str]:
+def build_actions(arm, arm_drop=ARM_DROP, gait=None, elbow_open=0.0) -> list[str]:
     names = []
-    for name, nf, fn, loop, keys in action_specs(arm, arm_drop, gait):
+    for name, nf, fn, loop, keys in action_specs(arm, arm_drop, gait, elbow_open):
         act = make_action(arm, name, nf, fn, loop=loop, keys=keys)
         names.append(act.name)
     return names
