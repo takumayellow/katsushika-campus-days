@@ -1406,6 +1406,9 @@ def build_kimono(mb, p, a: B.Anatomy, *, kimono_mat, hakama_mat, shoes,
                   z_top=hak_top, z_bot=hem,
                   r_top=hak_r0, r_bot=hak_r1, pleats=hakama_pleats,
                   amp=hak_amp, flare=1.00, levels=16, clear=0.0235,
+                  # スカートと同じく、ヒダはなめらかな面で張って輪郭の殻を
+                  # 折り目と裾で裂けないようにする。
+                  smooth=True,
                   # 馬乗り袴の切れ上がりは高下駄の坊っちゃんだけ。行灯袴の
                   # マドンナちゃんに掛けると、前中央の裾が持ち上がって
                   # 裾とブーツの口のあいだに素肌が幅 380px 出てしまう。
