@@ -143,6 +143,29 @@ def _smooth(x):
     return x * x * (3.0 - 2.0 * x)
 
 
+HANG_LO, HANG_HI = 0.26, 0.50  # 兜の殻が垂れ始める / 垂れ切る正面からの角度 (pi 比)
+
+
+def _hang(nu: int, hang_lo: float = HANG_LO, hang_hi: float = HANG_HI) -> np.ndarray:
+    """兜の殻の nu 列の方位ごとの、垂れる割合。正面 (前髪) は 0、横から後ろは 1。"""
+    d = _angdist(np.linspace(0.0, 2 * math.pi, nu, endpoint=False)) / math.pi
+    return _smooth((d - hang_lo) / (hang_hi - hang_lo))
+
+
+def _ellipsoid_normals(pts, center) -> np.ndarray:
+    """center に中心を置き pts の広がりに合わせた楕円体と相似な面の、各点での法線。
+
+    半径は左右で共通、前後と上下はそれぞれの側の広がり。下の半径は上より小さく
+    しない（垂れの短いキャラで、頭の中心のすぐ下から法線が真下を向かないように）。
+    """
+    d = np.asarray(pts, dtype=float) - np.asarray(center, dtype=float)
+    hi, lo = d.max(axis=0), -d.min(axis=0)
+    hi[0] = lo[0] = max(hi[0], lo[0])
+    lo[2] = max(lo[2], hi[2])
+    n = d / np.maximum(np.where(d >= 0.0, hi, lo), 1e-9) ** 2
+    return n / np.maximum(np.linalg.norm(n, axis=1, keepdims=True), 1e-12)
+
+
 def _el_at_z(head, az: np.ndarray, z: np.ndarray) -> np.ndarray:
     """方位ごとに、頭の表面の高さが z になる極角。"""
     grid = np.linspace(0.0, 0.75 * math.pi, 271)
@@ -208,7 +231,7 @@ def _helmet_rows(p: dict, head, *, front_el: float,
                  back_el: float, thickness: float, z_end_side: float,
                  z_end_back: float, puff: float = 1.0, ridges: int = 14,
                  ridge_amp: float = 0.30, jag: float = 0.030,
-                 hang_lo: float = 0.26, hang_hi: float = 0.50,
+                 hang_lo: float = HANG_LO, hang_hi: float = HANG_HI,
                  inward: float = 0.74, depth: float = 0.10,
                  nu: int = 72, nv: int = 10,
                  nh: int = 12, bangs: dict | None = None,
@@ -247,7 +270,7 @@ def _helmet_rows(p: dict, head, *, front_el: float,
     az = np.linspace(0.0, 2 * math.pi, nu, endpoint=False)
     emax = _el_max(az, front_el, back_el)
     d = _angdist(az) / math.pi                     # 0=正面 .. 1=真後ろ
-    hang = _smooth((d - hang_lo) / (hang_hi - hang_lo))  # 垂れる割合
+    hang = _hang(nu, hang_lo, hang_hi)             # 垂れる割合
     wb = _smooth((d - 0.50) / 0.50)                # 後ろ寄りの重み
     t_hair = hw * thickness
     crest = 0.5 + 0.5 * np.cos(az * ridges)        # 畝の山
@@ -360,6 +383,11 @@ def build_helmet(mb: M.MeshBuilder, p: dict, head, *, part: str = "hair_back",
     横髪にぼやけた濃い斑が並ぶ（後ろから映すゲームのカメラで一番目立つ）。
     ギザギザは畝と同じ周期で垂れの長さを変えるので、毛先の近くで同じ斑になる。
     畝もギザギザも形には残るので、シルエットは変わらない。
+
+    垂れる所（横と後ろ）の外殻の陰は、さらに殻を囲む楕円体の法線にする。畝の無い
+    殻でも、生え際の縁から垂れへ移る頭の中心の高さで法線の上下の向きが行ごとに
+    行き来する。そこは正面の上から照らしたときに光の反対側の陰の境目に当たり、
+    後頭部の陰が凸凹の染みになる。前髪の範囲は歯の溝の陰を残す。
     """
     # 陰の代理形状。_lay_helmet で張るのは頂点の並びを本物とそろえるためで、
     # 使うのは頂点の位置だけ（法線を求める面は本物の面）。
@@ -374,7 +402,31 @@ def build_helmet(mb: M.MeshBuilder, p: dict, head, *, part: str = "hair_back",
         # そろえないと輪郭線の殻が毛先で裂け、横髪の前の縁に沿った点線になる。
         # shade_as は重なった頂点の法線もそろえる。
         mb.shade_as(v0, f0, proxy.verts)
+        _hang_toward_ellipsoid(mb, p, head, v0, proxy.verts, len(rings[0]),
+                               len(rings) + len(outer),
+                               shape.get("hang_lo", HANG_LO),
+                               shape.get("hang_hi", HANG_HI))
     return rings[-1]
+
+
+def _hang_toward_ellipsoid(mb: M.MeshBuilder, p: dict, head, v0: int, proxy_verts,
+                           nu: int, rows: int, hang_lo: float, hang_hi: float) -> None:
+    """v0 番から張った兜の外殻 (nu 列 rows 行) の垂れる所の陰の法線を、陰の代理形状
+    proxy_verts を囲む楕円体の法線へ寄せる。前髪 (垂れる割合 0) は今の法線のまま。"""
+    n_out = nu * rows                   # 外殻の頂点（その次が頭頂の蓋の 1 点）
+    w = np.tile(_hang(nu, hang_lo, hang_hi), rows)[:, None]
+    N = mb.normal_array()[v0:]
+    ell = _ellipsoid_normals(proxy_verts[:n_out], head.center)
+    if not p.get("outward_faces"):
+        ell = -ell  # 面が頭の中を向いた殻は、書き出す法線も面にそろえて内向き
+    N[:n_out] = N[:n_out] * (1.0 - w) + ell * w
+    # 毛先の縁の帯は外殻の毛先と重なった別の頂点で張るので、同じ法線にそろえる。
+    group = mb.coincident(v0)
+    tip = np.full(group.max() + 1, -1)
+    tip[group[:n_out]] = np.arange(n_out)
+    j = tip[group[n_out:]]
+    N[n_out + np.flatnonzero(j >= 0)] = N[j[j >= 0]]
+    mb.set_normals(v0, N)
 
 
 def strand(mb: M.MeshBuilder, part: str, ctrl, r0: float, r1: float, *,
