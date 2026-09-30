@@ -31,6 +31,17 @@ namespace KCD.Editor
         /// </summary>
         public const float CharacterShadeCrisp = 1f;
 
+        /// <summary>
+        /// 天使の輪（KCD/Toon の _HAIRRING_ON）を描く材質 (#47)。輪の座標は Blender が髪の頂点の UV の 2 枚目に書く
+        /// （blender/kcd_chara/hair.py の RING_MATERIAL と ring_coords）。
+        /// </summary>
+        public const string HairRingMaterial = "hair";
+
+        /// <summary>天使の輪の色。髪の色を <see cref="HairRingHighlight"/> へ寄せる割合。</summary>
+        public const float HairRingLighten = 0.38f;
+
+        private static readonly Color HairRingHighlight = Color.white;
+
         private const string LitShader = "Universal Render Pipeline/Lit";
         private const string ToonShader = "KCD/Toon";
 
@@ -390,6 +401,7 @@ namespace KCD.Editor
 
             SetCharacterColor(material, color);
             ApplyPattern(material, patterns.TryGetValue(name, out Pattern pattern) ? pattern : null, color);
+            ApplyHairRing(material, name, color);
             material.SetFloat("_OutlineWidth", CharacterOutlineWidth);
             ApplyOutlineScreenFlat(material);
             ApplyShadeCrisp(material);
@@ -477,6 +489,7 @@ namespace KCD.Editor
             changed |= ApplyOutlineScreenFlat(material);
             changed |= ApplyShadeCrisp(material);
             changed |= ApplyPattern(material, pattern, declared);
+            changed |= ApplyHairRing(material, name, declared);
             if (changed)
             {
                 EditorUtility.SetDirty(material);
@@ -819,6 +832,44 @@ namespace KCD.Editor
             }
 
             material.SetFloat(ShadeCrispId, CharacterShadeCrisp);
+            return true;
+        }
+
+        private static readonly int HairRingId = Shader.PropertyToID("_HairRing");
+        private static readonly int HairRingColorId = Shader.PropertyToID("_HairRingColor");
+        private const string HairRingKeyword = "_HAIRRING_ON";
+
+        /// <summary>天使の輪の色。髪の色を白へ <see cref="HairRingLighten"/> だけ寄せる。</summary>
+        public static Color HairRingColor(Color hair)
+        {
+            Color ring = Color.Lerp(hair, HairRingHighlight, HairRingLighten);
+            ring.a = 1f;
+            return ring;
+        }
+
+        /// <summary>
+        /// 髪の材質に天使の輪を付ける（ほかの材質は何もしない）。変えたら true。
+        /// hair は髪の色（palette.json の hex）で、輪の色はそこから作る。
+        /// </summary>
+        public static bool ApplyHairRing(Material material, string name, Color hair)
+        {
+            if (name != HairRingMaterial || !material.HasProperty(HairRingId))
+            {
+                return false;
+            }
+
+            Color ring = HairRingColor(hair);
+            bool same = material.GetFloat(HairRingId) == 1f
+                && material.IsKeywordEnabled(HairRingKeyword)
+                && Same(material.GetColor(HairRingColorId), ring);
+            if (same)
+            {
+                return false;
+            }
+
+            material.SetFloat(HairRingId, 1f);
+            material.EnableKeyword(HairRingKeyword);
+            material.SetColor(HairRingColorId, ring);
             return true;
         }
 

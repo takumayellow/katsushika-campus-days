@@ -38,6 +38,20 @@ Shader "KCD/Toon"
         // FBX の頂点カラーは sRGB で入ってくるので、リニア空間では頂点段でリニアに直す。
         [Toggle(_VERTEXCOLOR_ON)] _VertexColor("Vertex Color", Float) = 0
 
+        // 髪の天使の輪（ツヤの帯, #47）。Blender が髪の頂点の高さと向きを UV の 2 枚目に書く
+        // （x = 高さ。髪の頂上が 0、頭の中心の高さが 0.5。y = 正面からの方位角の絶対値 / pi。
+        // kcd_chara/hair.py の ring_coords）。
+        // 帯は x が Top〜Bottom の間。下の縁は毛先へ向く三角の歯にし、後ろほど淡くする。
+        // カメラから見て頭の輪郭に近い所ほど帯を Droop だけ下げ、帯を頭の輪郭に沿った弧にする。
+        [Toggle(_HAIRRING_ON)] _HairRing("Hair Ring", Float) = 0
+        _HairRingColor("Hair Ring Color", Color) = (1, 1, 1, 1)
+        _HairRingTop("Hair Ring Top", Range(0, 1)) = 0.13
+        _HairRingBottom("Hair Ring Bottom", Range(0, 1)) = 0.165
+        _HairRingTeeth("Hair Ring Teeth (per half turn)", Float) = 7
+        _HairRingToothDepth("Hair Ring Tooth Depth", Range(0, 0.2)) = 0.04
+        _HairRingBack("Hair Ring Strength At Back", Range(0, 1)) = 0.4
+        _HairRingDroop("Hair Ring Droop At Silhouette", Range(0, 0.2)) = 0.07
+
         // Surface / blending state（マテリアル側から差し替える）
         [HideInInspector] _Surface("__surface", Float) = 0.0
         [HideInInspector] _SrcBlend("__src", Float) = 1.0
@@ -76,6 +90,14 @@ Shader "KCD/Toon"
         float  _PatternScale;
         half   _PatternBlend;
         half   _VertexColor;
+        half4  _HairRingColor;
+        half   _HairRing;
+        half   _HairRingTop;
+        half   _HairRingBottom;
+        half   _HairRingTeeth;
+        half   _HairRingToothDepth;
+        half   _HairRingBack;
+        half   _HairRingDroop;
         half   _Surface;
         half   _SrcBlend;
         half   _DstBlend;
@@ -197,6 +219,7 @@ Shader "KCD/Toon"
             #pragma shader_feature_local_fragment _ALPHATEST_ON
             #pragma shader_feature_local _PATTERN_ON
             #pragma shader_feature_local _VERTEXCOLOR_ON
+            #pragma shader_feature_local _HAIRRING_ON
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
             #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
@@ -220,6 +243,9 @@ Shader "KCD/Toon"
                 float4 positionOS : POSITION;
                 float3 normalOS   : NORMAL;
                 float2 uv         : TEXCOORD0;
+                #if defined(_HAIRRING_ON)
+                    float2 ring       : TEXCOORD1;
+                #endif
                 #if defined(_PATTERN_ON)
                     float3 generated  : TEXCOORD2;
                     float3 bindNormal : TEXCOORD3;
@@ -233,7 +259,7 @@ Shader "KCD/Toon"
             struct Varyings
             {
                 float4 positionCS : SV_POSITION;
-                float2 uv         : TEXCOORD0;
+                float4 uv         : TEXCOORD0;  // xy = _BaseMap, zw = 天使の輪の座標（target 2.0 の補間器は 8 本まで）
                 float3 positionWS : TEXCOORD1;
                 half3  normalWS   : TEXCOORD2;
                 half3  vertexSH   : TEXCOORD3;
@@ -248,6 +274,16 @@ Shader "KCD/Toon"
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
+            // カメラから見て、頭の輪郭にどれだけ近いか (0..1)。頭の縦の軸は物体の原点を通る
+            // （Blender は頭の中心を x = y = 0 に置く）。軸から頂点への水平の向きが画面の横を向くほど 1。
+            float HairRingSilhouette(float3 positionWS)
+            {
+                float2 radial = positionWS.xz - TransformObjectToWorld(float3(0.0, 0.0, 0.0)).xz;
+                float2 right = UNITY_MATRIX_V[0].xz;
+                float side = dot(radial, right) * rsqrt(max(dot(radial, radial) * dot(right, right), 1e-12));
+                return side * side;
+            }
+
             Varyings ToonVertex(Attributes input)
             {
                 Varyings output = (Varyings)0;
@@ -260,7 +296,11 @@ Shader "KCD/Toon"
                 output.positionCS = positionInputs.positionCS;
                 output.positionWS = positionInputs.positionWS;
                 output.normalWS = normalInputs.normalWS;
-                output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
+                output.uv.xy = TRANSFORM_TEX(input.uv, _BaseMap);
+                #if defined(_HAIRRING_ON)
+                    output.uv.zw = input.ring;
+                    output.uv.z -= _HairRingDroop * HairRingSilhouette(positionInputs.positionWS);
+                #endif
                 output.vertexSH = SampleSHVertex(normalInputs.normalWS);
                 output.fogFactor = ComputeFogFactor(positionInputs.positionCS.z);
                 #if defined(_PATTERN_ON)
@@ -322,6 +362,19 @@ Shader "KCD/Toon"
                 return color;
             }
 
+            // 天使の輪の濃さ (0..1)。ring.x = 高さ（髪の頂上 0、頭の中心 0.5）、ring.y = 正面からの方位角の絶対値 / pi。
+            // 縁は fwidth で画面の 1 画素の幅にする（面の大きさやカメラとの距離で縁がぼけない）。
+            half HairRingMask(float2 ring)
+            {
+                // 下の縁は毛先へ向く三角の歯。歯の先で ToothDepth だけ下へ伸びる
+                float tooth = 1.0 - abs(frac(ring.y * _HairRingTeeth) * 2.0 - 1.0);
+                float belowTop = ring.x - _HairRingTop;
+                float aboveBottom = _HairRingBottom + _HairRingToothDepth * tooth - ring.x;
+                float inside = saturate(belowTop / max(fwidth(belowTop), 1e-5) + 0.5)
+                             * saturate(aboveBottom / max(fwidth(aboveBottom), 1e-5) + 0.5);
+                return (half)(inside * lerp(1.0, _HairRingBack, smoothstep(0.4, 1.0, ring.y)));
+            }
+
             // 2 段階のトゥーンランプ。1.0 = 明部, 中間, 0.0 = 最暗部。
             half3 ToonRamp(half ndotl, half shadowAttenuation, half3 albedo)
             {
@@ -349,7 +402,7 @@ Shader "KCD/Toon"
             {
                 UNITY_SETUP_INSTANCE_ID(input);
 
-                half4 baseSample = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv) * _BaseColor;
+                half4 baseSample = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv.xy) * _BaseColor;
                 half3 albedo = baseSample.rgb;
                 half alpha = baseSample.a;
 
@@ -358,6 +411,9 @@ Shader "KCD/Toon"
                 #endif
                 #if defined(_VERTEXCOLOR_ON)
                     albedo *= input.vertexColor;
+                #endif
+                #if defined(_HAIRRING_ON)
+                    albedo = lerp(albedo, _HairRingColor.rgb, HairRingMask(input.uv.zw));
                 #endif
 
                 #if defined(_ALPHATEST_ON)

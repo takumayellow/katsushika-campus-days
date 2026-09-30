@@ -1167,3 +1167,76 @@ def build_hair(mb: M.MeshBuilder, p: dict, head, a, fs, uv_box) -> None:
         _glasses(mb, p, head, fs, uv_box)
 
     _ = a
+
+
+# --------------------------------------------------------------------------- #
+#  天使の輪（髪のツヤの帯）の座標
+# --------------------------------------------------------------------------- #
+#: 天使の輪の座標を書く UV の名前。assign_uvs の "UVMap" の後に作るので、Unity では
+#: uv の 2 枚目（TEXCOORD1）になり、KCD/Toon の _HAIRRING_ON が読む (#47)。
+RING_UV = "hair_ring"
+
+#: 天使の輪を描く材質。
+RING_MATERIAL = "hair"
+
+#: 髪でない頂点に書く座標。u = 1 は頭の中心より下なので帯の外になる。
+RING_OUTSIDE = (1.0, 1.0)
+
+#: 髪の頂上の高さを測る範囲。頭の軸からの水平の距離で、x と y をそれぞれ頭の半径で割って測る。
+RING_CROWN_RADIUS = 0.3
+
+
+def _head_local(head, co) -> np.ndarray:
+    return (np.asarray(co, dtype=float).reshape(-1, 3) - head.center) / head.scale
+
+
+def ring_top(head, co) -> float:
+    """髪の頂上の高さ。頭の中心から測り、頭の縦の半径を 1 とする。
+
+    頭の軸の近くの髪だけで測るので、横へ跳ねた房は数えない。
+    mirai は髪の殻が厚く 1.43、ほかは 1.10〜1.19（2026-09-30）。
+    """
+    d = _head_local(head, co)
+    near = np.hypot(d[:, 0], d[:, 1]) < RING_CROWN_RADIUS
+    return float(d[near, 2].max() if near.any() else d[:, 2].max())
+
+
+def ring_coords(head, co, top: float) -> np.ndarray:
+    """髪の頂点の位置を、天使の輪の座標 (u, v) にする。
+
+    u は高さの目盛り。髪の頂上 top が 0、頭の中心の高さが 0.5、その下は 1 で止める。
+    頭の中心からの向きでなく高さで測るので、前髪の房が地の髪の上に重なっていても、
+    同じ高さなら同じ u になり、帯の縁が層ごとにずれない。
+    v は正面（-Y）からの方位角の絶対値 / pi（0 = 正面, 0.5 = 真横, 1 = 真後ろ）。
+    左右を絶対値で畳むので、真後ろに継ぎ目ができない。
+    シェーダは頂点の座標を補間して画素ごとに帯の縁を決めるので、縁は面の大きさによらず細い。
+    """
+    if top <= 0.0:
+        raise ValueError(f"髪の頂上 {top} が頭の中心より上にない")
+    d = _head_local(head, co)
+    u = np.clip((top - d[:, 2]) / (2.0 * top), 0.0, 1.0)
+    v = np.abs(np.arctan2(d[:, 0], -d[:, 1])) / math.pi
+    return np.stack([u, v], axis=1)
+
+
+def ring_uvs(mb: M.MeshBuilder, head) -> np.ndarray:
+    """頂点ごとの天使の輪の座標。髪の材質の面の頂点は ring_coords、ほかは RING_OUTSIDE。"""
+    uv = np.tile(np.array(RING_OUTSIDE, dtype=float), (len(mb.verts), 1))
+    idx = sorted({i for f, m in zip(mb.faces, mb.face_mat) if m == RING_MATERIAL for i in f})
+    if idx:
+        co = np.asarray(mb.verts, dtype=float)[idx]
+        uv[idx] = ring_coords(head, co, ring_top(head, co))
+    return uv
+
+
+def assign_ring_uvs(obj, uv: np.ndarray) -> None:
+    """ring_uvs の値を UV "hair_ring" に書く。body.assign_uvs の後に呼ぶ（2 枚目の UV にする）。"""
+    me = obj.data
+    if me.uv_layers.get("UVMap") is None:
+        raise RuntimeError("body.assign_uvs の後に呼ぶ（天使の輪の UV を 2 枚目にするため）")
+    layer = me.uv_layers.get(RING_UV) or me.uv_layers.new(name=RING_UV)
+    loop_v = np.empty(len(me.loops), dtype=np.int32)
+    me.loops.foreach_get("vertex_index", loop_v)
+    data = np.asarray(uv, dtype=np.float32)[loop_v]
+    layer.data.foreach_set("uv", np.ascontiguousarray(data).ravel())
+    me.update()

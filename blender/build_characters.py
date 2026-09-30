@@ -236,6 +236,7 @@ def build_character(cid: str, out_root: str, face_size: int, fbx_opts: dict,
 
     obj = mb.to_object(cid, materials)
     body.assign_uvs(obj, uv_box, face_uvs)
+    hair.assign_ring_uvs(obj, hair.ring_uvs(mb, head))
 
     arm, pos = rig.build_armature(p, a, cid)
     method = rig.bind(obj, arm, pos)
