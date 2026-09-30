@@ -1,4 +1,4 @@
-"""セーラー服のプリーツスカート (#47)。
+"""セーラー服のプリーツスカートと着物の袴 (#47)。
 
 Unity の輪郭線（KCD_Toon.shader の Outline パス）は、FBX に書き出した角ごとの法線の向きへ
 頂点を押し出した殻の裏面で描く。ヒダの面を 1 枚ずつ平らに塗ると、折り目の頂点が面ごとに
@@ -20,6 +20,9 @@ HULL_AT_3M = OUTLINE_WIDTH * 3.0
 
 SKIRT = [cid for cid in params.ALL_IDS
          if params.CHARACTERS[cid]["outfit"].startswith("seifuku")]
+HAKAMA = [cid for cid in params.ALL_IDS
+          if params.CHARACTERS[cid]["outfit"].startswith("kimono")]
+PLEATS = [(cid, "skirt") for cid in SKIRT] + [(cid, "hakama") for cid in HAKAMA]
 
 
 @functools.cache
@@ -66,13 +69,17 @@ def test_seifuku_wears_a_skirt():
     assert {"mirai", "inari", "kaname", "sora"} <= set(SKIRT)
 
 
-@pytest.mark.parametrize("name", SKIRT)
-def test_skirt_corners_share_one_normal(name):
+def test_kimono_wears_a_hakama():
+    assert {"botchan", "madonna"} <= set(HAKAMA)
+
+
+@pytest.mark.parametrize("name,part", PLEATS)
+def test_pleat_corners_share_one_normal(name, part):
     """頂点ごとに角の法線が 1 本にそろい、輪郭の殻が折り目で裂けない。"""
-    corners = _corner_normals(_build(name), "skirt")
-    # ヒダ 26 本 × 4 列の格子が 10 段ある
+    corners = _corner_normals(_build(name), part)
+    # スカートはヒダ 26 本 × 4 列の格子が 10 段、袴は 10〜16 本 × 4 列が 17 段ある
     assert len(corners) > 500, (name, len(corners))
     spread = max(np.linalg.norm(np.array(ns) - ns[0], axis=1).max()
                  for ns in corners.values())
-    # 3 m で殻が裂ける幅。面ごとの法線では裾の折り返しで 29.6 mm 開く
-    assert spread * HULL_AT_3M < 1e-4, (name, spread * HULL_AT_3M)
+    # 3 m で殻が裂ける幅。面ごとの法線では裾の折り返しで 29〜30 mm 開く
+    assert spread * HULL_AT_3M < 1e-4, (name, part, spread * HULL_AT_3M)
