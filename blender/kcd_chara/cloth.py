@@ -234,7 +234,7 @@ def pleated_skirt(mb: M.MeshBuilder, p, a, mat, part, *, z_top, z_bot,
 def leg_profile(a: B.Anatomy):
     """素体の脚（body.leg_tube）の足首から股への z・半径・x（+X 側の脚）。
 
-    足首と膝を直線で結ぶとふくらはぎの膨らみ（r1*1.12）を取りこぼし、靴下や
+    足首と膝を直線で結ぶとふくらはぎの膨らみ（膝の半径 × a.leg_taper[1]）を取りこぼし、靴下や
     ブーツが脚を突き抜けて肌が縞状に露出する。脚の芯の点をそのまま使う。
     """
     path, radii = B.leg_tube(a, 1)

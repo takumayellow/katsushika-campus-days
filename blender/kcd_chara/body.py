@@ -529,10 +529,14 @@ class Anatomy:
         self.hand_tip = self.wrist + d2 * l3
         self.arm_dirs = (d1, d2)
 
-        self.hip_joint = np.array([self.hip_rx * 0.50, 0.0, z["crotch"] + h * 0.012])
-        self.knee = np.array([self.hip_rx * 0.47, 0.0, z["knee"]])
-        self.ankle = np.array([self.hip_rx * 0.45, 0.0, z["ankle"]])
-        self.toe = np.array([self.hip_rx * 0.45, -self.foot[1] * 0.78, self.foot[2] * 0.30])
+        # 股関節・膝・足首の横の位置（腰の半幅に対する比）
+        x_hip, x_knee, x_ankle = b.get("leg_x", (0.50, 0.47, 0.45))
+        self.hip_joint = np.array([self.hip_rx * x_hip, 0.0, z["crotch"] + h * 0.012])
+        self.knee = np.array([self.hip_rx * x_knee, 0.0, z["knee"]])
+        self.ankle = np.array([self.hip_rx * x_ankle, 0.0, z["ankle"]])
+        self.toe = np.array([self.hip_rx * x_ankle, -self.foot[1] * 0.78, self.foot[2] * 0.30])
+        # 腿の中ほどの半径（付け根に対する比）と、ふくらはぎの半径（膝に対する比）
+        self.leg_taper = b.get("leg_taper", (0.86, 1.12))
 
 
 def _torso_profile(p: dict, a: Anatomy):
@@ -825,7 +829,8 @@ def leg_tube(a: Anatomy, sgn):
     thigh_mid = hp + (kn - hp) * 0.42 + np.array([0.0, -0.004, 0.0])
     calf_mid = kn + (an - kn) * 0.36 + np.array([0.0, -0.006, 0.0])
     path = np.array([hp + (hp - kn) * 0.10, thigh_mid, kn, calf_mid, an])
-    return path, [r0 * 1.02, r0 * 0.86, r1, r1 * 1.12, r2]
+    thigh, calf = a.leg_taper
+    return path, [r0 * 1.02, r0 * thigh, r1, r1 * calf, r2]
 
 
 def leg_rings(p: dict, a: Anatomy, sgn):
