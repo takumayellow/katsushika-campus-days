@@ -613,6 +613,7 @@ class Hand(NamedTuple):
 
 
 def hand_frame(p: dict, a: Anatomy, sgn: int) -> Hand:
+    """sgn の側（+1 で +x の左手、-1 で右手）の手の枠と寸法。"""
     hr = a.hand_r
     chibi = bool(p.get("chibi"))
     wr = a.wrist * np.array([sgn, 1, 1])
@@ -648,7 +649,7 @@ def _finger_bases(hd: Hand):
 
 
 def finger_path(base, f, n_hat, length: float, curl: float = FINGER_CURL,
-                angles=None) -> np.ndarray:
+                angles: tuple[float, ...] | None = None) -> np.ndarray:
     """3 節の指の芯（4 点）。手のひら側（-n_hat）へ曲げる。
 
     curl は節ごとに -n_hat を足して向きを正規化するだけなので、90° を越えて
@@ -669,7 +670,7 @@ def finger_path(base, f, n_hat, length: float, curl: float = FINGER_CURL,
 
 
 def grip_hook(p: dict, a: Anatomy, sgn: int = -1):
-    """握った持ち手の束の芯（手の幅の中央）と、束から手首へ向かう向き。
+    """握った持ち手の束の芯（手の幅の中央）。
 
     中指・薬指の真ん中の節の中点から、曲がりの内側へ指の太さと束の半径の
     ぶんだけ寄せる。
@@ -681,12 +682,12 @@ def grip_hook(p: dict, a: Anatomy, sgn: int = -1):
             for b, ln in _finger_bases(hd)[1:3]]
     c = (np.mean(mids, axis=0)
          + inward * (hd.finger_r * 0.94 + GRIP_ROLL * p["height"]))
-    return c, inward
+    return c
 
 
 def _finger(mb: M.MeshBuilder, part: str, base, f, n_hat, length: float,
             radius: float, curl: float = FINGER_CURL, n: int = 6,
-            angles=None) -> None:
+            angles: tuple[float, ...] | None = None) -> None:
     """3 節のカプセル指。"""
     pts = finger_path(base, f, n_hat, length, curl, angles)
     radii = [radius * 1.00, radius * 0.94, radius * 0.84, radius * 0.58]

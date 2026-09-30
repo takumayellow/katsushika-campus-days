@@ -699,7 +699,7 @@ def _tote_strap(h: float, sx: int, grip_y: float):
         t = path[min(k + 1, len(path) - 1)] - path[max(k - 1, 0)]
         t = t / np.linalg.norm(t)
         e1 = np.array([sx, 0.0, 0.0]) - t * t[0] * sx
-        e1 = e1 / np.linalg.norm(e1)
+        e1 = e1 / (np.linalg.norm(e1) + 1e-12)
         e2 = np.cross(t, e1)
         # 手の中（握りの芯から束の外）で平たい帯から丸い束へ
         s = float(np.clip((abs(c[1]) - grip_y) / (h * 0.012), 0.0, 1.0))
@@ -720,8 +720,11 @@ def _tote(mb, p, a: B.Anatomy):
     真下へ下がるようにする。
     """
     h = p["height"]
-    grip, _ = B.grip_hook(p, a)
     hd = B.hand_frame(p, a, -1)
+    if hd.mitten:
+        # ミトンの手は指を曲げないので、持ち手の束が拳の前で宙に浮く
+        raise ValueError("トートはミトンの手では握れない")
+    grip = B.grip_hook(p, a)
     th = math.radians(p.get("arm_drop", B.ARM_DROP))
     R = np.array([[math.cos(th), 0.0, math.sin(th)],
                   [0.0, 1.0, 0.0],
