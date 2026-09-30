@@ -14,6 +14,7 @@ import pytest
 
 from kcd_chara import body, cloth, hair, params
 from kcd_chara import mesh as M
+from raycast import first_hit
 
 SEIFUKU = [cid for cid in params.ALL_IDS
            if params.CHARACTERS[cid]["outfit"].startswith("seifuku")]
@@ -59,22 +60,6 @@ def _triangles(mb, keep):
     tri = [(f[0], f[k], f[k + 1]) for f, m in zip(mb.faces, mb.face_mat) if keep(f, m)
            for k in range(1, len(f) - 1)]
     return V[np.array(tri)]
-
-
-def _first_hit(orig, d, tri):
-    """光線 orig + t d が三角形の束 tri に最初に当たる t（当たらなければ inf）。"""
-    A, e1, e2 = tri[:, 0], tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0]
-    pv = np.cross(d, e2)
-    det = np.einsum("ij,ij->i", e1, pv)
-    ok = np.abs(det) > 1e-14
-    inv = np.where(ok, 1.0 / np.where(ok, det, 1.0), 0.0)
-    tv = orig - A
-    u = np.einsum("ij,ij->i", tv, pv) * inv
-    qv = np.cross(tv, e1)
-    v = (qv @ d) * inv
-    t = np.einsum("ij,ij->i", e2, qv) * inv
-    hit = ok & (u >= 0) & (v >= 0) & (u + v <= 1) & (t > 0)
-    return float(t[hit].min()) if hit.any() else np.inf
 
 
 @pytest.mark.parametrize("name", SEIFUKU)
@@ -140,7 +125,7 @@ def test_nothing_pokes_through_front_collar(name):
                     continue
                 n /= np.linalg.norm(n)
                 c = q.mean(axis=0)
-                t = _first_hit(c + n * reach, -n, tri)
+                t = first_hit(c + n * reach, -n, tri)
                 checked += 1
                 # 前襟より手前（外）で身頃・袖・パーカー・肌に当たらない
                 assert t > reach - 1e-4, (name, c.round(3).tolist(), reach - t)

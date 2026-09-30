@@ -216,26 +216,14 @@ def pleated_skirt(mb: M.MeshBuilder, p, a, mat, part, *, z_top, z_bot,
 
 
 def leg_profile(a: B.Anatomy):
-    """素体の脚（body.build_legs）と同じ z→半径プロファイル。
+    """素体の脚（body.leg_tube）の足首から股への z・半径・x（+X 側の脚）。
 
     足首と膝を直線で結ぶとふくらはぎの膨らみ（r1*1.12）を取りこぼし、靴下や
-    ブーツが脚を突き抜けて肌が縞状に露出する。実キーポイントをそのまま使う。
+    ブーツが脚を突き抜けて肌が縞状に露出する。脚の芯の点をそのまま使う。
     """
-    r0, r1, r2 = a.leg_r
-    z_an, z_kn, z_hp = a.ankle[2], a.knee[2], a.hip_joint[2]
-    x_an, x_kn, x_hp = a.ankle[0], a.knee[0], a.hip_joint[0]
-    zs = np.array([z_an,
-                   z_kn + (z_an - z_kn) * 0.36,
-                   z_kn,
-                   z_hp + (z_kn - z_hp) * 0.42,
-                   z_hp + (z_hp - z_kn) * 0.10])
-    rr = np.array([r2, r1 * 1.12, r1, r0 * 0.86, r0 * 1.02])
-    xs = np.array([x_an,
-                   x_kn + (x_an - x_kn) * 0.36,
-                   x_kn,
-                   x_hp + (x_kn - x_hp) * 0.42,
-                   x_hp + (x_hp - x_kn) * 0.10])
-    return zs, rr, xs
+    path, radii = B.leg_tube(a, 1)
+    path = path[::-1]
+    return path[:, 2], np.array(radii[::-1]), path[:, 0]
 
 
 def inner_envelope(p, a: B.Anatomy, z_list):
@@ -271,6 +259,48 @@ def leg_sleeve(mb: M.MeshBuilder, p, a: B.Anatomy, mat, part, z_lo, z_hi,
         for zi, xi, ri in zip(zl, x, r):
             rings.append(M.ring(seg, ri, ri * 1.02, power=2.0, cx=float(xi),
                                 cy=-0.004, z=float(zi)))
+        with mb.part(f"{part}_{'l' if sgn > 0 else 'r'}"):
+            mb.add_grid(rings, mat, smooth=True)
+
+
+#: 靴下を脚の面から浮かせる距離（身長比）
+_SOCK_GAP = 0.0016
+#: 口ゴムの盛り（身長比）
+_SOCK_CUFF = 0.0012
+
+
+def socks(mb: M.MeshBuilder, p, a: B.Anatomy, mat, part, z_lo, z_hi):
+    """脚の面に沿わせて靴下を張る。
+
+    脚の筒のリングを、同じ段・同じ列のまま芯から外へ少しだけ押し出す。上端と下端の
+    段だけは脚のリングの間を線形に補間する。足首より下は足首のリングをそのまま下ろす
+    （靴の中）。上端は口ゴムの分だけ厚くし、その上の段を肌の内へ沈めて筒の切り口を
+    見せない。ウェイトは rig._follow_skin が脚の面から写す。
+    """
+    h = p["height"]
+    for sgn in (-1, 1):
+        # 足首から股へ（np.interp は高さの昇順が要る）
+        skin = np.array(B.leg_rings(p, a, sgn))[::-1]
+        core = skin.mean(axis=1)
+        cz = core[:, 2]
+        zl = np.union1d([z_lo, z_hi], cz[(cz > z_lo) & (cz < z_hi)])
+        drop = np.minimum(zl - cz[0], 0.0)
+        c = np.stack([np.interp(zl, cz, core[:, k]) for k in range(3)], axis=1)
+        c[:, 2] += drop
+        gap = np.full(len(zl), h * _SOCK_GAP)
+        gap[-1] += h * _SOCK_CUFF
+        rings = []
+        for i, zi in enumerate(zl):
+            v = np.stack([[np.interp(zi, cz, skin[:, j, k]) for k in range(3)]
+                          for j in range(skin.shape[1])])
+            v[:, 2] += drop[i]
+            out = v - c[i]
+            rings.append(v + out / np.linalg.norm(out, axis=1, keepdims=True) * gap[i])
+        # 口ゴムの縁を肌の内へ折り込む
+        tuck = rings[-1] - c[-1]
+        tuck = tuck / np.linalg.norm(tuck, axis=1, keepdims=True)
+        rings.append(rings[-1] - tuck * h * (_SOCK_GAP + _SOCK_CUFF + 0.0008)
+                     + np.array([0.0, 0.0, h * 0.0030]))
         with mb.part(f"{part}_{'l' if sgn > 0 else 'r'}"):
             mb.add_grid(rings, mat, smooth=True)
 
@@ -678,8 +708,8 @@ def build_seifuku(mb, p, a: B.Anatomy, *, apron: bool = False,
     skirt_rings = pleated_skirt(mb, p, a, "cloth_skirt_navy", "skirt",
                                 z_top=waist - h * 0.010, z_bot=hem,
                                 r_top=0.99, r_bot=1.56, pleats=26, amp=0.17)
-    leg_sleeve(mb, p, a, "cloth_socks_black", "socks", z["ankle"] - h * 0.012,
-               z["knee"] - h * 0.028, h * 0.0055)
+    socks(mb, p, a, "cloth_socks_black", "socks", z["ankle"] - h * 0.012,
+          z["knee"] - h * 0.028)
     if "sneakers" in acc:
         shoe(mb, p, a, "shoes_sneaker", heel=False, scale=1.22)
     else:
@@ -1091,7 +1121,8 @@ def _dress_under_hakama(mb, a: B.Anatomy, mat, z_top, *, leg_from: float):
       白地の振袖が覗いていた）。袖は別の部位なので触らない。
     * 足首〜膝の比 leg_from より上の脚の肌。境目をまたぐ面も含める。
       ブーツ（madonna）はブーツの口 BOOT_TOP から上（下半分は筒の中）。
-      高下駄の坊っちゃんは脛を見せるので、裾（0.32）より上の 0.6 から上だけ。
+      高下駄の坊っちゃんは足首から上ぜんぶ。裾は足の甲のすぐ上までしか無く、
+      歩きで後ろへ振った脛が裾の下から肌色の板のように覗く。
       馬乗り袴でも歩きで膝が前の中央を突き抜けて肌色が出ていた。
     """
     z_leg = a.ankle[2] + (a.knee[2] - a.ankle[2]) * leg_from
@@ -1285,7 +1316,7 @@ def build_kimono(mb, p, a: B.Anatomy, *, kimono_mat, hakama_mat, shoes,
     else:
         _boots(mb, p, a)
     _dress_under_hakama(mb, a, hakama_mat, hak_top,
-                        leg_from=0.6 if shoes == "geta" else BOOT_TOP)
+                        leg_from=0.0 if shoes == "geta" else BOOT_TOP)
     if "furoshiki" in p.get("accessories", ()):
         _furoshiki(mb, p, a)
 
