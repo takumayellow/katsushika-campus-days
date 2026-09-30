@@ -266,6 +266,7 @@ class MeshBuilder:
         self._stack: list[str] = []
         self._normals: list[tuple[int, np.ndarray]] = []
         self._outline: list[tuple[int, np.ndarray]] = []
+        self._outline_width: list[tuple[np.ndarray, float]] = []
 
     # -- 部位の記録 --------------------------------------------------------
     @contextmanager
@@ -392,6 +393,32 @@ class MeshBuilder:
         n = np.where(keep[:, None], pooled, n)
         length = np.linalg.norm(n, axis=1, keepdims=True)
         return n / np.maximum(length, 1e-12)
+
+    def set_outline_width(self, indices, scale: float) -> None:
+        """indices の頂点の輪郭線の太さを、マテリアルの太さ（_OutlineWidth）の scale 倍にする。
+
+        部位ごとに細くするときは、indices に part_indices を渡す。
+        """
+        if not 0.0 <= scale <= 1.0:
+            raise ValueError(f"輪郭線の太さの倍率は 0〜1: {scale}")
+        self._outline_width.append((np.asarray(indices, dtype=int).reshape(-1), float(scale)))
+
+    def outline_widths(self, tol: float = 1e-6) -> np.ndarray:
+        """頂点ごとの輪郭線の太さの倍率（0〜1、既定 1）。to_object が頂点カラーの alpha に書く。
+
+        鼻のような数ミリの出っ張りは、顔と同じ太さの殻で囲むと、出っ張りより太い黒い弧になる。
+        同じ頂点に何度か決めたときと、同じ位置に重なった頂点は、細いほうにそろえる
+        （継ぎ目で殻が段になって裂けないように）。
+        """
+        w = np.ones(len(self.verts))
+        if not self.verts:
+            return w
+        for idx, scale in self._outline_width:
+            w[idx] = np.minimum(w[idx], scale)
+        group = self.coincident(0, tol)
+        low = np.ones(group.max() + 1)
+        np.minimum.at(low, group, w)
+        return low[group]
 
     # -- 低レベル ----------------------------------------------------------
     def add_verts(self, pts) -> int:
@@ -576,10 +603,11 @@ class MeshBuilder:
             me.normals_split_custom_set(corner.tolist())
             me.update()
 
-        # 輪郭線の殻を押し出す向きを、FBX の頂点カラー（rgb = n * 0.5 + 0.5）で Unity へ渡す。
-        # 取り込みで tangent に移し（CharacterImporter.BakeOutlineNormals）、Outline パスが読む。
-        outline = np.ones((len(self.verts), 4), dtype=np.float32)
+        # 輪郭線の殻を押し出す向き（rgb = n * 0.5 + 0.5）と太さの倍率（alpha）を、FBX の頂点カラーで
+        # Unity へ渡す。取り込みで tangent に移し（CharacterImporter.BakeOutlineNormals）、Outline パスが読む。
+        outline = np.empty((len(self.verts), 4), dtype=np.float32)
         outline[:, :3] = self.outline_normals() * 0.5 + 0.5
+        outline[:, 3] = self.outline_widths()
         attr = me.color_attributes.new(OUTLINE_ATTR, "FLOAT_COLOR", "POINT")
         attr.data.foreach_set("color", outline.ravel())
         # Unity は FBX の最初の色の層を mesh.colors に読む。色の属性を足しても入れ替わらないよう明示する

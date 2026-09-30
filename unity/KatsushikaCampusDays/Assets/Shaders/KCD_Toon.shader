@@ -137,10 +137,13 @@ Shader "KCD/Toon"
                 UNITY_TRANSFER_INSTANCE_ID(input, output);
 
                 VertexPositionInputs positionInputs = GetVertexPositionInputs(input.positionOS.xyz);
-                // キャラは、陰の法線とは別に求めた殻の向きを tangent に持つ（w = 2 が印。
+                // キャラは、陰の法線とは別に求めた殻の向きを tangent に持つ（w が 2〜3 なのが印。
                 // CharacterImporter.BakeOutlineNormals）。スカートのヒダの壁のように法線が横を向く所で、
                 // 殻が隣のヒダを越えて折れ返らないようにするため。印の無いメッシュは法線のまま押す。
-                float3 outlineOS = input.tangentOS.w > 1.5 ? input.tangentOS.xyz : input.normalOS;
+                // w = 2 + (1 − 太さの倍率)。鼻のような小さな出っ張りは、殻を細くして黒い弧にしない。
+                bool hasOutlineDir = input.tangentOS.w > 1.5;
+                float3 outlineOS = hasOutlineDir ? input.tangentOS.xyz : input.normalOS;
+                float widthScale = hasOutlineDir ? saturate(3.0 - input.tangentOS.w) : 1.0;
                 VertexNormalInputs normalInputs = GetVertexNormalInputs(outlineOS);
 
                 // _OutlineNearDistance までは距離に比例させて画面上の太さを一定にし、それより遠くでは
@@ -157,7 +160,7 @@ Shader "KCD/Toon"
                 float3 viewDirWS = SafeNormalize(positionInputs.positionWS - GetCameraPositionWS());
                 float viewDot = dot(normalWS, viewDirWS);
                 normalWS -= _OutlineScreenFlat * (viewDot - 0.25 * max(viewDot, 0.0)) * viewDirWS;
-                float3 offsetWS = normalWS * (_OutlineWidth * distanceScale * fade);
+                float3 offsetWS = normalWS * (_OutlineWidth * widthScale * distanceScale * fade);
 
                 output.positionCS = TransformWorldToHClip(positionInputs.positionWS + offsetWS);
                 output.fogFactor = ComputeFogFactor(output.positionCS.z);
