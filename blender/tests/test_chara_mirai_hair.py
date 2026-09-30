@@ -175,7 +175,6 @@ def test_mirai_helmet_has_no_collapsed_faces(mirai):
     assert min(area) >= (p["head_w"] * 1e-3) ** 2
 
 
-
 def test_carrier_widens_above_the_eyes_and_keeps_the_face_front(mirai):
     """髪を載せる形は base より下を動かさず、頭頂の高さで幅と後頭部を gain 倍、
     高さを (lift - 1) 倍ぶん上げ、顔の前面の奥行きは変えない。"""
@@ -212,10 +211,10 @@ def test_mirai_hair_stands_off_the_skull_above_the_eyes(mirai):
         return ((np.abs(s[:, 0]).max() - np.abs(h[:, 0]).max()) / hw,
                 (s[:, 1].max() - h[:, 1].max()) / hw)
 
-    assert (P[:, 2].max() - H[:, 2].max()) / hw > 0.25
+    assert (P[:, 2].max() - H[:, 2].max()) / hw > 0.25  # 頭頂の髪の厚みが顔の幅の 1/4 を超える
     side, back = gap(eye + 0.6 * hw)
-    assert side > 0.32 and back > 0.31
-    assert gap(eye)[0] < 0.13
+    assert side > 0.32 and back > 0.31  # 額より上の横と後ろに顔の幅の 3 割の髪
+    assert gap(eye)[0] < 0.13  # 目の高さの横髪は頭から顔の幅の 1 割ほど
 
 
 def test_mirai_bangs_part_into_clumps(mirai):
@@ -233,12 +232,13 @@ def test_mirai_bangs_part_into_clumps(mirai):
         return np.linalg.norm(_shell(m)[:kw["nv"] + 1] - head.center, axis=2)
 
     dip = (radius(flat) - radius(mirai)) / p["head_w"]
-    deep = (notch > 0.9) & (fw > 0.9)
-    tip = (notch < 0.1) & (fw > 0.9)
+    deep = (notch > 0.9) & (fw > 0.9)  # 前髪の中ほどの、歯と歯の切れ込みの列
+    tip = (notch < 0.1) & (fw > 0.9)  # 歯の先の列
     assert deep.sum() >= kw["bangs"]["teeth"] - 1 and tip.any()
-    assert dip[:, deep].max(axis=0).min() > 0.03
+    assert dip[:, deep].max(axis=0).min() > 0.03  # どの切れ込みも顔の幅の 3 %（約 6 mm）凹む
     assert np.abs(dip[:, tip]).max() < 1e-9
-    assert np.abs(dip[:kw["nv"] // 3]).max() < 1e-9
+    assert np.abs(dip[:kw["nv"] // 3]).max() < 1e-9  # 頭頂側の 1/3 のリング
+
 
 def test_mirai_hairpins_face_into_the_head(mirai):
     """ヘアピンは 2 本とも開いた 1 枚板で、面を頭の中へ向ける。

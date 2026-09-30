@@ -102,6 +102,8 @@ def _carrier(p: dict, head, pts: np.ndarray, *, base: float, gain: float,
 
     目の少し下（顎→頭頂の base の高さ）から上で、幅と後頭部の奥行きを頭頂へ
     向けて 1 → gain 倍へ広げ、目の少し下から頭頂までの高さを lift 倍にする。
+    頭頂より上へ出た殻の頂は同じ勾配のまま広げ続ける（mirai の殻の頂で幅は
+    約 1.3 倍）。
     顔の前面の奥行きは変えないので、前髪は額から浮かない。頭の形に沿わせた
     殻は頭蓋に貼り付いた兜に見えるので、殻と頭の間を目より上で空けて髪の
     量を出す。
@@ -185,7 +187,7 @@ def build_helmet(mb: M.MeshBuilder, p: dict, head, *, front_el: float,
     - g_from: 溝を始める極角（最も厚い所の極角に対する倍率）。
 
     carry を渡すと、作り終えた殻を頭より大きい「髪を載せる形」へ移す
-    （`_carrier` の base / gain / lift）。
+    （`_carrier` の base / gain / lift / ease）。
     """
     hw, hd, hh = p["head_w"], p["head_d"], p["head_h"]
     az = np.linspace(0.0, 2 * math.pi, nu, endpoint=False)
@@ -201,8 +203,8 @@ def build_helmet(mb: M.MeshBuilder, p: dict, head, *, front_el: float,
     if bangs:
         el_env, el_tip, fw, notch = _bang_tips(p, head, az, bangs)
         # 房の溝。歯と歯の切れ込みの列を、毛先へ向けて深く凹ませる。溝の
-        # 断面を切れ込みの度合いの 2 乗で細くすると、3.2 m の輪郭線の殻が
-        # 溝の底で折れ返る
+        # 深さは切れ込みの度合いに比例させる（2 乗にして溝を細く深くすると、
+        # 3.2 m の輪郭線の殻が溝の底で折れ返る）。
         groove = bangs.get("groove", 0.0) * fw * notch
         E = emax + (np.maximum(el_tip, emax) - emax) * fw
         e_ref = el_tip + (el_env - el_tip) * bangs["valley"]
@@ -221,7 +223,7 @@ def build_helmet(mb: M.MeshBuilder, p: dict, head, *, front_el: float,
             g = (1.0 - fw) * np.cos(s * 0.5 * math.pi) ** 0.5 + fw * (1.0 - s ** fall)
             off = np.where(el <= el_pk, rise, r_end + (t_hair - r_end) * g)
             # 溝は頭頂を避けて始め、毛先へ向けて深くする。頭頂から溝を
-            # 入れると、溝が極へ集まってかぼちゃの筋に見える
+            # 入れると、溝が極へ集まってかぼちゃの筋に見える。
             e0 = bangs.get("g_from", 1.0) * el_pk
             off = off * (1.0 - groove * _smooth((el - e0) / np.maximum(e_ref - e0, 1e-6)))
         else:
@@ -269,6 +271,7 @@ def build_helmet(mb: M.MeshBuilder, p: dict, head, *, front_el: float,
     if carry:
         rings, outer, inner = ([_carrier(p, head, q, **carry) for q in rows]
                                for rows in (rings, outer, inner))
+        rim = rings[-1]
     # 外殻・内殻・縁の 3 枚は向きが揃っていて、揃って裏返っている
     # (外殻の面が頭の中を向く)。直すときは 3 枚とも返す。
     out = bool(p.get("outward_faces"))
