@@ -119,6 +119,7 @@ Shader "KCD/Toon"
             {
                 float4 positionOS : POSITION;
                 float3 normalOS   : NORMAL;
+                float4 tangentOS  : TANGENT;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
@@ -136,7 +137,11 @@ Shader "KCD/Toon"
                 UNITY_TRANSFER_INSTANCE_ID(input, output);
 
                 VertexPositionInputs positionInputs = GetVertexPositionInputs(input.positionOS.xyz);
-                VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS);
+                // キャラは、陰の法線とは別に求めた殻の向きを tangent に持つ（w = 2 が印。
+                // CharacterImporter.BakeOutlineNormals）。スカートのヒダの壁のように法線が横を向く所で、
+                // 殻が隣のヒダを越えて折れ返らないようにするため。印の無いメッシュは法線のまま押す。
+                float3 outlineOS = input.tangentOS.w > 1.5 ? input.tangentOS.xyz : input.normalOS;
+                VertexNormalInputs normalInputs = GetVertexNormalInputs(outlineOS);
 
                 // _OutlineNearDistance までは距離に比例させて画面上の太さを一定にし、それより遠くでは
                 // ワールド上の太さを固定して、遠くの人ほど細く描く（画面上で一定のままだと、遠くの小さな人物が

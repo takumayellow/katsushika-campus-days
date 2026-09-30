@@ -23,6 +23,10 @@ SKIRT = [cid for cid in params.ALL_IDS
 HAKAMA = [cid for cid in params.ALL_IDS
           if params.CHARACTERS[cid]["outfit"].startswith("kimono")]
 PLEATS = [(cid, "skirt") for cid in SKIRT] + [(cid, "hakama") for cid in HAKAMA]
+# 面が外向きのキャラ。面が内向きだと殻は体の中へ押し込まれ、輪郭線がもともと出ない
+OUTWARD = [(cid, part) for cid, part in PLEATS if params.CHARACTERS[cid].get("outward_faces")]
+# 殻が一番厚くなるのは 5 m より遠く
+HULL_MAX = OUTLINE_WIDTH * 5.0
 
 
 @functools.cache
@@ -83,3 +87,55 @@ def test_pleat_corners_share_one_normal(name, part):
                  for ns in corners.values())
     # 3 m で殻が裂ける幅。面ごとの法線では裾の折り返しで 29〜30 mm 開く
     assert spread * HULL_AT_3M < 1e-4, (name, part, spread * HULL_AT_3M)
+
+
+def _part_faces(mb, part):
+    keep = set(mb.part_indices(part).tolist())
+    return [f for f in mb.faces if all(i in keep for i in f)]
+
+
+def test_outward_pleats_are_checked():
+    assert {("mirai", "skirt"), ("botchan", "hakama"), ("madonna", "hakama")} <= set(OUTWARD)
+
+
+@pytest.mark.parametrize("name,part", OUTWARD)
+def test_outline_hull_does_not_fold_over_pleats(name, part):
+    """輪郭線の殻を一番厚くしても、ヒダの面が 1 枚も裏返らない。
+
+    陰の法線のまま押すと、ヒダの壁（法線が横を向く）で殻が隣のヒダを越えて折れ返り、
+    谷ごとに黒い破線が出る。mirai のスカートは 936 面のうち 176 面が裏返っていた。
+    坊っちゃんの袴は、裾の V の切れ込みで裾が 1 段上の段を越え、面そのものが 10 枚折れていた。
+    """
+    mb = _build(name)
+    V = np.array(mb.verts)
+    hull = V + HULL_MAX * mb.outline_normals()
+    flipped = []
+    for f in _part_faces(mb, part):
+        a, b = V[list(f)], hull[list(f)]
+        na = np.cross(a, np.roll(a, -1, axis=0)).sum(axis=0)
+        nb = np.cross(b, np.roll(b, -1, axis=0)).sum(axis=0)
+        if np.dot(na, nb) <= 0:
+            flipped.append(f)
+    assert not flipped, (name, part, len(flipped), flipped[:3])
+
+
+@pytest.mark.parametrize("name,part", PLEATS)
+def test_outline_normals_ignore_the_pleats(name, part):
+    """殻の向きが、同じ段の隣の頂点とヒダの列の間隔ほどしか変わらない。
+
+    ヒダを平らにならした格子の法線なので、段を 1 周するあいだに向きがなめらかに回る。
+    陰の法線は、ヒダの壁をまたぐたびに 57〜66° 折れる。
+    """
+    mb = _build(name)
+    V = np.array(mb.verts)
+    on = mb.outline_normals()
+    faces = _part_faces(mb, part)
+    top = V[faces[0][0], 2]
+    columns = sum(1 for i in mb.part_indices(part) if abs(V[i, 2] - top) < 1e-9)
+    worst = 0.0
+    for f in faces:
+        for a, b in zip(f, f[1:] + f[:1]):
+            if abs(V[a, 2] - V[b, 2]) < 1e-9:
+                worst = max(worst, np.degrees(np.arccos(np.clip(on[a] @ on[b], -1.0, 1.0))))
+    # 列の間隔（360° / 列の数）の 1.5 倍まで。直した後は 1.29〜1.41 倍
+    assert worst < 1.5 * 360.0 / columns, (name, part, worst, columns)

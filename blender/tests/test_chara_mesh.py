@@ -5,6 +5,7 @@ to_object は決めた頂点だけをカスタム法線にし、残りの角に�
 
 share_normals は、同じ位置に重なった別々の頂点へ 1 本にそろえた法線を決める。
 shade_as は、形はそのままで、陰の法線だけを別の位置に置いた同じ面から求める。
+outline_normals は、輪郭線の殻を押し出す向きを陰の法線とは別に求める。
 """
 
 import numpy as np
@@ -137,3 +138,65 @@ def test_shade_as_rejects_positions_of_another_length():
     mb, floor, _ = _l_shape()
     with pytest.raises(ValueError):
         mb.shade_as(floor, 0, np.zeros((3, 3)))
+
+
+def test_outline_normals_pool_overlapping_vertices():
+    """別々の面の同じ位置の頂点は、殻の向きを和の向きにそろえる（面の無い頂点は数えない）。"""
+    mb, floor, wall = _l_shape()
+    on = mb.outline_normals()
+    edge = np.array([1.0, 0.0, 1.0]) / np.sqrt(2.0)
+    for i in (0, floor + 1, floor + 2, wall, wall + 3):
+        np.testing.assert_allclose(on[i], edge, atol=1e-12)
+    np.testing.assert_allclose(on[floor], (0.0, 0.0, 1.0), atol=1e-12)
+    np.testing.assert_allclose(on[wall + 1], (1.0, 0.0, 0.0), atol=1e-12)
+
+
+def test_outline_normals_keep_cancelling_normals_per_vertex():
+    """表と裏の面が重なる所は、それぞれの面の向きのまま。"""
+    mb = M.MeshBuilder()
+    quad = [(0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (1.0, 1.0, 0.0), (0.0, 1.0, 0.0)]
+    top = mb.add_verts(quad)
+    mb.add_face([top + k for k in range(4)], "m")
+    bottom = mb.add_verts(quad)
+    mb.add_face([bottom + k for k in range(4)][::-1], "m")
+    on = mb.outline_normals()
+    np.testing.assert_allclose(on[top:top + 4], [(0.0, 0.0, 1.0)] * 4, atol=1e-12)
+    np.testing.assert_allclose(on[bottom:bottom + 4], [(0.0, 0.0, -1.0)] * 4, atol=1e-12)
+
+
+def _fold(half_deg):
+    """x 軸の辺で折れた 2 枚の四角形を別々の頂点で張る。面の法線は z から ±half_deg 傾く。"""
+    mb = M.MeshBuilder()
+    t = np.radians(half_deg)
+    starts = []
+    for n in ((0.0, np.sin(t), np.cos(t)), (0.0, -np.sin(t), np.cos(t))):
+        e = np.cross(n, (1.0, 0.0, 0.0))
+        v = mb.add_verts([(0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (1.0, 0.0, 0.0) + e, e])
+        mb.add_face([v + k for k in range(4)], "m")
+        starts.append(v)
+    return mb, starts
+
+
+def test_outline_normals_pool_up_to_120_degrees():
+    """向きが 120° より開く組は和にそろえない（和の向きへ押すと殻が面に沿って横へずれる）。"""
+    mb, (a, b) = _fold(55.0)
+    on = mb.outline_normals()
+    np.testing.assert_allclose(on[a], (0.0, 0.0, 1.0), atol=1e-12)
+    np.testing.assert_allclose(on[b], (0.0, 0.0, 1.0), atol=1e-12)
+    mb, (a, b) = _fold(65.0)
+    on = mb.outline_normals()
+    t = np.radians(65.0)
+    np.testing.assert_allclose(on[a], (0.0, np.sin(t), np.cos(t)), atol=1e-12)
+    np.testing.assert_allclose(on[b], (0.0, -np.sin(t), np.cos(t)), atol=1e-12)
+
+
+def test_outline_normals_prefer_the_given_then_the_shading_normals():
+    """決めた殻の向き、陰の法線、面から求めた法線の順に取る。"""
+    mb, floor, wall = _l_shape()
+    mb.set_normals(floor, [(0.0, 1.0, 1.0)] * 4)
+    mb.set_outline_normals(wall + 1, [(0.0, 0.0, -3.0)])
+    on = mb.outline_normals()
+    np.testing.assert_allclose(on[floor], np.array([0.0, 1.0, 1.0]) / np.sqrt(2.0), atol=1e-12)
+    np.testing.assert_allclose(on[wall + 1], (0.0, 0.0, -1.0), atol=1e-12)
+    np.testing.assert_allclose(on[wall + 2], (1.0, 0.0, 0.0), atol=1e-12)
+    np.testing.assert_allclose(np.linalg.norm(on, axis=1), 1.0)
