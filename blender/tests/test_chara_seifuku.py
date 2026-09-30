@@ -130,3 +130,45 @@ def test_nothing_pokes_through_front_collar(name):
                 # 前襟より手前（外）で身頃・袖・パーカー・肌に当たらない
                 assert t > reach - 1e-4, (name, c.round(3).tolist(), reach - t)
     assert checked > 200
+
+
+HOODIE = [cid for cid in params.ALL_IDS
+          if params.CHARACTERS[cid]["outfit"] == "seifuku_hoodie"]
+
+
+@pytest.mark.parametrize("name", HOODIE)
+def test_blouse_stays_well_inside_hoodie_sleeves(name):
+    """パーカーの袖の面ごとに外から光線を飛ばし、ブラウスが袖の面より十分奥にある。
+
+    ブラウスの半袖を張ると、肩口のふくらみがパーカーの袖とほぼ同じ太さ（面の中心で
+    0.04 mm 外）になり、二の腕に白い帯がちらついて突き抜けた。肩関節より付け根側は
+    身頃と襟に隠れるので数えない。"""
+    p, a, mb, _ = _build(name)
+    V = np.array(mb.verts)
+    sleeve = set(mb.part_indices("sleeve_l", "sleeve_r").tolist())
+    blouse = _triangles(mb, lambda f, m: m == "cloth_blouse")
+    hoodie = _triangles(mb, lambda f, m: m == "cloth_hoodie")
+    reach = p["height"] * 0.008
+    gap = p["height"] * 0.002
+    checked = 0
+    for f, m in zip(mb.faces, mb.face_mat):
+        if m != "cloth_hoodie" or not sleeve.issuperset(f) or len(f) != 4:
+            continue
+        q = V[list(f)]
+        c = q.mean(axis=0)
+        n = np.cross(q[2] - q[0], q[3] - q[1])
+        if np.linalg.norm(n) < 1e-12:
+            continue
+        sgn = 1.0 if c[0] > 0 else -1.0
+        sh, el = a.shoulder * [sgn, 1, 1], a.elbow * [sgn, 1, 1]
+        ax = el - sh
+        if np.dot(c - sh, ax) < 0:
+            continue
+        # 腕の軸から外へ向ける
+        radial = (c - sh) - np.dot(c - sh, ax) / np.dot(ax, ax) * ax
+        n = n / np.linalg.norm(n) * (1.0 if np.dot(n, radial) >= 0 else -1.0)
+        t_blouse = first_hit(c + n * reach, -n, blouse)
+        t_hoodie = first_hit(c + n * reach, -n, hoodie)
+        checked += 1
+        assert t_blouse > t_hoodie + gap, (name, c.round(3).tolist(), t_blouse - t_hoodie)
+    assert checked > 50
