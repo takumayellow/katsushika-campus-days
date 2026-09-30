@@ -193,6 +193,8 @@ class MeshBuilder:
         それぞれの頂点法線の平均を渡す。重ならない頂点の法線は決めない。
         """
         V = np.asarray(self.verts[v0:], dtype=float)
+        if any(i < v0 for f in self.faces[f0:] for i in f):
+            raise ValueError(f"f0={f0} 以降の面が v0={v0} より前の頂点を使っています")
         faces = [[i - v0 for i in f] for f in self.faces[f0:]]
         vn = vertex_normals(V, faces)
         _, group = np.unique(np.round(V / tol).astype(np.int64), axis=0,

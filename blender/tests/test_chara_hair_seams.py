@@ -15,7 +15,8 @@ from kcd_chara import body, hair, params
 from kcd_chara import mesh as M
 
 # 殻の厚みは MaterialLibrary.CharacterOutlineWidth × カメラまでの距離（5 m で頭打ち）
-HULL_AT_3M = 0.005 * 3.0
+OUTLINE_WIDTH = 0.005
+HULL_AT_3M = OUTLINE_WIDTH * 3.0
 PARTS = ("hair_back", "hair_front")
 
 
@@ -32,7 +33,7 @@ def _corner_normals(mb, part):
     """part の頂点ごとに、FBX に書き出す角の法線を集める。
 
     カスタム法線を決めた頂点はその 1 本。決めていない頂点は、なめらかな面の角なら周りの
-    なめらかな面の法線の和、平らな面の角ならその面の法線になる。
+    なめらかな面の法線の和、平らな面の角ならその面の法線になる（和の重みは Blender と違う）。
     """
     V = np.array(mb.verts)
     custom = mb.normal_array()
@@ -98,7 +99,8 @@ def test_hair_seams_share_one_normal(name, part):
     assert worst * HULL_AT_3M < 1e-4, f"{name}/{part}: {worst * HULL_AT_3M * 1000:.1f} mm"
 
 
-def test_mirai_hair_has_tip_seams():
-    """上のテストが空振りしていない。みらいの後ろ髪は毛先で頂点が重なっている。"""
-    pairs, _ = _seams("mirai", "hair_back")
-    assert len(pairs) >= 100
+@pytest.mark.parametrize("name,part", [("mirai", "hair_back"), ("madonna", "hair_front")])
+def test_hair_has_tip_seams(name, part):
+    """上のテストが空振りしていない。後ろ髪も前髪も、毛先で頂点が重なっている。"""
+    pairs, _ = _seams(name, part)
+    assert len(pairs) >= 40

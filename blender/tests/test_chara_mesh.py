@@ -7,6 +7,7 @@ share_normals は、同じ位置に重なった別々の頂点へ 1 本にそろ
 """
 
 import numpy as np
+import pytest
 
 from kcd_chara import mesh as M
 
@@ -68,3 +69,11 @@ def test_share_normals_leaves_cancelling_normals_unset():
     mb.add_face([bottom + k for k in range(4)][::-1], "m")
     mb.share_normals(0, 0)
     np.testing.assert_allclose(mb.normal_array(), 0.0)
+
+
+def test_share_normals_rejects_faces_before_v0():
+    """f0 以降の面が v0 より前の頂点を使うと、番号をずらした先が別の頂点になるので止める。"""
+    mb, floor, _ = _l_shape()
+    mb.add_face([0, floor + 2, floor + 3], "m")
+    with pytest.raises(ValueError):
+        mb.share_normals(floor, 0)
