@@ -58,7 +58,9 @@ def _head_deform(d: np.ndarray, square: float = 0.0) -> np.ndarray:
              * np.exp(-((np.abs(x) - 0.52) / 0.52) ** 2))
     front = np.clip(-y, 0.0, 1.0)
     Y -= 0.135 * cheek * front
-    X += np.sign(x) * 0.090 * cheek
+    # 横へ張る向きは正中で 0 からなめらかに立ち上げる。sign(x) だと正中の列が
+    # 丸め (cos(pi/2) = 6e-17) で左右の片方へ跳び、鼻筋と後頭部の正中が 3〜7 mm ずれる。
+    X += np.tanh(x / 0.04) * 0.090 * cheek
     # 顎先。前へ出しすぎると尖るので控えめにし、丸みを残す
     Y -= 0.042 * M.smoothstep(-0.40, -0.98, z)
     # 顎の底を持ち上げて丸くする

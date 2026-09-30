@@ -32,9 +32,10 @@ def _triangles(mb, *parts):
 
 def _hit(orig, d, tri):
     """first_hit と同じ。光線が三角形の辺をちょうど通ると丸めで両側の三角形を
-    外すことがあるので、そのときは向きをわずかにずらして撃ち直す。"""
+    外すことがあるので、そのときは向きをわずかにずらして撃ち直す。正中 (x = 0) の
+    面の中を進む光線は正中の辺の上を通るので、x も含めて 3 軸ともずらす。"""
     t = first_hit(orig, d, tri)
-    return t if np.isfinite(t) else first_hit(orig, d + (0.0, 1e-6, 1e-6), tri)
+    return t if np.isfinite(t) else first_hit(orig, d + 1e-6, tri)
 
 
 def _hair_dirs(seed, n=400):
