@@ -150,16 +150,16 @@ def _bang_tips(p: dict, head, az: np.ndarray, bangs: dict):
     return el_env, el_tip, w, notch
 
 
-def build_helmet(mb: M.MeshBuilder, p: dict, head, *, front_el: float,
+def _helmet_rows(p: dict, head, *, front_el: float,
                  back_el: float, thickness: float, z_end_side: float,
                  z_end_back: float, puff: float = 1.0, ridges: int = 14,
                  ridge_amp: float = 0.30, jag: float = 0.030,
                  hang_lo: float = 0.26, hang_hi: float = 0.50,
                  inward: float = 0.74, depth: float = 0.10,
-                 part: str = "hair_back", nu: int = 72, nv: int = 10,
+                 nu: int = 72, nv: int = 10,
                  nh: int = 12, bangs: dict | None = None,
                  carry: dict | None = None):
-    """地髪と横髪・後ろ髪を 1 枚の連続した殻で作る。
+    """地髪と横髪・後ろ髪を 1 枚の連続した殻にする頂点の列 (rings, outer, inner)。
 
     房を並べる方式だと、地髪の縁から房が垂れる境目が「帽子の下のプリーツ
     カーテン」に見える。殻を生え際から毛先まで途切れなく続け、縦の畝
@@ -271,25 +271,50 @@ def build_helmet(mb: M.MeshBuilder, p: dict, head, *, front_el: float,
     if carry:
         rings, outer, inner = ([_carrier(p, head, q, **carry) for q in rows]
                                for rows in (rings, outer, inner))
-        rim = rings[-1]
+    return rings, outer, inner
+
+
+def _lay_helmet(mb: M.MeshBuilder, p: dict, rings, outer, inner) -> None:
+    """_helmet_rows の列に、外殻・内殻・毛先の縁の帯の順で面を張る。"""
     # 外殻・内殻・縁の 3 枚は向きが揃っていて、揃って裏返っている
     # (外殻の面が頭の中を向く)。直すときは 3 枚とも返す。
     out = bool(p.get("outward_faces"))
     # 正面 (hang = 0) では垂れも内殻も縁も生え際の 1 本に潰れて面積 0 の面になる。
     # 向きを直した髪ではそれを張らない（潰れた面の頂点は法線が定まらず、
     # 輪郭線の殻が生え際に沿ってめくれて頭頂を横切る Λ の線になる）。
-    flat = (hw * 1e-3) ** 2 if out else 0.0
+    flat = (p["head_w"] * 1e-3) ** 2 if out else 0.0
+    mb.add_grid(rings + outer, "hair", smooth=True, cap_start=True,
+                cap_end=False, flip=out, min_area=flat)
+    mb.add_grid(inner, "hair", smooth=True, flip=not out, min_area=flat)
+    mb.add_grid([outer[-1], inner[-1]], "hair", smooth=False, flip=out,
+                min_area=flat)
+
+
+def build_helmet(mb: M.MeshBuilder, p: dict, head, *, part: str = "hair_back",
+                 **shape):
+    """地髪と横髪・後ろ髪の殻を part に組み、生え際のリングを返す。
+
+    形の引数 shape は `_helmet_rows` のもの。陰の法線は、同じ殻を畝
+    (ridge_amp) と毛先のギザギザ (jag) 無しで組んだときの頂点法線にする。
+    畝のまま陰を付けると、陰の境目の近くで畝ごとに明暗が入れ替わり、後ろ髪と
+    横髪にぼやけた濃い斑が並ぶ（後ろから映すゲームのカメラで一番目立つ）。
+    ギザギザは畝と同じ周期で垂れの長さを変えるので、毛先の近くで同じ斑になる。
+    畝もギザギザも形には残るので、シルエットは変わらない。
+    """
+    # 陰の代理形状。_lay_helmet で張るのは頂点の並びを本物とそろえるためで、
+    # 使うのは頂点の位置だけ（法線を求める面は本物の面）。
+    proxy = M.MeshBuilder()
+    _lay_helmet(proxy, p, *_helmet_rows(p, head, **{**shape, "ridge_amp": 0.0,
+                                                    "jag": 0.0}))
+    rings, outer, inner = _helmet_rows(p, head, **shape)
     with mb.part(part):
         v0, f0 = len(mb.verts), len(mb.faces)
-        mb.add_grid(rings + outer, "hair", smooth=True, cap_start=True,
-                    cap_end=False, flip=out, min_area=flat)
-        mb.add_grid(inner, "hair", smooth=True, flip=not out, min_area=flat)
-        mb.add_grid([outer[-1], inner[-1]], "hair", smooth=False, flip=out,
-                    min_area=flat)
+        _lay_helmet(mb, p, rings, outer, inner)
         # 縁の帯は外殻・内殻と別の頂点で張るので、毛先で頂点が重なる。法線を
         # そろえないと輪郭線の殻が毛先で裂け、横髪の前の縁に沿った点線になる。
-        mb.share_normals(v0, f0)
-    return rim
+        # shade_as は重なった頂点の法線もそろえる。
+        mb.shade_as(v0, f0, proxy.verts)
+    return rings[-1]
 
 
 def strand(mb: M.MeshBuilder, part: str, ctrl, r0: float, r1: float, *,
