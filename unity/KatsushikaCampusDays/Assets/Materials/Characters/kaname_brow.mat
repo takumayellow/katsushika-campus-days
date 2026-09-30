@@ -36,6 +36,13 @@ Material:
     - _Cull: 0
     - _Cutoff: 0.5
     - _DstBlend: 0
+    - _HairRing: 0
+    - _HairRingBack: 0.4
+    - _HairRingBottom: 0.165
+    - _HairRingDroop: 0.07
+    - _HairRingTeeth: 7
+    - _HairRingToothDepth: 0.04
+    - _HairRingTop: 0.13
     - _OutlineFadeEnd: 60
     - _OutlineFadeStart: 30
     - _OutlineNearDistance: 5
@@ -48,7 +55,7 @@ Material:
     - _RimPower: 4
     - _ShadeCrisp: 1
     - _ShadeSoftness: 0.03
-    - _ShadeThreshold: 0.1
+    - _ShadeThreshold: 0.5
     - _ShadeThreshold2: -0.25
     - _SpecularIntensity: 0
     - _SpecularPower: 48
@@ -59,9 +66,10 @@ Material:
     m_Colors:
     - _BaseColor: {r: 0.41568628, g: 0.24705882, b: 0.13333334, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+    - _HairRingColor: {r: 1, g: 1, b: 1, a: 1}
     - _OutlineColor: {r: 0.11999995, g: 0.09999997, b: 0.13999996, a: 1}
     - _RimColor: {r: 1, g: 1, b: 1, a: 1}
-    - _ShadeColor: {r: 0.43009803, g: 0.3196941, b: 0.3209333, a: 1}
+    - _ShadeColor: {r: 0.769, g: 0.521117, b: 0.42963773, a: 1}
     - _ShadeColor2: {r: 0.35205883, g: 0.26517648, b: 0.30200002, a: 1}
     - _SpecularColor: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []

@@ -435,7 +435,9 @@ Shader "KCD/Toon"
                 half3 ambient = SampleSHPixel(input.vertexSH, normalWS) * albedo;
                 color += ambient * 0.6h;
 
-                // 追加ライト（街灯など）は素朴な 2 値ランプで加算。
+                // 追加ライト（街灯など）は素朴な 2 値ランプで加算。境目は N・L で測り、上限を 0.1 にする。
+                // キャラは主光の境目を half-lambert の 0.5 に上げてあり (#47)、そのまま使うと室内の灯りが
+                // 光の向きから 60° 以内の面にしか当たらない。
                 #if defined(_ADDITIONAL_LIGHTS)
                     uint additionalLightCount = GetAdditionalLightsCount();
                     for (uint lightIndex = 0u; lightIndex < additionalLightCount; ++lightIndex)
@@ -443,7 +445,8 @@ Shader "KCD/Toon"
                         Light light = GetAdditionalLight(lightIndex, input.positionWS);
                         half attenuation = light.distanceAttenuation * light.shadowAttenuation;
                         half lightNdotL = saturate(dot(normalWS, light.direction));
-                        half toonStep = smoothstep(_ShadeThreshold, _ShadeThreshold + _ShadeSoftness * 4.0h, lightNdotL);
+                        half addThreshold = min(_ShadeThreshold, 0.1h);
+                        half toonStep = smoothstep(addThreshold, addThreshold + _ShadeSoftness * 4.0h, lightNdotL);
                         color += albedo * light.color * toonStep * attenuation;
                     }
                 #endif

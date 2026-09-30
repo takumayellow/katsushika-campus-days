@@ -32,6 +32,14 @@ namespace KCD.Editor
         public const float CharacterShadeCrisp = 1f;
 
         /// <summary>
+        /// キャラの陰の境目（KCD/Toon の _ShadeThreshold。half-lambert の値）。0.5 で光に対して 90° の所に境目が来る
+        /// （GGXrd と同じ）。キャンパスの既定 0.1 は 143° で、陰は光の真裏の 37° の範囲だけになる。キャラでは、後ろから
+        /// 見ると後頭部や背中に楕円の陰が浮き、前から見るとほとんど陰が無い (#47)。顔と目は顔の見た目
+        /// （<see cref="ApplyFaceLook"/>）が決めるので、ここでは変えない。
+        /// </summary>
+        public const float CharacterShadeThreshold = 0.5f;
+
+        /// <summary>
         /// 天使の輪（KCD/Toon の _HAIRRING_ON）を描く材質 (#47)。輪の座標は Blender が髪の頂点の UV の 2 枚目に書く
         /// （blender/kcd_chara/hair.py の RING_MATERIAL と ring_coords）。
         /// </summary>
@@ -332,6 +340,7 @@ namespace KCD.Editor
         private static readonly int VertexColorId = Shader.PropertyToID("_VertexColor");
         private static readonly int OutlineScreenFlatId = Shader.PropertyToID("_OutlineScreenFlat");
         private static readonly int ShadeCrispId = Shader.PropertyToID("_ShadeCrisp");
+        private static readonly int ShadeThresholdId = Shader.PropertyToID("_ShadeThreshold");
         private const string VertexColorKeyword = "_VERTEXCOLOR_ON";
 
         /// <summary>
@@ -405,6 +414,7 @@ namespace KCD.Editor
             material.SetFloat("_OutlineWidth", CharacterOutlineWidth);
             ApplyOutlineScreenFlat(material);
             ApplyShadeCrisp(material);
+            ApplyShadeThreshold(material, name);
 
             // 顔・目・スカートの面が内向きに出力されたキャラもあるので、両面描画にする（シェーダ側で法線を裏返す）。
             material.SetFloat("_Cull", 0f);
@@ -437,9 +447,20 @@ namespace KCD.Editor
             return material;
         }
 
-        private static Color ShadeOf(Color color)
+        private static readonly Color ShadeTint = new Color(0.45f, 0.42f, 0.58f);
+
+        /// <summary>
+        /// 陰の色（KCD/Toon の _ShadeColor）。シェーダは陰を「地の色 × この色」で塗るので、これは掛ける色になる。
+        /// 地の色をそのまま紫へ寄せると、暗い色ほど掛ける色も暗くなり、紺のスカートや襟の陰が黒につぶれる (#47)。
+        /// 地の色を最も明るい成分で割って色味だけにしてから紫へ寄せる。白の陰は前と同じ。
+        /// </summary>
+        internal static Color ShadeOf(Color color)
         {
-            return Color.Lerp(color, new Color(0.45f, 0.42f, 0.58f), 0.42f);
+            float brightest = Mathf.Max(color.r, Mathf.Max(color.g, color.b));
+            Color hue = brightest > 0f
+                ? new Color(color.r / brightest, color.g / brightest, color.b / brightest)
+                : Color.white;
+            return Color.Lerp(hue, ShadeTint, 0.42f);
         }
 
         private static void SetCharacterColor(Material material, Color color)
@@ -474,7 +495,8 @@ namespace KCD.Editor
 
             patterns.TryGetValue(name, out Pattern pattern);
             bool changed = false;
-            if (pattern == null && !Same(material.GetColor(BaseColorId), declared))
+            if (pattern == null && (!Same(material.GetColor(BaseColorId), declared)
+                || !Same(material.GetColor(ShadeColorId), ShadeOf(declared))))
             {
                 SetCharacterColor(material, declared);
                 changed = true;
@@ -488,6 +510,7 @@ namespace KCD.Editor
 
             changed |= ApplyOutlineScreenFlat(material);
             changed |= ApplyShadeCrisp(material);
+            changed |= ApplyShadeThreshold(material, name);
             changed |= ApplyPattern(material, pattern, declared);
             changed |= ApplyHairRing(material, name, declared);
             if (changed)
@@ -832,6 +855,22 @@ namespace KCD.Editor
             }
 
             material.SetFloat(ShadeCrispId, CharacterShadeCrisp);
+            return true;
+        }
+
+        /// <summary>
+        /// キャラの材質の陰の境目を <see cref="CharacterShadeThreshold"/> にする。顔と目と輪郭（反転ハル）は変えない。
+        /// 変えたら true。
+        /// </summary>
+        private static bool ApplyShadeThreshold(Material material, string name)
+        {
+            if (IsFaceTextured(name) || name == "outline" || !material.HasProperty(ShadeThresholdId)
+                || Mathf.Approximately(material.GetFloat(ShadeThresholdId), CharacterShadeThreshold))
+            {
+                return false;
+            }
+
+            material.SetFloat(ShadeThresholdId, CharacterShadeThreshold);
             return true;
         }
 
