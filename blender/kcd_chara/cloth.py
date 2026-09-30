@@ -820,9 +820,12 @@ def build_seifuku(mb, p, a: B.Anatomy, *, apron: bool = False,
     band(mb, p, a, "cloth_skirt_navy", "waistband", waist - h * 0.026,
          waist + h * 0.012, h * 0.016)
     hem = z["crotch"] - (z["crotch"] - z["knee"]) * 0.46
+    # ヒダはなめらかな面で張る。Unity の輪郭は角の法線へ押し出すので、面ごとの
+    # 法線だと折り目と裾で殻が裂け、ヒダに沿った破線と裾の下のギザギザになる。
     skirt_rings = pleated_skirt(mb, p, a, "cloth_skirt_navy", "skirt",
                                 z_top=waist - h * 0.010, z_bot=hem,
-                                r_top=0.99, r_bot=1.56, pleats=26, amp=0.17)
+                                r_top=0.99, r_bot=1.56, pleats=26, amp=0.17,
+                                smooth=True)
     socks(mb, p, a, "cloth_socks_black", "socks", z["ankle"] - h * 0.012,
           z["knee"] - h * 0.028)
     if "sneakers" in acc:
