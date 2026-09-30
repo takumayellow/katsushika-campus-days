@@ -410,7 +410,7 @@ namespace KCD.Editor
                 // MaterialLibrary.SetCharacterColor と同じ式。
                 Color c = color.Value;
                 material.SetColor("_BaseColor", c);
-                material.SetColor("_ShadeColor", Color.Lerp(c, new Color(0.45f, 0.42f, 0.58f), 0.42f));
+                material.SetColor("_ShadeColor", MaterialLibrary.ShadeOf(c));
                 material.SetColor("_ShadeColor2", Color.Lerp(c, new Color(0.30f, 0.28f, 0.44f), 0.55f));
             }
 
