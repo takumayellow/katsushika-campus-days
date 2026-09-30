@@ -67,6 +67,10 @@ OUTLINE_PARTS = (
                                       "hair_cap", "sleeve_l", "sleeve_r")]
     + [("madonna", part) for part in ("head", "hand_l", "hand_r", "hakama",
                                       "sleeve_l", "sleeve_r")]
+    + [(name, part) for name in ("inari", "kaname", "sora")
+       for part in ("head", "hand_l", "hand_r", "skirt", "sleeve_l", "sleeve_r")]
+    + [("prof", part) for part in ("head", "hand_l", "hand_r", "hair_cap",
+                                   "sleeve_l", "sleeve_r")]
 )
 
 
@@ -75,7 +79,7 @@ def test_outline_parts_face_outward(name, part):
     assert min(_grids(name)[part]) > 0.95
 
 
-@pytest.mark.parametrize("name", ["mirai", "madonna"])
+@pytest.mark.parametrize("name", ["mirai", "madonna", "inari", "kaname", "sora"])
 def test_hair_shell_outer_out_inner_in(name):
     outer, inner = _grids(name)["hair_back"][:2]
     assert outer > 0.95  # 外殻は頭の外を向く

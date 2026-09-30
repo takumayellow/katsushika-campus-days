@@ -434,7 +434,7 @@ namespace KCD.Editor
             ApplyFlatAmbient(material);
             ApplyRim(material);
 
-            // 顔・目・スカートの面が内向きに出力されたキャラもあるので、両面描画にする（シェーダ側で法線を裏返す）。
+            // 目の細部（二重・まつ毛・眉）や靴下など、内向きに出力される面が残っているので、両面描画にする（シェーダ側で法線を裏返す）。
             material.SetFloat("_Cull", 0f);
 
             if (name == "outline")
