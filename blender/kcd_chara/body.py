@@ -310,6 +310,11 @@ def _brow_curve_flat(cu: float, eye_y: float, rx: float, ry: float, sgn: int,
     return us, vs, np.maximum(ws, width * 0.30)
 
 
+#: 鼻の輪郭線の太さ（顔の輪郭線に対する倍率）。鼻は幅数ミリの出っ張りなので、顔と同じ太さで
+#: 囲むと、斜めから見たとき鼻より太い黒い弧になる。細い線にして、鼻筋を描き込んだ線に見せる。
+NOSE_OUTLINE_WIDTH = 0.3
+
+
 def build_face_parts(mb: M.MeshBuilder, p: dict, fs: FaceSurface, uv_box):
     """白目板・虹彩ドーム・まつ毛・二重線・眉・鼻・口を頭表面の手前に貼る。"""
     fl = p["face_layout"]
@@ -429,6 +434,7 @@ def build_face_parts(mb: M.MeshBuilder, p: dict, fs: FaceSurface, uv_box):
             mb.add_sphere((0.0, ny + hd * 0.012, float(nz_[0])),
                           (p["head_w"] * 0.017, hd * 0.014,
                            p["head_h"] * 0.013), "face", nu=10, nv=6)
+        mb.set_outline_width(mb.part_indices("nose"), NOSE_OUTLINE_WIDTH)
         lo_i, hi_i = mb.parts["nose"][0]
         for i in range(lo_i, hi_i):
             x, _y, z = mb.verts[i]

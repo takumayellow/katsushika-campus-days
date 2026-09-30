@@ -18,7 +18,7 @@ namespace KCD.Editor
         /// <summary>取り込み規則を変えたら上げる。既存の FBX が取り込み直される。</summary>
         public override uint GetVersion()
         {
-            return 7;
+            return 8;
         }
 
         /// <summary>
@@ -65,16 +65,21 @@ namespace KCD.Editor
             }
         }
 
-        /// <summary>tangent の w に入れる印。KCD/Toon の Outline パスは、w がこれの頂点だけ tangent の向きへ押し出す。</summary>
+        /// <summary>
+        /// tangent の w に入れる印。KCD/Toon の Outline パスは、w がこれ以上の頂点だけ tangent の向きへ押し出す。
+        /// w は印に（1 − 輪郭線の太さの倍率）を足した 2〜3 で、太さの倍率も運ぶ。
+        /// </summary>
         public const float OutlineNormalTag = 2f;
 
         /// <summary>
-        /// Blender が頂点カラー outline_normal（rgb = n * 0.5 + 0.5）に書いた輪郭線の殻の向きを、tangent に移す (#47)。
+        /// Blender が頂点カラー outline_normal（rgb = n * 0.5 + 0.5、alpha = 太さの倍率）に書いた輪郭線の殻の向きと
+        /// 太さを、tangent に移す (#47)。
         ///
         /// 輪郭線は、Outline パスが頂点を押し出した殻の裏で描く。陰の法線のまま押すと、スカートのヒダの壁
         /// （法線が横を向く）で殻が隣のヒダを越えて折れ返り、谷ごとに黒い破線が出る。別々の格子の継ぎ目でも、
         /// 同じ位置の頂点の法線が分かれて殻が裂ける。なので Blender で殻の向きを別に求めて渡す
-        /// （kcd_chara/mesh.py の MeshBuilder.outline_normals）。
+        /// （kcd_chara/mesh.py の MeshBuilder.outline_normals）。鼻のような数ミリの出っ張りは、顔と同じ太さの殻で
+        /// 囲むと出っ張りより太い黒い弧になるので、頂点ごとに細くする（MeshBuilder.outline_widths）。
         /// tangent は法線と同じくスキニングで回るので、動いても殻が服に付いてくる（頂点カラーは回らない）。
         /// 法線マップは使わないので tangent は空いている（取り込みで tangent を作らない）。
         /// 頂点カラーは使い終わったら消す。
@@ -110,7 +115,8 @@ namespace KCD.Editor
                 }
 
                 // 向きが決まらない頂点には印を付けず、Outline パスに陰の法線の向きで押させる
-                tangents[i] = n == Vector3.zero ? Vector4.zero : new Vector4(n.x, n.y, n.z, OutlineNormalTag);
+                float w = OutlineNormalTag + (1f - Mathf.Clamp01(c.a));
+                tangents[i] = n == Vector3.zero ? Vector4.zero : new Vector4(n.x, n.y, n.z, w);
             }
 
             mesh.tangents = tangents;

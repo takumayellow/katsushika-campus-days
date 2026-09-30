@@ -6,6 +6,7 @@ to_object は決めた頂点だけをカスタム法線にし、残りの角に�
 share_normals は、同じ位置に重なった別々の頂点へ 1 本にそろえた法線を決める。
 shade_as は、形はそのままで、陰の法線だけを別の位置に置いた同じ面から求める。
 outline_normals は、輪郭線の殻を押し出す向きを陰の法線とは別に求める。
+outline_widths は、頂点ごとの輪郭線の太さの倍率を求める。
 """
 
 import numpy as np
@@ -200,3 +201,34 @@ def test_outline_normals_prefer_the_given_then_the_shading_normals():
     np.testing.assert_allclose(on[wall + 1], (0.0, 0.0, -1.0), atol=1e-12)
     np.testing.assert_allclose(on[wall + 2], (1.0, 0.0, 0.0), atol=1e-12)
     np.testing.assert_allclose(np.linalg.norm(on, axis=1), 1.0)
+
+
+def test_outline_widths_default_to_one_and_take_the_thinner_at_overlaps():
+    """決めなかった頂点は 1。何度か決めた頂点と、同じ位置に重なった頂点は、細いほうにそろえる。"""
+    mb, floor, wall = _l_shape()
+    mb.set_outline_width([floor + 1], 0.3)
+    mb.set_outline_width([wall + 3], 0.6)
+    mb.set_outline_width([wall + 3], 0.8)
+    w = mb.outline_widths()
+    assert w.shape == (len(mb.verts),)
+    for i in (0, floor + 1, wall):
+        assert w[i] == pytest.approx(0.3)
+    # wall + 3 は floor + 2 と同じ位置
+    for i in (floor + 2, wall + 3):
+        assert w[i] == pytest.approx(0.6)
+    for i in (floor, floor + 3, wall + 1, wall + 2):
+        assert w[i] == 1.0
+
+
+@pytest.mark.parametrize("scale", [-0.1, 1.5])
+def test_set_outline_width_rejects_scales_outside_0_to_1(scale):
+    mb, floor, _wall = _l_shape()
+    with pytest.raises(ValueError):
+        mb.set_outline_width([floor], scale)
+
+
+@pytest.mark.parametrize("scale", [0.0, 1.0])
+def test_set_outline_width_accepts_0_and_1(scale):
+    mb, floor, _wall = _l_shape()
+    mb.set_outline_width([floor], scale)
+    assert mb.outline_widths()[floor] == scale
