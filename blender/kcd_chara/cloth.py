@@ -715,9 +715,9 @@ def _tote(mb, p, a: B.Anatomy):
     """右手に提げたキャンバス地のトートバッグ。
 
     広い面を体の横へ向けて（幅を前後に取って）脚に当てず、2 本の持ち手は
-    握った指の内側へ通す。腕は全モーションで A ポーズから arm_drop だけ
-    下ろすので、バインドでは握りを中心にその分だけ外へ振って吊り、動作中に
-    真下へ下がるようにする。
+    握った指の内側へ通す。腕は全モーションで A ポーズから上腕を arm_drop だけ
+    下ろし、前腕を elbow_open だけ外へ開くので、バインドでは握りを中心に
+    その差だけ外へ振って吊り、動作中に真下へ下がるようにする。
     """
     h = p["height"]
     hd = B.hand_frame(p, a, -1)
@@ -725,7 +725,7 @@ def _tote(mb, p, a: B.Anatomy):
         # ミトンの手は指を曲げないので、持ち手の束が拳の前で宙に浮く
         raise ValueError("トートはミトンの手では握れない")
     grip = B.grip_hook(p, a)
-    th = math.radians(p.get("arm_drop", B.ARM_DROP))
+    th = math.radians(B.arm_drop(p) - B.elbow_open(p))
     R = np.array([[math.cos(th), 0.0, math.sin(th)],
                   [0.0, 1.0, 0.0],
                   [-math.sin(th), 0.0, math.cos(th)]])

@@ -451,8 +451,35 @@ def build_face_parts(mb: M.MeshBuilder, p: dict, fs: FaceSurface, uv_box):
 
 #: レストポーズは A ポーズ（上腕が鉛直から 38° 開く）。動作中は腕を体側に下ろした姿勢を
 #: 基準にしたいので、全 Action の上腕にこの分の内転（ワールド Y 軸回り）を先に入れる。
-#: 残り約 12° が「気をつけ」で自然に見える開き。
-ARM_DROP = 26.0
+#: 待機の開き 2.5° と合わせて、上腕は鉛直から 7° で体側に沿う。
+ARM_DROP = 33.5
+#: 頭身の低いキャラは A ポーズの上腕が鉛直から 28° なので、下ろす量も小さい（待機で 4.5°）。
+CHIBI_ARM_DROP = 26.0
+#: 待機で前腕が上腕より外へ開く角度（肘の運搬角）。上腕を体側に沿わせたまま手が腰から
+#: 離れ、肩から手首が鉛直から約 12.6° になる。
+ELBOW_CARRY = 12.0
+
+
+def arm_angles(p: dict) -> tuple[float, float]:
+    """A ポーズの上腕・前腕が水平から下がる角度（度）。"""
+    return (62.0, 68.0) if p.get("chibi") else (52.0, 60.0)
+
+
+def arm_drop(p: dict) -> float:
+    """全モーションで上腕を A ポーズから体側へ下ろす角度（度）。"""
+    return p.get("arm_drop", CHIBI_ARM_DROP if p.get("chibi") else ARM_DROP)
+
+
+def elbow_open(p: dict) -> float:
+    """全モーションで前腕を A ポーズから外へ開く角度（度）。
+
+    A ポーズの前腕は上腕より (a2 - a1) だけ内へ折れているので、それを戻したうえで
+    ELBOW_CARRY だけ外へ出す。頭身の低いキャラは開かない。
+    """
+    if p.get("chibi"):
+        return 0.0
+    a1, a2 = arm_angles(p)
+    return (a2 - a1) + p.get("elbow_carry", ELBOW_CARRY)
 
 
 class Anatomy:
@@ -484,7 +511,7 @@ class Anatomy:
                                   z["shoulder"] - h * 0.012])
         al = b.get("arm_len", (0.170, 0.150, 0.088))
         l1, l2, l3 = al[0] * h, al[1] * h, al[2] * h
-        a1, a2 = (62.0, 68.0) if p.get("chibi") else (52.0, 60.0)
+        a1, a2 = arm_angles(p)
         d1 = np.array([math.cos(math.radians(a1)), 0.0,
                        -math.sin(math.radians(a1))])
         d2 = np.array([math.cos(math.radians(a2)), 0.0,
