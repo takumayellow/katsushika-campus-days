@@ -53,6 +53,56 @@ def merge_normals(custom, index, auto) -> np.ndarray:
     return out
 
 
+def faces_within(faces, idx) -> list:
+    """頂点がすべて idx に入る面。"""
+    keep = set(np.asarray(idx).tolist())
+    return [f for f in faces if all(i in keep for i in f)]
+
+
+def triangles(faces, idx) -> np.ndarray:
+    """頂点がすべて idx に入る面を扇形に三角形へ割った (T, 3) の頂点番号。"""
+    out = [(f[0], f[k], f[k + 1]) for f in faces_within(faces, idx)
+           for k in range(1, len(f) - 1)]
+    return np.array(out, dtype=int).reshape(-1, 3)
+
+
+def first_hits(origins, dirs, verts, tris, reach: float, chunk: int = 64) -> np.ndarray:
+    """光線 origins + t·dirs (0 < t < reach) が最初に当たる三角形（Möller–Trumbore）。
+
+    dirs は長さ 1 のベクトル（t と reach を長さとして比べる）。
+    返すのは (N, 4) の [三角形番号, u, v, t]。当たりの点は
+    verts[a]·(1-u-v) + verts[b]·u + verts[c]·v。当たらない光線は三角形番号が -1。
+    """
+    V = np.asarray(verts, dtype=float)
+    T = np.asarray(tris, dtype=int).reshape(-1, 3)
+    O = np.asarray(origins, dtype=float).reshape(-1, 3)
+    D = np.asarray(dirs, dtype=float).reshape(-1, 3)
+    res = np.full((len(O), 4), -1.0)
+    if len(T) == 0:
+        return res
+    A = V[T[:, 0]]
+    e1, e2 = V[T[:, 1]] - A, V[T[:, 2]] - A
+    for s in range(0, len(O), chunk):
+        o, d = O[s:s + chunk, None, :], D[s:s + chunk, None, :]
+        pv = np.cross(d, e2[None])
+        det = np.einsum("rtk,tk->rt", pv, e1)
+        ok = np.abs(det) > 1e-14
+        inv = np.where(ok, 1.0 / np.where(ok, det, 1.0), 0.0)
+        tv = o - A[None]
+        u = np.einsum("rtk,rtk->rt", tv, pv) * inv
+        qv = np.cross(tv, e1[None])
+        v = np.einsum("rtk,rk->rt", qv, d[:, 0]) * inv
+        t = np.einsum("tk,rtk->rt", e2, qv) * inv
+        hit = ok & (u >= 0) & (v >= 0) & (u + v <= 1) & (t > 0) & (t < reach)
+        t = np.where(hit, t, np.inf)
+        j = np.argmin(t, axis=1)
+        rows = np.arange(len(j))
+        good = np.isfinite(t[rows, j])
+        res[s:s + chunk][good] = np.stack(
+            [j, u[rows, j], v[rows, j], t[rows, j]], axis=1)[good]
+    return res
+
+
 def bezier3(p0, p1, p2, p3, n: int) -> np.ndarray:
     """3 次ベジエを n 点にサンプリングする（髪の房の芯線に使う）。"""
     t = np.linspace(0.0, 1.0, n).reshape(-1, 1)

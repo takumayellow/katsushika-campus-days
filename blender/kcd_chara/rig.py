@@ -538,14 +538,76 @@ def _skin_blend(pts, idx, grid, W, k: int = 4) -> list[dict]:
         t = np.clip(np.einsum("ij,ij->i", pts[i] - a, ab)
                     / np.einsum("ij,ij->i", ab, ab), 0.0, 1.0)
         r = int(np.argmin(np.linalg.norm(a + ab * t[:, None] - pts[i], axis=1)))
-        mix: dict[str, float] = {}
-        for w, s in ((W[r][j], 1.0 - t[r]), (W[r + 1][j], t[r])):
-            for name, val in w.items():
-                mix[name] = mix.get(name, 0.0) + val * s
-        keep = sorted(mix.items(), key=lambda kv: kv[1], reverse=True)[:k]
-        tot = sum(v for _, v in keep) or 1.0
-        out.append({name: val / tot for name, val in keep if val > 1e-4})
+        out.append(_mix(((W[r][j], 1.0 - t[r]), (W[r + 1][j], t[r])), k))
     return out
+
+
+def _mix(pairs, k: int = 4) -> dict:
+    """(ウェイト辞書, 割合) の組を足し合わせ、上位 k ボーンで正規化する。"""
+    mix: dict[str, float] = {}
+    for w, s in pairs:
+        for name, val in w.items():
+            mix[name] = mix.get(name, 0.0) + val * s
+    keep = sorted(mix.items(), key=lambda kv: kv[1], reverse=True)[:k]
+    tot = sum(v for _, v in keep) or 1.0
+    return {name: val / tot for name, val in keep if val > 1e-4}
+
+
+# 胴を直接包む布。布に隠れた胴の素肌は、すぐ外のこの布と同じウェイトにする。
+# 襟・リボン・ネクタイは下に必ずこの布があるので入れない。
+UNDER_CLOTH = ("blouse", "shirt", "shirt_yoke", "hoodie", "kimono", "kimono_yoke",
+               "waistband", "obi", "himo")
+# 脚について動く布。胴から最初に当たるのがこれなら写さない。股の素肌まで脚に
+# 振られ、袴の中から外へ出る（botchan の Walk で実測 29.6 → 45.8 mm）。
+LEG_CLOTH = ("skirt", "labcoat", "apron", "hakama", "pants_seat",
+             "pants_l", "pants_r", "bootleg_l", "bootleg_r")
+
+
+def _cover_weights(pts, idx, normals, tris, W, reach: float, k: int = 4) -> list[dict | None]:
+    """idx の各頂点から法線の向きへ光線を撃ち、最初に当たった三角形の 3 頂点の
+    ウェイト W（頂点番号 → {ボーン名: 値}）を当たった点の重心座標で内分する。
+
+    reach までに当たらない頂点と、W に無い頂点の三角形に当たった頂点は None。
+    """
+    idx = np.asarray(idx, dtype=int)
+    hits = M.first_hits(pts[idx], normals[idx], pts, tris, reach)
+    out: list[dict | None] = []
+    for j, u, v, _t in hits:
+        tri = tris[int(j)] if j >= 0 else ()
+        if len(tri) == 0 or not all(int(c) in W for c in tri):
+            out.append(None)
+            continue
+        a, b, c = (int(x) for x in tri)
+        out.append(_mix(((W[a], 1.0 - u - v), (W[b], u), (W[c], v)), k))
+    return out
+
+
+def _hide_under_cloth(obj, mb: M.MeshBuilder, pts, p: dict) -> None:
+    """布に隠れた胴の素肌へ、すぐ外の布のウェイトを写す。
+
+    自動ウェイトは布とその下の肌で割合が揃わない。mirai の脇ではブラウスが
+    RightUpperArm を 0.15〜0.40 持つのに肌は 0.21 までで、腕を下ろす Idle で
+    肌がブラウスの外へ 4.2 mm 出て、横腹に肌色の筋が見えていた。着物は背骨の
+    骨だけで動くので、腕を上げる Wave では脇の肌が 198 mm 外へ出ていた。
+    見える布の形は変えず、隠れている肌を布と同じ動きにする。
+
+    光線の長さは身長の 2%。布と肌の隙間は 12〜17 mm で、それより遠いのは
+    フードのように胴から離れた布だけ。
+    """
+    skin = mb.part_indices("torso")
+    under = mb.part_indices(*UNDER_CLOTH)
+    if len(skin) == 0 or len(under) == 0:
+        return
+    tris = M.triangles(mb.faces, mb.part_indices(*UNDER_CLOTH, *LEG_CLOTH))
+    normals = M.vertex_normals(pts, M.faces_within(mb.faces, skin))
+    gname = {g.index: g.name for g in obj.vertex_groups}
+    verts = obj.data.vertices
+    W = {i: {gname[g.group]: g.weight for g in verts[i].groups if g.weight > 0.0}
+         for i in under.tolist()}
+    new = _cover_weights(pts, skin, normals, tris, W, p["height"] * 0.02)
+    for i, w in zip(skin.tolist(), new):
+        if w:
+            _write_weights(obj, i, w)
 
 
 def override_weights(obj, mb: M.MeshBuilder, p: dict, a: B.Anatomy) -> None:
@@ -616,6 +678,7 @@ def override_weights(obj, mb: M.MeshBuilder, p: dict, a: B.Anatomy) -> None:
     _prune_influences(obj, mb, ("pants_l", "pants_r", "bootleg_l", "bootleg_r"))
     for side in ("l", "r"):
         _follow_skin(obj, mb, pts, f"socks_{side}", f"leg_{side}")
+    _hide_under_cloth(obj, mb, pts, p)
     for side in ("l", "r"):
         bone = "LeftFoot" if side == "l" else "RightFoot"
         _set_exclusive(obj, mb.part_indices(f"shoes_{side}", f"foot_{side}"),
