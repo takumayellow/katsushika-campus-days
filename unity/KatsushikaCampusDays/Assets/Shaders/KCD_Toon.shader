@@ -147,7 +147,7 @@ Shader "KCD/Toon"
                 // 法線の向きのまま押すと殻の裏が奥の服の後ろへ回り、輪郭が物から離れた弧や交差した線になる。
                 // 奥へ少し残すのは、片面の布の裏で殻が面と重なってちらつかないようにするため。
                 float3 normalWS = normalInputs.normalWS;
-                float3 viewDirWS = normalize(positionInputs.positionWS - GetCameraPositionWS());
+                float3 viewDirWS = SafeNormalize(positionInputs.positionWS - GetCameraPositionWS());
                 float viewDot = dot(normalWS, viewDirWS);
                 normalWS -= _OutlineScreenFlat * (viewDot - 0.25 * max(viewDot, 0.0)) * viewDirWS;
                 float3 offsetWS = normalWS * (_OutlineWidth * distanceScale * fade);
