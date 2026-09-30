@@ -33,13 +33,26 @@ def normalize(v):
     return v / n if n > 1e-12 else v
 
 
-def vertex_normals(verts, faces) -> np.ndarray:
-    """面の面積で重み付けした頂点法線（多角形の面の法線は Newell 法）。"""
+def vertex_normals(verts, faces, by_angle: bool = False) -> np.ndarray:
+    """頂点法線。既定は面の面積で重み付けする（多角形の面の法線は Newell 法）。
+
+    by_angle なら、面の単位法線を角の角度で重み付けする（Blender の頂点法線と同じ）。
+    面積の重みでは、大きな面に接した細い面の頂点の法線が大きな面の向きに引かれる。
+    """
     v = np.asarray(verts, dtype=float)
     out = np.zeros_like(v)
     for f in faces:
         q = v[list(f)]
         n = np.cross(q, np.roll(q, -1, axis=0)).sum(axis=0)
+        if by_angle:
+            length = np.linalg.norm(n)
+            if length < 1e-30:
+                continue
+            e0, e1 = np.roll(q, 1, axis=0) - q, np.roll(q, -1, axis=0) - q
+            den = np.linalg.norm(e0, axis=1) * np.linalg.norm(e1, axis=1)
+            cos = (e0 * e1).sum(axis=1) / np.maximum(den, 1e-30)
+            ang = np.where(den > 1e-30, np.arccos(np.clip(cos, -1.0, 1.0)), 0.0)
+            n = ang[:, None] * (n / length)
         out[list(f)] += n
     length = np.linalg.norm(out, axis=1, keepdims=True)
     return out / np.maximum(length, 1e-12)
@@ -292,21 +305,44 @@ class MeshBuilder:
         殻なので、継ぎ目で殻が裂ける。重なった頂点には、f0 番以降の面から求めた
         それぞれの頂点法線の平均を渡す。重ならない頂点の法線は決めない。
         """
+        self.set_normals(v0, self._pooled_normals(v0, f0, None, tol))
+
+    def shade_as(self, v0: int, f0: int, at, tol: float = 1e-6) -> None:
+        """v0 番以降の頂点の陰の法線を、f0 番以降の面を at の位置へ置いたときの頂点法線にする。
+
+        形（シルエットと輪郭線の殻の位置）はそのままで、陰だけを別の形（陰の代理形状）に
+        従わせる。at は v0 番以降の頂点と同じ並びの位置で、法線を求める面は f0 番以降の
+        本物の面。share_normals と違い、重ならない頂点にも法線を決める。今の位置で
+        重なった頂点には、それぞれの法線の平均を渡す。平均が打ち消し合う組（表と裏の
+        面が重なる所）は、それぞれの頂点の法線のままにする。
+        """
+        at = np.asarray(at, dtype=float).reshape(-1, 3)
+        if len(at) != len(self.verts) - v0:
+            raise ValueError(f"at は {len(self.verts) - v0} 点のはずが {len(at)} 点です")
+        self.set_normals(v0, self._pooled_normals(v0, f0, at, tol))
+
+    def _pooled_normals(self, v0: int, f0: int, at, tol: float) -> np.ndarray:
+        """f0 番以降の面から求めた v0 番以降の頂点法線。位置 at が None なら今の位置で求め、
+        重ならない頂点はゼロ（決めない）にする。at を渡すとその位置で求め、どの頂点にも
+        法線を入れる。今の位置で重なった頂点は、和が打ち消し合わなければその和にそろえる。"""
         V = np.asarray(self.verts[v0:], dtype=float)
         if any(i < v0 for f in self.faces[f0:] for i in f):
             raise ValueError(f"f0={f0} 以降の面が v0={v0} より前の頂点を使っています")
         faces = [[i - v0 for i in f] for f in self.faces[f0:]]
-        vn = vertex_normals(V, faces)
+        # 陰の代理形状の法線は Blender と同じ角の角度の重みで求める。面積の重みだと、
+        # 生え際の細い面の頂点が大きな面の向きになり、輪郭線の殻が細い面で折れ返る。
+        vn = (vertex_normals(V, faces) if at is None
+              else vertex_normals(at, faces, by_angle=True))
         _, group = np.unique(np.round(V / tol).astype(np.int64), axis=0,
                              return_inverse=True)
         group = group.reshape(-1)
-        out = np.zeros_like(V)
+        out = np.zeros_like(V) if at is None else vn.copy()
         for g in np.flatnonzero(np.bincount(group) > 1):
             members = np.flatnonzero(group == g)
             n = vn[members].sum(axis=0)
             if np.linalg.norm(n) > 1e-9:
                 out[members] = n
-        self.set_normals(v0, out)
+        return out
 
     # -- 低レベル ----------------------------------------------------------
     def add_verts(self, pts) -> int:

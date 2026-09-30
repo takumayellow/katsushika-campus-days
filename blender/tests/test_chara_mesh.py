@@ -4,6 +4,7 @@ to_object は決めた頂点だけをカスタム法線にし、残りの角に�
 そのまま渡す。その振り分けは bpy の要らない merge_normals が受け持つ。
 
 share_normals は、同じ位置に重なった別々の頂点へ 1 本にそろえた法線を決める。
+shade_as は、形はそのままで、陰の法線だけを別の位置に置いた同じ面から求める。
 """
 
 import numpy as np
@@ -77,3 +78,62 @@ def test_share_normals_rejects_faces_before_v0():
     mb.add_face([0, floor + 2, floor + 3], "m")
     with pytest.raises(ValueError):
         mb.share_normals(floor, 0)
+
+
+def test_vertex_normals_by_angle_ignores_face_size():
+    """角の角度で重み付けすると、大きな面に接した細い面の向きも同じだけ効く。"""
+    verts = [(0.0, 0.0, 0.0), (10.0, 0.0, 0.0), (10.0, 10.0, 0.0), (0.0, 10.0, 0.0),
+             (0.0, 0.0, -1.0)]
+    faces = [(0, 1, 2, 3), (0, 4, 3)]  # 面積 100 の床 (+z) と面積 5 の壁 (+x)
+    np.testing.assert_allclose(M.vertex_normals(verts, faces, by_angle=True)[0],
+                               np.array([1.0, 0.0, 1.0]) / np.sqrt(2.0))
+    assert M.vertex_normals(verts, faces)[0][2] > 0.99  # 面積の重みでは床の向きになる
+
+
+def test_shade_as_takes_normals_from_the_given_positions():
+    """陰の法線は at に置いた面から求め、頂点の位置は動かさない。"""
+    mb = M.MeshBuilder()
+    quad = [(0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (1.0, 1.0, 0.0), (0.0, 1.0, 0.0)]
+    v = mb.add_verts(quad)
+    mb.add_face([v + k for k in range(4)], "m")
+    mb.shade_as(v, 0, [(x, y, x) for x, y, _ in quad])  # z = x の斜面
+    np.testing.assert_allclose(mb.normal_array(),
+                               np.tile(np.array([-1.0, 0.0, 1.0]) / np.sqrt(2.0), (4, 1)))
+    np.testing.assert_allclose(mb.verts, quad)
+
+
+def test_shade_as_gives_overlapping_vertices_one_normal():
+    """今の位置で重なった頂点は、at では離れていても、それぞれの法線の平均にそろう。"""
+    mb, floor, wall = _l_shape()
+    at = np.asarray(mb.verts[floor:], dtype=float)
+    at[wall - floor:] += (0.5, 0.0, 0.0)  # 壁だけ平行に動かす（向きは +x のまま）
+    mb.shade_as(floor, 0, at)
+    n = mb.normal_array()
+    n = n / np.maximum(np.linalg.norm(n, axis=1, keepdims=True), 1e-30)
+    for i in (floor + 1, floor + 2, wall, wall + 3):
+        np.testing.assert_allclose(n[i], np.array([1.0, 0.0, 1.0]) / np.sqrt(2.0))
+    for i in (floor, floor + 3):
+        np.testing.assert_allclose(n[i], (0.0, 0.0, 1.0))
+    for i in (wall + 1, wall + 2):
+        np.testing.assert_allclose(n[i], (1.0, 0.0, 0.0))
+    np.testing.assert_allclose(n[0], 0.0)  # v0 より前の頂点は決めない
+
+
+def test_shade_as_keeps_cancelling_normals_per_vertex():
+    """表と裏の面が同じ位置で打ち消し合う点は、平均せずにそれぞれの面の向きのままにする。"""
+    mb = M.MeshBuilder()
+    quad = [(0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (1.0, 1.0, 0.0), (0.0, 1.0, 0.0)]
+    top = mb.add_verts(quad)
+    mb.add_face([top + k for k in range(4)], "m")
+    bottom = mb.add_verts(quad)
+    mb.add_face([bottom + k for k in range(4)][::-1], "m")
+    mb.shade_as(0, 0, mb.verts)
+    n = mb.normal_array()
+    np.testing.assert_allclose(n[top:top + 4], np.tile((0.0, 0.0, 1.0), (4, 1)))
+    np.testing.assert_allclose(n[bottom:bottom + 4], np.tile((0.0, 0.0, -1.0), (4, 1)))
+
+
+def test_shade_as_rejects_positions_of_another_length():
+    mb, floor, _ = _l_shape()
+    with pytest.raises(ValueError):
+        mb.shade_as(floor, 0, np.zeros((3, 3)))

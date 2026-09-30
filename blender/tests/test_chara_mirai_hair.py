@@ -87,8 +87,10 @@ def _vertex_normals(V, faces):
             continue
         for k in range(len(f)):
             e0, e1 = P[k - 1] - P[k], P[(k + 1) % len(f)] - P[k]
-            c = e0 @ e1 / (np.linalg.norm(e0) * np.linalg.norm(e1))
-            VN[f[k]] += n / L * np.arccos(np.clip(c, -1.0, 1.0))
+            den = np.linalg.norm(e0) * np.linalg.norm(e1)
+            if den < 1e-30:  # 長さ 0 の辺の角は向きが無い
+                continue
+            VN[f[k]] += n / L * np.arccos(np.clip(e0 @ e1 / den, -1.0, 1.0))
     return VN / np.maximum(np.linalg.norm(VN, axis=1, keepdims=True), 1e-30)
 
 
@@ -140,21 +142,26 @@ def test_mirai_bangs_are_the_helmet_shell(mirai):
 
 @pytest.mark.parametrize("w", [0.0045, 0.016])  # 0.9 m と 3.2 m での輪郭線の太さ
 def test_mirai_helmet_outline_does_not_fold_over_crown_and_bangs(mirai, w):
-    """頭頂から前髪の毛先までの外殻を、頂点法線の向きへ w 押し出しても面が裏返らない。
+    """頭頂から前髪の毛先までの外殻を、書き出す頂点法線の向きへ w 押し出しても面が裏返らない。
 
+    輪郭線の殻は FBX に書き出した法線の向きへ押し出すので、陰の法線を決めた頂点はその
+    法線で、決めていない頂点は面から求めた法線で測る。
     極のすぐ周り（リング 0〜2）は半径が 3.2 m の殻の幅 16 mm より小さく、押し出した
     殻が極を越えて反対側と重なるので、面ごとの向きの比較では測れない。そこは除く。
     """
     mb, V = mirai["mb"], mirai["V"]
     g = mirai["grids"]["hair_back"][0]
     faces = [np.array(f) for f in mb.faces[g["f0"]:g["f1"]]]
-    VN = _vertex_normals(V, faces)
+    custom = mb.normal_array()
+    VN = M.merge_normals(custom, np.arange(len(V)), _vertex_normals(V, faces))
+    VN /= np.maximum(np.linalg.norm(VN, axis=1, keepdims=True), 1e-30)
     folded, checked = [], 0
     for f in faces:
         rows = (f - g["v0"]) // g["cols"]
         if rows.min() < 3 or rows.max() > mirai["nv"]:
             continue
         checked += 1
+        assert np.all(np.linalg.norm(custom[f], axis=1) > 0.0)  # 陰の法線を決めた頂点で測る
         P = V[f]
         if _area_vec(P) @ _area_vec(P + VN[f] * w) < 0.0:
             folded.append((int(rows.min()), int((f[0] - g["v0"]) % g["cols"])))

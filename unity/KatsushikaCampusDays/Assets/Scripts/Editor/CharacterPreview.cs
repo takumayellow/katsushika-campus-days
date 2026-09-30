@@ -60,6 +60,8 @@ namespace KCD.Editor
             new Shot { Suffix = "face_f90", Yaw = 90f, Face = true },
             new Shot { Suffix = "body_f0", Yaw = 0f, Face = false },
             new Shot { Suffix = "body_f35", Yaw = 35f, Face = false },
+            new Shot { Suffix = "face_b145", Yaw = 145f, Face = true },
+            new Shot { Suffix = "body_b180", Yaw = 180f, Face = false },
         };
 
         private static readonly Shot[] MotionShots =
