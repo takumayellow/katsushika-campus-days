@@ -203,9 +203,7 @@ CHARACTERS: dict[str, dict] = {
         accessories=("tote",),
         # 頭・左手・髪の殻・スカート（袴）・袂の面を外向きに張る。Unity の
         # 輪郭線は法線の向きへ押し出した殻の裏面なので、面が内向きだと殻が
-        # 体の中へ押し込まれて外形の線が 1 本も出ない。inari・kaname・sora・
-        # prof も同じ面が内向きだが、書き出し直してゲームで確かめてから
-        # True にする。
+        # 体の中へ押し込まれて外形の線が 1 本も出ない。7 体とも True。
         outward_faces=True,
         # 横顔の鼻先を頭の奥行きの何割だけ前へ出すか（body._keel）。
         face_keel=0.090,
@@ -343,6 +341,7 @@ CHARACTERS: dict[str, dict] = {
                     "cloth_ribbon_green": "#2E6FBF"},
         accessories=(),
         sign_items=("赤縁メガネ", "ツインテール", "結び目の紫リボン"),
+        outward_faces=True,
     ),
     # ---------------------------------------------------------------- kaname
     "kaname": dict(
@@ -364,6 +363,7 @@ CHARACTERS: dict[str, dict] = {
                     "cloth_skirt_navy": "#7A3F46", "cloth_ribbon_green": "#D9A441"},
         accessories=(),
         sign_items=("エプロン", "ポニーテール", "三角巾"),
+        outward_faces=True,
     ),
     # ------------------------------------------------------------------ sora
     "sora": dict(
@@ -385,6 +385,7 @@ CHARACTERS: dict[str, dict] = {
                     "cloth_ribbon_green": "#00843D", "cloth_skirt_navy": "#3A4E6E"},
         accessories=("sneakers",),
         sign_items=("水色ショート", "パーカー", "スニーカー"),
+        outward_faces=True,
     ),
     # ------------------------------------------------------------------ prof
     "prof": dict(
@@ -407,6 +408,7 @@ CHARACTERS: dict[str, dict] = {
                     "glasses": "#AEB4BE"},
         accessories=("necktie",),
         sign_items=("白衣", "銀縁眼鏡", "ネクタイ"),
+        outward_faces=True,
     ),
 }
 

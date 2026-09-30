@@ -38,10 +38,11 @@ def _stick_out(name):
     return worst / p["head_d"]
 
 
-@pytest.mark.parametrize("name", ["mirai", "botchan", "madonna"])
+@pytest.mark.parametrize("name", params.ALL_IDS)
 def test_eyes_stay_inside_profile(name):
     assert params.resolve(name).get("outward_faces")
-    # 直す前は mirai 0.083、botchan 0.027。今は 3 体とも 0.014 以下に収まる。
+    # 直す前は mirai 0.083、botchan 0.027、inari・kaname・sora・prof 0.073〜0.080。
+    # 今は 7 体とも 0.015 未満に収まる。
     assert _stick_out(name) < 0.015
 
 

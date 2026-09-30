@@ -44,5 +44,6 @@
       "name": "skin",
       "hex": "F4CBB8"
     }
-  ]
+  ],
+  "outward_faces": true
 }
