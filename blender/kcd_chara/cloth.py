@@ -216,26 +216,14 @@ def pleated_skirt(mb: M.MeshBuilder, p, a, mat, part, *, z_top, z_bot,
 
 
 def leg_profile(a: B.Anatomy):
-    """素体の脚（body.build_legs）と同じ z→半径プロファイル。
+    """素体の脚（body.leg_tube）の足首から股への z・半径・x（+X 側の脚）。
 
     足首と膝を直線で結ぶとふくらはぎの膨らみ（r1*1.12）を取りこぼし、靴下や
-    ブーツが脚を突き抜けて肌が縞状に露出する。実キーポイントをそのまま使う。
+    ブーツが脚を突き抜けて肌が縞状に露出する。脚の芯の点をそのまま使う。
     """
-    r0, r1, r2 = a.leg_r
-    z_an, z_kn, z_hp = a.ankle[2], a.knee[2], a.hip_joint[2]
-    x_an, x_kn, x_hp = a.ankle[0], a.knee[0], a.hip_joint[0]
-    zs = np.array([z_an,
-                   z_kn + (z_an - z_kn) * 0.36,
-                   z_kn,
-                   z_hp + (z_kn - z_hp) * 0.42,
-                   z_hp + (z_hp - z_kn) * 0.10])
-    rr = np.array([r2, r1 * 1.12, r1, r0 * 0.86, r0 * 1.02])
-    xs = np.array([x_an,
-                   x_kn + (x_an - x_kn) * 0.36,
-                   x_kn,
-                   x_hp + (x_kn - x_hp) * 0.42,
-                   x_hp + (x_hp - x_kn) * 0.10])
-    return zs, rr, xs
+    path, radii = B.leg_tube(a, 1)
+    path = path[::-1]
+    return path[:, 2], np.array(radii[::-1]), path[:, 0]
 
 
 def inner_envelope(p, a: B.Anatomy, z_list):

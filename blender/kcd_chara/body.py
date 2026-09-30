@@ -706,14 +706,13 @@ def leg_rings(p: dict, a: Anatomy, sgn):
     return out
 
 
-def build_legs(mb: M.MeshBuilder, p: dict, a: Anatomy, *, bare: bool = True):
+def build_legs(mb: M.MeshBuilder, p: dict, a: Anatomy):
     for sgn in (-1, 1):
         side = "l" if sgn > 0 else "r"
         an = leg_tube(a, sgn)[0][-1]
         with mb.part(f"leg_{side}"):
             mb.add_grid(leg_rings(p, a, sgn), "skin", smooth=True,
                         cap_start=True, cap_end=True)
-        _ = bare
         # 足
         fw, fl_, fh = a.foot
         cx = float(an[0])

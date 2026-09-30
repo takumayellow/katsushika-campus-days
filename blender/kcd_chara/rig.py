@@ -471,10 +471,9 @@ def _prune_influences(obj, mb: M.MeshBuilder, parts, k: int = 2) -> None:
     たまたま届いただけで、形に効くというより PC と WebGL で食い違う種だった
     （madonna のブーツで Run 時 1.54 cm）。ここで落として両方同じにする。
 
-    以前は「WebGL は 1 頂点 2 ボーンだから」が理由だったが、その前提は #49 で
-    なくなった。スカート前中央は Hips ＋ 左右 UpperLeg の 3 本が要る場所で、
-    2 本に切ると左右どちらの脚を残すかが x=0 をまたいで入れ替わり、布が裂ける。
-    そのため QualitySettings の Mobile（＝WebGL）も PC と同じ 4 本にした。
+    ほかの部位は 4 本のまま残す。スカート前中央は Hips ＋ 左右 UpperLeg の 3 本が
+    要る場所で、2 本に切ると左右どちらの脚を残すかが x=0 をまたいで入れ替わり、
+    布が裂ける（QualitySettings の Mobile＝WebGL も PC と同じ 4 本）。
     """
     idx = mb.part_indices(*parts)
     if len(idx) == 0:
@@ -487,10 +486,15 @@ def _prune_influences(obj, mb: M.MeshBuilder, parts, k: int = 2) -> None:
             continue
         keep = ws[:k]
         tot = sum(w for w, _ in keep) or 1.0
-        for vg in obj.vertex_groups:
-            vg.remove([i])
-        for w, n in keep:
-            obj.vertex_groups[n].add([i], float(w / tot), "REPLACE")
+        _write_weights(obj, i, {n: w / tot for w, n in keep})
+
+
+def _write_weights(obj, i: int, weights: dict) -> None:
+    """頂点 i のウェイトを weights（ボーン名 → 値）だけにする。"""
+    for vg in obj.vertex_groups:
+        vg.remove([i])
+    for name, val in weights.items():
+        obj.vertex_groups[name].add([i], float(val), "REPLACE")
 
 
 def _follow_skin(obj, mb: M.MeshBuilder, pts, part: str, skin: str) -> None:
@@ -498,39 +502,50 @@ def _follow_skin(obj, mb: M.MeshBuilder, pts, part: str, skin: str) -> None:
 
     靴下は脚の筒と同じ列で張り、脚の面から数 mm しか浮かせていない。距離ウェイトを
     別に付けると肌と少しずつ違う割合になり、膝や足首を曲げたとき肌が靴下を突き抜ける。
-    靴下の各頂点を同じ列の脚の辺へ投影し、その辺の両端のウェイトを内分して付ける。
     """
     seg = B.LEG_SEG
     idx = mb.part_indices(part)
+    if len(idx) == 0:
+        return
     # 脚の筒は リング × seg 列の後ろに両端のふたの中心が 1 点ずつ付く
     sk = mb.part_indices(skin)
-    rows = len(sk) // seg
-    if len(idx) == 0 or rows < 2:
-        return
+    rows = (len(sk) - 2) // seg
+    if rows < 2 or len(sk) != rows * seg + 2:
+        raise ValueError(f"{skin} は {seg} 列のリング＋ふた 2 点の並びでない")
     sk = sk[:rows * seg].reshape(rows, seg)
     gname = {g.index: g.name for g in obj.vertex_groups}
     verts = obj.data.vertices
     W = [[{gname[g.group]: g.weight for g in verts[int(i)].groups if g.weight > 0.0}
           for i in row] for row in sk]
-    for n, i in enumerate(idx.tolist()):
+    for i, w in zip(idx.tolist(), _skin_blend(pts, idx, sk, W)):
+        if w:
+            _write_weights(obj, i, w)
+
+
+def _skin_blend(pts, idx, grid, W, k: int = 4) -> list[dict]:
+    """idx の各頂点を、grid（リング × 列の頂点番号）の同じ列の辺へ投影し、
+    辺の両端のウェイト W[リング][列]（ボーン名 → 値）を内分して返す。
+
+    idx の n 番目の頂点は grid の n % 列数 の列に並んでいる前提。上位 k ボーンで
+    正規化する（Unity は 1 頂点 4 ボーンまで）。
+    """
+    seg = grid.shape[1]
+    out = []
+    for n, i in enumerate(np.asarray(idx).tolist()):
         j = n % seg
-        a = pts[sk[:-1, j]]
-        ab = pts[sk[1:, j]] - a
+        a = pts[grid[:-1, j]]
+        ab = pts[grid[1:, j]] - a
         t = np.clip(np.einsum("ij,ij->i", pts[i] - a, ab)
                     / np.einsum("ij,ij->i", ab, ab), 0.0, 1.0)
-        k = int(np.argmin(np.linalg.norm(a + ab * t[:, None] - pts[i], axis=1)))
+        r = int(np.argmin(np.linalg.norm(a + ab * t[:, None] - pts[i], axis=1)))
         mix: dict[str, float] = {}
-        for w, s in ((W[k][j], 1.0 - t[k]), (W[k + 1][j], t[k])):
+        for w, s in ((W[r][j], 1.0 - t[r]), (W[r + 1][j], t[r])):
             for name, val in w.items():
                 mix[name] = mix.get(name, 0.0) + val * s
-        # Unity は 1 頂点 4 ボーンまで
-        keep = sorted(mix.items(), key=lambda kv: kv[1], reverse=True)[:4]
+        keep = sorted(mix.items(), key=lambda kv: kv[1], reverse=True)[:k]
         tot = sum(v for _, v in keep) or 1.0
-        for vg in obj.vertex_groups:
-            vg.remove([i])
-        for name, val in keep:
-            if val > 1e-4:
-                obj.vertex_groups[name].add([i], float(val / tot), "REPLACE")
+        out.append({name: val / tot for name, val in keep if val > 1e-4})
+    return out
 
 
 def override_weights(obj, mb: M.MeshBuilder, p: dict, a: B.Anatomy) -> None:
