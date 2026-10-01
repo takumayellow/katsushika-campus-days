@@ -35,6 +35,22 @@ namespace KCD
         private void Awake()
         {
             _walker = GetComponent<MobWalker>();
+        }
+
+        private void OnEnable()
+        {
+            L.LocaleChanged += RefreshPrompt;
+            RefreshPrompt();
+        }
+
+        private void OnDisable()
+        {
+            L.LocaleChanged -= RefreshPrompt;
+        }
+
+        /// <summary>いまの言語で「話す」を出す。言語を切り替えたら出し直す。</summary>
+        private void RefreshPrompt()
+        {
             PromptLabel = L.Get("ui.interact.talk", "話す");
         }
 

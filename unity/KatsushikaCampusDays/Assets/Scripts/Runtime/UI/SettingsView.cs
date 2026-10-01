@@ -5,7 +5,7 @@ using UnityEngine;
 namespace KCD
 {
     /// <summary>
-    /// 設定画面。上下で行を選び、左右で値を変える。BGM / 効果音 / 環境音の音量と言語。
+    /// 設定画面。上下で行を選び、左右で値を変える。BGM / 効果音 / 環境音の音量と言語と画質 (#70)。
     /// ポーズメニューとタイトルの両方から開く。Esc か「閉じる」で戻る。
     /// </summary>
     public sealed class SettingsView : MonoBehaviour
@@ -14,8 +14,9 @@ namespace KCD
         private const int RowSe = 1;
         private const int RowAmbient = 2;
         private const int RowLanguage = 3;
-        private const int RowClose = 4;
-        private const int RowCount = 5;
+        private const int RowQuality = 4;
+        private const int RowClose = 5;
+        private const int RowCount = 6;
 
         [SerializeField] private GameObject _root;
         [SerializeField] private TMP_Text _heading;
@@ -127,6 +128,9 @@ namespace KCD
                 case RowLanguage:
                     L.Toggle();
                     return true;
+                case RowQuality:
+                    QualityManager.SetTier(QualityTiers.Step(QualityManager.Current, direction));
+                    return true;
                 default:
                     return false;
             }
@@ -160,18 +164,39 @@ namespace KCD
             string se = audio != null ? Bar(audio.SeVolume) : "-";
             string ambient = audio != null ? Bar(audio.AmbientVolume) : "-";
             string language = "◀ " + L.Get("ui.settings.language." + L.Locale, L.Locale) + " ▶";
+            string quality = "◀ " + QualityLabel(QualityManager.Current) + " ▶";
 
             var builder = new System.Text.StringBuilder(512);
             AppendRow(builder, RowBgm, L.Get("ui.settings.bgm_volume", "音楽の音量"), bgm);
             AppendRow(builder, RowSe, L.Get("ui.settings.se_volume", "効果音の音量"), se);
             AppendRow(builder, RowAmbient, L.Pick("環境音の音量", "Ambient Volume"), ambient);
             AppendRow(builder, RowLanguage, L.Get("ui.settings.language", "言語"), language);
+            AppendRow(builder, RowQuality, L.Get("ui.settings.quality", "画質"), quality);
             builder.Append('\n');
             AppendRow(builder, RowClose, L.Pick("閉じる", "Close"), string.Empty);
             builder.Append("\n<size=70%><alpha=#99>");
             builder.Append(L.Pick("↑↓ で選択　←→ で変更　Esc で戻る", "Up/Down: select   Left/Right: change   Esc: back"));
             builder.Append("<alpha=#FF></size>");
             _body.text = builder.ToString();
+        }
+
+        private static string QualityLabel(QualityTier tier)
+        {
+            string fallback;
+            switch (tier)
+            {
+                case QualityTier.Low:
+                    fallback = L.Pick("低", "Low");
+                    break;
+                case QualityTier.High:
+                    fallback = L.Pick("高", "High");
+                    break;
+                default:
+                    fallback = L.Pick("中", "Medium");
+                    break;
+            }
+
+            return L.Get(QualityTiers.LabelKey(tier), fallback);
         }
 
         private void AppendRow(System.Text.StringBuilder builder, int row, string label, string value)

@@ -95,6 +95,9 @@ namespace KCD
         /// <summary>購読している QuestSystem。付け替えのときに外す。</summary>
         private QuestSystem _subscribedQuests;
 
+        /// <summary>シーンの非同期の読み込み。<see cref="Loader"/> が初めて使うときに付ける。</summary>
+        private SceneLoader _loader;
+
         /// <summary>ゲーム内時刻（時間単位の実数、0-24）。DayNightCycle が毎フレーム更新する。</summary>
         public float GameTimeHours { get; set; } = DayRestart.DayStartHour;
 
@@ -287,31 +290,47 @@ namespace KCD
             return characterId;
         }
 
-        /// <summary>キャンパスへ移動する。</summary>
-        public void EnterCampus()
+        /// <summary>
+        /// シーンの非同期の読み込み (#15)。この GameObject（DontDestroyOnLoad）に初めて使うときに付ける。
+        /// </summary>
+        public SceneLoader Loader
         {
-            // 封鎖を掛けた画面・演出はシーンごと消えるので、残った封鎖をまとめて外す (#40)。
-            KCDInput.ClearAllBlocks();
+            get
+            {
+                if (_loader == null)
+                {
+                    _loader = GetComponent<SceneLoader>();
+                    if (_loader == null)
+                    {
+                        _loader = gameObject.AddComponent<SceneLoader>();
+                    }
+                }
 
-            // 前のキャンパスで頼まれたまま書けなかった自動セーブを、次のキャンパスの最初のフレーム
-            // （「つづきから」の位置を当てる前）に書かないよう捨てる (#61)。
-            AutoSave.Cancel();
-            SceneManager.LoadScene(CampusSceneName);
+                return _loader;
+            }
         }
 
         /// <summary>
-        /// タイトルへ戻る。封鎖と時間停止を解いてから Title を読む。
+        /// キャンパスへ移動する。<see cref="SceneLoader"/> が非同期で読み、その間は「読み込み中」の画面を出して操作を止める (#15)。
+        /// 読んでいる最中にもう一度呼ばれても（二度押し）読むのは 1 回だけ。
+        /// 残った封鎖をまとめて外すこと (#40) と、前のキャンパスで頼まれたまま書けなかった自動セーブを
+        /// 次のキャンパスの最初のフレーム（「つづきから」の位置を当てる前）に書かないよう捨てること (#61) は、
+        /// ローダーが読み始めと切り替えの直前に行う。
+        /// </summary>
+        public void EnterCampus()
+        {
+            Loader.Load(CampusSceneName, false);
+        }
+
+        /// <summary>
+        /// タイトルへ戻る。封鎖を外し、読み込みの間は古いキャンパスの時間を止め、タイトルは timeScale 1 で始める (#15)。
+        /// 自動セーブの依頼も捨てる (#61)。読んでいる最中にもう一度呼ばれても読むのは 1 回だけ。
         /// メモリ上の進行はタイトルでは使わない。「つづきから」はセーブを読み直し、「はじめから」は
         /// <see cref="BeginNewGame"/> で初期値に戻すので、セーブしていない進行はここで失われる。
         /// </summary>
         public void ReturnToTitle()
         {
-            KCDInput.ClearAllBlocks();
-            Time.timeScale = 1f;
-
-            // 封鎖を外したので、シーンが切り替わるまでのフレームで自動セーブが書かないよう捨てる (#61)。
-            AutoSave.Cancel();
-            SceneManager.LoadScene(TitleSceneName);
+            Loader.Load(TitleSceneName, true);
         }
 
         /// <summary>シーンにインスタンスが無くても起動時に必ず用意する。</summary>
