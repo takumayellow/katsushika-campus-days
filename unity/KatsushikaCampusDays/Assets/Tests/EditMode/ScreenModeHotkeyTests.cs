@@ -29,11 +29,12 @@ namespace KCD.Tests
         [Test]
         public void IsFullscreenChord_NeedsCtrlHeldWithF()
         {
-            Assert.IsTrue(KCDInput.IsFullscreenChord(true, true));
+            Assert.IsTrue(KCDInput.IsFullscreenChord(true, false, true));
 
-            Assert.IsFalse(KCDInput.IsFullscreenChord(false, true), "F だけで切り替わった（歩いているうちに押し間違える）");
-            Assert.IsFalse(KCDInput.IsFullscreenChord(true, false), "Ctrl だけで切り替わった");
-            Assert.IsFalse(KCDInput.IsFullscreenChord(false, false));
+            Assert.IsFalse(KCDInput.IsFullscreenChord(false, false, true), "F だけで切り替わった（歩いているうちに押し間違える）");
+            Assert.IsFalse(KCDInput.IsFullscreenChord(true, false, false), "Ctrl だけで切り替わった");
+            Assert.IsFalse(KCDInput.IsFullscreenChord(true, true, true), "AltGr+F（Ctrl+Alt+F）で切り替わった");
+            Assert.IsFalse(KCDInput.IsFullscreenChord(false, false, false));
         }
 
         [Test]

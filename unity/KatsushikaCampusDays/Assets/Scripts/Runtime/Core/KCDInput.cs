@@ -321,12 +321,18 @@ namespace KCD
         /// </summary>
         public static bool FullscreenPressed =>
             Keyboard.current != null
-            && IsFullscreenChord(Keyboard.current.ctrlKey.isPressed, Keyboard.current.fKey.wasPressedThisFrame);
+            && IsFullscreenChord(
+                Keyboard.current.ctrlKey.isPressed,
+                Keyboard.current.altKey.isPressed,
+                Keyboard.current.fKey.wasPressedThisFrame);
 
-        /// <summary>全画面の打鍵か。Ctrl を押したまま F を押したときだけ。</summary>
-        public static bool IsFullscreenChord(bool ctrlHeld, bool fPressedThisFrame)
+        /// <summary>
+        /// 全画面の打鍵か。Ctrl を押したまま F を押したときだけ。
+        /// AltGr（Ctrl+Alt として届く）+F は文字入力なので除く。Web 版のページ内検索の抑止（index.html）と同じ条件。
+        /// </summary>
+        public static bool IsFullscreenChord(bool ctrlHeld, bool altHeld, bool fPressedThisFrame)
         {
-            return ctrlHeld && fPressedThisFrame;
+            return ctrlHeld && !altHeld && fPressedThisFrame;
         }
 
         /// <summary>クイックセーブ（F5）。</summary>
