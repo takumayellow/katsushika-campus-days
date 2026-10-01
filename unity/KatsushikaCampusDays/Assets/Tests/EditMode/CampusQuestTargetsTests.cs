@@ -8,7 +8,7 @@ using UnityEngine.SceneManagement;
 namespace KCD.Tests
 {
     /// <summary>
-    /// Campus シーンに、13 クエストのどのステップの対象も、隠しアイテム 20 個も、写真スポット 6 箇所も
+    /// Campus シーンに、14 クエスト（隠しクエストを含む）のどのステップの対象も、隠しアイテム 20 個も、写真スポット 6 箇所も
     /// 置かれていることを守る (#65)。
     ///
     /// 以前は collectibles.json の一覧だけがあってシーンに何も無く、サブクエ「写真散歩」の ps_* と
@@ -171,7 +171,9 @@ namespace KCD.Tests
         {
             Assert.IsTrue(_scene.IsValid(), ScenePath + " を開けない");
             List<QuestData> quests = LoadQuests();
-            Assert.AreEqual(MiniJson.GetInt(Totals(), "quests", -1), quests.Count, "クエストの数が result.json の totals と合わない");
+            // result.json の totals は隠しクエストを数えない (#175)。
+            Assert.AreEqual(MiniJson.GetInt(Totals(), "quests", -1), quests.FindAll(q => !q.Secret).Count,
+                "隠しクエスト以外のクエストの数が result.json の totals と合わない");
 
             var missing = new List<string>();
             foreach (QuestData quest in quests)

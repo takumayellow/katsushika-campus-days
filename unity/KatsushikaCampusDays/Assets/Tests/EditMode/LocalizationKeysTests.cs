@@ -47,6 +47,8 @@ namespace KCD.Tests
                 "GameManager.PlayableCharacterIds。OtherKeySources_ExistInEveryDictionary が見る"),
             ("CharacterSelect.cs", "\"ui.select.\" + id + \".desc\"",
                 "GameManager.PlayableCharacterIds。OtherKeySources_ExistInEveryDictionary が見る"),
+            ("NPCTalker.cs", "_promptKey",
+                "PromptKey に入れるリテラル（SecretStoryStage の ui.interact.inspect）。KeyShapedLiterals_ExistInEveryDictionary が見る"),
             ("MapAttribution.cs", "Key",
                 "定数 ui.credits.map。KeyShapedLiterals_ExistInEveryDictionary が見る"),
             ("PauseMenu.cs", "EntryKeys[i]",

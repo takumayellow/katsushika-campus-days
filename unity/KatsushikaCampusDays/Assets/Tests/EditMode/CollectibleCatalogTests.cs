@@ -40,7 +40,7 @@ namespace KCD.Tests
         }
 
         [Test]
-        public void RealCatalog_HasTwentyHiddenThreeRewardsSixSpotsThirteenAchievements()
+        public void RealCatalog_HasTwentyHiddenFourRewardsSixSpotsFourteenAchievements()
         {
             CollectibleCatalog catalog = RealCatalog();
             Dictionary<string, object> root = ReadObject(CatalogPath);
@@ -60,10 +60,10 @@ namespace KCD.Tests
             }
 
             Assert.AreEqual(20, catalog.HiddenCount);
-            Assert.AreEqual(3, rewards);
+            Assert.AreEqual(4, rewards);
             Assert.AreEqual(catalog.Items.Count, catalog.HiddenCount + rewards, "source が hidden でも quest でもない物がある");
             Assert.AreEqual(6, catalog.PhotoSpotCount);
-            Assert.AreEqual(13, catalog.Achievements.Count);
+            Assert.AreEqual(14, catalog.Achievements.Count);
         }
 
         [Test]

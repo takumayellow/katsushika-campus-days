@@ -154,9 +154,18 @@ namespace KCD.Tests
             Dictionary<string, object> totals = MiniJson.GetObject(ReadObject(ResultPath), "totals");
             Assert.IsNotNull(totals, "result.json に totals が無い");
 
-            int quests = Directory.GetFiles(Path.Combine(DataRoot, "Quests"), "*.json").Length;
+            // 隠しクエストは結果画面の分母に入れない (#175)。
+            int quests = 0;
+            foreach (string file in Directory.GetFiles(Path.Combine(DataRoot, "Quests"), "*.json"))
+            {
+                if (!QuestData.FromJson(ReadObject(file)).Secret)
+                {
+                    quests++;
+                }
+            }
+
             Assert.AreEqual(quests, MiniJson.GetInt(totals, "quests"),
-                "totals.quests が Data/Quests のクエスト数と違う");
+                "totals.quests が Data/Quests の（隠しを除く）クエスト数と違う");
 
             Dictionary<string, object> collectibles =
                 ReadObject(Path.Combine(DataRoot, "Collectibles", "collectibles.json"));

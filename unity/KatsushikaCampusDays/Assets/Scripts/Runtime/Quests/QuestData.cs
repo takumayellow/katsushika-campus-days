@@ -92,6 +92,12 @@ namespace KCD
         /// <summary>サブクエストか（JSON の side）。称号「本編を歩き切った」(ach_main_story) は本編だけを数える。</summary>
         public bool Side;
 
+        /// <summary>
+        /// 隠しクエストか（JSON の secret）(#175)。一日の結果の「クエスト」と称号のクエスト数には数えない
+        /// （気づかずに終えた人の点数や称号が届かなくならないように）。
+        /// </summary>
+        public bool Secret;
+
         public string RewardText = string.Empty;
 
         /// <summary>英語の報酬文（JSON の rewardText_en）。</summary>
@@ -158,6 +164,7 @@ namespace KCD
                 Order = MiniJson.GetInt(node, "order", 999),
                 AutoStart = MiniJson.GetBool(node, "autoStart"),
                 Side = MiniJson.GetBool(node, "side"),
+                Secret = MiniJson.GetBool(node, "secret"),
                 RewardText = MiniJson.GetString(node, "rewardText"),
                 RewardTextEn = MiniJson.GetString(node, "rewardText_en"),
                 RewardType = MiniJson.GetString(node, "rewardType"),

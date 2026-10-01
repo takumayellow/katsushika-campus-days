@@ -30,7 +30,7 @@ namespace KCD.Tests
         {
             var quests = new QuestSystem { Clock = () => hour };
             quests.LoadFromResources();
-            Assert.AreEqual(13, quests.All.Count, "Resources/KCD/Quests のクエストの数が 13 ではない");
+            Assert.AreEqual(14, quests.All.Count, "Resources/KCD/Quests のクエストの数が 14 ではない");
             return quests;
         }
 

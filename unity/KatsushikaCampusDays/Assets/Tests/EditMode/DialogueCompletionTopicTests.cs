@@ -28,6 +28,7 @@ namespace KCD.Tests
             new[] { "q_sq_lost_card", "kaname", "t_sq_lost_card_done" },
             new[] { "q_sq_lab_notebook", "sora", "t_sq_lab_notebook_done" },
             new[] { "q_sq_stray_book", "inari", "t_sq_stray_book_done" },
+            new[] { "q_secret_spring_hunt", "inari", "t_secret_done" },
         };
 
         private static Dictionary<string, object> ReadObject(string path)

@@ -8,7 +8,8 @@ namespace KCD.Tests
     /// <summary>
     /// 結果画面の分母（Ending/result.json の totals）が実データの件数と合っているか (#65)。
     /// 分母が実際に集められる数より大きいと、全部集めても 100% にならない。
-    /// 隠しアイテムの数は collectibles.json の source = hidden の件数（クエストの報酬 3 件は入れない）。
+    /// 隠しアイテムの数は collectibles.json の source = hidden の件数（クエストの報酬 4 件は入れない）。
+    /// クエストの数は隠しクエスト（secret）を入れない。隠しクエストは結果画面に出さない (#175)。
     /// </summary>
     public sealed class ResultTotalsTests
     {
@@ -42,10 +43,20 @@ namespace KCD.Tests
         }
 
         [Test]
-        public void Quests_EqualsTheQuestFiles()
+        public void Quests_EqualsTheQuestFilesOtherThanSecret()
         {
-            int files = Directory.GetFiles(Path.Combine(DataRoot, "Quests"), "*.json").Length;
-            Assert.AreEqual(files, MiniJson.GetInt(Totals(), "quests", -1));
+            int shown = 0;
+            foreach (string file in Directory.GetFiles(Path.Combine(DataRoot, "Quests"), "*.json"))
+            {
+                QuestData quest = QuestData.FromJson(MiniJson.Deserialize(File.ReadAllText(file)) as Dictionary<string, object>);
+                Assert.IsNotNull(quest, file);
+                if (!quest.Secret)
+                {
+                    shown++;
+                }
+            }
+
+            Assert.AreEqual(shown, MiniJson.GetInt(Totals(), "quests", -1));
         }
 
         [Test]

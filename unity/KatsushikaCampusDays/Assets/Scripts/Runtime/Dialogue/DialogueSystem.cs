@@ -165,10 +165,20 @@ namespace KCD
         }
 
         /// <summary>
-        /// 条件に合う話題を選ぶ（テストから呼ぶ純関数）。条件つきの話題を上から優先し、無条件のものは最後の受け皿。
+        /// 条件に合う話題を選ぶ。隠しアイテムの数と持ち物は、いま拾っているもの（DayStats）で判定する。
         /// spentTopics は「NPC id/話題 id」の集合で、once の話題を二度出さないために使う。
         /// </summary>
         public static DialogueTopic SelectTopic(DialogueData data, QuestSystem quests, ICollection<string> spentTopics)
+        {
+            return SelectTopic(data, quests, spentTopics, LiveHiddenCount(), DayStats.HasCollected);
+        }
+
+        /// <summary>
+        /// 条件に合う話題を選ぶ（テストから呼ぶ純関数）。条件つきの話題を上から優先し、無条件のものは最後の受け皿。
+        /// hiddenCount は拾った隠しアイテムの種類数、hasItem はそのアイテムを拾っているか (#175)。
+        /// </summary>
+        public static DialogueTopic SelectTopic(DialogueData data, QuestSystem quests, ICollection<string> spentTopics,
+            int hiddenCount, Func<string, bool> hasItem)
         {
             if (data == null)
             {
@@ -229,6 +239,16 @@ namespace KCD
                     conditional = true;
                 }
 
+                if (topic.HasItemCondition)
+                {
+                    if (!ItemConditionMet(topic, hiddenCount, hasItem))
+                    {
+                        continue;
+                    }
+
+                    conditional = true;
+                }
+
                 // 条件つきの話題を優先し、無条件のものは最後の受け皿にする。
                 if (conditional)
                 {
@@ -256,6 +276,16 @@ namespace KCD
         /// </summary>
         public static DialogueTopic ReportTalkAndSelect(
             DialogueData data, QuestSystem quests, ICollection<string> spentTopics, DialogueTopic chosen)
+        {
+            return ReportTalkAndSelect(data, quests, spentTopics, chosen, LiveHiddenCount(), DayStats.HasCollected);
+        }
+
+        /// <summary>
+        /// <see cref="ReportTalkAndSelect(DialogueData, QuestSystem, ICollection{string}, DialogueTopic)"/> の、
+        /// 隠しアイテムの数と持ち物を渡せる版（テストから呼ぶ）。
+        /// </summary>
+        public static DialogueTopic ReportTalkAndSelect(DialogueData data, QuestSystem quests,
+            ICollection<string> spentTopics, DialogueTopic chosen, int hiddenCount, Func<string, bool> hasItem)
         {
             if (data == null || quests == null)
             {
@@ -298,10 +328,68 @@ namespace KCD
                     continue;
                 }
 
+                if (topic.HasItemCondition && !ItemConditionMet(topic, hiddenCount, hasItem))
+                {
+                    continue;
+                }
+
                 return topic;
             }
 
             return chosen;
+        }
+
+        /// <summary>話題の、隠しアイテムの数と持ち物の条件を満たしているか。条件が無ければ true。</summary>
+        public static bool ItemConditionMet(DialogueTopic topic, int hiddenCount, Func<string, bool> hasItem)
+        {
+            if (topic == null)
+            {
+                return false;
+            }
+
+            if (topic.RequiresHiddenCount > 0 && hiddenCount < topic.RequiresHiddenCount)
+            {
+                return false;
+            }
+
+            return string.IsNullOrEmpty(topic.RequiresItem) || (hasItem != null && hasItem(topic.RequiresItem));
+        }
+
+        private static int LiveHiddenCount()
+        {
+            return DayStats.HiddenCollectedCount(CollectibleCatalog.Instance);
+        }
+
+        /// <summary>会話データ dialogueId の中の話題を id で引く。無ければ null。</summary>
+        public DialogueTopic FindTopic(string dialogueId, string topicId)
+        {
+            if (string.IsNullOrEmpty(dialogueId) || !_data.TryGetValue(dialogueId, out DialogueData data))
+            {
+                return null;
+            }
+
+            return data.Topics.Find(t => t.Id == topicId);
+        }
+
+        /// <summary>
+        /// NPC に話しかけずに会話を出す（拾ったメモの文面など）(#175)。talk の報告はしない。
+        /// once は覚えない（どの NPC の話題か決まらないので）。依頼（startsQuest）とフラグは話しかけたときと同じく終わりに扱う。
+        /// 会話中なら何もせず false。
+        /// </summary>
+        public bool Play(DialogueTopic topic)
+        {
+            if (_topic != null || topic == null || topic.Lines.Count == 0)
+            {
+                return false;
+            }
+
+            _topic = topic;
+            _topicKey = string.Empty;
+            _lineIndex = 0;
+            _lineStartedAt = Time.unscaledTime;
+            KCDInput.Block(this);
+            LineChanged?.Invoke(CurrentLine);
+            return true;
         }
 
         /// <summary>次の行へ。最後まで行けば会話を閉じる。</summary>
@@ -337,7 +425,7 @@ namespace KCD
 
             if (finished != null)
             {
-                if (finished.Once)
+                if (finished.Once && !string.IsNullOrEmpty(finishedKey))
                 {
                     _spentTopics.Add(finishedKey);
                 }

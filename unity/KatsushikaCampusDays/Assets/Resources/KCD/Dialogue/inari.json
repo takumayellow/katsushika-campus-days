@@ -122,6 +122,30 @@
       ]
     },
     {
+      "id": "t_secret_start",
+      "requiresHiddenCount": 5,
+      "once": true,
+      "startsQuest": "q_secret_spring_hunt",
+      "lines": [
+        {
+          "text": "……ちょっと待って。それ、メモが付いてたでしょう。",
+          "text_en": "...Wait. That came with a note, didn't it?"
+        },
+        {
+          "text": "番号の付いたメモが 20 枚。キャンパスが開いた春に、最初に通った学生たちがはじめた宝探し。",
+          "text_en": "Twenty numbered notes. A treasure hunt started by the first students, the spring this campus opened."
+        },
+        {
+          "text": "最後の 1 枚には鍵が付いていて、図書館 2 階の小さな扉が開く……らしいわよ。",
+          "text_en": "The last one comes with a key, and it opens a small door upstairs in the library... or so they say."
+        },
+        {
+          "text": "わたしは手伝わない。自分で見つけるものだから。",
+          "text_en": "I won't help. You're supposed to find it yourself."
+        }
+      ]
+    },
+    {
       "id": "t_sq_stray_book_active",
       "requiresActiveQuest": "q_sq_stray_book",
       "lines": [
@@ -132,6 +156,16 @@
         {
           "text": "見つけたら、カウンターに伝えて。それから、ここに戻ってきて。",
           "text_en": "When you find it, tell the counter. Then come back here."
+        }
+      ]
+    },
+    {
+      "id": "t_secret_active",
+      "requiresActiveQuest": "q_secret_spring_hunt",
+      "lines": [
+        {
+          "text": "ドームの扉、まだ開けてないの？　鍵は 20 番のメモと一緒よ。",
+          "text_en": "Haven't opened the dome door yet? The key is wherever note twenty is."
         }
       ]
     },
@@ -156,6 +190,34 @@
         {
           "text": "だめ。栞は使うもの。大事にするのは本のほう。",
           "text_en": "No. A bookmark is for using. The thing you take care of is the book."
+        }
+      ]
+    },
+    {
+      "id": "t_secret_done",
+      "requiresCompletedQuest": "q_secret_spring_hunt",
+      "once": true,
+      "lines": [
+        {
+          "text": "……読んだのね。",
+          "text_en": "...So you read it."
+        },
+        {
+          "text": "鈴のメモ、字が違ったでしょう。今年 20 個を隠したのは、わたし。",
+          "text_en": "The note with the bell was in different handwriting, wasn't it? I'm the one who hid all twenty this year."
+        },
+        {
+          "text": "去年の春、わたしも全部見つけた。だから今年はわたしが当番。",
+          "text_en": "Last spring I found them all, too. So this year it was my turn."
+        },
+        {
+          "text": "21 枚目は、あなたが持っていて。来年の春は、あなたが隠す番。",
+          "text_en": "Keep note twenty-one. Next spring, it's your turn to hide them."
+        },
+        {
+          "speaker": "自分",
+          "text": "……何を書くか、考えておきます。",
+          "text_en": "...I'll think about what to write."
         }
       ]
     },

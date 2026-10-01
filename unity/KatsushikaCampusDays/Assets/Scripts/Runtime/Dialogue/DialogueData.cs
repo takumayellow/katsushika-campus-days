@@ -19,6 +19,9 @@ namespace KCD
         /// <summary>英語表示で話者名を引く辞書キー（ui.npc.*）。空なら英語表示でも Speaker を出す。</summary>
         public string SpeakerKey = string.Empty;
 
+        /// <summary>紙に書かれた文（メモ・手紙）。声を鳴らさずに出す（JSON の written）(#175)。</summary>
+        public bool Written;
+
         /// <summary>画面に出す本文。いまの言語で選ぶ。</summary>
         public string DisplayText => L.Pick(Text, TextEn);
 
@@ -37,6 +40,15 @@ namespace KCD
 
         /// <summary>このクエストが完了済みのときだけ出す。空なら無条件。</summary>
         public string RequiresCompletedQuest = string.Empty;
+
+        /// <summary>隠しアイテムをこの数以上拾っているときだけ出す。0 なら無条件。</summary>
+        public int RequiresHiddenCount;
+
+        /// <summary>このアイテム（コレクション id）を拾っているときだけ出す。空なら無条件。</summary>
+        public string RequiresItem = string.Empty;
+
+        /// <summary>クエスト以外の条件（隠しアイテムの数・持ち物）があるか。</summary>
+        public bool HasItemCondition => RequiresHiddenCount > 0 || !string.IsNullOrEmpty(RequiresItem);
 
         /// <summary>一度話したら二度と出さない。</summary>
         public bool Once;
@@ -115,6 +127,8 @@ namespace KCD
                 Id = MiniJson.GetString(node, "id", "t" + index),
                 RequiresActiveQuest = MiniJson.GetString(node, "requiresActiveQuest"),
                 RequiresCompletedQuest = MiniJson.GetString(node, "requiresCompletedQuest"),
+                RequiresHiddenCount = MiniJson.GetInt(node, "requiresHiddenCount"),
+                RequiresItem = MiniJson.GetString(node, "requiresItem"),
                 Once = MiniJson.GetBool(node, "once"),
                 StartsQuest = MiniJson.GetString(node, "startsQuest"),
                 SetsFlag = MiniJson.GetString(node, "setsFlag")
@@ -131,7 +145,8 @@ namespace KCD
                         Speaker = speaker,
                         SpeakerKey = data.SpeakerKeyFor(speaker),
                         Text = MiniJson.GetString(lineNode, "text"),
-                        TextEn = MiniJson.GetString(lineNode, "text_en")
+                        TextEn = MiniJson.GetString(lineNode, "text_en"),
+                        Written = MiniJson.GetBool(lineNode, "written")
                     });
                 }
                 else if (lines[i] is string plain)

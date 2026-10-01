@@ -53,7 +53,7 @@ namespace KCD
     }
 
     /// <summary>
-    /// collectibles.json の称号 13 件を判定し、獲得済みを覚えておく (#65)。
+    /// collectibles.json の称号 14 件を判定し、獲得済みを覚えておく (#65)。
     /// 以前は称号を読むコードが無く、クエストの報酬の 4 件がトーストに名前を出すだけだった。
     ///
     /// 数は結果画面と同じ数え方をする: 隠しアイテムは一覧の source = hidden だけ、写真は一覧の ps_ だけ。
@@ -177,7 +177,8 @@ namespace KCD
             int count = 0;
             foreach (QuestData quest in record.Quests)
             {
-                if (quest != null && (!mainOnly || !quest.Side) && record.IsCompleted(quest.Id))
+                // 隠しクエストは数えない (#175)。数えると、ほかのクエストを 1 つ残しても届いてしまう。
+                if (quest != null && !quest.Secret && (!mainOnly || !quest.Side) && record.IsCompleted(quest.Id))
                 {
                     count++;
                 }

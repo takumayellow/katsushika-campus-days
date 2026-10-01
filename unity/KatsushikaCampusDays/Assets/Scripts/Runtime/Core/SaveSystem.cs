@@ -241,6 +241,7 @@ namespace KCD
             manager.DayNumber = data.DayNumber;
 
             DayStats.Restore(data.Buildings, data.Collected, data.PhotoSpots, data.Talked);
+            manager.Quests?.NoteHeldFromSave(data.Collected);
             manager.Quests?.Restore(data.Quests);
 
             // 読み込んだ進行で取れている称号は、ロードの時点で黙って獲得済みにする（トーストを並べない）。

@@ -224,6 +224,16 @@ namespace KCD.Editor
                 Fov = 0f,
                 Note = "図書館 2 階の自習室から奥の窓の外。キャンパスの遠景（ドーム）が見えるか",
             },
+            new Shot
+            {
+                Name = "shot_library_dome_door",
+                Space = Frame.Interior,
+                Building = "library",
+                Eye = new Vector3(-35.5f, 6f, 39.5f),         // 回廊の書架の列の北の端から
+                Look = new Vector3(-40.4f, 5.4f, 42.3f),      // SecretStoryStage が西の壁際に立てるコアの扉
+                Fov = 0f,
+                Note = "図書館 2 階の回廊の西の壁際にある、ドームへ上がる扉（#175）",
+            },
 
             // ここから下はキャンパス（#56）。site.py の (u, v) を CampusProps.Local で読み替えた値:
             //   堀 BASINS = 東の帯 u -59.5..-50（モールで途切れる）+ 南の池 u -100..-59.5 / v -78..-66

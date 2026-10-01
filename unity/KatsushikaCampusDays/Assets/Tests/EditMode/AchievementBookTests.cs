@@ -6,7 +6,7 @@ using UnityEngine;
 namespace KCD.Tests
 {
     /// <summary>
-    /// 称号 13 件の判定 (#65)。以前は collectibles.json の achievements を読むコードが無く、
+    /// 称号 14 件の判定 (#65, #175)。以前は collectibles.json の achievements を読むコードが無く、
     /// クエストの報酬の 4 件がトーストに名前を出すだけで、残りの 9 件は取る手段が無かった。
     /// 判定は実データの条件で見る。数え方は結果画面と同じ（一覧に載った hidden と ps_ だけ）。
     /// </summary>
@@ -190,14 +190,18 @@ namespace KCD.Tests
             var side = new List<string>();
             foreach (QuestData quest in quests)
             {
-                (quest.Side ? side : main).Add(quest.Id);
+                // 隠しクエストはクエストの数の称号に数えない (#175)。
+                if (!quest.Secret)
+                {
+                    (quest.Side ? side : main).Add(quest.Id);
+                }
             }
 
             Assert.AreEqual(7, main.Count, "本編のクエストが 7 本ではない: " + string.Join(", ", main));
             Assert.AreEqual(6, side.Count, "サブクエストが 6 本ではない: " + string.Join(", ", side));
             Assert.AreEqual(main.Count, Find(catalog, "ach_main_story").Count);
             Assert.AreEqual(AchievementBook.ScopeMain, Find(catalog, "ach_main_story").Scope);
-            Assert.AreEqual(quests.Count, Find(catalog, "ach_all_quests").Count);
+            Assert.AreEqual(main.Count + side.Count, Find(catalog, "ach_all_quests").Count);
 
             // サブクエストを 6 本と本編を 6 本では「はじめての一日」にならない（以前の数え方なら 12 本で届く）。
             var sixMain = new HashSet<string>(side);
@@ -252,7 +256,7 @@ namespace KCD.Tests
         }
 
         [Test]
-        public void AllThirteen_CanBeUnlocked()
+        public void AllFourteen_CanBeUnlocked()
         {
             CollectibleCatalog catalog = Catalog();
             List<QuestData> quests = Quests();
@@ -283,7 +287,7 @@ namespace KCD.Tests
             }
 
             Assert.IsEmpty(missing, "取れない称号: " + string.Join(", ", missing));
-            Assert.AreEqual(13, unlocked.Count);
+            Assert.AreEqual(14, unlocked.Count);
         }
 
         [Test]
@@ -404,7 +408,9 @@ namespace KCD.Tests
         {
             foreach (QuestData quest in Quests())
             {
-                Assert.AreEqual(quest.Id.StartsWith("q_sq_"), quest.Side, quest.Id + " の side と id の q_sq_ が合わない");
+                // 隠しクエストもサブの扱い (#175)。
+                bool expected = quest.Id.StartsWith("q_sq_") || quest.Secret;
+                Assert.AreEqual(expected, quest.Side, quest.Id + " の side と id の q_sq_（または secret）が合わない");
             }
         }
     }

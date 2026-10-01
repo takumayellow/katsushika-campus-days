@@ -6,7 +6,8 @@ using UnityEngine;
 namespace KCD.Tests
 {
     /// <summary>
-    /// 実データの 13 クエストを、プレイヤーにできる操作（会話・入館・到着・拾得）だけで全部達成できるか (#65)。
+    /// 実データの 14 クエスト（隠しクエストを含む）を、プレイヤーにできる操作（会話・入館・到着・拾得）だけで
+    /// 全部達成できるか (#65, #175)。
     ///
     /// クエストの JSON と会話の JSON は別々に書かれていて、組み合わせたときにしか分からない詰みがあった。
     /// - autoStart のクエストが前提を見ずに最初から受注されていた（QuestSystem.Load）。
@@ -57,6 +58,55 @@ namespace KCD.Tests
             return dialogues;
         }
 
+        private static CollectibleCatalog LoadCatalog()
+        {
+            return CollectibleCatalog.Parse(File.ReadAllText(Path.Combine(DataRoot, "Collectibles", "collectibles.json")));
+        }
+
+        /// <summary>
+        /// どのクエストの collect の対象でもない隠しアイテムを count 個。先に拾っておいても、ほかのクエストの進み方を変えない。
+        /// </summary>
+        private static List<string> SpareHiddenIds(CollectibleCatalog catalog, int count)
+        {
+            var targets = new HashSet<string>();
+            foreach (QuestData quest in LoadQuests())
+            {
+                foreach (QuestStep step in quest.Steps)
+                {
+                    if (step.Kind == QuestStepKind.Collect)
+                    {
+                        targets.Add(step.Target);
+                    }
+                }
+            }
+
+            var ids = new List<string>();
+            foreach (CatalogItem item in catalog.Items)
+            {
+                if (item.IsHidden && !targets.Contains(item.Id) && ids.Count < count)
+                {
+                    ids.Add(item.Id);
+                }
+            }
+
+            Assert.AreEqual(count, ids.Count, "クエストの対象でない隠しアイテムが足りない");
+            return ids;
+        }
+
+        private static List<string> AllHiddenIds(CollectibleCatalog catalog)
+        {
+            var ids = new List<string>();
+            foreach (CatalogItem item in catalog.Items)
+            {
+                if (item.IsHidden)
+                {
+                    ids.Add(item.Id);
+                }
+            }
+
+            return ids;
+        }
+
         private static QuestSystem NewGame(float hour)
         {
             var quests = new QuestSystem { Clock = () => hour };
@@ -64,17 +114,32 @@ namespace KCD.Tests
             return quests;
         }
 
-        /// <summary>プレイヤーの操作をなぞる。会話は DialogueSystem.TalkTo と DialogueSystem.Finish と同じ順で進める。</summary>
+        /// <summary>
+        /// プレイヤーの操作をなぞる。会話は DialogueSystem.TalkTo と DialogueSystem.Finish と同じ順で進める。
+        /// 拾った物（DayStats の代わり）を覚えておき、話題の隠しアイテムの数と持ち物の条件に使う (#175)。
+        /// </summary>
         private sealed class Player
         {
             private readonly QuestSystem _quests;
             private readonly List<DialogueData> _dialogues;
+            private readonly CollectibleCatalog _catalog;
             private readonly HashSet<string> _spent = new HashSet<string>();
+            private readonly HashSet<string> _have = new HashSet<string>();
 
-            public Player(QuestSystem quests, List<DialogueData> dialogues)
+            public Player(QuestSystem quests, List<DialogueData> dialogues, CollectibleCatalog catalog)
             {
                 _quests = quests;
                 _dialogues = dialogues;
+                _catalog = catalog;
+            }
+
+            private int HiddenCount => _catalog.CountHidden(_have);
+
+            /// <summary>物を拾う。CollectableItem と同じく、拾ったことをクエストへ報告する。</summary>
+            public void PickUp(string itemId)
+            {
+                _have.Add(itemId);
+                _quests.ReportCollect(itemId);
             }
 
             public void TalkToEveryone()
@@ -87,14 +152,14 @@ namespace KCD.Tests
 
             private void TalkTo(DialogueData npc)
             {
-                DialogueTopic topic = DialogueSystem.SelectTopic(npc, _quests, _spent);
+                DialogueTopic topic = DialogueSystem.SelectTopic(npc, _quests, _spent, HiddenCount, _have.Contains);
                 if (topic == null || topic.Lines.Count == 0)
                 {
                     return;
                 }
 
                 // DialogueSystem.TalkTo: 会話が始まった時点で talk を報告し、それで達成したクエストのお礼があれば差し替える (#94)。
-                topic = DialogueSystem.ReportTalkAndSelect(npc, _quests, _spent, topic);
+                topic = DialogueSystem.ReportTalkAndSelect(npc, _quests, _spent, topic, HiddenCount, _have.Contains);
 
                 // DialogueSystem.Finish: 閉じたときに once を使い切り、依頼を受け、フラグを立てる。
                 if (topic.Once)
@@ -153,7 +218,7 @@ namespace KCD.Tests
                         _quests.ReportVisit(step.Target, true);
                         break;
                     case QuestStepKind.Collect:
-                        _quests.ReportCollect(step.Target);
+                        PickUp(step.Target);
                         break;
                     case QuestStepKind.Flag:
                         _quests.ReportFlag(step.Target);
@@ -176,13 +241,42 @@ namespace KCD.Tests
             return missing;
         }
 
-        [TestCase(true, TestName = "AllThirteenQuests_CanBeCompleted_TalkingToEveryoneFirst")]
-        [TestCase(false, TestName = "AllThirteenQuests_CanBeCompleted_DoingStepsFirst")]
-        public void AllThirteenQuests_CanBeCompleted(bool talkFirst)
+        /// <summary>
+        /// 隠しクエストはいなり先輩が隠しアイテム 5 個から話すので、どのクエストの対象でもない隠しアイテムを 5 個拾ってから始める。
+        /// 鍵（c_dome_key）は拾わずにおき、隠しクエストの 1 つ目のステップで拾う。
+        /// </summary>
+        [TestCase(true, TestName = "AllFourteenQuests_CanBeCompleted_TalkingToEveryoneFirst")]
+        [TestCase(false, TestName = "AllFourteenQuests_CanBeCompleted_DoingStepsFirst")]
+        public void AllFourteenQuests_CanBeCompleted(bool talkFirst)
+        {
+            CollectibleCatalog catalog = LoadCatalog();
+            List<string> spare = SpareHiddenIds(catalog, HiddenNote.HintThreshold);
+            CollectionAssert.DoesNotContain(spare, "c_dome_key");
+            PlayThrough(spare, talkFirst);
+        }
+
+        /// <summary>
+        /// 隠しアイテムを鍵まで 20 個とも先に拾ってから始めても、隠しクエストが鍵のステップで止まらない。
+        /// 鍵は拾い直せないので、受注したときに持っている分で進む（QuestSystem の追いつき）必要がある。
+        /// </summary>
+        [Test]
+        public void AllFourteenQuests_CanBeCompleted_AfterPickingUpEveryHiddenItemFirst()
+        {
+            CollectibleCatalog catalog = LoadCatalog();
+            List<string> all = AllHiddenIds(catalog);
+            CollectionAssert.Contains(all, "c_dome_key");
+            PlayThrough(all, true);
+        }
+
+        private static void PlayThrough(IEnumerable<string> pickedUpFirst, bool talkFirst)
         {
             QuestSystem quests = NewGame(EveningHour);
-            var player = new Player(quests, LoadDialogues());
-            Assert.AreEqual(13, quests.All.Count, "クエストの数が 13 ではない");
+            var player = new Player(quests, LoadDialogues(), LoadCatalog());
+            Assert.AreEqual(14, quests.All.Count, "クエストの数が 14 ではない");
+            foreach (string itemId in pickedUpFirst)
+            {
+                player.PickUp(itemId);
+            }
 
             for (int round = 0; round < MaxRounds && NotCompleted(quests).Count > 0; round++)
             {

@@ -419,9 +419,10 @@ namespace KCD
             int done = 0;
             if (quests != null)
             {
+                // 隠しクエストは分母（result.json の totals）に入っていないので数えない (#175)。
                 foreach (QuestData quest in quests.All)
                 {
-                    if (quests.IsCompleted(quest.Id))
+                    if (!quest.Secret && quests.IsCompleted(quest.Id))
                     {
                         done++;
                     }

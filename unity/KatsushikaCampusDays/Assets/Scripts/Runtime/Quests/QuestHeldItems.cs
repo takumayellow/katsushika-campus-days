@@ -49,6 +49,28 @@ namespace KCD
         }
 
         /// <summary>
+        /// セーブに載っている拾い物（隠しアイテム）を、持っている物として数える。拾った数はセーブに載らないので、
+        /// 「つづきから」で読み直すと 0 に戻る。隠しアイテムは拾い直せないので、受注前に拾った
+        /// ドームの鍵（c_dome_key, #175）を数えないと q_secret_spring_hunt が進まなくなる。
+        /// このセッションで数えた分があればそちらを残す。<see cref="Restore"/> の追いつきより先に呼ぶ。
+        /// </summary>
+        public void NoteHeldFromSave(IEnumerable<string> collected)
+        {
+            if (collected == null)
+            {
+                return;
+            }
+
+            foreach (string itemId in collected)
+            {
+                if (!string.IsNullOrEmpty(itemId) && HeldCount(itemId) == 0)
+                {
+                    _held[itemId] = 1;
+                }
+            }
+        }
+
+        /// <summary>
         /// 今のステップが collect なら、持っている数まで進める。数がそろえば達成にして次のステップへ進める。
         /// 制限時間つきのステップは、計時中に拾った分だけを数える（前もって集めておけば済む挑戦にしない）。
         /// </summary>

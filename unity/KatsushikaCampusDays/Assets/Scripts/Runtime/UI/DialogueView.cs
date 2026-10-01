@@ -107,7 +107,8 @@ namespace KCD
             _revealed = 0f;
             _revealedFrame = -1;
             _lastBlipAt = 0;
-            _voice = DialogueVoice.ForSpeaker(line.Speaker, playerId);
+            // 紙に書かれた文（メモ・手紙）は読むだけなので声を鳴らさない (#175)。
+            _voice = line.Written ? string.Empty : DialogueVoice.ForSpeaker(line.Speaker, playerId);
 
             if (_bodyLabel != null)
             {
@@ -202,7 +203,7 @@ namespace KCD
         /// <summary>2 文字ごとに話者の声を鳴らす。句読点・空白では鳴らさない。</summary>
         private void Blip(int visible)
         {
-            if (visible - _lastBlipAt < 2 || visible <= 0 || visible > _fullText.Length)
+            if (string.IsNullOrEmpty(_voice) || visible - _lastBlipAt < 2 || visible <= 0 || visible > _fullText.Length)
             {
                 return;
             }

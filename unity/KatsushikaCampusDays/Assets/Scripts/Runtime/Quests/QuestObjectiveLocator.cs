@@ -41,7 +41,7 @@ namespace KCD
             switch (kind)
             {
                 case QuestStepKind.Talk:
-                    return Nearest(_npcs, from, n => n.NpcId == target, out position);
+                    return LocateHereOrEntrance(_npcs, from, n => n.NpcId == target, out position);
                 case QuestStepKind.Enter:
                     return Nearest(_entrances, from, e => e.BuildingId == target, out position);
                 case QuestStepKind.Visit:
@@ -106,10 +106,20 @@ namespace KCD
         /// </summary>
         private static bool LocateCollect(string target, Vector3 from, out Vector3 position)
         {
+            return LocateHereOrEntrance(_items, from, i => i.ItemId == target && i.CanInteract, out position);
+        }
+
+        /// <summary>
+        /// いまいる所（屋内ならその建物、外ならキャンパス）にある候補を先に指す。そこに無ければ、
+        /// 屋内の候補はその建物の入口を、外の候補はその物を指す。talk と collect が使う。
+        /// 図書館の 2 階にあるドームの扉（#175）のように、屋内に置いた話し相手も外から指せる。
+        /// </summary>
+        private static bool LocateHereOrEntrance<T>(
+            T[] candidates, Vector3 from, System.Func<T, bool> match, out Vector3 position) where T : Component
+        {
             string current = InteriorLoader.Instance != null ? InteriorLoader.Instance.CurrentId : null;
             string here = string.IsNullOrEmpty(current) ? null : current;
-            if (Nearest(_items, from, i => i.ItemId == target && i.CanInteract && InteriorOwnerOf(i.transform) == here,
-                    out position))
+            if (Nearest(candidates, from, c => match(c) && InteriorOwnerOf(c.transform) == here, out position))
             {
                 return true;
             }
@@ -117,16 +127,16 @@ namespace KCD
             position = Vector3.zero;
             float best = float.MaxValue;
             bool found = false;
-            for (int i = 0; i < _items.Length; i++)
+            for (int i = 0; i < candidates.Length; i++)
             {
-                CollectableItem item = _items[i];
-                if (item == null || item.ItemId != target || !item.CanInteract)
+                T candidate = candidates[i];
+                if (candidate == null || !match(candidate))
                 {
                     continue;
                 }
 
-                string owner = InteriorOwnerOf(item.transform);
-                Vector3 goal = item.transform.position;
+                string owner = InteriorOwnerOf(candidate.transform);
+                Vector3 goal = candidate.transform.position;
                 if (owner != null && !Nearest(_entrances, from, e => e.BuildingId == owner, out goal))
                 {
                     continue;
