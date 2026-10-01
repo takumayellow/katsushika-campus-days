@@ -41,13 +41,22 @@ namespace KCD.Tests
         }
 
         /// <summary>
-        /// sceneLoaded を待ってから 1 フレーム進める。同期の LoadScene は Awake / OnEnable を読み込み中に、
-        /// Start を sceneLoaded の後の最初の Update の前に呼ぶので、戻った時点で全員の Start が済んでいる。
+        /// sceneLoaded を待ち、GameManager の非同期の読み込み（SceneLoader, #15）が封鎖と「読み込み中」の画面を
+        /// 外すまで待ってから 1 フレーム進める。Awake / OnEnable は切り替えの中で、Start は sceneLoaded の後の
+        /// 最初の Update の前に走り、ローダーは切り替えから数フレーム後に外すので、戻った時点で全員の Start と
+        /// 最初の Update（CampusDirector の「つづきから」の位置合わせ）が済んでいる。
+        /// タイトルを同期の LoadScene で読むときはローダーは動いていないので、sceneLoaded の後の 1 フレームだけ進める。
+        /// 上限まで待っても外れなければそのまま戻る（封鎖が残ったことはテスト本体の Assert が落とす）。
         /// </summary>
         private static IEnumerator WaitForLoad(LogCapture capture)
         {
             float deadline = Time.realtimeSinceStartup + LoadTimeoutSeconds;
             while (!capture.SceneLoaded && Time.realtimeSinceStartup < deadline)
+            {
+                yield return null;
+            }
+
+            while (SceneLoader.IsAnyLoading && Time.realtimeSinceStartup < deadline)
             {
                 yield return null;
             }
