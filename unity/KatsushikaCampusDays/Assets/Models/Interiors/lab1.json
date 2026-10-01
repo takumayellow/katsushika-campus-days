@@ -119,5 +119,14 @@
   "furn_lab1_03_lab01",
   "furn_lab1_04_lab02",
   "furn_lab1_05_prep03"
- ]
+ ],
+ "ext": {
+  "objects": [
+   "ext_lab1",
+   "ext_lab1_trees"
+  ],
+  "triangles": 10895,
+  "radius": 30.0,
+  "dz": -0.03
+ }
 }

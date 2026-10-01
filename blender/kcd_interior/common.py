@@ -33,6 +33,7 @@ def envelope(c, z_ceil, floor_mat="floor_tile_white", door_w=6.0,
                          s.y_face + shell.WALL * 0.5)
     if ceil:
         shell.ceiling(c.wall, ix0, iy0, ix1, iy1, z_ceil, ceil_mat, grid=grid)
+    c.door_gap = (d0, d1)
     return (d0, d1)
 
 
