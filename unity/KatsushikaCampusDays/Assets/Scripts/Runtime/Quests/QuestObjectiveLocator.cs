@@ -4,7 +4,7 @@ namespace KCD
 {
     /// <summary>
     /// クエストの現在ステップが「どこへ行けばいいか」をシーン内の物から引く。
-    /// ミニマップの目的地マーカーと、画面の上の目的地の印（ObjectiveWaypoint）が使う。探索結果は 1 秒だけ覚えて、毎フレーム探さない。
+    /// ミニマップの目的地マーカーが使う。探索結果は 1 秒だけ覚えて、毎フレーム探さない。
     /// </summary>
     public static class QuestObjectiveLocator
     {

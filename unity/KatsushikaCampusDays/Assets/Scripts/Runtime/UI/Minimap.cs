@@ -8,7 +8,9 @@ namespace KCD
     /// <summary>
     /// 右上の北固定ミニマップ。Blender で描いた俯瞰図（minimap.png）を円形マスクの中で
     /// プレイヤー中心にずらして見せる。矢印がプレイヤー、点が NPC、輪が追跡中クエストの目的地。
-    /// 建物の中にいるあいだは入口を中心にして建物名を出す。
+    /// 目的地の案内はここだけに出す（画面の上には出さない。#163）。
+    /// 建物の中にいるあいだはキャンパスの絵を隠して建物名を出し、屋内の目的地と NPC をプレイヤーからの向きどおりに出す。
+    /// 目的地が外にあるときは、その建物の出口を指す。
     /// </summary>
     public sealed class Minimap : MonoBehaviour
     {
@@ -32,7 +34,6 @@ namespace KCD
         private float _npcRefreshedAt = -10f;
         private Image _objective;
         private bool _indoor;
-        private Vector3 _indoorAnchor;
 
         /// <summary>現在のシーンのミニマップ。</summary>
         public static Minimap Instance { get; private set; }
@@ -67,11 +68,15 @@ namespace KCD
             _viewRadiusPixels = Mathf.Max(1f, viewRadiusPixels);
         }
 
-        /// <summary>建物に入った。地図は入口を中心に固定し、見出しを出す。</summary>
-        public void SetIndoor(string caption, Vector3 entranceWorld)
+        /// <summary>建物に入った。キャンパスの絵を隠し、見出しを出す。</summary>
+        public void SetIndoor(string caption)
         {
             _indoor = true;
-            _indoorAnchor = entranceWorld;
+            if (_map != null)
+            {
+                _map.gameObject.SetActive(false);
+            }
+
             if (_caption != null)
             {
                 _caption.text = caption;
@@ -83,6 +88,11 @@ namespace KCD
         public void ClearIndoor()
         {
             _indoor = false;
+            if (_map != null)
+            {
+                _map.gameObject.SetActive(true);
+            }
+
             if (_caption != null)
             {
                 _caption.gameObject.SetActive(false);
@@ -130,16 +140,18 @@ namespace KCD
                 return;
             }
 
-            Vector3 focus = _indoor ? _indoorAnchor : _target.position;
-            Vector2 uv = new Vector2(
-                (focus.x - _worldCenter.x) / (2f * _halfExtent) + 0.5f,
-                (focus.z - _worldCenter.y) / (2f * _halfExtent) + 0.5f);
-            _map.anchoredPosition = -(uv - new Vector2(0.5f, 0.5f)) * _map.sizeDelta.x;
+            Vector3 focus = _target.position;
+            if (!_indoor)
+            {
+                Vector2 uv = new Vector2(
+                    (focus.x - _worldCenter.x) / (2f * _halfExtent) + 0.5f,
+                    (focus.z - _worldCenter.y) / (2f * _halfExtent) + 0.5f);
+                _map.anchoredPosition = -(uv - new Vector2(0.5f, 0.5f)) * _map.sizeDelta.x;
+            }
 
             if (_playerArrow != null)
             {
                 _playerArrow.localRotation = Quaternion.Euler(0f, 0f, -_target.eulerAngles.y);
-                _playerArrow.gameObject.SetActive(!_indoor);
             }
 
             UpdateNpcDots(focus);
@@ -154,11 +166,13 @@ namespace KCD
                 _npcs = FindObjectsByType<NPCTalker>(FindObjectsInactive.Exclude);
             }
 
+            // 地図の範囲では絞らない。屋内では屋内の NPC を出したいので、プレイヤーからの距離だけで決める。
+            // 屋内の模型はキャンパスから遠くに置いてあるので、外にいるときは円の外になって出ない。
             int used = 0;
             for (int i = 0; i < _npcs.Length; i++)
             {
                 NPCTalker npc = _npcs[i];
-                if (npc == null || !npc.isActiveAndEnabled || !IsOnMap(npc.transform.position))
+                if (npc == null || !npc.isActiveAndEnabled)
                 {
                     continue;
                 }
@@ -195,23 +209,52 @@ namespace KCD
             QuestData quest = GameManager.Instance.Quests?.TrackedQuest;
             QuestStep step = quest?.CurrentStep;
 
-            if (step == null || !QuestObjectiveLocator.TryLocate(step, focus, out Vector3 position) || !IsOnMap(position))
+            string building = InteriorLoader.Instance != null ? InteriorLoader.Instance.CurrentId : null;
+            if (step == null || !TryGoal(step, focus, building, out Vector3 position))
             {
                 _objective.gameObject.SetActive(false);
                 return;
             }
 
-            Vector2 offset = Offset(position, focus);
-            float limit = _viewRadiusPixels - 16f;
-            if (offset.magnitude > limit)
-            {
-                offset = offset.normalized * limit;
-            }
-
+            Vector2 offset = PlaceMarker(position, focus, PixelsPerMeter, _viewRadiusPixels - 16f);
             float pulse = 1f + 0.18f * Mathf.Sin(Time.unscaledTime * 4f);
             _objective.rectTransform.anchoredPosition = offset;
             _objective.rectTransform.localScale = Vector3.one * pulse;
             _objective.gameObject.SetActive(true);
+        }
+
+        /// <summary>
+        /// 輪を地図の中心からどこに置くか（地図の単位）。円の縁（limit）より外なら、向きを保って縁に寄せる。
+        /// </summary>
+        public static Vector2 PlaceMarker(Vector3 goal, Vector3 focus, float pixelsPerMeter, float limit)
+        {
+            Vector3 delta = goal - focus;
+            var offset = new Vector2(delta.x, delta.z) * pixelsPerMeter;
+            return offset.magnitude > limit ? offset.normalized * limit : offset;
+        }
+
+        /// <summary>
+        /// 追跡中のステップの目的地。外にいるときは、キャンパスの外（屋内の模型の中）の地点は出さない。
+        /// 屋内にいて目的地がキャンパスにあるなら、いまいる建物（building）の出口を指す。
+        /// </summary>
+        public bool TryGoal(QuestStep step, Vector3 from, string building, out Vector3 goal)
+        {
+            if (!QuestObjectiveLocator.TryLocate(step, from, out goal))
+            {
+                return false;
+            }
+
+            if (!_indoor)
+            {
+                return IsOnMap(goal);
+            }
+
+            if (!IsOnMap(goal))
+            {
+                return true;
+            }
+
+            return QuestObjectiveLocator.TryLocateExit(building, from, out goal);
         }
 
         /// <summary>地図の範囲内（キャンパス）か。屋内モデルは遠くに置いてあるので、これで自然と外れる。</summary>
@@ -223,8 +266,7 @@ namespace KCD
 
         private Vector2 Offset(Vector3 world, Vector3 focus)
         {
-            Vector3 delta = world - focus;
-            return new Vector2(delta.x, delta.z) * PixelsPerMeter;
+            return PlaceMarker(world, focus, PixelsPerMeter, float.MaxValue);
         }
 
         private Image CreateMarker(string name, Sprite sprite, float size, Color color)
