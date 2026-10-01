@@ -23,6 +23,7 @@ namespace KCD.Editor
             RectTransform gameplay = Stretch(canvasRect, "Gameplay");
             hud.GameplayRoot = gameplay.gameObject;
 
+            BuildWaypoint(canvas.gameObject, gameplay, player.transform);
             hud.PromptView = BuildPrompt(canvas.gameObject, gameplay);
             hud.ToastView = BuildToast(canvas.gameObject, gameplay);
             BuildTracker(canvas.gameObject, gameplay);
@@ -161,15 +162,17 @@ namespace KCD.Editor
                 new Vector2(0f, 48f), new Vector2(1520f, 300f));
             Backdrop(rect, new Color(0.05f, 0.07f, 0.12f, 0.9f));
 
+            // 話者名の札は枠の内側（上端から 14 px 下）に置き、本文はその下から始める。
+            // 札を枠の上にはみ出させると、背景から浮いて本文の 1 行目にも重なる。
             RectTransform speakerRect = Rect(rect, "SpeakerRow", new Vector2(0f, 1f), new Vector2(0f, 1f),
-                new Vector2(24f, 10f), new Vector2(520f, 66f));
+                new Vector2(24f, -14f), new Vector2(520f, 58f));
             Backdrop(speakerRect, new Color(0.12f, 0.2f, 0.28f, 0.95f));
             TMP_Text speaker = Label(speakerRect, "Speaker", string.Empty, 32f, TextAlignmentOptions.Left);
             speaker.color = Accent;
 
             RectTransform bodyRect = Stretch(rect, "BodyArea");
             bodyRect.offsetMin = new Vector2(36f, 36f);
-            bodyRect.offsetMax = new Vector2(-36f, -24f);
+            bodyRect.offsetMax = new Vector2(-36f, -80f);
             TMP_Text body = Label(bodyRect, "Body", string.Empty, 32f, TextAlignmentOptions.TopLeft);
 
             RectTransform markRect = Rect(rect, "ContinueMark", new Vector2(1f, 0f), new Vector2(1f, 0f),

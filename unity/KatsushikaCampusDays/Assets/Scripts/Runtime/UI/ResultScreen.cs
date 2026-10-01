@@ -107,10 +107,10 @@ namespace KCD
                 return;
             }
 
-            int step = KCDInput.MenuVertical;
+            int step = StepOf(KCDInput.MenuHorizontal, KCDInput.MenuVertical);
             if (step != 0)
             {
-                _index = (_index + step + ChoiceKeys.Length) % ChoiceKeys.Length;
+                _index = TitleMenu.MoveIndex(_index, step, ChoiceKeys.Length);
                 AudioManager.Instance?.PlayUi("ui_move");
                 Redraw();
             }
@@ -120,6 +120,15 @@ namespace KCD
                 AudioManager.Instance?.PlayUi("ui_confirm");
                 Choose(_index);
             }
+        }
+
+        /// <summary>
+        /// 選択肢の移動量。選択肢は横に並ぶので左右で動かし、上下でも動かせるようにしておく。
+        /// 左右と上下が同時に来たら左右を取る（タイトル画面と同じ）。
+        /// </summary>
+        public static int StepOf(int horizontal, int vertical)
+        {
+            return horizontal != 0 ? horizontal : vertical;
         }
 
         /// <summary>

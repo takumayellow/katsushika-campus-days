@@ -6,6 +6,7 @@ namespace KCD
     /// <summary>
     /// 建物の上に浮かぶ名札。常にカメラを向き、遠いと薄く小さくなる。
     /// SceneBuilder が sign_&lt;id&gt; / 建物の重心にぶら下げる。
+    /// 文字は辞書の ui.building.&lt;id&gt; から引き、言語を切り替えるたびに引き直す。
     /// </summary>
     [RequireComponent(typeof(TextMeshPro))]
     public sealed class BuildingLabel : MonoBehaviour
@@ -16,9 +17,15 @@ namespace KCD
         [SerializeField] private float _minScale = 0.6f;
         [SerializeField] private float _maxScale = 3.5f;
 
+        [SerializeField] private string _key;
+        [SerializeField] private string _fallback;
+
         private TextMeshPro _text;
         private Transform _camera;
         private Color _baseColor;
+
+        /// <summary>辞書の鍵（ui.building.&lt;id&gt;）。</summary>
+        public string Key => _key;
 
         /// <summary>表示する名前。</summary>
         public string Label
@@ -35,10 +42,43 @@ namespace KCD
             }
         }
 
+        /// <summary>辞書の鍵（ui.building.&lt;id&gt;）と、鍵が無いときに出す名前。</summary>
+        public void Bind(string key, string fallback)
+        {
+            _key = key;
+            _fallback = fallback;
+            Label = Resolve(key, fallback);
+        }
+
+        /// <summary>今の言語での表示名。鍵が空なら fallback をそのまま出す。</summary>
+        public static string Resolve(string key, string fallback)
+        {
+            return string.IsNullOrEmpty(key) ? fallback : L.Get(key, fallback);
+        }
+
         private void Awake()
         {
             _text = GetComponent<TextMeshPro>();
             _baseColor = _text.color;
+        }
+
+        private void OnEnable()
+        {
+            L.LocaleChanged += OnLocaleChanged;
+            OnLocaleChanged();
+        }
+
+        private void OnDisable()
+        {
+            L.LocaleChanged -= OnLocaleChanged;
+        }
+
+        private void OnLocaleChanged()
+        {
+            if (!string.IsNullOrEmpty(_key))
+            {
+                Label = Resolve(_key, _fallback);
+            }
         }
 
         private void LateUpdate()

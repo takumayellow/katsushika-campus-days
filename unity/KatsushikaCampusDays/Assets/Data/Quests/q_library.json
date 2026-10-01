@@ -16,11 +16,18 @@
       "id": "s1",
       "type": "enter",
       "target": "library",
-      "text": "図書館に入って取り置きの本を受け取る",
-      "text_en": "Enter the library and pick up the reserved book"
+      "text": "図書館に入る",
+      "text_en": "Enter the library"
     },
     {
       "id": "s2",
+      "type": "visit",
+      "target": "poi_library_counter",
+      "text": "カウンターで取り置きの本を受け取る",
+      "text_en": "Pick up the reserved book at the counter"
+    },
+    {
+      "id": "s3",
       "type": "talk",
       "target": "inari",
       "text": "水盤のほとりのいなりに本を届ける",

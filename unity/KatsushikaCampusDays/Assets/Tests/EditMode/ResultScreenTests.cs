@@ -120,5 +120,19 @@ namespace KCD.Tests
             Assert.IsTrue(_screen.IsOpen, "範囲外の番号で閉じた");
             Assert.AreEqual(0f, Time.timeScale);
         }
+
+        [TestCase(1, 0, 1)]
+        [TestCase(-1, 0, 1)]
+        [TestCase(0, 1, 1)]
+        [TestCase(0, -1, 1)]
+        [TestCase(1, 1, 1)]
+        [TestCase(0, 0, 0)]
+        public void ArrowKeysMoveBetweenTheTwoChoices(int horizontal, int vertical, int expected)
+        {
+            // 選択肢は「もう一日歩く」「タイトルへ」を横に並べている。右矢印で動かなかった（プレイテスト 2026-10-01）。
+            int step = ResultScreen.StepOf(horizontal, vertical);
+
+            Assert.AreEqual(expected, TitleMenu.MoveIndex(0, step, 2));
+        }
     }
 }

@@ -74,5 +74,32 @@ namespace KCD.Tests
             Assert.AreEqual(expected, BuildingLabel.ScaleAt(distance, Reference, MinScale, MaxScale), Tolerance,
                 distance + " m の大きさ");
         }
+
+        [Test]
+        public void NameFollowsLocale()
+        {
+            using (new PlayerPrefsKeyScope(L.PrefKey))
+            {
+                string before = L.Locale;
+                try
+                {
+                    L.SetLocale("en");
+                    Assert.AreEqual("Library", BuildingLabel.Resolve("ui.building.library", "図書館"), "英語表示で名札が日本語のまま");
+                    L.SetLocale("ja");
+                    Assert.AreEqual("図書館", BuildingLabel.Resolve("ui.building.library", "図書館"));
+                }
+                finally
+                {
+                    L.SetLocale(before);
+                }
+            }
+        }
+
+        [Test]
+        public void NameFallsBackWhenKeyIsMissing()
+        {
+            Assert.AreEqual("第9研究棟", BuildingLabel.Resolve("ui.building.no_such_building", "第9研究棟"));
+            Assert.AreEqual("第9研究棟", BuildingLabel.Resolve(string.Empty, "第9研究棟"));
+        }
     }
 }
