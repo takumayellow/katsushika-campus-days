@@ -23,7 +23,6 @@ namespace KCD.Editor
             RectTransform gameplay = Stretch(canvasRect, "Gameplay");
             hud.GameplayRoot = gameplay.gameObject;
 
-            BuildWaypoint(canvas.gameObject, gameplay, player.transform);
             hud.PromptView = BuildPrompt(canvas.gameObject, gameplay);
             hud.ToastView = BuildToast(canvas.gameObject, gameplay);
             BuildTracker(canvas.gameObject, gameplay);

@@ -19,6 +19,11 @@ namespace KCD
             public string Id;
             public string DisplayName;
             public Transform Spawn;
+
+            /// <summary>
+            /// キャンパス側の入口の位置。ステージが書き込むが、いまは読む側がない
+            /// （目的地の案内は QuestObjectiveLocator が入口と InteriorExit を直接探す）。
+            /// </summary>
             public Vector3 EntranceWorld;
         }
 
@@ -188,7 +193,7 @@ namespace KCD
         private void MarkInside(Entry entry)
         {
             CurrentId = entry.Id;
-            Minimap.Instance?.SetIndoor(entry.DisplayName, entry.EntranceWorld);
+            Minimap.Instance?.SetIndoor(entry.DisplayName);
             QuestObjectiveLocator.Invalidate();
         }
 
