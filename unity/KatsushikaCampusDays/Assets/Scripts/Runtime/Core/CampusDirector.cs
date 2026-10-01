@@ -85,7 +85,7 @@ namespace KCD
             // Web 版はカーソルがブラウザのポインターロックに取られる。外し方と全画面の出し方を最初に伝える (#48)。
             if (Application.platform == RuntimePlatform.WebGLPlayer)
             {
-                hud.ShowToast(L.Get("ui.hud.web_controls", "Esc でマウスを解放　F で全画面"));
+                hud.ShowToast(L.Get("ui.hud.web_controls", "Esc でマウスを解放　Ctrl+F で全画面"));
             }
         }
 

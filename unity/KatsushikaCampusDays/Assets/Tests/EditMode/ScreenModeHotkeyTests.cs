@@ -4,7 +4,7 @@ using UnityEngine;
 namespace KCD.Tests
 {
     /// <summary>
-    /// F キーの全画面切り替えの条件 (#48)。
+    /// Ctrl+F の全画面切り替えの条件 (#48)。
     /// 打鍵を拾ってよいかの判定と、切り替えた先の表示モードだけを見る（実際の Screen 操作は Editor では効かない）。
     /// </summary>
     public sealed class ScreenModeHotkeyTests
@@ -24,6 +24,16 @@ namespace KCD.Tests
             Assert.IsFalse(ScreenModeHotkey.ShouldToggle(true, true, false), "文字入力中に切り替わった");
             Assert.IsFalse(ScreenModeHotkey.ShouldToggle(true, false, true), "キー割り当ての取り込み中に切り替わった");
             Assert.IsFalse(ScreenModeHotkey.ShouldToggle(true, true, true));
+        }
+
+        [Test]
+        public void IsFullscreenChord_NeedsCtrlHeldWithF()
+        {
+            Assert.IsTrue(KCDInput.IsFullscreenChord(true, true));
+
+            Assert.IsFalse(KCDInput.IsFullscreenChord(false, true), "F だけで切り替わった（歩いているうちに押し間違える）");
+            Assert.IsFalse(KCDInput.IsFullscreenChord(true, false), "Ctrl だけで切り替わった");
+            Assert.IsFalse(KCDInput.IsFullscreenChord(false, false));
         }
 
         [Test]

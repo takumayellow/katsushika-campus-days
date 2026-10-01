@@ -41,7 +41,7 @@
              全画面ボタンは画面の中に置くので、ブラウザの全画面表示（キャンバスだけが
              映る）でも隠れない (#48)。キーボードはクリックしなくても最初から効く。 -->
         <div id="kcd-overlay" class="kcd-hidden">
-          <span id="kcd-overlay-text">クリックでマウス視点　·　Esc でマウスを解放　·　F で全画面</span>
+          <span id="kcd-overlay-text">クリックでマウス視点　·　Esc でマウスを解放　·　Ctrl+F で全画面</span>
           <button type="button" class="kcd-fullscreen">⛶ 全画面</button>
         </div>
       </div>
@@ -49,7 +49,7 @@
       <div id="unity-warning"> </div>
 
       <div id="kcd-guide">
-        <p class="kcd-line">クリックでマウス視点　·　<b>Esc</b> でマウスを解放　·　<b>F</b> で全画面</p>
+        <p class="kcd-line">クリックでマウス視点　·　<b>Esc</b> でマウスを解放　·　<b>Ctrl+F</b> で全画面</p>
         <p class="kcd-line kcd-sub"><b>WASD</b> 移動　·　<b>Shift</b> ダッシュ　·　<b>E</b> 話す　·　<b>Tab</b> クエスト</p>
         <button type="button" class="kcd-fullscreen">⛶ 全画面</button>
       </div>
@@ -244,6 +244,10 @@
             });
             focusCanvas();
             document.addEventListener("keydown", (e) => {
+              // Ctrl+F はゲームの全画面に使うので、ブラウザのページ内検索を開かせない。
+              if (e.ctrlKey && !e.altKey && !e.metaKey && e.code === "KeyF") {
+                e.preventDefault();
+              }
               if (e.target === document.body || e.target === document.documentElement) {
                 focusCanvas();
               }
