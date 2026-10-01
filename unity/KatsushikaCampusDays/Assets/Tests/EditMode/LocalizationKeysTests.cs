@@ -41,6 +41,8 @@ namespace KCD.Tests
                 "collectibles.json の称号。CollectibleLocalizationTests が全件を見る"),
             ("DialogueData.cs", "SpeakerKey",
                 "ui.npc.<会話データの id> と ui.npc.self。Dialogue_EverySpeakerHasANameInEveryDictionary が見る"),
+            ("BuildingLabel.cs", "key",
+                "CampusProps の BuildingNames から焼いた Campus シーンの名札。CampusBuildingLabelTests が見る"),
             ("CharacterSelect.cs", "\"ui.select.\" + id + \".name\"",
                 "GameManager.PlayableCharacterIds。OtherKeySources_ExistInEveryDictionary が見る"),
             ("CharacterSelect.cs", "\"ui.select.\" + id + \".desc\"",

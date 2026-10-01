@@ -158,7 +158,7 @@ namespace KCD
             for (int i = 0; i < _npcs.Length; i++)
             {
                 NPCTalker npc = _npcs[i];
-                if (npc == null || !npc.isActiveAndEnabled || !OnMap(npc.transform.position))
+                if (npc == null || !npc.isActiveAndEnabled || !IsOnMap(npc.transform.position))
                 {
                     continue;
                 }
@@ -195,7 +195,7 @@ namespace KCD
             QuestData quest = GameManager.Instance.Quests?.TrackedQuest;
             QuestStep step = quest?.CurrentStep;
 
-            if (step == null || !QuestObjectiveLocator.TryLocate(step, focus, out Vector3 position) || !OnMap(position))
+            if (step == null || !QuestObjectiveLocator.TryLocate(step, focus, out Vector3 position) || !IsOnMap(position))
             {
                 _objective.gameObject.SetActive(false);
                 return;
@@ -214,8 +214,8 @@ namespace KCD
             _objective.gameObject.SetActive(true);
         }
 
-        /// <summary>地図の範囲内か。屋内モデルは遠くに置いてあるので、これで自然と外れる。</summary>
-        private bool OnMap(Vector3 world)
+        /// <summary>地図の範囲内（キャンパス）か。屋内モデルは遠くに置いてあるので、これで自然と外れる。</summary>
+        public bool IsOnMap(Vector3 world)
         {
             return Mathf.Abs(world.x - _worldCenter.x) <= _halfExtent
                 && Mathf.Abs(world.z - _worldCenter.y) <= _halfExtent;

@@ -112,6 +112,7 @@ namespace KCD.Tests
 
             Assert.IsTrue(quests.StartQuest("q_library"));
             quests.ReportEnter("library");
+            quests.ReportVisit("poi_library_counter", true);
             quests.ReportTalk("inari");
 
             Assert.IsTrue(quests.IsCompleted("q_library"));
@@ -209,6 +210,7 @@ namespace KCD.Tests
             quests.QuestStarted += quest => started.Add(quest.Id);
 
             quests.ReportEnter("library");
+            quests.ReportVisit("poi_library_counter", true);
             quests.ReportTalk("inari");
 
             Assert.IsTrue(quests.IsCompleted("q_library"));
@@ -231,6 +233,7 @@ namespace KCD.Tests
             Assert.IsFalse(quests.IsActive("q_park"));
 
             quests.ReportEnter("library");
+            quests.ReportVisit("poi_library_counter", true);
             quests.ReportTalk("inari");
 
             Assert.IsTrue(quests.IsCompleted("q_park"), "待っているあいだに拾った葉が数えられていない");

@@ -300,7 +300,7 @@ namespace KCD.Editor
                 }
 
                 text.rectTransform.sizeDelta = new Vector2(12f, 3f);
-                go.AddComponent<BuildingLabel>().Label = pair.Value;
+                go.AddComponent<BuildingLabel>().Bind("ui.building." + pair.Key, pair.Value);
                 count++;
             }
 

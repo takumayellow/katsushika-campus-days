@@ -114,6 +114,40 @@ namespace KCD.Tests
                 + "（編集時に複製を作る生成コードを直し、KCD/シーンを組み直す）: " + string.Join(", ", copies));
         }
 
+        [Test]
+        public void 名札の名前はどの言語の辞書にもある()
+        {
+            Assert.IsNotEmpty(_labels, ScenePath + " に建物の名札が無い（KCD/シーンを組み直す）");
+
+            const string Missing = "<missing>";
+            var missing = new List<string>();
+            using (new PlayerPrefsKeyScope(L.PrefKey))
+            {
+                string before = L.Locale;
+                try
+                {
+                    foreach (string locale in new[] { "ja", "en" })
+                    {
+                        L.SetLocale(locale);
+                        foreach (TextMeshPro text in _labels)
+                        {
+                            string key = text.GetComponent<BuildingLabel>().Key;
+                            if (string.IsNullOrEmpty(key) || BuildingLabel.Resolve(key, Missing) == Missing)
+                            {
+                                missing.Add(locale + ": " + text.name + " (" + key + ")");
+                            }
+                        }
+                    }
+                }
+                finally
+                {
+                    L.SetLocale(before);
+                }
+            }
+
+            Assert.IsEmpty(missing, "辞書に無い名札（英語表示でも日本語の名前が焼いたまま出る）:\n" + string.Join("\n", missing));
+        }
+
         private static string AssetPathOf(Material material)
         {
             if (material == null)

@@ -4,7 +4,7 @@ namespace KCD
 {
     /// <summary>
     /// クエストの現在ステップが「どこへ行けばいいか」をシーン内の物から引く。
-    /// ミニマップの目的地マーカーが使う。探索結果は 1 秒だけ覚えて、毎フレーム探さない。
+    /// ミニマップの目的地マーカーと、画面の上の目的地の印（ObjectiveWaypoint）が使う。探索結果は 1 秒だけ覚えて、毎フレーム探さない。
     /// </summary>
     public static class QuestObjectiveLocator
     {
@@ -16,6 +16,7 @@ namespace KCD
         private static VisitZone[] _zones = new VisitZone[0];
         private static CollectableItem[] _items = new CollectableItem[0];
         private static PropInteractable[] _props = new PropInteractable[0];
+        private static InteriorExit[] _exits = new InteriorExit[0];
 
         /// <summary>ステップの目的地を返す。見つからなければ false。</summary>
         public static bool TryLocate(QuestStep step, Vector3 from, out Vector3 position)
@@ -63,6 +64,19 @@ namespace KCD
             return !string.IsNullOrEmpty(name) && name.StartsWith(InteriorPrefix)
                 ? name.Substring(InteriorPrefix.Length)
                 : null;
+        }
+
+        /// <summary>その建物の屋内の出口のうち、いちばん近いもの。屋内から外の目的地を指すときに使う。</summary>
+        public static bool TryLocateExit(string buildingId, Vector3 from, out Vector3 position)
+        {
+            position = Vector3.zero;
+            if (string.IsNullOrEmpty(buildingId))
+            {
+                return false;
+            }
+
+            Refresh();
+            return Nearest(_exits, from, e => e.BuildingId == buildingId, out position);
         }
 
         /// <summary>
@@ -180,6 +194,7 @@ namespace KCD
             _zones = Object.FindObjectsByType<VisitZone>(FindObjectsInactive.Exclude);
             _items = Object.FindObjectsByType<CollectableItem>(FindObjectsInactive.Exclude);
             _props = Object.FindObjectsByType<PropInteractable>(FindObjectsInactive.Exclude);
+            _exits = Object.FindObjectsByType<InteriorExit>(FindObjectsInactive.Exclude);
         }
 
         private static bool Nearest<T>(
