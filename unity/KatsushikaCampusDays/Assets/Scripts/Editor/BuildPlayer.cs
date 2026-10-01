@@ -171,7 +171,7 @@ namespace KCD.Editor
             PlayerSettings.WebGL.nameFilesAsHashes = true;
             PlayerSettings.WebGL.exceptionSupport = WebGLExceptionSupport.ExplicitlyThrownExceptionsOnly;
             // 自前のテンプレート（Assets/WebGLTemplates/KCD）。大きな全画面ボタンと、
-            // 「Esc でマウスを解放 / F で全画面」の案内をページに常に出す (#48)。
+            // 「Esc でマウスを解放 / Ctrl+F で全画面」の案内をページに常に出す (#48)。
             PlayerSettings.WebGL.template = "PROJECT:KCD";
             PlayerSettings.WebGL.initialMemorySize = 256;
             PlayerSettings.WebGL.maximumMemorySize = 2048;

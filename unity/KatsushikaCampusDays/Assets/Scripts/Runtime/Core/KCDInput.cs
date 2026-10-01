@@ -8,7 +8,7 @@ namespace KCD
     /// <summary>
     /// Input System のデバイスを直接読む薄いファサード。
     /// .inputactions アセットへの GUID 参照を持たずに済むので、シーンをコードだけで組み立てられる。
-    /// 操作: WASD または矢印キーで移動 / Shift（左右とも）ダッシュ / Space ジャンプ / E 会話 / Tab クエストログ / F 全画面 / Esc メニュー。
+    /// 操作: WASD または矢印キーで移動 / Shift（左右とも）ダッシュ / Space ジャンプ / E 会話 / Tab クエストログ / Ctrl+F 全画面 / Esc メニュー。
     /// </summary>
     public static class KCDInput
     {
@@ -315,11 +315,25 @@ namespace KCD
             (Gamepad.current != null && Gamepad.current.selectButton.wasPressedThisFrame);
 
         /// <summary>
-        /// 全画面の切り替え（F）。メニューやポーズ中でも効かせたいので封鎖を見ない。
+        /// 全画面の切り替え（Ctrl+F）。メニューやポーズ中でも効かせたいので封鎖を見ない。
+        /// F だけだと WASD の隣なので歩いているうちに押し間違える。Ctrl と組にする。
         /// ゲームパッドは割り当てない（ブラウザがゲームパッド入力をユーザー操作と見なさず、全画面要求が通らない, #48）。
         /// </summary>
         public static bool FullscreenPressed =>
-            Keyboard.current != null && Keyboard.current.fKey.wasPressedThisFrame;
+            Keyboard.current != null
+            && IsFullscreenChord(
+                Keyboard.current.ctrlKey.isPressed,
+                Keyboard.current.altKey.isPressed,
+                Keyboard.current.fKey.wasPressedThisFrame);
+
+        /// <summary>
+        /// 全画面の打鍵か。Ctrl を押したまま F を押したときだけ。
+        /// AltGr（Ctrl+Alt として届く）+F は文字入力なので除く。Web 版のページ内検索の抑止（index.html）と同じ条件。
+        /// </summary>
+        public static bool IsFullscreenChord(bool ctrlHeld, bool altHeld, bool fPressedThisFrame)
+        {
+            return ctrlHeld && !altHeld && fPressedThisFrame;
+        }
 
         /// <summary>クイックセーブ（F5）。</summary>
         public static bool QuickSavePressed =>
