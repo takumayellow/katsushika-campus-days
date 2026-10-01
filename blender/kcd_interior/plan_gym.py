@@ -9,6 +9,10 @@ TRUSS_Z = 10.40
 Z_TOP = 12.40
 COURT_W = 15.0       # コート幅（X）
 COURT_L = 28.0       # コート長（Y）
+# FIBA のゴール位置: バックボードの表面がエンドラインの 1.2 m 内側、リングの中心が
+# 1.575 m 内側。移動式ゴールの支柱はエンドラインの外に置く。
+HOOP_BOARD_IN = 1.20
+HOOP_POST_OUT = 0.675
 
 
 def build(c):
@@ -25,7 +29,8 @@ def build(c):
 
     # 玄関ホール（下足エリア）と、アリーナとの段差
     hall_y1 = iy0 + 5.0
-    kit.plate(c.floor, ix0, iy0, ix1, hall_y1, 0.016, "floor_tile_grey")
+    # 玄関マット（entry_kit, z=0.012）より下に敷く。0.016 だとマットが埋もれた
+    kit.plate(c.floor, ix0, iy0, ix1, hall_y1, 0.008, "floor_tile_grey")
     ent = c.furn("entry_hall")
     F.locker_bank(ent, cx - 9.0, cx - 2.0, iy0 + 0.6, ang=0.0, h=1.80)
     F.locker_bank(ent, cx + 2.0, cx + 9.0, iy0 + 0.6, ang=0.0, h=1.80)
@@ -33,13 +38,14 @@ def build(c):
     F.bench(ent, cx + 6.0, iy0 + 2.6, ang=0.0, w=2.4)
     shell.notice_board(c.wall, ix0 + 3.0, iy0 + 0.4, 1.50, ang=0.0, w=2.4,
                        h=1.2, rng=c.rng)
-    shell.clock(c.wall, cx, iy1 - 0.22, 7.40, ang=math.pi, r=0.42)
+    # 窓台（4.2 m）より下の南の壁に、コート側を向けて掛ける
+    shell.clock(c.wall, cx + 5.2, iy0 + 0.01, 3.30, ang=0.0, r=0.34)
     common.sign_board(c, ent, cx, iy0 + 0.30, 2.45, ang=0.0, w=2.6, h=0.6)
     shell.vending(ent, ix1 - 1.6, iy0 + 2.4, ang=-math.pi * 0.5)
     shell.vending(ent, ix1 - 1.6, iy0 + 4.0, ang=-math.pi * 0.5, mat="fm_green")
 
-    _court(c, cx, hall_y1)
-    _stage(c, ix0, ix1, iy1)
+    hoop_base = _court(c, cx, hall_y1)
+    _stage(c, ix0, ix1, iy1, hoop_base)
     _bleachers(c, ix0, ix1, iy0, iy1, cx, hall_y1)
     _storage(c, ix0, ix1, iy0, iy1, cx, hall_y1)
     _truss(c, ix0, ix1, iy0, iy1)
@@ -51,9 +57,14 @@ def build(c):
 
 # --------------------------------------------------------------------------- #
 def _court(c, cx, hall_y1):
-    """フロアのコートライン。実ジオメトリの薄板で引く。"""
+    """フロアのコートライン。実ジオメトリの薄板で引く。
+
+    戻り値は北のゴールの台座が床を占める範囲 (x0, x1, y_north)。
+    """
     mb = c.furn("court")
-    cy = hall_y1 + 4.0 + COURT_L * 0.5
+    # 南のエンドラインは玄関ホールから 2.0 m。北のエンドラインと舞台の前面の間
+    # （体育館の内寸で決まり約 2.1 m）には、北のゴールの台座が入る。
+    cy = hall_y1 + 2.0 + COURT_L * 0.5
     x0, x1 = cx - COURT_W * 0.5, cx + COURT_W * 0.5
     y0, y1 = cy - COURT_L * 0.5, cy + COURT_L * 0.5
     lw = 0.05
@@ -70,26 +81,35 @@ def _court(c, cx, hall_y1):
     # センターライン + センターサークル
     band(x0, cy - lw, x1, cy + lw)
     _circle(mb, cx, cy, 1.80, lw, Z)
-    # 制限区域とフリースローサークル
+    # 制限区域・フリースローサークル・3 ポイントライン（FIBA）。
+    # sgn=-1 が南のエンドライン y0、+1 が北の y1。コートの内側は -sgn 方向。
+    t3 = math.acos(6.60 / 6.75)            # 弧と直線がつながる角度
+    y3 = 1.575 + 6.75 * math.sin(t3)       # 直線部の長さ（2.99 m）
     for sgn in (-1, 1):
         by = y0 if sgn < 0 else y1
-        ky = by + sgn * 5.80
+        ky = by - sgn * 5.80
         band(cx - 2.45 - lw, ky - lw, cx + 2.45 + lw, ky + lw)
         band(cx - 2.45 - lw, min(by, ky), cx - 2.45 + lw, max(by, ky))
         band(cx + 2.45 - lw, min(by, ky), cx + 2.45 + lw, max(by, ky))
         _circle(mb, cx, ky, 1.80, lw, Z)
-        # 3 ポイントライン
-        _arc(mb, cx, by + sgn * 1.575, 6.75, lw, Z,
-             a0=0.0 if sgn > 0 else math.pi, span=math.pi)
+        rim_y = by - sgn * 1.575
+        inward = 0.0 if sgn < 0 else math.pi   # 弧をコートの内側へ振る
+        _arc(mb, cx, rim_y, 6.75, lw, Z, a0=inward + t3, span=math.pi - 2 * t3)
+        # ノーチャージ半円（半径 1.25 m）
+        _arc(mb, cx, rim_y, 1.25 + lw * 2, lw, Z, a0=inward, span=math.pi,
+             seg=10)
         for s2 in (-1, 1):
-            band(cx + s2 * 6.75 - lw, min(by, by + sgn * 1.575),
-                 cx + s2 * 6.75 + lw, max(by, by + sgn * 1.575))
+            band(cx + s2 * (6.60 - lw) - lw, min(by, by - sgn * y3),
+                 cx + s2 * (6.60 - lw) + lw, max(by, by - sgn * y3))
 
-    # ゴール 2 基
+    # ゴール 2 基（移動式。台座はエンドラインの外、腕でコートへ張り出す）
+    arm = HOOP_POST_OUT + HOOP_BOARD_IN - 0.06
     for sgn in (-1, 1):
         by = y0 if sgn < 0 else y1
-        F.basketball_hoop(mb, cx, by - sgn * 1.20,
-                          ang=0.0 if sgn < 0 else math.pi)
+        F.basketball_hoop(mb, cx, by + sgn * HOOP_POST_OUT,
+                          ang=0.0 if sgn < 0 else math.pi, arm=arm)
+    hoop_base = (cx - 0.35, cx + 0.35,
+                 y1 + HOOP_POST_OUT + F.hoop_base_back(arm))
     # バレーボールコート（18 x 9 m、青ライン）
     vw, vl = 9.0, 18.0
     vx0, vx1 = cx - vw * 0.5, cx + vw * 0.5
@@ -108,8 +128,7 @@ def _court(c, cx, hall_y1):
     for sgn in (-1, 1):
         kit.cyl(mb, cx + sgn * (vw * 0.5 + 0.6), cy, 0.0, 2.55, 0.055,
                 "metal_gray", seg=6)
-    kit.box(mb, cx - vw * 0.5 - 0.6, cy - 0.02, 1.43,
-            cx + vw * 0.5 + 0.6, cy + 0.02, 2.43, "net_white")
+    _volley_net(mb, cx - vw * 0.5 - 0.5, cx + vw * 0.5 + 0.5, cy)
 
     # バドミントンコート 2 面
     for sgn in (-1, 1):
@@ -131,6 +150,28 @@ def _court(c, cx, hall_y1):
     c.npc(cx - 4.0, cy - 6.0, 0.0)
     c.npc(cx + 3.5, cy + 4.0, 0.0)
     c.npc(cx, cy - 11.0, 0.0)
+    return hoop_base
+
+
+def _volley_net(mb, nx0, nx1, y, z0=1.43, z1=2.43, pitch=0.25):
+    """バレーのネット。上下の白帯と黒い網糸で組み、向こう側が透けて見えるようにする。
+
+    1 枚の箱で張ると、コートの長手方向の視界が高さ 1 m の灰色の壁でふさがれた。
+    """
+    kit.box(mb, nx0, y - 0.012, z1 - 0.07, nx1, y + 0.012, z1, "net_white")
+    kit.box(mb, nx0, y - 0.008, z0, nx1, y + 0.008, z0 + 0.05, "net_white")
+    for x in (nx0, nx1):
+        kit.box(mb, x - 0.025, y - 0.010, z0, x + 0.025, y + 0.010, z1,
+                "net_white")
+    za, zb = z0 + 0.05, z1 - 0.07
+    n = max(2, int(round((nx1 - nx0) / pitch)))
+    for i in range(1, n):
+        x = nx0 + (nx1 - nx0) * i / n
+        kit.tube(mb, (x, y, za), (x, y, zb), 0.007, "rubber_black", seg=3)
+    m = max(1, int(round((zb - za) / pitch)))
+    for k in range(1, m):
+        z = za + (zb - za) * k / m
+        kit.tube(mb, (nx0, y, z), (nx1, y, z), 0.007, "rubber_black", seg=3)
 
 
 def _circle(mb, cx, cy, r, lw, z, seg=24):
@@ -150,21 +191,34 @@ def _arc(mb, cx, cy, r, lw, z, a0=0.0, span=math.pi, seg=20):
                     (q1[0], q1[1], z), (q0[0], q0[1], z), "court_line")
 
 
-def _stage(c, x0, x1, y1):
-    """奥のステージ（式典用）。"""
+def _stage(c, x0, x1, y1, hoop_base):
+    """奥のステージ（式典用）。hoop_base は北のゴールの台座 (x0, x1, y_north)。"""
     mb = c.furn("stage")
     sx0, sx1 = x0 + 8.0, x1 - 8.0
     sy0, sy1 = y1 - 7.0, y1 - 0.4
-    F.stage(mb, sx0, sy0, sx1, sy1, h=0.90)
+    # 前面の上り段は両端に。中央は北のゴールの台座が来る（コートは中央）
+    steps, step_w, step_d = (sx0 + 2.6, sx1 - 2.6), 2.0, 0.9
+    hx0, hx1, hy1 = hoop_base
+    assert hy1 < sy0, "ゴールの台座が舞台に食い込む"
+    for sx in steps:
+        assert (hy1 <= sy0 - step_d or sx + step_w * 0.5 <= hx0
+                or sx - step_w * 0.5 >= hx1), "上り段がゴールの台座に重なる"
+    F.stage(mb, sx0, sy0, sx1, sy1, h=0.90, steps=steps, step_w=step_w)
     # 緞帳
     kit.box(c.wall, sx0 - 0.4, sy1 - 0.45, 0.90, sx1 + 0.4, sy1 - 0.30, 7.40,
             "curtain_blue")
     for i in range(14):
         px = sx0 + (sx1 - sx0) * i / 13.0
         kit.cyl(c.wall, px, sy1 - 0.52, 0.90, 7.20, 0.10, "curtain_blue", seg=5)
-    # 校章代わりのパネル
-    kit.vplate(c.wall, (sx1 - 2.0, sy1 - 0.28), (sx0 + 2.0, sy1 - 0.28),
-               4.20, 6.60, "wall_accent_navy")
+    # 校章代わりのパネル。緞帳のひだ（手前端 sy1-0.62）のすぐ前に吊り、客席を向ける
+    mx = (sx0 + sx1) * 0.5
+    py = sy1 - 0.70
+    kit.box(c.wall, mx - 1.5, py, 4.30, mx + 1.5, py + 0.04, 6.10, "wall_wood")
+    kit.vplate(c.wall, (mx - 1.3, py - 0.005), (mx + 1.3, py - 0.005),
+               4.50, 5.90, "paper_white")
+    c.wall.add_face([(mx + 0.55 * math.cos(math.pi * 2 * k / 12), py - 0.01,
+                      5.20 + 0.55 * math.sin(math.pi * 2 * k / 12))
+                     for k in range(12)], "wall_accent_navy")
     # 演台は客席（-Y）へ向け、舞台の高さ（0.90 m）まで持ち上げる
     base_pd = len(mb.verts)
     F.podium(mb, (sx0 + sx1) * 0.5 - 2.0, sy0 + 1.6, ang=math.pi)
@@ -342,8 +396,9 @@ def _storage(c, x0, x1, y0, y1, cx, hall_y1):
         by = y0 + 1.0 if sgn < 0 else y1 - 1.0
         kit.box(w, cx - 2.4, by - 0.16, 6.20, cx + 2.4, by + 0.16, 8.00,
                 "metal_dark")
-        kit.vplate(w, (cx - 2.2, by + sgn * -0.20), (cx + 2.2, by + sgn * -0.20),
-                   6.40, 7.80, "screen_blue")
+        # 表示面はコート側へ（南は +Y、北は -Y）
+        kit.vplate(w, (cx - 2.2, by - sgn * 0.20), (cx + 2.2, by - sgn * 0.20),
+                   6.40, 7.80, "screen_blue", flip=sgn < 0)
     # 放送・審判席
     F.table(mb, cx - 10.0, hall_y1 + 2.4, ang=0.0, w=2.4, d=0.8, h=0.74,
             top="desk_dark")
@@ -417,13 +472,9 @@ def _extras(c, x0, x1, y0, y1, cx, hall_y1):
                 py = hall_y1 + 1.0 + (y1 - hall_y1 - 2.0) * k / n
                 kit.tube(w, (wx + rail, py, 8.50), (wx + rail, py, 9.50),
                          0.028, "metal_gray", seg=4)
-    # --- 横断幕・時計 ---
-    for sgn in (-1, 1):
-        by = y0 + 0.30 if sgn < 0 else y1 - 0.30
-        kit.vplate(w, (cx - 7.0, by), (cx + 7.0, by), 4.60, 5.60,
-                   "wall_accent_navy")
-        kit.cyl(w, cx + 5.2, by, 9.00, 9.06, 0.34, "paper_white", seg=12)
-        kit.cyl(w, cx + 5.2, by, 8.94, 9.00, 0.37, "metal_dark", seg=12)
+    # --- 横断幕（南の妻面。北は舞台の緞帳が前に来るので掛けない） ---
+    kit.box(w, cx - 7.0, y0 + 0.28, 4.60, cx + 7.0, y0 + 0.30, 5.60,
+            "wall_accent_navy")
     for j in range(6):
         mx = x0 + 3.0 + j * 2.2
         kit.box(mb, mx - 0.95, y0 + 0.40, 0.0, mx + 0.95, y0 + 0.46, 1.90,

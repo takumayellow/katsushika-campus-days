@@ -12,6 +12,7 @@ from .kit import T
 WALL = 0.30          # 外周壁厚
 PART = 0.16          # 間仕切り厚
 GLASS_T = 0.04       # ガラスの厚み（室内側にも面を作って通り抜けを止める。#45）
+STRINGER_T = 0.06    # 階段の側桁の厚み（#45）
 DOOR_W = 1.10        # 片開きドアの幅
 DOOR_H = 2.10
 
@@ -376,11 +377,11 @@ def stair_flight(mb, cx, y0, y1, z0, z1, width=2.6, steps=None,
         z = z0 + dz * i
         kit.box(mb, cx - hw, y, z, cx + hw, y + dy, z + dz * 0.32, tread_mat)
         kit.box(mb, cx - hw, y + dy * 0.86, z, cx + hw, y + dy, z + dz, riser_mat)
-    # 側桁
+    # 側桁。厚みのある板にして両側から見え、両側から当たるようにする (#45)
     for sgn in (-1, 1):
         x = cx + sgn * hw
-        mb.add_quad((x, y0, z0 - 0.30), (x, y1, z1 - 0.30),
-                    (x, y1, z1), (x, y0, z0), riser_mat)
+        kit.thick_quad(mb, (x, y0, z0 - 0.30), (x, y1, z1 - 0.30),
+                       (x, y1, z1), (x, y0, z0), STRINGER_T, riser_mat)
     if rail:
         for sgn in (-1, 1):
             x = cx + sgn * (hw - 0.05)
@@ -405,9 +406,9 @@ def railing(mb, pts, z, h=1.05, mat="metal_white", glass=None, post=1.6):
             continue
         kit.tube(mb, (a[0], a[1], z + h), (b[0], b[1], z + h), 0.035, mat, seg=6)
         if glass:
-            mb.add_quad((a[0], a[1], z + 0.05), (b[0], b[1], z + 0.05),
-                        (b[0], b[1], z + h - 0.06), (a[0], a[1], z + h - 0.06),
-                        glass)
+            kit.thick_quad(mb, (a[0], a[1], z + 0.05), (b[0], b[1], z + 0.05),
+                           (b[0], b[1], z + h - 0.06), (a[0], a[1], z + h - 0.06),
+                           GLASS_T, glass)
         n = max(1, int(L / post))
         for k in range(n + 1):
             t = k / n

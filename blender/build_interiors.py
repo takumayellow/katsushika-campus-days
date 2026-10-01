@@ -218,6 +218,38 @@ def build_one(sp, plan, args, eng):
 POI_RE = re.compile(r"^poi_([a-z0-9]+)_[a-z0-9_]+$")
 
 
+def summary_rows(report, summary_path, rendered, preview_dir):
+    """_summary.json に書く行。パスはリポジトリからの相対パスにする（作業ツリーの
+    場所で中身が変わらないように）。プレビューを撮らなかった回は、前回の一覧のうち
+    preview_dir に今もあるものを引き継ぐ。"""
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+    def rel(p):
+        try:
+            return os.path.relpath(p, root).replace("\\", "/")
+        except ValueError:  # 別ドライブ
+            return p.replace("\\", "/")
+
+    old = {}
+    if not rendered and os.path.isfile(summary_path):
+        with open(summary_path, encoding="utf-8") as fp:
+            old = {b["id"]: b.get("previews", [])
+                   for b in json.load(fp).get("buildings", [])}
+    rows = []
+    for info in report:
+        row = dict(info)
+        row["fbx"] = rel(info["fbx"]) if info.get("fbx") else None
+        if rendered:
+            row["previews"] = [rel(p) for p in info["previews"]]
+        else:
+            kept = [os.path.join(preview_dir,
+                                 os.path.basename(p.replace("\\", "/")))
+                    for p in old.get(info["id"], [])]
+            row["previews"] = [rel(p) for p in kept if os.path.isfile(p)]
+        rows.append(row)
+    return rows
+
+
 def required_pois(data_dir):
     """クエスト・収集物データが参照する poi_<棟>_<名前> を棟ごとに集める。
 
@@ -375,8 +407,9 @@ def main():
     summary = os.path.join(args.out_dir, "_summary.json")
     if len(report) == len(registry.ORDER) and not args.no_export:
         os.makedirs(args.out_dir, exist_ok=True)
+        rows = summary_rows(report, summary, args.preview, args.preview_dir)
         with open(summary, "w", encoding="utf-8") as fp:
-            json.dump({"total_tris": total, "buildings": report}, fp,
+            json.dump({"total_tris": total, "buildings": rows}, fp,
                       ensure_ascii=False, indent=1)
         print("[interiors] 集計: %s" % summary)
     else:

@@ -54,6 +54,33 @@ def vplate(mb, a, b, z0, z1, mat, flip=False):
     mb.add_face(pts, mat)
 
 
+def thick_quad(mb, a, b, c, d, t, mat):
+    """平面の四角形 a-b-c-d を法線方向に厚み t の閉じた板にする（両面・12 三角形）。
+
+    厚みゼロの 1 枚板は片面しか描かれず、Unity の MeshCollider も裏からは素通りする
+    （#45 の階段の側桁・ガラス手すり）。板の中心面が a-b-c-d になるよう ±t/2 ずつ振る。
+    """
+    pts = (a, b, c, d)
+    n = [0.0, 0.0, 0.0]
+    for i in range(4):
+        p, q = pts[i], pts[(i + 1) % 4]
+        n[0] += (p[1] - q[1]) * (p[2] + q[2])
+        n[1] += (p[2] - q[2]) * (p[0] + q[0])
+        n[2] += (p[0] - q[0]) * (p[1] + q[1])
+    ln = math.sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2])
+    if ln < 1e-9:
+        return
+    h = t * 0.5 / ln
+    off = (n[0] * h, n[1] * h, n[2] * h)
+    front = [(p[0] + off[0], p[1] + off[1], p[2] + off[2]) for p in pts]
+    back = [(p[0] - off[0], p[1] - off[1], p[2] - off[2]) for p in pts]
+    mb.add_face(front, mat)
+    mb.add_face(back[::-1], mat)
+    for i in range(4):
+        j = (i + 1) % 4
+        mb.add_quad(back[i], back[j], front[j], front[i], mat)
+
+
 def cyl(mb, cx, cy, z0, z1, r, mat, seg=10, cap_top=True, cap_bottom=False):
     mb.add_cylinder(cx, cy, z0, z1, r, mat, seg=seg,
                     cap_top=cap_top, cap_bottom=cap_bottom)
