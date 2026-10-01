@@ -4,7 +4,9 @@
     "references": [
         "KCD.Runtime",
         "Unity.TextMeshPro",
-        "UnityEngine.TestRunner"
+        "UnityEngine.TestRunner",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.Core.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
