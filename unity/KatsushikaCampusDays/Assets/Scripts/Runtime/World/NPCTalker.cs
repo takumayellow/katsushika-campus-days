@@ -3,8 +3,8 @@ using UnityEngine;
 namespace KCD
 {
     /// <summary>
-    /// 話しかけられる NPC。会話データの id と結びつき、話しかけられると
-    /// DialogueSystem に会話を投げ、QuestSystem に「会った」ことを報告する。
+    /// 話しかけられる NPC。会話データの id と結びつき、話しかけられると DialogueSystem に会話を投げる。
+    /// QuestSystem への「会った」の報告は DialogueSystem.TalkTo が話題を選ぶのと一緒に行う (#94)。
     /// </summary>
     [RequireComponent(typeof(Collider))]
     public sealed class NPCTalker : Interactable
@@ -73,7 +73,6 @@ namespace KCD
 
             // 称号「顔なじみ」(ach_friends) は話した NPC の数で決まる (#65)。
             DayStats.NoteTalk(_npcId);
-            GameManager.Instance.Quests?.ReportTalk(_npcId);
         }
 
         private void Update()

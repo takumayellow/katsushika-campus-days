@@ -43,8 +43,9 @@ namespace KCD
         /// <summary>
         /// 時刻の条件（minHour）があるステップの場所に、その時刻より前に着いた (#66)。
         /// 黙って何も起きないと「来たのに進まない」だけに見えるので、追跡表示が「◯時ごろにまた来よう」と知らせる。
-        /// 着いた瞬間（<see cref="ReportVisit(string, bool)"/> の arriving が true）の 1 回だけ呼び、
-        /// 留まっているあいだの報告し直しでは呼ばない。Changed より先に呼ぶ。
+        /// 着いた瞬間（<see cref="ReportVisit(string, bool)"/> の arriving が true）にだけ呼び、
+        /// 留まっているあいだの報告し直しでは呼ばない。同じステップには一度呼んだら、出直して入り直しても
+        /// 時計が巻き戻る（翌朝・セーブの読み込み）まで呼ばない (#54)。Changed より先に呼ぶ。
         /// </summary>
         public event Action<QuestData, QuestStep> StepTooEarly;
 
@@ -72,6 +73,16 @@ namespace KCD
         /// インスタンスが同じなら付け替えない）なので、黙らせないとタイトルで quest_start が鳴る。
         /// </summary>
         private bool _silent;
+
+        /// <summary>
+        /// 「◯時ごろにまた来よう」（<see cref="StepTooEarly"/>）を知らせ済みのステップ (#54)。
+        /// 以前は入るたびに知らせていたので、時刻前に同じ場所を出入りするとそのたびにトーストが出た。
+        /// 時計が巻き戻ったとき（<see cref="ObserveClock"/>）と、読み込み直したときに忘れる。
+        /// </summary>
+        private readonly HashSet<QuestStep> _toldTooEarly = new HashSet<QuestStep>();
+
+        /// <summary>最後に見た時計（時）。巻き戻りを見つけるために覚える。まだ見ていなければ NaN。</summary>
+        private float _lastSeenHour = float.NaN;
 
         /// <summary>Resources から全クエストを読み込み、autoStart のものを開始する。</summary>
         public void LoadFromResources()
@@ -131,6 +142,7 @@ namespace KCD
                 _active.Clear();
                 _completed.Clear();
                 _held.Clear();
+                ForgetTooEarlyNotices();
 
                 if (quests != null)
                 {
@@ -333,6 +345,36 @@ namespace KCD
             return Clock != null ? Clock() : GameManager.Instance.GameTimeHours;
         }
 
+        /// <summary>
+        /// 時計を見て、前に見たときより戻っていたら「また来よう」の知らせ済みを忘れる (#54)。
+        /// 一日の時計は朝から夜へ進む。戻るのは翌朝に戻したとき（DayEndEvaluator）や前の時刻のセーブを読んだときなので、
+        /// 戻ったら新しい一日として数え、その日に来たらもう一度知らせる。
+        /// </summary>
+        private void ObserveClock(float hour)
+        {
+            if (hour < _lastSeenHour)
+            {
+                _toldTooEarly.Clear();
+            }
+
+            _lastSeenHour = hour;
+        }
+
+        /// <summary>いまが時刻の条件より前か。見た時計は巻き戻りの判定（<see cref="ObserveClock"/>）にも回す。</summary>
+        private bool IsBeforeMinHour(QuestStep step)
+        {
+            float hour = CurrentHour();
+            ObserveClock(hour);
+            return hour < step.MinHour;
+        }
+
+        /// <summary>「また来よう」の知らせ済みと、見た時計を捨てる。読み込み直すときに呼ぶ。</summary>
+        private void ForgetTooEarlyNotices()
+        {
+            _toldTooEarly.Clear();
+            _lastSeenHour = float.NaN;
+        }
+
         private void Report(QuestStepKind kind, string target, bool arriving)
         {
             if (string.IsNullOrEmpty(target))
@@ -435,9 +477,10 @@ namespace KCD
 
                 // 夕方にしか起きない出来事など、時刻の条件があるステップ。
                 // 早く着いたら進めない。入った瞬間なら「◯時ごろにまた来よう」を知らせる（イベントはループの後）。
-                if (step.MinHour > 0f && CurrentHour() < step.MinHour)
+                // 知らせるのはステップごとに 1 回。出て入り直しても繰り返さない (#54)。
+                if (step.MinHour > 0f && IsBeforeMinHour(step))
                 {
-                    if (arriving)
+                    if (arriving && _toldTooEarly.Add(step))
                     {
                         if (tooEarly == null)
                         {
@@ -503,9 +546,12 @@ namespace KCD
         /// <summary>
         /// GameManager から毎フレーム呼ぶ。制限時間つきステップを見張る。
         /// 会話・クエストログ・写真モードなど操作を止めている間は数えない（ポーズ中は timeScale 0 で deltaTime も 0）。
+        /// 時計も毎フレーム見る。着いたときに見るだけだと、1 日目の 10 時に知らせて 2 日目の 15 時に来たとき、
+        /// 時計が戻ったことに気づけず「また来よう」を出しそびれる (#54)。
         /// </summary>
         public void Tick(float deltaTime)
         {
+            ObserveClock(CurrentHour());
             Tick(deltaTime, KCDInput.GameplayBlocked);
         }
 

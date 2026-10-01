@@ -91,6 +91,7 @@ namespace KCD
             }
 
             // 入った瞬間。時刻の条件より早ければ「◯時ごろにまた来よう」が出る (#66)。
+            // 出て入り直しても同じステップでは繰り返さない（QuestSystem が一日に 1 回に絞る, #54）。
             GameManager.Instance.Quests?.ReportVisit(_placeId, true);
         }
 
