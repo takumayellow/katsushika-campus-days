@@ -35,6 +35,22 @@ namespace KCD
             {
                 _root.SetActive(false);
             }
+
+            L.LocaleChanged += OnLocaleChanged;
+        }
+
+        private void OnDestroy()
+        {
+            L.LocaleChanged -= OnLocaleChanged;
+        }
+
+        /// <summary>開いたまま言語を切り替えたら、その場で描き直す。閉じているなら次に開いたときに作る。</summary>
+        private void OnLocaleChanged()
+        {
+            if (IsOpen)
+            {
+                Rebuild();
+            }
         }
 
         /// <summary>開いたまま無効にされても、自分の封鎖を残さない。</summary>
@@ -124,48 +140,54 @@ namespace KCD
             }
 
             _builder.Length = 0;
+            Compose(_builder, _quests);
+            _bodyLabel.text = _builder.ToString();
+        }
+
+        /// <summary>受注中・完了済みのクエストを一覧の文面にして足す。題名・あらすじ・目標はいまの言語で出す。</summary>
+        public static void Compose(StringBuilder into, QuestSystem quests)
+        {
             int shown = 0;
 
-            for (int i = 0; i < _quests.All.Count; i++)
+            for (int i = 0; i < quests.All.Count; i++)
             {
-                QuestData quest = _quests.All[i];
-                bool active = _quests.IsActive(quest.Id);
-                bool completed = _quests.IsCompleted(quest.Id);
+                QuestData quest = quests.All[i];
+                bool active = quests.IsActive(quest.Id);
+                bool completed = quests.IsCompleted(quest.Id);
                 if (!active && !completed)
                 {
                     continue;
                 }
 
                 shown++;
-                _builder.Append(completed ? "<color=#8FD48F>" : "<color=#FFE6A8>");
-                _builder.Append(completed
+                into.Append(completed ? "<color=#8FD48F>" : "<color=#FFE6A8>");
+                into.Append(completed
                     ? L.Get("ui.questlog.completed", "[達成] ")
                     : L.Get("ui.questlog.active", "[受注中] "));
-                _builder.Append(quest.Title);
-                _builder.Append("</color>\n");
+                into.Append(quest.DisplayTitle);
+                into.Append("</color>\n");
 
-                if (!string.IsNullOrEmpty(quest.Summary))
+                string summary = quest.DisplaySummary;
+                if (!string.IsNullOrEmpty(summary))
                 {
-                    _builder.Append("  ").Append(quest.Summary).Append('\n');
+                    into.Append("  ").Append(summary).Append('\n');
                 }
 
                 for (int s = 0; s < quest.Steps.Count; s++)
                 {
                     QuestStep step = quest.Steps[s];
-                    _builder.Append(step.Completed ? "  <s>" : "  ");
-                    _builder.Append("・").Append(step.Text);
-                    _builder.Append(step.Completed ? "</s>\n" : "\n");
+                    into.Append(step.Completed ? "  <s>" : "  ");
+                    into.Append("・").Append(step.DisplayText);
+                    into.Append(step.Completed ? "</s>\n" : "\n");
                 }
 
-                _builder.Append('\n');
+                into.Append('\n');
             }
 
             if (shown == 0)
             {
-                _builder.Append(L.Get("ui.questlog.empty", "まだ受けているクエストはない。\nキャンパスを歩いて、誰かに話しかけてみよう。"));
+                into.Append(L.Get("ui.questlog.empty", "まだ受けているクエストはない。\nキャンパスを歩いて、誰かに話しかけてみよう。"));
             }
-
-            _bodyLabel.text = _builder.ToString();
         }
     }
 }

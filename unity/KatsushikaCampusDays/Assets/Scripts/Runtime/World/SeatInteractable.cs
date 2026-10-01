@@ -33,7 +33,19 @@ namespace KCD
             }
         }
 
-        private void Start()
+        private void OnEnable()
+        {
+            L.LocaleChanged += RefreshPrompt;
+            RefreshPrompt();
+        }
+
+        private void OnDisable()
+        {
+            L.LocaleChanged -= RefreshPrompt;
+        }
+
+        /// <summary>いまの言語で「座る」を出す。言語を切り替えたら出し直す。</summary>
+        private void RefreshPrompt()
         {
             PromptLabel = L.Get("ui.interact.sit", "座る");
         }
