@@ -31,7 +31,10 @@ namespace KCD
 #endif
         }
 
-        /// <summary>文字列を読む。無ければ空文字。</summary>
+        /// <summary>
+        /// 文字列を読む。無いとき Web 版は空文字、デスクトップは FileNotFoundException になるので、
+        /// 呼び出し側は先に <see cref="Exists"/> を見る（SaveSystem.Read）。
+        /// </summary>
         public static string Read(string path)
         {
 #if UNITY_WEBGL && !UNITY_EDITOR

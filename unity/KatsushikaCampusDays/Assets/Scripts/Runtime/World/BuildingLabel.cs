@@ -57,8 +57,8 @@ namespace KCD
             Vector3 delta = transform.position - _camera.position;
             float distance = delta.magnitude;
 
-            float alpha = 1f - Mathf.InverseLerp(_fadeInDistance, _fadeOutDistance, distance);
-            if (alpha <= 0.01f)
+            float alpha = AlphaAt(distance, _fadeInDistance, _fadeOutDistance);
+            if (IsHidden(alpha))
             {
                 if (_text.enabled)
                 {
@@ -75,9 +75,27 @@ namespace KCD
 
             _text.color = new Color(_baseColor.r, _baseColor.g, _baseColor.b, _baseColor.a * alpha);
 
-            float scale = Mathf.Clamp(distance / _referenceDistance, _minScale, _maxScale);
+            float scale = ScaleAt(distance, _referenceDistance, _minScale, _maxScale);
             transform.localScale = Vector3.one * scale;
             transform.rotation = Quaternion.LookRotation(delta.normalized, Vector3.up);
+        }
+
+        /// <summary>カメラからの距離での不透明度。fadeIn m までは 1、fadeOut m で 0、その間は線形。</summary>
+        public static float AlphaAt(float distance, float fadeInDistance, float fadeOutDistance)
+        {
+            return 1f - Mathf.InverseLerp(fadeInDistance, fadeOutDistance, distance);
+        }
+
+        /// <summary>ほぼ見えないので文字の描画ごと止めるか。</summary>
+        public static bool IsHidden(float alpha)
+        {
+            return alpha <= 0.01f;
+        }
+
+        /// <summary>距離での大きさ。reference m で等倍、遠いほど大きくして読める大きさを保つ（min〜max に収める）。</summary>
+        public static float ScaleAt(float distance, float referenceDistance, float minScale, float maxScale)
+        {
+            return Mathf.Clamp(distance / referenceDistance, minScale, maxScale);
         }
     }
 }

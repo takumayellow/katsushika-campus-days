@@ -59,7 +59,8 @@ namespace KCD
             }
         }
 
-        private static string PhaseName(float hours)
+        /// <summary>時間帯の呼び名。5 / 9 / 12 / 15 / 17 / 19 時で区切り、区切りの時刻ちょうどは後ろの帯に入る。</summary>
+        public static string PhaseName(float hours)
         {
             if (hours < 5f) { return L.Get("ui.hud.time_midnight", "深夜"); }
             if (hours < 9f) { return L.Get("ui.hud.time_morning", "朝"); }
