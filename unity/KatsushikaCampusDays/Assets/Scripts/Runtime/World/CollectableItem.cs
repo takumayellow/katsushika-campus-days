@@ -152,6 +152,7 @@ namespace KCD
             GameManager.Instance.Quests?.ReportCollect(_itemId);
             DayStats.NoteCollect(_itemId);
             HUD.Instance?.ShowToast(ToastFor(_itemId, _displayName));
+            HiddenNote.ShowFor(_itemId);
 
             // Destroy すると、キャンパスの中でロードして DayStats が拾う前に戻っても出し直せない (#106)。
             SetTaken(true);

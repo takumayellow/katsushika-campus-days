@@ -70,8 +70,20 @@ namespace KCD
 
         public CatalogPlace Place;
 
+        /// <summary>
+        /// 隠しアイテムに添えてあるメモの番号（1 から 20）。0 ならメモは無い (#175)。
+        /// 開校の年の学生が始めた宝探しのメモで、20 枚目が図書館 2 階の扉へ導く。
+        /// </summary>
+        public int NoteNo;
+
+        public string NoteJa = string.Empty;
+        public string NoteEn = string.Empty;
+
         /// <summary>キャンパスに隠してある物か。結果画面と称号はこれだけを数える。</summary>
         public bool IsHidden => Source == CollectibleCatalog.SourceHidden;
+
+        /// <summary>拾ったときに読むメモがあるか。</summary>
+        public bool HasNote => NoteNo > 0 && !string.IsNullOrEmpty(NoteJa);
 
         /// <summary>表示名。ローカライズの item.&lt;id&gt;.name、無ければ JSON の name_ja / name_en。</summary>
         public string DisplayName => L.Get("item." + Id + ".name", L.Pick(NameJa, NameEn));
@@ -93,7 +105,10 @@ namespace KCD
                 HintEn = MiniJson.GetString(node, "hint_en"),
                 Rarity = MiniJson.GetString(node, "rarity"),
                 Source = MiniJson.GetString(node, "source"),
-                Place = CatalogPlace.Read(node)
+                Place = CatalogPlace.Read(node),
+                NoteNo = MiniJson.GetInt(node, "note_no"),
+                NoteJa = MiniJson.GetString(node, "note_ja"),
+                NoteEn = MiniJson.GetString(node, "note_en")
             };
         }
     }

@@ -13,6 +13,11 @@ namespace KCD
         [SerializeField] private string _displayName = "稲荷先輩";
         [SerializeField] private float _turnSpeed = 6f;
 
+        /// <summary>近づいたときの操作の表示の辞書キー。人なら「話す」、扉のような物なら「調べる」(#175)。</summary>
+        [SerializeField] private string _promptKey = TalkPromptKey;
+
+        public const string TalkPromptKey = "ui.interact.talk";
+
         private NPCWander _wander;
         private PlayerAnimatorDriver _playerAnimator;
         private Transform _facingTarget;
@@ -30,6 +35,24 @@ namespace KCD
         {
             get => _displayName;
             set => _displayName = value;
+        }
+
+        /// <summary>操作の表示の辞書キー（<see cref="TalkPromptKey"/> など）。</summary>
+        public string PromptKey
+        {
+            get => _promptKey;
+            set
+            {
+                _promptKey = string.IsNullOrEmpty(value) ? TalkPromptKey : value;
+                RefreshPrompt();
+            }
+        }
+
+        /// <summary>話しかけた人へ向き直る速さ。0 以下なら向き直らない（扉や掲示板など）。</summary>
+        public float TurnSpeed
+        {
+            get => _turnSpeed;
+            set => _turnSpeed = value;
         }
 
         public override bool CanInteract =>
@@ -52,10 +75,12 @@ namespace KCD
             Unsubscribe();
         }
 
-        /// <summary>いまの言語で「話す」を出す。言語を切り替えたら出し直す。</summary>
+        /// <summary>いまの言語で「話す」（または PromptKey の表示）を出す。言語を切り替えたら出し直す。</summary>
         private void RefreshPrompt()
         {
-            PromptLabel = L.Get("ui.interact.talk", "話す");
+            PromptLabel = _promptKey == TalkPromptKey || string.IsNullOrEmpty(_promptKey)
+                ? L.Get("ui.interact.talk", "話す")
+                : L.Get(_promptKey, _promptKey);
         }
 
         public override void Interact(GameObject interactor)
@@ -89,7 +114,7 @@ namespace KCD
 
         private void Update()
         {
-            if (_facingTarget == null)
+            if (_facingTarget == null || _turnSpeed <= 0f)
             {
                 return;
             }
