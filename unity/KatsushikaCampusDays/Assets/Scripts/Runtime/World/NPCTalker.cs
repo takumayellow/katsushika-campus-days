@@ -38,12 +38,24 @@ namespace KCD
         private void Awake()
         {
             _wander = GetComponent<NPCWander>();
-            PromptLabel = L.Get("ui.interact.talk", "話す");
+        }
+
+        private void OnEnable()
+        {
+            L.LocaleChanged += RefreshPrompt;
+            RefreshPrompt();
         }
 
         private void OnDisable()
         {
+            L.LocaleChanged -= RefreshPrompt;
             Unsubscribe();
+        }
+
+        /// <summary>いまの言語で「話す」を出す。言語を切り替えたら出し直す。</summary>
+        private void RefreshPrompt()
+        {
+            PromptLabel = L.Get("ui.interact.talk", "話す");
         }
 
         public override void Interact(GameObject interactor)
