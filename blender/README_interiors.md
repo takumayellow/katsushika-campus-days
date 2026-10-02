@@ -228,7 +228,7 @@ BFS で、上りはジャンプ（1.10 m）以内なら隣へ移れるとし、�
 | `kcd_interior/shell.py` | 床・壁・天井・階段・手すり・建具・EV・サイン等の躯体部品 |
 | `kcd_interior/furniture.py` | 什器（机・椅子・書架・実験台・座席・カウンター等） |
 | `kcd_interior/common.py` | 全棟共通の外周・入口まわり・廊下の作り付け。`turned(c, ox, oy, ang)` は区画を回して置く（`lab2` の翼） |
-| `kcd_interior/plan_*.py` | 棟ごとの間取り（`plan_lecture.py` ほか 8 本） |
+| `kcd_interior/plan_<id>.py` | 棟ごとの間取り（9 棟に 1 本ずつ。`registry.py` が建物 ID と対応づける） |
 
 `kcd_lib/` と `build_campus.py` は読むだけで、このジェネレータからは変更しない（屋外側と共有しているため）。
 

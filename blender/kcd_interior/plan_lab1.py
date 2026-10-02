@@ -1,8 +1,6 @@
-"""実験棟 (lab1 / lab2): 廊下 + 実験室が並ぶ。実験台・ドラフトチャンバー・ボンベ・流し・薬品庫。
+"""第1実験棟 (lab1): 廊下 + 実験室が並ぶ。実験台・ドラフトチャンバー・ボンベ・流し・薬品庫。
 
-入口が長辺にある棟（lab1）は、入口の面に沿って廊下を通し、その奥に部屋を並べる。
-入口が短辺にある棟（lab2 は東の妻面）は、入口の内側を玄関ホールにし、廊下をローカル
--X の壁（lab2 では南、第1実験棟の側）に沿って奥へ通して、部屋を +X（北の窓側）に並べる。
+入口が長辺にあるので、入口の面に沿って廊下を通し、その奥に部屋を並べる。
 """
 
 import math
@@ -12,9 +10,6 @@ from . import common, furniture as F, kit, shell
 CEIL = 3.20
 Z_TOP = 4.10
 COR_D = 2.60         # 廊下の奥行き
-HALL_D = 3.60        # 入口が短辺にある棟の玄関ホールの奥行き
-PREP_W = 7.60        # 同じく、準備室の幅（残りを実験室にする）
-LAB_W = 10.5         # 同じく、実験室 1 室の最小幅
 
 
 def build(c):
@@ -31,26 +26,16 @@ def build(c):
                                mat="light_strip", w=0.24, l=1.5)
     c.lights_from(pts, CEIL, energy=112.0, step=2)
 
-    if s.depth <= s.width:
-        _wing(c, ix0, ix1, iy0, iy1)
-        return
-
-    hall_y1 = iy0 + HALL_D
-    _hall(c, ix0, ix1, iy0, hall_y1)
-    # 廊下と部屋の並びを、-90° 回した座標で組む（ローカル (x, y) -> (y, -x)）。
-    # 回した座標の x はホール側の端 -hall_y1 から奥の壁 -iy1 まで、y は外周の -X 側
-    # ix0（廊下の窓）から +X 側 ix1（部屋の奥の窓）まで。
-    with common.turned(c, 0.0, 0.0, -math.pi * 0.5):
-        _wing(c, -iy1, -hall_y1, ix0, ix1, prep_w=PREP_W)
+    _wing(c, ix0, ix1, iy0, iy1)
 
 
-def _wing(c, ax0, ax1, wy0, wy1, prep_w=None):
+def _wing(c, ax0, ax1, wy0, wy1):
     """廊下と部屋の並び。廊下は x に沿って ax0..ax1、y = wy0 の窓ぎわから奥行き
-    1.2 + COR_D、部屋はその先 wy1 まで。prep_w は _room_spans へ渡す。"""
+    1.2 + COR_D、部屋はその先 wy1 まで。"""
     cor_y0, cor_y1 = wy0 + 1.2, wy0 + 1.2 + COR_D
 
     # 廊下と実験室を分ける間仕切り（各室のドア位置に開口）
-    rooms = _room_spans(ax0, ax1, prep_w)
+    rooms = _room_spans(ax0, ax1)
     gaps = []
     for (rx0, rx1, _kind) in rooms:
         d = (rx0 + rx1) * 0.5 - ax0
@@ -111,38 +96,10 @@ def _wing(c, ax0, ax1, wy0, wy1, prep_w=None):
            % (len(lab_idx), len(prep_idx)))
 
 
-def _hall(c, ix0, ix1, iy0, iy1):
-    """入口が短辺にある棟の玄関ホール（ix0..ix1 x iy0..iy1）。
-
-    奥の壁（iy1 + 0.1 の準備室の側壁）は _wing が立てる。-X 側は廊下へ抜ける。
-    入口の右手（+X）に掲示板・ベンチ・鉢を置き、入口から廊下への通り道は空ける。
-    """
-    mb = c.furn("hall")
-    wall_y = iy1 + 0.1 - 0.07     # 準備室の側壁（厚さ 0.14）のホール側の面
-    bx = (1.6 + ix1) * 0.5        # 入口（幅 3.2）の右脇から +X の壁までの中央
-    shell.notice_board(mb, bx, wall_y - 0.02, 1.58, ang=math.pi, w=2.4,
-                       h=1.05, sheets=10, rng=c.rng)
-    F.bench(mb, bx, wall_y - 0.45, ang=math.pi, w=1.8)
-    c.seats += 1
-    shell.planter(mb, ix1 - 0.7, wall_y - 0.7, r=0.40, h=0.44, leaf_h=1.4)
-    shell.planter(mb, ix1 - 0.7, iy0 + 0.8, r=0.40, h=0.44, leaf_h=1.4)
-    c.note("玄関ホール（入口が短辺）から廊下を奥へ")
-
-
 # --------------------------------------------------------------------------- #
-def _room_spans(ix0, ix1, prep_w=None):
-    """幅を見て実験室と準備室に割り付ける。
-
-    prep_w を渡すと、最後の準備室をその幅にし、残りを LAB_W 以上の実験室で等分する。
-    """
+def _room_spans(ix0, ix1):
+    """幅を見て実験室と準備室に割り付ける。"""
     width = ix1 - ix0
-    if prep_w is not None:
-        lab_w = width - prep_w
-        n = max(1, int(lab_w / LAB_W))
-        edges = [ix0 + lab_w * i / n for i in range(n + 1)] + [ix1]
-        kinds = ["lab"] * n + ["prep"]
-        return [(edges[i] + 0.1, edges[i + 1] - 0.1, kinds[i])
-                for i in range(n + 1)]
     n = max(2, int(width / 9.5))
     out = []
     for i in range(n):
@@ -220,6 +177,7 @@ def _lab_room(c, x0, y0, x1, y1, idx, pois=frozenset()):
         # lab と同室になったときは奥側（2 列目の実験台の奥）に離して置く
         c.poi("lab_b", cx, aisle if "lab" not in pois else back, 0.0)
         c.npc(cx - 1.4, back, 0.0)
+
 
 
 def _prep_room(c, x0, y0, x1, y1, idx, place_poi=False):
