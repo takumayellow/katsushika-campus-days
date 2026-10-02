@@ -143,6 +143,29 @@ namespace KCD.Tests
         }
 
         [Test]
+        public void CaptionBackdropShowsOnlyIndoors()
+        {
+            Minimap minimap = MakeMinimap();
+            RectTransform map = MakeRect("Map", minimap.transform);
+            RectTransform markers = MakeRect("Markers", minimap.transform);
+            RectTransform panel = MakeRect("Caption", minimap.transform);
+            RectTransform label = MakeRect("Label", panel);
+            TMPro.TMP_Text caption = label.gameObject.AddComponent<TMPro.TextMeshProUGUI>();
+            minimap.Bind(map, markers, null, caption, null, null, panel.gameObject);
+
+            minimap.ClearIndoor();
+            Assert.IsFalse(panel.gameObject.activeSelf, "外なのに見出しの背景だけが残り、空の帯が出ている (#181)");
+
+            minimap.SetIndoor("図書館");
+            Assert.IsTrue(panel.gameObject.activeSelf, "建物の中で見出しが出ない");
+            Assert.IsTrue(label.gameObject.activeInHierarchy, "見出しの背景は出たが文字が出ない");
+            Assert.AreEqual("図書館", caption.text);
+
+            minimap.SetIndoor(string.Empty);
+            Assert.IsFalse(panel.gameObject.activeSelf, "建物名が空なのに見出しの背景が出ている");
+        }
+
+        [Test]
         public void ExitOfTheCurrentBuildingIsTheNearestOneWithThatId()
         {
             MakeExit("library", new Vector3(0f, 0f, 10f));
