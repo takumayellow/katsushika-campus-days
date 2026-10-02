@@ -55,7 +55,18 @@ FBX_OPTS = dict(
 EXT_PREFIX = exterior.EXT_PREFIX
 
 # 三角数の上限（docs/DESIGN.md §3.4）。超えたら NG で終える
-INT_BUDGET = 300000       # 屋内の合計
+INT_BUDGET = 450000       # 屋内の合計
+INT_BUDGET_ONE = {        # 屋内 1 棟
+    "library": 80000,
+    "research2": 75000,
+    "lecture": 55000,
+    "research1": 50000,
+    "kyoso": 45000,
+    "gym": 40000,
+    "lab1": 35000,
+    "lab2": 30000,
+    "greenhouse": 15000,
+}
 EXT_BUDGET = 180000       # 近景の合計
 EXT_BUDGET_ONE = 50000    # 近景 1 棟
 
@@ -429,9 +440,20 @@ def door_mismatch(specs, data):
 
 
 def over_budget(report, total, total_ext):
-    """三角数が上限を超えたものの説明のリスト。"""
-    msgs = ["%s の近景 %d > %d" % (i["id"], i["ext_tris"], EXT_BUDGET_ONE)
-            for i in report if i["ext_tris"] > EXT_BUDGET_ONE]
+    """三角数が上限を超えたものの説明のリスト。
+
+    屋内は棟ごとの上限（INT_BUDGET_ONE）と合計（INT_BUDGET）の両方で見る。
+    INT_BUDGET_ONE に無い棟は上限が決まっていないので、それも NG にする。
+    """
+    msgs = []
+    for i in report:
+        cap = INT_BUDGET_ONE.get(i["id"])
+        if cap is None:
+            msgs.append("%s の屋内の上限が INT_BUDGET_ONE に無い" % i["id"])
+        elif i["tris"] > cap:
+            msgs.append("%s の屋内 %d > %d" % (i["id"], i["tris"], cap))
+    msgs += ["%s の近景 %d > %d" % (i["id"], i["ext_tris"], EXT_BUDGET_ONE)
+             for i in report if i["ext_tris"] > EXT_BUDGET_ONE]
     if total > INT_BUDGET:
         msgs.append("屋内の合計 %d > %d" % (total, INT_BUDGET))
     if total_ext > EXT_BUDGET:
@@ -476,10 +498,10 @@ def main():
         info["id"] = bid
         info["label"] = registry.LABELS.get(bid, bid)
         info["sec"] = time.time() - t0
-        print("[interiors] %-11s %6.1f x %5.1f m  tris=%7d  ext=%6d  "
+        print("[interiors] %-11s %6.1f x %5.1f m  tris=%7d/%5d  ext=%6d  "
               "empties=%3d  %5.1f s  %s"
-              % (bid, sp.width, sp.depth, info["tris"], info["ext_tris"],
-                 len(info["empties"]), info["sec"],
+              % (bid, sp.width, sp.depth, info["tris"], INT_BUDGET_ONE.get(bid, 0),
+                 info["ext_tris"], len(info["empties"]), info["sec"],
                  "%.2f MB" % (info["size"] / 1048576.0) if info["size"] else "-"))
         es = info["ext_stats"]
         if es:
