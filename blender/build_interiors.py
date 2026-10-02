@@ -100,6 +100,9 @@ def parse_args(argv):
                    default=os.path.join(root, "unity", "KatsushikaCampusDays",
                                         "Assets", "Models", "Campus"),
                    help="近景の元にする campus.fbx / trees.fbx の場所")
+    p.add_argument("--report-json", default=None,
+                   help="棟ごとの三角数と Empty の名前・位置を書く JSON のパス"
+                        "（--no-export でも書く。改修の前後を比べるとき用）")
     return p.parse_args(argv)
 
 
@@ -196,6 +199,7 @@ def build_one(sp, plan, args, eng, ext_src=None):
         "objects": [o.name for o in objects],
         "ext_objects": [o.name for o in ext_objects],
         "empties": [n for n, _ in c.empties],
+        "empty_pos": [[n, p[0], p[1], p[2]] for n, p in c.empties],
         "seats": c.seats,
         "notes": c.notes,
     }
@@ -256,6 +260,21 @@ def build_one(sp, plan, args, eng, ext_src=None):
 
 POI_RE = re.compile(r"^poi_([a-z0-9]+)_[a-z0-9_]+$")
 
+# --report-json にだけ書く項目（_summary.json には入れない）
+REPORT_ONLY = ("empty_pos",)
+
+
+def write_report(path, report):
+    """棟ごとの三角数と Empty の名前・ローカル座標（丸めない）を JSON に書く。"""
+    rows = {i["id"]: {"tris": i["tris"], "ext_tris": i["ext_tris"],
+                      "empties": i["empty_pos"]}
+            for i in report}
+    folder = os.path.dirname(os.path.abspath(path))
+    os.makedirs(folder, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as fp:
+        json.dump({"buildings": rows}, fp, ensure_ascii=False, indent=1)
+    return path
+
 
 def summary_rows(report, summary_path, rendered, preview_dir):
     """_summary.json に書く行。パスはリポジトリからの相対パスにする（作業ツリーの
@@ -276,7 +295,7 @@ def summary_rows(report, summary_path, rendered, preview_dir):
                    for b in json.load(fp).get("buildings", [])}
     rows = []
     for info in report:
-        row = dict(info)
+        row = {k: v for k, v in info.items() if k not in REPORT_ONLY}
         row["fbx"] = rel(info["fbx"]) if info.get("fbx") else None
         if rendered:
             row["previews"] = [rel(p) for p in info["previews"]]
@@ -466,10 +485,10 @@ def main():
         if es:
             print("             近景: %s" % ", ".join(
                 "%s=%d" % kv for kv in sorted(es["tris"].items(), key=lambda kv: -kv[1])))
-            print("                   裏向きで除外 %d（うち木 %d）/ 株 %d（簡略形 %d）/ 木 %d 本"
+            print("                   裏向きで除外 %d（うち木 %d）/ 株 %d（遠くの形 %d）/ 木 %d 本"
                   "（樹冠が外周にかかり除外 %d 本）"
                   % (sum(es["culled_tris"].values()), es["culled_tris"]["trees"],
-                     sum(es["plants"].values()), es["plants"]["simple"],
+                     sum(es["plants"].values()), es["plants"]["far"],
                      es["trees"]["placed"], es["trees"]["skipped"]))
             print("                   自分の棟: 外装 %d 面・扉 %d 面を除外 / 入口の前: 設備 %d 個"
                   "（%d 面）・木 %d 本を除外"
@@ -538,6 +557,10 @@ def main():
              "Empty 欠落 / POI 契約違反 / 外周の穴 / 近景のメッシュ違い / 入口と扉の食い違い"
              " / 予算超過あり"))
 
+    if args.report_json:
+        print("[interiors] 棟ごとの三角数と Empty: %s"
+              % write_report(args.report_json, report))
+
     # 集計を JSON で残す（README 生成の材料）。
     # 一部の棟だけを流したときに上書きすると全棟ぶんの集計が失われるので、
     # 全棟を書き出したときだけ更新する。
@@ -557,7 +580,7 @@ def main():
     if not ok:
         # Empty が欠けた FBX は Unity 側の配置が壊れる。外周に穴があると
         # プレイヤーが建物の外の何も無い空間へ出られる。予算超過は棟を増やす前に
-        # RADIUS / PLANT_FULL などを見直す合図。どれも失敗として終了する。
+        # RADIUS / PLANT_NEAR などを見直す合図。どれも失敗として終了する。
         sys.exit(1)
 
 

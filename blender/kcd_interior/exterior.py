@@ -30,9 +30,9 @@ import math
 import os
 
 import bpy
-from kcd_lib import entrances
+from kcd_lib import entrances, mats
 from kcd_lib.mesh import MeshBuilder, _area3, _clip_half, _is_convex, _newell, _triangulate
-from kcd_lib.site import _PLANT_RINGS, _plant_z
+from kcd_lib.site import _PLANT_RINGS, BLOOM_LIFT, BLOOM_R, BLOOM_REACH
 
 from .spec import campus_frame
 
@@ -44,10 +44,12 @@ DZ = -0.03           # 近景全体を下げる量
 Z_MIN = -0.045       # これより下の頂点は持ち上げる（OuterGround -0.05 / OutsideGround -0.06 より上に置く）
 Z_BURIED = -0.001    # キャンパスでこれより下にしか無い面（車道の帯の埋まった側面）は捨てる
 TREE_MARGIN = 0.3    # 樹冠と外周のあいだに空ける幅
-PLANT_FULL = 12.0    # 花壇の株をそのままの形で入れる距離（外周から）。これより遠いと簡略形
+PLANT_NEAR = 12.0    # 花壇の株を近くの形で入れる距離（外周から）。これより遠いと遠くの形（find_plants）
 TOP_RING = _PLANT_RINGS[0][0] / _PLANT_RINGS[-1][0]   # 株の天面の輪から下の輪への倍率
-BLOOM_LIFT = (0.01, 0.06)   # 花の底が株の表面から浮く高さ、底から頂点までの高さ（site._plant）
 PLANT_SEG = 7        # 株の角数（site._plant の seg）
+PLANT_ZTOL = 1e-3    # 株の下の段と上の段を高さで分けるときの余裕 [m]
+# 花の中心から花びらの先までの距離（花冠の半径の倍率）。花びらは杯形に反るので 1 より少し大きい
+BLOOM_SPAN = 1.2
 PLANT_FACES = PLANT_SEG * (len(_PLANT_RINGS) - 1) + 1   # 株 1 つの面数（側面 + 天面）
 EPS = 1e-6
 # 屋内の入口の前の通り道
@@ -78,14 +80,16 @@ class Source:
 
     def __init__(self):
         # (出どころ, マテリアル, [(x, y, z)], (xmin, xmax, ymin, ymax), zmax, 株)
-        # 株 = None か (株の番号, 簡略形か)。花壇の株の面と花、その簡略形（find_plants）
+        # 株 = None か (株の番号, 遠くの形か)。花壇の株の近くの形と遠くの形（find_plants）
         self.polys = []
         # polys と同じ長さ。屋外の設備の面なら物の番号（prop_groups）、ほかは None
         self.groups = []
         self.plants = []   # 株の中心 (x, y)
         self.doors = {}    # 棟 -> [entrances.plan の扉]
         self.signs = {}    # 棟 -> [立て看板の位置 (x, y)]
-        self.protos = {}   # 樹種 -> (頂点, [(頂点番号, マテリアル)], 樹冠の半径, 原型の姿勢)
+        # 樹種 -> (頂点, [(頂点番号, マテリアル, 色)], 樹冠の半径, 原型の姿勢)。
+        # 色は頂点カラーで塗るマテリアル（mats.VERTEX_COLORED）の面の sRGB、ほかは None
+        self.protos = {}
         self.trees = []    # (樹種, 4x4 行列, (x, y), 倍率)
 
 
@@ -136,8 +140,7 @@ def load(campus_dir, data):
         mw = o.matrix_world
         verts = [v.co.copy() for v in o.data.vertices]
         names = [_mat_name(m) for m in o.data.materials]
-        faces = [(tuple(p.vertices), names[p.material_index] if names else "leaf")
-                 for p in o.data.polygons]
+        faces = _proto_faces(o.data, names)
         crown = max(math.hypot(w.x - mw.translation.x, w.y - mw.translation.y)
                     for w in (mw @ v for v in verts))
         src.protos[o.name[len(TREE_PREFIX):]] = (verts, faces, crown, mw.copy())
@@ -155,6 +158,23 @@ def load(campus_dir, data):
         t = o.matrix_world.translation
         src.trees.append((species, m, (t.x, t.y), o.matrix_world.to_scale().x))
     return src
+
+
+def _proto_faces(me, names):
+    """木の原型の面 [(頂点番号, マテリアル, 色)]。
+
+    葉は 1 本の中で面ごとに色が違い、Unity は白 × 頂点カラーで描く（mats.VERTEX_COLORED, #51）。
+    近景に写すときも色を持っていく。色は面の最初の角の頂点カラー（sRGB）。"""
+    attr = me.color_attributes.get(mats.COLOR_ATTR)
+    out = []
+    for p in me.polygons:
+        mat = names[p.material_index] if names else "leaf"
+        col = None
+        if attr is not None and mat in mats.VERTEX_COLORED:
+            i = p.loop_start if attr.domain == "CORNER" else p.vertices[0]
+            col = tuple(attr.data[i].color_srgb[:3])
+        out.append((tuple(p.vertices), mat, col))
+    return out
 
 
 def _poly(name, mat, pts, plant):
@@ -243,37 +263,86 @@ def prop_groups(polys):
 
 
 def find_plants(polys):
-    """花壇の株（site._plant）を面の集まりから拾い、遠くで使う簡略形を足す。
+    """花壇の株（site._plant）を面の集まりから拾い、近景で使う 2 つの形に置き換える。
 
-    株は flower_leaf の 7 角の天面と 2 段の側面（頂点を共有する 1 つのまとまり）、花は株ごとに
-    1 色の小さな 3 角錐 7 個。簡略形は下の輪から天面へ 1 段の側面で結び、天面をその株の花の
-    色で塗る（花 21 面と中段の 14 面が無くなる）。
+    株は flower_leaf の 7 角の天面と 2 段の側面（頂点を共有する 1 つのまとまり）、花は 1 株
+    BLOOMS 輪の平たい 5 弁の花（花びら 5 面 + 目の 1 面で 11 三角形）。site._plant は株の面を
+    足したすぐあとにその株の花を足し、FBX を通しても面の順は変わらないので、株の最後の面に続く
+    花の面がその株の花になる（campus.fbx の 465 株すべてで、葉の 15 面のあとに花の 72 面が続く）。
 
-    戻り値は (面, 株の中心)。株の面・花・簡略形には (株の番号, 簡略形か) を付ける。
-    花の付いていない株は元の形のまま（番号なし）。"""
+    花をそのまま入れると 1 株 165 三角形になり、近景の予算に収まらない（モールの花壇に面した
+    講義棟では、外周から 12 m 以内に 211 株ある）。花の面は入れず、株を次の形にする。
+
+      近くの形（外周から PLANT_NEAR 以内）: 株の面はそのままで、上の段の側面と天面をその株の
+          花の主な色で塗る。下の段は葉の色の裾として残る（33 三角形）
+      遠くの形: 下の輪から天面へ 1 段の側面で結び、天面を花の主な色で塗る（19 三角形）
+
+    戻り値は (面, 株の中心)。近くの形と遠くの形の面には (株の番号, 遠くの形か) を付ける。
+    花の付いていない株と、続く花が株の上に載っていない株は花ごと元の形のまま（番号なし）。"""
     plants = _plant_groups(polys)
-    blooms = _match_blooms(polys, plants) if plants else {}
     out = list(polys)
+    drop = set()
     centers = []
-    for n, (c, top, zb, faces, _r, _h) in enumerate(plants):
-        mine = blooms.get(n)
+    stray = 0
+    for c, top, zb, faces, rad, _h in plants:
+        mine = _blooms_after(polys, max(faces))
         if not mine:
+            continue
+        if not _on_plant(polys, mine, c, rad):
+            stray += 1
             continue
         k = len(centers)
         centers.append(c)
-        for i in faces + mine:
-            out[i] = polys[i][:5] + ((k, False),)
-        col = polys[mine[0]][1]
+        col = _main_color(polys, mine)
+        for i in faces:
+            name, mat, pts = polys[i][:3]
+            if min(q[2] for q in pts) > zb + PLANT_ZTOL:   # 上の段の側面と天面
+                mat = col
+            out[i] = (name, mat) + polys[i][2:5] + ((k, False),)
+        drop.update(mine)
         ring = [(c[0] + (q[0] - c[0]) * TOP_RING, c[1] + (q[1] - c[1]) * TOP_RING, zb)
                 for q in top]
         for j in range(PLANT_SEG):
             j1 = (j + 1) % PLANT_SEG
             out.append(_poly(BEDS, "flower_leaf", [ring[j], ring[j1], top[j1], top[j]], (k, True)))
         out.append(_poly(BEDS, col, list(top), (k, True)))
+    if stray:
+        print("[exterior] 警告: 花壇の %d 株で、続く花が株の上に載っていない"
+              "（site._plant の面の順が変わった？）。その株は花ごと元の形のまま入れる" % stray)
     if not centers and any(p[0] == BEDS and p[1] == "flower_leaf" for p in polys):
         print("[exterior] 警告: 花壇の株を見分けられない（site._plant の形が変わった？）。"
-              "遠くの株も元の形のまま入れる")
-    return out, centers
+              "株は花ごと元の形のまま入れる")
+    return [p for i, p in enumerate(out) if i not in drop], centers
+
+
+def _is_bloom(mat):
+    return mat.startswith("flower_") and mat != "flower_leaf"
+
+
+def _blooms_after(polys, last):
+    """面 last のすぐあとに続く花壇の花の面の番号。"""
+    out = []
+    i = last + 1
+    while i < len(polys) and polys[i][0] == BEDS and _is_bloom(polys[i][1]):
+        out.append(i)
+        i += 1
+    return out
+
+
+def _on_plant(polys, idx, c, rad):
+    """idx の面の頂点がすべて、中心 c・半径 rad の株に咲く花の届く範囲（水平）に入るか。"""
+    reach = rad * BLOOM_REACH + BLOOM_LIFT + BLOOM_SPAN * BLOOM_R[1]
+    return all(math.hypot(q[0] - c[0], q[1] - c[1]) <= reach
+               for i in idx for q in polys[i][2])
+
+
+def _main_color(polys, idx):
+    """idx の面で一番多いマテリアル（同数なら名前の順で先のもの）。"""
+    count = {}
+    for i in idx:
+        count[polys[i][1]] = count.get(polys[i][1], 0) + 1
+    best = max(count.values())
+    return min(m for m, n in count.items() if n == best)
 
 
 def _plant_groups(polys):
@@ -310,47 +379,6 @@ def _box_cells(b, pad, size):
     gx0, gy0 = _cell(b[0] - pad, b[2] - pad, size)
     gx1, gy1 = _cell(b[1] + pad, b[3] + pad, size)
     return [(gx, gy) for gx in range(gx0, gx1 + 1) for gy in range(gy0, gy1 + 1)]
-
-
-def _match_blooms(polys, plants, cell=1.0):
-    """花の 3 角錐（頂点を共有する 3 面）を株に振り分ける。{株の番号: [面の番号]}
-
-    株どうしは重なり、花は隣の株の中心のほうが近いことがある。花は株の表面に置かれている
-    （底 = 表面 + BLOOM_LIFT[0]）ので、3 角錐の頂点の高さが表面の高さと合う株に付ける。
-    隣り合う株は高さが違う（site._flowers の h）ので取り違えない。"""
-    grid = {}
-    for n, p in enumerate(plants):
-        grid.setdefault(_cell(p[0][0], p[0][1], cell), []).append(n)
-    cones = {}
-    for i, p in enumerate(polys):
-        if p[0] != BEDS or not p[1].startswith("flower_") or p[1] == "flower_leaf":
-            continue
-        apex = max(p[2], key=lambda q: q[2])
-        cones.setdefault(_key(apex), (apex, []))[1].append(i)
-    blooms = {}
-    for apex, idx in cones.values():
-        gx, gy = _cell(apex[0], apex[1], cell)
-        near = [n for dx in (-1, 0, 1) for dy in (-1, 0, 1)
-                for n in grid.get((gx + dx, gy + dy), ())]
-        best = _best_plant(apex, plants, near)
-        if best is not None:
-            blooms.setdefault(best, []).extend(idx)
-    return blooms
-
-
-def _best_plant(apex, plants, near):
-    """near の株のうち、apex の真下の表面の高さが一番合うもの（真下に無ければ None）。"""
-    ax, ay, az = apex
-    best, be = None, 1e9
-    for n in near:
-        c, _t, zb, _f, rad, h = plants[n]
-        t = math.hypot(ax - c[0], ay - c[1]) / rad
-        if t > 1.0:
-            continue
-        err = abs(az - (zb + h * _plant_z(t) + sum(BLOOM_LIFT)))
-        if err < be:
-            best, be = n, err
-    return best
 
 
 # --------------------------------------------------------------------------- #
@@ -500,7 +528,7 @@ def build(sp, src, top, door_gap=None, radius=RADIUS):
     集計:
       tris        入れた三角数（出どころ別。棟の外装はまとめて bld、木は trees）
       culled_tris 裏を向くので入れなかった三角数（切り出したあとの数。site / trees）
-      plants      入れた花壇の株の数（full = 元の形、simple = 簡略形）
+      plants      入れた花壇の株の数（near = 近くの形、far = 遠くの形）
       trees       入れた木の本数（placed）と、樹冠が外周にかかるので入れなかった本数（skipped）
       own         入れなかった自分の棟の面の数（外装 bld、石張りを除く扉の部材 door）
       entrance    屋内の入口の前の通り道にかかるので入れなかった設備の数（props）とその面の数
@@ -524,8 +552,8 @@ def build(sp, src, top, door_gap=None, radius=RADIUS):
     stats = {
         "tris": tris,
         "culled_tris": {"site": site["culled"], "trees": forest["culled"]},
-        "plants": {"full": sum(1 for v in used.values() if not v),
-                   "simple": sum(1 for v in used.values() if v)},
+        "plants": {"near": sum(1 for v in used.values() if not v),
+                   "far": sum(1 for v in used.values() if v)},
         "trees": {"placed": forest["placed"], "skipped": forest["skipped"]},
         "own": own_faces,
         "entrance": {"props": len(blocked), "prop_faces": site["lane_faces"],
@@ -537,8 +565,8 @@ def build(sp, src, top, door_gap=None, radius=RADIUS):
 def _collect(sp, src, env, box):
     """範囲 box に入る面を建物ローカルへ写し、設備は物ごとの外接矩形を取る。
 
-    自分の棟の外装と扉の部材、使わないほうの形の株（外周から PLANT_FULL より遠い株は簡略形、
-    近い株は元の形を使う）は入れない。
+    自分の棟の外装と扉の部材、使わないほうの形の株（外周から PLANT_NEAR より遠い株は遠くの形、
+    近い株は近くの形を使う）は入れない。
     (候補の面 [(name, mat, local, plant, 物の番号)], {物の番号: 外接矩形}, 集計 own) を返す。"""
     wx0, wx1, wy0, wy1 = _world_bbox(sp, box)
     own = BLD_PREFIX + sp.id
@@ -546,7 +574,7 @@ def _collect(sp, src, env, box):
     cand = []
     gbox = {}   # 物の番号 -> 建物ローカルの外接矩形
     own_faces = {"bld": 0, "door": 0}
-    far = {}    # 株の番号 -> 外周から PLANT_FULL より遠いか
+    far = {}    # 株の番号 -> 外周から PLANT_NEAR より遠いか
     for i, (name, mat, pts, bb, zmax, plant) in enumerate(src.polys):
         if bb[1] < wx0 or bb[0] > wx1 or bb[3] < wy0 or bb[2] > wy1:
             continue
@@ -559,11 +587,11 @@ def _collect(sp, src, env, box):
             own_faces["door"] += 1
             continue
         if plant is not None:
-            n, simple = plant
+            n, far_form = plant
             if n not in far:
                 cx, cy, _ = _to_local(sp, src.plants[n] + (0.0,))
-                far[n] = _rect_dist(cx, cy, env) > PLANT_FULL
-            if far[n] != simple:
+                far[n] = _rect_dist(cx, cy, env) > PLANT_NEAR
+            if far[n] != far_form:
                 continue
         local = [_to_local(sp, p) for p in pts]
         g = src.groups[i]
@@ -580,7 +608,7 @@ def _site_mesh(sp, cand, blocked, box, env, corners):
     """候補の面を外周の外へ切り出して ext_<id> に入れる。blocked の物の面は入れない。
 
     (MeshBuilder, 集計) を返す。集計は tris（出どころ別の三角数）、culled（裏向きで
-    入れなかった三角数）、used（{入れた株の番号: 簡略形か}）、lane_faces（blocked で除いた面の数）。"""
+    入れなかった三角数）、used（{入れた株の番号: 遠くの形か}）、lane_faces（blocked で除いた面の数）。"""
     mb = MeshBuilder(EXT_PREFIX + sp.id)
     tris = {}
     culled = 0
@@ -610,8 +638,8 @@ def _tree_mesh(sp, src, env, lane, corners, radius):
     """幹が外周から radius + 樹冠の半径 以内の木を丸ごと ext_<id>_trees に入れる。
 
     樹冠が外周 + TREE_MARGIN にかかる木と、幹が入口の前の通り道 lane から LANE_TREE 以内の木は
-    入れない。(MeshBuilder, 集計) を返す。集計は tris / culled（三角数）と、木の本数 placed /
-    skipped（樹冠が外周にかかる）/ lane（通り道）。"""
+    入れない。葉は原型の面の色（頂点カラー）を持っていく。(MeshBuilder, 集計) を返す。
+    集計は tris / culled（三角数）と、木の本数 placed / skipped（樹冠が外周にかかる）/ lane（通り道）。"""
     tb = MeshBuilder(EXT_PREFIX + sp.id + TREES_SUFFIX)
     tris = culled = placed = skipped = lane_trees = 0
     for species, m, (x, y), scale in src.trees:
@@ -630,12 +658,12 @@ def _tree_mesh(sp, src, env, lane, corners, radius):
         world = [m @ v for v in verts]
         local = [_to_local(sp, (w.x, w.y, w.z)) for w in world]
         n_tris = 0
-        for idx, fmat in faces:
+        for idx, fmat, fcol in faces:
             pc = [local[i] for i in idx]
             if not faces_viewer(pc, corners):
                 culled += len(idx) - 2
                 continue
-            tb.add_face(_lift(pc), fmat)
+            tb.add_face(_lift(pc), fmat, fcol)
             n_tris += len(idx) - 2
         if n_tris:
             tris += n_tris
