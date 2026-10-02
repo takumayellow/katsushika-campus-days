@@ -18,6 +18,7 @@ namespace KCD
         [SerializeField] private RectTransform _markerRoot;
         [SerializeField] private RectTransform _playerArrow;
         [SerializeField] private TMP_Text _caption;
+        [SerializeField] private GameObject _captionPanel;
         [SerializeField] private Sprite _dotSprite;
         [SerializeField] private Sprite _ringSprite;
         [SerializeField] private Transform _target;
@@ -48,13 +49,15 @@ namespace KCD
         private float PixelsPerMeter => _viewRadiusPixels / Mathf.Max(1f, _viewRadiusMeters);
 
         /// <summary>SceneBuilder から差し込む。</summary>
+        /// <param name="captionPanel">見出しの背景ごとの親。外では背景も消す (#181)。null なら文字だけを出し入れする。</param>
         public void Bind(RectTransform map, RectTransform markerRoot, RectTransform playerArrow, TMP_Text caption,
-            Sprite dotSprite, Sprite ringSprite)
+            Sprite dotSprite, Sprite ringSprite, GameObject captionPanel = null)
         {
             _map = map;
             _markerRoot = markerRoot;
             _playerArrow = playerArrow;
             _caption = caption;
+            _captionPanel = captionPanel;
             _dotSprite = dotSprite;
             _ringSprite = ringSprite;
         }
@@ -80,8 +83,9 @@ namespace KCD
             if (_caption != null)
             {
                 _caption.text = caption;
-                _caption.gameObject.SetActive(!string.IsNullOrEmpty(caption));
             }
+
+            ShowCaption(!string.IsNullOrEmpty(caption));
         }
 
         /// <summary>外に出た。</summary>
@@ -93,9 +97,16 @@ namespace KCD
                 _map.gameObject.SetActive(true);
             }
 
-            if (_caption != null)
+            ShowCaption(false);
+        }
+
+        /// <summary>見出しを背景ごと出し入れする。</summary>
+        private void ShowCaption(bool visible)
+        {
+            GameObject panel = _captionPanel != null ? _captionPanel : _caption != null ? _caption.gameObject : null;
+            if (panel != null)
             {
-                _caption.gameObject.SetActive(false);
+                panel.SetActive(visible);
             }
         }
 
@@ -127,10 +138,7 @@ namespace KCD
             _objective = CreateMarker("Objective", _ringSprite, 26f, _objectiveColor);
             _objective.gameObject.SetActive(false);
 
-            if (_caption != null)
-            {
-                _caption.gameObject.SetActive(false);
-            }
+            ShowCaption(false);
         }
 
         private void LateUpdate()

@@ -148,6 +148,65 @@ namespace KCD.Tests
             Assert.IsEmpty(missing, "辞書に無い名札（英語表示でも日本語の名前が焼いたまま出る）:\n" + string.Join("\n", missing));
         }
 
+        /// <summary>
+        /// 20〜30 m 先の名札が、拡大しなくても読めること (#181)。1080p・縦の画角 55 度（本編カメラ）で、
+        /// 字の高さが 20〜60 m で 18 px 以上、近くでも大きすぎない（60 px 以下）こと。1 行に収まっていること。
+        /// 以前は 25 m で約 7 px で、4 倍に拡大しないと「Gymnasium」が読めなかった。
+        /// </summary>
+        [Test]
+        public void 名札は20から60m先で読める大きさで1行に収まる()
+        {
+            Assert.IsNotEmpty(_labels, ScenePath + " に建物の名札が無い（KCD/シーンを組み直す）");
+
+            const float ScreenHeight = 1080f;
+            const float VerticalFov = 55f;
+            const float MinPixels = 18f;
+            const float MaxPixels = 60f;
+            float focalPixels = ScreenHeight * 0.5f / Mathf.Tan(VerticalFov * 0.5f * Mathf.Deg2Rad);
+
+            var problems = new List<string>();
+            using (new PlayerPrefsKeyScope(L.PrefKey))
+            {
+                string before = L.Locale;
+                try
+                {
+                    foreach (string locale in new[] { "ja", "en" })
+                    {
+                        L.SetLocale(locale);
+                        foreach (TextMeshPro text in _labels)
+                        {
+                            BuildingLabel label = text.GetComponent<BuildingLabel>();
+                            text.text = BuildingLabel.Resolve(label.Key, text.text);
+                            text.ForceMeshUpdate();
+                            float glyphMeters = text.textBounds.size.y;
+                            if (text.textInfo.lineCount != 1)
+                            {
+                                problems.Add(locale + ": " + text.name + " 「" + text.text + "」が " + text.textInfo.lineCount + " 行に折り返す");
+                            }
+
+                            foreach (float distance in new[] { 5f, 20f, 30f, 60f })
+                            {
+                                float scale = BuildingLabel.ScaleAt(distance, BuildingLabel.DefaultReferenceDistance,
+                                    BuildingLabel.DefaultMinScale, BuildingLabel.DefaultMaxScale);
+                                float pixels = focalPixels * glyphMeters * scale / distance;
+                                if ((distance >= 20f && pixels < MinPixels) || pixels > MaxPixels)
+                                {
+                                    problems.Add(locale + ": " + text.name + " 「" + text.text + "」が " + distance + " m で "
+                                        + pixels.ToString("F1") + " px");
+                                }
+                            }
+                        }
+                    }
+                }
+                finally
+                {
+                    L.SetLocale(before);
+                }
+            }
+
+            Assert.IsEmpty(problems, "名札の大きさ:\n" + string.Join("\n", problems));
+        }
+
         private static string AssetPathOf(Material material)
         {
             if (material == null)

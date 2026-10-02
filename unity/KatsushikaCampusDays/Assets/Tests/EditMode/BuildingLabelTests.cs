@@ -4,7 +4,8 @@ namespace KCD.Tests
 {
     /// <summary>
     /// 建物の名札（BuildingLabel）の遠近。近くでは濃く、fadeIn〜fadeOut m の間で薄れ、fadeOut m から先は描画ごと止めること、
-    /// 大きさは reference m で等倍、遠いほど大きくして min〜max に収めること。値は Campus シーンと部品の既定値。
+    /// 大きさは reference m で等倍、遠いほど大きくして min〜max に収めること。大きさの式はここ、既定値での画面の字の高さは
+    /// CampusBuildingLabelTests が見る。
     /// </summary>
     public sealed class BuildingLabelTests
     {
