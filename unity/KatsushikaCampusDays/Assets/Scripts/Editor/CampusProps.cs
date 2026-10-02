@@ -284,9 +284,10 @@ namespace KCD.Editor
 
                 TextMeshPro text = go.AddComponent<TextMeshPro>();
                 text.text = pair.Value;
-                text.fontSize = 3.2f;
+                text.fontSize = BuildingLabel.FontSize;
+                text.fontStyle = FontStyles.Bold;
                 text.alignment = TextAlignmentOptions.Center;
-                text.color = new Color(1f, 1f, 1f, 0.92f);
+                text.color = Color.white;
                 if (font != null)
                 {
                     text.font = font;

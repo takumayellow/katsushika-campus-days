@@ -65,7 +65,8 @@ namespace KCD.Editor
             TMP_Text caption = Label(captionRect, "Label", string.Empty, 22f, TextAlignmentOptions.Center);
 
             Minimap minimap = host.AddComponent<Minimap>();
-            minimap.Bind(mapRect, markers, arrowRect, caption, MinimapAssets.Dot(), MinimapAssets.Ring());
+            minimap.Bind(mapRect, markers, arrowRect, caption, MinimapAssets.Dot(), MinimapAssets.Ring(),
+                captionRect.gameObject);
             minimap.Configure(info.Center, info.HalfExtent, MinimapViewMeters, MinimapInner * 0.5f);
             minimap.Target = target;
         }

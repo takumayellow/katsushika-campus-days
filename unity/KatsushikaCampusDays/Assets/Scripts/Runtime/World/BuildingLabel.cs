@@ -4,18 +4,31 @@ using UnityEngine;
 namespace KCD
 {
     /// <summary>
-    /// 建物の上に浮かぶ名札。常にカメラを向き、遠いと薄く小さくなる。
+    /// 建物の上に浮かぶ名札。常にカメラを向き、遠いと薄くなる。
+    /// 大きさは距離に比例させ、画面の上の字の高さをおよそ一定に保つ（20〜30 m 先で読めること。#181）。
     /// SceneBuilder が sign_&lt;id&gt; / 建物の重心にぶら下げる。
     /// 文字は辞書の ui.building.&lt;id&gt; から引き、言語を切り替えるたびに引き直す。
     /// </summary>
     [RequireComponent(typeof(TextMeshPro))]
     public sealed class BuildingLabel : MonoBehaviour
     {
+        /// <summary>文字の大きさ（TextMeshPro の 3D 文字なので 1 = 0.1 m）。CampusProps が名札を作るときに使う。</summary>
+        public const float FontSize = 3.2f;
+
+        /// <summary>等倍になる距離（m）。これより遠いほど大きくする。</summary>
+        public const float DefaultReferenceDistance = 11f;
+
+        /// <summary>近くで小さくしすぎない下限。</summary>
+        public const float DefaultMinScale = 0.5f;
+
+        /// <summary>遠くで大きくしすぎない上限。大きすぎると斜めから見たときに建物の壁へめり込む。</summary>
+        public const float DefaultMaxScale = 6f;
+
         [SerializeField] private float _fadeInDistance = 120f;
         [SerializeField] private float _fadeOutDistance = 220f;
-        [SerializeField] private float _referenceDistance = 40f;
-        [SerializeField] private float _minScale = 0.6f;
-        [SerializeField] private float _maxScale = 3.5f;
+        [SerializeField] private float _referenceDistance = DefaultReferenceDistance;
+        [SerializeField] private float _minScale = DefaultMinScale;
+        [SerializeField] private float _maxScale = DefaultMaxScale;
 
         [SerializeField] private string _key;
         [SerializeField] private string _fallback;
