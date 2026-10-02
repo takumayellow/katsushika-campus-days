@@ -176,6 +176,11 @@ namespace KCD.Tests
                         foreach (TextMeshPro text in _labels)
                         {
                             BuildingLabel label = text.GetComponent<BuildingLabel>();
+                            // シーンに焼いた値で測る（既定値で測ると、シーンを組み直し忘れても通ってしまう）。
+                            var serialized = new SerializedObject(label);
+                            float referenceDistance = serialized.FindProperty("_referenceDistance").floatValue;
+                            float minScale = serialized.FindProperty("_minScale").floatValue;
+                            float maxScale = serialized.FindProperty("_maxScale").floatValue;
                             text.text = BuildingLabel.Resolve(label.Key, text.text);
                             text.ForceMeshUpdate();
                             float glyphMeters = text.textBounds.size.y;
@@ -186,8 +191,7 @@ namespace KCD.Tests
 
                             foreach (float distance in new[] { 5f, 20f, 30f, 60f })
                             {
-                                float scale = BuildingLabel.ScaleAt(distance, BuildingLabel.DefaultReferenceDistance,
-                                    BuildingLabel.DefaultMinScale, BuildingLabel.DefaultMaxScale);
+                                float scale = BuildingLabel.ScaleAt(distance, referenceDistance, minScale, maxScale);
                                 float pixels = focalPixels * glyphMeters * scale / distance;
                                 if ((distance >= 20f && pixels < MinPixels) || pixels > MaxPixels)
                                 {

@@ -158,7 +158,7 @@ namespace KCD.Tests
 
             minimap.SetIndoor("図書館");
             Assert.IsTrue(panel.gameObject.activeSelf, "建物の中で見出しが出ない");
-            Assert.IsTrue(label.gameObject.activeSelf, "見出しの背景は出たが文字が出ない");
+            Assert.IsTrue(label.gameObject.activeInHierarchy, "見出しの背景は出たが文字が出ない");
             Assert.AreEqual("図書館", caption.text);
 
             minimap.SetIndoor(string.Empty);
