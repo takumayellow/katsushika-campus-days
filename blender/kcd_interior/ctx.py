@@ -42,6 +42,7 @@ class Ctx:
         self.seats = 0           # 数えた座席数（README 用）
         self.notes = []
         self.door_gap = None     # 入口の開口の (x0, x1)。common.envelope が入れる
+        self.signs = []          # 文字を貼った看板の記録（signs.wall / signs.hanging が積む）
         self._npc = 0
         self._sign = 0
         self._seats_flushed = False
@@ -64,6 +65,10 @@ class Ctx:
                 n += max(0, len(f) - 2)
         return n
 
+    def text_tris(self):
+        """看板の文字の三角形の数（tris() に含まれる）。"""
+        return sum(r["tris"] for r in self.signs)
+
     # ---- Empty ----
     def _put(self, name, x, y, z=0.0):
         self.empties.append((name, (float(x), float(y), float(z))))
@@ -83,6 +88,7 @@ class Ctx:
         return self._put("npc_%s_%d" % (self.spec.id, self._npc), x, y, z)
 
     def sign(self, x, y, z):
+        """看板の Empty。プランからは直に呼ばず signs.wall / signs.hanging を使う。"""
         self._sign += 1
         return self._put("sign_%s_%d" % (self.spec.id, self._sign), x, y, z)
 

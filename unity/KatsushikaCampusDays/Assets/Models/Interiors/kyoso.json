@@ -33,7 +33,7 @@
   "sign_kyoso_1": {
    "x": -8.6,
    "y": 2.05,
-   "z": 13.9
+   "z": 14.36
   },
   "poi_kyoso_stair": {
    "x": -5.8,
@@ -57,8 +57,8 @@
   },
   "sign_kyoso_2": {
    "x": 14.0,
-   "y": 2.55,
-   "z": 12.2
+   "y": 2.95,
+   "z": 14.04
   },
   "poi_kyoso_store": {
    "x": -13.4,
@@ -72,8 +72,8 @@
   },
   "sign_kyoso_3": {
    "x": -13.4,
-   "y": 2.35,
-   "z": 5.25
+   "y": 3.13,
+   "z": 5.65
   },
   "npc_kyoso_4": {
    "x": -14.0,
@@ -103,7 +103,7 @@
   "sign_kyoso_4": {
    "x": -35.8,
    "y": 6.4,
-   "z": 13.96
+   "z": 14.36
   },
   "seat_kyoso_01": {
    "x": -2.4,
@@ -456,7 +456,7 @@
    "z": 9.095
   }
  },
- "triangles": 25544,
+ "triangles": 27139,
  "seats": 90,
  "notes": [
   "1F=カフェ（吹き抜け）+ コンビニ、2F=ラウンジ。q_coffee の舞台"
@@ -470,12 +470,108 @@
   "furn_kyoso_04_cvs",
   "furn_kyoso_05_lounge"
  ],
+ "signs": [
+  {
+   "empty": "sign_kyoso_1",
+   "kind": "wall",
+   "ja": "館内案内\n1F ストア・カフェ　2F ラウンジ",
+   "en": "Floor Guide  1F Store & Cafe / 2F Lounge",
+   "tris": 929,
+   "pos": {
+    "x": -8.6,
+    "y": 2.05,
+    "z": 14.36
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 2.4,
+   "h": 0.9,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_kyoso_2",
+   "kind": "wall",
+   "ja": "メニュー",
+   "en": "Menu",
+   "tris": 113,
+   "pos": {
+    "x": 14.0,
+    "y": 2.95,
+    "z": 14.04
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 3.0,
+   "h": 0.62,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_kyoso_3",
+   "kind": "hanging",
+   "ja": "レジ",
+   "en": "Checkout",
+   "tris": 348,
+   "pos": {
+    "x": -13.4,
+    "y": 3.13,
+    "z": 5.65
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 2.0,
+   "h": 0.44,
+   "faces": 2,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center",
+   "drop": 0.55
+  },
+  {
+   "empty": "sign_kyoso_4",
+   "kind": "wall",
+   "ja": "ラウンジ",
+   "en": "Lounge",
+   "tris": 205,
+   "pos": {
+    "x": -35.8,
+    "y": 6.4,
+    "z": 14.36
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 2.0,
+   "h": 0.55,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  }
+ ],
+ "text_triangles": 1595,
  "ext": {
   "objects": [
    "ext_kyoso",
    "ext_kyoso_trees"
   ],
-  "triangles": 26221,
+  "triangles": 27199,
   "radius": 30.0,
   "dz": -0.03
  }

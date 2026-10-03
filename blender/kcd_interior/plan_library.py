@@ -2,7 +2,7 @@
 
 import math
 
-from . import common, furniture as F, kit, shell
+from . import common, furniture as F, kit, shell, signs
 
 CEIL = 3.60          # 一般部の天井
 SLAB = 4.40          # 2F 床
@@ -13,6 +13,19 @@ Z_TOP = 8.80
 STAIR_DX = 8.0       # 東の内壁から階段の中心線まで
 STAIR_W = 2.2
 STAIR_RUN = 8.6      # 水平の長さ（25 段 x 0.344 m）
+# 書架の列端の見出し（日本十進分類法の類）。列の順に繰り返す
+NDC_CLASSES = (
+    ("000 総記", "General Works"),
+    ("100 哲学", "Philosophy"),
+    ("200 歴史", "History"),
+    ("300 社会科学", "Social Sciences"),
+    ("400 自然科学", "Natural Sciences"),
+    ("500 技術", "Technology"),
+    ("600 産業", "Industry"),
+    ("700 芸術", "Arts"),
+    ("800 言語", "Language"),
+    ("900 文学", "Literature"),
+)
 
 
 def build(c):
@@ -60,7 +73,9 @@ def _entrance_zone(c, x0, y0, x1, y1):
     # y0+8.2 だとカウンターに埋まっていた（空き 0.04 m・#42）
     c.npc(-13.2, y0 + 8.9, 0.0)
     c.npc(-10.6, y0 + 8.9, 0.0)
-    common.sign_board(c, mb, -12.0, y0 + 8.4, 2.45, ang=math.pi, w=3.2, h=0.62)
+    # カウンターの上に天井から吊る（後ろに壁が無いので両面に文字）
+    signs.hanging(c, mb, -12.0, y0 + 8.4, CEIL, ang=math.pi, ja="貸出・返却",
+                  en="Circulation Desk", w=3.2, h=0.62, drop=0.70)
 
     # ゲート（入退館）
     for i in range(3):
@@ -132,9 +147,11 @@ def _stacks(c, x0, y0, x1, y1):
                           bays=int(length / 0.92), h=1.90, shelves=5, rng=rng,
                           clump=2.48)
             ranges += 1
-        # 列端の見出しサイン
-        shell.wall_sign(mb, cx, y0 + 2.0 - length * 0.0 - 0.1, 2.05,
-                        ang=math.pi, w=0.72, h=0.30)
+        # 列端の見出しサイン。手前の書架の端の柱（y0 + 2.0 の 0.025 手前が面）に付ける。
+        # 日本十進分類法の類。照明の目印は要らないので Empty は置かない
+        ja, en = NDC_CLASSES[i % len(NDC_CLASSES)]
+        signs.wall(c, mb, cx, y0 + 2.0 - 0.025, 1.62, ang=math.pi, ja=ja, en=en,
+                   w=0.48, h=0.30, anchor=False)
     c.note("開架書架 %d 連" % ranges)
     aisle_i = max(0, ranges // 4)
     aisle_x = x0 + 0.9 + aisle_i * pitch + pitch * 0.5
@@ -218,7 +235,10 @@ def _booths(c, x0, y0, x1, y1):
     pts = shell.ceiling_lights(w, x0 + 2.0, y0 + 1.0, x1 - 2.0, y1 - 1.0, CEIL,
                                sx=4.0, sy=3.4)
     c.lights_from(pts, CEIL, energy=180.0, step=2)
-    common.sign_board(c, mb, x0 + 2.8, y0 + 0.16, 2.45, ang=0.0, w=2.2, h=0.52)
+    # 入る側（壁の南の面）、西のドアの開口（x0 + 2.0〜3.6）の東どなり。上のガラス（2.20 m から上）に
+    # かからない高さ
+    signs.wall(c, mb, x0 + 5.0, y0 - 0.08, 1.90, ang=math.pi, ja="個人閲覧席",
+               en="Study Booths", w=2.2, h=0.52)
 
     n = 0
     for r in range(6):

@@ -47,7 +47,7 @@
   },
   "sign_library_1": {
    "x": -12.0,
-   "y": 2.45,
+   "y": 2.59,
    "z": 12.7
   },
   "poi_library_search": {
@@ -96,9 +96,9 @@
    "z": 23.3
   },
   "sign_library_2": {
-   "x": -1.2,
-   "y": 2.45,
-   "z": 51.66
+   "x": 1.0,
+   "y": 1.9,
+   "z": 51.42
   },
   "poi_library_desk": {
    "x": -1.0,
@@ -441,7 +441,7 @@
    "z": 45.007
   }
  },
- "triangles": 57924,
+ "triangles": 63926,
  "seats": 299,
  "notes": [
   "開架書架 14 連",
@@ -459,12 +459,384 @@
   "furn_library_05_booths",
   "furn_library_06_gallery"
  ],
+ "signs": [
+  {
+   "empty": "sign_library_1",
+   "kind": "hanging",
+   "ja": "貸出・返却",
+   "en": "Circulation Desk",
+   "tris": 942,
+   "pos": {
+    "x": -12.0,
+    "y": 2.59,
+    "z": 12.7
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 3.2,
+   "h": 0.62,
+   "faces": 2,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center",
+   "drop": 0.7
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "000 総記",
+   "en": "General Works",
+   "tris": 360,
+   "pos": {
+    "x": -38.954,
+    "y": 1.62,
+    "z": 20.275
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.48,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "100 哲学",
+   "en": "Philosophy",
+   "tris": 289,
+   "pos": {
+    "x": -36.604,
+    "y": 1.62,
+    "z": 20.275
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.48,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "200 歴史",
+   "en": "History",
+   "tris": 244,
+   "pos": {
+    "x": -34.254,
+    "y": 1.62,
+    "z": 20.275
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.48,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "300 社会科学",
+   "en": "Social Sciences",
+   "tris": 444,
+   "pos": {
+    "x": -31.904,
+    "y": 1.62,
+    "z": 20.275
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.48,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "400 自然科学",
+   "en": "Natural Sciences",
+   "tris": 449,
+   "pos": {
+    "x": -29.554,
+    "y": 1.62,
+    "z": 20.275
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.48,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "500 技術",
+   "en": "Technology",
+   "tris": 330,
+   "pos": {
+    "x": -27.204,
+    "y": 1.62,
+    "z": 20.275
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.48,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "600 産業",
+   "en": "Industry",
+   "tris": 295,
+   "pos": {
+    "x": -24.854,
+    "y": 1.62,
+    "z": 20.275
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.48,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "700 芸術",
+   "en": "Arts",
+   "tris": 180,
+   "pos": {
+    "x": -22.504,
+    "y": 1.62,
+    "z": 20.275
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.48,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "800 言語",
+   "en": "Language",
+   "tris": 339,
+   "pos": {
+    "x": -20.154,
+    "y": 1.62,
+    "z": 20.275
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.48,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "900 文学",
+   "en": "Literature",
+   "tris": 279,
+   "pos": {
+    "x": -17.804,
+    "y": 1.62,
+    "z": 20.275
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.48,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "000 総記",
+   "en": "General Works",
+   "tris": 360,
+   "pos": {
+    "x": -15.454,
+    "y": 1.62,
+    "z": 20.275
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.48,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "100 哲学",
+   "en": "Philosophy",
+   "tris": 289,
+   "pos": {
+    "x": -13.104,
+    "y": 1.62,
+    "z": 20.275
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.48,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "200 歴史",
+   "en": "History",
+   "tris": 244,
+   "pos": {
+    "x": -10.754,
+    "y": 1.62,
+    "z": 20.275
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.48,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "300 社会科学",
+   "en": "Social Sciences",
+   "tris": 444,
+   "pos": {
+    "x": -8.404,
+    "y": 1.62,
+    "z": 20.275
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.48,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_library_2",
+   "kind": "wall",
+   "ja": "個人閲覧席",
+   "en": "Study Booths",
+   "tris": 502,
+   "pos": {
+    "x": 1.0,
+    "y": 1.9,
+    "z": 51.42
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 2.2,
+   "h": 0.52,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  }
+ ],
+ "text_triangles": 5990,
  "ext": {
   "objects": [
    "ext_library",
    "ext_library_trees"
   ],
-  "triangles": 12969,
+  "triangles": 13942,
   "radius": 30.0,
   "dz": -0.03
  }

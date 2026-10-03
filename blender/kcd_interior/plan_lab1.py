@@ -5,7 +5,7 @@
 
 import math
 
-from . import common, furniture as F, kit, shell
+from . import common, furniture as F, kit, shell, signs
 
 CEIL = 3.20
 Z_TOP = 4.10
@@ -47,13 +47,18 @@ def _wing(c, ax0, ax1, wy0, wy1):
     cor = c.furn("corridor")
     common.corridor_run(c, cor, ax0 + 2.0, ax1 - 2.0, cor_y0 + 0.1, CEIL,
                         pitch=10.0)
+    n_lab = 0
     for (rx0, rx1, kind) in rooms:
         dx = (rx0 + rx1) * 0.5
         shell.door(c.wall, dx, cor_y1, ang=0.0, w=1.10, h=2.10,
                    leaf="desk_white", glass="glass_partition")
-        shell.wall_sign(cor, dx + 0.95, cor_y1 - 0.10, 2.05, ang=math.pi,
-                        w=0.70, h=0.28)
-        c.sign(dx + 0.95, cor_y1 - 0.10, 2.05)
+        if kind == "lab":
+            n_lab += 1
+            ja, en = "実験室 %d" % n_lab, "Lab %d" % n_lab
+        else:
+            ja, en = "準備室", "Prep Room"
+        signs.wall(c, cor, dx + 0.95, cor_y1 - 0.08, 2.05, ang=math.pi, ja=ja, en=en,
+                   w=0.70, h=0.28)
         shell.exit_sign(c.wall, dx, cor_y1 - 0.06, 2.85, ang=math.pi)
         # ドアの脇の壁に掲示板（廊下側を向く）
         if rx0 + 1.2 < dx - 1.0:

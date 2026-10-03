@@ -32,8 +32,8 @@
   },
   "sign_gym_1": {
    "x": -0.006,
-   "y": 2.45,
-   "z": 4.1
+   "y": 3.7,
+   "z": 3.8
   },
   "poi_gym_court": {
    "x": -0.006,
@@ -86,7 +86,7 @@
    "z": 13.8
   },
   "sign_gym_2": {
-   "x": 19.764,
+   "x": 19.814,
    "y": 2.4,
    "z": 38.294
   },
@@ -171,7 +171,7 @@
    "z": 6.42
   }
  },
- "triangles": 20965,
+ "triangles": 21786,
  "seats": 540,
  "notes": [
   "観覧席 540 席",
@@ -189,12 +189,61 @@
   "furn_gym_06_equipment",
   "furn_gym_07_extras"
  ],
+ "signs": [
+  {
+   "empty": "sign_gym_1",
+   "kind": "wall",
+   "ja": "体育館",
+   "en": "Gymnasium",
+   "tris": 351,
+   "pos": {
+    "x": -0.006,
+    "y": 3.7,
+    "z": 3.8
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 2.6,
+   "h": 0.6,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_gym_2",
+   "kind": "wall",
+   "ja": "器具庫",
+   "en": "Equipment Storage",
+   "tris": 470,
+   "pos": {
+    "x": 19.814,
+    "y": 2.4,
+    "z": 38.294
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.4,
+   "h": 0.4,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  }
+ ],
+ "text_triangles": 821,
  "ext": {
   "objects": [
    "ext_gym",
    "ext_gym_trees"
   ],
-  "triangles": 11721,
+  "triangles": 12033,
   "radius": 30.0,
   "dz": -0.03
  }

@@ -58,11 +58,6 @@ def entry_kit(c, z_ceil, door_w=6.0, spawn_depth=1.5, bin_x=None):
     return mb
 
 
-def sign_board(c, mb, x, y, z, ang=0.0, w=1.8, h=0.55):
-    shell.wall_sign(mb, x, y, z, ang=ang, w=w, h=h)
-    c.sign(x, y, z)
-
-
 def corridor_run(c, mb, x0, x1, y, z_ceil, pitch=9.0, both=True):
     """廊下の定番設備を等間隔に置く（誘導灯・消火器・掲示板・ベンチ）。"""
     n = max(1, int((x1 - x0) / pitch))
@@ -86,8 +81,8 @@ def window_planters(c, mb, x0, x1, y, n=4):
 def turned(c, ox, oy, ang):
     """ブロックの中で置いた物を、原点のまわりに ang 回してから (ox, oy) へ動かす。
 
-    メッシュの頂点・座面・Empty・プレビューの照明とカメラが対象。軸に沿って組んだ
-    間取りを向きを変えて使うためのもの。回すだけなので面の表裏は変わらない。
+    メッシュの頂点・座面・Empty・看板の記録（c.signs の位置と向き）・プレビューの照明とカメラが対象。
+    軸に沿って組んだ間取りを向きを変えて使うためのもの。回すだけなので面の表裏は変わらない。
     """
     co, si = math.cos(ang), math.sin(ang)
 
@@ -98,6 +93,7 @@ def turned(c, ox, oy, ang):
     marks = {id(mb): (len(mb.verts), len(getattr(mb, "seats", None) or ()))
              for mb in c.builders()}
     n_emp, n_light, n_cam = len(c.empties), len(c.lights), len(c.cams)
+    n_sign = len(c.signs)
     yield
     for mb in c.builders():
         v0, s0 = marks.get(id(mb), (0, 0))
@@ -109,3 +105,13 @@ def turned(c, ox, oy, ang):
     c.lights[n_light:] = [mv(lt) for lt in c.lights[n_light:]]
     c.cams[n_cam:] = [(sfx, mv(a), mv(b), lens)
                       for sfx, a, b, lens in c.cams[n_cam:]]
+    c.signs[n_sign:] = [_turned_sign(r, mv, co, si) for r in c.signs[n_sign:]]
+
+
+def _turned_sign(rec, mv, co, si):
+    """看板の記録（位置と向きは Unity の並び。y が上）を turned と同じだけ回して動かす。"""
+    p, f = rec["pos"], rec["facing"]
+    x, y = mv((p["x"], p["z"]))
+    fx, fy = co * f["x"] - si * f["z"], si * f["x"] + co * f["z"]
+    return dict(rec, pos={"x": round(x, 3), "y": p["y"], "z": round(y, 3)},
+                facing={"x": round(fx, 4), "y": 0.0, "z": round(fy, 4)})

@@ -31,12 +31,12 @@
    "z": 3.55
   },
   "sign_lab2_1": {
-   "x": -2.258,
+   "x": -2.238,
    "y": 2.05,
    "z": 19.516
   },
   "sign_lab2_2": {
-   "x": -2.258,
+   "x": -2.238,
    "y": 2.05,
    "z": 9.75
   },
@@ -101,7 +101,7 @@
    "z": 6.46
   }
  },
- "triangles": 12980,
+ "triangles": 13568,
  "seats": 21,
  "notes": [
   "玄関ホール（入口が短辺）から廊下を奥へ",
@@ -116,12 +116,61 @@
   "furn_lab2_04_lab01",
   "furn_lab2_05_prep02"
  ],
+ "signs": [
+  {
+   "empty": "sign_lab2_1",
+   "kind": "wall",
+   "ja": "実験室 1",
+   "en": "Lab 1",
+   "tris": 262,
+   "pos": {
+    "x": -2.238,
+    "y": 2.05,
+    "z": 19.516
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": -0.0
+   },
+   "w": 0.7,
+   "h": 0.28,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_lab2_2",
+   "kind": "wall",
+   "ja": "準備室",
+   "en": "Prep Room",
+   "tris": 326,
+   "pos": {
+    "x": -2.238,
+    "y": 2.05,
+    "z": 9.75
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": -0.0
+   },
+   "w": 0.7,
+   "h": 0.28,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  }
+ ],
+ "text_triangles": 588,
  "ext": {
   "objects": [
    "ext_lab2",
    "ext_lab2_trees"
   ],
-  "triangles": 6498,
+  "triangles": 6683,
   "radius": 30.0,
   "dz": -0.03
  }

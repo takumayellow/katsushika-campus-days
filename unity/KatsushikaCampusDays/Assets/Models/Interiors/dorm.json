@@ -246,7 +246,7 @@
    "z": 17.5
   }
  },
- "triangles": 6452,
+ "triangles": 7829,
  "seats": 6,
  "notes": [
   "寮長 = npc_dorm_1 / poi_dorm_kanrinin（玄関ホール、管理人カウンターの手前）",
@@ -263,6 +263,101 @@
   "furn_dorm_04_dining",
   "furn_dorm_05_corridor"
  ],
+ "signs": [
+  {
+   "empty": "sign_dorm_1",
+   "kind": "wall",
+   "ja": "管理人室",
+   "en": "Manager's Office",
+   "tris": 441,
+   "pos": {
+    "x": 4.1,
+    "y": 2.3,
+    "z": 11.95
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.2,
+   "h": 0.36,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_dorm_2",
+   "kind": "wall",
+   "ja": "談話室",
+   "en": "Lounge",
+   "tris": 258,
+   "pos": {
+    "x": -1.7,
+    "y": 2.35,
+    "z": 14.1
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.2,
+   "h": 0.34,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_dorm_3",
+   "kind": "wall",
+   "ja": "食堂",
+   "en": "Dining Hall",
+   "tris": 238,
+   "pos": {
+    "x": 1.7,
+    "y": 2.35,
+    "z": 14.1
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.2,
+   "h": 0.34,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_dorm_4",
+   "kind": "wall",
+   "ja": "関係者以外立入禁止",
+   "en": "Staff Only",
+   "tris": 440,
+   "pos": {
+    "x": -1.5,
+    "y": 1.95,
+    "z": 38.6
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.1,
+   "h": 0.4,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  }
+ ],
+ "text_triangles": 1377,
  "operator": "共立メンテナンス（学生会館ドーミー）",
  "not_university": "大学直営ではない（ゲーム内で『大学の寮』と断定しない）",
  "off_campus": true,

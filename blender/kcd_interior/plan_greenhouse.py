@@ -2,7 +2,7 @@
 
 import math
 
-from . import common, furniture as F, kit, shell
+from . import common, furniture as F, kit, shell, signs
 
 CEIL = 3.30
 Z_TOP = 3.60
@@ -113,8 +113,9 @@ def build(c):
 
     c.poi("plants", (ix0 + ix1) * 0.5, (iy0 + iy1) * 0.5, 0.0)
     c.npc((ix0 + ix1) * 0.5, iy0 + 2.6, 0.0)
-    common.sign_board(c, mb, (ix0 + ix1) * 0.5, iy1 - 0.22, 2.20, ang=math.pi,
-                      w=1.2, h=0.36)
+    # 奥の壁はガラスなので、ガラスの室内側の面（内壁面 + GLASS_IN）に貼る
+    signs.wall(c, mb, (ix0 + ix1) * 0.5, iy1 + shell.GLASS_IN, 2.20, ang=math.pi,
+               ja="温室", en="Greenhouse", w=1.2, h=0.36)
 
     c.cam("", ((ix0 + ix1) * 0.5, iy0 + 0.9, 1.60),
           ((ix0 + ix1) * 0.5, iy1 - 1.0, 1.10), lens=16.0)

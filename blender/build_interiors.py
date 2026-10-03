@@ -32,7 +32,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import bpy  # noqa: E402
 
 from kcd_lib import entrances, mats, render  # noqa: E402
-from kcd_interior import closure, exterior, imats, registry, spec as ispec  # noqa: E402
+from kcd_interior import closure, exterior, imats, registry, signs, spec as ispec  # noqa: E402
 from kcd_interior.ctx import Ctx  # noqa: E402
 
 FBX_OPTS = dict(
@@ -185,6 +185,7 @@ def build_one(sp, plan, args, eng, ext_src=None):
 
     c = Ctx(sp, seed=args.seed)
     plan.build(c)
+    signs.check(c)        # 文字の無い看板の Empty があれば止める（DESIGN.md §3.4 の看板）
     c.flush_seats()       # 座れる家具 -> seat_ Empty（Unity の SeatFactory が読む）
 
     objects = []
@@ -213,6 +214,8 @@ def build_one(sp, plan, args, eng, ext_src=None):
         "empty_pos": [[n, p[0], p[1], p[2]] for n, p in c.empties],
         "seats": c.seats,
         "notes": c.notes,
+        "signs": len(c.signs),
+        "text_tris": c.text_tris(),   # 看板の文字の三角形（tris に含まれる）
     }
 
     # --- 配置メタ（Unity 用） ---
@@ -226,6 +229,9 @@ def build_one(sp, plan, args, eng, ext_src=None):
         "seats": c.seats,
         "notes": c.notes,
         "objects": info["objects"],
+        # 看板ごとの文言・Empty・位置（signs.wall / signs.hanging の記録）と文字の三角形の数
+        "signs": c.signs,
+        "text_triangles": info["text_tris"],
     }
     if ext_objects:
         meta_extra["ext"] = {
@@ -498,10 +504,11 @@ def main():
         info["id"] = bid
         info["label"] = registry.LABELS.get(bid, bid)
         info["sec"] = time.time() - t0
-        print("[interiors] %-11s %6.1f x %5.1f m  tris=%7d/%5d  ext=%6d  "
+        print("[interiors] %-11s %6.1f x %5.1f m  tris=%7d/%5d  text=%5d (%2d 枚)  ext=%6d  "
               "empties=%3d  %5.1f s  %s"
               % (bid, sp.width, sp.depth, info["tris"], INT_BUDGET_ONE.get(bid, 0),
-                 info["ext_tris"], len(info["empties"]), info["sec"],
+                 info["text_tris"], info["signs"], info["ext_tris"], len(info["empties"]),
+                 info["sec"],
                  "%.2f MB" % (info["size"] / 1048576.0) if info["size"] else "-"))
         es = info["ext_stats"]
         if es:
@@ -568,13 +575,15 @@ def main():
 
     total = sum(i["tris"] for i in report)
     total_ext = sum(i["ext_tris"] for i in report)
+    total_text = sum(i["text_tris"] for i in report)
     over = over_budget(report, total, total_ext)
     for msg in over:
         print("[budget] NG %s" % msg)
     if over:
         ok = False
-    print("\n[interiors] 合計 %d / %d 三角形 + 近景 %d / %d / %d 棟 / %.1f s  (%s)"
-          % (total, INT_BUDGET, total_ext, EXT_BUDGET, len(report), time.time() - t_all,
+    print("\n[interiors] 合計 %d / %d 三角形（うち看板の文字 %d）+ 近景 %d / %d / %d 棟 / %.1f s  (%s)"
+          % (total, INT_BUDGET, total_text, total_ext, EXT_BUDGET, len(report),
+             time.time() - t_all,
              "OK" if ok else
              "Empty 欠落 / POI 契約違反 / 外周の穴 / 近景のメッシュ違い / 入口と扉の食い違い"
              " / 予算超過あり"))
@@ -592,7 +601,7 @@ def main():
         rows = summary_rows(report, summary, args.preview, args.preview_dir)
         with open(summary, "w", encoding="utf-8") as fp:
             json.dump({"total_tris": total, "total_ext_tris": total_ext,
-                       "buildings": rows}, fp,
+                       "total_text_tris": total_text, "buildings": rows}, fp,
                       ensure_ascii=False, indent=1)
         print("[interiors] 集計: %s" % summary)
     else:

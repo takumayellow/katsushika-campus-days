@@ -43,10 +43,10 @@
   "sign_greenhouse_1": {
    "x": 0.031,
    "y": 2.2,
-   "z": 9.453
+   "z": 9.833
   }
  },
- "triangles": 4072,
+ "triangles": 4333,
  "seats": 0,
  "notes": [
   "切妻ガラス屋根の温室（棟木は入口の妻面から奥へ・栽培ベンチ 4 列・鉢植え・灌水パイプ）"
@@ -57,12 +57,38 @@
   "furn_greenhouse_01_entry",
   "furn_greenhouse_02_benches"
  ],
+ "signs": [
+  {
+   "empty": "sign_greenhouse_1",
+   "kind": "wall",
+   "ja": "温室",
+   "en": "Greenhouse",
+   "tris": 261,
+   "pos": {
+    "x": 0.031,
+    "y": 2.2,
+    "z": 9.833
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 1.2,
+   "h": 0.36,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  }
+ ],
+ "text_triangles": 261,
  "ext": {
   "objects": [
    "ext_greenhouse",
    "ext_greenhouse_trees"
   ],
-  "triangles": 4105,
+  "triangles": 4238,
   "radius": 30.0,
   "dz": -0.03
  }

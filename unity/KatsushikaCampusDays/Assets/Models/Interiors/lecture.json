@@ -67,12 +67,12 @@
   },
   "sign_lecture_1": {
    "x": 17.0,
-   "y": 2.05,
-   "z": 54.321
+   "y": 2.4,
+   "z": 33.18
   },
   "sign_lecture_2": {
    "x": 17.0,
-   "y": 3.0,
+   "y": 3.02,
    "z": 37.2
   },
   "poi_lecture_foyer": {
@@ -91,9 +91,9 @@
    "z": 46.0
   },
   "sign_lecture_3": {
-   "x": 35.68,
-   "y": 2.05,
-   "z": 13.737
+   "x": 35.72,
+   "y": 1.7,
+   "z": 13.937
   },
   "poi_lecture_seminar": {
    "x": 42.66,
@@ -111,14 +111,14 @@
    "z": 14.687
   },
   "sign_lecture_4": {
-   "x": 35.68,
-   "y": 2.05,
-   "z": 30.51
+   "x": 35.72,
+   "y": 1.7,
+   "z": 30.71
   },
   "sign_lecture_5": {
-   "x": 35.68,
-   "y": 2.05,
-   "z": 47.284
+   "x": 35.72,
+   "y": 1.7,
+   "z": 47.484
   },
   "poi_lecture_grand_stair": {
    "x": -7.5,
@@ -126,14 +126,14 @@
    "z": 16.9
   },
   "sign_lecture_6": {
-   "x": -1.4,
+   "x": 1.32,
    "y": 2.35,
-   "z": 7.5
+   "z": 8.1
   },
   "sign_lecture_7": {
-   "x": -16.941,
-   "y": 3.4,
-   "z": 7.3
+   "x": 1.32,
+   "y": 4.6,
+   "z": 20.6
   },
   "poi_lecture_atrium": {
    "x": -16.941,
@@ -161,9 +161,9 @@
    "z": 52.021
   },
   "sign_lecture_8": {
-   "x": -27.282,
+   "x": -26.482,
    "y": 2.3,
-   "z": 31.16
+   "z": 30.89
   },
   "seat_lecture_01": {
    "x": 12.0,
@@ -831,7 +831,7 @@
    "z": 16.48
   }
  },
- "triangles": 47429,
+ "triangles": 50703,
  "seats": 820,
  "notes": [
   "大ホール 600 席（16/18/16 × 12 列）",
@@ -850,12 +850,200 @@
   "furn_lecture_07_atrium",
   "furn_lecture_08_lecture_room"
  ],
+ "signs": [
+  {
+   "empty": "sign_lecture_1",
+   "kind": "wall",
+   "ja": "大ホール",
+   "en": "Main Hall",
+   "tris": 212,
+   "pos": {
+    "x": 17.0,
+    "y": 2.4,
+    "z": 33.18
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 2.6,
+   "h": 0.62,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_lecture_2",
+   "kind": "hanging",
+   "ja": "ホワイエ",
+   "en": "Foyer",
+   "tris": 270,
+   "pos": {
+    "x": 17.0,
+    "y": 3.02,
+    "z": 37.2
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 3.0,
+   "h": 0.44,
+   "faces": 2,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center",
+   "drop": 0.36
+  },
+  {
+   "empty": "sign_lecture_3",
+   "kind": "wall",
+   "ja": "演習室 1",
+   "en": "Seminar Room 1",
+   "tris": 384,
+   "pos": {
+    "x": 35.72,
+    "y": 1.7,
+    "z": 13.937
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 0.7,
+   "h": 0.28,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_lecture_4",
+   "kind": "wall",
+   "ja": "演習室 2",
+   "en": "Seminar Room 2",
+   "tris": 399,
+   "pos": {
+    "x": 35.72,
+    "y": 1.7,
+    "z": 30.71
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 0.7,
+   "h": 0.28,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_lecture_5",
+   "kind": "wall",
+   "ja": "演習室 3",
+   "en": "Seminar Room 3",
+   "tris": 422,
+   "pos": {
+    "x": 35.72,
+    "y": 1.7,
+    "z": 47.484
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 0.7,
+   "h": 0.28,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_lecture_6",
+   "kind": "wall",
+   "ja": "大ホール・演習室",
+   "en": "Main Hall / Seminar Rooms",
+   "tris": 657,
+   "pos": {
+    "x": 1.32,
+    "y": 2.35,
+    "z": 8.1
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 2.4,
+   "h": 0.6,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_lecture_7",
+   "kind": "wall",
+   "ja": "講義棟",
+   "en": "Lecture Building",
+   "tris": 613,
+   "pos": {
+    "x": 1.32,
+    "y": 4.6,
+    "z": 20.6
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 4.0,
+   "h": 0.8,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_lecture_8",
+   "kind": "wall",
+   "ja": "中教室",
+   "en": "Classroom",
+   "tris": 329,
+   "pos": {
+    "x": -26.482,
+    "y": 2.3,
+    "z": 30.89
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 1.4,
+   "h": 0.4,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  }
+ ],
+ "text_triangles": 3286,
  "ext": {
   "objects": [
    "ext_lecture",
    "ext_lecture_trees"
   ],
-  "triangles": 43851,
+  "triangles": 41580,
   "radius": 30.0,
   "dz": -0.03
  }

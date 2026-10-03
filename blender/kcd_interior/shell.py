@@ -12,6 +12,8 @@ from .kit import T
 WALL = 0.30          # 外周壁厚
 PART = 0.16          # 間仕切り厚
 GLASS_T = 0.04       # ガラスの厚み（室内側にも面を作って通り抜けを止める。#45）
+# 外周壁の内壁面から窓ガラスの室内側の面までの距離（outer_wall はガラスを外面から 0.4 * WALL に置く）
+GLASS_IN = WALL - WALL * 0.4 - GLASS_T * 0.5
 STRINGER_T = 0.06    # 階段の側桁の厚み（#45）
 DOOR_W = 1.10        # 片開きドアの幅
 DOOR_H = 2.10
@@ -448,20 +450,27 @@ def exit_sign(mb, x, y, z, ang=0.0, w=0.62, h=0.26):
 
 def wall_sign(mb, x, y, z, ang=0.0, w=1.6, h=0.5, mat="sign_plate_blue",
               frame="metal_white", out=0.06):
-    """案内サイン板（文字は Unity の TMP）。"""
+    """案内サインの板と枠（文字は無い）。板の面は正面へ out。文字つきの看板は signs.wall で置く。"""
     t = T(x, y, z, ang)
     t.box(mb, -w * 0.5 - 0.04, 0.0, -h * 0.5 - 0.04, w * 0.5 + 0.04, out * 0.5,
           h * 0.5 + 0.04, frame)
     t.box(mb, -w * 0.5, out * 0.5, -h * 0.5, w * 0.5, out, h * 0.5, mat)
 
 
+HANG_HALF = 0.04   # 吊り看板の板の厚みの半分（板の面は ±HANG_HALF）
+
+
 def hanging_sign(mb, x, y, z, ang=0.0, w=1.8, h=0.42, mat="sign_plate_blue",
                  drop=0.5):
+    """天井から吊る看板の板と吊り棒（文字は無い）。(x, y, z) は吊り元、板は drop 下がった所から高さ h。
+
+    文字つきの看板は signs.hanging で置く。
+    """
     t = T(x, y, z, ang)
     for sgn in (-1, 1):
-        t.box(mb, sgn * w * 0.35 - 0.02, -0.02, 0.0, sgn * w * 0.35 + 0.02,
-              0.02, drop, "metal_gray")
-    t.box(mb, -w * 0.5, -0.04, -drop - h, w * 0.5, 0.04, -drop, mat)
+        t.box(mb, sgn * w * 0.35 - 0.02, -0.02, -drop, sgn * w * 0.35 + 0.02,
+              0.02, 0.0, "metal_gray")
+    t.box(mb, -w * 0.5, -HANG_HALF, -drop - h, w * 0.5, HANG_HALF, -drop, mat)
 
 
 def notice_board(mb, x, y, z, ang=0.0, w=2.4, h=1.3, sheets=9, rng=None):

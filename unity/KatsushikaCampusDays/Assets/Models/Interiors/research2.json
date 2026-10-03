@@ -32,32 +32,32 @@
   },
   "sign_research2_1": {
    "x": -39.15,
-   "y": 2.8,
+   "y": 2.98,
    "z": 35.527
   },
   "sign_research2_2": {
    "x": -32.15,
-   "y": 2.8,
+   "y": 2.98,
    "z": 35.527
   },
   "sign_research2_3": {
    "x": -25.15,
-   "y": 2.8,
+   "y": 2.98,
    "z": 35.527
   },
   "sign_research2_4": {
    "x": -18.15,
-   "y": 2.8,
+   "y": 2.98,
    "z": 35.527
   },
   "sign_research2_5": {
    "x": -11.15,
-   "y": 2.8,
+   "y": 2.98,
    "z": 35.527
   },
   "sign_research2_6": {
    "x": -4.15,
-   "y": 2.8,
+   "y": 2.98,
    "z": 35.527
   },
   "poi_research2_counter": {
@@ -201,7 +201,7 @@
    "z": 5.52
   }
  },
- "triangles": 64210,
+ "triangles": 66486,
  "seats": 1400,
  "notes": [
   "食堂 1F 1164 席",
@@ -220,12 +220,159 @@
   "furn_research2_06_chairs",
   "furn_research2_07_green"
  ],
+ "signs": [
+  {
+   "empty": "sign_research2_1",
+   "kind": "hanging",
+   "ja": "麺",
+   "en": "Noodles",
+   "tris": 458,
+   "pos": {
+    "x": -39.15,
+    "y": 2.98,
+    "z": 35.527
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 2.0,
+   "h": 0.44,
+   "faces": 2,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center",
+   "drop": 5.0
+  },
+  {
+   "empty": "sign_research2_2",
+   "kind": "hanging",
+   "ja": "丼",
+   "en": "Rice Bowls",
+   "tris": 388,
+   "pos": {
+    "x": -32.15,
+    "y": 2.98,
+    "z": 35.527
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 2.0,
+   "h": 0.44,
+   "faces": 2,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center",
+   "drop": 5.0
+  },
+  {
+   "empty": "sign_research2_3",
+   "kind": "hanging",
+   "ja": "B",
+   "en": "Counter B",
+   "tris": 376,
+   "pos": {
+    "x": -25.15,
+    "y": 2.98,
+    "z": 35.527
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 2.0,
+   "h": 0.44,
+   "faces": 2,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center",
+   "drop": 5.0
+  },
+  {
+   "empty": "sign_research2_4",
+   "kind": "hanging",
+   "ja": "D",
+   "en": "Counter D",
+   "tris": 332,
+   "pos": {
+    "x": -18.15,
+    "y": 2.98,
+    "z": 35.527
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 2.0,
+   "h": 0.44,
+   "faces": 2,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center",
+   "drop": 5.0
+  },
+  {
+   "empty": "sign_research2_5",
+   "kind": "hanging",
+   "ja": "定食",
+   "en": "Set Meals",
+   "tris": 502,
+   "pos": {
+    "x": -11.15,
+    "y": 2.98,
+    "z": 35.527
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 2.0,
+   "h": 0.44,
+   "faces": 2,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center",
+   "drop": 5.0
+  },
+  {
+   "empty": "sign_research2_6",
+   "kind": "hanging",
+   "ja": "カレー",
+   "en": "Curry",
+   "tris": 220,
+   "pos": {
+    "x": -4.15,
+    "y": 2.98,
+    "z": 35.527
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 2.0,
+   "h": 0.44,
+   "faces": 2,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center",
+   "drop": 5.0
+  }
+ ],
+ "text_triangles": 2276,
  "ext": {
   "objects": [
    "ext_research2",
    "ext_research2_trees"
   ],
-  "triangles": 25594,
+  "triangles": 23241,
   "radius": 30.0,
   "dz": -0.03
  }
