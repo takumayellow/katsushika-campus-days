@@ -121,27 +121,6 @@ def wall_shelf(mb, t, w, h, d, rng, levels=5, frame=DARK, z0=0.0):
         books_face(mb, t, -hw + 0.04, hw - 0.04, d - 0.04, a, b - 0.03, rng)
 
 
-def stack_range(mb, t, length, h, d, rng, levels=5, frame=DARK, end="library_counter_black"):
-    """両面の書架 1 連（原点は中央、長さはローカル X、奥行きはローカル Y）。"""
-    hl, hd = length * 0.5, d * 0.5
-    t.box_nb(mb, -hl, -hd + 0.02, 0.0, hl, hd - 0.02, h - 0.02, frame)
-    for sx in (-hl - 0.03, hl):
-        t.box_nb(mb, sx, -hd - 0.01, 0.0, sx + 0.03, hd + 0.01, h, end)
-    t.box_nb(mb, -hl, -hd - 0.01, h - 0.03, hl, hd + 0.01, h, end)
-    for a, b in _levels(0.10, h - 0.05, levels):
-        for side in (1, -1):
-            y = side * (hd - 0.01)
-            if side > 0:
-                books_face(mb, t, -hl + 0.02, hl - 0.02, y, a, b - 0.03, rng,
-                           seg=(0.5, 1.2))
-            else:
-                tt = T(*t.p(0.0, 0.0), ang=math.atan2(t.s, t.c) + math.pi)
-                books_face(mb, tt, -hl + 0.02, hl - 0.02, hd - 0.01, a, b - 0.03,
-                           rng, seg=(0.5, 1.2))
-            t.vplate(mb, hl, y + side * 0.012, -hl, y + side * 0.012, a - 0.025, a,
-                     frame, flip=side < 0)
-
-
 def book_wall(mb, a, b, z0, z1, rng, levels=3, frame=DARK, plinth="library_wood_slat"):
     """壁の面に沿った本の壁（a→b の左を向く）。下に木のスラットの台輪を付ける。"""
     dx, dy = b[0] - a[0], b[1] - a[1]
