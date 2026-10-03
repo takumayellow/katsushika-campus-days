@@ -7,8 +7,9 @@ namespace KCD.Editor
     /// <summary>
     /// キャンパスに置く目印。入口トリガー・建物の名札・クエストの到達判定・拾い物。
     /// 座標は Blender 側と同じローカル軸 (u = 第1研究棟の長手, v = 直交) で書く。
+    /// 看板の板に貼る文字は CampusProps.SignFaces.cs。
     /// </summary>
-    public static class CampusProps
+    public static partial class CampusProps
     {
         /// <summary>第1研究棟の長辺から決めたキャンパスの向き。build_campus.make_frame と同じ値。</summary>
         private static readonly Vector2 AxisU = new Vector2(0.90958899f, -0.41550916f);
@@ -306,11 +307,18 @@ namespace KCD.Editor
             }
 
             EditorPaths.Report("建物の名札を " + count + " 個置きました。");
+            PlaceSignFaces(parent, font);
         }
 
         /// <summary>
+        /// 店舗の名札を色板の中心から持ち上げる高さ（m）。色板の上端（中心 + 0.8 m）より上に出し、
+        /// 色板に貼った店名（<see cref="PlaceSignFaces"/>）と重ねない (#181)。
+        /// </summary>
+        private const float StoreLabelRise = 1.8f;
+
+        /// <summary>
         /// 名札を吊るす位置。sign_&lt;id&gt;（扉の脇の立て看板の板の中心）の上、sign_ が無い建物は入口の上に、
-        /// 店舗は色板（文字の無い看板）の手前に出す。
+        /// 店舗は色板の手前の、色板より上に出す。
         /// </summary>
         private static bool SignAnchor(string buildingId, out Vector3 position)
         {
@@ -330,7 +338,7 @@ namespace KCD.Editor
 
             if (PlateCenter("sign_" + buildingId, out Vector3 plate))
             {
-                position = plate + AxisV * 0.9f;
+                position = plate + AxisV * 0.9f + Vector3.up * StoreLabelRise;
                 return true;
             }
 
