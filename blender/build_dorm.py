@@ -28,7 +28,7 @@ import bpy  # noqa: E402
 
 from kcd_lib import geom, mats, render                 # noqa: E402
 from kcd_lib.mesh import MeshBuilder                   # noqa: E402
-from kcd_interior import closure, imats                # noqa: E402
+from kcd_interior import closure, imats, signs         # noqa: E402
 from kcd_interior import spec as ispec                 # noqa: E402
 from kcd_interior.ctx import Ctx                       # noqa: E402
 from kcd_route import dorm as D                        # noqa: E402
@@ -307,6 +307,7 @@ def build_interior_scene(dorm, args, eng):
     sp = D.make_spec(dorm)
     c = Ctx(sp, seed=args.seed)
     D.build(c)
+    signs.check(c)        # 文字の無い看板の Empty があれば止める（DESIGN.md §3.4 の看板）
     c.flush_seats()
 
     objects = [mb.to_object() for mb in c.builders() if mb.faces]
@@ -323,6 +324,9 @@ def build_interior_scene(dorm, args, eng):
         "seats": len(c.seat_list()),
         "notes": c.notes,
         "objects": [o.name for o in objects],
+        # 看板ごとの文言・Empty・位置（signs.wall / signs.hanging の記録）と文字の三角形の数
+        "signs": c.signs,
+        "text_triangles": c.text_tris(),
         # --- 寮だけの追加メタ（Unity 側の実装が読む） ---
         "operator": D.OPERATOR,
         "not_university": D.NOT_UNIVERSITY,
@@ -345,6 +349,7 @@ def build_interior_scene(dorm, args, eng):
     ispec.dump_sidecar(sp, meta_extra, sidecar)
 
     out = {"tris": tris, "objects": [o.name for o in objects],
+           "text_tris": c.text_tris(), "signs": len(c.signs),
            "empties": [n for n, _ in c.empties], "notes": c.notes,
            "sidecar": sidecar, "fbx": None, "size": 0, "previews": [],
            "max_edge": round(max(max_edge(o) for o in objects), 3),
@@ -437,9 +442,10 @@ def main():
     if args.mode in ("both", "interior"):
         inr = build_interior_scene(dorm, args, eng)
         report["interior"] = inr
-        print("[dorm] 屋内  %.1f x %.1f m  tris=%d / 予算 %d  最長辺 %.1f m  empties=%d  %s"
+        print("[dorm] 屋内  %.1f x %.1f m  tris=%d（うち看板の文字 %d、%d 枚）/ 予算 %d  最長辺 %.1f m  "
+              "empties=%d  %s"
               % (inr["envelope"]["width"], inr["envelope"]["depth"], inr["tris"],
-                 INT_BUDGET, inr["max_edge"], len(inr["empties"]),
+                 inr["text_tris"], inr["signs"], INT_BUDGET, inr["max_edge"], len(inr["empties"]),
                  "%.2f MB" % (inr["size"] / 1048576.0) if inr["size"] else "-"))
         for n in inr["notes"]:
             print("           - %s" % n)

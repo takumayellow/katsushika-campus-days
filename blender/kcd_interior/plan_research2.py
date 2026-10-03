@@ -2,7 +2,7 @@
 
 import math
 
-from . import common, furniture as F, kit, shell
+from . import common, furniture as F, kit, shell, signs
 
 CEIL = 8.20          # 吹き抜け天井
 Z_TOP = 8.90
@@ -14,6 +14,16 @@ STAIR_DX = 1.25      # 東の内壁から階段の中心線まで
 STAIR_W = 2.2
 STAIR_RUN = 7.6      # 水平の長さ（24 段 x 0.317 m）
 TARGET_SEATS = 1400
+# 配膳口の吊り看板（西から順に）。先頭の 4 枚は #171 の調べ（受け取りの窓口 麺・丼・B・D）、
+# 残りの 2 枚は配膳口の役割からの見立てで、research2 の担当が実物に合わせて直す
+SERVING_SIGNS = (
+    ("麺", "Noodles"),
+    ("丼", "Rice Bowls"),
+    ("B", "Counter B"),
+    ("D", "Counter D"),
+    ("定食", "Set Meals"),
+    ("カレー", "Curry"),
+)
 
 
 def build(c):
@@ -84,10 +94,11 @@ def build(c):
     srv = c.furn("serving")
     sy = iy1 - 6.6
     F.serving_line(srv, ix0 + 8.0, ix0 + 46.0, sy, depth=1.35, h=0.95)
-    for i in range(6):
+    for i, (ja, en) in enumerate(SERVING_SIGNS):
         px = ix0 + 10.0 + i * 7.0
-        shell.hanging_sign(srv, px, sy - 1.9, 3.60, w=2.0, h=0.44, drop=0.4)
-        c.sign(px, sy - 1.9, 2.80)
+        # 吹き抜けの天井（CEIL）からワイヤで吊り、板の下端を 2.76 m にそろえる
+        signs.hanging(c, srv, px, sy - 1.9, CEIL, ja=ja, en=en, w=2.0, h=0.44,
+                      drop=CEIL - 3.20)
     c.poi("counter", ix0 + 27.0, sy - 2.4, 0.0)
     for i in range(5):
         # 配膳台（奥行 1.35、面は sy-0.68）から 0.62 m 離す。0.95 だと 0.27 m しか
@@ -166,7 +177,7 @@ def build(c):
                       mat="metal_dark", bulb="light_panel")
             if i % 2 == 0:
                 c.light(px, py, CEIL - 3.5, 700.0, 1.2)
-    c.light(0.0, iy0 + 18.0, 6.0, 2200.0, 3.0)
+    c.light((ix0 + ix1) * 0.5, iy0 + 18.0, 6.0, 2200.0, 3.0)
 
     c.cam("", (ix0 + 8.0, iy0 + 7.0, 2.35), (ix0 + 30.0, iy1 - 8.0, 1.60),
           lens=17.0)

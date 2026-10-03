@@ -1,7 +1,7 @@
 """建物 ID → プランモジュールの対応表。"""
 
-from . import (plan_greenhouse, plan_gym, plan_kyoso, plan_lab, plan_lecture,
-               plan_library, plan_research1, plan_research2)
+from . import (plan_greenhouse, plan_gym, plan_kyoso, plan_lab1, plan_lab2,
+               plan_lecture, plan_library, plan_research1, plan_research2)
 
 PLANS = {
     "research1": plan_research1,
@@ -10,8 +10,8 @@ PLANS = {
     "kyoso": plan_kyoso,
     "library": plan_library,
     "gym": plan_gym,
-    "lab1": plan_lab,
-    "lab2": plan_lab,
+    "lab1": plan_lab1,
+    "lab2": plan_lab2,
     "greenhouse": plan_greenhouse,
 }
 

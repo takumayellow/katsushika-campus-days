@@ -3,12 +3,21 @@
 kcd_lib.mats のパレットは触らず、ここで足りない名前だけを同じ流儀
 （Principled BSDF・名前が Unity との契約）で bpy.data.materials に足す。
 既に同名が登録されていれば何もしない（= 外装側の定義が勝つ）。
+
+何棟かで使う材質はこのファイルの COMMON_*、1 棟だけで使う材質はその棟の mats_<id>.py に書く。
+compose() が両方を合わせて PALETTE / TRANSPARENT / EMISSIVE を作る。建物担当はこのファイルを
+触らず、自分の棟の mats_<id>.py にだけ足す。
 """
+
+import re
 
 import bpy
 
+from . import (mats_greenhouse, mats_gym, mats_kyoso, mats_lab1, mats_lab2,
+               mats_lecture, mats_library, mats_research1, mats_research2)
+
 # name -> (rgb, roughness, metallic, alpha)
-PALETTE = {
+COMMON_PALETTE = {
     # ---- 床 ----
     "floor_tile_white":   ((0.855, 0.850, 0.830), 0.30, 0.02, 1.0),
     "floor_tile_grey":    ((0.560, 0.565, 0.565), 0.34, 0.02, 1.0),
@@ -96,13 +105,13 @@ PALETTE = {
 }
 
 # 透けるもの（アルファは EEVEE の blend 設定も要る）
-TRANSPARENT = {
+COMMON_TRANSPARENT = {
     "glass_interior":  ((0.620, 0.720, 0.740), 0.05, 0.0, 0.22),
     "glass_partition": ((0.760, 0.820, 0.830), 0.05, 0.0, 0.16),
 }
 
 # 発光するもの -> (emission rgb, strength)
-EMISSIVE = {
+COMMON_EMISSIVE = {
     "light_panel":      ((1.00, 0.975, 0.920), 4.5),
     "light_strip":      ((1.00, 0.955, 0.870), 5.5),
     "sign_exit_green":  ((0.10, 0.950, 0.420), 3.0),
@@ -112,6 +121,109 @@ EMISSIVE = {
 
 BOOK_MATS = ["book_a", "book_b", "book_c", "book_d",
              "book_e", "book_f", "book_g", "book_h"]
+
+# 棟ごとの材質ファイル（並びは registry.ORDER と同じ）
+BUILDING_MATS = {
+    "research1": mats_research1,
+    "lecture": mats_lecture,
+    "research2": mats_research2,
+    "kyoso": mats_kyoso,
+    "library": mats_library,
+    "gym": mats_gym,
+    "lab1": mats_lab1,
+    "lab2": mats_lab2,
+    "greenhouse": mats_greenhouse,
+}
+
+
+def _is_unit(x):
+    return isinstance(x, (int, float)) and not isinstance(x, bool) and 0.0 <= x <= 1.0
+
+
+def _is_rgb(rgb):
+    return isinstance(rgb, tuple) and len(rgb) == 3 and all(_is_unit(c) for c in rgb)
+
+
+def _check_surface(where, name, value, opaque):
+    """PALETTE / TRANSPARENT の値 ((r, g, b), roughness, metallic, alpha) の形を確かめる。"""
+    ok = (isinstance(value, tuple) and len(value) == 4 and _is_rgb(value[0])
+          and all(_is_unit(v) for v in value[1:]))
+    if ok:
+        alpha = value[3]
+        ok = alpha == 1.0 if opaque else 0.0 < alpha < 1.0
+    if not ok:
+        raise ValueError("%s の %s の値 %r は ((r, g, b), roughness, metallic, alpha) で、"
+                         "0〜1 の数にする（alpha は %s）"
+                         % (where, name, value, "1.0" if opaque else "0 より大きく 1 未満"))
+
+
+def _check_emission(where, name, value):
+    """EMISSIVE の値 ((r, g, b), strength) の形を確かめる。"""
+    ok = (isinstance(value, tuple) and len(value) == 2 and _is_rgb(value[0])
+          and isinstance(value[1], (int, float)) and not isinstance(value[1], bool)
+          and value[1] > 0.0)
+    if not ok:
+        raise ValueError("%s の %s の値 %r は ((r, g, b), strength) で、色は 0〜1、"
+                         "strength は正の数にする" % (where, name, value))
+
+
+def compose(common, buildings):
+    """共有の材質に棟ごとの材質を足し、(PALETTE, TRANSPARENT, EMISSIVE, OWNER) を返す。
+
+    common    : 共有の (PALETTE, TRANSPARENT, EMISSIVE)
+    buildings : {棟 ID: PALETTE / TRANSPARENT / EMISSIVE を持つモジュール}
+    OWNER     : 棟の材質名 -> 棟 ID
+
+    次のときは ValueError:
+      - 同じ名前が 2 か所にある（共有と棟、同じ棟の PALETTE と TRANSPARENT など）
+      - 棟の材質名が "<id>_" で始まる英小文字・数字・_ の名前でない（EMISSIVE も同じ）
+      - 棟の EMISSIVE の名前が、その棟の PALETTE に無い
+      - 値の形が違う（PALETTE の alpha は 1.0、TRANSPARENT の alpha は 0 より大きく 1 未満）
+    """
+    common_p, common_t, common_e = common
+    palette, transparent, emissive = dict(common_p), dict(common_t), dict(common_e)
+    owner = {}
+    where_of = {}
+
+    def claim(name, where):
+        if name in where_of:
+            raise ValueError("材質名 %s が %s と %s で重なっている" % (name, where_of[name], where))
+        where_of[name] = where
+
+    for kind, table, opaque in (("PALETTE", common_p, True), ("TRANSPARENT", common_t, False)):
+        for name, value in table.items():
+            where = "imats.COMMON_" + kind
+            _check_surface(where, name, value, opaque)
+            claim(name, where)
+    for name, value in common_e.items():
+        _check_emission("imats.COMMON_EMISSIVE", name, value)
+
+    for bid, mod in buildings.items():
+        rule = re.compile(re.escape(bid) + r"_[a-z0-9_]+")
+        tables = {kind: dict(getattr(mod, kind)) for kind in ("PALETTE", "TRANSPARENT", "EMISSIVE")}
+        for kind in ("PALETTE", "TRANSPARENT", "EMISSIVE"):
+            where = "mats_%s.%s" % (bid, kind)
+            for name, value in tables[kind].items():
+                if not (isinstance(name, str) and rule.fullmatch(name)):
+                    raise ValueError("%s の %r は \"%s_\" で始まる英小文字・数字・_ の名前にする"
+                                     % (where, name, bid))
+                if kind == "EMISSIVE":
+                    if name not in tables["PALETTE"]:
+                        raise ValueError("%s の %s が mats_%s.PALETTE に無い" % (where, name, bid))
+                    _check_emission(where, name, value)
+                    continue
+                _check_surface(where, name, value, kind == "PALETTE")
+                claim(name, where)
+                owner[name] = bid
+        palette.update(tables["PALETTE"])
+        transparent.update(tables["TRANSPARENT"])
+        emissive.update(tables["EMISSIVE"])
+    return palette, transparent, emissive, owner
+
+
+# 登録するのはこの 3 つ（共有 + 全棟）。Unity の InteriorPalette.cs はこれを写したもの
+PALETTE, TRANSPARENT, EMISSIVE, OWNER = compose(
+    (COMMON_PALETTE, COMMON_TRANSPARENT, COMMON_EMISSIVE), BUILDING_MATS)
 
 
 def _make(name, rgb, rough, metal, alpha):

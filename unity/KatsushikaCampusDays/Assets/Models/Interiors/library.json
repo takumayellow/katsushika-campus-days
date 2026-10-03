@@ -31,440 +31,1400 @@
    "z": 4.55
   },
   "poi_library_counter": {
-   "x": -12.0,
+   "x": -11.6,
    "y": 0.0,
-   "z": 10.5
-  },
-  "npc_library_1": {
-   "x": -13.2,
-   "y": 0.0,
-   "z": 13.2
-  },
-  "npc_library_2": {
-   "x": -10.6,
-   "y": 0.0,
-   "z": 13.2
-  },
-  "sign_library_1": {
-   "x": -12.0,
-   "y": 2.45,
-   "z": 12.7
+   "z": 25.0
   },
   "poi_library_search": {
-   "x": 10.0,
+   "x": -10.0,
    "y": 0.0,
-   "z": 7.3
-  },
-  "poi_library_stacks": {
-   "x": -30.729,
-   "y": 0.0,
-   "z": 24.3
-  },
-  "npc_library_3": {
-   "x": -33.079,
-   "y": 0.0,
-   "z": 26.3
-  },
-  "npc_library_4": {
-   "x": -28.379,
-   "y": 0.0,
-   "z": 34.3
+   "z": 19.5
   },
   "poi_library_reading": {
-   "x": 22.68,
+   "x": -1.0,
    "y": 0.0,
-   "z": 34.3
+   "z": 28.0
   },
-  "npc_library_5": {
-   "x": 0.0,
-   "y": 0.0,
-   "z": 23.3
-  },
-  "npc_library_6": {
-   "x": 9.0,
-   "y": 0.0,
-   "z": 31.3
-  },
-  "npc_library_7": {
-   "x": 18.0,
-   "y": 0.0,
-   "z": 39.3
-  },
-  "npc_library_8": {
-   "x": 27.0,
-   "y": 0.0,
-   "z": 23.3
-  },
-  "sign_library_2": {
-   "x": -1.2,
-   "y": 2.45,
-   "z": 51.66
+  "poi_library_stacks": {
+   "x": 30.0,
+   "y": 5.0,
+   "z": 46.6
   },
   "poi_library_desk": {
    "x": -1.0,
-   "y": 0.0,
-   "z": 54.43
-  },
-  "npc_library_9": {
-   "x": 2.6,
-   "y": 0.0,
-   "z": 54.43
+   "y": 5.0,
+   "z": 56.5
   },
   "poi_library_gallery": {
-   "x": -35.354,
-   "y": 4.4,
+   "x": -35.35,
+   "y": 5.0,
    "z": 29.3
   },
+  "poi_library_hall_stage": {
+   "x": -1.6,
+   "y": 10.75,
+   "z": 59.5
+  },
+  "poi_library_hall_seats": {
+   "x": -1.6,
+   "y": 11.3,
+   "z": 45.3
+  },
+  "poi_library_foyer": {
+   "x": -4.0,
+   "y": 10.0,
+   "z": 12.0
+  },
+  "poi_library_balcony": {
+   "x": -1.6,
+   "y": 17.2,
+   "z": 30.5
+  },
+  "npc_library_1": {
+   "x": -15.5,
+   "y": 0.0,
+   "z": 25.5
+  },
+  "npc_library_2": {
+   "x": -10.2,
+   "y": 0.0,
+   "z": 21.0
+  },
+  "npc_library_3": {
+   "x": -2.0,
+   "y": 0.0,
+   "z": 27.0
+  },
+  "npc_library_4": {
+   "x": 9.8,
+   "y": 1.7,
+   "z": 27.0
+  },
+  "npc_library_5": {
+   "x": 14.0,
+   "y": 3.3,
+   "z": 38.0
+  },
+  "npc_library_6": {
+   "x": -12.0,
+   "y": 0.0,
+   "z": 13.0
+  },
+  "npc_library_7": {
+   "x": 30.0,
+   "y": 5.0,
+   "z": 34.0
+  },
+  "npc_library_8": {
+   "x": 5.5,
+   "y": 5.0,
+   "z": 59.7
+  },
+  "npc_library_9": {
+   "x": 23.4,
+   "y": 5.0,
+   "z": 57.6
+  },
   "npc_library_10": {
-   "x": -35.354,
-   "y": 4.4,
-   "z": 37.3
+   "x": -36.0,
+   "y": 5.0,
+   "z": 53.0
+  },
+  "npc_library_11": {
+   "x": -6.0,
+   "y": 10.0,
+   "z": 9.4
+  },
+  "npc_library_12": {
+   "x": -3.5,
+   "y": 10.75,
+   "z": 58.5
+  },
+  "sign_library_1": {
+   "x": -17.55,
+   "y": 3.2,
+   "z": 25.5
+  },
+  "sign_library_2": {
+   "x": -1.0,
+   "y": 7.19,
+   "z": 53.9
+  },
+  "sign_library_3": {
+   "x": -13.0,
+   "y": 1.13,
+   "z": 25.0
+  },
+  "sign_library_4": {
+   "x": -0.65,
+   "y": 1.2,
+   "z": 9.0
+  },
+  "sign_library_5": {
+   "x": -2.95,
+   "y": 1.5,
+   "z": 6.5
+  },
+  "sign_library_6": {
+   "x": -11.0,
+   "y": 3.87,
+   "z": 15.0
+  },
+  "sign_library_7": {
+   "x": 2.0,
+   "y": 1.2,
+   "z": 20.0
+  },
+  "sign_library_8": {
+   "x": -10.5,
+   "y": 2.1,
+   "z": 31.9
+  },
+  "sign_library_9": {
+   "x": -12.2,
+   "y": 1.9,
+   "z": 22.0
+  },
+  "sign_library_10": {
+   "x": -6.5,
+   "y": 1.6,
+   "z": 19.0
+  },
+  "sign_library_11": {
+   "x": -18.6,
+   "y": 2.0,
+   "z": 17.8
+  },
+  "sign_library_12": {
+   "x": -14.45,
+   "y": 2.4,
+   "z": 33.5
+  },
+  "sign_library_13": {
+   "x": -14.45,
+   "y": 2.4,
+   "z": 38.2
+  },
+  "sign_library_14": {
+   "x": -15.4,
+   "y": 2.4,
+   "z": 43.95
+  },
+  "sign_library_15": {
+   "x": -11.65,
+   "y": 1.6,
+   "z": 43.95
+  },
+  "sign_library_16": {
+   "x": 13.5,
+   "y": 2.2,
+   "z": 9.05
+  },
+  "sign_library_17": {
+   "x": 6.0,
+   "y": 6.75,
+   "z": 24.0
+  },
+  "sign_library_18": {
+   "x": 22.5,
+   "y": 7.17,
+   "z": 16.6
+  },
+  "sign_library_19": {
+   "x": -20.0,
+   "y": 7.17,
+   "z": 40.0
+  },
+  "sign_library_20": {
+   "x": 20.5,
+   "y": 6.2,
+   "z": 51.5
+  },
+  "sign_library_21": {
+   "x": 21.92,
+   "y": 6.8,
+   "z": 53.45
+  },
+  "sign_library_22": {
+   "x": 26.16,
+   "y": 6.8,
+   "z": 53.45
+  },
+  "sign_library_23": {
+   "x": 30.4,
+   "y": 6.8,
+   "z": 53.45
+  },
+  "sign_library_24": {
+   "x": 34.64,
+   "y": 6.8,
+   "z": 53.45
+  },
+  "sign_library_25": {
+   "x": 38.88,
+   "y": 6.8,
+   "z": 53.45
+  },
+  "sign_library_26": {
+   "x": -37.5,
+   "y": 7.5,
+   "z": 45.45
+  },
+  "sign_library_27": {
+   "x": 16.25,
+   "y": 12.6,
+   "z": 10.0
+  },
+  "sign_library_28": {
+   "x": 0.0,
+   "y": 15.8,
+   "z": 18.45
+  },
+  "sign_library_29": {
+   "x": 14.0,
+   "y": 20.0,
+   "z": 18.45
+  },
+  "sign_library_30": {
+   "x": -6.85,
+   "y": 11.2,
+   "z": 10.2
+  },
+  "sign_library_31": {
+   "x": 19.42,
+   "y": 2.6,
+   "z": 12.0
+  },
+  "sign_library_32": {
+   "x": -19.42,
+   "y": 2.6,
+   "z": 9.0
+  },
+  "sign_library_33": {
+   "x": -13.5,
+   "y": 3.55,
+   "z": 25.5
   },
   "seat_library_01": {
-   "x": 4.2,
-   "y": 0.0,
-   "z": 11.24
+   "x": -1.875,
+   "y": 11.2,
+   "z": 46.6
   },
   "seat_library_01_f": {
-   "x": 4.2,
-   "y": 0.0,
-   "z": 11.59
+   "x": -1.875,
+   "y": 11.2,
+   "z": 46.85
   },
   "seat_library_01_s": {
-   "x": 4.54,
-   "y": 0.0,
-   "z": 11.24
+   "x": -1.625,
+   "y": 11.2,
+   "z": 46.6
   },
   "seat_library_01_a0": {
-   "x": 4.2,
-   "y": 0.0,
-   "z": 11.37
+   "x": -1.875,
+   "y": 11.2,
+   "z": 46.65
   },
   "seat_library_02": {
-   "x": 5.86,
-   "y": 0.0,
-   "z": 12.9
+   "x": -1.325,
+   "y": 11.2,
+   "z": 46.6
   },
   "seat_library_02_f": {
-   "x": 5.51,
-   "y": 0.0,
-   "z": 12.9
+   "x": -1.325,
+   "y": 11.2,
+   "z": 46.85
   },
   "seat_library_02_s": {
-   "x": 5.86,
-   "y": 0.0,
-   "z": 13.24
+   "x": -1.075,
+   "y": 11.2,
+   "z": 46.6
   },
   "seat_library_02_a0": {
-   "x": 5.73,
-   "y": 0.0,
-   "z": 12.9
+   "x": -1.325,
+   "y": 11.2,
+   "z": 46.65
   },
   "seat_library_03": {
-   "x": 4.2,
-   "y": 0.0,
-   "z": 14.56
+   "x": -1.6,
+   "y": 16.0,
+   "z": 33.85
   },
   "seat_library_03_f": {
-   "x": 4.2,
-   "y": 0.0,
-   "z": 14.21
+   "x": -1.6,
+   "y": 16.0,
+   "z": 34.1
   },
   "seat_library_03_s": {
-   "x": 3.86,
-   "y": 0.0,
-   "z": 14.56
+   "x": -1.35,
+   "y": 16.0,
+   "z": 33.85
   },
   "seat_library_03_a0": {
-   "x": 4.2,
-   "y": 0.0,
-   "z": 14.43
+   "x": -1.6,
+   "y": 16.0,
+   "z": 33.9
   },
   "seat_library_04": {
-   "x": 2.54,
-   "y": 0.0,
-   "z": 12.9
+   "x": -0.55,
+   "y": 5.0,
+   "z": 55.0
   },
   "seat_library_04_f": {
-   "x": 2.89,
-   "y": 0.0,
-   "z": 12.9
+   "x": -0.3,
+   "y": 5.0,
+   "z": 55.0
   },
   "seat_library_04_s": {
-   "x": 2.54,
-   "y": 0.0,
-   "z": 12.56
+   "x": -0.55,
+   "y": 5.0,
+   "z": 54.75
   },
   "seat_library_04_a0": {
-   "x": 2.67,
-   "y": 0.0,
-   "z": 12.9
+   "x": -0.5,
+   "y": 5.0,
+   "z": 55.0
   },
   "seat_library_05": {
-   "x": 10.6,
-   "y": 0.0,
-   "z": 12.04
+   "x": -0.55,
+   "y": 5.0,
+   "z": 57.0
   },
   "seat_library_05_f": {
-   "x": 10.6,
-   "y": 0.0,
-   "z": 12.39
+   "x": -0.3,
+   "y": 5.0,
+   "z": 57.0
   },
   "seat_library_05_s": {
-   "x": 10.94,
-   "y": 0.0,
-   "z": 12.04
+   "x": -0.55,
+   "y": 5.0,
+   "z": 56.75
   },
   "seat_library_05_a0": {
-   "x": 10.6,
-   "y": 0.0,
-   "z": 12.17
+   "x": -0.5,
+   "y": 5.0,
+   "z": 57.0
   },
   "seat_library_06": {
-   "x": 12.26,
-   "y": 0.0,
-   "z": 13.7
+   "x": 1.75,
+   "y": 5.0,
+   "z": 55.0
   },
   "seat_library_06_f": {
-   "x": 11.91,
-   "y": 0.0,
-   "z": 13.7
+   "x": 1.5,
+   "y": 5.0,
+   "z": 55.0
   },
   "seat_library_06_s": {
-   "x": 12.26,
-   "y": 0.0,
-   "z": 14.04
+   "x": 1.75,
+   "y": 5.0,
+   "z": 55.25
   },
   "seat_library_06_a0": {
-   "x": 12.13,
-   "y": 0.0,
-   "z": 13.7
+   "x": 1.7,
+   "y": 5.0,
+   "z": 55.0
   },
   "seat_library_07": {
-   "x": 10.6,
+   "x": -3.5,
    "y": 0.0,
-   "z": 15.36
+   "z": 26.5
   },
   "seat_library_07_f": {
-   "x": 10.6,
+   "x": -3.25,
    "y": 0.0,
-   "z": 15.01
+   "z": 26.5
   },
   "seat_library_07_s": {
-   "x": 10.26,
+   "x": -3.5,
    "y": 0.0,
-   "z": 15.36
+   "z": 26.25
   },
   "seat_library_07_a0": {
-   "x": 10.6,
+   "x": -3.45,
    "y": 0.0,
-   "z": 15.23
+   "z": 26.5
   },
   "seat_library_08": {
-   "x": 8.94,
+   "x": 2.0,
    "y": 0.0,
-   "z": 13.7
+   "z": 30.5
   },
   "seat_library_08_f": {
-   "x": 9.29,
+   "x": 2.0,
    "y": 0.0,
-   "z": 13.7
+   "z": 30.75
   },
   "seat_library_08_s": {
-   "x": 8.94,
+   "x": 2.25,
    "y": 0.0,
-   "z": 13.36
+   "z": 30.5
   },
   "seat_library_08_a0": {
-   "x": 9.07,
+   "x": 2.0,
    "y": 0.0,
-   "z": 13.7
+   "z": 30.55
   },
   "seat_library_09": {
-   "x": -5.0,
-   "y": 0.0,
-   "z": 14.91
+   "x": 9.0,
+   "y": 1.7,
+   "z": 24.0
   },
   "seat_library_09_f": {
-   "x": -5.0,
-   "y": 0.0,
-   "z": 14.68
+   "x": 8.75,
+   "y": 1.7,
+   "z": 24.0
   },
   "seat_library_09_s": {
-   "x": -6.2,
-   "y": 0.0,
-   "z": 14.91
+   "x": 9.0,
+   "y": 1.7,
+   "z": 24.25
   },
   "seat_library_09_a0": {
-   "x": -4.1,
-   "y": 0.0,
-   "z": 14.88
-  },
-  "seat_library_09_a1": {
-   "x": -4.7,
-   "y": 0.0,
-   "z": 14.88
-  },
-  "seat_library_09_a2": {
-   "x": -5.3,
-   "y": 0.0,
-   "z": 14.88
-  },
-  "seat_library_09_a3": {
-   "x": -5.9,
-   "y": 0.0,
-   "z": 14.88
+   "x": 8.95,
+   "y": 1.7,
+   "z": 24.0
   },
   "seat_library_10": {
-   "x": -8.0,
-   "y": 0.0,
-   "z": 14.91
+   "x": 9.0,
+   "y": 1.7,
+   "z": 30.0
   },
   "seat_library_10_f": {
-   "x": -8.0,
-   "y": 0.0,
-   "z": 14.68
+   "x": 8.75,
+   "y": 1.7,
+   "z": 30.0
   },
   "seat_library_10_s": {
-   "x": -9.2,
-   "y": 0.0,
-   "z": 14.91
+   "x": 9.0,
+   "y": 1.7,
+   "z": 30.25
   },
   "seat_library_10_a0": {
-   "x": -7.1,
-   "y": 0.0,
-   "z": 14.88
-  },
-  "seat_library_10_a1": {
-   "x": -7.7,
-   "y": 0.0,
-   "z": 14.88
-  },
-  "seat_library_10_a2": {
-   "x": -8.3,
-   "y": 0.0,
-   "z": 14.88
-  },
-  "seat_library_10_a3": {
-   "x": -8.9,
-   "y": 0.0,
-   "z": 14.88
+   "x": 8.95,
+   "y": 1.7,
+   "z": 30.0
   },
   "seat_library_11": {
-   "x": 47.761,
-   "y": 0.0,
-   "z": 22.3
+   "x": -33.0,
+   "y": 5.0,
+   "z": 56.0
   },
   "seat_library_11_f": {
-   "x": 47.336,
-   "y": 0.0,
-   "z": 22.3
+   "x": -33.0,
+   "y": 5.0,
+   "z": 56.25
   },
   "seat_library_11_s": {
-   "x": 47.761,
-   "y": 0.0,
-   "z": 23.5
+   "x": -32.75,
+   "y": 5.0,
+   "z": 56.0
   },
   "seat_library_11_a0": {
-   "x": 47.556,
-   "y": 0.0,
-   "z": 21.593
-  },
-  "seat_library_11_a1": {
-   "x": 47.556,
-   "y": 0.0,
-   "z": 22.3
-  },
-  "seat_library_11_a2": {
-   "x": 47.556,
-   "y": 0.0,
-   "z": 23.007
+   "x": -33.0,
+   "y": 5.0,
+   "z": 56.05
   },
   "seat_library_12": {
-   "x": 47.761,
-   "y": 0.0,
-   "z": 33.3
+   "x": -37.0,
+   "y": 5.0,
+   "z": 57.5
   },
   "seat_library_12_f": {
-   "x": 47.336,
-   "y": 0.0,
-   "z": 33.3
+   "x": -37.0,
+   "y": 5.0,
+   "z": 57.75
   },
   "seat_library_12_s": {
-   "x": 47.761,
-   "y": 0.0,
-   "z": 34.5
+   "x": -36.75,
+   "y": 5.0,
+   "z": 57.5
   },
   "seat_library_12_a0": {
-   "x": 47.556,
-   "y": 0.0,
-   "z": 32.593
-  },
-  "seat_library_12_a1": {
-   "x": 47.556,
-   "y": 0.0,
-   "z": 33.3
-  },
-  "seat_library_12_a2": {
-   "x": 47.556,
-   "y": 0.0,
-   "z": 34.007
+   "x": -37.0,
+   "y": 5.0,
+   "z": 57.55
   },
   "seat_library_13": {
-   "x": 47.761,
-   "y": 0.0,
-   "z": 44.3
+   "x": 21.92,
+   "y": 5.0,
+   "z": 56.5
   },
   "seat_library_13_f": {
-   "x": 47.336,
-   "y": 0.0,
-   "z": 44.3
+   "x": 21.92,
+   "y": 5.0,
+   "z": 56.75
   },
   "seat_library_13_s": {
-   "x": 47.761,
-   "y": 0.0,
-   "z": 45.5
+   "x": 22.17,
+   "y": 5.0,
+   "z": 56.5
   },
   "seat_library_13_a0": {
-   "x": 47.556,
-   "y": 0.0,
-   "z": 43.593
+   "x": 21.92,
+   "y": 5.0,
+   "z": 56.55
   },
-  "seat_library_13_a1": {
-   "x": 47.556,
+  "seat_library_14": {
+   "x": -10.0,
    "y": 0.0,
-   "z": 44.3
+   "z": 9.0
   },
-  "seat_library_13_a2": {
-   "x": 47.556,
+  "seat_library_14_f": {
+   "x": -10.0,
    "y": 0.0,
-   "z": 45.007
+   "z": 9.25
+  },
+  "seat_library_14_s": {
+   "x": -9.75,
+   "y": 0.0,
+   "z": 9.0
+  },
+  "seat_library_14_a0": {
+   "x": -10.0,
+   "y": 0.0,
+   "z": 9.05
+  },
+  "seat_library_15": {
+   "x": -10.05,
+   "y": 5.0,
+   "z": 30.0
+  },
+  "seat_library_15_f": {
+   "x": -9.8,
+   "y": 5.0,
+   "z": 30.0
+  },
+  "seat_library_15_s": {
+   "x": -10.05,
+   "y": 5.0,
+   "z": 29.75
+  },
+  "seat_library_15_a0": {
+   "x": -10.0,
+   "y": 5.0,
+   "z": 30.0
+  },
+  "seat_library_16": {
+   "x": -20.0,
+   "y": 10.0,
+   "z": 12.0
+  },
+  "seat_library_16_f": {
+   "x": -20.0,
+   "y": 10.0,
+   "z": 12.25
+  },
+  "seat_library_16_s": {
+   "x": -19.75,
+   "y": 10.0,
+   "z": 12.0
+  },
+  "seat_library_16_a0": {
+   "x": -20.0,
+   "y": 10.0,
+   "z": 12.05
   }
  },
- "triangles": 57924,
- "seats": 299,
+ "triangles": 73136,
+ "seats": 0,
  "notes": [
-  "開架書架 14 連",
-  "閲覧長机 6 列",
-  "個人閲覧ブース 66 席",
-  "開架書架 + 閲覧席 + 2F 回廊の吹き抜け + 個人閲覧ブース"
+  "1F ブックギャラリー（段状の書架・赤いソファのロビー・カウンター）+ 2F 開架書架 14 連・キャレル・黙考書院・グループ学習室 5 室 + 3F ホワイエ + 3〜4F 大ホール（1 階席 480・2 階席 117）"
  ],
  "objects": [
   "floor_library",
   "wall_library",
   "furn_library_01_entry",
   "furn_library_02_counter",
-  "furn_library_03_stacks",
-  "furn_library_04_reading",
-  "furn_library_05_booths",
-  "furn_library_06_gallery"
+  "furn_library_03_lobby",
+  "furn_library_04_gallery",
+  "furn_library_05_west2f",
+  "furn_library_06_stacks",
+  "furn_library_07_frontdesk",
+  "furn_library_08_carrel",
+  "furn_library_09_group",
+  "furn_library_10_mokko",
+  "furn_library_11_stair",
+  "furn_library_12_foyer",
+  "furn_library_13_hallshell",
+  "furn_library_14_seats",
+  "furn_library_15_balcony",
+  "furn_library_16_stage"
  ],
+ "signs": [
+  {
+   "empty": "sign_library_1",
+   "kind": "wall",
+   "ja": "OPAC の使い方",
+   "en": "How to use OPAC",
+   "tris": 490,
+   "pos": {
+    "x": -17.55,
+    "y": 3.2,
+    "z": 25.5
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.6,
+   "h": 0.95,
+   "faces": 1,
+   "plate": "library_signage_screen",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": "sign_library_2",
+   "kind": "hanging",
+   "ja": "閲覧席",
+   "en": "Study Carrels",
+   "tris": 808,
+   "pos": {
+    "x": -1.0,
+    "y": 7.19,
+    "z": 53.9
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 1.8,
+   "h": 0.42,
+   "faces": 2,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center",
+   "drop": 0.6
+  },
+  {
+   "empty": "sign_library_3",
+   "kind": "wall",
+   "ja": "受付",
+   "en": "Reception",
+   "tris": 220,
+   "pos": {
+    "x": -13.0,
+    "y": 1.13,
+    "z": 25.0
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 0.4,
+   "h": 0.2,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_library_4",
+   "kind": "wall",
+   "ja": "入館",
+   "en": "Entrance",
+   "tris": 213,
+   "pos": {
+    "x": -0.65,
+    "y": 1.2,
+    "z": 9.0
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.4,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_library_5",
+   "kind": "wall",
+   "ja": "館内案内\n2F 開架書架・閲覧席・黙考書院\n1F 受付・ブックギャラリー",
+   "en": "Floor Guide\n2F Stacks / Carrels / Mokko\n1F Reception / Book Gallery",
+   "tris": 1928,
+   "pos": {
+    "x": -2.95,
+    "y": 1.5,
+    "z": 6.5
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 2.4,
+   "h": 1.6,
+   "faces": 1,
+   "plate": "library_info_grey",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": "sign_library_6",
+   "kind": "hanging",
+   "ja": "メディアラウンジ",
+   "en": "Media Lounge",
+   "tris": 700,
+   "pos": {
+    "x": -11.0,
+    "y": 3.87,
+    "z": 15.0
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 2.4,
+   "h": 0.46,
+   "faces": 2,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center",
+   "drop": 0.4
+  },
+  {
+   "empty": "sign_library_7",
+   "kind": "wall",
+   "ja": "企画展示",
+   "en": "Exhibition",
+   "tris": 281,
+   "pos": {
+    "x": 2.0,
+    "y": 1.2,
+    "z": 20.0
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 1.0,
+   "h": 0.36,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_library_8",
+   "kind": "wall",
+   "ja": "シラバス指定図書（教科書）",
+   "en": "Course Reserves",
+   "tris": 693,
+   "pos": {
+    "x": -10.5,
+    "y": 2.1,
+    "z": 31.9
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 2.4,
+   "h": 0.4,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_library_9",
+   "kind": "wall",
+   "ja": "自動貸出機",
+   "en": "Self Checkout",
+   "tris": 505,
+   "pos": {
+    "x": -12.2,
+    "y": 1.9,
+    "z": 22.0
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.0,
+   "h": 0.32,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_library_10",
+   "kind": "wall",
+   "ja": "新着図書 今週分",
+   "en": "New Arrivals",
+   "tris": 448,
+   "pos": {
+    "x": -6.5,
+    "y": 1.6,
+    "z": 19.0
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 1.2,
+   "h": 0.36,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_library_11",
+   "kind": "wall",
+   "ja": "ノートPC貸出ロッカー",
+   "en": "Laptop Lockers",
+   "tris": 411,
+   "pos": {
+    "x": -18.6,
+    "y": 2.0,
+    "z": 17.8
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.6,
+   "h": 0.36,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_library_12",
+   "kind": "wall",
+   "ja": "ITサポート室",
+   "en": "IT Support",
+   "tris": 257,
+   "pos": {
+    "x": -14.45,
+    "y": 2.4,
+    "z": 33.5
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.2,
+   "h": 0.32,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_library_13",
+   "kind": "wall",
+   "ja": "学習相談室",
+   "en": "Learning Support",
+   "tris": 488,
+   "pos": {
+    "x": -14.45,
+    "y": 2.4,
+    "z": 38.2
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.2,
+   "h": 0.32,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_library_14",
+   "kind": "wall",
+   "ja": "多目的室1",
+   "en": "Multipurpose Room 1",
+   "tris": 432,
+   "pos": {
+    "x": -15.4,
+    "y": 2.4,
+    "z": 43.95
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 1.2,
+   "h": 0.32,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_library_15",
+   "kind": "wall",
+   "ja": "多目的室2",
+   "en": "Multipurpose Room 2",
+   "tris": 448,
+   "pos": {
+    "x": -11.65,
+    "y": 1.6,
+    "z": 43.95
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 1.0,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_library_16",
+   "kind": "wall",
+   "ja": "文庫・新書",
+   "en": "Paperbacks",
+   "tris": 402,
+   "pos": {
+    "x": 13.5,
+    "y": 2.2,
+    "z": 9.05
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 1.2,
+   "h": 0.36,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_library_17",
+   "kind": "hanging",
+   "ja": "ブックギャラリー",
+   "en": "Book Gallery",
+   "tris": 664,
+   "pos": {
+    "x": 6.0,
+    "y": 6.75,
+    "z": 24.0
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 2.4,
+   "h": 0.5,
+   "faces": 2,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center",
+   "drop": 1.0
+  },
+  {
+   "empty": "sign_library_18",
+   "kind": "hanging",
+   "ja": "開架書架",
+   "en": "Open Stacks",
+   "tris": 870,
+   "pos": {
+    "x": 22.5,
+    "y": 7.17,
+    "z": 16.6
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.8,
+   "h": 0.46,
+   "faces": 2,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center",
+   "drop": 0.6
+  },
+  {
+   "empty": "sign_library_19",
+   "kind": "hanging",
+   "ja": "参考図書",
+   "en": "Reference",
+   "tris": 728,
+   "pos": {
+    "x": -20.0,
+    "y": 7.17,
+    "z": 40.0
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.8,
+   "h": 0.46,
+   "faces": 2,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center",
+   "drop": 0.6
+  },
+  {
+   "empty": "sign_library_20",
+   "kind": "wall",
+   "ja": "グループ学習室",
+   "en": "Group Study Rooms",
+   "tris": 503,
+   "pos": {
+    "x": 20.5,
+    "y": 6.2,
+    "z": 51.5
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.8,
+   "h": 0.4,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_library_21",
+   "kind": "wall",
+   "ja": "1",
+   "en": "Room 1",
+   "tris": 145,
+   "pos": {
+    "x": 21.92,
+    "y": 6.8,
+    "z": 53.45
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 1.2,
+   "h": 0.9,
+   "faces": 1,
+   "plate": "plastic_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": "sign_library_22",
+   "kind": "wall",
+   "ja": "2",
+   "en": "Room 2",
+   "tris": 178,
+   "pos": {
+    "x": 26.16,
+    "y": 6.8,
+    "z": 53.45
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 1.2,
+   "h": 0.9,
+   "faces": 1,
+   "plate": "plastic_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": "sign_library_23",
+   "kind": "wall",
+   "ja": "3",
+   "en": "Room 3",
+   "tris": 211,
+   "pos": {
+    "x": 30.4,
+    "y": 6.8,
+    "z": 53.45
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 1.2,
+   "h": 0.9,
+   "faces": 1,
+   "plate": "plastic_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": "sign_library_24",
+   "kind": "wall",
+   "ja": "4",
+   "en": "Room 4",
+   "tris": 154,
+   "pos": {
+    "x": 34.64,
+    "y": 6.8,
+    "z": 53.45
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 1.2,
+   "h": 0.9,
+   "faces": 1,
+   "plate": "plastic_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": "sign_library_25",
+   "kind": "wall",
+   "ja": "5",
+   "en": "Room 5",
+   "tris": 191,
+   "pos": {
+    "x": 38.88,
+    "y": 6.8,
+    "z": 53.45
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 1.2,
+   "h": 0.9,
+   "faces": 1,
+   "plate": "plastic_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": "sign_library_26",
+   "kind": "wall",
+   "ja": "黙 考 書 院",
+   "en": "Mokko Library",
+   "tris": 425,
+   "pos": {
+    "x": -37.5,
+    "y": 7.5,
+    "z": 45.45
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 2.0,
+   "h": 0.5,
+   "faces": 1,
+   "plate": "library_mokko_board",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_library_27",
+   "kind": "wall",
+   "ja": "大村ホール",
+   "en": "Omura Hall",
+   "tris": 260,
+   "pos": {
+    "x": 16.25,
+    "y": 12.6,
+    "z": 10.0
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.6,
+   "h": 0.46,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_library_28",
+   "kind": "wall",
+   "ja": "大ホール",
+   "en": "Main Hall",
+   "tris": 206,
+   "pos": {
+    "x": 0.0,
+    "y": 15.8,
+    "z": 18.45
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 2.4,
+   "h": 0.6,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_library_29",
+   "kind": "wall",
+   "ja": "2階席入口",
+   "en": "Balcony Entrance",
+   "tris": 430,
+   "pos": {
+    "x": 14.0,
+    "y": 20.0,
+    "z": 18.45
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 1.8,
+   "h": 0.46,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_library_30",
+   "kind": "wall",
+   "ja": "インフォメーション",
+   "en": "Information",
+   "tris": 265,
+   "pos": {
+    "x": -6.85,
+    "y": 11.2,
+    "z": 10.2
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.2,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_library_31",
+   "kind": "wall",
+   "ja": "未来わくわく館",
+   "en": "Mirai Wakuwaku-kan",
+   "tris": 499,
+   "pos": {
+    "x": 19.42,
+    "y": 2.6,
+    "z": 12.0
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.8,
+   "h": 0.46,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_library_32",
+   "kind": "wall",
+   "ja": "理科大サイエンス道場",
+   "en": "TUS Science Dojo",
+   "tris": 575,
+   "pos": {
+    "x": -19.42,
+    "y": 2.6,
+    "z": 9.0
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 2.0,
+   "h": 0.46,
+   "faces": 1,
+   "plate": "library_info_grey",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": "sign_library_33",
+   "kind": "hanging",
+   "ja": "貸出・返却",
+   "en": "Circulation Desk",
+   "tris": 888,
+   "pos": {
+    "x": -13.5,
+    "y": 3.55,
+    "z": 25.5
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 2.4,
+   "h": 0.5,
+   "faces": 2,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center",
+   "drop": 0.7
+  }
+ ],
+ "text_triangles": 15916,
  "ext": {
   "objects": [
    "ext_library",
    "ext_library_trees"
   ],
-  "triangles": 14484,
+  "triangles": 14332,
   "radius": 30.0,
   "dz": -0.03
  }

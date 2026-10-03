@@ -39,6 +39,7 @@ from kcd_lib.mesh import MeshBuilder                 # noqa: E402
 from kcd_interior import common, kit                 # noqa: E402
 from kcd_interior import furniture as F              # noqa: E402
 from kcd_interior import shell as sh                 # noqa: E402
+from kcd_interior import signs                       # noqa: E402
 from kcd_interior.spec import InteriorSpec           # noqa: E402
 
 # --------------------------------------------------------------------------- #
@@ -303,8 +304,8 @@ def _hall(c):
     F.reception(mb, 5.40, 10.40, ang=math.pi * 0.5, w=3.4, d=0.9)
     F.bookshelf(mb, 7.35, 11.40, ang=math.pi * 0.5, w=1.40, h=1.85, rng=c.rng)
     F.chair(mb, 6.40, 10.40, ang=math.pi * 0.5)
-    sh.wall_sign(mb, 4.10, 11.95, 2.30, ang=math.pi * 0.5, w=1.2, h=0.36)
-    c.sign(4.10, 11.95, 2.30)
+    signs.wall(c, mb, 4.10, 11.95, 2.30, ang=math.pi * 0.5, ja="管理人室",
+               en="Manager's Office", w=1.2, h=0.36)
 
     # メールボックス（玄関の西どなり）と掲示板
     F.locker_bank(mb, -6.80, -2.60, 3.34, ang=0.0, h=1.70, mat="metal_gray")
@@ -354,8 +355,8 @@ def _lounge(c):
     kit.box(mb, x_in - 0.14, 20.20, 1.12, x_in - 0.10, 21.60, 1.91, "screen_blue")
     sh.planter(mb, -7.20, 22.20, r=0.40, h=0.44, leaf_h=1.5)
     sh.ceiling_lights(c.wall, ix0, Y_CROSS, x_in, Y_NORTH, Z_CEIL, sx=3.4, sy=3.6)
-    sh.wall_sign(mb, x_in - 0.02, 14.10, 2.35, ang=math.pi * 0.5, w=1.2, h=0.34)
-    c.sign(x_in - 0.02, 14.10, 2.35)
+    signs.wall(c, mb, x_in - 0.02, 14.10, 2.35, ang=math.pi * 0.5, ja="談話室",
+               en="Lounge", w=1.2, h=0.34)
 
     c.npc(-4.00, 16.40)
     c.poi("lounge", -5.40, 17.50)
@@ -385,8 +386,8 @@ def _dining(c):
                    trays=True)
     F.tray_rack(mb, x_in + 0.70, 19.80, ang=math.pi)
     sh.ceiling_lights(c.wall, x_in, Y_CROSS, ix1, Y_NORTH, Z_CEIL, sx=3.4, sy=3.6)
-    sh.wall_sign(mb, x_in + 0.02, 14.10, 2.35, ang=-math.pi * 0.5, w=1.2, h=0.34)
-    c.sign(x_in + 0.02, 14.10, 2.35)
+    signs.wall(c, mb, x_in + 0.02, 14.10, 2.35, ang=-math.pi * 0.5, ja="食堂",
+               en="Dining Hall", w=1.2, h=0.34)
     c.poi("shokudo", 5.00, 17.00)
     return mb
 
@@ -417,9 +418,8 @@ def _corridor(c):
 
     # 行き止まり: エレベーター + 立入禁止の掲示 + 進入止めのポール
     sh.elevator_bank(mb, 0.0, iy1 - 0.06, count=1, ang=0.0, w=1.05, h=2.25)
-    sh.wall_sign(mb, xw + 0.02, iy1 - 1.90, 1.95, ang=-math.pi * 0.5,
-                 w=1.10, h=0.40)
-    c.sign(xw + 0.02, iy1 - 1.90, 1.95)
+    signs.wall(c, mb, xw + 0.02, iy1 - 1.90, 1.95, ang=-math.pi * 0.5,
+               ja="関係者以外立入禁止", en="Staff Only", w=1.10, h=0.40)
     sh.notice_board(mb, xe - 0.02, iy1 - 2.10, 0.95, ang=math.pi * 0.5,
                     w=1.60, h=1.10, sheets=5, rng=c.rng)
     for sx in (-1.30, 1.30):

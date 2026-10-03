@@ -1,8 +1,11 @@
-"""実験棟 (lab1 / lab2): 廊下 + 実験室が並ぶ。実験台・ドラフトチャンバー・ボンベ・流し・薬品庫。"""
+"""第1実験棟 (lab1): 廊下 + 実験室が並ぶ。実験台・ドラフトチャンバー・ボンベ・流し・薬品庫。
+
+入口が長辺にあるので、入口の面に沿って廊下を通し、その奥に部屋を並べる。
+"""
 
 import math
 
-from . import common, furniture as F, kit, shell
+from . import common, furniture as F, kit, shell, signs
 
 CEIL = 3.20
 Z_TOP = 4.10
@@ -12,7 +15,6 @@ COR_D = 2.60         # 廊下の奥行き
 def build(c):
     s = c.spec
     ix0, iy0, ix1, iy1 = s.inner()
-    cor_y0, cor_y1 = iy0 + 1.2, iy0 + 1.2 + COR_D
 
     common.envelope(c, CEIL, "floor_resin_grey", door_w=3.2, z_top=Z_TOP,
                     sill=1.05, header=0.40, seg=2.8, ceil=True,
@@ -24,26 +26,39 @@ def build(c):
                                mat="light_strip", w=0.24, l=1.5)
     c.lights_from(pts, CEIL, energy=112.0, step=2)
 
+    _wing(c, ix0, ix1, iy0, iy1)
+
+
+def _wing(c, ax0, ax1, wy0, wy1):
+    """廊下と部屋の並び。廊下は x に沿って ax0..ax1、y = wy0 の窓ぎわから奥行き
+    1.2 + COR_D、部屋はその先 wy1 まで。"""
+    cor_y0, cor_y1 = wy0 + 1.2, wy0 + 1.2 + COR_D
+
     # 廊下と実験室を分ける間仕切り（各室のドア位置に開口）
-    rooms = _room_spans(ix0, ix1)
+    rooms = _room_spans(ax0, ax1)
     gaps = []
     for (rx0, rx1, _kind) in rooms:
-        d = (rx0 + rx1) * 0.5 - ix0
+        d = (rx0 + rx1) * 0.5 - ax0
         gaps.append((d - 0.6, d + 0.6))
-    shell.partition(c.wall, (ix0, cor_y1), (ix1, cor_y1), 0.0, CEIL,
+    shell.partition(c.wall, (ax0, cor_y1), (ax1, cor_y1), 0.0, CEIL,
                     "wall_white", thick=0.16, gaps=gaps, glass_top=True,
                     glass_z=2.10)
 
     cor = c.furn("corridor")
-    common.corridor_run(c, cor, ix0 + 2.0, ix1 - 2.0, cor_y0 + 0.1, CEIL,
+    common.corridor_run(c, cor, ax0 + 2.0, ax1 - 2.0, cor_y0 + 0.1, CEIL,
                         pitch=10.0)
+    n_lab = 0
     for (rx0, rx1, kind) in rooms:
         dx = (rx0 + rx1) * 0.5
         shell.door(c.wall, dx, cor_y1, ang=0.0, w=1.10, h=2.10,
                    leaf="desk_white", glass="glass_partition")
-        shell.wall_sign(cor, dx + 0.95, cor_y1 - 0.10, 2.05, ang=math.pi,
-                        w=0.70, h=0.28)
-        c.sign(dx + 0.95, cor_y1 - 0.10, 2.05)
+        if kind == "lab":
+            n_lab += 1
+            ja, en = "実験室 %d" % n_lab, "Lab %d" % n_lab
+        else:
+            ja, en = "準備室", "Prep Room"
+        signs.wall(c, cor, dx + 0.95, cor_y1 - 0.08, 2.05, ang=math.pi, ja=ja, en=en,
+                   w=0.70, h=0.28)
         shell.exit_sign(c.wall, dx, cor_y1 - 0.06, 2.85, ang=math.pi)
         # ドアの脇の壁に掲示板（廊下側を向く）
         if rx0 + 1.2 < dx - 1.0:
@@ -56,7 +71,7 @@ def build(c):
     lab_idx = [i for i, r in enumerate(rooms) if r[2] == "lab"]
     prep_idx = [i for i, r in enumerate(rooms) if r[2] == "prep"]
     for i, (rx0, rx1, kind) in enumerate(rooms):
-        shell.partition(c.wall, (rx1, cor_y1), (rx1, iy1), 0.0, CEIL,
+        shell.partition(c.wall, (rx1, cor_y1), (rx1, wy1), 0.0, CEIL,
                         "wall_white", thick=0.14)
         if kind == "lab":
             pois = set()
@@ -64,22 +79,26 @@ def build(c):
                 pois.add("lab")
             if i == lab_idx[-1]:
                 pois.add("lab_b")
-            _lab_room(c, rx0, cor_y1, rx1, iy1, i, pois)
+            _lab_room(c, rx0, cor_y1, rx1, wy1, i, pois)
         else:
-            _prep_room(c, rx0, cor_y1, rx1, iy1, i, i == prep_idx[-1])
+            _prep_room(c, rx0, cor_y1, rx1, wy1, i, i == prep_idx[-1])
 
     # 廊下のロッカーと洗い場
-    F.locker_bank(cor, ix0 + 2.0, ix0 + 8.0, cor_y0 + 0.2, ang=0.0, h=1.80)
-    shell.trash_bins(cor, ix1 - 3.0, cor_y0 + 0.6, ang=0.0, n=3)
-    shell.vending(cor, ix1 - 1.4, cor_y0 + 0.5, ang=0.0)
-    common.window_planters(c, cor, ix0 + 10.0, ix1 - 6.0, iy0 + 0.6, n=3)
+    F.locker_bank(cor, ax0 + 2.0, ax0 + 8.0, cor_y0 + 0.2, ang=0.0, h=1.80)
+    shell.trash_bins(cor, ax1 - 3.0, cor_y0 + 0.6, ang=0.0, n=3)
+    shell.vending(cor, ax1 - 1.4, cor_y0 + 0.5, ang=0.0)
+    # 鉢は 3 つまで、廊下が短ければ 3 m に 1 つ
+    span = (ax1 - 6.0) - (ax0 + 10.0)
+    common.window_planters(c, cor, ax0 + 10.0, ax1 - 6.0, wy0 + 0.6,
+                           n=min(3, max(1, int(span / 3.0))))
 
-    c.cam("", (ix0 + 1.0, cor_y0 + 1.32, 1.62), (ix1 - 5.0, cor_y0 + 1.42, 1.42),
+    c.cam("", (ax0 + 1.0, cor_y0 + 1.32, 1.62), (ax1 - 5.0, cor_y0 + 1.42, 1.42),
           lens=24.0)
     rx0, rx1, _k = rooms[0]
-    c.cam("room", (rx1 - 1.3, cor_y1 + 0.9, 2.15), (rx0 + 1.8, iy1 - 2.4, 0.95),
+    c.cam("room", (rx1 - 1.3, cor_y1 + 0.9, 2.15), (rx0 + 1.8, wy1 - 2.4, 0.95),
           lens=20.0)
-    c.note("廊下 + 実験室 %d 室（実験台・ドラフト・ボンベ・薬品庫）" % len(rooms))
+    c.note("廊下 + 実験室 %d 室 + 準備室 %d 室（実験台・ドラフト・ボンベ・薬品庫）"
+           % (len(lab_idx), len(prep_idx)))
 
 
 # --------------------------------------------------------------------------- #
@@ -163,6 +182,7 @@ def _lab_room(c, x0, y0, x1, y1, idx, pois=frozenset()):
         # lab と同室になったときは奥側（2 列目の実験台の奥）に離して置く
         c.poi("lab_b", cx, aisle if "lab" not in pois else back, 0.0)
         c.npc(cx - 1.4, back, 0.0)
+
 
 
 def _prep_room(c, x0, y0, x1, y1, idx, place_poi=False):

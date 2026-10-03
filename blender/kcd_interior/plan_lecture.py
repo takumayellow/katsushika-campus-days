@@ -2,7 +2,7 @@
 
 import math
 
-from . import common, furniture as F, kit, shell
+from . import common, furniture as F, kit, shell, signs
 
 CEIL = 3.60          # ホール以外の天井高
 HALL_CEIL = 11.20    # 大ホールの天井高
@@ -294,11 +294,13 @@ def _atrium(c, x0, y0, x1, y1):
     shell.planter(mb, x0 + 1.6, y0 + 12.5, r=0.55, h=0.55, leaf_h=2.2)
     shell.notice_board(mb, x0 + 0.20, y0 + 6.0, 1.05, ang=math.pi * 0.5,
                        w=4.0, h=1.45, sheets=12, rng=rng)
-    common.sign_board(c, mb, x1 - 0.4, y0 + 3.2, 2.35, ang=-math.pi * 0.5,
-                      w=2.4, h=0.60)
-    shell.hanging_sign(mb, (x0 + x1) * 0.5, y0 + 3.0, 4.20, w=3.2, h=0.46,
-                       drop=0.4)
-    c.sign((x0 + x1) * 0.5, y0 + 3.0, 3.40)
+    # 大ホールの西の壁（間仕切りの面 HALL_X0 - 0.68）に、階段ホールへ向けて掛ける。
+    # 入口寄りの扉（y0 + 6.0〜8.6）の手前と、2 つの扉の間の高い所（棟の名前）
+    hall_face = HALL_X0 - 0.5 - 0.18
+    signs.wall(c, mb, hall_face, y0 + 3.8, 2.35, ang=math.pi * 0.5,
+               ja="大ホール・演習室", en="Main Hall / Seminar Rooms", w=2.4, h=0.60)
+    signs.wall(c, mb, hall_face, y0 + 16.3, 4.60, ang=math.pi * 0.5, ja="講義棟",
+               en="Lecture Building", w=4.0, h=0.80)
     shell.trash_bins(mb, x0 + 1.8, y0 + 4.4, ang=-math.pi * 0.5, n=3)
     shell.vending(mb, x0 + 1.0, y0 + 16.0, ang=-math.pi * 0.5)
     for j in range(2):
@@ -366,7 +368,9 @@ def _lecture_room(c, x0, y0, x1, y1):
                                CEIL, sx=3.6, sy=3.6)
     c.lights_from(pts, CEIL, energy=200.0, step=2)
     shell.exit_sign(c.wall, x0 + 4.2, y0 + 0.2, CEIL - 0.1)
-    common.sign_board(c, mb, x0 + 5.6, y0 + 0.16, 2.30, ang=0.0, w=1.4, h=0.4)
+    # 階段ホールの側（壁の南の面）、西のドアの開口（x0 + 3.0〜5.4）の東どなり
+    signs.wall(c, mb, x0 + 6.4, y0 - 0.11, 2.30, ang=math.pi, ja="中教室", en="Classroom",
+               w=1.4, h=0.4)
 
 
 # --------------------------------------------------------------------------- #
@@ -411,9 +415,11 @@ def _foyer(c, x0, y0, x1, y1):
     shell.planter(mb, x1 - 1.4, y1 - 2.0, r=0.60, h=0.55, leaf_h=2.2)
     shell.fire_extinguisher(mb, x0 + 0.7, y0 + 1.2)
     shell.exit_sign(w, cx, y1 - 0.24, 2.60, ang=math.pi)
-    common.sign_board(c, mb, cx, y1 - 0.30, 2.05, ang=math.pi, w=2.6, h=0.62)
-    shell.hanging_sign(mb, cx, y0 + 4.2, CEIL - 0.10, w=3.0, h=0.44, drop=0.36)
-    c.sign(cx, y0 + 4.2, CEIL - 0.60)
+    # 大ホールの北の壁（間仕切りの面 y0 + 0.18）に、ホワイエへ向けて掛ける
+    signs.wall(c, mb, cx, y0 + 0.18, 2.40, ang=0.0, ja="大ホール", en="Main Hall",
+               w=2.6, h=0.62)
+    signs.hanging(c, mb, cx, y0 + 4.2, CEIL, ja="ホワイエ", en="Foyer",
+                  w=3.0, h=0.44, drop=0.36)
     c.poi("foyer", cx, (y0 + y1) * 0.5, 0.0)
     c.npc(cx - 3.0, y0 + 7.0, 0.0)
     c.npc(cx + 2.4, y0 + 13.0, 0.0)
@@ -447,9 +453,9 @@ def _seminar_rooms(c, x0, y0, x1, y1):
                         glass_top=True, glass_z=2.10)
         shell.door(w, cor_x1, cy, ang=math.pi * 0.5, w=1.15, h=2.10,
                    leaf="desk_white", glass="glass_partition")
-        shell.wall_sign(mb, cor_x1 - 0.12, cy + 1.05, 2.05, ang=-math.pi * 0.5,
-                        w=0.70, h=0.28)
-        c.sign(cor_x1 - 0.12, cy + 1.05, 2.05)
+        # ドアの開口（cy ± 0.7）の外、上のガラス（2.10 m から上）にかからない高さ
+        signs.wall(c, mb, cor_x1 - 0.08, cy + 1.25, 1.70, ang=math.pi * 0.5,
+                   ja="演習室 %d" % (i + 1), en="Seminar Room %d" % (i + 1), w=0.70, h=0.28)
         shell.exit_sign(w, cor_x1 - 0.08, cy, 2.85, ang=-math.pi * 0.5)
         if i < n - 1:
             shell.partition(w, (cor_x1, ry1 + 0.15), (x1, ry1 + 0.15), 0.0,
