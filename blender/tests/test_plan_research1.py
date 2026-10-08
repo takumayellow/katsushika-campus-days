@@ -17,7 +17,10 @@ from conftest import CAMPUS_JSON
 SEED = 1709
 INT_CAP = 50000
 N_BOARDS = 25          # 文字入りの板の枚数
-N_SIGNS = 23           # そのうち Empty を持つ板（東のトイレと東の実験室は anchor=False）
+N_SIGNS = 25           # そのうち Empty を持つ板（全部）
+STAND_STEP = 0.55      # Unity の StandUp が前へ出す距離
+CAPSULE_R = 0.31       # プレイヤーのカプセルの半径
+TABLE_R = 0.45         # 丸テーブルの天板の半径
 TOP = D.Z_SKY + 0.05   # トップライトより上に何も出さない
 
 
@@ -77,30 +80,36 @@ def test_npcs_are_in_table_order(built):
 
 
 def _seat_centers():
-    """spec §4-3 の順の座面の中心（01〜08 は丸テーブルの椅子、09〜10 は西側ラウンジのベンチ）。"""
-    chairs = [(tx + D.CHAIR_R * math.cos(th), ty + D.CHAIR_R * math.sin(th), (tx, ty))
-              for (tx, ty), th in ((D.TABLES[ti], D.CHAIR_ANGLES[ai]) for ti, ai in D.TABLE_SEATS)]
-    return chairs + [(x, y, None) for x, y in D.SEAT_BENCHES]
+    """spec §4-3 の順の座面の中心（01〜02 は西側ラウンジのベンチ）。"""
+    return [(x, y) for x, y in D.SEAT_BENCHES]
 
 
 def test_seats_follow_the_spec_table(built):
     names = [n for n, _ in built.empties if re.fullmatch(r"seat_research1_\d\d", n)]
-    assert names == ["seat_research1_%02d" % k for k in range(1, 11)]
-    assert built.seats == 10
+    assert names == ["seat_research1_%02d" % k for k in range(1, len(D.SEAT_BENCHES) + 1)]
+    assert built.seats == len(D.SEAT_BENCHES) == 2
     pos = dict(built.empties)
-    for k, (x, y, table) in enumerate(_seat_centers(), 1):
+    for k, (x, y) in enumerate(_seat_centers(), 1):
         name = "seat_research1_%02d" % k
-        cx, cy, cz = pos[name]
-        assert (cx, cy, cz) == pytest.approx((x, y, D.Z1), abs=0.02)
+        assert pos[name] == pytest.approx((x, y, D.Z1), abs=0.02)
         assert name + "_a0" in pos
-        if table is not None:   # 椅子の正面は卓の中心を向く
-            fx, fy, _ = pos[name + "_f"]
-            assert (fx - cx) * (table[0] - cx) + (fy - cy) * (table[1] - cy) > 0.0
 
 
-def test_each_table_keeps_one_chair_free(built):
-    for ti in range(len(D.TABLES)):
-        assert len({ai for t, ai in D.TABLE_SEATS if t == ti}) == len(D.CHAIR_ANGLES) - 1
+def test_standing_up_never_lands_in_a_table(built):
+    """立つと座る位置 a0 から前へ 0.55 m 出る。その位置のカプセルが丸テーブルに掛からない。"""
+    pos = dict(built.empties)
+    seats = [n for n, _ in built.empties if re.fullmatch(r"seat_research1_\d\d", n)]
+    assert seats
+    for name in seats:
+        cx, cy, _ = pos[name]
+        fx, fy, _ = pos[name + "_f"]
+        L = math.hypot(fx - cx, fy - cy)
+        ux, uy = (fx - cx) / L, (fy - cy) / L
+        for k in range(len([n for n in pos if n.startswith(name + "_a")])):
+            ax, ay, _ = pos["%s_a%d" % (name, k)]
+            sx, sy = ax + STAND_STEP * ux, ay + STAND_STEP * uy
+            for tx, ty in D.TABLES:
+                assert math.hypot(sx - tx, sy - ty) >= TABLE_R + CAPSULE_R, (name, k, tx, ty)
 
 
 def test_signs_are_in_table_order(built):

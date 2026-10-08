@@ -81,9 +81,26 @@ def _north(c):
     wall(c, (a, b), 3.2, D.Z_WALL, mat=CONC, top=False)
     shell.outer_wall(mb, a, b, D.Z_WALL, D.Z_SKY, wall=CONC, glass=GLASS, sill=0.3,
                      header=1.2, seg=2.0 * D.X_A / 6.0)
-    # 窓の奥の明るい面（窓から空洞が見えないように）
-    kit.box(mb, -D.X_A, D.Y_NC1 + 1.6, 4.6, D.X_A, D.Y_NC1 + 1.65, 7.95, WHITE)
+    _north_room(c)
     F.counter(mb, *D.COUNTER, h=1.0, body="research1_counter_front", top="research1_counter_top")
+
+
+# 北の 2F の窓の奥の室（X, Y, 床の Z, 天井の Z）。窓（Z 4.8〜7.8）から明るい室とダウンライトが見える
+N_ROOM = (-9.5, D.Y_NC1 + shell.WALL, 9.5, 35.5, D.Z2 + 0.02, D.C2)
+
+
+def _north_room(c):
+    """北の窓の奥の閉じた室: 白い壁 3 面、床、天井とダウンライト。窓から外も空洞も見えない。"""
+    mb = c.wall
+    x0, y0, x1, y1, zf, zc = N_ROOM
+    kit.box(mb, x0, y1, D.Z2, x1, y1 + 0.1, zc, WHITE)
+    for xa, xb in ((x0 - 0.1, x0), (x1, x1 + 0.1)):
+        kit.box(mb, xa, y0, D.Z2, xb, y1 + 0.1, zc, WHITE)
+    kit.plate(mb, x0, y0, x1, y1, zf, "research1_vinyl_lightgrey")
+    shell.ceiling(mb, x0, y0, x1, y1, zc, "research1_ceiling")
+    pts = shell.ceiling_lights(mb, x0, y0, x1, y1, zc, sx=2.4, sy=2.0, w=0.22, l=0.22,
+                               mat="research1_light_panel", drop=0.02)
+    c.lights_from(pts, zc - 0.1, energy=120.0, step=3)
 
 
 def _vestibule(c):
@@ -145,19 +162,19 @@ def _lobby(c):
 
 
 def _fjr710(c):
-    """FJR710（長手は Y）: 黒い架台、銀のファンケース、暗いコア、排気コーン、説明板の台。"""
+    """FJR710（長手は Y）: チャコールの架台、銀のファンケース、暗いコアと排気コーン、説明板の台。"""
     mb = c.furn("fjr710")
     x, y = D.FJR
-    kit.box(mb, x - 0.9, y - 1.5, D.Z1, x + 0.9, y + 1.5, 0.35, "research1_engine_dark")
+    kit.box(mb, x - 0.9, y - 1.5, D.Z1, x + 0.9, y + 1.5, 0.35, "research1_band_charcoal")
     for dy in (-0.7, 0.7):
         kit.box(mb, x - 0.3, y + dy - 0.1, 0.35, x + 0.3, y + dy + 0.1, 0.55, BLACK)
     zc, y0 = 1.0, y - 1.175
-    kit.tube(mb, (x, y0, zc), (x, y0 + 0.95, zc), 0.65, "research1_sash_silver", seg=14)
-    kit.tube(mb, (x, y0 + 0.95, zc), (x, y0 + 2.0, zc), 0.45, "research1_engine_metal", seg=12)
-    kit.tube(mb, (x, y0 + 2.0, zc), (x, y0 + 2.35, zc), 0.28, "research1_engine_dark", seg=10)
-    _disc(mb, x, y0, zc, 0.65, "research1_engine_dark", 14, front=True)
-    _disc(mb, x, y0 - 0.01, zc, 0.16, "research1_engine_metal", 8, front=True)
-    _disc(mb, x, y0 + 2.35, zc, 0.28, "research1_engine_dark", 10, front=False)
+    kit.tube(mb, (x, y0, zc), (x, y0 + 0.95, zc), 0.65, "research1_engine_metal", seg=32)
+    kit.tube(mb, (x, y0 + 0.95, zc), (x, y0 + 2.0, zc), 0.45, "research1_engine_dark", seg=28)
+    kit.tube(mb, (x, y0 + 2.0, zc), (x, y0 + 2.35, zc), 0.28, "research1_engine_dark", seg=28)
+    _disc(mb, x, y0, zc, 0.65, "research1_engine_dark", 32, front=True)
+    _disc(mb, x, y0 - 0.01, zc, 0.16, "research1_engine_metal", 16, front=True)
+    _disc(mb, x, y0 + 2.35, zc, 0.28, "research1_engine_dark", 28, front=False)
     px, py = D.FJR_PLATE
     T(px, py, 0.0, PI * 0.75).box(c.wall, -0.85, -0.08, D.Z1, 0.85, 0.0, 1.35, BLACK)
     c.light(x - 1.6, y, 3.0, energy=160.0, radius=1.0)

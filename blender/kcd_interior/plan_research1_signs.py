@@ -1,4 +1,4 @@
-"""第1研究棟の看板（文字入り）と誘導灯。置く順が Empty の sign_research1_1〜23 の番号になる（anchor=False の 2 枚は Empty を持たない）。
+"""第1研究棟の看板（文字入り）と誘導灯。置く順が Empty の sign_research1_1〜25 の番号になる。
 
 文言は docs/ref/interiors/research1/spec.md §5。
 """
@@ -183,11 +183,10 @@ def build(c):
                   w=1.8, h=0.42, drop=0.3, plate=NAVY)
     _place(c, LATER_SIGNS)
     signs.wall(c, c.wall, -52.6, SC1F, 2.45, PI, ja=WC[0], en=WC[1], w=1.4, h=0.3, plate=NAVY)
-    signs.wall(c, c.wall, 27.4, SC1F, 2.45, PI, ja=WC[0], en=WC[1], w=1.4, h=0.3, plate=NAVY,
-               anchor=False)
     _place(c, UPPER_SIGNS)
     signs.wall(c, c.wall, -28.7, NC1F, 1.9, PI, ja=LAB[0], en=LAB[1], w=1.0, h=0.28, plate=NAVY)
-    signs.wall(c, c.wall, 36.3, NC1F, 1.9, PI, ja=LAB[0], en=LAB[1], w=1.0, h=0.28, plate=NAVY,
-               anchor=False)
     for x, y, z, ang in EXITS:
         shell.exit_sign(c.wall, x, y, z, ang=ang)
+    # 東のトイレと東の実験室（24・25。Empty の照明で南の廊下と北の廊下の東の暗がりを埋める）
+    signs.wall(c, c.wall, 27.4, SC1F, 2.45, PI, ja=WC[0], en=WC[1], w=1.4, h=0.3, plate=NAVY)
+    signs.wall(c, c.wall, 36.3, NC1F, 1.9, PI, ja=LAB[0], en=LAB[1], w=1.0, h=0.28, plate=NAVY)

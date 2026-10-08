@@ -245,229 +245,79 @@
    "y": 1.9,
    "z": 33.02
   },
+  "sign_research1_24": {
+   "x": 27.4,
+   "y": 2.45,
+   "z": 19.32
+  },
+  "sign_research1_25": {
+   "x": 36.3,
+   "y": 1.9,
+   "z": 33.02
+  },
   "seat_research1_01": {
-   "x": -4.6,
-   "y": 0.0,
-   "z": 23.75
-  },
-  "seat_research1_01_f": {
-   "x": -4.6,
-   "y": 0.0,
-   "z": 24.0
-  },
-  "seat_research1_01_s": {
-   "x": -4.35,
-   "y": 0.0,
-   "z": 23.75
-  },
-  "seat_research1_01_a0": {
-   "x": -4.6,
-   "y": 0.0,
-   "z": 23.8
-  },
-  "seat_research1_02": {
-   "x": -3.864,
-   "y": 0.0,
-   "z": 25.025
-  },
-  "seat_research1_02_f": {
-   "x": -4.08,
-   "y": 0.0,
-   "z": 24.9
-  },
-  "seat_research1_02_s": {
-   "x": -3.989,
-   "y": 0.0,
-   "z": 25.242
-  },
-  "seat_research1_02_a0": {
-   "x": -3.907,
-   "y": 0.0,
-   "z": 25.0
-  },
-  "seat_research1_03": {
-   "x": -1.4,
-   "y": 0.0,
-   "z": 23.75
-  },
-  "seat_research1_03_f": {
-   "x": -1.4,
-   "y": 0.0,
-   "z": 24.0
-  },
-  "seat_research1_03_s": {
-   "x": -1.15,
-   "y": 0.0,
-   "z": 23.75
-  },
-  "seat_research1_03_a0": {
-   "x": -1.4,
-   "y": 0.0,
-   "z": 23.8
-  },
-  "seat_research1_04": {
-   "x": -2.136,
-   "y": 0.0,
-   "z": 25.025
-  },
-  "seat_research1_04_f": {
-   "x": -1.92,
-   "y": 0.0,
-   "z": 24.9
-  },
-  "seat_research1_04_s": {
-   "x": -2.261,
-   "y": 0.0,
-   "z": 24.808
-  },
-  "seat_research1_04_a0": {
-   "x": -2.093,
-   "y": 0.0,
-   "z": 25.0
-  },
-  "seat_research1_05": {
-   "x": -4.6,
-   "y": 0.0,
-   "z": 27.15
-  },
-  "seat_research1_05_f": {
-   "x": -4.6,
-   "y": 0.0,
-   "z": 27.4
-  },
-  "seat_research1_05_s": {
-   "x": -4.35,
-   "y": 0.0,
-   "z": 27.15
-  },
-  "seat_research1_05_a0": {
-   "x": -4.6,
-   "y": 0.0,
-   "z": 27.2
-  },
-  "seat_research1_06": {
-   "x": -3.864,
-   "y": 0.0,
-   "z": 28.425
-  },
-  "seat_research1_06_f": {
-   "x": -4.08,
-   "y": 0.0,
-   "z": 28.3
-  },
-  "seat_research1_06_s": {
-   "x": -3.989,
-   "y": 0.0,
-   "z": 28.642
-  },
-  "seat_research1_06_a0": {
-   "x": -3.907,
-   "y": 0.0,
-   "z": 28.4
-  },
-  "seat_research1_07": {
-   "x": -1.4,
-   "y": 0.0,
-   "z": 27.15
-  },
-  "seat_research1_07_f": {
-   "x": -1.4,
-   "y": 0.0,
-   "z": 27.4
-  },
-  "seat_research1_07_s": {
-   "x": -1.15,
-   "y": 0.0,
-   "z": 27.15
-  },
-  "seat_research1_07_a0": {
-   "x": -1.4,
-   "y": 0.0,
-   "z": 27.2
-  },
-  "seat_research1_08": {
-   "x": -2.136,
-   "y": 0.0,
-   "z": 28.425
-  },
-  "seat_research1_08_f": {
-   "x": -1.92,
-   "y": 0.0,
-   "z": 28.3
-  },
-  "seat_research1_08_s": {
-   "x": -2.261,
-   "y": 0.0,
-   "z": 28.208
-  },
-  "seat_research1_08_a0": {
-   "x": -2.093,
-   "y": 0.0,
-   "z": 28.4
-  },
-  "seat_research1_09": {
    "x": -22.4,
    "y": 0.0,
    "z": 9.59
   },
-  "seat_research1_09_f": {
+  "seat_research1_01_f": {
    "x": -22.4,
    "y": 0.0,
    "z": 9.82
   },
-  "seat_research1_09_s": {
+  "seat_research1_01_s": {
    "x": -21.5,
    "y": 0.0,
    "z": 9.59
   },
-  "seat_research1_09_a0": {
+  "seat_research1_01_a0": {
    "x": -23.0,
    "y": 0.0,
    "z": 9.62
   },
-  "seat_research1_09_a1": {
+  "seat_research1_01_a1": {
    "x": -22.4,
    "y": 0.0,
    "z": 9.62
   },
-  "seat_research1_09_a2": {
+  "seat_research1_01_a2": {
    "x": -21.8,
    "y": 0.0,
    "z": 9.62
   },
-  "seat_research1_10": {
+  "seat_research1_02": {
    "x": -19.4,
    "y": 0.0,
    "z": 9.59
   },
-  "seat_research1_10_f": {
+  "seat_research1_02_f": {
    "x": -19.4,
    "y": 0.0,
    "z": 9.82
   },
-  "seat_research1_10_s": {
+  "seat_research1_02_s": {
    "x": -18.5,
    "y": 0.0,
    "z": 9.59
   },
-  "seat_research1_10_a0": {
+  "seat_research1_02_a0": {
    "x": -20.0,
    "y": 0.0,
    "z": 9.62
   },
-  "seat_research1_10_a1": {
+  "seat_research1_02_a1": {
    "x": -19.4,
    "y": 0.0,
    "z": 9.62
   },
-  "seat_research1_10_a2": {
+  "seat_research1_02_a2": {
    "x": -18.8,
    "y": 0.0,
    "z": 9.62
   }
  },
- "triangles": 42901,
- "seats": 10,
+ "triangles": 44097,
+ "seats": 2,
  "notes": [
   "1F 吹き抜け（トップライト・FJR710・窓口）+ 南北 2 本の廊下 + 西と東の EV ホール（2F まで） + 実験室・研究室・産学試作開発室・西側ラウンジ"
  ],
@@ -922,29 +772,6 @@
    "align": "center"
   },
   {
-   "empty": null,
-   "kind": "wall",
-   "ja": "トイレ ／ 多目的トイレ",
-   "en": "Restrooms / Accessible Restroom",
-   "tris": 623,
-   "pos": {
-    "x": 27.4,
-    "y": 2.45,
-    "z": 19.32
-   },
-   "facing": {
-    "x": -0.0,
-    "y": 0.0,
-    "z": -1.0
-   },
-   "w": 1.4,
-   "h": 0.3,
-   "faces": 1,
-   "plate": "research1_navy_panel",
-   "text": "plastic_white",
-   "align": "center"
-  },
-  {
    "empty": "sign_research1_20",
    "kind": "wall",
    "ja": "2W",
@@ -1037,7 +864,30 @@
    "align": "center"
   },
   {
-   "empty": null,
+   "empty": "sign_research1_24",
+   "kind": "wall",
+   "ja": "トイレ ／ 多目的トイレ",
+   "en": "Restrooms / Accessible Restroom",
+   "tris": 623,
+   "pos": {
+    "x": 27.4,
+    "y": 2.45,
+    "z": 19.32
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 1.4,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "research1_navy_panel",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_research1_25",
    "kind": "wall",
    "ja": "実験室",
    "en": "Laboratory",

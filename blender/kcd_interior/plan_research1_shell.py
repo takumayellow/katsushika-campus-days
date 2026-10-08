@@ -60,6 +60,13 @@ def _gap(a, x_or_y, w=DOOR_W):
 
 
 # ---- 外周 ----
+# 南の廊下の突き当たりのガラス: FOOT の辺の番号 -> 辺の始点からの距離 (s0, s1)。Y 17.2〜19.4
+END_GLASS = {
+    10: (D.FOOT[10][1] - D.Y_SC1, D.FOOT[10][1] - D.Y_SC0),
+    22: (D.Y_SC0 - D.FOOT[22][1], D.Y_SC1 - D.FOOT[22][1]),
+}
+
+
 def _curtain(c, a, b):
     """吹き抜けの南のカーテンウォール（黒い框・Z 0〜9）と風除室の外側の自動扉。"""
     x0 = a[0]
@@ -81,12 +88,41 @@ def _curtain(c, a, b):
     c.door_gap = D.DOOR
 
 
+def _end_glass(c, a, b, s0, s1):
+    """南の廊下の突き当たり（外周の辺 a -> b の s0〜s1）: 床から廊下の天井までのガラスと黒い框。
+
+    ガラスは壁の室内側の面に立て、壁の厚みの奥を白い見込みと発光面（階段塔の明るさ）でふさぐ。
+    発光面は外面の 4 cm 内側で、外から見えない。
+    """
+    wall(c, (a, b), D.Z1, D.Z_WALL, gaps=[(s0, s1)], gap_top=D.C_COR)
+    dx, dy = b[0] - a[0], b[1] - a[1]
+    L = math.hypot(dx, dy)
+    d = (dx / L, dy / L)
+    t = T(a[0] + d[0] * (s0 + s1) * 0.5, a[1] + d[1] * (s0 + s1) * 0.5, D.Z1,
+          math.atan2(dy, dx))
+    hw, top, f = (s1 - s0) * 0.5, D.C_COR, 0.05
+    inner, back = shell.WALL, 0.04
+    mb = c.wall
+    t.box(mb, -hw, back, 0.0, hw, back + 0.02, top, "research1_skylight_glow")
+    for u0, u1 in ((-hw, -hw + 0.01), (hw - 0.01, hw)):
+        t.box(mb, u0, back, 0.0, u1, inner, top, WHITE)
+    t.box(mb, -hw, back, top - 0.01, hw, inner, top, WHITE)
+    yg = inner - 0.03
+    t.box(mb, -hw + f, yg - 0.01, f, hw - f, yg + 0.01, top - f, GLASS)
+    for u0, u1, z0, z1 in ((-hw, -hw + f, 0.0, top), (hw - f, hw, 0.0, top),
+                           (-0.025, 0.025, 0.0, top), (-hw, hw, 0.0, f), (-hw, hw, top - f, top),
+                           (-hw, hw, 2.1 - f * 0.5, 2.1 + f * 0.5)):
+        t.box(mb, u0, yg - 0.03, z0, u1, inner, z1, BLACK)
+
+
 def _outer(c):
     n = len(D.FOOT)
     for i in range(n):
         a, b = D.FOOT[i], D.FOOT[(i + 1) % n]
         if i == D.ATRIUM_EDGE:
             _curtain(c, a, b)
+        elif i in END_GLASS:
+            _end_glass(c, a, b, *END_GLASS[i])
         elif i in D.WINDOW_EDGES:
             wall(c, (a, b), D.Z1, D.Z_WALL, glass=GLASS, sill=0.9, header=1.5, seg=3.6)
         else:
@@ -94,6 +130,29 @@ def _outer(c):
 
 
 # ---- 床 ----
+TILE_SHADES = ("research1_tile_dark", "research1_tile_mid", "research1_tile_light")
+TILE_X = (-4.0, 4.0)       # 入口ホールのタイルの帯
+TILE_Y1 = 22.0
+TILE_COLS = 27             # 列の幅は 8.0 / 27 ≒ 0.30 m
+TILE_L = 1.2               # 板の長さ（Y）
+
+
+def _tiles(c, y0):
+    """入口ホールのタイル: 幅 0.3 m × 長さ 1.2 m の板を、列ごとに板の半分ずらして敷く。
+
+    濃・中・淡の 3 色を c.rng で選ぶ（隣の板と同じ色が続いてもよい）。
+    """
+    x0, x1 = TILE_X
+    w = (x1 - x0) / TILE_COLS
+    for k in range(TILE_COLS):
+        xa = x0 + w * k
+        y = y0 - (TILE_L * 0.5 if k % 2 else 0.0)
+        while y < TILE_Y1 - 1e-6:
+            ya, yb = max(y, y0), min(y + TILE_L, TILE_Y1)
+            kit.plate(c.floor, xa, ya, xa + w, yb, 0.02, c.rng.choice(TILE_SHADES))
+            y += TILE_L
+
+
 def _floors(c):
     fl = c.floor
     for x0, x1, y0, y1 in D.SLABS:
@@ -103,12 +162,7 @@ def _floors(c):
     kit.plate(fl, -D.X_A, y_in, D.X_A, D.Y_NC1, 0.01, navy)
     kit.plate(fl, D.W_HALL[0], D.Y_SC1, -D.X_A, D.Y_NC0, 0.01, navy)
     kit.plate(fl, D.X_A, D.Y_SC1, D.E_HALL[2], D.Y_NC0, 0.01, navy)
-    # 入口ホールの細長いタイル（X -4〜+4 の帯。濃淡を交互に）
-    w = 0.5
-    for k in range(16):
-        x = -4.0 + w * k
-        mat = "research1_tile_dark" if k % 2 else "research1_tile_light"
-        kit.plate(fl, x, y_in, x + w, 22.0, 0.02, mat)
+    _tiles(c, y_in)
     # 室の床
     vinyl, carpet = "research1_vinyl_lightgrey", "research1_carpet_grey"
     kit.plate(fl, D.LAB_A[0], D.Y_SC1, D.LAB_A[1], D.Y_NC0, 0.01, vinyl)
@@ -200,18 +254,15 @@ DOORS = (
     + [(x, _NC0F, 0.0) for x in (-60.0, -40.0, 20.0, 40.0)]
     + [(x, _NC1F, PI) for x in (-50.0, -30.0, 35.0)]
 )
-# 閉じた EV の扉（西端・東コア 2・東端）
+# 閉じた EV の扉（西端・東コア 2・東端。どれも南の廊下の北の壁）
 EV_DOORS = (
-    (-67.0, _SC1F, PI), (59.85, _SC1F, PI), (62.15, _SC1F, PI),
-    (D.X_E_IN, 18.3, HALF_PI),
+    (-67.0, _SC1F, PI), (59.85, _SC1F, PI), (62.15, _SC1F, PI), (64.5, _SC1F, PI),
 )
-# 廊下の突き当たりの階段の扉（西端）
-END_DOORS = ((D.X_W_IN, 18.3, -HALF_PI),)
 
 
 def _doors(c):
     mb = c.wall
-    for x, y, ang in (*DOORS, *END_DOORS):
+    for x, y, ang in DOORS:
         room_door(mb, x, y, ang)
     for x, y, ang in EV_DOORS:
         ev_door(mb, x, y, ang)

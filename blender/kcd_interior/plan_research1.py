@@ -4,8 +4,6 @@
 寸法と出典は docs/ref/interiors/research1/spec.md、座標の表は plan_research1_dims。
 """
 
-import math
-
 from . import furniture as F
 from . import plan_research1_atrium as atrium
 from . import plan_research1_core as core
@@ -15,24 +13,37 @@ from . import plan_research1_shell as shell_r1
 from . import plan_research1_signs as signs_r1
 from .kit import T
 
+# 裏から見えなくする材質（下向きの天井・トップライトの発光面・スラブの下面）。Unity の Lit は裏面を
+# 描かないので、Blender のプレビューもそろえる（俯瞰で天井の裏が室を隠さないように）
+BACKFACE_CULLED = ("research1_ceiling", "research1_slab_exposed", "research1_skylight_glow")
+
 
 def _seats(c):
     """座面の Empty を spec §4-3 の順に並べる（家具ヘルパの記録は使わない）。
 
-    01〜08 は吹き抜けの丸テーブルの椅子（椅子の中心、正面は卓の中心）、09〜10 は西側ラウンジの
-    ベンチ。記録は c.floor に積む（research1 は kit.lift を使わないので vi は 0 でよい）。
+    01〜02 は西側ラウンジのベンチ。記録は c.floor に積む（research1 は kit.lift を使わないので
+    vi は 0 でよい）。
     """
     for mb in c.builders():
         mb.seats = []
-    for ti, ai in D.TABLE_SEATS:
-        tx, ty = D.TABLES[ti]
-        th = D.CHAIR_ANGLES[ai]
-        t = T(tx + D.CHAIR_R * math.cos(th), ty + D.CHAIR_R * math.sin(th), D.Z1,
-              th + math.pi * 0.5)
-        F._seat(c.floor, t, 0, 0.25, -0.25, 0.25, 0.5, 0.20)
     for x, y in D.SEAT_BENCHES:
         F._seat(c.floor, T(x, y, D.Z1, 0.0), 0, D.BENCH_W * 0.5, -0.24, 0.22, D.BENCH_W, 0.20)
-    c.seats += len(D.TABLE_SEATS) + len(D.SEAT_BENCHES)
+    c.seats += len(D.SEAT_BENCHES)
+
+
+def _cull_backfaces():
+    """BACKFACE_CULLED の材質の裏面を描かない（Blender の外ではなにもしない）。"""
+    try:
+        import bpy
+    except ImportError:
+        return
+    mats = getattr(getattr(bpy, "data", None), "materials", None)
+    if mats is None:
+        return
+    for name in BACKFACE_CULLED:
+        mat = mats.get(name)
+        if mat is not None:
+            mat.use_backface_culling = True
 
 
 def build(c):
@@ -48,6 +59,7 @@ def build(c):
     for x, y, z in D.NPCS:
         c.npc(x, y, z)
     signs_r1.build(c)
+    _cull_backfaces()
     for suffix, loc, target, lens in D.CAMS:
         c.cam(suffix, loc, target, lens=lens)
     c.note("1F 吹き抜け（トップライト・FJR710・窓口）+ 南北 2 本の廊下 + 西と東の EV ホール（2F まで）"
