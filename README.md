@@ -55,18 +55,20 @@ Windows の配布 zip は `python tools/package_windows.py` で作る。名前�
 CREDITS.md を CREDITS.txt として同梱する。地図データの帰属（© OpenStreetMap contributors, ODbL）は
 タイトル画面の右下とクレジット画面に出る。
 
-<img src="https://github.com/takumayellow/katsushika-campus-days/blob/01437f9815830d2d9d7286afb07eedf62096987c/docs/progress/57/20260924-windows-chunked-trees.jpg?raw=true" alt="Windows 版のプレイ画面" width="100%">
+<img src="docs/screenshots/campus.jpg" alt="正門からモールを見たプレイ画面" width="100%">
 
-Windows 版のプレイ画面。左上が進行中のクエスト、右上がミニマップと時刻。
+Windows 版のプレイ画面。正門からモールの並木を見たところで、左上が進行中のクエスト、右上がミニマップと時刻。
 
 <p>
-<img src="https://github.com/takumayellow/katsushika-campus-days/blob/01437f9815830d2d9d7286afb07eedf62096987c/docs/previews/shot_campus_moat.png?raw=true" alt="図書館とまわりの堀" width="32%">
-<img src="https://github.com/takumayellow/katsushika-campus-days/blob/01437f9815830d2d9d7286afb07eedf62096987c/docs/previews/shot_campus_mall_beds.png?raw=true" alt="モールの並木と花壇" width="32%">
-<img src="https://github.com/takumayellow/katsushika-campus-days/blob/01437f9815830d2d9d7286afb07eedf62096987c/docs/previews/shot_campus_moat_bank.png?raw=true" alt="堀の岸から見た図書館" width="32%">
+<img src="docs/screenshots/talk.jpg" alt="花之木いなりとの会話" width="49%">
+<img src="docs/screenshots/interior.jpg" alt="図書館 1 階の閲覧席" width="49%">
+<img src="docs/screenshots/entrance.jpg" alt="図書館の入口と看板" width="49%">
+<img src="docs/screenshots/dusk.jpg" alt="夕暮れのモール" width="49%">
 </p>
 
-左から、図書館とまわりの堀（南東の上から）、モールの並木と花壇、堀の岸から見た図書館（プレイヤーの目の高さ）。
-3 枚は `KCD.Editor.ScenePreview` が Campus.unity から本編のシェーダのまま撮ったもの。
+左上から順に、花之木いなりとの会話、図書館 1 階の閲覧席、図書館の入口と看板、17 時台の夕暮れのモール。
+どれも Windows 版を `-kcd-*` の起動引数（`SmokeDirector`）で場面を指定して起こし、1600×900 の窓で撮った。
+会話の 1 枚だけはカメラをプレイヤーの斜め後ろ 4 m に置き直していて、ほかは本編の追従カメラのまま。
 
 ## 自分でビルドする
 
