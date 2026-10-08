@@ -2,8 +2,9 @@
 
 import pytest
 
-from kcd_interior import plan_lecture_dims as D
 import stubs
+from kcd_interior import plan_lecture_dims as D
+from kcd_interior import plan_lecture_hall as HL
 from kcd_interior import plan_lecture_shell as SH
 from kcd_interior import plan_lecture_signs as SG
 from kcd_interior import shell as ishell
@@ -20,6 +21,8 @@ KEPT_POIS = ("hall_stage", "hall_booth", "hall_seats", "grand_stair", "atrium", 
              "foyer_counter", "foyer", "seminar")      # 名前を変えずに残す 9 個
 NEW_POIS = ("coop", "lounge", "corridor", "health")
 MARGIN = ishell.WALL      # 外周壁の厚み
+HALL_SEATS, HALL_DESKS = 270, 70                       # spec §4
+SEATS_DESKS_CAP = 12720   # spec §4 の見積もり（座席 270 x 44 + 机）
 REGISTERS = ((36.6, 39.0), (37.6, 39.0), (38.6, 39.0), (39.6, 39.0))   # 生協のモジュールが決めるまでの仮置き
 
 
@@ -57,6 +60,13 @@ def signed(lspec):
         SG.build(c, c.furn("signs"), REGISTERS)
         signs.check(c)
     return c
+
+
+@pytest.fixture(scope="module")
+def hall(lspec):
+    c = Ctx(lspec)
+    n = HL.build_seats(c, c.furn("hall_seats"), c.furn("hall_desks"))
+    return c, n
 
 
 @pytest.fixture(scope="module")
@@ -134,3 +144,47 @@ def test_register_count_is_checked(lspec):
 def test_hang_roots_are_the_eight_hanging_signs():
     roots = SG.hang_roots()
     assert len(roots) == 8 and all(z == D.CEIL_CORR for _, _, z in roots)
+
+
+def test_hall_has_270_seats_at_70_desks():
+    rs = HL.rows()
+    assert len(rs) == D.HALL_ROWS
+    assert all(len(r.desks) == 7 and sum(d[2] for d in r.desks) == 27 for r in rs)
+    assert len(HL.seat_points(rs)) == HALL_SEATS
+    assert sum(len(r.desks) for r in rs) == HALL_DESKS
+
+
+def test_hall_desks_fill_each_block_from_wall_to_aisle():
+    desks = HL.rows()[0].desks
+    for bx0, bx1 in D.HALL_BLOCKS:
+        mine = [d for d in desks if bx0 - 1e-6 <= d[0] and d[1] <= bx1 + 1e-6]
+        assert mine[0][0] == pytest.approx(bx0) and mine[-1][1] == pytest.approx(bx1)
+        assert all(0 < d[2] <= HL.DESK_SEATS for d in mine)
+    assert [len([d for d in desks if bx0 - 1e-6 <= d[0] and d[1] <= bx1 + 1e-6])
+            for bx0, bx1 in D.HALL_BLOCKS] == [2, 3, 2]
+
+
+def test_hall_rows_climb_to_the_back_aisle():
+    rs = HL.rows()
+    assert rs[0].y1 == pytest.approx(D.HALL_FLAT_Y[0])
+    assert rs[-1].y0 == pytest.approx(D.HALL_BACK_Y[1]) and rs[-1].z == pytest.approx(1.2)
+    for a, b in zip(rs, rs[1:]):
+        assert b.y1 == pytest.approx(a.y0) and b.z - a.z == pytest.approx(D.HALL_RISE)
+
+
+def test_hall_seats_and_desks_stay_on_their_tread(hall):
+    c, _n = hall
+    rs = HL.rows()
+    stray = []
+    for mb in c.builders():
+        for x, y, z in mb.verts:
+            r = next((r for r in rs if r.y0 - 1e-6 <= y <= r.y1 + 1e-6), None)
+            if r is None or not (r.z - 1e-6 <= z <= r.z + 1.0):
+                stray.append((x, y, z))
+    assert stray == []
+
+
+def test_hall_seats_and_desks_fit_the_estimate(hall):
+    c, n = hall
+    assert n == HALL_SEATS and c.seats == HALL_SEATS
+    assert c.tris() <= SEATS_DESKS_CAP
