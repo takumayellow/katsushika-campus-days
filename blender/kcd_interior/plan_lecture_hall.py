@@ -7,6 +7,7 @@
 
 from collections import namedtuple
 
+from . import furn_lecture as FL
 from . import furniture as F
 from . import kit
 from . import plan_lecture_dims as D
@@ -72,7 +73,7 @@ def build_seats(c, seats_mb, desks_mb):
     rs = rows()
     pts = seat_points(rs)
     for x, y, z in pts:
-        F.hall_seat(seats_mb, kit.T(x, y, z), mat=SEAT_MAT, frame=FRAME_MAT)
+        FL.shell_seat(seats_mb, kit.T(x, y, z), seat=SEAT_MAT, frame=FRAME_MAT)
     for r in rs:
         for x0, x1, _n in r.desks:
             _desk(desks_mb, x0, x1, r)

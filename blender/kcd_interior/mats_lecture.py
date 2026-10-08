@@ -42,6 +42,7 @@ PALETTE = {
     "lecture_seat_green":       ((0.076, 0.195, 0.068), 0.85, 0.0, 1.0),  # #4E7A4A
     "lecture_sign_white":       ((0.888, 0.888, 0.863), 0.40, 0.0, 1.0),  # #F2F2EF
     "lecture_sign_black":       ((0.007, 0.007, 0.007), 0.45, 0.0, 1.0),  # #141414
+    "lecture_light_cool":       ((0.716, 0.807, 1.000), 0.20, 0.0, 1.0),  # #DCE8FF
 }
 
 TRANSPARENT = {
@@ -49,4 +50,6 @@ TRANSPARENT = {
     "lecture_glass_curtain":    ((0.552, 0.672, 0.701), 0.05, 0.0, 0.20),  # #C4D6DA
 }
 
-EMISSIVE = {}
+EMISSIVE = {
+    "lecture_light_cool":       ((0.72, 0.81, 1.00), 4.0),   # コアの黒い壁の上端の青白い間接照明
+}
