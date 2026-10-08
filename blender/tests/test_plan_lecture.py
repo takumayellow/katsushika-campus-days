@@ -279,5 +279,14 @@ def test_hole_rails_clear_the_escalator_cladding():
     assert (x0, x1) == (D.ESC_LAND_W[1], D.ESC_LAND_E[0])
 
 
+def test_no_point_light_next_to_the_escalator_hole(lspec):
+    c = Ctx(lspec)
+    UP.build(c, SG.hang_roots())
+    assert c.lights
+    assert not [p for p in c.lights if UP.near_hole(p[0], p[1])]
+    x0, y0, x1, y1 = UP.HOLE
+    assert UP.near_hole((x0 + x1) * 0.5, y0 - 1.0)
+
+
 def test_escalator_fits_its_budget(esc):
     assert 0 < esc.tris() <= ESC_CAP
