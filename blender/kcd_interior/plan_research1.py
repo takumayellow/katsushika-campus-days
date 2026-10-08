@@ -5,7 +5,7 @@
 
 import math
 
-from . import common, furniture as F, kit, shell
+from . import common, furniture as F, kit, shell, signs
 
 CEIL = 3.40          # 天井高
 Z_TOP = 4.50         # 1 層ぶんの躯体高さ
@@ -91,11 +91,16 @@ def build(c):
                     mat="wall_grey")
     centers = shell.elevator_bank(core, -5.2, 19.82, count=3, pitch=5.2,
                                   w=0.62, h=2.30)
-    for cx, cy in centers:
-        shell.wall_sign(core, cx, cy - 0.12, 2.86, ang=math.pi, w=1.30, h=0.30,
-                        mat="screen_blue")
+    # 号機の札は扉枠の上の壁（間仕切りの面 = 戸当たり面 + 0.01）に付ける。
+    # 3 枚が近いので照明の目印の Empty は置かない
+    for k, (cx, cy) in enumerate(centers):
+        signs.wall(c, core, cx, cy + 0.01, 2.86, ang=math.pi, ja="%d号機" % (k + 1),
+                   en="Elevator %d" % (k + 1), w=1.30, h=0.30, plate="screen_blue",
+                   anchor=False)
     c.poi("elevator", 0.0, 17.6, 0.0)
-    common.sign_board(c, core, 0.0, 19.6, 2.60, ang=math.pi, w=3.2, h=0.62)
+    # 扉の列の西の端の壁（1 号機の枠の外 x = -5.98 より西）
+    signs.wall(c, core, -7.3, 19.83, 2.30, ang=math.pi, ja="エレベーター", en="Elevators",
+               w=1.8, h=0.50)
 
     # ---- ロビー ----
     lob = c.furn("lobby")
@@ -128,9 +133,10 @@ def build(c):
             F.stool(lob, px + math.sin(ang) * 1.05, 10.2 - math.cos(ang) * 1.05,
                     ang=ang, mat="chair_grey", h=0.76)
             c.seats += 1
-    # 案内サインは spawn_research1 (0, 8.30) の 0.10 m 先にあり、入った瞬間に
-    # 板の中に立っていた。頭の上（板の下端 1.96 m）へ上げる（#42）
-    common.sign_board(c, lob, 0.0, 8.4, 2.55, ang=0.0, w=1.6, h=1.10)
+    # 案内サインは spawn_research1 (0, 8.30) の真上に天井から吊る。板の下端は 2.00 m で、
+    # 入った瞬間に板の中に立たない（#42）
+    signs.hanging(c, lob, 0.0, 8.4, CEIL, ja="第1研究棟\n館内案内",
+                  en="Research Building 1\nFloor Guide", w=1.6, h=1.10, drop=0.30)
     shell.planter(lob, -6.2, 8.2, r=0.50, h=0.54, leaf_h=2.2)
     shell.planter(lob, 6.2, 8.2, r=0.50, h=0.54, leaf_h=2.2)
     F.bench(lob, -3.4, 13.6, ang=0.0, w=2.2, back=True)
@@ -142,8 +148,8 @@ def build(c):
     shell.planter(lob, 13.6, 19.0, r=0.46, h=0.50, leaf_h=1.8)
     shell.vending(lob, 13.0, 21.6, ang=math.pi)
     shell.vending(lob, 11.6, 21.6, ang=math.pi, mat="fm_green")
-    shell.hanging_sign(c.wall, 0.0, 9.6, CEIL, w=3.6, h=0.46, drop=0.35)
-    c.sign(0.0, 9.6, CEIL - 0.8)
+    signs.hanging(c, c.wall, 0.0, 9.6, CEIL, ja="インフォメーション", en="Information",
+                  w=3.6, h=0.46, drop=0.35)
 
     # ---- 廊下 ----
     cor = c.furn("corridor")
@@ -212,8 +218,10 @@ def _lab(c, x0, x1, y1, kind):
     # NPC は机の島（椅子は yy ± 1.30）の外に置く。島の間と北側の通路（#42）
     c.npc(cx - 2.0, y0 + 5.0, 0.0)
     c.npc(cx + 2.4, y0 + 11.0, 0.0)
-    common.sign_board(c, mb, cx + 1.1, Y_COR1 - 0.22, 2.20, ang=math.pi,
-                      w=1.1, h=0.34)
+    label = kind.split("_")[-1].upper()
+    # 廊下側の壁の面（Y_COR1 - 0.10）、ドアの開口（cx ± 0.62）の東どなり。上のガラスにかからない高さ
+    signs.wall(c, mb, cx + 1.3, Y_COR1 - 0.10, 2.10, ang=math.pi, ja="研究室 " + label,
+               en="Laboratory " + label, w=1.1, h=0.34)
 
 
 def _professor(c, x0, x1, y1):
@@ -248,5 +256,5 @@ def _professor(c, x0, x1, y1):
     # 机の手前（来客側）。y1-1.6 は教授の椅子（y1-1.55）の中で空き 0.18 m だった（#42）
     c.poi("professor", cx + 1.4, y1 - 3.6, 0.0)
     c.npc(cx + 2.6, y1 - 1.0, 0.0)   # 椅子（y1-1.55）の中に湧いていた
-    common.sign_board(c, mb, cx + 1.05, Y_COR1 - 0.22, 2.20, ang=math.pi,
-                      w=1.1, h=0.34)
+    signs.wall(c, mb, cx + 1.3, Y_COR1 - 0.10, 2.10, ang=math.pi, ja="教授室",
+               en="Professor's Office", w=1.1, h=0.34)
