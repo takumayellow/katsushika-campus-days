@@ -33,6 +33,7 @@ BAND_T, BAND_H, BAND_DROP = 0.06, 0.06, 0.04   # コアの光の帯の厚み・�
 HEADER_T = 0.1
 DOWN = 0.30                         # ダウンライトの一辺
 DOWN_CLEAR = 0.8                    # 吊り看板の吊り元からダウンライトまでの最小距離
+HOLE_LIGHT_GAP = 1.5                # 穴の縁からこの範囲の天井には点光源を置かない（エスカレータの段に近すぎる）
 
 CORR = "lecture_concrete"
 CORE = "lecture_core_black"
@@ -129,14 +130,22 @@ def downlight_centers(z_floor, x1, roots):
     return [p for p in pts if _clear(p[0], p[1], z_floor, z_floor + CEIL_H, roots)]
 
 
+def near_hole(x, y):
+    """(x, y) が穴の縁から HOLE_LIGHT_GAP の内か。"""
+    x0, y0, x1, y1 = HOLE
+    g = HOLE_LIGHT_GAP
+    return x0 - g < x < x1 + g and y0 - g < y < y1 + g
+
+
 def _lights(c, roots):
+    """ダウンライトの板は全部に、点光源は 1 つおきに置き、穴の近くの点光源は省く。"""
     h = DOWN * 0.5
     for z_floor, x1 in ((D.F2, X_2F_E), (D.F3, X_3F_E)):
         z = z_floor + CEIL_H
         pts = downlight_centers(z_floor, x1, roots)
         for x, y in pts:
             kit.plate(c.wall, x - h, y - h, x + h, y + h, z - 0.005, "light_panel", flip=True)
-        c.lights_from(pts, z, step=2)
+        c.lights_from([p for p in pts[::2] if not near_hole(*p)], z)
 
 
 def build(c, roots):
