@@ -21,7 +21,8 @@ X_LOBBY_E = D.LOBBY_X[1] + T * 0.5    # ロビーの東の壁の中心（面 7.2
 X_101_E, T_101_E = 28.425, 0.35       # 101 と東端ホールの間の壁（面 28.25 / 28.60）
 X_CORR_E = D.X_STEP                   # 中廊下の東端（ここから東端ホール）
 X_GLASS = 17.65                       # 仕切りのガラスの線
-ESC_HALL = (X_GLASS, D.Y_CORE0, X_CORR_E, D.Y_CORE1)   # 天井 4.0 のエスカレータのホール
+ESC_HALL = (X_GLASS, D.Y_CORE0, X_CORR_E, D.Y_CORE1)   # エスカレータのホール（上は 2F の床）
+Z_SLAB2_UNDER = D.F2 - D.SLAB         # 2F の床スラブの下面（エスカレータのホールの天井）
 ATRIUM_RING = (-5.8, 20.5, 9.6, 34.5)  # 吹き抜けの各階の輪（歩けない。奥の壁の内面まで）
 PARAPET_T, PARAPET_H = 0.15, 1.2
 
@@ -125,7 +126,7 @@ def _glass_screen(c):
     y0, y1 = D.Y_CORE0, D.Y_CORE1
     kit.box(c.wall, x0, y0, 0.0, x1, y1, 1.0, CORE)
     kit.box(c.wall, X_GLASS - 0.01, y0, 1.0, X_GLASS + 0.01, y1, D.CEIL_CORR, GLASS)
-    kit.box(c.wall, X_GLASS - 0.08, y0, D.CEIL_CORR, X_GLASS + 0.08, y1, 4.0, CORE)
+    kit.box(c.wall, X_GLASS - 0.08, y0, D.CEIL_CORR, X_GLASS + 0.08, y1, Z_SLAB2_UNDER, CORE)
 
 
 def _ceilings(c):
@@ -137,7 +138,7 @@ def _ceilings(c):
     shell.ceiling(c.wall, X_GLASS, D.Y_CORE1, X_CORR_E, D.Y_ROOM_N0, z, CEIL)
     shell.ceiling(c.wall, D.LOBBY_X[0], Y_IN_S, D.LOBBY_X[1], D.Y_ROOM_S1, z, CEIL)
     for y in (D.Y_CORE0, D.Y_CORE1):
-        _header(c.wall, X_GLASS, X_CORR_E, y, z, 4.0, thick=0.1, mat=CORR)
+        _header(c.wall, X_GLASS, X_CORR_E, y, z, Z_SLAB2_UNDER, thick=0.1, mat=CORR)
     for ya, yb in ((D.Y_ROOM_S1, D.Y_CORE0), (D.Y_CORE1, D.Y_ROOM_N0)):
         kit.box(c.wall, X_CORR_E - 0.05, ya, z, X_CORR_E + 0.05, yb, 4.0, CORR)
     shell.ceiling(c.wall, D.R101_X[0], Y_IN_S, D.R101_X[1], D.Y_101_N, D.CEIL_101,
