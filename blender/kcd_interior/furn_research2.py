@@ -131,16 +131,6 @@ def ticket_floor(mb, x, y, z, ang):
     t.box_nb(mb, -0.28, 0.3, 0.8, 0.28, 0.34, 1.0, "research2_kiosk_black")
 
 
-def monitor(mb, x, y, z, ang, w=1.2, h=0.7, z_ceil=None):
-    """黒い枠の呼び出しモニター（中心の高さ z）。z_ceil を与えると吊り棒を付ける。"""
-    t = T(x, y, z, ang)
-    t.box(mb, -w * 0.5, -0.05, -h * 0.5, w * 0.5, 0.05, h * 0.5, "research2_monitor_black")
-    t.vplate(mb, w * 0.5 - 0.04, 0.051, -w * 0.5 + 0.04, 0.051, -h * 0.5 + 0.04, h * 0.5 - 0.04,
-             "research2_display_blue")
-    if z_ceil is not None:
-        t.box_nb(mb, -0.03, -0.03, h * 0.5, 0.03, 0.03, z_ceil - z, "research2_monitor_black")
-
-
 # ---- 島型カウンター・ワゴン・返却口 ----
 def island(mb, x, y, z, length, depth=0.8):
     """灰色の島型カウンター（中心 (x, y)、長手が X）と給茶機・給水機・黄緑の板。"""

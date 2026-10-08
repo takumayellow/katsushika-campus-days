@@ -51,13 +51,21 @@ def _hall(mb):
     # SUNMI 端末 3 台（壁の西の面を背に、西を向く）
     for y in D.KIOSK_Y:
         FR.kiosk(mb, D.KIOSK_X - 0.05, y, D.Z1, D.FACE_W)
-    # 立て看板（A 形。南を向く）
+    # 案内板の白い線の階段の絵（左下から右上へ 5 段。文字の看板の下）
+    sx, sz, run, rise = 0.35, 0.15, 0.24, 0.12
+    for k in range(5):
+        x, z = sx + run * k, sz + rise * k
+        kit.box_nb(mb, x, by - 0.105, z, x + run + 0.03, by - 0.1, z + 0.03, "plastic_white")
+        kit.box_nb(mb, x + run, by - 0.105, z, x + run + 0.03, by - 0.1, z + rise + 0.03,
+                   "plastic_white")
+    # 立て看板（南を向く。前の板の上 0.9 m は文字の地で plan_research2_signs が置く。
+    # ここは下の白い板、文字の地の裏の板、後ろへ開く脚）
     ax, ay = D.A_FRAME
+    kit.box_nb(mb, ax - 0.3, ay - 0.06, D.Z1 + 0.04, ax + 0.3, ay - 0.03, 0.46, "research2_kiosk_white")
+    kit.box_nb(mb, ax - 0.34, ay - 0.03, 0.46, ax + 0.34, ay, 1.44, "research2_kiosk_white")
     t = T(ax, ay, D.Z1, D.FACE_S)
-    for s in (-1, 1):
-        kit.thick_quad(mb, t.p(-0.3, 0.25 * s, 0.0), t.p(0.3, 0.25 * s, 0.0),
-                       t.p(0.3, 0.02 * s, 1.4), t.p(-0.3, 0.02 * s, 1.4), 0.03,
-                       "research2_kiosk_white")
+    kit.thick_quad(mb, t.p(-0.28, -0.35, 0.0), t.p(0.28, -0.35, 0.0),
+                   t.p(0.28, 0.0, 1.38), t.p(-0.28, 0.0, 1.38), 0.03, "research2_kiosk_white")
 
 
 def _window_counter(mb):
@@ -79,17 +87,15 @@ def _serving(mb):
     kit.box_nb(mb, sx0, y, D.Z1, sx1, D.KITCHEN_Y, 1.0, ENJI)
     kit.box(mb, sx0, y - 0.1, 1.0, sx1, D.KITCHEN_Y + 0.3, 1.04, FR.STAINLESS)
     # 上のえんじの帯と、帯の下端の光
-    kit.box(mb, sx0, y, 2.2, sx1, D.KITCHEN_Y, 2.8, ENJI)
-    kit.box_nb(mb, sx0, y - 0.04, 2.16, sx1, y, 2.22, "research2_band_light")
+    b0, b1 = D.BAND1
+    kit.box(mb, sx0, y, b0, sx1, D.KITCHEN_Y, b1, ENJI)
+    kit.box_nb(mb, sx0, y - 0.04, b0 - 0.04, sx1, y, b0 + 0.02, "research2_band_light")
     # 厨房の見える所（奥のステンレスの台と、台の上の箱）
     back = 35.0
     kit.box_nb(mb, sx0 + 0.2, back, D.Z1, sx1 - 0.2, 35.4, 0.9, FR.STAINLESS)
     for k, x in enumerate(range(int(sx0) + 2, int(sx1) - 1, 4)):
         h = 0.3 + 0.12 * (k % 3)
         kit.box_nb(mb, x, back + 0.05, 0.9, x + 0.6, 35.35, 0.9 + h, FR.STAINLESS)
-    # 呼び出しのモニター（帯の前に吊る）
-    mx, my, mz = D.MONITOR_1F
-    FR.monitor(mb, mx, my, mz, D.FACE_S, z_ceil=D.C1)
 
 
 def _islands(mb):

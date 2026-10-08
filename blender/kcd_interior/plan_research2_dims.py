@@ -99,6 +99,7 @@ STOOLS_1F = tuple((E_SW, -15.4 + 0.9 * k) for k in range(8)) + tuple(
     (E_FRONT, -7.6 + 0.65 * k) for k in range(4))
 SERVE_Y = 33.4                             # 配膳の前面
 SERVE_X = (-26.0, 10.0)
+BAND1 = (2.2, 2.8)                         # 配膳口の上のえんじの帯（下端, 上端）
 KITCHEN_Y = 33.6                           # 厨房の壁（入れない）
 ISLAND_Y = (28.6, 29.4)
 ISLAND_X = (-18.4, -9.2, 0.0, 9.2)        # 島の中心（y 29 の柱の間）

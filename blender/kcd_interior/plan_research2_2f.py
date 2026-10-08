@@ -88,8 +88,6 @@ def _wood_wall(mb):
     kit.box_nb(mb, bx0, y - 0.04, bz0, bx1, y, bz1, "research2_board_green")
     kit.vplate(mb, (bx0 + 0.06, y - 0.041), (bx1 - 0.06, y - 0.041), bz0 + 0.06, bz1 - 0.06,
                "research2_cork")
-    mx, _my, mz = D.MONITOR_2F
-    FR.monitor(mb, mx, y - 0.06, mz, D.FACE_S, w=1.0, h=0.6)
 
 
 def _tray_window(mb):
@@ -112,8 +110,6 @@ def _tray_window(mb):
             tx = w0 + 0.75 + j * 0.5
             FR.tray_stack(mb, tx, y + 0.52, zk + 0.02, n=3 - (j + k) % 2,
                           mat="research2_tray_black" if (j + k) % 2 else "research2_panel_grey")
-    # 白いパネル（「トレー」の札の地）
-    kit.box_nb(mb, w0 + 0.9, y - 0.03, z + 2.35, w1 - 0.9, y, z + 2.75, "research2_kiosk_white")
 
 
 def _lilac(mb):

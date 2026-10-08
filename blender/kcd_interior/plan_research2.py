@@ -1,6 +1,7 @@
-"""第2研究棟: 1F 食堂 + 2F 自習とカフェのフロア + 研究棟側のロビー。
+"""第2研究棟: 1F 食堂 + 2F 食堂（カフェテリア）+ 研究棟側のロビー。
 
-寸法は plan_research2_dims、躯体は plan_research2_shell、1F の中身は plan_research2_1f が持つ。
+寸法は plan_research2_dims、躯体は plan_research2_shell、1F / 2F / 研究棟側の中身は
+plan_research2_1f / _2f / _research、看板は plan_research2_signs が持つ。
 ここは組み立ての順番だけを決める。
 """
 
@@ -8,9 +9,11 @@ from . import furn_research2 as FR
 from . import plan_research2_1f as P1
 from . import plan_research2_2f as P2
 from . import plan_research2_dims as D
+from . import plan_research2_research as PR
 from . import plan_research2_shell as S
+from . import plan_research2_signs as PS
 
-FURN = ("hall", "serving", "seats1", "stairs", "counters2", "seats2", "terrace")
+FURN = ("hall", "serving", "seats1", "stairs", "counters2", "seats2", "terrace", "research")
 
 
 def _seats(c, sink):
@@ -22,13 +25,15 @@ def _seats(c, sink):
 
 
 def build(c):
-    S.build(c)
+    S.build(c, PS.HANGS)
     M = {kind: c.furn(kind) for kind in FURN}
     c.spawn(*D.SPAWN)
     c.exit(*D.EXIT)
 
     P1.build(c, M)
     P2.build(c, M)
+    PR.build(c, M)
+    PS.build(c, M)
 
     for name, x, y, z in D.POIS:
         c.poi(name, x, y, z)
@@ -37,5 +42,5 @@ def build(c):
     _seats(c, M["hall"])
     for suffix, loc, target, lens in D.CAMS:
         c.cam(suffix, loc, target, lens)
-    c.note("1F 食堂（配膳口・返却口・窓際の下がり天井）+ 2F 自習とカフェのフロア（木の天井・"
-           "厨房前のカウンター・テラス）+ 研究棟側のロビー")
+    c.note("1F 食堂（配膳口・返却口・窓際の下がり天井）+ 2F 食堂（カフェテリア。木の天井・"
+           "厨房前のカウンター・テラス）+ 研究棟側のロビーと EV ホール")
