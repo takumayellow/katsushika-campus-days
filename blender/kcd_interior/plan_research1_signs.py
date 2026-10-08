@@ -21,17 +21,26 @@ SC1F = D.Y_SC1 - HALF_PART
 HALL_N = D.Y_NC0 - HALF_PART       # EV ホールの北の壁の南面
 NC1F = D.Y_NC1 - HALF_PART
 
-GUIDE_JA = ("第1研究棟 フロアガイド\n11F 生命システム工学科\n10F 電子システム工学科\n"
-            "9F マテリアル創成工学科\n8F 物理工学科\n7F 建築学科\n6F 工業化学科\n5F 電気工学科\n"
-            "4F 機械工学科\n3F 学生実験室・高電圧実験室\n2F 機能デザイン工学科・学生実験室\n"
-            "1F 入試センター・庶務課・学科事務センター\n　 インキュベーションルーム・産学試作開発室")
-GUIDE_EN = ("Research Building 1 Floor Guide\n"
-            "11F Biological Science and Technology  10F Electronic Systems Engineering\n"
-            "9F Materials Science and Technology  8F Applied Physics  7F Architecture\n"
-            "6F Industrial Chemistry  5F Electrical Engineering  4F Mechanical Engineering\n"
-            "3F Student Labs, High Voltage Lab  2F Medical and Robotic Engineering Design, "
-            "Student Labs\n1F Admissions Center, General Affairs, Department Office Center, "
-            "Incubation Rooms, Prototyping Lab")
+# フロアガイドの行: (階, 日本語, 英語)。階が空の行は前の行の続き。題は GUIDE_TITLE
+GUIDE_TITLE = ("第1研究棟 フロアガイド", "Research Building 1 Floor Guide")
+GUIDE_ROWS = (
+    ("11F", "生命システム工学科", "Biological Science and Technology"),
+    ("10F", "電子システム工学科", "Electronic Systems Engineering"),
+    ("9F", "マテリアル創成工学科", "Materials Science and Technology"),
+    ("8F", "物理工学科", "Applied Physics"),
+    ("7F", "建築学科", "Architecture"),
+    ("6F", "工業化学科", "Industrial Chemistry"),
+    ("5F", "電気工学科", "Electrical Engineering"),
+    ("4F", "機械工学科", "Mechanical Engineering"),
+    ("3F", "学生実験室・高電圧実験室", "Student Labs, High Voltage Lab"),
+    ("2F", "機能デザイン工学科・学生実験室", "Medical and Robotic Engineering Design, Student Labs"),
+    ("1F", "入試センター・庶務課・学科事務センター",
+     "Admissions Center, General Affairs, Department Office Center"),
+    ("", "インキュベーションルーム・産学試作開発室", "Incubation Rooms, Prototyping Lab"),
+)
+GUIDE_JA = "\n".join([GUIDE_TITLE[0]]
+                     + [(f + " " if f else "　 ") + ja for f, ja, _e in GUIDE_ROWS])
+GUIDE_EN = "\n".join([GUIDE_TITLE[1]] + [(f + " " if f else "") + e for f, _j, e in GUIDE_ROWS])
 FJR_JA = ("民間航空機用FJR710ジェットエンジン\n1998年3月までJAXAの短距離離着陸実験機「飛鳥」に\n"
           "実際に搭載されていたジェットエンジンです。")
 FJR_EN = ("FJR710 Turbofan Engine for Civil Aircraft.\n"
@@ -54,14 +63,14 @@ ROOM_SIGNS = (
     (50.45, SC0F, 1.9, 0.0, "産学試作開発室", "Industry-Academia Prototyping Lab", 1.3, 0.3, NAVY),
 )
 LATER_SIGNS = (
-    (D.PROF[1] + HALF_PART, 15.0, 1.5, -HALF_PI, "エコステーション", "Eco Station", 1.4,
+    (D.PROF[1] + HALF_PART, D.ECO_Y, 1.5, -HALF_PI, "エコステーション", "Eco Station", 1.4,
      0.32, NAVY),
     (-27.55, SC1F, 1.9, PI, "機械工学科 実験室", "Mechanical Engineering Laboratory", 1.3, 0.3,
      NAVY),
     (-31.35, SC0F, 1.9, 0.0, "機械工学科 研究室", "Mechanical Engineering Lab Office", 1.3, 0.3,
      NAVY),
     (-51.2, SC0F, 1.4, 0.0, RENO_JA, RENO_EN, 1.0, 0.7, PAPER),
-    (D.RECEPTION[0] - 0.35, D.RECEPTION[1], 0.75, HALF_PI, "受付", "Reception", 0.5, 0.2, NAVY),
+    (D.RECEPTION[0] - 0.30, D.RECEPTION[1], 0.45, HALF_PI, "受付", "Reception", 0.5, 0.2, NAVY),
     (-4.9, 16.84, 2.5, 0.0, "掲示板", "Notice Board", 1.2, 0.26, NAVY),
 )
 WC = ("トイレ ／ 多目的トイレ", "Restrooms / Accessible Restroom")
@@ -94,13 +103,65 @@ def _place(c, rows):
 GUIDE_TOL = 0.05
 
 
+GUIDE_TITLE_GAP = 0.5        # 題の行の下に足す空き（字の大きさに対する比）
+GUIDE_COL_GAP = (0.6, 1.2)   # 階の列と日本語の列、日本語の列と英語の列の間（同上）
+
+
+def _em_width(fnt, text):
+    return sum(fnt.advance(fnt.glyph_id(ch)) for ch in text) / fnt.units_per_em
+
+
+def _guide_glyphs(w, h):
+    """フロアガイドの字の位置 [(字, u, 基線, 大きさ)]。u は読む人から見て右、基線は板の中心から上（m）。
+
+    階・日本語・英語の 3 列に分け、行ごとに基線をそろえる（題の日本語は階の列から書く）。字の大きさは
+    板の内側（signtext.margin の余白の内）に全部の行と列が入る最大にし、英語は日本語の EN_SCALE 倍。
+    3 列のまとまりは板の左右の中央に置く。
+    """
+    fnt = signtext.font()
+    m = signtext.margin(w, h)
+    iw, ih = w - 2.0 * m, h - 2.0 * m
+    rows = (("",) + GUIDE_TITLE,) + GUIDE_ROWS
+    en = signtext.EN_SCALE
+    fw = max(_em_width(fnt, f) for f, _j, _e in rows) + GUIDE_COL_GAP[0]
+    jw = max(_em_width(fnt, j) for _f, j, _e in rows[1:]) + GUIDE_COL_GAP[1]
+    ew = max(_em_width(fnt, e) for _f, _j, e in rows) * en
+    tall = len(rows) + (len(rows) - 1) * signtext.LEADING + GUIDE_TITLE_GAP
+    size = min(ih / tall, iw / (fw + jw + ew))
+    left = -(fw + jw + ew) * size * 0.5
+    desc = -fnt.descender / fnt.units_per_em
+    top = tall * size * 0.5
+    out = []
+    for k, (f, ja, e) in enumerate(rows):
+        base = top - size + desc * size
+        cols = ((left, f, size), (left if k == 0 else left + fw * size, ja, size),
+                (left + (fw + jw) * size, e, size * en))
+        for u, line, sz in cols:
+            for ch in line:
+                out.append((ch, u, base, sz))
+                u += fnt.advance(fnt.glyph_id(ch)) / fnt.units_per_em * sz
+        top -= (1.0 + signtext.LEADING + (GUIDE_TITLE_GAP if k == 0 else 0.0)) * size
+    return out
+
+
 def _guide(c):
-    """フロアガイド（案内板の壁の南面。紺の板に白い文字を左寄せ）。signs.wall と同じ置き方で、許容誤差だけ固定する。"""
+    """フロアガイド（案内板の壁の南面。紺の板に白い文字で、階・日本語・英語の 3 列）。
+
+    板は signs.wall と同じ置き方。文字は 3 列に並べるので signtext.place を使わずに字を置き、
+    許容誤差を GUIDE_TOL に固定する。
+    """
     x, y, z, ang, w, h = 0.0, D.GUIDE_WALL[1], 1.6, PI, 4.6, 2.0
+    out = 0.06
     text = signs.text_mat(NAVY)
-    shell.wall_sign(c.wall, x, y, z, ang=ang, w=w, h=h, mat=NAVY, frame="metal_white", out=0.06)
-    tris = signtext.place(c.wall, T(x, y, z, ang), w, h, GUIDE_JA, GUIDE_EN, face=0.06, side=1,
-                          mat=text, align="left", tol=GUIDE_TOL)
+    shell.wall_sign(c.wall, x, y, z, ang=ang, w=w, h=h, mat=NAVY, frame="metal_white", out=out)
+    frame = T(x, y, z, ang)
+    lift = out + signtext.LIFT
+    tris = 0
+    for ch, u, base, size in _guide_glyphs(w, h):
+        for tri in signtext.fitted_glyph(ch, size, GUIDE_TOL)[0]:
+            c.wall.add_face([frame.p(-(u + gx * size), lift, base + gy * size) for gx, gy in tri],
+                            text)
+            tris += 1
     empty = c.sign(x, y, z)
     signs._record(c, empty, "wall", GUIDE_JA, GUIDE_EN, tris, (x, y, z), ang, w, h, 1, NAVY, text,
                   "left")

@@ -1,4 +1,7 @@
-"""第1研究棟のプラン（kcd_interior.plan_research1）: スタブで組み、Empty・看板・カメラ・三角数を確かめる。"""
+"""第1研究棟のプラン（kcd_interior.plan_research1）: スタブで組み、Empty・座面・看板・カメラ・三角数を確かめる。"""
+
+import math
+import re
 
 import pytest
 
@@ -71,6 +74,33 @@ def test_npcs_are_in_table_order(built):
     got = _empties(built, "npc_research1_")
     assert [n for n, _ in got] == ["npc_research1_%d" % k for k in range(1, len(D.NPCS) + 1)]
     assert [p for _, p in got] == [pytest.approx(p) for p in D.NPCS]
+
+
+def _seat_centers():
+    """spec §4-3 の順の座面の中心（01〜08 は丸テーブルの椅子、09〜10 は西側ラウンジのベンチ）。"""
+    chairs = [(tx + D.CHAIR_R * math.cos(th), ty + D.CHAIR_R * math.sin(th), (tx, ty))
+              for (tx, ty), th in ((D.TABLES[ti], D.CHAIR_ANGLES[ai]) for ti, ai in D.TABLE_SEATS)]
+    return chairs + [(x, y, None) for x, y in D.SEAT_BENCHES]
+
+
+def test_seats_follow_the_spec_table(built):
+    names = [n for n, _ in built.empties if re.fullmatch(r"seat_research1_\d\d", n)]
+    assert names == ["seat_research1_%02d" % k for k in range(1, 11)]
+    assert built.seats == 10
+    pos = dict(built.empties)
+    for k, (x, y, table) in enumerate(_seat_centers(), 1):
+        name = "seat_research1_%02d" % k
+        cx, cy, cz = pos[name]
+        assert (cx, cy, cz) == pytest.approx((x, y, D.Z1), abs=0.02)
+        assert name + "_a0" in pos
+        if table is not None:   # 椅子の正面は卓の中心を向く
+            fx, fy, _ = pos[name + "_f"]
+            assert (fx - cx) * (table[0] - cx) + (fy - cy) * (table[1] - cy) > 0.0
+
+
+def test_each_table_keeps_one_chair_free(built):
+    for ti in range(len(D.TABLES)):
+        assert len({ai for t, ai in D.TABLE_SEATS if t == ti}) == len(D.CHAIR_ANGLES) - 1
 
 
 def test_signs_are_in_table_order(built):

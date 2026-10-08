@@ -4,12 +4,35 @@
 寸法と出典は docs/ref/interiors/research1/spec.md、座標の表は plan_research1_dims。
 """
 
+import math
+
+from . import furniture as F
 from . import plan_research1_atrium as atrium
 from . import plan_research1_core as core
 from . import plan_research1_dims as D
 from . import plan_research1_rooms as rooms
 from . import plan_research1_shell as shell_r1
 from . import plan_research1_signs as signs_r1
+from .kit import T
+
+
+def _seats(c):
+    """座面の Empty を spec §4-3 の順に並べる（家具ヘルパの記録は使わない）。
+
+    01〜08 は吹き抜けの丸テーブルの椅子（椅子の中心、正面は卓の中心）、09〜10 は西側ラウンジの
+    ベンチ。記録は c.floor に積む（research1 は kit.lift を使わないので vi は 0 でよい）。
+    """
+    for mb in c.builders():
+        mb.seats = []
+    for ti, ai in D.TABLE_SEATS:
+        tx, ty = D.TABLES[ti]
+        th = D.CHAIR_ANGLES[ai]
+        t = T(tx + D.CHAIR_R * math.cos(th), ty + D.CHAIR_R * math.sin(th), D.Z1,
+              th + math.pi * 0.5)
+        F._seat(c.floor, t, 0, 0.25, -0.25, 0.25, 0.5, 0.20)
+    for x, y in D.SEAT_BENCHES:
+        F._seat(c.floor, T(x, y, D.Z1, 0.0), 0, D.BENCH_W * 0.5, -0.24, 0.22, D.BENCH_W, 0.20)
+    c.seats += len(D.TABLE_SEATS) + len(D.SEAT_BENCHES)
 
 
 def build(c):
@@ -19,6 +42,7 @@ def build(c):
     atrium.build(c)
     core.build(c)
     rooms.build(c)
+    _seats(c)
     for name, x, y, z in D.POIS:
         c.poi(name, x, y, z)
     for x, y, z in D.NPCS:

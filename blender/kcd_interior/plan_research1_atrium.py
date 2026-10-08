@@ -116,9 +116,12 @@ def _lobby(c):
     """受付台・丸テーブルと椅子・ラック・時計・アート・掲示板。"""
     mb = c.furn("atrium")
     x, y = D.RECEPTION
-    F.counter(mb, x - 0.35, y - 0.9, x + 0.35, y + 0.9, h=1.0, body="research1_counter_front",
-              top="research1_counter_top")
-    F.monitor(mb, x, y, 1.0, ang=-HALF_PI)
+    # 白い長机（長手を Y、職員は +X の側）と、来訪者の側（-X）の幕板・職員の椅子・モニター
+    F.desk(mb, x, y, ang=-HALF_PI, w=2.4, d=0.6, h=0.72, top="research1_table_white", leg=STEEL)
+    T(x, y, D.Z1, -HALF_PI).box(mb, -1.2, -0.30, 0.05, 1.2, -0.27, 0.68, "research1_cabinet_white")
+    F.monitor(mb, x - 0.1, y, 0.72, ang=HALF_PI)
+    F.keyboard(mb, x + 0.15, y, 0.72, ang=HALF_PI)
+    F.chair(mb, x + 0.65, y - 0.4, ang=HALF_PI, mat="research1_chair_white", frame=STEEL)
     for tx, ty in D.TABLES:
         F.round_table(mb, tx, ty, r=0.45, h=0.72, top="research1_table_white", leg=STEEL)
         for th in D.CHAIR_ANGLES:
@@ -176,7 +179,8 @@ def _office(c):
                 for dx in (-0.75, 0.75):
                     F.desk(mb, ix + dx, iy + sgn * 0.36, ang=0.0 if sgn > 0 else PI,
                            top="research1_table_white", leg=STEEL)
-    F.locker_bank(mb, -7.6, -3.4, D.Y_N - 0.3, ang=PI, h=1.8, mat="research1_locker_grey")
+    for x0, x1 in ((-7.6, -3.4), (2.8, 5.2)):   # 2 列目は北の 2 枚の扉の間
+        F.locker_bank(mb, x0, x1, D.Y_N - 0.3, ang=PI, h=1.8, mat="research1_locker_grey")
     for x in (2.0, 6.0):
         T(x, D.Y_N, 0.0, PI).box(mb, -0.5, 0.0, D.Z1, 0.5, 0.04, 2.1, "research1_door_lightblue")
 
