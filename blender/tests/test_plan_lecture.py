@@ -4,9 +4,11 @@ import pytest
 
 import stubs
 from kcd_interior import plan_lecture_dims as D
+from kcd_interior import plan_lecture_esc as ESC
 from kcd_interior import plan_lecture_hall as HL
 from kcd_interior import plan_lecture_shell as SH
 from kcd_interior import plan_lecture_signs as SG
+from kcd_interior import plan_lecture_upper as UP
 from kcd_interior import shell as ishell
 from kcd_interior import signs
 from kcd_interior import spec as ispec
@@ -24,6 +26,9 @@ MARGIN = ishell.WALL      # 外周壁の厚み
 HALL_SEATS, HALL_DESKS = 270, 70                       # spec §4
 SEATS_DESKS_CAP = 12720   # spec §4 の見積もり（座席 270 x 44 + 机）
 REGISTERS = ((36.6, 39.0), (37.6, 39.0), (38.6, 39.0), (39.6, 39.0))   # 生協のモジュールが決めるまでの仮置き
+ESC_CAP = 2200           # エスカレータ 4 区間と 3F→4F（spec §7 のコア・エスカレータ・吹き抜けの内）
+UNDER_CLEAR = 1.6        # spec §1-3: 斜路の下でこれより低い所には入れない
+HEAD_CLEAR = 2.1         # 段の上面から上の区間の腹まで
 
 
 def _inside(x, y):
@@ -205,3 +210,74 @@ def test_hall_floor_is_cheap(lspec):
     c = Ctx(lspec)
     HL.build_floor(c.furn("hall_floor"))
     assert 0 < c.tris() <= 200
+
+
+@pytest.fixture(scope="module")
+def esc(lspec):
+    c = Ctx(lspec)
+    ESC.build(c)
+    return c
+
+
+def _all_flights():
+    return ESC.flights() + (ESC.stub(),)
+
+
+def test_escalator_steps_are_climbable():
+    assert ESC.RISE <= STEP_OFFSET
+    for f in _all_flights():
+        assert f.n * ESC.RISE == pytest.approx(f.zb - f.za)
+        assert f.tread(1)[2] == pytest.approx(f.za + ESC.RISE)
+        assert f.tread(f.n)[2] == pytest.approx(f.zb)
+        assert 0.33 <= abs(f.run) <= 0.40
+
+
+def test_escalator_ends_meet_floors_and_landings():
+    for f in ESC.flights():
+        assert min(abs(f.za - z) for z in D.FL) < 1e-9
+        assert min(abs(f.zb - z) for z in D.FL) < 1e-9
+        assert sorted((f.xa, f.xb)) == [D.ESC_LAND_W[1], D.ESC_LAND_E[0]]
+        assert (f.y0, f.y1) in (D.ESC_S_Y, D.ESC_N_Y)
+        assert (f.xb > f.xa) == ((f.y0, f.y1) == D.ESC_S_Y)   # 南の列は東へ、北の列は西へ上る
+
+
+def test_escalator_rows_stack_with_headroom():
+    fl = ESC.flights()
+    for lo, hi in ((fl[0], fl[1]), (fl[2], fl[3]), (fl[3], ESC.stub())):
+        assert (lo.y0, lo.y1, lo.xa, lo.xb) == (hi.y0, hi.y1, hi.xa, hi.xb)
+        for x in (lo.xa, (lo.xa + lo.xb) * 0.5, lo.xb):
+            gap = hi.line(x) - lo.line(x)
+            assert 4.2 - 1e-9 <= gap <= 4.6 + 1e-9
+            assert hi.line(x) - ESC.DROP - (lo.line(x) + ESC.RISE) >= HEAD_CLEAR
+
+
+def test_escalator_underside_is_closed_where_low():
+    for f in ESC.flights():
+        if f.za > 0.0:
+            continue
+        xo = f.open_x()
+        assert min(f.xa, f.xb) < xo < max(f.xa, f.xb)
+        assert f.line(xo) - ESC.DROP == pytest.approx(ESC.CLEAR)
+        assert ESC.CLEAR >= UNDER_CLEAR
+
+
+def test_escalator_stub_shows_three_steps_then_closes():
+    f = ESC.stub()
+    assert f.za == pytest.approx(D.F3) and f.zb == pytest.approx(D.FL[3])
+    assert ESC.STUB_SHOWN == 3
+    front = ESC.stub_bar_x(f) - f.dir * ESC.SHEET_T * 0.5
+    assert front == pytest.approx(f.xa + ESC.STUB_SHOWN * f.run)
+    assert ESC.CEIL_3F == pytest.approx(UP.Z_TOP)
+    assert f.x_at(ESC.CEIL_3F + ESC.DROP) > min(f.xa, f.xb)   # 腹は区間の途中で天井に入る
+
+
+def test_hole_rails_clear_the_escalator_cladding():
+    post = 0.03                                    # shell.railing の柱の半幅
+    assert UP.RAIL_OUT > post
+    x0, y0, x1, y1 = UP.HOLE
+    assert (y0, y1) == (D.ESC_S_Y[0], D.ESC_N_Y[1])
+    assert (x0, x1) == (D.ESC_LAND_W[1], D.ESC_LAND_E[0])
+
+
+def test_escalator_fits_its_budget(esc):
+    assert 0 < esc.tris() <= ESC_CAP

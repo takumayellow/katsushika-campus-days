@@ -28,6 +28,8 @@ CEIL_H = 3.0                        # 2F・3F の廊下の天井（床から）
 Z_TOP = D.F3 + CEIL_H               # 3F の天井（壁とコアの箱の上端）
 DOOR_201 = 27.3                     # 2F の南廊下で見える 201 の東の扉（閉じる）
 RAIL_H = 1.1
+RAIL_OUT = 0.08                     # 穴の手すりを穴の縁から外の床へ離す（エスカレータの腹板と当たらない）
+BAND_T, BAND_H, BAND_DROP = 0.06, 0.06, 0.04   # コアの光の帯の厚み・高さ・天井からの下がり
 HEADER_T = 0.1
 DOWN = 0.30                         # ダウンライトの一辺
 DOWN_CLEAR = 0.8                    # 吊り看板の吊り元からダウンライトまでの最小距離
@@ -38,6 +40,7 @@ CEIL = "lecture_ceiling_dark"
 CARPET = "lecture_carpet_corridor"
 WHITE = "lecture_rail_white"
 GLASS_RAIL = "lecture_glass_rail"
+COOL = "lecture_light_cool"
 DOOR_WOOD = "lecture_door_wood"
 
 
@@ -92,14 +95,26 @@ def _walls(c):
 
 
 def _hole_rails(c):
-    """エスカレータの穴の手すり。乗り口・降り口になる短辺は開ける。"""
+    """エスカレータの穴の手すり。穴の縁から RAIL_OUT 外の床に立て、乗り口・降り口になる短辺は開ける。"""
     x0, y0, x1, y1 = HOLE
-    for pts in ([(x0, y0), (x1, y0)], [(x0, y1), (x1, y1)]):
+    ys, yn = y0 - RAIL_OUT, y1 + RAIL_OUT
+    for pts in ([(x0, ys), (x1, ys)], [(x0, yn), (x1, yn)]):
         shell.railing(c.wall, pts, D.F2, h=RAIL_H, mat="stainless", glass=GLASS_RAIL)
-    # 3F: 南の列は東端で、北の列は西端で降りる。反対の端は下の階へ落ちる縁
-    for pts in ([(x0, D.ESC_S_Y[1]), (x0, y0), (x1, y0)],
-                [(x0, y1), (x1, y1), (x1, D.ESC_N_Y[0])]):
+    # 3F: 南の列は東端で降り、北の列は西端で降りて東端から 4F へ上る。南の列の西端は下の階へ落ちる縁
+    for pts in ([(x0 - RAIL_OUT, D.ESC_S_Y[1]), (x0 - RAIL_OUT, ys), (x1, ys)],
+                [(x0, yn), (x1, yn)]):
         shell.railing(c.wall, pts, D.F3, h=RAIL_H, mat="stainless", glass=GLASS_RAIL)
+
+
+def _core_bands(c):
+    """2F・3F の黒いコアの天井際を回る光の帯（南・北・東の面。西の面は外殻の壁に付く）。"""
+    x0, y0, x1, y1 = X0 + T, D.Y_CORE0, X_CORE1, D.Y_CORE1
+    b = BAND_T
+    for h in (D.F2 + CEIL_H, Z_TOP):
+        z0, z1 = h - BAND_DROP - BAND_H, h - BAND_DROP
+        kit.box(c.wall, x0, y0 - b, z0, x1, y0, z1, COOL)
+        kit.box(c.wall, x0, y1, z0, x1, y1 + b, z1, COOL)
+        kit.box(c.wall, x1, y0 - b, z0, x1 + b, y1 + b, z1, COOL)
 
 
 def _clear(x, y, z0, z1, roots):
@@ -130,4 +145,5 @@ def build(c, roots):
     _ceilings(c)
     _walls(c)
     _hole_rails(c)
+    _core_bands(c)
     _lights(c, roots)
