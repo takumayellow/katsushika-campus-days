@@ -158,7 +158,7 @@ BLACK, WHITE = "lecture_sign_black", "lecture_sign_white"
 BLUE, BAND = "sign_plate_blue", "lecture_coop_band"
 SIGNS = (
     ("wall", "1F", "1st Floor", 0.7, 0.6, 9.0, 23.49, 2.2, S, BLACK, {}),
-    ("hang", "エスカレーター", "Escalator", 1.6, 0.42, 20.4, 21.6, CEIL_CORR, 0.0, BLUE, {}),
+    ("hang", "エスカレーター", "Escalator", 1.6, 0.42, 20.4, 21.6, CEIL_CORR, E, BLUE, {}),
     ("hang", "学生食堂へ", "To Cafeteria", 1.6, 0.42, -25.0, 27.5, CEIL_CORR, E, BLUE, {}),
     ("wall", "エレベーター", "Elevator", 1.0, 0.3, -17.6, 23.49, 2.4, S, BLUE, {}),
     ("wall", "女子トイレ", "Women", 0.8, 0.3, -7.8, 23.49, 2.4, S, BLUE, {}),
