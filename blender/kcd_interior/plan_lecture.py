@@ -2,7 +2,7 @@
 
 組み立ての順:
 躯体（plan_lecture_shell）→ 中廊下・コア・入口ロビー・吹き抜け（plan_lecture_core）→
-2F・3F の東側の廊下とエスカレータの穴（plan_lecture_upper）→
+2F・3F の東側の廊下とエスカレータの穴（plan_lecture_upper）→ エスカレータ 2 列と 3F→4F の上り口（plan_lecture_esc）→
 101 の段床と 270 席（plan_lecture_hall）・黒板と木の壁（plan_lecture_101）→ 看板（plan_lecture_signs）→ POI・NPC・カメラ。
 寸法・POI・NPC・カメラ・看板の表は plan_lecture_dims が持つ。
 """
@@ -10,6 +10,7 @@
 from . import plan_lecture_101 as R101
 from . import plan_lecture_core as CORE
 from . import plan_lecture_dims as D
+from . import plan_lecture_esc as ESC
 from . import plan_lecture_hall as HALL
 from . import plan_lecture_shell as SHELL
 from . import plan_lecture_signs as SIGNS
@@ -26,6 +27,7 @@ def build(c):
     SHELL.build(c)
     CORE.build(c, M, SIGNS.hang_roots())
     UPPER.build(c, SIGNS.hang_roots())
+    ESC.build(c)
     HALL.build_floor(c.floor)
     seats = HALL.build_seats(c, M["hall_seats"], M["hall_desks"])
     R101.build(M["hall_front"])
