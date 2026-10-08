@@ -113,7 +113,7 @@
   "npc_research1_5": {
    "x": -1.4,
    "y": 0.0,
-   "z": 27.2
+   "z": 26.3
   },
   "npc_research1_6": {
    "x": 2.6,
@@ -193,7 +193,7 @@
   "sign_research1_13": {
    "x": -25.72,
    "y": 1.5,
-   "z": 15.0
+   "z": 14.0
   },
   "sign_research1_14": {
    "x": -27.55,
@@ -211,8 +211,8 @@
    "z": 17.28
   },
   "sign_research1_17": {
-   "x": 2.95,
-   "y": 0.75,
+   "x": 3.0,
+   "y": 0.45,
    "z": 20.0
   },
   "sign_research1_18": {
@@ -246,158 +246,228 @@
    "z": 33.02
   },
   "seat_research1_01": {
+   "x": -4.6,
+   "y": 0.0,
+   "z": 23.75
+  },
+  "seat_research1_01_f": {
+   "x": -4.6,
+   "y": 0.0,
+   "z": 24.0
+  },
+  "seat_research1_01_s": {
+   "x": -4.35,
+   "y": 0.0,
+   "z": 23.75
+  },
+  "seat_research1_01_a0": {
+   "x": -4.6,
+   "y": 0.0,
+   "z": 23.8
+  },
+  "seat_research1_02": {
+   "x": -3.864,
+   "y": 0.0,
+   "z": 25.025
+  },
+  "seat_research1_02_f": {
+   "x": -4.08,
+   "y": 0.0,
+   "z": 24.9
+  },
+  "seat_research1_02_s": {
+   "x": -3.989,
+   "y": 0.0,
+   "z": 25.242
+  },
+  "seat_research1_02_a0": {
+   "x": -3.907,
+   "y": 0.0,
+   "z": 25.0
+  },
+  "seat_research1_03": {
+   "x": -1.4,
+   "y": 0.0,
+   "z": 23.75
+  },
+  "seat_research1_03_f": {
+   "x": -1.4,
+   "y": 0.0,
+   "z": 24.0
+  },
+  "seat_research1_03_s": {
+   "x": -1.15,
+   "y": 0.0,
+   "z": 23.75
+  },
+  "seat_research1_03_a0": {
+   "x": -1.4,
+   "y": 0.0,
+   "z": 23.8
+  },
+  "seat_research1_04": {
+   "x": -2.136,
+   "y": 0.0,
+   "z": 25.025
+  },
+  "seat_research1_04_f": {
+   "x": -1.92,
+   "y": 0.0,
+   "z": 24.9
+  },
+  "seat_research1_04_s": {
+   "x": -2.261,
+   "y": 0.0,
+   "z": 24.808
+  },
+  "seat_research1_04_a0": {
+   "x": -2.093,
+   "y": 0.0,
+   "z": 25.0
+  },
+  "seat_research1_05": {
+   "x": -4.6,
+   "y": 0.0,
+   "z": 27.15
+  },
+  "seat_research1_05_f": {
+   "x": -4.6,
+   "y": 0.0,
+   "z": 27.4
+  },
+  "seat_research1_05_s": {
+   "x": -4.35,
+   "y": 0.0,
+   "z": 27.15
+  },
+  "seat_research1_05_a0": {
+   "x": -4.6,
+   "y": 0.0,
+   "z": 27.2
+  },
+  "seat_research1_06": {
+   "x": -3.864,
+   "y": 0.0,
+   "z": 28.425
+  },
+  "seat_research1_06_f": {
+   "x": -4.08,
+   "y": 0.0,
+   "z": 28.3
+  },
+  "seat_research1_06_s": {
+   "x": -3.989,
+   "y": 0.0,
+   "z": 28.642
+  },
+  "seat_research1_06_a0": {
+   "x": -3.907,
+   "y": 0.0,
+   "z": 28.4
+  },
+  "seat_research1_07": {
+   "x": -1.4,
+   "y": 0.0,
+   "z": 27.15
+  },
+  "seat_research1_07_f": {
+   "x": -1.4,
+   "y": 0.0,
+   "z": 27.4
+  },
+  "seat_research1_07_s": {
+   "x": -1.15,
+   "y": 0.0,
+   "z": 27.15
+  },
+  "seat_research1_07_a0": {
+   "x": -1.4,
+   "y": 0.0,
+   "z": 27.2
+  },
+  "seat_research1_08": {
+   "x": -2.136,
+   "y": 0.0,
+   "z": 28.425
+  },
+  "seat_research1_08_f": {
+   "x": -1.92,
+   "y": 0.0,
+   "z": 28.3
+  },
+  "seat_research1_08_s": {
+   "x": -2.261,
+   "y": 0.0,
+   "z": 28.208
+  },
+  "seat_research1_08_a0": {
+   "x": -2.093,
+   "y": 0.0,
+   "z": 28.4
+  },
+  "seat_research1_09": {
    "x": -22.4,
    "y": 0.0,
    "z": 9.59
   },
-  "seat_research1_01_f": {
+  "seat_research1_09_f": {
    "x": -22.4,
    "y": 0.0,
    "z": 9.82
   },
-  "seat_research1_01_s": {
+  "seat_research1_09_s": {
    "x": -21.5,
    "y": 0.0,
    "z": 9.59
   },
-  "seat_research1_01_a0": {
+  "seat_research1_09_a0": {
    "x": -23.0,
    "y": 0.0,
    "z": 9.62
   },
-  "seat_research1_01_a1": {
+  "seat_research1_09_a1": {
    "x": -22.4,
    "y": 0.0,
    "z": 9.62
   },
-  "seat_research1_01_a2": {
+  "seat_research1_09_a2": {
    "x": -21.8,
    "y": 0.0,
    "z": 9.62
   },
-  "seat_research1_02": {
+  "seat_research1_10": {
    "x": -19.4,
    "y": 0.0,
    "z": 9.59
   },
-  "seat_research1_02_f": {
+  "seat_research1_10_f": {
    "x": -19.4,
    "y": 0.0,
    "z": 9.82
   },
-  "seat_research1_02_s": {
+  "seat_research1_10_s": {
    "x": -18.5,
    "y": 0.0,
    "z": 9.59
   },
-  "seat_research1_02_a0": {
+  "seat_research1_10_a0": {
    "x": -20.0,
    "y": 0.0,
    "z": 9.62
   },
-  "seat_research1_02_a1": {
+  "seat_research1_10_a1": {
    "x": -19.4,
    "y": 0.0,
    "z": 9.62
   },
-  "seat_research1_02_a2": {
+  "seat_research1_10_a2": {
    "x": -18.8,
    "y": 0.0,
    "z": 9.62
-  },
-  "seat_research1_03": {
-   "x": -16.4,
-   "y": 0.0,
-   "z": 9.59
-  },
-  "seat_research1_03_f": {
-   "x": -16.4,
-   "y": 0.0,
-   "z": 9.82
-  },
-  "seat_research1_03_s": {
-   "x": -15.5,
-   "y": 0.0,
-   "z": 9.59
-  },
-  "seat_research1_03_a0": {
-   "x": -17.0,
-   "y": 0.0,
-   "z": 9.62
-  },
-  "seat_research1_03_a1": {
-   "x": -16.4,
-   "y": 0.0,
-   "z": 9.62
-  },
-  "seat_research1_03_a2": {
-   "x": -15.8,
-   "y": 0.0,
-   "z": 9.62
-  },
-  "seat_research1_04": {
-   "x": 10.4,
-   "y": 0.0,
-   "z": 12.29
-  },
-  "seat_research1_04_f": {
-   "x": 10.4,
-   "y": 0.0,
-   "z": 12.52
-  },
-  "seat_research1_04_s": {
-   "x": 11.3,
-   "y": 0.0,
-   "z": 12.29
-  },
-  "seat_research1_04_a0": {
-   "x": 9.8,
-   "y": 0.0,
-   "z": 12.32
-  },
-  "seat_research1_04_a1": {
-   "x": 10.4,
-   "y": 0.0,
-   "z": 12.32
-  },
-  "seat_research1_04_a2": {
-   "x": 11.0,
-   "y": 0.0,
-   "z": 12.32
-  },
-  "seat_research1_05": {
-   "x": 13.6,
-   "y": 0.0,
-   "z": 12.29
-  },
-  "seat_research1_05_f": {
-   "x": 13.6,
-   "y": 0.0,
-   "z": 12.52
-  },
-  "seat_research1_05_s": {
-   "x": 14.5,
-   "y": 0.0,
-   "z": 12.29
-  },
-  "seat_research1_05_a0": {
-   "x": 13.0,
-   "y": 0.0,
-   "z": 12.32
-  },
-  "seat_research1_05_a1": {
-   "x": 13.6,
-   "y": 0.0,
-   "z": 12.32
-  },
-  "seat_research1_05_a2": {
-   "x": 14.2,
-   "y": 0.0,
-   "z": 12.32
   }
  },
- "triangles": 40350,
- "seats": 0,
+ "triangles": 42901,
+ "seats": 10,
  "notes": [
   "1F 吹き抜け（トップライト・FJR710・窓口）+ 南北 2 本の廊下 + 西と東の EV ホール（2F まで） + 実験室・研究室・産学試作開発室・西側ラウンジ"
  ],
@@ -417,8 +487,8 @@
    "empty": "sign_research1_1",
    "kind": "wall",
    "ja": "第1研究棟 フロアガイド\n11F 生命システム工学科\n10F 電子システム工学科\n9F マテリアル創成工学科\n8F 物理工学科\n7F 建築学科\n6F 工業化学科\n5F 電気工学科\n4F 機械工学科\n3F 学生実験室・高電圧実験室\n2F 機能デザイン工学科・学生実験室\n1F 入試センター・庶務課・学科事務センター\n　 インキュベーションルーム・産学試作開発室",
-   "en": "Research Building 1 Floor Guide\n11F Biological Science and Technology  10F Electronic Systems Engineering\n9F Materials Science and Technology  8F Applied Physics  7F Architecture\n6F Industrial Chemistry  5F Electrical Engineering  4F Mechanical Engineering\n3F Student Labs, High Voltage Lab  2F Medical and Robotic Engineering Design, Student Labs\n1F Admissions Center, General Affairs, Department Office Center, Incubation Rooms, Prototyping Lab",
-   "tris": 9925,
+   "en": "Research Building 1 Floor Guide\n11F Biological Science and Technology\n10F Electronic Systems Engineering\n9F Materials Science and Technology\n8F Applied Physics\n7F Architecture\n6F Industrial Chemistry\n5F Electrical Engineering\n4F Mechanical Engineering\n3F Student Labs, High Voltage Lab\n2F Medical and Robotic Engineering Design, Student Labs\n1F Admissions Center, General Affairs, Department Office Center\nIncubation Rooms, Prototyping Lab",
+   "tris": 9616,
    "pos": {
     "x": 0.0,
     "y": 1.6,
@@ -699,7 +769,7 @@
    "pos": {
     "x": -25.72,
     "y": 1.5,
-    "z": 15.0
+    "z": 14.0
    },
    "facing": {
     "x": 1.0,
@@ -789,8 +859,8 @@
    "en": "Reception",
    "tris": 220,
    "pos": {
-    "x": 2.95,
-    "y": 0.75,
+    "x": 3.0,
+    "y": 0.45,
     "z": 20.0
    },
    "facing": {
@@ -990,7 +1060,7 @@
    "align": "center"
   }
  ],
- "text_triangles": 24764,
+ "text_triangles": 24455,
  "ext": {
   "objects": [
    "ext_research1",
