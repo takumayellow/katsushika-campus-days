@@ -188,3 +188,20 @@ def test_hall_seats_and_desks_fit_the_estimate(hall):
     c, n = hall
     assert n == HALL_SEATS and c.seats == HALL_SEATS
     assert c.tris() <= SEATS_DESKS_CAP
+
+
+def test_hall_tiers_run_wall_to_wall_without_gaps():
+    ts = HL.tiers()
+    assert len(ts) == D.HALL_ROWS + 1
+    assert all(t[0] < D.R101_X[0] and t[2] > D.R101_X[1] for t in ts)
+    assert ts[0][1] < D.HALL_BACK_Y[0] and ts[-1][3] == pytest.approx(D.HALL_FLAT_Y[0])
+    for a, b in zip(ts, ts[1:]):
+        assert b[1] == pytest.approx(a[3])
+        assert 0 <= a[4] - b[4] < STEP_OFFSET
+    assert ts[-1][4] < STEP_OFFSET
+
+
+def test_hall_floor_is_cheap(lspec):
+    c = Ctx(lspec)
+    HL.build_floor(c.furn("hall_floor"))
+    assert 0 < c.tris() <= 200
