@@ -234,7 +234,7 @@ def _research(c):
     door_part(c, a, b, D.Z2, D.C2, gap)
     ex0, ey0, ex1, ey1 = D.PART_X, D.EV[1], D.EV[2], D.EV_HALL[3]
     c.wall.add_prism([(ex0, ey0), (ex1, ey0), (ex1, ey1), (ex0, ey1)], D.Z1, D.C2,
-                     "research2_panel_grey")
+                     "research2_lobby_panel")
     y = D.R_STAIR[1]
     xa, xb = D.EV[2], D.INNER[13][0]
     c.wall.add_prism([(xa, y - 0.02), (xb, y - 0.02), (xb, y + 0.02), (xa, y + 0.02)],

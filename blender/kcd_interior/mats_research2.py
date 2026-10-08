@@ -64,6 +64,13 @@ PALETTE = {
     "research2_monitor_black":         ((0.010, 0.010, 0.012), 0.30, 0.2, 1.0),
     "research2_display_blue":          ((0.014, 0.114, 0.521), 0.30, 0.0, 1.0),
     "research2_ground_brick":          ((0.323, 0.105, 0.060), 0.90, 0.0, 1.0),
+    "research2_floor_1f_honey":        ((0.456, 0.275, 0.205), 0.35, 0.0, 1.0),
+    "research2_floor_2f_honey":        ((0.610, 0.301, 0.117), 0.30, 0.0, 1.0),
+    "research2_grille_black":          ((0.013, 0.013, 0.013), 0.70, 0.0, 1.0),
+    "research2_cassette_white":        ((0.815, 0.815, 0.791), 0.60, 0.0, 1.0),
+    "research2_roll_white":            ((0.871, 0.855, 0.807), 0.90, 0.0, 1.0),
+    "research2_lobby_stone":           ((0.270, 0.262, 0.246), 0.50, 0.0, 1.0),
+    "research2_floor_mat_black":       ((0.019, 0.019, 0.019), 0.90, 0.0, 1.0),
 }
 
 TRANSPARENT = {

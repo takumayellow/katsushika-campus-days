@@ -20,6 +20,7 @@ Y_FRONT = D.COUNTER2_Y
 Y_WALL = S.KITCHEN2_Y
 TOP_H = 0.95
 BAND = (2.3, 2.9)        # 上の帯（床からの高さ）
+BENCH_SEATS = 3          # 幅 1.8 m のベンチ 1 台に座れる人数（1 人 0.6 m）
 
 # 長机 2 卓つなぎの組（左の卓の中心 x, 列の y）
 GROUPS2 = tuple((x, 12.6) for x in (-20.0, -11.8, -6.0)) + tuple(
@@ -128,6 +129,7 @@ def _lilac(mb):
 
 # ---- 窓ぎわのカウンター ----
 def _window_counters(mb):
+    """窓ぎわのカウンター・ベンチ・高椅子。座れる人数を返す。"""
     for i, x0, x1, h in D.WINDOW_COUNTER_2F:
         x0 = max(x0, D.G1[0] + 0.6) if i == D.E_SW else x0
         a, b = D.edge_pt(i, x0, 0.3), D.edge_pt(i, x1, 0.3)
@@ -139,6 +141,7 @@ def _window_counters(mb):
     for i, x in D.HIGH_CHAIRS:
         cx, cy = D.edge_pt(i, x, D.CHAIR_OFF)
         FR.high_chair(mb, cx, cy, D.Z2, D.edge_ang(i))
+    return len(D.BENCHES2) * BENCH_SEATS + len(D.HIGH_CHAIRS)
 
 
 # ---- 客席 ----
@@ -152,12 +155,15 @@ def round_centers():
 
 
 def _seating(mb):
+    """長机の組とガラスぎわの丸テーブル。置いた椅子の数を返す。"""
+    n = 0
     for k, (x, y) in enumerate(GROUPS2):
         mats = _shells(k)
-        FR.table_set(mb, x, y, D.Z2, mats)
-        FR.table_set(mb, x + 1.6, y, D.Z2, mats[1:] + mats[:1])
+        n += FR.table_set(mb, x, y, D.Z2, mats)
+        n += FR.table_set(mb, x + 1.6, y, D.Z2, mats[1:] + mats[:1])
     for k, (x, y) in enumerate(round_centers()):
-        FR.round_set(mb, x, y, D.Z2, 4, _shells(k + 3), a0=math.pi * 0.25)
+        n += FR.round_set(mb, x, y, D.Z2, 4, _shells(k + 3), a0=math.pi * 0.25)
+    return n
 
 
 def _columns(mb):
@@ -167,17 +173,21 @@ def _columns(mb):
 
 # ---- テラス ----
 def _terrace(mb):
+    """テラスの白い丸テーブル（入れない）。椅子の数を返す。"""
     w = "research2_terrace_white"
+    n = 0
     for k, (x, y) in enumerate(D.TERRACE_SETS):
-        FR.round_set(mb, x, y, D.Z2, 2, (w,), a0=0.6 * k, r_chair=0.7, top=w, leg=w)
+        n += FR.round_set(mb, x, y, D.Z2, 2, (w,), a0=0.6 * k, r_chair=0.7, top=w, leg=w)
+    return n
 
 
 def build(c, M):
+    """2F 一式。(室内の席数, テラスの椅子の数) を返す。"""
     _counters(M["counters2"])
     _wood_wall(M["counters2"])
     _tray_window(M["counters2"])
     _lilac(M["counters2"])
-    _window_counters(M["seats2"])
-    _seating(M["seats2"])
+    seats = _window_counters(M["seats2"]) + _seating(M["seats2"])
     _columns(M["seats2"])
-    _terrace(M["terrace"])
+    terrace = _terrace(M["terrace"])
+    return seats, terrace

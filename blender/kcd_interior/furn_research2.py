@@ -45,22 +45,24 @@ def table(mb, x, y, z, ang=0.0, w=1.6, d=0.8):
 
 
 def table_set(mb, x, y, z, mats, w=1.6):
-    """長机 1 卓（長手が X）と椅子 4 脚。mats は 4 脚ぶんの材質の列。"""
+    """長机 1 卓（長手が X）と椅子 4 脚。mats は 4 脚ぶんの材質の列。置いた椅子の数を返す。"""
     table(mb, x, y, z, w=w)
     k = 0
     for dy in (-0.75, 0.75):
         for dx in (-0.4, 0.4):
             chair(mb, x + dx, y + dy, z, kit.face_ang(x + dx, y + dy, x + dx, y), mats[k % len(mats)])
             k += 1
+    return k
 
 
 def round_set(mb, x, y, z, n, mats, a0=0.0, r_chair=0.75, top=TABLE, leg=CHROME):
-    """丸テーブル（1 本脚）と、まわりの椅子 n 脚（角度 a0 から等分）。"""
+    """丸テーブル（1 本脚）と、まわりの椅子 n 脚（角度 a0 から等分）。置いた椅子の数を返す。"""
     F.round_table(mb, x, y, r=0.42, h=0.72, top=top, leg=leg, z=z)
     for k in range(n):
         a = a0 + math.tau * k / n
         cx, cy = x + math.cos(a) * r_chair, y + math.sin(a) * r_chair
         chair(mb, cx, cy, z, kit.face_ang(cx, cy, x, y), mats[k % len(mats)])
+    return n
 
 
 def high_stool(mb, x, y, z, seat=WHITE, leg=CHROME, h=0.75):
@@ -146,10 +148,11 @@ def island(mb, x, y, z, length, depth=0.8):
 
 
 def wagon(mb, x, y, z, ang, levels=4):
-    """ステンレスのトレーのワゴン（0.6 x 0.5 x 1.2）にライムグリーンのトレーを積む。"""
+    """ステンレスのトレーのワゴン（0.6 x 0.5 x 1.2。四隅の柱と上下の枠）にライムグリーンのトレーを積む。"""
     t = T(x, y, z, ang)
     for sx in (-0.3, 0.27):
-        t.box_nb(mb, sx, -0.25, 0.08, sx + 0.03, 0.25, 1.2, STAINLESS)
+        for sy in (-0.25, 0.22):
+            t.box_nb(mb, sx, sy, 0.08, sx + 0.03, sy + 0.03, 1.17, STAINLESS)
     t.box(mb, -0.3, -0.25, 1.17, 0.3, 0.25, 1.2, STAINLESS)
     t.box_nb(mb, -0.3, -0.25, 0.06, 0.3, 0.25, 0.1, STAINLESS)
     for k in range(levels):
@@ -211,24 +214,42 @@ def glass_rail(mb, pts, z, h=1.1, frame=CHROME, cap=STAINLESS, glass=GLASS, post
 
 
 def stair(mb, x0, y0, x1, y1, z0, z1, n, up, tread=TREAD, riser=SOFFIT, side=SOFFIT):
-    """直階段。up は上る向き（'+y' '-y'）。範囲は踏面の外形。段裏に白い斜めの板を張る。"""
-    run = (y1 - y0) / n
+    """直階段。up は上る向き（'+y' '-y' '+x' '-x'）。範囲は踏面の外形。
+
+    段裏に斜めの板を張る（材質は side、side=None なら riser）。side=None なら両脇の板は張らない。
+    """
+    ax, sgn = up[1], (1 if up[0] == "+" else -1)
+    lo, hi = (y0, y1) if ax == "y" else (x0, x1)
+    w0, w1 = (x0, x1) if ax == "y" else (y0, y1)
+
+    def at(s, w, z):
+        """上る向きの座標 s と、横の座標 w から 3D の点。"""
+        return (w, s, z) if ax == "y" else (s, w, z)
+
+    def block(s0, s1, za, zb, mat, open_bottom=False):
+        (xa, ya, _), (xb, yb, _) = at(s0, w0, 0.0), at(s1, w1, 0.0)
+        make = kit.box_nb if open_bottom else kit.box
+        make(mb, min(xa, xb), min(ya, yb), za, max(xa, xb), max(ya, yb), zb, mat)
+
+    run = (hi - lo) / n
     rise = (z1 - z0) / n
-    sgn = 1 if up == "+y" else -1
-    start = y0 if sgn > 0 else y1
-    end = start + sgn * (y1 - y0)
+    start = lo if sgn > 0 else hi
+    end = start + sgn * (hi - lo)
     for i in range(n):
         p = start + sgn * run * i
         q = p + sgn * run
         zt = z0 + rise * (i + 1)
-        kit.box(mb, x0, min(p, q), zt - 0.05, x1, max(p, q), zt, tread)
-        kit.box_nb(mb, x0, min(p, p + sgn * 0.03), zt - rise, x1, max(p, p + sgn * 0.03),
-                   zt - 0.05, riser)
-    for xb in (x0 - 0.06, x1):
-        kit.thick_quad(mb, (xb, start, z0 - 0.35), (xb, end, z1 - 0.35),
-                       (xb, end, z1 + 0.02), (xb, start, z0 + 0.02), 0.06, side)
-    kit.thick_quad(mb, (x1, start, z0 - 0.3), (x0, start, z0 - 0.3),
-                   (x0, end, z1 - 0.3), (x1, end, z1 - 0.3), 0.03, side)
+        block(min(p, q), max(p, q), zt - 0.05, zt, tread)
+        block(min(p, p + sgn * 0.03), max(p, p + sgn * 0.03), zt - rise, zt - 0.05, riser,
+              open_bottom=True)
+    if side is not None:
+        for wb in (w0 - 0.06, w1):
+            kit.thick_quad(mb, at(start, wb, z0 - 0.35), at(end, wb, z1 - 0.35),
+                           at(end, wb, z1 + 0.02), at(start, wb, z0 + 0.02), 0.06, side)
+    wa, wb = (w1, w0) if ax == "y" else (w0, w1)
+    kit.thick_quad(mb, at(start, wa, z0 - 0.3), at(start, wb, z0 - 0.3),
+                   at(end, wb, z1 - 0.3), at(end, wa, z1 - 0.3), 0.03,
+                   riser if side is None else side)
 
 
 def stair_rails(mb, x0, y0, x1, y1, z0, z1, up, h=0.95, sides=(0, 1)):

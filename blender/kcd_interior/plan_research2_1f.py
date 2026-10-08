@@ -123,14 +123,17 @@ def _tray_return(mb):
 
 # ---- 客席 ----
 def _seating(mb):
+    """長机の組と窓ぎわの丸テーブル。置いた椅子の数を返す。"""
+    n = 0
     for k, (x, y) in enumerate(GROUPS1):
         mats = _chair_mats(k)
-        FR.table_set(mb, x, y, D.Z1, mats)
-        FR.table_set(mb, x + 1.6, y, D.Z1, mats[2:] + mats[:2])
+        n += FR.table_set(mb, x, y, D.Z1, mats)
+        n += FR.table_set(mb, x + 1.6, y, D.Z1, mats[2:] + mats[:2])
     for k, (i, x) in enumerate(ROUNDS1):
         cx, cy = D.edge_pt(i, x, ROUND_OFF)
         a_in = D.edge_ang(i) + math.pi * 0.5 + math.pi    # 室内を向く法線の角度（数学の角）
-        FR.round_set(mb, cx, cy, D.Z1, 3, _chair_mats(k + 1), a0=a_in)
+        n += FR.round_set(mb, cx, cy, D.Z1, 3, _chair_mats(k + 1), a0=a_in)
+    return n
 
 
 def _columns(mb):
@@ -168,12 +171,14 @@ def _back_stair(mb):
 
 
 def build(c, M):
+    """1F 一式。客席の椅子とスツールの数を返す。"""
     _hall(M["hall"])
     _window_counter(M["hall"])
     _serving(M["serving"])
     _islands(M["serving"])
     _tray_return(M["serving"])
-    _seating(M["seats1"])
+    seats = _seating(M["seats1"]) + len(D.STOOLS_1F)
     _columns(M["stairs"])
     _front_stair(M["stairs"])
     _back_stair(M["stairs"])
+    return seats

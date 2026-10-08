@@ -9,7 +9,7 @@ from . import kit
 from . import plan_research2_dims as D
 
 PANEL = "research2_lobby_panel"
-STONE = "research2_floor_1f_dark"
+STONE = "research2_lobby_stone"
 BRICK = "research2_brick_core"
 SPINE = 0.16                 # 2 本の段の間の煉瓦の壁の厚み
 LAND_W = 1.3                 # 東の踊り場の奥行き（X）
@@ -37,33 +37,15 @@ def _ev(mb):
             FR.ev_doors(mb, D.EV[2], y, z, D.FACE_E)
 
 
-def stair_x(mb, x0, y0, x1, y1, z0, z1, n, up, tread=FR.TREAD, riser=FR.SOFFIT):
-    """X 向きの直階段（up は '+x' '-x'）。範囲は踏面の外形。段裏に白い斜めの板。"""
-    run = (x1 - x0) / n
-    rise = (z1 - z0) / n
-    sgn = 1 if up == "+x" else -1
-    start = x0 if sgn > 0 else x1
-    end = start + sgn * (x1 - x0)
-    for i in range(n):
-        p = start + sgn * run * i
-        q = p + sgn * run
-        zt = z0 + rise * (i + 1)
-        kit.box(mb, min(p, q), y0, zt - 0.05, max(p, q), y1, zt, tread)
-        kit.box_nb(mb, min(p, p + sgn * 0.03), y0, zt - rise, max(p, p + sgn * 0.03), y1,
-                   zt - 0.05, riser)
-    kit.thick_quad(mb, (start, y0, z0 - 0.3), (start, y1, z0 - 0.3),
-                   (end, y1, z1 - 0.3), (end, y0, z1 - 0.3), 0.03, riser)
-
-
 def _stair(mb):
     x0, y0, x1, y1 = D.R_STAIR
     ym = (y0 + y1) * 0.5
     xa, xb = x0 + TOP_W, x1 - LAND_W
     zm = (D.Z1 + D.Z2) * 0.5
     # 南の半分（東へ上る）・東の踊り場・北の半分（西へ上る）・2F の着き場
-    stair_x(mb, xa, y0 + 0.1, xb, ym - SPINE * 0.5, D.Z1, zm, STEPS, "+x")
+    FR.stair(mb, xa, y0 + 0.1, xb, ym - SPINE * 0.5, D.Z1, zm, STEPS, "+x", side=None)
     kit.box(mb, xb, y0 + 0.1, zm - 0.22, x1, y1, zm, FR.TREAD, bottom=FR.SOFFIT)
-    stair_x(mb, xa, ym + SPINE * 0.5, xb, y1, zm, D.Z2, STEPS, "-x")
+    FR.stair(mb, xa, ym + SPINE * 0.5, xb, y1, zm, D.Z2, STEPS, "-x", side=None)
     kit.box(mb, x0, ym + SPINE * 0.5, D.Z2 - D.SLAB, xa, y1, D.Z2, FR.TREAD, bottom=FR.SOFFIT)
     # 2 本の間の煉瓦の壁（手すりを兼ねる）と、2F の着き場の南の手すり
     kit.box(mb, xa, ym - SPINE * 0.5, D.Z1, xb, ym + SPINE * 0.5, D.Z2 + 1.0, BRICK)

@@ -41,51 +41,74 @@ def _area(poly):
                      - poly[(i + 1) % len(poly)][0] * poly[i][1] for i in range(len(poly)))
 
 
-def strips(poly, holes=(), xmin=None, xmax=None, ymin=None, ymax=None):
-    """多角形 poly（単純・向き不問）から矩形の穴を抜き、凸の多角形（反時計回り）の列で返す。
+def _y_at(a, b, x):
+    return a[1] + (b[1] - a[1]) * (x - a[0]) / (b[0] - a[0])
 
-    xmin / xmax / ymin / ymax を与えるとその外を切り落とす。
-    """
-    n = len(poly)
+
+def _cuts(poly, holes, xmin, xmax):
+    """縦の帯の区切り（外形の頂点と穴の左右の x。xmin / xmax の外は捨てる）。"""
     xs = {p[0] for p in poly}
     for h in holes:
         xs.update((h[0], h[2]))
     lo = min(xs) if xmin is None else max(xmin, min(xs))
     hi = max(xs) if xmax is None else min(xmax, max(xs))
     xs = sorted(x for x in xs | {lo, hi} if lo - EPS <= x <= hi + EPS)
+    return [(x0, x1) for x0, x1 in zip(xs, xs[1:]) if x1 - x0 >= 1e-4]
+
+
+def _spans(poly, x0, x1):
+    """帯 x0〜x1 を横切る外形の辺の、帯の中央・左端・右端での y（中央の y の順）。"""
+    xm = (x0 + x1) * 0.5
     out = []
-    for x0, x1 in zip(xs, xs[1:]):
-        if x1 - x0 < 1e-4:
-            continue
-        xm = (x0 + x1) * 0.5
-        spans = []
-        for i in range(n):
-            a, b = poly[i], poly[(i + 1) % n]
-            if min(a[0], b[0]) <= xm <= max(a[0], b[0]) and abs(b[0] - a[0]) > EPS:
-                def y_at(x, a=a, b=b):
-                    return a[1] + (b[1] - a[1]) * (x - a[0]) / (b[0] - a[0])
-                spans.append((y_at(xm), y_at(x0), y_at(x1)))
-        spans.sort()
-        for k in range(0, len(spans) - 1, 2):
-            bot, top = spans[k], spans[k + 1]
+    n = len(poly)
+    for i in range(n):
+        a, b = poly[i], poly[(i + 1) % n]
+        if min(a[0], b[0]) <= xm <= max(a[0], b[0]) and abs(b[0] - a[0]) > EPS:
+            out.append((_y_at(a, b, xm), _y_at(a, b, x0), _y_at(a, b, x1)))
+    return sorted(out)
+
+
+def _clip_both(pieces, ymin, ymax):
+    if ymin is not None:
+        pieces = [_clip_y(p, ymin, False) for p in pieces]
+    if ymax is not None:
+        pieces = [_clip_y(p, ymax, True) for p in pieces]
+    return pieces
+
+
+def _subtract_holes(pieces, holes, xm):
+    """帯の中央 xm に掛かる穴を、上下の 2 つの切れ端に分けて抜く。"""
+    for hx0, hy0, hx1, hy1 in holes:
+        if hx0 - EPS <= xm <= hx1 + EPS:
+            pieces = [q for p in pieces if len(p) >= 3
+                      for q in (_clip_y(p, hy0, True), _clip_y(p, hy1, False))]
+    return pieces
+
+
+def _faces(pieces):
+    """切れ端のうち面になるものを反時計回りにそろえる。"""
+    out = []
+    for p in pieces:
+        p = _clean(p)
+        if len(p) >= 3 and abs(_area(p)) > 1e-4:
+            out.append(p if _area(p) > 0 else list(reversed(p)))
+    return out
+
+
+def strips(poly, holes=(), xmin=None, xmax=None, ymin=None, ymax=None):
+    """多角形 poly（単純・向き不問）から矩形の穴を抜き、凸の多角形（反時計回り）の列で返す。
+
+    xmin / xmax / ymin / ymax を与えるとその外を切り落とす。
+    帯を切る → 上下をクリップ → 穴を抜く → 面にする、の順に進む。
+    """
+    out = []
+    for x0, x1 in _cuts(poly, holes, xmin, xmax):
+        spans = _spans(poly, x0, x1)
+        for bot, top in zip(spans[0::2], spans[1::2]):
             pieces = [[(x0, bot[1]), (x1, bot[2]), (x1, top[2]), (x0, top[1])]]
-            if ymin is not None:
-                pieces = [_clip_y(p, ymin, False) for p in pieces]
-            if ymax is not None:
-                pieces = [_clip_y(p, ymax, True) for p in pieces]
-            for hx0, hy0, hx1, hy1 in holes:
-                if not (hx0 - EPS <= xm <= hx1 + EPS):
-                    continue
-                cut = []
-                for p in pieces:
-                    if len(p) >= 3:
-                        cut.append(_clip_y(p, hy0, True))
-                        cut.append(_clip_y(p, hy1, False))
-                pieces = cut
-            for p in pieces:
-                p = _clean(p)
-                if len(p) >= 3 and abs(_area(p)) > 1e-4:
-                    out.append(p if _area(p) > 0 else list(reversed(p)))
+            pieces = _clip_both(pieces, ymin, ymax)
+            pieces = _subtract_holes(pieces, holes, (x0 + x1) * 0.5)
+            out.extend(_faces(pieces))
     return out
 
 
