@@ -21,6 +21,9 @@ SEAT_SET = 0.72             # 踏面の北端から座席の中心まで
 SEAT_MAT = "lecture_seat_navy"
 FRAME_MAT = "metal_dark"
 DESK_MAT = "lecture_desk_ivory"
+FLOOR_TOP = "lecture_carpet_hall"
+FLOOR_SIDE = "lecture_concrete"
+WALL_IN = 0.08              # 段板を壁の中へ差し込む長さ（壁との間に溝を残さない。#42）
 
 Row = namedtuple("Row", "k z y0 y1 desks")    # desks: ((x0, x1, 席数), ...)
 
@@ -75,3 +78,18 @@ def build_seats(c, seats_mb, desks_mb):
             _desk(desks_mb, x0, x1, r)
     c.seats += len(pts)
     return len(pts)
+
+
+def tiers():
+    """段床の板 (x0, y0, x1, y1, z)。後ろの通路、列 10〜1 の踏面の順（南から北へ）。"""
+    x0, x1 = D.R101_X[0] - WALL_IN, D.R101_X[1] + WALL_IN
+    out = [(x0, D.HALL_BACK_Y[0] - WALL_IN, x1, D.HALL_BACK_Y[1], D.HALL_RISE * D.HALL_ROWS)]
+    out += [(x0, r.y0, x1, r.y1, r.z) for r in reversed(rows())]
+    return tuple(out)
+
+
+def build_floor(mb):
+    """段床（踏面はカーペット、蹴込みはコンクリート）と平場のカーペット。"""
+    for x0, y0, x1, y1, z in tiers():
+        mb.add_prism([(x0, y0), (x1, y0), (x1, y1), (x0, y1)], 0.0, z, FLOOR_SIDE, FLOOR_TOP)
+    kit.plate(mb, D.R101_X[0], D.HALL_FLAT_Y[0], D.R101_X[1], D.HALL_FLAT_Y[1], 0.004, FLOOR_TOP)
