@@ -17,7 +17,7 @@ def _widths(cid):
     return mb, mb.outline_widths()
 
 
-@pytest.mark.parametrize("cid", ["mirai", "inari", "kaname", "sora", "prof", "botchan"])
+@pytest.mark.parametrize("cid", ["mirai", "inari", "kaname", "sora", "prof", "student_m", "botchan"])
 def test_nose_outline_is_thinner_than_the_face(cid):
     mb, w = _widths(cid)
     nose = mb.part_indices("nose")

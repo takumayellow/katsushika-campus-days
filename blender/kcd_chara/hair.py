@@ -1153,7 +1153,9 @@ def build_hair(mb: M.MeshBuilder, p: dict, head, a, fs, uv_box) -> None:
         _side(mb, p, head, count=2, az_lo=math.radians(70.0),
               az_hi=math.radians(96.0), el=1.20,
               z_end=chin + hh * 0.70, width=0.058, curl=0.0)
-        _back(mb, p, head, count=9, el=1.72, z_end=chin + hh * 0.10,
+        # 襟足の長さ（顎から頭高の何割上で切るか）。男子学生は短く刈って耳の下を見せる。
+        _back(mb, p, head, count=9, el=1.72,
+              z_end=chin + hh * p.get("nape_end", 0.10),
               width=0.102, puff=0.85)
 
     acc = p.get("hair_accessory")

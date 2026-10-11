@@ -12,7 +12,7 @@ import pytest
 from kcd_chara import body, hair, params
 from kcd_chara import mesh as M
 
-CHARACTERS = ["mirai", "inari", "kaname", "sora", "prof", "botchan", "madonna"]
+CHARACTERS = ["mirai", "inari", "kaname", "sora", "prof", "student_m", "botchan", "madonna"]
 
 
 def _build(cid):

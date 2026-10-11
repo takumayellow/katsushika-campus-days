@@ -128,6 +128,21 @@ BUILDS = {
         arm_len=(0.172, 0.152, 0.086),
         head_w=0.828, head_d=0.850,
     ),
+    # 男子学生（モブ）: 肩幅 = 頭幅 x 1.48。胸のふくらみは無く、腰は女子より細い。
+    # 肩・胴・脚は slim と sturdy の間に置き、教授より細身の若い体にする。
+    "lean_m": dict(
+        shoulder_half=0.740, shoulder_ry=0.320,
+        bust_rx=0.520, bust_ry=0.370, bust_bulge=0.000,
+        underbust_rx=0.470, underbust_ry=0.330,
+        waist_rx=0.420, waist_ry=0.300,
+        hip_rx=0.475, hip_ry=0.345,
+        crotch_rx=0.460, crotch_ry=0.335,
+        neck_r=0.195,
+        arm_r=(0.110, 0.095, 0.068), hand=0.125,
+        leg_r=(0.270, 0.200, 0.130), foot=(0.225, 0.680, 0.170),
+        arm_len=(0.172, 0.152, 0.085),
+        head_w=0.815, head_d=0.840,
+    ),
     # ちび（女子・3 頭身）: 肩幅 = 頭幅 x 0.86、手足は短く細く、首はほぼ無い
     "chibi_f": dict(
         shoulder_half=0.430, shoulder_ry=0.215,
@@ -417,6 +432,31 @@ CHARACTERS: dict[str, dict] = {
                     "glasses": "#AEB4BE"},
         accessories=("necktie",),
         sign_items=("白衣", "銀縁眼鏡", "ネクタイ"),
+        outward_faces=True,
+    ),
+    # ------------------------------------------------------------- student_m
+    # 男子学生のモブ (#165)。話に出る名前は無い。シャツ・ズボン・靴・髪の色は
+    # Unity の MobStage が人ごとに塗り替える。
+    "student_m": dict(
+        id="student_m",
+        jp="男子学生",
+        height=1.70, heads=6.3, build="lean_m",
+        skin=_c("#ECC0A2"),
+        hair_color=_c("#46464F"),
+        eye_color=_c("#5A4434"),
+        lash_color=_c("#24222A"),
+        brow_color=_c("#2E2C34"),
+        blush_color=_c("#E09080"), blush_strength=0.12,
+        mouth_color=_c("#9A4A40"), mouth_style="line", mouth_w=0.030,
+        eye_style="sharp", eye_tilt=0.0,
+        brow_width=0.020, brow_arch=0.06,
+        hair="short_old", hair_accessory=None, nape_end=0.20,
+        outfit="casual_m",
+        face_layout=dict(eye_y=0.421, eye_dx=0.190, eye_rx=0.074, eye_ry=0.090),
+        mat_colors={"hair": "#46464F", "eye_l": "#5A4434", "eye_r": "#5A4434",
+                    "cloth_blouse": "#F2F2F0"},
+        accessories=(),
+        sign_items=("半袖シャツ", "スニーカー", "短い黒髪"),
         outward_faces=True,
     ),
 }

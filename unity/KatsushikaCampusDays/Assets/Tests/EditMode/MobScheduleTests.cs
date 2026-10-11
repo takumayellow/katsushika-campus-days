@@ -10,7 +10,7 @@ namespace KCD.Tests
     ///
     /// 朝は門か北西の駅側から建物へ 18 人、昼はモール・池・北側に散って 20 人、午後は建物の間を 14 人、
     /// 夕方は門か駅側へ 10 人、夜はほとんど誰もいない（2 人）。8 時より前は誰も出さない (#165)。
-    /// どの時間帯も同時に出す上限の 24 人を超えない。
+    /// どの時間帯も同時に出す上限の 24 人を超えない。見た目は男女がおよそ 3 対 7 (#165)。
     /// </summary>
     public sealed class MobScheduleTests
     {
@@ -22,7 +22,10 @@ namespace KCD.Tests
         /// <summary>夕方に帰る出口: 正門と、北西の駅側（キャンパスの外へ出る道の端）。</summary>
         private static readonly string[] EveningExits = { "place:gate_main", "xz:-62:78" };
 
-        private static readonly string[] KnownBodies = { "sora", "inari", "kaname", "prof", "mirai" };
+        private static readonly string[] KnownBodies = { "sora", "inari", "kaname", "prof", "mirai", "student_m" };
+
+        /// <summary>男の体。ほかは女の体。</summary>
+        private static readonly HashSet<string> MaleBodies = new HashSet<string> { "prof", "student_m" };
 
         private static string DataPath => Path.Combine(Application.dataPath, "Data", "Mobs", "schedule.json");
 
@@ -162,6 +165,36 @@ namespace KCD.Tests
                 string fbx = Path.Combine(
                     Application.dataPath, "Models", "Characters", variant.BodyId, variant.BodyId + ".fbx");
                 Assert.IsTrue(File.Exists(fbx), variant.Id + " の体の FBX が無い: " + fbx);
+            }
+        }
+
+        [Test]
+        public void 男女はおよそ3対7で並びのどこを切っても偏らない()
+        {
+            // MobStage は枠 i に Variants[i % 数] を焼き込み、MobPool は枠を順に貸す。
+            // 全枠で男が 25〜35%、続けて貸す 10 枠（夕方の人数）のどこを切っても男が 2〜4 人。
+            IReadOnlyList<MobSchedule.Variant> variants = Load().Variants;
+            int slots = MobScheduler.MaxActive;
+            var male = new bool[slots];
+            int total = 0;
+            for (int i = 0; i < slots; i++)
+            {
+                male[i] = MaleBodies.Contains(variants[i % variants.Count].BodyId);
+                total += male[i] ? 1 : 0;
+            }
+
+            Assert.That(total / (float)slots, Is.InRange(0.25f, 0.35f), "全枠の男の割合");
+
+            const int window = 10;
+            for (int start = 0; start < slots; start++)
+            {
+                int count = 0;
+                for (int k = 0; k < window; k++)
+                {
+                    count += male[(start + k) % slots] ? 1 : 0;
+                }
+
+                Assert.That(count, Is.InRange(2, 4), start + " 番の枠から 10 人の男の数");
             }
         }
 
