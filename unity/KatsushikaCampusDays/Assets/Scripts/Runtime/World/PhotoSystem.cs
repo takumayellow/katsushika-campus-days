@@ -16,6 +16,13 @@ namespace KCD
     {
         public const string FolderName = "Photos";
 
+        /// <summary>
+        /// 写真を置くフォルダの親を差し替える（テストとスモーク用）。null なら Application.persistentDataPath。
+        /// Editor の persistentDataPath は Windows 版と同じフォルダなので、写真スポットで撮るテストがそのまま書くと、
+        /// その端末で遊んで撮った写真の隣にテストの写真が溜まる。
+        /// </summary>
+        public static string DirectoryOverride { get; set; }
+
         [SerializeField] private GameObject _overlayRoot;
         [SerializeField] private TMP_Text _hintLabel;
         [SerializeField] private Image _flash;
@@ -215,7 +222,7 @@ namespace KCD
             _capturing = true;
             bool overlayWasVisible = _overlayRoot != null && _overlayRoot.activeSelf;
             SetOverlay(false);
-            yield return new WaitForEndOfFrame();
+            yield return EndOfFrame();
 
             string fileName = FileNameFor(DateTime.Now);
             bool saved;
@@ -286,10 +293,20 @@ namespace KCD
                 }
             }
 
-            string folder = Path.Combine(Application.persistentDataPath, FolderName);
+            string folder = Path.Combine(DirectoryOverride ?? Application.persistentDataPath, FolderName);
             Directory.CreateDirectory(folder);
             ScreenCapture.CaptureScreenshot(Path.Combine(folder, fileName));
             return true;
+        }
+
+        /// <summary>
+        /// 描画が終わるまで待つ。batchmode の Editor（PlayMode テスト）では WaitForEndOfFrame が来ず、
+        /// 撮影が止まったままになるので、次のフレームまで待つ。CaptureScreenshot は呼んだフレームの描画の終わりに
+        /// 撮るので、デスクトップではそれでも撮影の画は変わらない。
+        /// </summary>
+        private static object EndOfFrame()
+        {
+            return Application.isBatchMode ? null : new WaitForEndOfFrame();
         }
 
         private IEnumerator Flash()

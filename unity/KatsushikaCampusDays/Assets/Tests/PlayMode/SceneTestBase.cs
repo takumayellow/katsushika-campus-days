@@ -18,7 +18,9 @@ namespace KCD.Tests
 
         protected LogCapture Capture { get; private set; }
 
-        /// <summary>このテストのセーブの置き場。空のフォルダから始めるので、端末に残ったセーブで結果が変わらない。</summary>
+        /// <summary>
+        /// このテストのセーブと写真の置き場。空のフォルダから始めるので、端末に残ったセーブで結果が変わらない。
+        /// </summary>
         protected string SaveDirectory { get; private set; }
 
         [SetUp]
@@ -31,6 +33,7 @@ namespace KCD.Tests
             SaveDirectory = Path.Combine(Path.GetTempPath(), "kcd-playmode-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(SaveDirectory);
             SaveSystem.DirectoryOverride = SaveDirectory;
+            PhotoSystem.DirectoryOverride = SaveDirectory;
             SaveSystem.DiscardPending();
 
             Capture = new LogCapture();
@@ -47,6 +50,7 @@ namespace KCD.Tests
             AutoSave.Cancel();
             SaveSystem.DiscardPending();
             SaveSystem.DirectoryOverride = null;
+            PhotoSystem.DirectoryOverride = null;
             if (SaveDirectory != null && Directory.Exists(SaveDirectory))
             {
                 Directory.Delete(SaveDirectory, true);
