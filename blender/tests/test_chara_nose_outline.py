@@ -35,5 +35,8 @@ def test_nose_outline_is_thinner_than_the_face(cid):
 def test_characters_without_a_nose_keep_full_width():
     p = params.resolve("madonna")
     assert p.get("nose", True) is False
-    _mb, w = _widths("madonna")
-    assert np.all(w == 1.0)
+    mb, w = _widths("madonna")
+    # 胴の上端は鼻と関係なく輪郭線を消している (#155)
+    keep = np.ones(len(w), dtype=bool)
+    keep[body.torso_top_indices(mb)] = False
+    assert np.all(w[keep] == 1.0)
