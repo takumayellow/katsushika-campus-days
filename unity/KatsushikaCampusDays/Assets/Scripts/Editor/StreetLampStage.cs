@@ -80,7 +80,7 @@ namespace KCD.Editor
             go.transform.localScale = Vector3.one;
 
             Physics.SyncTransforms();
-            Mesh mesh = SaveMesh(BuildMesh(go.transform, lamps, fallbackGround));
+            Mesh mesh = SaveGlowMesh(BuildMesh(go.transform, lamps, fallbackGround), MeshPath);
 
             go.AddComponent<MeshFilter>().sharedMesh = mesh;
             MeshRenderer renderer = go.AddComponent<MeshRenderer>();
@@ -271,14 +271,17 @@ namespace KCD.Editor
             triangles.AddRange(new[] { i, i + 1, i + 2, i, i + 2, i + 3 });
         }
 
-        /// <summary>Assets/Generated/Meshes/StreetLampGlow.asset に保存する。既にあれば中身だけ入れ替える。</summary>
-        private static Mesh SaveMesh(Mesh built)
+        /// <summary>
+        /// KCD/LampGlow 用のメッシュ（頂点・UV0・三角形）を path に保存する。既にあれば中身だけ入れ替える。
+        /// 窓の明かり（WindowLightStage）も使う。
+        /// </summary>
+        public static Mesh SaveGlowMesh(Mesh built, string path)
         {
-            var existing = AssetDatabase.LoadAssetAtPath<Mesh>(MeshPath);
+            var existing = AssetDatabase.LoadAssetAtPath<Mesh>(path);
             if (existing == null)
             {
                 EditorPaths.EnsureFolder(EditorPaths.GeneratedFolder + "/Meshes");
-                AssetDatabase.CreateAsset(built, MeshPath);
+                AssetDatabase.CreateAsset(built, path);
                 return built;
             }
 

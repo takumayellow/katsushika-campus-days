@@ -90,6 +90,8 @@ namespace KCD
     /// <summary>
     /// 時刻ごとのトゥーン調の空の配色 (#8)。朝は淡い水色、昼は青、夕方は橙と桃色、夜は紺に星。
     /// 日の出 5:30・日の入り 18:30（DayNightCycle の既定）に合わせてキーを置き、あいだは線形に補間する。
+    /// 夕方から夜は暗さでなく色で夜を出す（#166）。環境光は昼の 4 割を下回らせず、青へ寄せて彩度を落とし、
+    /// 青白い月明かりを主光源にして影の向きを残す。
     /// </summary>
     public static class SkyPalette
     {
@@ -108,10 +110,10 @@ namespace KCD
             sunGlow: C(0.20f, 0.20f, 0.35f, 0f),
             cloud: C(0.16f, 0.18f, 0.28f, 0.55f),
             sunColor: C(0.50f, 0.55f, 0.80f),
-            ambientSky: C(0.10f, 0.13f, 0.24f),
-            ambientEquator: C(0.07f, 0.09f, 0.16f),
-            ambientGround: C(0.035f, 0.04f, 0.06f),
-            sunIntensity: 0f, moonIntensity: 0.24f, stars: 1f, lampGlow: 1f, reflectionIntensity: 0.25f);
+            ambientSky: C(0.23f, 0.28f, 0.44f),
+            ambientEquator: C(0.20f, 0.24f, 0.36f),
+            ambientGround: C(0.09f, 0.10f, 0.14f),
+            sunIntensity: 0f, moonIntensity: 0.45f, stars: 1f, lampGlow: 1f, reflectionIntensity: 0.25f);
 
         private static readonly SkyState Predawn = new SkyState(
             zenith: C(0.10f, 0.13f, 0.30f),
@@ -207,10 +209,10 @@ namespace KCD
             sunGlow: C(0.90f, 0.42f, 0.36f, 0.70f),
             cloud: C(0.72f, 0.46f, 0.56f, 0.80f),
             sunColor: C(0.90f, 0.50f, 0.40f),
-            ambientSky: C(0.28f, 0.26f, 0.38f),
-            ambientEquator: C(0.30f, 0.24f, 0.28f),
-            ambientGround: C(0.11f, 0.09f, 0.10f),
-            sunIntensity: 0f, moonIntensity: 0.06f, stars: 0.15f, lampGlow: 0.7f, reflectionIntensity: 0.45f);
+            ambientSky: C(0.40f, 0.36f, 0.52f),
+            ambientEquator: C(0.44f, 0.34f, 0.40f),
+            ambientGround: C(0.17f, 0.14f, 0.15f),
+            sunIntensity: 0f, moonIntensity: 0.25f, stars: 0.15f, lampGlow: 0.7f, reflectionIntensity: 0.45f);
 
         private static readonly SkyState BlueHour = new SkyState(
             zenith: C(0.07f, 0.09f, 0.24f),
@@ -218,10 +220,10 @@ namespace KCD
             sunGlow: C(0.50f, 0.32f, 0.42f, 0.30f),
             cloud: C(0.28f, 0.26f, 0.40f, 0.65f),
             sunColor: C(0.60f, 0.55f, 0.75f),
-            ambientSky: C(0.14f, 0.16f, 0.28f),
-            ambientEquator: C(0.11f, 0.12f, 0.20f),
-            ambientGround: C(0.05f, 0.05f, 0.07f),
-            sunIntensity: 0f, moonIntensity: 0.18f, stars: 0.7f, lampGlow: 1f, reflectionIntensity: 0.3f);
+            ambientSky: C(0.26f, 0.29f, 0.46f),
+            ambientEquator: C(0.24f, 0.26f, 0.40f),
+            ambientGround: C(0.10f, 0.10f, 0.14f),
+            sunIntensity: 0f, moonIntensity: 0.40f, stars: 0.7f, lampGlow: 1f, reflectionIntensity: 0.3f);
 
         // 時刻の昇順。最初と最後は同じ夜空にして 24 時と 0 時をつなぐ。
         private static readonly Key[] Keys =

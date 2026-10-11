@@ -26,9 +26,12 @@ namespace KCD
         private bool _outdoorFog = true;
         private bool _wasIndoor;
 
-        /// <summary>太陽は地平線から 5° 昇るまでに明るくなり、月明かりは太陽が 10° 沈むまでに灯る。</summary>
+        /// <summary>
+        /// 太陽は地平線から 5° 昇るまでに明るくなり、月明かりは太陽が 4° 沈むまでに灯る。
+        /// 月を早めに灯して、日の入り直後に直接光がどちらも無い時間を短くする（#166）。
+        /// </summary>
         public const float SunFadeDegrees = 5f;
-        public const float MoonFadeDegrees = 10f;
+        public const float MoonFadeDegrees = 4f;
 
         /// <summary>月の方へ向かう単位ベクトル。月は時刻で動かさず、南東の空の 38° に置く。</summary>
         public static readonly Vector3 MoonDirection = new Vector3(0.557f, 0.616f, -0.557f).normalized;
@@ -39,6 +42,9 @@ namespace KCD
 
         /// <summary>現在のゲーム内時刻（0-24 の実数）。</summary>
         public float Hours { get; private set; }
+
+        /// <summary>true の間は時計を止める。スモークで同じ時刻の画を撮るときに使う。</summary>
+        public bool Paused { get; set; }
 
         /// <summary>"HH:MM" 形式の時刻。</summary>
         public string TimeText
@@ -113,7 +119,7 @@ namespace KCD
 
         private void Update()
         {
-            if (_realSecondsPerGameDay <= 0f)
+            if (Paused || _realSecondsPerGameDay <= 0f)
             {
                 return;
             }

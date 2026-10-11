@@ -73,9 +73,27 @@ namespace KCD.Tests
             Assert.Greater(night.Stars, 0.8f, "夜に星が出ていない");
             Assert.AreEqual(1f, night.LampGlow, 1e-4f, "夜に街灯が点いていない");
             Assert.AreEqual(0f, night.SunIntensity, 1e-4f, "夜に太陽が光っている");
-            Assert.Greater(night.MoonIntensity, 0.1f, "夜に月明かりが無い");
-            Assert.Less(Luma(night.AmbientSky), 0.2f, "夜の環境光が明るすぎる");
+            Assert.GreaterOrEqual(night.MoonIntensity, 0.4f, "夜の月明かりが弱く、影の向きが出ない");
+            Assert.Less(Luma(night.AmbientSky), Luma(SkyPalette.Evaluate(Noon).AmbientSky) * 0.6f, "夜の環境光が昼に近い");
             Assert.Greater(night.AmbientSky.b, night.AmbientSky.r, "夜の環境光が青寄りでない");
+        }
+
+        [TestCase(18f)]
+        [TestCase(18.5f)]
+        [TestCase(18.7f)]
+        [TestCase(19f)]
+        [TestCase(19.5f)]
+        [TestCase(20f)]
+        [TestCase(Night)]
+        [TestCase(2f)]
+        public void EveningAndNight_AmbientStaysAboveFortyPercentOfNoon(float hours)
+        {
+            // 夕方から夜は暗さでなく色で出す（#166）。直接光の無い時間でも人物と道が沈まないよう、
+            // 上と横の環境光は昼の 4 割を下回らせない。
+            SkyState noon = SkyPalette.Evaluate(Noon);
+            SkyState sky = SkyPalette.Evaluate(hours);
+            Assert.GreaterOrEqual(Luma(sky.AmbientSky), Luma(noon.AmbientSky) * 0.4f, hours + " 時の上の環境光が暗い");
+            Assert.GreaterOrEqual(Luma(sky.AmbientEquator), Luma(noon.AmbientEquator) * 0.4f, hours + " 時の横の環境光が暗い");
         }
 
         [Test]
