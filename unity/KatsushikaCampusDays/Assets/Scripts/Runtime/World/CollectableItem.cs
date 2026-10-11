@@ -14,6 +14,7 @@ namespace KCD
         [SerializeField] private string _displayName = "理科大グリーンの葉";
         [SerializeField] private float _bobHeight = 0.12f;
         [SerializeField] private float _spinSpeed = 45f;
+        [SerializeField] private bool _floats = true;
 
         private Vector3 _basePosition;
         private bool _taken;
@@ -30,6 +31,15 @@ namespace KCD
         {
             get => _displayName;
             set => _displayName = value;
+        }
+
+        /// <summary>
+        /// 宙で上下に揺れて回るか。宝石や葉のような目印は浮かせ、牛乳のような売り物は台の上に置いたまま動かさない (#186)。
+        /// </summary>
+        public bool Floats
+        {
+            get => _floats;
+            set => _floats = value;
         }
 
         public override bool CanInteract => !_taken && isActiveAndEnabled;
@@ -135,6 +145,11 @@ namespace KCD
 
         private void Update()
         {
+            if (!_floats)
+            {
+                return;
+            }
+
             float bob = Mathf.Sin(Time.time * 1.8f) * _bobHeight;
             transform.position = _basePosition + Vector3.up * bob;
             transform.Rotate(Vector3.up, _spinSpeed * Time.deltaTime, Space.World);

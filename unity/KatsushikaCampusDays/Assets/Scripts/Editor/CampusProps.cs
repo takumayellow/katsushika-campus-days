@@ -411,11 +411,23 @@ namespace KCD.Editor
             box.size = size;
         }
 
-        /// <summary>拾い物。牛乳は共創棟の売店前、葉は公園に 5 枚。</summary>
+        /// <summary>売店前のワゴンの天板の高さ [m]。</summary>
+        private const float MilkStandHeight = 0.75f;
+
+        /// <summary>ワゴンの天板の大きさ [m]（u 方向の幅, 厚さ, v 方向の奥行き）。</summary>
+        private static readonly Vector3 MilkStandTop = new Vector3(0.7f, 0.04f, 0.45f);
+
+        /// <summary>
+        /// 拾い物。牛乳は共創棟の売店前のワゴンの上、葉は公園に 5 枚。
+        /// 牛乳は売り物なので、宝石や葉のように宙で揺らさず天板に立てておく (#186)。
+        /// </summary>
         private static void PlaceCollectables(Transform parent)
         {
             Vector3 shop = Outward("kyoso", 4.5f, new Vector2(112.3f, -78f));
-            ActorFactory.CreateCollectable(parent, "milk", "牛乳", shop + Vector3.up * 0.4f, "white");
+            PlaceMilkStand(parent, shop);
+            GameObject milk = ActorFactory.CreateCollectable(parent, "milk", "牛乳",
+                shop + Vector3.up * (MilkStandHeight + CollectableMeshes.MilkCartonHalfHeight), "white");
+            milk.GetComponent<CollectableItem>().Floats = false;
 
             foreach (Vector2 spot in LeafSpots)
             {
@@ -424,6 +436,45 @@ namespace KCD.Editor
             }
 
             EditorPaths.Report("拾い物を " + (LeafSpots.Length + 1) + " 個置きました。");
+        }
+
+        /// <summary>売店前のワゴン。白い天板と灰色の脚 4 本。当たり判定は全体を包む箱 1 つ。</summary>
+        private static void PlaceMilkStand(Transform parent, Vector3 ground)
+        {
+            var stand = new GameObject("MilkStand");
+            stand.transform.SetParent(parent, false);
+            stand.transform.SetPositionAndRotation(ground, LocalRotation);
+
+            Material board = MaterialLibrary.EnsureCampus("white");
+            Material frame = MaterialLibrary.EnsureCampus("metal_grey");
+            StandPart(stand.transform, "top", new Vector3(0f, MilkStandHeight - MilkStandTop.y * 0.5f, 0f), MilkStandTop, board);
+
+            const float leg = 0.04f;
+            float legHeight = MilkStandHeight - MilkStandTop.y;
+            float x = (MilkStandTop.x - leg) * 0.5f;
+            float z = (MilkStandTop.z - leg) * 0.5f;
+            // i の下位ビットで左右、上位ビットで手前と奥を選んで 4 隅に立てる。
+            for (int i = 0; i < 4; i++)
+            {
+                var at = new Vector3(i % 2 == 0 ? -x : x, legHeight * 0.5f, i < 2 ? -z : z);
+                StandPart(stand.transform, "leg" + i, at, new Vector3(leg, legHeight, leg), frame);
+            }
+
+            BoxCollider box = stand.AddComponent<BoxCollider>();
+            box.center = new Vector3(0f, MilkStandHeight * 0.5f, 0f);
+            box.size = new Vector3(MilkStandTop.x, MilkStandHeight, MilkStandTop.z);
+        }
+
+        /// <summary>当たり判定を外した箱。ワゴンの判定は根元の BoxCollider がまとめて持つ。</summary>
+        private static void StandPart(Transform parent, string name, Vector3 position, Vector3 size, Material material)
+        {
+            GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            cube.name = name;
+            Object.DestroyImmediate(cube.GetComponent<Collider>());
+            cube.transform.SetParent(parent, false);
+            cube.transform.localPosition = position;
+            cube.transform.localScale = size;
+            cube.GetComponent<MeshRenderer>().sharedMaterial = material;
         }
     }
 }
