@@ -317,8 +317,9 @@ def socks(mb: M.MeshBuilder, p, a: B.Anatomy, mat, part, z_lo, z_hi):
         tuck = tuck / np.linalg.norm(tuck, axis=1, keepdims=True)
         rings.append(rings[-1] - tuck * h * (_SOCK_GAP + _SOCK_CUFF + 0.0008)
                      + np.array([0.0, 0.0, h * 0.0030]))
+        # リングは足首から股へ並び、脚の筒（股から足首へ）と逆なので、面を裏返して外へ向ける
         with mb.part(f"{part}_{'l' if sgn > 0 else 'r'}"):
-            mb.add_grid(rings, mat, smooth=True)
+            mb.add_grid(rings, mat, smooth=True, flip=True)
 
 
 def shoe(mb: M.MeshBuilder, p, a: B.Anatomy, mat, *, heel=True, scale=1.18,
