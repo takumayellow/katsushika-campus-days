@@ -83,6 +83,41 @@ def test_socks_hug_the_leg(name):
     assert checked > 300
 
 
+def _inward_faces(mb, part, core):
+    """part の筒の四角形のうち、法線が脚の芯から面の中心へ向かう向きと逆を向く面の数と、面の数。
+
+    脚の端のふたの三角形は中心が芯の上にあり、向きが決まらないので数えない。
+    """
+    V = np.array(mb.verts)
+    keep = set(mb.part_indices(part).tolist())
+    faces = [f for f in mb.faces if len(f) == 4 and all(i in keep for i in f)]
+    inward = 0
+    for f in faces:
+        q = V[list(f)]
+        n = sum(np.cross(q[k], q[(k + 1) % len(f)]) for k in range(len(f)))
+        c = q.mean(axis=0)
+        z = np.clip(c[2], core[0, 2], core[-1, 2])
+        axis = np.array([np.interp(z, core[:, 2], core[:, k]) for k in range(3)])
+        inward += int(n @ (c - axis) <= 0.0)
+    return inward, len(faces)
+
+
+@pytest.mark.parametrize("name", SEIFUKU)
+def test_socks_face_outward(name):
+    """靴下の面が脚の肌と同じく外を向く (#157)。
+
+    KCD_Toon の輪郭線は法線の向きへ押し出した殻の裏面で描く。面が内を向くと殻が脚の中へ
+    縮み、靴下に輪郭線が出ない。キャラの材質は両面描きなので、色だけ見ても気づけない。
+    """
+    p, a, mb = _build(name)
+    for side, sgn in (("l", 1), ("r", -1)):
+        core = np.array([r.mean(axis=0) for r in body.leg_rings(p, a, sgn)])[::-1]
+        for part in (f"leg_{side}", f"socks_{side}"):
+            inward, total = _inward_faces(mb, part, core)
+            assert total > 200, (name, part, total)
+            assert inward == 0, (name, part, inward, total)
+
+
 @pytest.mark.parametrize("name", SEIFUKU)
 def test_sock_weights_follow_the_skin(name):
     """靴下の各頂点のウェイトは、すぐ内側の脚の面のウェイトと同じ。
