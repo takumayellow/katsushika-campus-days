@@ -319,6 +319,43 @@ def _keep_leg_side(obj, mb: M.MeshBuilder) -> None:
                 dst.add([i], w, "ADD")
 
 
+#: 脚の肌から外す腕のボーン（_legs_without_arms）。
+ARM_BONES = tuple(side + seg for side in ("Left", "Right")
+                  for seg in ("Shoulder", "UpperArm", "LowerArm", "Hand"))
+
+
+def _legs_without_arms(obj, mb: M.MeshBuilder) -> None:
+    """脚の肌（leg_l / leg_r）から腕のボーンのウェイトを外す。
+
+    立ち姿では手が腿の横に下りているので、距離ウェイトだと腿の付け根の外側に
+    手や前腕が 6 割近く乗る（madonna）。腕を頭の横まで上げる Wave では、その
+    頂点だけ手について行き、袴の色の三角が腰から突き出ていた。外した分は
+    同じ頂点に残る脚・腰のボーンで分け直し、何も残らなければ同じ側の腿に預ける。
+    """
+    names = {g.index: g.name for g in obj.vertex_groups}
+    for part, side in (("leg_l", "Left"), ("leg_r", "Right")):
+        for i in mb.part_indices(part).tolist():
+            ws = {names[g.group]: g.weight for g in obj.data.vertices[i].groups}
+            if not any(n in ARM_BONES for n in ws):
+                continue
+            rest = {n: w for n, w in ws.items() if n not in ARM_BONES and w > 0.0}
+            total = sum(rest.values())
+            if total > 0.0:
+                _write_weights(obj, i, {n: w / total for n, w in rest.items()})
+            else:
+                _set_exclusive(obj, [i], {side + "UpperLeg": 1.0})
+
+
+def _tamoto_on_upper_arm(obj, mb: M.MeshBuilder) -> None:
+    """振り袖の袂（tamoto_l / tamoto_r）を上腕だけに付ける (#13)。
+
+    距離ウェイトだと袂は Hips / Spine に乗り、腕を上げると腰まで伸びて垂れ幕になる。
+    前腕に付けると振るたびに手を覆うので、上腕にする。
+    """
+    for sd, side in (("l", "Left"), ("r", "Right")):
+        _set_exclusive(obj, mb.part_indices(f"tamoto_{sd}"), {side + "UpperArm": 1.0})
+
+
 #: 衣装を Hips ＋ 脚ボーン 1 本だけで包むときの調整値。
 #:   reach      裾で脚に付いて回る割合（1.0 で脚と同じだけ動く）
 #:   hem_pow    腰から裾への立ち上がり（大きいほど裾の近くだけ動く）
@@ -730,6 +767,7 @@ def override_weights(obj, mb: M.MeshBuilder, p: dict, a: B.Anatomy) -> None:
                    {"Neck": 0.35, "UpperChest": 0.65})
     _collar_on_cloth(obj, mb, pts)
     _set_exclusive(obj, mb.part_indices("ribbon"), {"UpperChest": 1.0})
+    _tamoto_on_upper_arm(obj, mb)
     _spine_only(obj, mb, pts, p, a, ("kimono", "kimono_yoke"))
     _set_exclusive(obj, mb.part_indices("obi", "himo", "waistband"),
                    {"Hips": 0.7, "Spine": 0.3})
@@ -747,6 +785,7 @@ def override_weights(obj, mb: M.MeshBuilder, p: dict, a: B.Anatomy) -> None:
         _cloth_leg_weights(obj, mb, pts, a, "apron")
 
     _keep_leg_side(obj, mb)
+    _legs_without_arms(obj, mb)
     # 膝で UpperLeg / LowerLeg を切り替えるのは、裾が脛まで割れて脚ごとに
     # 分かれる馬乗り袴（高下駄の坊っちゃん）だけ。筒の行灯袴（ブーツのマドンナ
     # ちゃん）に掛けると、走りで膝を曲げたとき膝より上は腿へ、下は脛へ

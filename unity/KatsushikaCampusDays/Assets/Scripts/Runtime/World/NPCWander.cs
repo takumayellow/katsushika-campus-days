@@ -19,7 +19,7 @@ namespace KCD
         private static readonly int GaitRateHash = Animator.StringToHash("GaitRate");
         private static readonly int WaveHash = Animator.StringToHash("Wave");
 
-        /// <summary>手を振り返すあいだ立ち止まっている時間（秒）。Wave のクリップとほぼ同じ長さ。</summary>
+        /// <summary>手を振り返すあいだ立ち止まっている時間（秒）。Wave のクリップ（約 1.2 秒）を振り終えてから少し待って歩き出す。</summary>
         public const float WaveBackSeconds = 2f;
 
         /// <summary>
