@@ -598,6 +598,19 @@ def build_torso(mb: M.MeshBuilder, p: dict, a: Anatomy, mat: str = "skin",
     return rings
 
 
+#: 胴の上端（肩の上のふた）の輪郭線の太さの倍率。ふたの縁は首の前へ数 mm はみ出す
+#: ので、殻を付けると、殻のふたが肩より低い視点から首の付け根を横切る黒い線になる
+#: (#155)。上端は首と服の襟に隠れるので、輪郭線は要らない。
+TORSO_TOP_OUTLINE_WIDTH = 0.0
+
+
+def torso_top_indices(mb: M.MeshBuilder) -> np.ndarray:
+    """胴の上端のリングとふたの中心の頂点。"""
+    torso = mb.part_indices("torso")
+    z = np.asarray(mb.verts)[torso, 2]
+    return torso[z > z.max() - 1e-6]
+
+
 #: 首の筒の上端の高さ（顎から頭の高さ比）。筒の口が頭の面より 1 cm 以上
 #: 内側に入る高さ
 NECK_TOP = 0.12
@@ -882,6 +895,7 @@ def build_base(mb: M.MeshBuilder, p: dict):
 
     build_neck(mb, p, a)
     build_torso(mb, p, a)
+    mb.set_outline_width(torso_top_indices(mb), TORSO_TOP_OUTLINE_WIDTH)
     build_arms(mb, p, a)
     build_legs(mb, p, a)
     face_uvs = build_face_parts(mb, p, fs, uv_box)
