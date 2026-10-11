@@ -68,6 +68,13 @@ namespace KCD
         /// </summary>
         public static string BuildText()
         {
+            return BuildBody() + "\n\n<size=75%><alpha=#99>" + L.Pick("Esc / Enter で戻る", "Esc / Enter: back")
+                + "<alpha=#FF></size>";
+        }
+
+        /// <summary>案内の行（「Esc / Enter で戻る」）を除いた本文。エンディングの最後のページも使う (#176)。</summary>
+        public static string BuildBody()
+        {
             var builder = new System.Text.StringBuilder(2048);
             builder.Append(MapAttribution.Line());
             AppendNote(builder, L.Pick(
@@ -102,9 +109,7 @@ namespace KCD
                 "Fonts: Noto Sans JP © 2014-2021 Adobe, Liberation Sans © 2010 Google, 2012 Red Hat\n"
                 + "(SIL Open Font License 1.1; full text in StreamingAssets/Licenses)\n"
                 + "Made with Unity 6 (URP). Buildings, characters and their textures are generated in Blender 4.5."));
-            builder.Append("</size>\n\n<size=75%><alpha=#99>");
-            builder.Append(L.Pick("Esc / Enter で戻る", "Esc / Enter: back"));
-            builder.Append("<alpha=#FF></size>");
+            builder.Append("</size>");
             return builder.ToString();
         }
 

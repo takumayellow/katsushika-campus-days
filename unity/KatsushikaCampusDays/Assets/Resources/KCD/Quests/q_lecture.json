@@ -1,0 +1,37 @@
+{
+  "id": "q_lecture",
+  "title": "はじめての講義",
+  "title_en": "Your First Lecture",
+  "summary": "走ったあとは座る番だ、と教授が言う。講義棟の大ホールで、新入生向けの短い講義があるらしい。席に着いて話を聞き、終わったら教卓の教授に質問してみよう。",
+  "summary_en": "After running comes sitting, says the professor. There is a short lecture for new students in the main hall of the lecture building. Take a seat and listen, and when it is over, go and ask the professor at the lectern a question.",
+  "order": 7,
+  "autoStart": false,
+  "prerequisites": [
+    "q_gym"
+  ],
+  "rewardText": "講義で 1 ビットの考え方を教わった",
+  "rewardText_en": "You learned to think in bits at the lecture",
+  "steps": [
+    {
+      "id": "s1",
+      "type": "enter",
+      "target": "lecture",
+      "text": "講義棟に入る",
+      "text_en": "Enter the lecture building"
+    },
+    {
+      "id": "s2",
+      "type": "visit",
+      "target": "poi_lecture_hall_seats",
+      "text": "大ホールの席に着く",
+      "text_en": "Take a seat in the main hall"
+    },
+    {
+      "id": "s3",
+      "type": "talk",
+      "target": "lecture",
+      "text": "講義のあと、教卓の教授に質問する",
+      "text_en": "After the lecture, ask the professor at the lectern a question"
+    }
+  ]
+}

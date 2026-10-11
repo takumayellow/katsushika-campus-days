@@ -57,7 +57,7 @@ namespace KCD
         private float _wPhotos = 0.15f;
         private float _wBuildings = 0.10f;
         /// <summary>result.json が読めないときの分母。result.json の totals と同じ値にしておく（ResultTotalsTests）。</summary>
-        public const int DefaultQuestTotal = 13;
+        public const int DefaultQuestTotal = 15;
         public const int DefaultCollectibleTotal = 20;
         public const int DefaultPhotoTotal = 6;
         public const int DefaultBuildingTotal = 9;
@@ -215,7 +215,8 @@ namespace KCD
             // 封鎖が外れた最初のフレームで出す (#62)。
             EnsureLoaded();
             SetDayEndLatched(LatchDayEnd(_dayEndLatched, manager.GameTimeHours, DayStartHour, _dayEndHour));
-            if (ShouldEndDay(_dayEndLatched, KCDInput.GameplayBlocked, DormEnding.IsAnyShowing))
+            if (ShouldEndDay(_dayEndLatched, KCDInput.GameplayBlocked,
+                    DormEnding.IsAnyShowing || FormalEnding.IsAnyShowing))
             {
                 EndDayNow();
             }

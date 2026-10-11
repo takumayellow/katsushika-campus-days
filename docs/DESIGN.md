@@ -159,7 +159,8 @@ FBX オプションは §3.3 と同じ。
 **Empty**: `spawn_<id>`（入口から 1.5 m 内側）、`exit_<id>`、`poi_<id>_<name>`、`npc_<id>_<n>`、`sign_<id>_<n>`。
 §4 のクエストが屋内で踏む地点はすべて用意してある。`q_library` は `poi_library_counter` と
 `poi_library_desk`、`q_lunch` は `poi_kyoso_store` と `poi_research2_counter`・`poi_research2_hall`、
-`q_coffee` は `poi_kyoso_starbucks`、`q_gym` は `poi_gym_court`。
+`q_coffee` は `poi_kyoso_starbucks`、`q_gym` は `poi_gym_court`、`q_lecture` は `poi_lecture_hall_seats`、
+`q_sq_lab_tour` は `poi_research1_notice` と `poi_research1_lab_a`。
 `q_coffee` の最終目的地（キャンパスモールのベンチ）と `q_orientation` / `q_park` / `q_sunset` は屋外。
 
 **棟ごとの中身**（実測 2026-09-24・合計 297,441 三角形 / 上限 300,000）:
@@ -257,7 +258,13 @@ Assets/
   4. `q_coffee` スタバ: そらと一緒にキャンパスモールのベンチへ
   5. `q_gym` 体育館: 体育館まで 60 秒以内にダッシュ
   6. `q_park` 公園: にいじゅくみらい公園に散らばった「理科大グリーンの葉」5 枚を集める
-  7. `q_sunset` 夕焼け: 18:00 以降に図書館の水盤前へ（エンディング会話）
+  7. `q_lecture` 講義: 講義棟の大教室に入り、席に着いて、教壇の教授（会話データ `lecture`）と話す
+  8. `q_sunset` 夕焼け: 1〜7 をすべて終えたあと、18:00 以降に図書館の水盤前へ
+- エンディング（`FormalEnding`）: `q_sunset` を達成すると操作を止め、2 秒後にいなりの会話 `t_sunset` を流す。
+  会話が終わると暗転して 3 ページ（今日の振り返り → 会った人 → クレジット）を出し、最後のページを閉じると
+  キャンパスに戻る。日付は進まず、そのまま遊び続けられる。一度だけ出る。
+- サブクエストは `q_sq_*`（研究室見学 `q_sq_lab_tour` は `q_lecture` のあとに教授から受ける）、
+  隠しクエストは `q_secret_*`。総数の 15（隠しクエストを除く）は実績・一日の終わりのリザルト・エンディングで共通。
 
 ## 5. 検証（PROVE-BEFORE-CLOSE）
 

@@ -43,6 +43,8 @@ namespace KCD.Tests
                 "ui.npc.<会話データの id> と ui.npc.self。Dialogue_EverySpeakerHasANameInEveryDictionary が見る"),
             ("BuildingLabel.cs", "key",
                 "CampusProps の BuildingNames から焼いた Campus シーンの名札。CampusBuildingLabelTests が見る"),
+            ("FormalEnding.cs", "DialogueData.SpeakerKeyPrefix + id",
+                "FormalEnding.PeopleIds（会った人のページの NPC）。OtherKeySources_ExistInEveryDictionary が見る"),
             ("CharacterSelect.cs", "\"ui.select.\" + id + \".name\"",
                 "GameManager.PlayableCharacterIds。OtherKeySources_ExistInEveryDictionary が見る"),
             ("CharacterSelect.cs", "\"ui.select.\" + id + \".desc\"",
@@ -326,6 +328,11 @@ namespace KCD.Tests
             foreach (string locale in Locales)
             {
                 Require(dictionaries, "ui.settings.language." + locale, "SettingsView の言語名", missing);
+            }
+
+            foreach (string id in FormalEnding.PeopleIds)
+            {
+                Require(dictionaries, DialogueData.SpeakerKeyPrefix + id, "FormalEnding.PeopleIds", missing);
             }
 
             RequireMobLines(dictionaries, missing);

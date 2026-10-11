@@ -55,7 +55,7 @@ namespace KCD
         // ---- 純関数（Unity を起動せずにテストする）----
 
         /// <summary>
-        /// いま書くか。頼まれていて、キャンパスにいて、操作の封鎖も裏エンドも無く、一日の終わりを待っていないときだけ。
+        /// いま書くか。頼まれていて、キャンパスにいて、操作の封鎖も裏エンド・エンディング (#176) も無く、一日の終わりを待っていないときだけ。
         /// 裏エンドは閉じるときに封鎖をまとめて外すので、封鎖とは別に見る。
         /// 一日の終わり（<see cref="DayEndEvaluator.IsDayEndPending"/>）はリザルトが出るまで待つ。封鎖中に 24 時をまたいだ夜に
         /// 書くと、読み直したときにその夜が終わらない。リザルトのあとは「もう一日歩く」の翌朝か「タイトルへ」の
@@ -75,7 +75,8 @@ namespace KCD
         /// <summary>毎フレーム呼ぶ。書ける状態なら書く。</summary>
         public static void Tick(bool onCampus)
         {
-            if (!ShouldWrite(_pending, onCampus, KCDInput.GameplayBlocked, DormEnding.IsAnyShowing, DayEndEvaluator.IsDayEndPending))
+            if (!ShouldWrite(_pending, onCampus, KCDInput.GameplayBlocked,
+                    DormEnding.IsAnyShowing || FormalEnding.IsAnyShowing, DayEndEvaluator.IsDayEndPending))
             {
                 return;
             }

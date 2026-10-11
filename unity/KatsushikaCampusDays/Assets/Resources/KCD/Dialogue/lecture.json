@@ -1,0 +1,83 @@
+{
+  "id": "lecture",
+  "speaker": "教授",
+  "topics": [
+    {
+      "id": "t_lecture_done",
+      "requiresCompletedQuest": "q_lecture",
+      "once": true,
+      "lines": [
+        {
+          "text": "――というわけで、今日の話はここまで。質問のある人は前へ。",
+          "text_en": "...And that is all for today. Anyone with a question, come up to the front."
+        },
+        {
+          "speaker": "自分",
+          "text": "あの、席の話がよくわからなくて。",
+          "text_en": "Um, I did not quite follow the part about the seats."
+        },
+        {
+          "text": "よろしい、もう一度だけ。席が空いていたら 0、埋まっていたら 1。1 席で 2 通り。これが 1 ビットだ。",
+          "text_en": "Very well, once more. An empty seat is 0, a taken seat is 1. One seat, two possibilities. That is one bit."
+        },
+        {
+          "text": "8 席並べれば 8 ビット、つまり 1 バイト。空きと埋まりの並び方は 2 の 8 乗、256 通りある。",
+          "text_en": "Line up eight seats and you have eight bits, which is one byte. The patterns of empty and taken come to two to the eighth: 256."
+        },
+        {
+          "speaker": "自分",
+          "text": "このホール全部だと……",
+          "text_en": "And for this whole hall..."
+        },
+        {
+          "text": "600 席なら 2 の 600 乗通り。宇宙にある原子の数より、ずっと多い。",
+          "text_en": "Six hundred seats, two to the six hundredth. Far more than the number of atoms in the universe."
+        },
+        {
+          "text": "計算機がやっているのは、結局それだけだ。数えて、並べて、名前を付ける。",
+          "text_en": "That is all a computer really does. Count, arrange, and give things names."
+        },
+        {
+          "text": "当たり前のことを、とんでもない速さでやる。それが計算機だよ。",
+          "text_en": "Ordinary things, done at an extraordinary speed. That is a computer."
+        },
+        {
+          "speaker": "自分",
+          "text": "……さっきより、わかった気がします。",
+          "text_en": "...I think I get it better than before."
+        },
+        {
+          "text": "それなら今日の講義は成功だ。",
+          "text_en": "Then today's lecture was a success."
+        }
+      ]
+    },
+    {
+      "id": "t_lecture_wait",
+      "requiresActiveQuest": "q_lecture",
+      "lines": [
+        {
+          "text": "席に着きなさい。始めるよ。",
+          "text_en": "Take a seat. We are about to start."
+        },
+        {
+          "text": "前のほうが空いている。前に座る学生は、だいたい得をする。",
+          "text_en": "The front rows are empty. Students who sit at the front usually come out ahead."
+        }
+      ]
+    },
+    {
+      "id": "t_idle",
+      "lines": [
+        {
+          "text": "この大ホールは 600 席ある。満席になるのは、入学式と期末試験の前の週くらいだ。",
+          "text_en": "This hall seats six hundred. It only fills up for the entrance ceremony and the week before finals."
+        },
+        {
+          "text": "後ろの席は声が届きにくい。……と言うと、みんな前に来るんだがね。",
+          "text_en": "My voice does not carry to the back rows. ...Or so I say, and then everyone moves to the front."
+        }
+      ]
+    }
+  ]
+}

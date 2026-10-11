@@ -121,6 +121,8 @@ namespace KCD.Editor
             }
 
             InteriorStage.Build(root);
+            // 講義棟の大ホールの教卓に立つ教授（クエスト「はじめての講義」, #176）。屋内の床を使うので屋内のあと。
+            LectureStage.Build(root);
             // 隠しアイテム 20 個と写真スポット 6 箇所（collectibles.json）。屋内の poi に置く物があるので屋内のあと (#65)。
             CollectibleStage.Build(root);
             // 隠しストーリーの「ドームの扉」（図書館 2F の西の壁）(#175)。
@@ -132,6 +134,8 @@ namespace KCD.Editor
             }
 
             UIFactory.BuildCampusUI(root, player);
+            // 夕日のあとのエンディング (#176)。寮のルートの有無に関わらず置く。
+            FormalEndingFactory.Build(root);
             if (route != null)
             {
                 DormEndingFactory.Build(root);

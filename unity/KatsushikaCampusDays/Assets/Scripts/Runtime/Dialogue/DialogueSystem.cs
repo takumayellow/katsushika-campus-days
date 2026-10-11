@@ -392,6 +392,23 @@ namespace KCD
             return true;
         }
 
+        /// <summary>
+        /// NPC に話しかけずに、その NPC の話題を出す（夕日のあとのエンディング）(#176)。talk の報告はしない。
+        /// once の話題は話しかけたときと同じく覚えるので、あとで話しかけても同じ話は出ない。
+        /// 話題が無いか会話中なら何もせず false。
+        /// </summary>
+        public bool PlayTopic(string dialogueId, string topicId)
+        {
+            DialogueTopic topic = FindTopic(dialogueId, topicId);
+            if (!Play(topic))
+            {
+                return false;
+            }
+
+            _topicKey = dialogueId + "/" + topic.Id;
+            return true;
+        }
+
         /// <summary>次の行へ。最後まで行けば会話を閉じる。</summary>
         public void Advance()
         {
