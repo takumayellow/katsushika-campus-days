@@ -595,8 +595,9 @@ def _cover_weights(pts, idx, normals, tris, W, reach: float, k: int = 4) -> list
 
 
 # 襟を載せる身頃。襟は、いちばん近いこの布（か袖）の点と同じウェイトにする。
+# パーカーの襟は背中でフードの上に載る。
 # 着物の衿は着物ごと背骨で動くので入れない（Neck / UpperChest のまま）。
-COLLAR_BASE = ("blouse", "shirt", "shirt_yoke", "hoodie")
+COLLAR_BASE = ("blouse", "shirt", "shirt_yoke", "hoodie", "hood")
 
 
 def _collar_on_cloth(obj, mb: M.MeshBuilder, pts) -> None:
@@ -633,6 +634,17 @@ def _weights_of(obj, idx) -> dict:
             for i in np.asarray(idx).tolist()}
 
 
+def _take_cover_weights(obj, mb: M.MeshBuilder, pts, idx, tris, W, reach: float) -> None:
+    """idx の頂点へ、法線の向きで最初に当たる tris のウェイトを写す（_cover_weights）。
+
+    当たらない頂点は元のまま。
+    """
+    normals = M.vertex_normals(pts, M.faces_within(mb.faces, idx))
+    for i, w in zip(idx.tolist(), _cover_weights(pts, idx, normals, tris, W, reach)):
+        if w:
+            _write_weights(obj, i, w)
+
+
 def _hide_under_cloth(obj, mb: M.MeshBuilder, pts, p: dict) -> None:
     """布に隠れた胴の素肌へ、すぐ外の布のウェイトを写す。
 
@@ -650,12 +662,32 @@ def _hide_under_cloth(obj, mb: M.MeshBuilder, pts, p: dict) -> None:
     if len(skin) == 0 or len(under) == 0:
         return
     tris = M.triangles(mb.faces, mb.part_indices(*UNDER_CLOTH, *LEG_CLOTH))
-    normals = M.vertex_normals(pts, M.faces_within(mb.faces, skin))
-    W = _weights_of(obj, under)
-    new = _cover_weights(pts, skin, normals, tris, W, p["height"] * 0.02)
-    for i, w in zip(skin.tolist(), new):
-        if w:
-            _write_weights(obj, i, w)
+    _take_cover_weights(obj, mb, pts, skin, tris, _weights_of(obj, under),
+                        p["height"] * 0.02)
+
+
+# ブラウスを覆うパーカーの胴と袖。フードとポケットは胴から離れて付くので入れない。
+HOODIE_COVER = ("hoodie", "sleeve_l", "sleeve_r")
+
+
+def _blouse_under_hoodie(obj, mb: M.MeshBuilder, pts, p: dict) -> None:
+    """パーカーに隠れたブラウスへ、すぐ外のパーカー（胴と袖）のウェイトを写す。
+
+    ブラウスとパーカーの胴は別々に自動ウェイトが付き、脇の下ではパーカーの方が
+    上腕に強く付く。腕を下ろす Idle で両者の隙間が 18 mm から 2.6 mm まで詰まり、
+    Unity ではブラウスがパーカーの外へ出て、脇の下に白い布が見えていた（sora, #156）。
+    隠れているブラウスをパーカーと同じ動きにする。V の開きから覗く胸当ては、
+    光線がパーカーに当たらないので元のまま。
+
+    光線の長さは身長の 2%。ブラウスとパーカーの隙間は 18 mm（身長の 1.15%）。
+    _hide_under_cloth より先に呼ぶ（胴の素肌はこのあとブラウスのウェイトを写す）。
+    """
+    blouse = mb.part_indices("blouse")
+    if len(blouse) == 0 or len(mb.part_indices("hoodie")) == 0:
+        return
+    outer = mb.part_indices(*HOODIE_COVER)
+    _take_cover_weights(obj, mb, pts, blouse, M.triangles(mb.faces, outer),
+                        _weights_of(obj, outer), p["height"] * 0.02)
 
 
 def override_weights(obj, mb: M.MeshBuilder, p: dict, a: B.Anatomy) -> None:
@@ -727,6 +759,7 @@ def override_weights(obj, mb: M.MeshBuilder, p: dict, a: B.Anatomy) -> None:
     _prune_influences(obj, mb, ("pants_l", "pants_r", "bootleg_l", "bootleg_r"))
     for side in ("l", "r"):
         _follow_skin(obj, mb, pts, f"socks_{side}", f"leg_{side}")
+    _blouse_under_hoodie(obj, mb, pts, p)
     _hide_under_cloth(obj, mb, pts, p)
     for side in ("l", "r"):
         bone = "LeftFoot" if side == "l" else "RightFoot"
