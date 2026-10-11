@@ -188,7 +188,7 @@ def _distance_weights(pts, pos):
 
 UPPER_ARMS = ("LeftUpperArm", "RightUpperArm")
 # 付け根で打ち切るだけの距離で、首の付け根に上腕が乗っていたキャラ。
-REACHED_NECK_BASE = ("mirai", "madonna", "inari", "kaname", "sora")
+REACHED_NECK_BASE = ("madonna", "sora")
 
 
 @pytest.mark.parametrize("name", params.ALL_IDS)
