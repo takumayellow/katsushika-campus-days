@@ -65,12 +65,12 @@ namespace KCD
             }
         }
 
-        /// <summary>近くの Interactable を受け取り、プロンプトの出し分けを任せる。</summary>
-        public void ShowInteractionPrompt(Interactable target)
+        /// <summary>近くの Interactable と手を振れるかを受け取り、プロンプトの出し分けを任せる。</summary>
+        public void ShowInteractionPrompt(Interactable target, bool canWave)
         {
             if (_promptView != null)
             {
-                _promptView.SetTarget(target);
+                _promptView.SetTarget(target, canWave);
             }
         }
 

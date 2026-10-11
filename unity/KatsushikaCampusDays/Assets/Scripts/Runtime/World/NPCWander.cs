@@ -22,8 +22,20 @@ namespace KCD
         /// <summary>手を振り返すあいだ立ち止まっている時間（秒）。Wave のクリップとほぼ同じ長さ。</summary>
         public const float WaveBackSeconds = 2f;
 
-        /// <summary>プレイヤーが手を振ったとき、振り返してくれる人までの最大距離（m）。</summary>
-        public const float WaveReach = 7f;
+        /// <summary>
+        /// プレイヤーが手を振れる相手までの最大距離（m）。話しかける（E）より遠い、離れて交わす挨拶の間合い。
+        /// </summary>
+        public const float WaveReach = 5f;
+
+        /// <summary>手を振れる相手の向き。プレイヤーの正面から左右 60° 以内（cos 60°）。</summary>
+        public const float WaveFacingDot = 0.5f;
+
+        private static readonly System.Collections.Generic.List<NPCWander> Enabled =
+            new System.Collections.Generic.List<NPCWander>();
+        private static readonly System.Collections.Generic.List<NPCWander> WaveCandidates =
+            new System.Collections.Generic.List<NPCWander>();
+        private static readonly System.Collections.Generic.List<Vector3> WavePositions =
+            new System.Collections.Generic.List<Vector3>();
 
         private NavMeshAgent _agent;
         private Animator _animator;
@@ -92,12 +104,35 @@ namespace KCD
         }
 
         /// <summary>
+        /// プレイヤーが手を振れる相手。正面の WaveReach 以内でいちばん近い人で、会話中（Paused）の人と
+        /// もう振り返している最中の人は数えない（WaveBack が断る相手を選ばない）。
+        /// いなければ null（そのときは Q を押しても手を振らない）。
+        /// </summary>
+        public static NPCWander FindWaveTarget(Vector3 origin, Vector3 forward)
+        {
+            WaveCandidates.Clear();
+            WavePositions.Clear();
+            foreach (NPCWander npc in Enabled)
+            {
+                if (npc != null && !npc._paused && !npc.IsWaving)
+                {
+                    WaveCandidates.Add(npc);
+                    WavePositions.Add(npc.transform.position);
+                }
+            }
+
+            int pick = PickWaveTarget(origin, forward, WavePositions, WaveReach);
+            return pick >= 0 ? WaveCandidates[pick] : null;
+        }
+
+        /// <summary>
         /// 手を振ったプレイヤーから見て、振り返す相手を選ぶ。
-        /// 前方（左右 90° 以内）で reach 以内のうち、いちばん近い人。いなければ -1。
+        /// 正面から左右 60° 以内（WaveFacingDot）で reach 以内のうち、いちばん近い人。いなければ -1。
         /// </summary>
         public static int PickWaveTarget(Vector3 origin, Vector3 forward, System.Collections.Generic.IList<Vector3> others, float reach)
         {
             forward.y = 0f;
+            forward = forward.normalized;
             int best = -1;
             float bestSq = reach * reach;
             for (int i = 0; i < others.Count; i++)
@@ -105,7 +140,7 @@ namespace KCD
                 Vector3 d = others[i] - origin;
                 d.y = 0f;
                 float sq = d.sqrMagnitude;
-                if (sq > bestSq || (sq > 1e-4f && Vector3.Dot(d, forward) <= 0f))
+                if (sq > bestSq || (sq > 1e-4f && Vector3.Dot(d, forward) < WaveFacingDot * Mathf.Sqrt(sq)))
                 {
                     continue;
                 }
@@ -140,6 +175,16 @@ namespace KCD
             _agent.stoppingDistance = 0.4f;
             _animator = GetComponentInChildren<Animator>();
             _home = transform.position;
+        }
+
+        private void OnEnable()
+        {
+            Enabled.Add(this);
+        }
+
+        private void OnDisable()
+        {
+            Enabled.Remove(this);
         }
 
         private void Start()
