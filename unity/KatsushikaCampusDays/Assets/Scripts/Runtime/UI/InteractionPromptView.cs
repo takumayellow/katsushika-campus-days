@@ -4,13 +4,16 @@ using UnityEngine;
 namespace KCD
 {
     /// <summary>
-    /// 「E: 話す」のような操作案内。対象が居るときだけ出し、切り替わりをふわっと見せる。
+    /// 「[E] 話す」「[Q] 手を振る」のような操作案内。対象が居るときだけ出し、切り替わりをふわっと見せる。
     /// </summary>
     public sealed class InteractionPromptView : MonoBehaviour
     {
         [SerializeField] private CanvasGroup _group;
         [SerializeField] private TMP_Text _label;
         [SerializeField] private float _fadeSpeed = 9f;
+
+        /// <summary>2 つ並べて枠に収まらないときに縮める下限の文字の大きさ。</summary>
+        public const float MinFontSize = 18f;
 
         private float _targetAlpha;
 
@@ -32,17 +35,27 @@ namespace KCD
             {
                 _group.alpha = 0f;
             }
+
+            // 「[E] 撮影する　[Q] 手を振る」や英語の長い文言は 1 行の枠からはみ出すので、折り返さずに縮める。
+            if (_label != null)
+            {
+                _label.textWrappingMode = TextWrappingModes.NoWrap;
+                _label.fontSizeMax = _label.fontSize;
+                _label.fontSizeMin = Mathf.Min(MinFontSize, _label.fontSize);
+                _label.enableAutoSizing = true;
+            }
         }
 
-        /// <summary>対象を差し替える。null なら消える。</summary>
-        public void SetTarget(Interactable target)
+        /// <summary>対象を差し替える。対象が null で手も振れなければ消える。</summary>
+        public void SetTarget(Interactable target, bool canWave)
         {
-            bool visible = IsVisible(target != null, KCDInput.GameplayBlocked);
+            bool visible = IsVisible(target != null || canWave, KCDInput.GameplayBlocked);
             _targetAlpha = visible ? 1f : 0f;
 
             if (visible && _label != null)
             {
-                string text = LabelFor(target.PromptLabel);
+                string text = LabelFor(target != null ? target.PromptLabel : null,
+                    canWave ? L.Get("ui.interact.wave", "手を振る") : null);
                 if (_label.text != text)
                 {
                     _label.text = text;
@@ -60,6 +73,20 @@ namespace KCD
         public static string LabelFor(string promptLabel)
         {
             return "[E] " + promptLabel;
+        }
+
+        /// <summary>
+        /// E と Q の案内を 1 行に並べる。「[E] 話す　[Q] 手を振る」の形で、null の方は出さない。
+        /// </summary>
+        public static string LabelFor(string promptLabel, string waveLabel)
+        {
+            if (waveLabel == null)
+            {
+                return LabelFor(promptLabel);
+            }
+
+            string wave = "[Q] " + waveLabel;
+            return promptLabel == null ? wave : LabelFor(promptLabel) + "　" + wave;
         }
 
         private void Update()

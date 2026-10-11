@@ -174,6 +174,16 @@ namespace KCD.Tests
         }
 
         [Test]
+        public void PromptView_LabelFor_AddsTheWaveOnlyWhenSomeoneIsThere()
+        {
+            Assert.AreEqual("[E] 話す　[Q] 手を振る", InteractionPromptView.LabelFor("話す", "手を振る"));
+            Assert.AreEqual("[Q] 手を振る", InteractionPromptView.LabelFor(null, "手を振る"),
+                "調べる物が無くても、手を振れる相手がいれば案内を出す");
+            Assert.AreEqual("[E] 話す", InteractionPromptView.LabelFor("話す", null),
+                "手を振れる相手がいないのに Q を案内した");
+        }
+
+        [Test]
         public void PromptView_LabelFor_UsesTheConfiguredVerb()
         {
             var go = new GameObject("Prop");

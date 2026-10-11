@@ -39,7 +39,7 @@ namespace KCD
             HUD hud = HUD.Instance;
             if (hud != null)
             {
-                hud.ShowInteractionPrompt(seatUsesKey ? null : _current);
+                hud.ShowInteractionPrompt(seatUsesKey ? null : _current, CanWave());
             }
 
             if (ShouldInteract(_current != null, KCDInput.InteractPressed, KCDInput.GameplayBlocked,
@@ -47,6 +47,15 @@ namespace KCD
             {
                 _current.Interact(gameObject);
             }
+        }
+
+        /// <summary>
+        /// Q で手を振れるか。Q の受け付け（PlayerAnimatorDriver.CanWaveNow）が通り、正面の近くに相手がいるとき。
+        /// </summary>
+        private bool CanWave()
+        {
+            return PlayerAnimatorDriver.CanWaveNow(_player)
+                && NPCWander.FindWaveTarget(_player.transform.position, _player.transform.forward) != null;
         }
 
         /// <summary>

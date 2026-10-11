@@ -348,7 +348,7 @@ namespace KCD
             SmokeProbe.Log("wave at " + npcId);
             for (int i = 0; i < 30 && driver != null; i++)
             {
-                driver.WaveHello();
+                SmokeProbe.Log(driver.WaveHello() ? "wave: waved back" : "wave: nobody in front");
                 yield return new WaitForSecondsRealtime(NPCWander.WaveBackSeconds + 0.5f);
             }
         }
