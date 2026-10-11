@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -172,8 +173,9 @@ namespace KCD.Tests
         public void 男女はおよそ3対7で並びのどこを切っても偏らない()
         {
             // MobStage は枠 i に Variants[i % 数] を焼き込み、MobPool は枠を順に貸す。
-            // 全枠で男が 25〜35%、続けて貸す 10 枠（夕方の人数）のどこを切っても男が 2〜4 人。
-            IReadOnlyList<MobSchedule.Variant> variants = Load().Variants;
+            // 全枠で男が 25〜35%、続けて貸す夕方の人数ぶんの枠のどこを切っても男が 2 人以上・4 人以下。
+            MobSchedule schedule = Load();
+            IReadOnlyList<MobSchedule.Variant> variants = schedule.Variants;
             int slots = MobScheduler.MaxActive;
             var male = new bool[slots];
             int total = 0;
@@ -185,7 +187,7 @@ namespace KCD.Tests
 
             Assert.That(total / (float)slots, Is.InRange(0.25f, 0.35f), "全枠の男の割合");
 
-            const int window = 10;
+            int window = schedule.Bands.First(band => band.Id == "evening").Count;
             for (int start = 0; start < slots; start++)
             {
                 int count = 0;
@@ -194,7 +196,7 @@ namespace KCD.Tests
                     count += male[(start + k) % slots] ? 1 : 0;
                 }
 
-                Assert.That(count, Is.InRange(2, 4), start + " 番の枠から 10 人の男の数");
+                Assert.That(count, Is.InRange(2, 4), start + " 番の枠から " + window + " 人の男の数");
             }
         }
 

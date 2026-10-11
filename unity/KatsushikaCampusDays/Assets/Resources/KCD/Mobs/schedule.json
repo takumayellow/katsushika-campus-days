@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "coordinate_note": "x,z は campus.json 座標 (= Unity のワールド座標, x=東 m, z=北 m)。{entrance: <building id>} は Campus シーンの entrance_<id>（ドア前の床）、{place: <id>} は CampusProps の VisitZone (Zone_<id>) の位置。SceneBuilder（MobStage）がどの点も NavMesh の上に下ろし、下ろせなかった点を通る道は使わない（CampusMobTests が確かめる）。variants は既存のキャラクターの体かモブだけの男子学生の体 student_m（body）を、髪（hair）・上着かブラウス（top）・スカートかズボンと胸のリボン（bottom）・靴（shoes）の色だけ変えて使う。",
+  "coordinate_note": "x,z は campus.json 座標 (= Unity のワールド座標, x=東 m, z=北 m)。{entrance: <building id>} は Campus シーンの entrance_<id>（ドア前の床）、{place: <id>} は CampusProps の VisitZone (Zone_<id>) の位置。SceneBuilder（MobStage）がどの点も NavMesh の上に下ろし、下ろせなかった点を通る道は使わない（CampusMobTests が確かめる）。variants は既存のキャラクターの体かモブだけの男子学生の体 student_m（body）を、髪（hair）・上着かブラウスかシャツ（top）・スカートかズボンと胸のリボン（bottom。男子学生はズボンだけ）・靴（shoes）の色だけ変えて使う。variants は並んだ順に枠へ焼き込まれる。男の体（prof・student_m）を 3 つおきに置いて男女をおよそ 3 対 7 に混ぜているので、並べ替えるときは偏らないようにする（MobScheduleTests が確かめる）。",
   "spawn_stagger_seconds": 2.5,
   "respawn_delay_seconds": 6.0,
   "avoid_player_radius": 1.2,
