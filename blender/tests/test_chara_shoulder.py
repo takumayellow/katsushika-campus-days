@@ -24,7 +24,7 @@ def _drops(name):
 
 
 def test_tall_characters_are_listed():
-    assert {"mirai", "inari", "kaname", "sora", "prof"} <= set(TALL)
+    assert {"mirai", "inari", "kaname", "sora", "prof", "student_m"} <= set(TALL)
 
 
 @pytest.mark.parametrize("name", TALL)

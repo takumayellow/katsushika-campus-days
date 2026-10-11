@@ -49,7 +49,7 @@ def _hair_dirs(seed, n=400):
     return d[(d[:, 2] > -0.8) & (d[:, 1] > -0.5) & (np.abs(d[:, 0]) < math.cos(math.radians(35)))]
 
 
-@pytest.fixture(scope="module", params=HELMET_IDS + ["prof"])
+@pytest.fixture(scope="module", params=HELMET_IDS + ["prof", "student_m"])
 def chara(request):
     p = params.resolve(request.param)
     mb = M.MeshBuilder()
@@ -113,7 +113,7 @@ def test_off_skull_pushes_only_inside_points_and_keeps_order(chara):
 def test_back_of_head_is_covered_by_hair(chara):
     """真後ろから見て、うなじより上の後頭部に当たる光線は先に髪に当たる。
 
-    毛先は顎より 0.03〜0.09hh 上で終わり、その下はうなじの肌が見えてよい。
+    毛先は顎より 0.03〜0.09hh 上で終わり（男子学生は刈り上げて 0.20hh 上）、その下はうなじの肌が見えてよい。
     旧版は顎より 0.1hh 上 (prof は 0.35hh 上) から頭の中心の近くまで肌が見えていた。
     """
     head, p = chara["head"], chara["p"]

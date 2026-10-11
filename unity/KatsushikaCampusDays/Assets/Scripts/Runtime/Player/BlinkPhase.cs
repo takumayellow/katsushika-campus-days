@@ -19,10 +19,10 @@ namespace KCD
 
         /// <summary>
         /// ずらす順番。並びの番号に黄金比を掛けて周期に散らすので、先頭に近いほど互いに離れる。
-        /// タイトルに並ぶ 3 人（GameManager.PlayableCharacterIds）を先頭に置き、NPC が続く。
+        /// タイトルに並ぶ 3 人（GameManager.PlayableCharacterIds）を先頭に置き、NPC、モブだけの体（student_m）が続く。
         /// </summary>
         public static readonly string[] CharacterOrder = Concat(
-            GameManager.PlayableCharacterIds, new[] { "inari", "kaname", "prof", "sora" });
+            GameManager.PlayableCharacterIds, new[] { "inari", "kaname", "prof", "sora", "student_m" });
 
         // 黄金比の小数部。番号に掛けて周期に散らすと、何人並べても近い 2 人が出にくい。
         private const float GoldenFraction = 0.618034f;

@@ -1487,20 +1487,37 @@ def build_kimono(mb, p, a: B.Anatomy, *, kimono_mat, hakama_mat, shoes,
 # --------------------------------------------------------------------------
 
 
-def build_labcoat(mb, p, a: B.Anatomy):
+def _shirt_and_slacks(mb, p, a: B.Anatomy, *, fitted=False):
+    """裾をズボンに入れたシャツと、折り目のないズボン。白衣の下と男子学生の普段着。
+
+    白衣の下は肩も脚も白衣に隠れるので、ズボンを脚から大きく浮かせて裾を短く切ってある。
+    fitted はシャツとズボンを人に見せる着方: シャツを素体の肩の稜線に沿わせて肩先の
+    素肌を隠し、ズボンを脚に沿わせ（浮かせたままだと左右の脚が 1 枚の板に見える）、
+    裾を靴の中まで下ろし、脚の筒の上端を太らせて股の素肌を左右の筒で覆う。
+    腰の筒は脚を振ると腰の素肌が突き抜けるので、脚に沿わせても浮かせておく。
+    """
     h = p["height"]
     z = p["z"]
+    ease, hem, seat, taper = ((0.006, -0.012, 0.060, 1.22) if fitted
+                              else (0.016, 0.020, 0.010, 1.05))
     sh_rings = shell(mb, p, a, "cloth_blouse", "shirt",
                      z["waist"] - h * 0.010, z["shoulder"] + h * 0.014,
-                     h * 0.008, levels=7, bust=0.0, shoulder=True)
+                     h * 0.008, levels=7, bust=0.0, shoulder=True,
+                     follow_body=fitted)
     yoke(mb, p, a, "cloth_blouse", "shirt_yoke", sh_rings[-1],
          z["shoulder"] + h * 0.014, h * 0.008, rise=h * 0.028, bust=0.0)
     _collar(mb, p, a, "cloth_blouse", z["shoulder"] + h * 0.014, drop=0.040)
     # ズボン
-    leg_sleeve(mb, p, a, "cloth_pants_gray", "pants", z["ankle"] + h * 0.020,
-               z["crotch"] + h * 0.004, h * 0.016, levels=7, taper_top=1.05)
-    shell(mb, p, a, "cloth_pants_gray", "pants_seat", z["crotch"] - h * 0.010,
-          z["waist"] + h * 0.004, h * 0.016, levels=5, bust=0.0)
+    leg_sleeve(mb, p, a, "cloth_pants_gray", "pants", z["ankle"] + h * hem,
+               z["crotch"] + h * 0.004, h * ease, levels=7, taper_top=taper)
+    shell(mb, p, a, "cloth_pants_gray", "pants_seat", z["crotch"] - h * seat,
+          z["waist"] + h * 0.004, h * max(ease, 0.012), levels=5, bust=0.0)
+
+
+def build_labcoat(mb, p, a: B.Anatomy):
+    h = p["height"]
+    z = p["z"]
+    _shirt_and_slacks(mb, p, a)
     shoe(mb, p, a, "shoes_loafer", heel=True, scale=1.12)
     # 白衣（前開き）
     zs = np.linspace(z["knee"] + (z["crotch"] - z["knee"]) * 0.45,
@@ -1513,6 +1530,19 @@ def build_labcoat(mb, p, a: B.Anatomy):
                 puff=0.25)
     # 襟（折り返し）
     _collar(mb, p, a, "labcoat", z["shoulder"] + h * 0.012, drop=0.050)
+
+
+# --------------------------------------------------------------------------
+# 男子学生の普段着
+# --------------------------------------------------------------------------
+
+
+def build_casual_m(mb, p, a: B.Anatomy):
+    """半袖のシャツとズボンとスニーカー。袖はセーラー服より膨らみを抑える。"""
+    _shirt_and_slacks(mb, p, a, fitted=True)
+    _arm_sleeve(mb, p, a, "cloth_blouse", "sleeve", t_end=0.42, r_scale=1.30,
+                puff=0.40)
+    shoe(mb, p, a, "shoes_sneaker", heel=False, scale=1.22)
 
 
 # --------------------------------------------------------------------------
@@ -1544,5 +1574,7 @@ def build_outfit(mb: M.MeshBuilder, p: dict, a: B.Anatomy) -> None:
                      himo="bow", himo_mat="cloth_hakama_himo_purple")
     elif outfit == "labcoat":
         build_labcoat(mb, p, a)
+    elif outfit == "casual_m":
+        build_casual_m(mb, p, a)
     else:
         raise KeyError(f"未知の outfit: {outfit}")

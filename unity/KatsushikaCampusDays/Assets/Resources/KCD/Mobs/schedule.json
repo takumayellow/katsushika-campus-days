@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "coordinate_note": "x,z は campus.json 座標 (= Unity のワールド座標, x=東 m, z=北 m)。{entrance: <building id>} は Campus シーンの entrance_<id>（ドア前の床）、{place: <id>} は CampusProps の VisitZone (Zone_<id>) の位置。SceneBuilder（MobStage）がどの点も NavMesh の上に下ろし、下ろせなかった点を通る道は使わない（CampusMobTests が確かめる）。variants は既存のキャラクターの体（body）を、髪（hair）・上着かブラウス（top）・スカートかズボンと胸のリボン（bottom）・靴（shoes）の色だけ変えて使う。",
+  "coordinate_note": "x,z は campus.json 座標 (= Unity のワールド座標, x=東 m, z=北 m)。{entrance: <building id>} は Campus シーンの entrance_<id>（ドア前の床）、{place: <id>} は CampusProps の VisitZone (Zone_<id>) の位置。SceneBuilder（MobStage）がどの点も NavMesh の上に下ろし、下ろせなかった点を通る道は使わない（CampusMobTests が確かめる）。variants は既存のキャラクターの体かモブだけの男子学生の体 student_m（body）を、髪（hair）・上着かブラウスかシャツ（top）・スカートかズボンと胸のリボン（bottom。男子学生はズボンだけ）・靴（shoes）の色だけ変えて使う。variants は並んだ順に枠へ焼き込まれる。男の体（prof・student_m）を 3 つおきに置いて男女をおよそ 3 対 7 に混ぜているので、並べ替えるときは偏らないようにする（MobScheduleTests が確かめる）。",
   "spawn_stagger_seconds": 2.5,
   "respawn_delay_seconds": 6.0,
   "avoid_player_radius": 1.2,
@@ -36,6 +36,16 @@
       "height": 1.72
     },
     {
+      "id": "mob_g",
+      "body": "student_m",
+      "label": "男子学生の体・黒髪・紺のシャツ・ベージュのズボン",
+      "hair": "#1e1c1e",
+      "top": "#2c3a5c",
+      "bottom": "#bdb39a",
+      "shoes": "#f2f2f2",
+      "height": 1.7
+    },
+    {
       "id": "mob_d",
       "body": "kaname",
       "label": "かなめの体・明るい茶髪・理科大グリーンのエプロン・黒のスカート",
@@ -44,6 +54,16 @@
       "bottom": "#3a3a3a",
       "shoes": "#ffffff",
       "height": 1.6
+    },
+    {
+      "id": "mob_f",
+      "body": "mirai",
+      "label": "みらいの体・こげ茶の髪・水色のブラウス・カーキのスカート",
+      "hair": "#4a3426",
+      "top": "#a9cbe0",
+      "bottom": "#7a7458",
+      "shoes": "#f2f2f2",
+      "height": 1.58
     },
     {
       "id": "mob_e",
@@ -56,14 +76,34 @@
       "height": 1.75
     },
     {
-      "id": "mob_f",
+      "id": "mob_h",
+      "body": "inari",
+      "label": "いなりの体・黒髪・白のカーディガン・紺のスカート・黒縁メガネ",
+      "hair": "#221e20",
+      "top": "#ecebe6",
+      "bottom": "#2a3350",
+      "shoes": "#5a4634",
+      "height": 1.62
+    },
+    {
+      "id": "mob_i",
       "body": "mirai",
-      "label": "みらいの体・こげ茶の髪・水色のブラウス・カーキのスカート",
-      "hair": "#4a3426",
-      "top": "#a9cbe0",
-      "bottom": "#7a7458",
-      "shoes": "#f2f2f2",
-      "height": 1.58
+      "label": "みらいの体・明るい茶髪・薄桃のブラウス・グレーのスカート",
+      "hair": "#8a5a36",
+      "top": "#e8c4cc",
+      "bottom": "#6a6a70",
+      "shoes": "#ffffff",
+      "height": 1.55
+    },
+    {
+      "id": "mob_j",
+      "body": "student_m",
+      "label": "男子学生の体・茶髪・白のシャツ・黒のズボン",
+      "hair": "#5a3e2c",
+      "top": "#f4f4f2",
+      "bottom": "#2a2a2e",
+      "shoes": "#3a3a3a",
+      "height": 1.76
     }
   ],
   "bands": [

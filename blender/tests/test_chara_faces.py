@@ -69,8 +69,8 @@ OUTLINE_PARTS = (
                                       "sleeve_l", "sleeve_r")]
     + [(name, part) for name in ("inari", "kaname", "sora")
        for part in ("head", "hand_l", "hand_r", "skirt", "sleeve_l", "sleeve_r")]
-    + [("prof", part) for part in ("head", "hand_l", "hand_r", "hair_cap",
-                                   "sleeve_l", "sleeve_r")]
+    + [(name, part) for name in ("prof", "student_m")
+       for part in ("head", "hand_l", "hand_r", "hair_cap", "sleeve_l", "sleeve_r")]
 )
 
 
