@@ -65,8 +65,9 @@ namespace KCD
         }
 
         /// <summary>
-        /// スモークの自動セーブ・クイックセーブを persistentDataPath/smoke/ に書かせる。ワープや調べるで進んだ進行が、
-        /// その端末で遊んでいるセーブを上書きしないように。フォルダを作れなくても差し替えは残す（書けずに終わるだけ）。
+        /// スモークの自動セーブ・クイックセーブと写真を persistentDataPath/smoke/ に書かせる。ワープや調べるで進んだ進行が、
+        /// その端末で遊んでいるセーブを上書きしないように。写真スポットで撮った写真も、遊んで撮った写真に混ぜない。
+        /// フォルダを作れなくても差し替えは残す（書けずに終わるだけ）。
         /// </summary>
         private static void UseSmokeSaveFolder()
         {
@@ -81,6 +82,7 @@ namespace KCD
             }
 
             SaveSystem.DirectoryOverride = folder;
+            PhotoSystem.DirectoryOverride = folder;
         }
 
         private static string Arg(string name)
