@@ -288,14 +288,19 @@ namespace KCD.Tests
             }
         }
 
-        /// <summary>入ってきた向きへ、出口の範囲（ExitMargin だけ広げる）から出るまで進んだ床の点。</summary>
+        /// <summary>
+        /// 入った所から出口と反対の向き（建物の奥）へ、出口の範囲（ExitMargin だけ広げる）から出るまで進んだ床の点。
+        /// 入った直後の向きは出口のほうを向いていることがあるので、向きでなく出口の位置から奥を決める。
+        /// </summary>
         private static Vector3 ClearOf(PlayerController player, Bounds[] exits)
         {
             Vector3 from = player.transform.position;
-            Vector3 forward = Flat(player.transform.forward).normalized;
+            Bounds nearest = exits.OrderBy(e => Flat(e.center - from).magnitude).First();
+            Vector3 inward = Flat(from - nearest.center).normalized;
+            Assert.AreNotEqual(Vector3.zero, inward, "入った所が出口の真ん中にある");
             for (float d = 0f; d < 4f; d += 0.25f)
             {
-                Vector3 point = from + forward * d;
+                Vector3 point = from + inward * d;
                 if (!CrossesAny(exits, point, point) && TryFloor(player, point, out Vector3 floor) && IsFree(player, floor))
                 {
                     return floor;
