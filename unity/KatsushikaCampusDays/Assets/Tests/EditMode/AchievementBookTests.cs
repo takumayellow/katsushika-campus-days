@@ -197,16 +197,16 @@ namespace KCD.Tests
                 }
             }
 
-            Assert.AreEqual(7, main.Count, "本編のクエストが 7 本ではない: " + string.Join(", ", main));
-            Assert.AreEqual(6, side.Count, "サブクエストが 6 本ではない: " + string.Join(", ", side));
+            Assert.AreEqual(8, main.Count, "本編のクエストが 8 本ではない: " + string.Join(", ", main));
+            Assert.AreEqual(7, side.Count, "サブクエストが 7 本ではない: " + string.Join(", ", side));
             Assert.AreEqual(main.Count, Find(catalog, "ach_main_story").Count);
             Assert.AreEqual(AchievementBook.ScopeMain, Find(catalog, "ach_main_story").Scope);
             Assert.AreEqual(main.Count + side.Count, Find(catalog, "ach_all_quests").Count);
 
-            // サブクエストを 6 本と本編を 6 本では「はじめての一日」にならない（以前の数え方なら 12 本で届く）。
-            var sixMain = new HashSet<string>(side);
-            sixMain.UnionWith(main.GetRange(0, 6));
-            Assert.IsFalse(Met(catalog, "ach_main_story", Record(quests: quests, completed: sixMain)));
+            // サブクエストを 7 本と本編を 7 本では「はじめての一日」にならない（本編とサブを区別しなければ 14 本で届く）。
+            var mainButOne = new HashSet<string>(side);
+            mainButOne.UnionWith(main.GetRange(0, main.Count - 1));
+            Assert.IsFalse(Met(catalog, "ach_main_story", Record(quests: quests, completed: mainButOne)));
 
             var allMain = new HashSet<string>(main);
             Assert.IsTrue(Met(catalog, "ach_main_story", Record(quests: quests, completed: allMain)));

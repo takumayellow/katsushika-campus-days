@@ -30,7 +30,7 @@ namespace KCD.Tests
         {
             var quests = new QuestSystem { Clock = () => hour };
             quests.LoadFromResources();
-            Assert.AreEqual(14, quests.All.Count, "Resources/KCD/Quests のクエストの数が 14 ではない");
+            Assert.AreEqual(16, quests.All.Count, "Resources/KCD/Quests のクエストの数が 16 ではない");
             return quests;
         }
 
@@ -237,7 +237,8 @@ namespace KCD.Tests
             quests.ReportTalk("inari");
 
             Assert.IsTrue(quests.IsCompleted("q_park"), "待っているあいだに拾った葉が数えられていない");
-            Assert.IsTrue(quests.IsActive("q_sunset"));
+            // 夕日は本編をすべて終えてから (#176)。昼食・コーヒー・体育館・講義が残っているので、まだ始まらない。
+            Assert.IsFalse(quests.IsActive("q_sunset"), "本編が残っているのに夕日が始まった");
         }
 
         [Test]

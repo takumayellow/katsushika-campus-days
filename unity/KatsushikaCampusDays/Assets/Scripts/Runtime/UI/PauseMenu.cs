@@ -181,11 +181,11 @@ namespace KCD
                 return;
             }
 
-            // DormEnding.IsAnyShowing: 裏エンド (#41) の暗転中と結果表示中は Esc を食わせない。
+            // DormEnding / FormalEnding.IsAnyShowing: 裏エンド (#41) と本編のエンディング (#176) の最中は Esc を食わせない。
             // 食わせると暗転の裏でポーズが開き、閉じたときの SetOpen(false) が
             // Time.timeScale = 1 に戻してしまう（裏エンドの最中に時間が動き出す）。
             if (IgnoresMenuKey(KCDInput.PhotoMode, input.Consumed, ResultScreen.IsAnyOpen,
-                    DormEnding.IsAnyShowing, _settings != null && _settings.IsOpen))
+                    DormEnding.IsAnyShowing || FormalEnding.IsAnyShowing, _settings != null && _settings.IsOpen))
             {
                 return;
             }

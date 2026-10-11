@@ -24,6 +24,9 @@ namespace KCD.Tests
             new[] { "q_library", "inari", "t_done" },
             new[] { "q_lunch", "kaname", "t_done" },
             new[] { "q_coffee", "sora", "t_done" },
+            // 講義の教授は外の教授と別の会話（lecture.json）。講義のあとの話題をその場で出す (#176)。
+            new[] { "q_lecture", "lecture", "t_lecture_done" },
+            new[] { "q_sq_lab_tour", "prof", "t_lab_tour_done" },
             new[] { "q_sq_greenhouse", "prof", "t_sq_greenhouse_done" },
             new[] { "q_sq_lost_card", "kaname", "t_sq_lost_card_done" },
             new[] { "q_sq_lab_notebook", "sora", "t_sq_lab_notebook_done" },

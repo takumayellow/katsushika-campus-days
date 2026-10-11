@@ -535,11 +535,11 @@
       "id": "ach_main_story",
       "name_ja": "はじめての一日",
       "name_en": "The First Day",
-      "desc_ja": "メインクエスト 7 本をすべて達成する。",
-      "desc_en": "Complete all seven main quests.",
+      "desc_ja": "メインクエスト 8 本をすべて達成する。",
+      "desc_en": "Complete all eight main quests.",
       "condition": {
         "type": "quest_count",
-        "value": 7,
+        "value": 8,
         "scope": "main"
       }
     },
@@ -547,11 +547,11 @@
       "id": "ach_all_quests",
       "name_ja": "頼まれごとの達人",
       "name_en": "Errand Master",
-      "desc_ja": "サブクエストを含む 13 本すべてを達成する。",
-      "desc_en": "Complete all thirteen quests, side quests included.",
+      "desc_ja": "サブクエストを含む 15 本すべてを達成する。",
+      "desc_en": "Complete all fifteen quests, side quests included.",
       "condition": {
         "type": "quest_count",
-        "value": 13
+        "value": 15
       }
     },
     {

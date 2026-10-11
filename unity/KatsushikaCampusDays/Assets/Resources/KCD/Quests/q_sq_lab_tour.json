@@ -1,0 +1,45 @@
+{
+  "id": "q_sq_lab_tour",
+  "title": "研究室をのぞく",
+  "title_en": "A Peek into the Labs",
+  "summary": "教授いわく、講義でわからなかった残りの半分は研究室に転がっている。第1研究棟の 1 階の掲示板で研究室の場所を確かめて、のぞいてこよう。見てきたことは教授に報告する。",
+  "summary_en": "According to the professor, the half of the lecture you missed is lying around in the research labs. Check where the labs are on the noticeboard on the ground floor of Research Building 1, then go and take a peek. Report what you saw to the professor.",
+  "order": 17,
+  "autoStart": false,
+  "prerequisites": [
+    "q_lecture"
+  ],
+  "rewardText": "研究室の空気を少しだけ吸ってきた",
+  "rewardText_en": "You got a small taste of lab life",
+  "side": true,
+  "steps": [
+    {
+      "id": "s1",
+      "type": "enter",
+      "target": "research1",
+      "text": "第1研究棟に入る",
+      "text_en": "Enter Research Building 1"
+    },
+    {
+      "id": "s2",
+      "type": "visit",
+      "target": "poi_research1_notice",
+      "text": "1 階の掲示板で研究室の場所を確かめる",
+      "text_en": "Check where the labs are on the ground-floor noticeboard"
+    },
+    {
+      "id": "s3",
+      "type": "visit",
+      "target": "poi_research1_lab_a",
+      "text": "研究室をのぞく",
+      "text_en": "Peek into a lab"
+    },
+    {
+      "id": "s4",
+      "type": "talk",
+      "target": "prof",
+      "text": "講義棟前の教授に報告する",
+      "text_en": "Report to the professor in front of the lecture building"
+    }
+  ]
+}

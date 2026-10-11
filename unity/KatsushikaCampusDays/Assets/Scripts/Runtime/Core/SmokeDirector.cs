@@ -38,6 +38,7 @@ namespace KCD
         private string _wave;
         private string _goto;
         private float _interactDelay = -1f;
+        private float _endingPage = -1f;
         private float _hours = -1f;
         private float _titleYaw = float.NaN;
         private float _faceCam = float.NaN;
@@ -116,6 +117,7 @@ namespace KCD
             _wave = Arg("-kcd-wave");
             _goto = Arg("-kcd-goto");
             _interactDelay = ArgFloat("-kcd-interact", -1f);
+            _endingPage = ArgFloat("-kcd-ending", -1f);
             _hours = ArgFloat("-kcd-time", -1f);
             _titleYaw = ArgFloat("-kcd-title-yaw", float.NaN);
             _faceCam = ArgFloat("-kcd-face-cam", float.NaN);
@@ -259,6 +261,11 @@ namespace KCD
             if (_interactDelay >= 0f)
             {
                 StartCoroutine(InteractAfter(_interactDelay));
+            }
+
+            if (_endingPage >= 0f)
+            {
+                StartCoroutine(ShowEnding(Mathf.Clamp((int)_endingPage, 0, FormalEnding.PageCount - 1)));
             }
 
             yield return new WaitForSecondsRealtime(1f);
@@ -445,6 +452,49 @@ namespace KCD
 
             SmokeProbe.Log("interact " + name + (itemId != null ? ", collected=" + DayStats.HasCollected(itemId) : string.Empty)
                            + ", photos=" + DayStats.PhotoSpotIds.Count);
+        }
+
+        /// <summary>本編のエンディングを出し、夕日の会話を送り切って、page 枚目のページで止める。</summary>
+        private static IEnumerator ShowEnding(int page)
+        {
+            FormalEnding ending = FindAnyObjectByType<FormalEnding>();
+            if (ending == null)
+            {
+                Debug.LogWarning("[KCD] スモーク: キャンパスに FormalEnding が無い");
+                yield break;
+            }
+
+            foreach (string id in FormalEnding.PeopleIds)
+            {
+                DayStats.NoteTalk(id);
+            }
+
+            ending.Play();
+            const float timeoutSeconds = 20f;
+            float until = Time.realtimeSinceStartup + timeoutSeconds;
+            DialogueSystem dialogue = DialogueSystem.Instance;
+            while (dialogue != null && !dialogue.IsPlaying && Time.realtimeSinceStartup < until)
+            {
+                yield return null;
+            }
+
+            while (dialogue != null && dialogue.IsPlaying && Time.realtimeSinceStartup < until)
+            {
+                dialogue.Advance();
+                yield return new WaitForSecondsRealtime(0.1f);
+            }
+
+            while (ending.CurrentPage != page && Time.realtimeSinceStartup < until)
+            {
+                if (ending.CurrentPage >= 0)
+                {
+                    ending.AdvancePage();
+                }
+
+                yield return null;
+            }
+
+            SmokeProbe.Log("ending page " + ending.CurrentPage);
         }
 
         private static void TalkTo(string npcId)
