@@ -140,6 +140,11 @@ namespace KCD.Editor
                     colliders++;
                 }
 
+                if (IsPropMesh(id))
+                {
+                    MarkNotWalkable(go);
+                }
+
                 if (id.Contains("ground") && groundLayer >= 0)
                 {
                     go.layer = groundLayer;
@@ -155,6 +160,38 @@ namespace KCD.Editor
 
             EditorPaths.Report("キャンパスに MeshCollider を " + colliders + " 個付けました"
                 + "（うち背景ビル " + backgroundTris + " 三角形、NavMesh からは除外）。");
+        }
+
+        /// <summary>
+        /// ベンチ・照明柱（site_furniture）と、看板・花壇・自販機・ゴミ箱（site_props_*）のメッシュか。
+        /// どれもプレイヤーが歩いては上がれないので、NPC にも上を歩かせない（#164）。
+        /// </summary>
+        public static bool IsPropMesh(string objectName)
+        {
+            if (string.IsNullOrEmpty(objectName))
+            {
+                return false;
+            }
+
+            string id = objectName.ToLowerInvariant();
+            return id == "site_furniture" || id.StartsWith("site_props_", System.StringComparison.Ordinal);
+        }
+
+        /// <summary>
+        /// NavMesh に Not Walkable の面として焼く。Ignore と違って形は残すので、下の地面も小物の足もとで切れ、
+        /// NPC は小物の縁からエージェントの半径ぶん離れて歩く。花壇の天面（3.6 m 幅）は段差を下げても
+        /// 地面とつながらない島として焼けてしまうので、段差だけには頼らない。
+        /// </summary>
+        private static void MarkNotWalkable(GameObject go)
+        {
+            NavMeshModifier modifier = go.GetComponent<NavMeshModifier>();
+            if (modifier == null)
+            {
+                modifier = go.AddComponent<NavMeshModifier>();
+            }
+
+            modifier.overrideArea = true;
+            modifier.area = 1;   // 1 = Not Walkable
         }
 
         /// <summary>
