@@ -74,9 +74,57 @@ namespace KCD.Editor
             hint.overflowMode = TextOverflowModes.Ellipsis;
             hintRect.gameObject.SetActive(false);
 
+            PhotoCutIn cutIn = BuildPhotoCutIn(host, parent);
             PhotoSystem photo = host.AddComponent<PhotoSystem>();
-            photo.Bind(hintRect.gameObject, hint, flash);
+            photo.Bind(hintRect.gameObject, hint, flash, cutIn);
             return photo;
+        }
+
+        /// <summary>
+        /// 記念写真のポラロイド (#170)。画面の右に少し傾けて置き、白い台紙に 16:9 の写真と 2 行の書き込み。
+        /// フラッシュより後に作るので、フラッシュが引くと上に残って見える。閉じた状態で置く。
+        /// </summary>
+        private static PhotoCutIn BuildPhotoCutIn(GameObject host, RectTransform parent)
+        {
+            const float margin = 20f;
+            var photoSize = new Vector2(600f, 338f);
+            var frameSize = new Vector2(photoSize.x + margin * 2f, photoSize.y + margin + 104f);
+
+            RectTransform frame = Rect(parent, "PhotoCutIn", new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
+                new Vector2(-96f, 48f), frameSize);
+            frame.localRotation = Quaternion.Euler(0f, 0f, 3f);
+            CanvasGroup group = frame.gameObject.AddComponent<CanvasGroup>();
+            group.blocksRaycasts = false;
+            group.interactable = false;
+
+            RectTransform shadow = Stretch(frame, "Shadow");
+            shadow.offsetMin = new Vector2(10f, -14f);
+            shadow.offsetMax = new Vector2(10f, -14f);
+            Image shadowImage = shadow.gameObject.AddComponent<Image>();
+            shadowImage.color = new Color(0f, 0f, 0f, 0.35f);
+            shadowImage.raycastTarget = false;
+
+            Backdrop(frame, new Color(0.98f, 0.97f, 0.94f, 1f));
+
+            RectTransform photoRect = Rect(frame, "Photo", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+                new Vector2(0f, -margin), photoSize);
+            RawImage photo = photoRect.gameObject.AddComponent<RawImage>();
+            photo.color = Color.white;
+            photo.raycastTarget = false;
+
+            RectTransform captionBox = Rect(frame, "Caption", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
+                new Vector2(0f, 6f), new Vector2(photoSize.x, 98f));
+            TMP_Text caption = Label(captionBox, "Label", string.Empty, 28f, TextAlignmentOptions.Center);
+            caption.color = new Color(0.17f, 0.16f, 0.15f, 1f);
+            caption.enableAutoSizing = true;
+            caption.fontSizeMin = 18f;
+            caption.fontSizeMax = 28f;
+            caption.overflowMode = TextOverflowModes.Ellipsis;
+
+            frame.gameObject.SetActive(false);
+            PhotoCutIn cutIn = host.AddComponent<PhotoCutIn>();
+            cutIn.Bind(frame, group, photo, caption);
+            return cutIn;
         }
     }
 }

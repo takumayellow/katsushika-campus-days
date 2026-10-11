@@ -4,7 +4,8 @@ namespace KCD
 {
     /// <summary>
     /// 写真スポットの三脚 (#65)。E で、collectibles.json の look_dir の向きへプレイヤーを向け、
-    /// カメラを背後へ回してから PhotoSystem.CaptureAt(spotId) で撮る。撮った id は DayStats が
+    /// カメラを背後へ回してから PhotoSystem.TakeSelfieAt で記念写真を撮る（プレイヤーが三脚の前へ駆けていき、
+    /// 振り向いたところを三脚のカメラが撮る, #170）。撮った id は DayStats が
     /// 写真として数える（結果画面の「写真」と称号「写真散歩」系）。
     ///
     /// 入っただけでサブクエ（q_sq_photo_walk）の visit が進むのは、同じ場所に置く VisitZone の役目。
@@ -52,7 +53,7 @@ namespace KCD
                 CameraRig.SnapBehind(interactor.transform);
             }
 
-            photos.CaptureAt(_spotId);
+            photos.TakeSelfieAt(_spotId, transform, _lookDir, interactor);
         }
 
         /// <summary>

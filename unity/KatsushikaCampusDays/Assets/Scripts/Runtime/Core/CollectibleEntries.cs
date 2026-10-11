@@ -126,6 +126,9 @@ namespace KCD
         /// <summary>撮る向き (x, z)。長さは 1 とは限らない。</summary>
         public Vector2 LookDir;
 
+        /// <summary>記念写真の構図（photo_spots[].selfie, #170）。書かれていなければ既定値。</summary>
+        public SelfieComposition Selfie = new SelfieComposition();
+
         /// <summary>表示名。ローカライズの photo.&lt;id&gt;.name、無ければ JSON の name_ja / name_en。</summary>
         public string DisplayName => L.Get("photo." + Id + ".name", L.Pick(NameJa, NameEn));
 
@@ -146,7 +149,8 @@ namespace KCD
                 CaptionJa = MiniJson.GetString(node, "caption_ja"),
                 CaptionEn = MiniJson.GetString(node, "caption_en"),
                 Place = CatalogPlace.Read(node),
-                LookDir = new Vector2(MiniJson.GetFloat(look, "x"), MiniJson.GetFloat(look, "z"))
+                LookDir = new Vector2(MiniJson.GetFloat(look, "x"), MiniJson.GetFloat(look, "z")),
+                Selfie = SelfieComposition.Read(MiniJson.GetObject(node, "selfie"))
             };
         }
     }

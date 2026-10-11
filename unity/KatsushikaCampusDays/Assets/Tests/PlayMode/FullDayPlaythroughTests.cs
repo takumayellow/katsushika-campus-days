@@ -144,10 +144,11 @@ namespace KCD.Tests
             Assert.AreEqual(100, result.Percent, summary);
             Assert.AreEqual("S", result.Rank, summary);
 
-            // 写真はこのテストの置き場に保存を頼んでいること。batchmode の Editor では
-            // ScreenCapture.CaptureScreenshot がファイルを書かないので、枚数までは見られない。
+            // 三脚の記念写真は専用のカメラで描いて書く (#170) ので、batchmode でもスポットの数だけ PNG が残る。
             string photoFolder = Path.Combine(SaveDirectory, PhotoSystem.FolderName);
             Assert.IsTrue(Directory.Exists(photoFolder), "写真の保存先が " + photoFolder + " になっていない");
+            Assert.AreEqual(result.PhotoTotal, Directory.GetFiles(photoFolder, "*.png").Length,
+                "写真スポットで撮った PNG の数が合わない（" + photoFolder + "）");
 
             AssertNoErrors("一日の通しプレイ");
         }
