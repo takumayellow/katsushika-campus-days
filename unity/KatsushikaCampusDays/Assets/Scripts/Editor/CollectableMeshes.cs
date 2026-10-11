@@ -44,13 +44,20 @@ namespace KCD.Editor
         public const float TripodCameraHeight = 1.3f;
 
         /// <summary>
-        /// itemId に合う見た目。牛乳は紙パック、隠しアイテム（c_*）は materialName の色の宝石、
-        /// それ以外は materialName の色の葉（葉は理科大グリーン）。
+        /// itemId に合う見た目。牛乳は紙パック、隠しアイテム（c_*）は名前どおりの模型（<see cref="HiddenItemModels"/>、
+        /// 模型の無い物だけ materialName の色の宝石）、それ以外は materialName の色の葉（葉は理科大グリーン）。
         /// </summary>
         public static Model For(string itemId, string materialName)
         {
             if (itemId != null && itemId.StartsWith("c_"))
             {
+                if (HiddenItemModels.Has(itemId))
+                {
+                    return HiddenItemModels.For(itemId);
+                }
+
+                // 模型の無い隠しアイテム（collectibles.json に足したばかりの物）は、ひとまず宝石で置く。
+                Debug.LogWarning("[KCD] 隠しアイテム " + itemId + " の模型が無いので宝石で置きます（HiddenItemModels に足す）。");
                 return new Model
                 {
                     Mesh = Save(BuildGem(), "Gem"),
@@ -200,8 +207,7 @@ namespace KCD.Editor
         }
 
         /// <summary>
-        /// 隠しアイテムの宝石。上下に尖った正八面体（面ごとに頂点を分けて角を立てる）。原点が中心。
-        /// 葉や牛乳と違う形にして、クエストの拾い物ではないことが遠目にも分かるようにする (#65)。
+        /// 模型の無い隠しアイテムの代わりの宝石。上下に尖った正八面体（面ごとに頂点を分けて角を立てる）。原点が中心 (#65, #167)。
         /// </summary>
         public static Mesh BuildGem()
         {
@@ -333,15 +339,16 @@ namespace KCD.Editor
         /// <summary>Assets/Generated/Meshes/&lt;name&gt;.asset に保存する。既にあれば中身だけ入れ替える。</summary>
         private static Mesh Save(Mesh built, string name)
         {
-            string path = MeshFolder + "/" + name + ".asset";
+            return SaveAt(built, MeshFolder + "/" + name + ".asset");
+        }
+
+        /// <summary>path（Assets/ からの .asset）に保存する。既にあれば中身だけ入れ替え、GUID を変えない。</summary>
+        internal static Mesh SaveAt(Mesh built, string path)
+        {
             var existing = AssetDatabase.LoadAssetAtPath<Mesh>(path);
             if (existing == null)
             {
-                if (!AssetDatabase.IsValidFolder(MeshFolder))
-                {
-                    AssetDatabase.CreateFolder(EditorPaths.GeneratedFolder, "Meshes");
-                }
-
+                EditorPaths.EnsureFolder(path.Substring(0, path.LastIndexOf('/')));
                 AssetDatabase.CreateAsset(built, path);
                 return built;
             }

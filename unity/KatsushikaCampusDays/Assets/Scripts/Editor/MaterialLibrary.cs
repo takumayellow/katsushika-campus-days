@@ -125,11 +125,30 @@ namespace KCD.Editor
             { "gem_common", "E8DCC0" },
             { "gem_uncommon", "5FCF8E" },
             { "gem_rare", "58A8F0" },
-            { "gem_legendary", "F2B93B" }
+            { "gem_legendary", "F2B93B" },
+            // 隠しアイテムの足元の輪ときらめき（#167）。宝石と同じレア度の色で、宝石より強く光らせる。
+            { "mark_common", "E8DCC0" },
+            { "mark_uncommon", "5FCF8E" },
+            { "mark_rare", "58A8F0" },
+            { "mark_legendary", "F2B93B" },
+            // 隠しアイテムの模型（#167, HiddenItemShapes）。item_metal_* は金属の艶を付ける。
+            { "item_metal_silver", "C4C8CE" },
+            { "item_metal_brass", "C9A23F" },
+            { "item_metal_gold", "E3B23C" },
+            { "item_acorn", "9A6233" },
+            { "item_acorn_cap", "6E5030" },
+            { "item_paper", "F3EEE0" },
+            { "item_red", "C8323C" },
+            { "item_navy", "25335A" },
+            { "glass_item", "BFE3EA" },
+            { "glass_marble", "7FC4E0" }
         };
 
         /// <summary>宝石の自己発光の強さ（基本色に掛ける）。</summary>
         private const float GemEmission = 0.55f;
+
+        /// <summary>隠しアイテムの足元の輪ときらめきの自己発光の強さ（基本色に掛ける）。昼の芝の上でも見えるように。</summary>
+        private const float MarkEmission = 1.1f;
 
         /// <summary>
         /// 服・髪などの名前に含まれる色語 → 色。palette.json が無いキャラだけの予備 (#55)。
@@ -203,14 +222,20 @@ namespace KCD.Editor
                 MakeTransparent(material, name == "glass_clear" ? 0.32f : 0.72f, color);
                 material.SetFloat("_Smoothness", 0.92f);
             }
-            else if (name.StartsWith("gem_"))
+            else if (name.StartsWith("gem_") || name.StartsWith("mark_"))
             {
                 material.SetColor("_BaseColor", color);
                 material.SetFloat("_Smoothness", 0.9f);
                 material.SetFloat("_Metallic", 0f);
                 material.EnableKeyword("_EMISSION");
-                material.SetColor("_EmissionColor", color * GemEmission);
+                material.SetColor("_EmissionColor", color * (name.StartsWith("mark_") ? MarkEmission : GemEmission));
                 material.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
+            }
+            else if (name.StartsWith("item_metal_"))
+            {
+                material.SetColor("_BaseColor", color);
+                material.SetFloat("_Smoothness", 0.6f);
+                material.SetFloat("_Metallic", 0.5f);
             }
             else if (!CampusColors.ContainsKey(name) && InteriorPalette.TryGetSurface(name, out InteriorPalette.Surface surface))
             {

@@ -12,7 +12,7 @@ namespace KCD.Editor
     /// ゴーグル c_lab_goggles も見つからなかった。
     ///
     /// 置き方:
-    ///   隠しアイテム  レア度の色の宝石（CollectableMeshes の Gem）。E で拾うと DayStats が数える。
+    ///   隠しアイテム  名前どおりの模型と、足元のレア度の色の輪・きらめき（HiddenItemModels）。E で拾うと DayStats が数える。
     ///   写真スポット  三脚（PhotoSpot、E で look_dir へ向いて撮る）と、同じ場所の VisitZone（PlaceId = ps_*）。
     /// 屋外は campus.json と同じ (x, z) の地面、屋内は Interior_&lt;building&gt; の poi_ の床。
     /// 屋内の poi を使うので InteriorStage.Build のあとに呼ぶ。
@@ -116,8 +116,10 @@ namespace KCD.Editor
                 }
 
                 floor = AwayFromSpots(floor, interior, anchors);
-                ActorFactory.CreateCollectable(parent, item.Id, item.NameJa, floor + Vector3.up * ItemLift,
-                    "gem_" + item.Rarity);
+                // 見た目は HiddenItemModels の模型。宝石の色（gem_<rarity>）は模型の無い id の代わりにだけ使う。
+                GameObject placed = ActorFactory.CreateCollectable(parent, item.Id, item.NameJa,
+                    floor + Vector3.up * ItemLift, "gem_" + item.Rarity);
+                HiddenItemModels.AddRarityMarks(placed, item.Rarity, ItemLift);
                 items++;
             }
 

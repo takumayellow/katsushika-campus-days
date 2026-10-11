@@ -15,8 +15,10 @@ namespace KCD
         [SerializeField] private float _bobHeight = 0.12f;
         [SerializeField] private float _spinSpeed = 45f;
         [SerializeField] private bool _floats = true;
+        [SerializeField] private Transform _groundMark;
 
         private Vector3 _basePosition;
+        private Vector3 _groundMarkOffset;
         private bool _taken;
 
         /// <summary>クエストの collect ステップの target と揃える id。</summary>
@@ -42,6 +44,23 @@ namespace KCD
             set => _floats = value;
         }
 
+        /// <summary>
+        /// 床に留めておく子（隠しアイテムの足元の光る輪, #167）。物が上下に揺れても、これは置いた高さのまま動かさない。
+        /// </summary>
+        public Transform GroundMark
+        {
+            get => _groundMark;
+            set
+            {
+                _groundMark = value;
+                if (value != null)
+                {
+                    // 揺れている最中に差しても、本体からの位置の差で覚える（揺れの分は含まない）。
+                    _groundMarkOffset = value.position - transform.position;
+                }
+            }
+        }
+
         public override bool CanInteract => !_taken && isActiveAndEnabled;
 
         /// <summary>拾われたか（隠しアイテムなら、もう拾ってあるので隠しているか）。</summary>
@@ -50,6 +69,10 @@ namespace KCD
         private void Awake()
         {
             _basePosition = transform.position;
+            if (_groundMark != null)
+            {
+                _groundMarkOffset = _groundMark.position - _basePosition;
+            }
         }
 
         private void OnEnable()
@@ -153,6 +176,15 @@ namespace KCD
             float bob = Mathf.Sin(Time.time * 1.8f) * _bobHeight;
             transform.position = _basePosition + Vector3.up * bob;
             transform.Rotate(Vector3.up, _spinSpeed * Time.deltaTime, Space.World);
+        }
+
+        private void LateUpdate()
+        {
+            // 揺れて回った後に、足元の輪だけ置いた高さに戻す。
+            if (_groundMark != null)
+            {
+                _groundMark.position = _basePosition + _groundMarkOffset;
+            }
         }
 
         public override void Interact(GameObject interactor)
