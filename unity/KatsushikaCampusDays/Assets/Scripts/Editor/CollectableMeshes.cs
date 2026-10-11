@@ -139,6 +139,9 @@ namespace KCD.Editor
             return mesh;
         }
 
+        /// <summary>紙パックの胴の高さの半分 [m]。原点が胴の中心なので、台に立てるときはこの分だけ上げる。</summary>
+        public const float MilkCartonHalfHeight = 0.12f;
+
         /// <summary>
         /// 200 ml の紙パック（実物 6.5 x 6.5 x 12 cm）を 2 倍にしたもの。原点は胴の中心。
         /// サブメッシュ 0 = 白い胴と屋根、1 = 青い帯。
@@ -146,7 +149,7 @@ namespace KCD.Editor
         public static Mesh BuildMilkCarton()
         {
             const float side = 0.13f;
-            const float body = 0.24f;
+            const float body = MilkCartonHalfHeight * 2f;
             const float gable = 0.06f;
             float h = side * 0.5f;
             float top = body * 0.5f;

@@ -166,6 +166,32 @@ namespace KCD.Tests
             return new Vector2(a.x - b.x, a.z - b.z).magnitude;
         }
 
+        /// <summary>牛乳の胴の底と、その真下の天板との隙間の許容 [m]。</summary>
+        private const float MilkRestTolerance = 0.03f;
+
+        [Test]
+        public void Milk_StandsStillOnTheShopStand()
+        {
+            List<CollectableItem> milk = ItemsWithId("milk");
+            Assert.AreEqual(1, milk.Count, "牛乳がシーンに 1 個でない");
+            CollectableItem carton = milk[0];
+            Assert.IsFalse(carton.Floats, "売り物の牛乳が宙で揺れて回る (#186)");
+
+            Vector3 p = carton.transform.position;
+            Assert.IsTrue(Physics.Raycast(p, Vector3.down, out RaycastHit top, 1f, _solidMask), "牛乳の下に台が無い: " + p);
+            float bottom = -carton.GetComponent<MeshFilter>().sharedMesh.bounds.min.y * carton.transform.lossyScale.y;
+            Assert.AreEqual(bottom, top.distance, MilkRestTolerance,
+                "牛乳が台に立っていない（" + top.collider.name + " まで " + top.distance + " m）");
+            Assert.AreEqual("MilkStand", top.collider.name, "牛乳の下にあるのが売店前のワゴンでない");
+
+            // ワゴンの根元は地面の高さ。根元から下へ撃ったレイは、中から撃つのでワゴン自身には当たらない。
+            Vector3 foot = top.collider.transform.position;
+            Assert.IsTrue(Physics.Raycast(foot + Vector3.up * 0.05f, Vector3.down, out _, 0.3f, _solidMask),
+                "ワゴンが地面から浮いている: " + foot);
+
+            Assert.IsTrue(ItemsWithId("leaf").TrueForAll(i => i.Floats), "葉は目印なので浮かせたまま");
+        }
+
         [Test]
         public void EveryQuestStep_HasItsTargetInTheScene()
         {
