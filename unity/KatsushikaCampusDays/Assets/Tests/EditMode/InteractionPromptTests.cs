@@ -114,14 +114,33 @@ namespace KCD.Tests
 
         // ---- E の受け付け ----
 
-        [TestCase(true, true, false, false, true, TestName = "ShouldInteract_対象があって押した")]
-        [TestCase(false, true, false, false, false, TestName = "ShouldInteract_対象が無い")]
-        [TestCase(true, false, false, false, false, TestName = "ShouldInteract_押していない")]
-        [TestCase(true, true, true, false, false, TestName = "ShouldInteract_会話やメニューで封鎖中")]
-        [TestCase(true, true, false, true, false, TestName = "ShouldInteract_モーダルを閉じたフレーム")]
-        public void ShouldInteract_OnlyWhenEverythingAllows(bool hasTarget, bool pressed, bool blocked, bool modalClosed, bool expected)
+        [TestCase(true, true, false, false, false, true, TestName = "ShouldInteract_対象があって押した")]
+        [TestCase(false, true, false, false, false, false, TestName = "ShouldInteract_対象が無い")]
+        [TestCase(true, false, false, false, false, false, TestName = "ShouldInteract_押していない")]
+        [TestCase(true, true, true, false, false, false, TestName = "ShouldInteract_会話やメニューで封鎖中")]
+        [TestCase(true, true, false, true, false, false, TestName = "ShouldInteract_モーダルを閉じたフレーム")]
+        [TestCase(true, true, false, false, true, false, TestName = "ShouldInteract_E を座席の立ち上がりに使う")]
+        public void ShouldInteract_OnlyWhenEverythingAllows(bool hasTarget, bool pressed, bool blocked, bool modalClosed,
+            bool seatUsesKey, bool expected)
         {
-            Assert.AreEqual(expected, InteractionPrompt.ShouldInteract(hasTarget, pressed, blocked, modalClosed));
+            Assert.AreEqual(expected, InteractionPrompt.ShouldInteract(hasTarget, pressed, blocked, modalClosed, seatUsesKey));
+        }
+
+        [Test]
+        public void SeatUsesInteractKey_WhileSeated()
+        {
+            bool before = KCDInput.MovementLocked;
+            try
+            {
+                KCDInput.MovementLocked = false;
+                Assert.IsFalse(InteractionPrompt.SeatUsesInteractKey(null), "座っていないのに E を座席に取られる");
+                KCDInput.MovementLocked = true;
+                Assert.IsTrue(InteractionPrompt.SeatUsesInteractKey(null), "座っている間の E で前の人に話しかける");
+            }
+            finally
+            {
+                KCDInput.MovementLocked = before;
+            }
         }
 
         [Test]
@@ -129,11 +148,11 @@ namespace KCD.Tests
         {
             var dialogue = new object();
             KCDInput.Block(dialogue);
-            Assert.IsFalse(InteractionPrompt.ShouldInteract(true, true, KCDInput.GameplayBlocked, false),
+            Assert.IsFalse(InteractionPrompt.ShouldInteract(true, true, KCDInput.GameplayBlocked, false, false),
                 "会話中の E で別の物を調べている");
 
             KCDInput.Unblock(dialogue);
-            Assert.IsTrue(InteractionPrompt.ShouldInteract(true, true, KCDInput.GameplayBlocked, false),
+            Assert.IsTrue(InteractionPrompt.ShouldInteract(true, true, KCDInput.GameplayBlocked, false, false),
                 "会話を閉じたあとも調べられない");
         }
 
