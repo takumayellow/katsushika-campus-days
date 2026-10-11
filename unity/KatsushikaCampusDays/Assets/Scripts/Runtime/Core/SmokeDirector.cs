@@ -12,7 +12,7 @@ namespace KCD
     ///   -kcd-start campus      タイトルを飛ばしてキャンパスへ
     ///   -kcd-start credits     タイトルでクレジットを開いたままにする
     ///   -kcd-lang en           表示する言語を合わせる（ja / en。選択は PlayerPrefs に残る）
-    ///   -kcd-time 17.5         ゲーム内時刻を合わせる
+    ///   -kcd-time 17.5         ゲーム内時刻を合わせる（-kcd-time-hold 1 でその時刻のまま時計を止める）
     ///   -kcd-talk inari        NPC の前へワープして会話を始める
     ///   -kcd-interior kyoso    建物の中へ入る
     ///   -kcd-title-yaw 180     タイトルの立ち姿の向きを試す
@@ -40,6 +40,7 @@ namespace KCD
         private float _interactDelay = -1f;
         private float _endingPage = -1f;
         private float _hours = -1f;
+        private bool _holdTime;
         private float _titleYaw = float.NaN;
         private float _faceCam = float.NaN;
         private float _faceYaw;
@@ -119,6 +120,7 @@ namespace KCD
             _interactDelay = ArgFloat("-kcd-interact", -1f);
             _endingPage = ArgFloat("-kcd-ending", -1f);
             _hours = ArgFloat("-kcd-time", -1f);
+            _holdTime = ArgFloat("-kcd-time-hold", 0f) > 0f;
             _titleYaw = ArgFloat("-kcd-title-yaw", float.NaN);
             _faceCam = ArgFloat("-kcd-face-cam", float.NaN);
             _faceYaw = ArgFloat("-kcd-face-yaw", 0f);
@@ -229,6 +231,7 @@ namespace KCD
                 if (cycle != null)
                 {
                     cycle.SetHours(_hours);
+                    cycle.Paused = _holdTime;
                 }
             }
 
