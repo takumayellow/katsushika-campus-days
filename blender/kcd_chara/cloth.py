@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import math
+from contextlib import nullcontext
 
 import numpy as np
 
@@ -1073,8 +1074,11 @@ def _furi_sleeve(mb, p, a: B.Anatomy, mat, *, drop=1.0, style="furi"):
                     rx *= 0.26 + 0.74 * s2
                     ry *= 0.26 + 0.74 * s2
                 rings.append(M.ring(16, rx, ry, power=2.1, cx=cx, cy=cy, z=zz))
-            mb.add_grid(rings, mat, smooth=True, cap_start=True, cap_end=True,
-                        flip=bool(p.get("outward_faces")))
+            # 振り袖の袂は別の部位名でも引けるようにする（ウェイトを腕へ寄せる, rig）。
+            tamoto = mb.part(f"tamoto_{part[-1]}") if style == "furi" else nullcontext()
+            with tamoto:
+                mb.add_grid(rings, mat, smooth=True, cap_start=True, cap_end=True,
+                            flip=bool(p.get("outward_faces")))
 
 
 def _obi(mb, p, a: B.Anatomy, mat, z_c, width):

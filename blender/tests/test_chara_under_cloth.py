@@ -107,10 +107,22 @@ class _VertexGroup:
 
 
 class _Groups(list):
+    def __init__(self, obj, groups):
+        super().__init__(groups)
+        self._obj = obj
+
     def __getitem__(self, key):
         if isinstance(key, str):
             return next(g for g in self if g.name == key)
         return super().__getitem__(key)
+
+    def get(self, name):
+        return next((g for g in self if g.name == name), None)
+
+    def new(self, name):
+        self._obj.index[name] = len(self._obj.index)
+        self.append(_VertexGroup(self._obj, name))
+        return self[-1]
 
 
 class _FakeObj:
@@ -119,7 +131,7 @@ class _FakeObj:
     def __init__(self, weights, names):
         self.w = weights
         self.index = {n: k for k, n in enumerate(names)}
-        self.vertex_groups = _Groups(_VertexGroup(self, n) for n in names)
+        self.vertex_groups = _Groups(self, (_VertexGroup(self, n) for n in names))
 
         class _Data:
             pass

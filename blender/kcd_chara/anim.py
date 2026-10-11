@@ -20,7 +20,7 @@ ACTION_NAMES = ("Idle", "Walk", "Run", "Jump", "Wave", "Talk")
 
 #: Action 名 -> {Shape Key 名: [(フレーム比 0..1, 値), ...]}
 SHAPE_TRACKS: dict[str, dict[str, list[tuple[float, float]]]] = {
-    "Wave": {"smile": [(0.0, 0.0), (0.18, 1.0), (0.82, 1.0), (1.0, 0.25)]},
+    "Wave": {"smile": [(0.0, 0.0), (0.22, 1.0), (0.82, 1.0), (1.0, 0.2)]},
     "Talk": {"mouth_a": [(0.0, 0.05), (0.18, 0.85), (0.36, 0.10),
                          (0.54, 0.75), (0.72, 0.10), (1.0, 0.05)],
              "mouth_i": [(0.0, 0.0), (0.27, 0.70), (0.45, 0.05),
@@ -614,25 +614,57 @@ class Jump(_Legs):
         return spec
 
 
-def _wave(t, drop=ARM_DROP, elbow=0.0):
-    # 振る腕の Y は -(104 + drop)。_posed が先頭に足す +drop と打ち消し合い、
-    # 腕をどれだけ下ろすキャラでも振る手の高さは同じ -104° になる。
-    # 前腕の最後の +elbow も、_posed が最後に足す -elbow と打ち消し合う。
-    swing = math.sin(2 * math.pi * 3.0 * t)
-    ramp = min(1.0, t / 0.18) * min(1.0, (1.0 - t) / 0.18 + 0.0 if t > 0.82 else 1.0)
-    ramp = max(0.0, min(1.0, ramp))
+#: 手を振るときの上腕の回転 (X, Z)。Y は A ポーズの角度と腕下ろしから決める（_wave）。
+#: 上腕を水平・やや前へ、前腕を立てて手のひらを正面へ向ける (#13)。
+WAVE_UP_XZ = (-8.8, -18.0)
+#: 手を振るときの前腕の回転 (Y, X, Z)。肘を約 80° 曲げて（振りで 65〜100°）前腕をほぼ鉛直に立てる。
+WAVE_LO = (-94.2, -34.0, -34.3)
+#: 上げ / 振り / 下ろしの割合（足して 1）。
+WAVE_PHASES = (0.22, 0.60, 0.18)
+#: 振りの往復数。28 フレーム（1.17 s）のうち振る 0.70 s で 2 往復 ≈ 2.9 Hz。
+WAVE_SWEEPS = 2.0
+#: 上腕を持ち上げる元の角度の既定。背の高いキャラの A ポーズの上腕（body.arm_angles）。
+WAVE_LIFT = 52.0
+
+assert abs(sum(WAVE_PHASES) - 1.0) < 1e-9
+
+
+def _wave_ramp(t):
+    """腕を上げている度合い 0..1。両端の傾きが 0 なので、前後のモーションとの継ぎ目に角が出ない。"""
+    up, hold, _ = WAVE_PHASES
+    if t < up:
+        return _ease(t / up)
+    if t <= up + hold:
+        return 1.0
+    return _ease((1.0 - t) / (1.0 - up - hold))
+
+
+def _wave(t, drop=ARM_DROP, elbow=0.0, lift=WAVE_LIFT):
+    """左手を顔の横で、肘から先を左右に振る (#13)。
+
+    lift は A ポーズの上腕が水平から下がる角度（body.arm_angles）。振る腕の Y は
+    -(lift + drop) で、_posed が先頭に足す +drop と打ち消し合い、どのキャラでも上腕が水平になる。
+    前腕の最後の +elbow も、_posed が最後に足す -elbow と打ち消し合う。
+    右手はトートを提げることがある（mirai）ので、少し上げるだけで左右には振らない。
+    """
+    ramp = _wave_ramp(t)
+    up, hold, _ = WAVE_PHASES
+    u = min(1.0, max(0.0, (t - up) / hold))
+    swing = math.sin(2 * math.pi * WAVE_SWEEPS * u) * ramp
+    wrist = math.sin(2 * math.pi * WAVE_SWEEPS * u - 0.9) * ramp  # 手首は少し遅れて追う
+    xu, zu = WAVE_UP_XZ
+    yl, xl, zl = WAVE_LO
     return {
-        **_hair(0.7, 3.6 * ramp, t, freq=3.0),
-        "Hips": [("Y", D(1.5) * swing * ramp)],
-        "Spine": [("Z", D(3.0) * ramp)],
-        "Head": [("Z", D(5.0) * ramp), ("Y", D(-4.0) * ramp),
-                 ("X", D(-3.0) * ramp)],
-        "LeftUpperArm": [("Y", D(-(104.0 + drop)) * ramp), ("X", D(-8.0) * ramp)],
-        "LeftLowerArm": [("Y", D(-26.0) * ramp), ("X", D(-24.0) * ramp * (0.5 + 0.5 * swing)),
-                         ("Y", D(elbow) * ramp)],
-        "LeftHand": [("Y", D(-18.0) * swing * ramp)],
-        "RightUpperArm": [("Y", D(3.0)), ("X", D(4.0) * ramp)],
-        "RightLowerArm": [("X", D(-14.0))],
+        **_hair(0.7, 2.0 * ramp, t, freq=WAVE_SWEEPS),
+        "Spine": [("Z", D(-1.5) * ramp)],
+        "UpperChest": [("Z", D(-2.0) * ramp)],
+        "Head": [("Y", D(2.5) * ramp), ("X", D(-2.0) * ramp)],
+        "LeftUpperArm": [("Y", D(-(lift + drop)) * ramp), ("X", D(xu) * ramp), ("Z", D(zu) * ramp)],
+        "LeftLowerArm": [("Y", D(yl) * ramp), ("X", D(xl) * ramp), ("Z", D(zl) * ramp),
+                         ("Y", D(18.0) * swing), ("Y", D(elbow) * ramp)],
+        "LeftHand": [("Y", D(8.0) * wrist)],
+        "RightUpperArm": [("Y", D(3.0) * ramp), ("X", D(4.0) * ramp)],
+        "RightLowerArm": [("X", D(-14.0) * ramp)],
     }
 
 
@@ -663,12 +695,13 @@ def _posed(fn, drop=ARM_DROP, elbow=0.0):
     return lambda t: _arms_down(fn(t), drop, elbow)
 
 
-def action_specs(arm, arm_drop=ARM_DROP, gait=None, elbow_open=0.0):
+def action_specs(arm, arm_drop=ARM_DROP, gait=None, elbow_open=0.0, arm_lift=WAVE_LIFT):
     """(名前, フレーム数, poser, ループ, キー数) の一覧。
 
     歩き・走りの長さはキャラの脚長から決まる（速度を合わせるため人によって違う）。
     arm_drop は A ポーズから上腕を下ろす角度、elbow_open は前腕を外へ開く角度
-    （body.arm_drop / body.elbow_open）。
+    （body.arm_drop / body.elbow_open）。arm_lift は A ポーズの上腕が水平から下がる角度
+    （body.arm_angles の 1 つめ）で、手を振る腕を水平に上げるのに使う。
     gait は {"Walk": {...}, "Run": {...}} で GAIT_TARGET をキャラごとに上書きする
     （params の "gait"。v はゲーム側の閾値なので変えないこと）。
     """
@@ -682,7 +715,8 @@ def action_specs(arm, arm_drop=ARM_DROP, gait=None, elbow_open=0.0):
         ("Walk", walk.nframes, _posed(walk.pose, d, e), True, walk.nframes + 1),
         ("Run", run.nframes, _posed(run.pose, d, e), True, run.nframes + 1),
         ("Jump", jump.nframes, _posed(jump.pose, d, e), False, jump.nframes),
-        ("Wave", 40, _posed(lambda t: _wave(t, d, e), d, e), False, 17),
+        # 振りのサイン波が丸まらないよう、全フレームにキーを打つ。
+        ("Wave", 28, _posed(lambda t: _wave(t, d, e, arm_lift), d, e), False, 28),
         ("Talk", 60, _posed(_talk, d, e), True, 13),
     )
 
@@ -750,9 +784,9 @@ def setup_shape_drivers(obj, arm) -> list[str]:
     return made
 
 
-def build_actions(arm, arm_drop=ARM_DROP, gait=None, elbow_open=0.0) -> list[str]:
+def build_actions(arm, arm_drop=ARM_DROP, gait=None, elbow_open=0.0, arm_lift=WAVE_LIFT) -> list[str]:
     names = []
-    for name, nf, fn, loop, keys in action_specs(arm, arm_drop, gait, elbow_open):
+    for name, nf, fn, loop, keys in action_specs(arm, arm_drop, gait, elbow_open, arm_lift):
         act = make_action(arm, name, nf, fn, loop=loop, keys=keys)
         names.append(act.name)
     return names
