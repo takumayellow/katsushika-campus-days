@@ -59,8 +59,9 @@ ALLOWLIST: tuple[AllowRule, ...] = (
     AllowRule(
         r"Shader 'Hidden/Universal Render Pipeline/Edge Adaptive Spatial Upsampling' "
         r"is not supported or has been stripped",
-        "URP の FSR 拡大シェーダーがビルドから削られている。後処理が止まる不具合として #72 で追う。"
-        "起動と操作は続くので、このスモークでは失敗にしない"),
+        "RenderScale 1 未満のときの拡大に使う FSR（EASU）のシェーダーは target 4.5 が要り、WebGL2 では"
+        "必ず落ちる。止まるのはこの拡大のパスだけで、Bloom・UberPost は動いている（#72 で描画数を"
+        "測った。後処理が止まったかは postprocess_check で判定する）。拡大は線形で行われる"),
     AllowRule(
         r"Manual synchronization of Unity Application\.persistentDataPath via "
         r"JS_FileSystem_Sync\(\) is deprecated",
