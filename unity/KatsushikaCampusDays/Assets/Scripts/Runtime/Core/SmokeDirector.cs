@@ -445,10 +445,10 @@ namespace KCD
             current.Interact(player.gameObject);
             yield return null;
 
-            // 三脚の撮影はフレームの描画とフラッシュを待ってから数えるので、枚数が増えるまで少し待つ。
+            // 三脚の記念写真は、三脚の前へ走って振り向いてから撮って数える (#170) ので、枚数が増えるまで待つ。
             if (current is PhotoSpot)
             {
-                float until = Time.realtimeSinceStartup + 3f;
+                float until = Time.realtimeSinceStartup + PhotoSystem.RunUpSeconds + PhotoSystem.PoseSeconds + 4f;
                 while (DayStats.PhotoSpotIds.Count == photosBefore && Time.realtimeSinceStartup < until)
                 {
                     yield return null;

@@ -56,6 +56,12 @@ namespace KCD
         private int _solidMask;
         private int _stuckFrames;
         private float _planarSpeed;
+        private bool _autopilot;
+        private Vector3 _autopilotTarget;
+        private float _autopilotSpeed;
+
+        /// <summary>自動で歩かせているとき、目的地に着いたとみなす距離（m）。</summary>
+        public const float AutopilotArrival = 0.2f;
 
         /// <summary>座っているか。ベンチの SeatInteractable が SitAt で立てる。</summary>
         public bool IsSitting => _sitting;
@@ -86,6 +92,12 @@ namespace KCD
 
         /// <summary>接地しているか。</summary>
         public bool IsGrounded => _controller != null && _controller.isGrounded;
+
+        /// <summary>SetAutopilot で目的地へ向かっている途中か。着くか ClearAutopilot で false になる。</summary>
+        public bool AutopilotActive => _autopilot;
+
+        /// <summary>ダッシュの速さ（m/s）。</summary>
+        public float RunSpeed => _runSpeed;
 
         /// <summary>カメラ相対移動の基準。ThirdPersonCamera が設定する。</summary>
         public Transform CameraTransform
@@ -243,8 +255,32 @@ namespace KCD
             _controller.enabled = true;
         }
 
+        /// <summary>
+        /// 入力の代わりに target へ向かって speed で進ませる（写真スポットの記念写真で三脚の前へ駆けていく, #170）。
+        /// 重力・段差・壁はふだんどおり効くので、行けない所では手前で止まる。着いたら自分で止まる。
+        /// </summary>
+        public void SetAutopilot(Vector3 target, float speed)
+        {
+            _autopilotTarget = target;
+            _autopilotSpeed = Mathf.Max(0f, speed);
+            _autopilot = true;
+        }
+
+        /// <summary>自動で歩かせるのをやめ、その場で止まる（着く前に打ち切ったとき滑っていかないように）。</summary>
+        public void ClearAutopilot()
+        {
+            _autopilot = false;
+            _horizontalVelocity = Vector3.zero;
+        }
+
         private void UpdateHorizontal(float deltaTime)
         {
+            if (_autopilot)
+            {
+                SteerAutopilot(deltaTime);
+                return;
+            }
+
             Vector2 input = KCDInput.Move;
             Vector3 desired = Vector3.zero;
 
@@ -276,6 +312,32 @@ namespace KCD
 
             _horizontalVelocity = Vector3.MoveTowards(
                 _horizontalVelocity, desired, _acceleration * deltaTime);
+        }
+
+        private void SteerAutopilot(float deltaTime)
+        {
+            Vector3 to = _autopilotTarget - transform.position;
+            to.y = 0f;
+            float distance = to.magnitude;
+            Vector3 desired = Vector3.zero;
+            if (distance <= AutopilotArrival)
+            {
+                _autopilot = false;
+            }
+            else
+            {
+                Vector3 direction = to / distance;
+                // 着く手前で緩め、加速度の範囲で止まり切れるようにする。
+                float speed = Mathf.Min(_autopilotSpeed, Mathf.Sqrt(2f * _acceleration * distance));
+                desired = direction * speed;
+
+                float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg;
+                float angle = Mathf.SmoothDampAngle(
+                    transform.eulerAngles.y, targetAngle, ref _turnVelocity, _turnSmoothTime);
+                transform.rotation = Quaternion.Euler(0f, angle, 0f);
+            }
+
+            _horizontalVelocity = Vector3.MoveTowards(_horizontalVelocity, desired, _acceleration * deltaTime);
         }
 
         private void UpdateVertical(float deltaTime)
@@ -364,6 +426,7 @@ namespace KCD
             _controller.enabled = false;
             transform.SetPositionAndRotation(position, Quaternion.Euler(0f, yawDegrees, 0f));
             _controller.enabled = true;
+            _autopilot = false;
             _horizontalVelocity = Vector3.zero;
             _verticalVelocity = 0f;
             _planarSpeed = 0f;
