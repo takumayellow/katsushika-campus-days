@@ -369,7 +369,7 @@ namespace KCD.Tests
             }
         }
 
-        private static float Yaw(Vector3 direction)
+        internal static float Yaw(Vector3 direction)
         {
             return Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg;
         }
