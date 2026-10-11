@@ -803,13 +803,13 @@ def _hoodie(mb, p, a: B.Anatomy, z_col, mat="cloth_hoodie"):
                         puff=0.55)
     # フード（首の後ろに垂れる袋）
     center, radii = hood_ellipsoid(p, a)
-    with mb.part("hoodie"):
+    with mb.part("hood"):
         mb.add_sphere(center, radii, mat, nu=16, nv=10)
     # 前ポケット
     zz, rx, ry = _profile(p, a)
     z_p = z["waist"] - h * 0.010
     yp = -float(np.interp(z_p, zz, ry)) - h * 0.018
-    with mb.part("hoodie"):
+    with mb.part("hoodie_pocket"):
         mb.add_rounded_box((0.0, yp, z_p), (a.shoulder[0] * 0.92, h * 0.014,
                                             h * 0.052), mat, seg=3,
                            smooth=True)
