@@ -66,6 +66,14 @@ namespace KCD
         /// <summary>前にいるプレイヤーを横へよけ始める距離（よける半径に掛ける）。</summary>
         public const float LookAheadFactor = 2.5f;
 
+        /// <summary>
+        /// 立ち止まる点（wait のある点）のまわりに散らす輪の内と外の半径（m）。
+        /// 同じ道を選んだ人が同じ 1 点で重なって立たないよう、行き先をこの輪のどこかにずらす (#165)。
+        /// </summary>
+        public const float StandSpreadMin = 0.8f;
+
+        public const float StandSpreadMax = 3f;
+
         private static readonly int SpeedHash = Animator.StringToHash("Speed");
         private static readonly int GaitRateHash = Animator.StringToHash("GaitRate");
         private static readonly int TalkHash = Animator.StringToHash("Talk");
@@ -456,7 +464,20 @@ namespace KCD
 
         private void StartLeg(float now)
         {
-            if (!_owner.TryGetWaypoint(_route.Waypoints[_next].Key, out Vector3 target) || !_agent.SetDestination(target))
+            MobSchedule.Waypoint waypoint = _route.Waypoints[_next];
+            if (!_owner.TryGetWaypoint(waypoint.Key, out Vector3 target))
+            {
+                // 行き先が引けない区間は飛ばす（次のフレームで次の点へ）。
+                _legDeadline = now;
+                return;
+            }
+
+            if (waypoint.Wait > 0f)
+            {
+                target = SpreadStand(target);
+            }
+
+            if (!_agent.SetDestination(target))
             {
                 // 行き先が引けない / 道が作れない区間は飛ばす（次のフレームで次の点へ）。
                 _legDeadline = now;
@@ -537,6 +558,36 @@ namespace KCD
                 _animator.Update(_stepAccum);
                 _stepAccum = 0f;
             }
+        }
+
+        /// <summary>
+        /// 立ち止まる点 center のまわりの輪から 1 点を選び、NavMesh に下ろす。下ろせなければ center で待つ。
+        /// center から NavMesh の上をまっすぐ行けない所（池の対岸・壁の向こう）に下りたら、行ける端で止める。
+        /// 行けない所を目指すと着かないまま時間切れになり、立ち止まらずに通り過ぎてしまう。
+        /// </summary>
+        private static Vector3 SpreadStand(Vector3 center)
+        {
+            Vector3 spot = StandSpot(center, UnityEngine.Random.value, UnityEngine.Random.value);
+            // 池や花壇の上に出たら、いちばん近い NavMesh（岸や花壇の縁）に下ろす。
+            if (!NavMesh.SamplePosition(spot, out NavMeshHit hit, StandSpreadMax, NavMesh.AllAreas))
+            {
+                return center;
+            }
+
+            return NavMesh.Raycast(center, hit.position, out NavMeshHit edge, NavMesh.AllAreas) ? edge.position : hit.position;
+        }
+
+        /// <summary>
+        /// 立ち止まる点 center のまわりの、半径 <see cref="StandSpreadMin"/>〜<see cref="StandSpreadMax"/> の輪の中の点。
+        /// 向きを angle01、中心からの離れ方を radius01（どちらも 0〜1）で決める。高さは center のまま。
+        /// 輪の面積に対して偏らないよう、半径の 2 乗を radius01 で割り振る。
+        /// </summary>
+        public static Vector3 StandSpot(Vector3 center, float angle01, float radius01)
+        {
+            float angle = Mathf.Clamp01(angle01) * Mathf.PI * 2f;
+            float r = Mathf.Sqrt(Mathf.Lerp(
+                StandSpreadMin * StandSpreadMin, StandSpreadMax * StandSpreadMax, Mathf.Clamp01(radius01)));
+            return center + new Vector3(Mathf.Cos(angle) * r, 0f, Mathf.Sin(angle) * r);
         }
 
         /// <summary>
