@@ -61,6 +61,9 @@ namespace KCD.Editor
 
             // 座り姿勢の IK。
             animator.gameObject.AddComponent<SitPose>();
+
+            // まばたきが全員で揃わないよう、周期の始まりをずらす（#193）。
+            animator.gameObject.AddComponent<BlinkPhase>().Offset = BlinkPhase.OffsetFor(characterId);
             return body;
         }
 
