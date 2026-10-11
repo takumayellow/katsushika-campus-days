@@ -372,8 +372,9 @@ _SAILOR_NARROW = math.pi * 0.085
 
 #: V 開きの頂点（リボンの結び目）の、胸の高さからの高さ（身長比）
 _SAILOR_V_APEX = 0.018
-#: 胸当ての上端の、肩の関節の高さからの下がり（身長比）
-_SAILOR_BIB_DROP = 0.016
+#: 胸当ての上端の、胸の高さからの高さ（身長比）。V の頂点（リボンの結び目）と同じく
+#: 胸から測るので、肩の高さを変えても胸当てとリボンの釣り合いは崩れない
+_SAILOR_BIB_RISE = 0.045
 #: 前の襟の外縁が肩の関節の真上を越える高さ。肩の関節からの高さ（身長比）
 _SAILOR_EDGE_RISE = 0.006
 #: 前の襟の外縁の頂点を、V の頂点から下げる量（身長比）。前中心で襟に幅を残す。
@@ -845,7 +846,7 @@ def build_seifuku(mb, p, a: B.Anatomy, *, apron: bool = False,
     inflate = h * 0.0085
     rings, front = _bodice(mb, p, a, "blouse", "cloth_blouse",
                            waist - h * 0.020, z_col, inflate,
-                           bib=a.shoulder[2] - h * _SAILOR_BIB_DROP)
+                           bib=z["bust"] + h * _SAILOR_BIB_RISE)
     if hoodie:
         # セーラー襟はパーカーの上に出す。ブラウスの半袖はパーカーの袖に
         # 隠れるので張らない。張ると肩口のふくらみがパーカーの袖より太く、
