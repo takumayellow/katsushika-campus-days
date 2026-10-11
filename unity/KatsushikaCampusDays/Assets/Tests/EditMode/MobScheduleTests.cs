@@ -8,8 +8,9 @@ namespace KCD.Tests
     /// <summary>
     /// モブの学生の時間割（Assets/Data/Mobs/schedule.json）を守る (#22)。
     ///
-    /// 朝は門から建物へ 24 人、昼は食堂とモールに 24 人、午後は建物の間を 16 人、夕方は門へ 12 人、
-    /// 夜はほとんど誰もいない（2 人）。8 時より前は誰も出さない。どの時間帯も同時に出す上限の 24 人を超えない。
+    /// 朝は門か北西の駅側から建物へ 18 人、昼はモール・池・北側に散って 20 人、午後は建物の間を 14 人、
+    /// 夕方は門か駅側へ 10 人、夜はほとんど誰もいない（2 人）。8 時より前は誰も出さない (#165)。
+    /// どの時間帯も同時に出す上限の 24 人を超えない。
     /// </summary>
     public sealed class MobScheduleTests
     {
@@ -17,6 +18,9 @@ namespace KCD.Tests
         {
             "greenhouse", "gym", "kyoso", "lab1", "lab2", "lecture", "library", "research1", "research2"
         };
+
+        /// <summary>夕方に帰る出口: 正門と、北西の駅側（キャンパスの外へ出る道の端）。</summary>
+        private static readonly string[] EveningExits = { "place:gate_main", "xz:-62:78" };
 
         private static readonly string[] KnownBodies = { "sora", "inari", "kaname", "prof", "mirai" };
 
@@ -35,15 +39,15 @@ namespace KCD.Tests
 
         [TestCase(0f, 0)]
         [TestCase(7.99f, 0)]
-        [TestCase(8f, 24)]
-        [TestCase(10f, 24)]
-        [TestCase(11.49f, 24)]
-        [TestCase(11.5f, 24)]
-        [TestCase(12.5f, 24)]
-        [TestCase(13.5f, 16)]
-        [TestCase(16.99f, 16)]
-        [TestCase(17f, 12)]
-        [TestCase(18.5f, 12)]
+        [TestCase(8f, 18)]
+        [TestCase(10f, 18)]
+        [TestCase(11.49f, 18)]
+        [TestCase(11.5f, 20)]
+        [TestCase(12.5f, 20)]
+        [TestCase(13.5f, 14)]
+        [TestCase(16.99f, 14)]
+        [TestCase(17f, 10)]
+        [TestCase(18.5f, 10)]
         [TestCase(19f, 2)]
         [TestCase(23.5f, 2)]
         [TestCase(24.5f, 0)]
@@ -128,7 +132,7 @@ namespace KCD.Tests
         }
 
         [Test]
-        public void 朝は門か駅から建物へ_夕方は門へ()
+        public void 朝は門か駅から建物へ_夕方は門か駅へ()
         {
             MobSchedule schedule = Load();
             foreach (MobSchedule.Route route in schedule.BandAt(9f).Routes)
@@ -140,7 +144,7 @@ namespace KCD.Tests
             foreach (MobSchedule.Route route in schedule.BandAt(18f).Routes)
             {
                 MobSchedule.Waypoint last = route.Waypoints[route.Waypoints.Count - 1];
-                Assert.AreEqual("place:gate_main", last.Key, "夕方の道は正門で終わる");
+                CollectionAssert.Contains(EveningExits, last.Key, "夕方の道は正門か駅側の出口で終わる");
             }
         }
 

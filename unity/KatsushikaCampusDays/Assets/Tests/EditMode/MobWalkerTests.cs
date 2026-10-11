@@ -7,6 +7,7 @@ namespace KCD.Tests
     /// モブがプレイヤーの行く手をふさがないことを守る (#22)。
     /// MobWalker.AvoidanceStep は 1 フレームぶんのよける量を返す純粋な関数。
     /// 内側に入られたら離れ、前方にいれば反対側へ横にずれ、関係ない位置なら動かない。
+    /// MobWalker.StandSpot は立ち止まる点のまわりの輪から 1 点を選ぶ純粋な関数 (#165)。
     /// </summary>
     public sealed class MobWalkerTests
     {
@@ -74,6 +75,53 @@ namespace KCD.Tests
             Assert.AreEqual(Vector3.zero, MobWalker.AvoidanceStep(Vector3.zero, North, player, Radius, Speed, 0f));
             Assert.AreEqual(Vector3.zero, MobWalker.AvoidanceStep(Vector3.zero, North, player, 0f, Speed, Dt));
             Assert.AreEqual(Vector3.zero, MobWalker.AvoidanceStep(Vector3.zero, North, player, Radius, 0f, Dt));
+        }
+
+        [Test]
+        public void 立ち止まる所は点のまわりの輪に散らす()
+        {
+            var center = new Vector3(10f, 2f, -5f);
+            for (int i = 0; i <= 8; i++)
+            {
+                for (int j = 0; j <= 4; j++)
+                {
+                    Vector3 spot = MobWalker.StandSpot(center, i / 8f, j / 4f);
+                    float distance = Vector3.Distance(spot, center);
+                    Assert.GreaterOrEqual(distance, MobWalker.StandSpreadMin - 1e-4f, "点に近すぎて重なる");
+                    Assert.LessOrEqual(distance, MobWalker.StandSpreadMax + 1e-4f, "点から離れすぎる");
+                    Assert.AreEqual(center.y, spot.y, 1e-6f, "高さを変えた");
+                }
+            }
+        }
+
+        [Test]
+        public void 立ち止まる所は向きと離れ方で変わる()
+        {
+            Vector3 a = MobWalker.StandSpot(Vector3.zero, 0f, 0.5f);
+            Vector3 b = MobWalker.StandSpot(Vector3.zero, 0.5f, 0.5f);
+            Vector3 c = MobWalker.StandSpot(Vector3.zero, 0f, 1f);
+            Assert.Greater(Vector3.Distance(a, b), 2f * MobWalker.StandSpreadMin, "向きが違っても同じ所に立つ");
+            Assert.Greater(c.magnitude, a.magnitude, "離れ方を大きくしても遠くならない");
+            Assert.AreEqual(MobWalker.StandSpreadMax, c.magnitude, 1e-4f);
+            Assert.AreEqual(MobWalker.StandSpreadMin, MobWalker.StandSpot(Vector3.zero, 0.3f, 0f).magnitude, 1e-4f);
+        }
+
+        [Test]
+        public void 立ち止まる所は輪の内と外に同じ数だけ散る()
+        {
+            // radius01 = 0.5 の円は輪を同じ面積の内と外に分ける。半径をそのまま割り振ると内側に詰まる。
+            float min = MobWalker.StandSpreadMin;
+            float max = MobWalker.StandSpreadMax;
+            float r = MobWalker.StandSpot(Vector3.zero, 0f, 0.5f).magnitude;
+            Assert.AreEqual(r * r - min * min, max * max - r * r, 1e-3f, "内と外の面積が違う");
+        }
+
+        [Test]
+        public void 立ち止まる輪は着いたとみなす距離より広い()
+        {
+            // 輪が着いたとみなす距離より狭いと、ずらしても同じ点に集まって見える。
+            Assert.Greater(MobWalker.StandSpreadMin, MobWalker.ArriveDistance);
+            Assert.Greater(MobWalker.StandSpreadMax, MobWalker.StandSpreadMin);
         }
 
         [Test]
