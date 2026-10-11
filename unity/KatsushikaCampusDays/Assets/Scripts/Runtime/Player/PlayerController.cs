@@ -52,12 +52,19 @@ namespace KCD
         private bool _wasGrounded = true;
         private bool _sitting;
         private float _sitTime;
+        private int _stoodUpFrame = KCDInput.NoFrame;
         private int _solidMask;
         private int _stuckFrames;
         private float _planarSpeed;
 
         /// <summary>座っているか。ベンチの SeatInteractable が SitAt で立てる。</summary>
         public bool IsSitting => _sitting;
+
+        /// <summary>
+        /// このフレームで立ち上がったか。立つのに使った E を、同じフレームで後から走る InteractionPrompt が
+        /// 「調べる」として拾わないように見る (#97)。
+        /// </summary>
+        public bool StoodUpThisFrame => _stoodUpFrame == Time.frameCount;
 
         /// <summary>座った / 立った。アニメーション駆動が読む。</summary>
         public event System.Action<bool> SittingChanged;
@@ -336,6 +343,7 @@ namespace KCD
             }
 
             _sitting = false;
+            _stoodUpFrame = Time.frameCount;
             KCDInput.MovementLocked = false;
             Teleport(transform.position + transform.forward * 0.55f, transform.eulerAngles.y);
             SittingChanged?.Invoke(false);

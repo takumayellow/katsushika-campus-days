@@ -14,12 +14,14 @@ namespace KCD
 
         private readonly Collider[] _hits = new Collider[16];
         private Interactable _current;
+        private PlayerController _player;
 
         /// <summary>いま対象になっている Interactable。無ければ null。</summary>
         public Interactable Current => _current;
 
         private void Awake()
         {
+            _player = GetComponentInParent<PlayerController>();
             int interactableLayer = LayerMask.NameToLayer("Interactable");
             int npcLayer = LayerMask.NameToLayer("NPC");
             if (interactableLayer >= 0 && npcLayer >= 0)
@@ -31,15 +33,17 @@ namespace KCD
         private void Update()
         {
             _current = FindBest();
+            bool seatUsesKey = SeatUsesInteractKey(_player);
 
+            // 座っている間の E は立ち上がりに使うので、「[E] 話す」も出さない。
             HUD hud = HUD.Instance;
             if (hud != null)
             {
-                hud.ShowInteractionPrompt(_current);
+                hud.ShowInteractionPrompt(seatUsesKey ? null : _current);
             }
 
             if (ShouldInteract(_current != null, KCDInput.InteractPressed, KCDInput.GameplayBlocked,
-                    KCDInput.ModalClosedThisFrame))
+                    KCDInput.ModalClosedThisFrame, seatUsesKey))
             {
                 _current.Interact(gameObject);
             }
@@ -48,11 +52,22 @@ namespace KCD
         /// <summary>
         /// E で調べてよいか。対象がいて、会話やメニューで操作が封鎖されておらず、
         /// モーダルを閉じたそのフレームでもないとき（会話の最終行を送った E で同じ相手に話しかけ直さない）。
+        /// 座っている間と立ち上がったフレームの E は立ち上がりの分なので調べない (#97)。
         /// </summary>
         public static bool ShouldInteract(bool hasTarget, bool interactPressed, bool gameplayBlocked,
-            bool modalClosedThisFrame)
+            bool modalClosedThisFrame, bool seatUsesKey)
         {
-            return hasTarget && interactPressed && !gameplayBlocked && !modalClosedThisFrame;
+            return hasTarget && interactPressed && !gameplayBlocked && !modalClosedThisFrame && !seatUsesKey;
+        }
+
+        /// <summary>
+        /// E が座席の立ち上がりに使われるか。座っている（MovementLocked）間と、立ち上がったそのフレーム。
+        /// PlayerController と InteractionPrompt の Update の順は決まっていないので、どちらが先に走っても
+        /// 1 回の E で「立つ」と「話しかける」の両方が起きないように、立ったフレームも含める。
+        /// </summary>
+        public static bool SeatUsesInteractKey(PlayerController player)
+        {
+            return KCDInput.MovementLocked || (player != null && player.StoodUpThisFrame);
         }
 
         /// <summary>
