@@ -49,14 +49,14 @@ namespace KCD.Editor
             { "greenhouse", new Vector2(111.5f, 22.8f) }
         };
 
-        /// <summary>にいじゅくみらい公園に散らす葉の位置。建物の footprint を避けてある。</summary>
+        /// <summary>にいじゅくみらい公園に散らす葉の位置。建物の footprint と池・せせらぎ（data/osm/park.json）を避けてある。</summary>
         private static readonly Vector2[] LeafSpots =
         {
             new Vector2(-95f, -80f),
-            new Vector2(-72f, -96f),
+            new Vector2(-75f, -97f),
             new Vector2(-50f, -105f),
             new Vector2(-84f, -112f),
-            new Vector2(-108f, -98f)
+            new Vector2(-104f, -97f)
         };
 
         /// <summary>建物の表示名。未登録なら id をそのまま返す。</summary>

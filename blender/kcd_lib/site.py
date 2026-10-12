@@ -615,11 +615,13 @@ def build_street_furniture(mb, frame, hard):
         u += 20.0
 
 
-def collect_trees(data, frame, occ, hard, rng, park_density=1.0 / 150.0, max_trees=1200):
+def collect_trees(data, frame, occ, hard, rng, park_density=1.0 / 150.0, max_trees=1200, park_trees=None):
     """(x, y, species_index, scale, rot) のリストを返す。
 
     occ  : 舗装や道路も含む全占有（散布の抑制に使う）
     hard : 建物・水盤だけの占有（列植でも絶対に侵入してはいけない領域）
+    park_trees : 公園の木（kcd_lib.park.park_trees）。渡すと公園へのランダム散布の代わりにこれを植える。
+                 間引きの格子にかけず、全部残す（全体図の木の間隔は 4 m より狭いところがある）
     """
     trees = []
 
@@ -644,21 +646,25 @@ def collect_trees(data, frame, occ, hard, rng, park_density=1.0 / 150.0, max_tre
                 trees.append((p[0], p[1], rng.choice([0, 0, 1, 2]),
                               rng.uniform(0.85, 1.15), rng.uniform(0, 6.28)))
 
-    # 3) 公園・空地へのランダム散布
-    polys = [geom.ensure_ccw(geom.dedup(a["polygon"])) for a in data["areas"]
-             if a["kind"] in ("park",)]
+    # 3) 公園の木（全体図から）と、公園・敷地へのランダム散布
+    fixed = list(park_trees or [])
+    for t in fixed:
+        occ.stamp_disc(t[0], t[1], 2.0)
+    polys = [] if park_trees is not None else [
+        geom.ensure_ccw(geom.dedup(a["polygon"])) for a in data["areas"] if a["kind"] in ("park",)]
     polys.append(bd)
-    pts = props.scatter_positions(polys, park_density, occ.blocked, rng)
-    for p in pts:
-        trees.append((p[0], p[1], rng.choice([0, 1, 1, 2]),
-                      rng.uniform(0.8, 1.25), rng.uniform(0, 6.28)))
+    scattered = []
+    for p in props.scatter_positions(polys, park_density, occ.blocked, rng):
+        scattered.append((p[0], p[1], rng.choice([0, 1, 1, 2]),
+                          rng.uniform(0.8, 1.25), rng.uniform(0, 6.28)))
 
-    # 重なりを間引く（4 m グリッドに 1 本）
+    # 重なりを間引く（4 m グリッドに 1 本）。公園の木は列植の次に入れ、間引かずに格子だけ埋める
     seen = set()
     out = []
-    for t in trees:
+    for t, keep in ([(t, False) for t in trees] + [(t, True) for t in fixed]
+                    + [(t, False) for t in scattered]):
         key = (int(t[0] / 4.0), int(t[1] / 4.0))
-        if key in seen:
+        if key in seen and not keep:
             continue
         seen.add(key)
         out.append(t)

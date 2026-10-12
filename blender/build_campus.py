@@ -25,6 +25,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import bpy  # noqa: E402
 
 from kcd_lib import buildings, entrances, geom, mats, props, render, site, uv  # noqa: E402
+from kcd_lib import park as parklib  # noqa: E402
 from kcd_lib.mesh import MeshBuilder  # noqa: E402
 
 FBX_OPTS = dict(
@@ -170,7 +171,7 @@ def check_site_ground(obj):
 # --------------------------------------------------------------------------- #
 #  キャンパス本体
 # --------------------------------------------------------------------------- #
-def build_campus(data, frame, rng, max_trees):
+def build_campus(data, frame, rng, max_trees, park):
     scene_coll = bpy.context.scene.collection
     occ = site.Occupancy()       # 舗装・道路も含む全占有（散布の抑制）
     hard = site.Occupancy()      # 建物・水盤だけ（列植でも絶対に侵入しない）
@@ -184,6 +185,11 @@ def build_campus(data, frame, rng, max_trees):
     site.build_mall(site_mb, frame, occ)
     site.build_basin(site_mb, frame, occ)
     site.build_basin_keepout(frame, hard)
+    # 公園の池とせせらぎ（#168）。底と橋の床は歩くので site_ground に入れる
+    parklib.build_bed(site_mb, park, occ, hard)
+    park_mb = MeshBuilder("site_props_park")
+    n_bridge = parklib.build_bridges(site_mb, park_mb, data, park, hard)
+    print("[park] bridges over the water: %d" % n_bridge)
     n_cut, n_faces = site_mb.split_by_grid(SITE_GRID)
     print("[site] split %d faces by %.0f m grid -> %d faces" % (n_cut, SITE_GRID, n_faces))
     site_obj = site_mb.to_object(scene_coll)
@@ -191,6 +197,7 @@ def build_campus(data, frame, rng, max_trees):
     objects.append(site_obj)
     water_mb = MeshBuilder("site_water")
     site.build_water(water_mb, frame)
+    parklib.build_water(water_mb, park)
     objects.append(water_mb.to_object(scene_coll))
 
     # 建物どうしの接触判定（共創棟が第1研究棟に接する辺）と小物配置のために先に集める
@@ -243,6 +250,11 @@ def build_campus(data, frame, rng, max_trees):
         occ.stamp_poly(ctx["kyoso_rect"], margin=3.0)
         hard.stamp_poly(ctx["kyoso_rect"], margin=2.0)
 
+    # --- 公園の地球釜・パーゴラ・遊具（建物の占有を入れた後に置く）---
+    n_play = parklib.build_props(park_mb, park, occ, hard)
+    objects.append(park_mb.to_object(scene_coll))
+    print("[park] play spots: %d / %d" % (n_play, len(park["play"])))
+
     # --- 入口（風除室・ガラス扉・庇・足元の石張り）---
     # 扉の前の通り道は、ベンチ・照明柱・列植・散布の木より先に空けておく（#39）。
     # 名前が bld_ で始まるので Unity では Building レイヤー（カメラが突き抜けない）になる。
@@ -262,6 +274,8 @@ def build_campus(data, frame, rng, max_trees):
     # --- ベンチ・照明柱 ---
     fur_mb = MeshBuilder("site_furniture")
     site.build_street_furniture(fur_mb, frame, hard)
+    n_bench, n_lamp = parklib.build_furniture(fur_mb, data, hard)
+    print("[park] benches %d  lamps %d" % (n_bench, n_lamp))
     objects.append(fur_mb.to_object(scene_coll))
 
     # --- 看板・花壇・自販機・ゴミ箱 ---
@@ -301,7 +315,9 @@ def build_campus(data, frame, rng, max_trees):
             occ.stamp_disc(p[0], p[1], r)
             hard.stamp_disc(p[0], p[1], r)
 
-    trees = site.collect_trees(data, frame, occ, hard, rng, max_trees=max_trees)
+    fixed = parklib.park_trees(park, hard, rng)
+    print("[park] trees from the map: %d / %d" % (len(fixed), len(park["trees"])))
+    trees = site.collect_trees(data, frame, occ, hard, rng, max_trees=max_trees, park_trees=fixed)
     return objects, ctx, trees
 
 
@@ -378,14 +394,15 @@ def main():
     t0 = time.time()
     rng = random.Random(args.seed)
 
-    data = load_data(args.json)
+    park = parklib.load()
+    data = parklib.apply_buildings(load_data(args.json), park)
     reset_scene()
     mats.build_all()
     frame = make_frame(data)
     print("[frame] u=(%.4f, %.4f)  angle=%.2f deg"
           % (frame.u[0], frame.u[1], math.degrees(math.atan2(frame.u[1], frame.u[0]))))
 
-    objects, ctx, trees = build_campus(data, frame, rng, args.trees)
+    objects, ctx, trees = build_campus(data, frame, rng, args.trees, park)
     t_build = time.time()
     campus_verts = total_verts()
     print("[build] objects=%d  verts=%d  trees=%d  %.1fs"
@@ -433,7 +450,7 @@ def main():
     # サイドカー（Unity 側が種別を読めるように）
     meta = {"species": [n for n, _ in props.TREE_SPECIES],
             "trees": [{"i": i, "x": round(t[0], 3), "y": round(t[1], 3),
-                       "species": props.TREE_SPECIES[t[2] % 3][0],
+                       "species": props.TREE_SPECIES[t[2] % len(props.TREE_SPECIES)][0],
                        "scale": round(t[3], 3), "rot": round(t[4], 4)}
                       for i, t in enumerate(trees)]}
     with open(os.path.join(args.out_dir, "trees.json"), "w", encoding="utf-8") as fp:
