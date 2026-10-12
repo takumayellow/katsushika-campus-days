@@ -56,7 +56,7 @@ StreamingAssets はビルドにそのまま入るので、配布物にもフォ�
 |---|---|---|---|---|
 | 坊っちゃん・マドンナちゃん | 東京理科大学の公式キャラクター。3D モデルとその顔・柄のテクスチャは本作が Blender で生成したもの | `blender/build_characters.py`、`blender/kcd_chara/`。公式イラスト `docs/ref/tus_chara01.jpg` / `tus_chara02.jpg` を頭身・形・色の参照に使った（画像そのものはゲームに入らない） | 公式キャラクターであることと、モデルが独自制作であることを表示する | 大学の許諾の記録なし（未確認） |
 | みらい・いなり・かなめ・そら・教授 | 本作のオリジナルキャラクター | `docs/DESIGN.md` | 学生・教授は架空の人物と表示する | 確認済み |
-| スターバックス、ファミリーマート、ローソン | 各社の商標。店名は会話文・クエストの文と、OSM の名称（`campus.json` の `display` / `desc`）にだけ出る。建物の外にも講義棟などの屋内にも店の看板・店名・ブランドの色を出さず、ロゴも描いていない（屋内の看板は「生協」「レジ」のような一般の語だけ） | `Assets/Data/campus.json`、`Localization/*.json`、`Assets/Data/Dialogue/`、`Assets/Data/Quests/`、`CampusSignFaceTests` | 各社の商標であることを表示する | 使用の許諾の記録なし |
+| スターバックス、ファミリーマート、ローソン | 各社の商標。店名は会話文・クエストの文と、OSM の名称（`campus.json` の `display` / `desc`）にだけ出る。建物の外にも講義棟・共創棟などの屋内にも店の看板・店名・ブランドの色の帯を出さず、ロゴも描いていない（屋内の看板は「生協」「レジ」「カフェ」「コンビニ」のような一般の語だけ） | `Assets/Data/campus.json`、`Localization/*.json`、`Assets/Data/Dialogue/`、`Assets/Data/Quests/`、`CampusSignFaceTests` | 各社の商標であることを表示する | 使用の許諾の記録なし |
 
 ## 3D モデル・テクスチャ
 

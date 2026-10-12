@@ -38,6 +38,7 @@ class Ctx:
         self.furns = []          # [(name, MeshBuilder)]
         self.empties = []        # [(name, (x, y, z))]
         self.lights = []         # [(x, y, z, energy, radius)] プレビュー専用
+        self.light_color = None  # プレビューの点光源の色。None なら既定の白寄り
         self.cams = []           # [(suffix, loc, target, lens)]
         self.seats = 0           # 数えた座席数（README 用）
         self.notes = []

@@ -176,3 +176,24 @@ def test_text_reads_left_to_right_from_its_side(side):
     stem = [p[0] * right for p in ja if p[2] > top - 0.02]
     every = [p[0] * right for p in ja]
     assert max(stem) < (min(every) + max(every)) * 0.5
+
+
+def test_glyph_that_collapses_when_coarse_is_found_with_a_finer_tol():
+    """「物」のように粗い tol で辺が WELD より短くなる字は、始めより細かい tol で拾う。"""
+    _em, glyphs = signtext.layout("忘れ物", "Lost & Found", 1.2, 0.5)
+    size = next(size for ch, _x, _y, size in glyphs if ch == "物")
+    coarse_steps = int(round((signtext.TOL_MAX - signtext.tol_for(size)) / signtext.TOL_STEP)) + 1
+    calls = []
+
+    def sliver_while_coarse(contours):
+        calls.append(contours)
+        ears = _ears(contours)
+        if len(calls) > coarse_steps:
+            return ears
+        a, b, c = ears[0]
+        gx, gy = (a[0] + b[0] + c[0]) / 3.0, (a[1] + b[1] + c[1]) / 3.0
+        return ears + [((gx, gy), (gx + 1e-5, gy), (gx, gy + 1e-5))]
+
+    tris, _adv, shortest = signtext.fitted_glyph("物", size, candidates=sliver_while_coarse)
+    assert len(calls) == coarse_steps + 1
+    assert tris and shortest * size >= signtext.WELD

@@ -418,6 +418,46 @@ namespace KCD.Editor
                 Fov = 0f,
                 Note = "図書館 1F の入口から閲覧席",
             },
+            new Shot
+            {
+                Name = "shot_kyoso_entrance",
+                Space = Frame.Interior,
+                Building = "kyoso",
+                Eye = new Vector3(1.5f, 1.65f, 4.6f),
+                Look = new Vector3(-22.0f, 2.4f, 12.6f),
+                Fov = 0f,
+                Note = "共創棟 1F の入口から奥",
+            },
+            new Shot
+            {
+                Name = "shot_kyoso_ls",
+                Space = Frame.Interior,
+                Building = "kyoso",
+                Eye = new Vector3(-14.8f, 1.7f, 11.6f),
+                Look = new Vector3(-30.0f, 6.5f, 7.2f),
+                Fov = 0f,
+                Note = "共創棟 1F のラーニングスクエアから階段",
+            },
+            new Shot
+            {
+                Name = "shot_kyoso_lounge2f",
+                Space = Frame.Interior,
+                Building = "kyoso",
+                Eye = new Vector3(-15.0f, 7.0f, 13.4f),
+                Look = new Vector3(-6.0f, 6.1f, 7.0f),
+                Fov = 0f,
+                Note = "共創棟 2F のラウンジ",
+            },
+            new Shot
+            {
+                Name = "shot_kyoso_store",
+                Space = Frame.Interior,
+                Building = "kyoso",
+                Eye = new Vector3(-36.5f, 1.65f, 10.5f),
+                Look = new Vector3(-46.0f, 1.2f, 8.5f),
+                Fov = 0f,
+                Note = "共創棟 1F の売店",
+            },
         };
 
         /// <summary>

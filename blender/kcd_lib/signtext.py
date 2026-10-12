@@ -314,8 +314,9 @@ def glyph(ch, tol=TOL, candidates=None, fnt=None):
 def fitted_glyph(ch, size, tol=None, candidates=None, fnt=None):
     """大きさ size（m）で置く字の glyph()。
 
-    tol を渡さなければ tol_for(size) から始め、辺が WELD より短くなる字は TOL_MAX まで tol を粗くする。
-    それでも短ければ ValueError（重複頂点のマージで三角形が潰れ、数えた三角形の数と合わなくなるため）。
+    tol を渡さなければ tol_for(size) から始め、辺が WELD より短くなる字は TOL_MAX まで tol を粗くし、
+    それでも短ければ始めより細かい tol（TOL_STEP 刻みで TOL_STEP まで）も試す。
+    どの tol でも短ければ ValueError（重複頂点のマージで三角形が潰れ、数えた三角形の数と合わなくなるため）。
     """
     if tol is not None:
         steps = [tol]
@@ -325,6 +326,11 @@ def fitted_glyph(ch, size, tol=None, candidates=None, fnt=None):
         while t <= TOL_MAX + 1e-9:
             steps.append(t)
             t = round(t + TOL_STEP, 3)
+        # 粗くしても辺が短い字（細い輪郭が重なる字）は、始めより細かい tol で辺が WELD 以上になることがある
+        t = round(tol_for(size) - TOL_STEP, 3)
+        while t >= TOL_STEP - 1e-9:
+            steps.append(t)
+            t = round(t - TOL_STEP, 3)
     for t in steps:
         hit = glyph(ch, t, candidates, fnt)
         if hit[2] * size >= WELD:
