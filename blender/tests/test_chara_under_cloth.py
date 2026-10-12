@@ -102,8 +102,10 @@ class _VertexGroup:
             self._obj.w[i].pop(self.name, None)
 
     def add(self, idx, val, mode):
+        # Blender と同じく、ADD は今のウェイトに足し、それ以外は置き換える。
         for i in idx:
-            self._obj.w[i][self.name] = val
+            w = self._obj.w[i]
+            w[self.name] = (w.get(self.name, 0.0) + val) if mode == "ADD" else val
 
 
 class _Groups(list):
