@@ -101,8 +101,8 @@
           "text_en": "Incidentally, I was on greenhouse watering duty today. It had entirely slipped my mind."
         },
         {
-          "text": "第2実験棟の東に、切妻のガラス屋根が見えるだろう。あれが温室だ。栽培ベンチの鉢に水をやってきてくれんか。",
-          "text_en": "East of Experiment Building 2 you'll see a gabled glass roof. That's the greenhouse. Would you water the pots on the growing benches for me?"
+          "text": "第1実験棟の東どなりに、屋根まで平らなガラスの小さな棟があるだろう。あれが温室だ。栽培ベンチの鉢に水をやってきてくれんか。",
+          "text_en": "Just east of Experiment Building 1 there's a small building with a flat glass roof. That's the greenhouse. Would you water the pots on the growing benches for me?"
         },
         {
           "speaker": "自分",
@@ -120,12 +120,12 @@
       "requiresActiveQuest": "q_sq_greenhouse",
       "lines": [
         {
-          "text": "温室は第2実験棟の東だ。灌水パイプの元栓は入って右。",
-          "text_en": "The greenhouse is east of Experiment Building 2. The tap for the watering pipe is on the right as you go in."
+          "text": "温室は第1実験棟の東どなりだ。灌水パイプの元栓は入って右。",
+          "text_en": "The greenhouse is just east of Experiment Building 1. The tap for the watering pipe is on the right as you go in."
         },
         {
-          "text": "鉢は 2 列。全部にやりなさい。ひとつでも忘れると、私が怒られる。",
-          "text_en": "Two rows of pots. Water every one. Miss a single pot and it's me who gets told off."
+          "text": "栽培ベンチは 4 台。全部の鉢にやりなさい。ひとつでも忘れると、私が怒られる。",
+          "text_en": "There are four growing benches. Water every pot. Miss a single pot and it's me who gets told off."
         }
       ]
     },
