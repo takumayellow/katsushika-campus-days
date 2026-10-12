@@ -72,6 +72,14 @@ namespace KCD.Tests
             ("VisitZone.cs", "\"ui.place.\" + placeId",
                 "クエストの visit 目標。写真スポットは photo.*.name を、表示名の無い屋内 poi_* はトーストを出さない。" +
                 "残りは Quests_GiversAndTargetsHaveNamesInEveryDictionary が見る"),
+            ("DevWarpCatalog.cs", "\"ui.place.\" + zone.Id",
+                "ゾーンの placeId。控えの表示を渡すので辞書に無くても名前は出る。ゾーンの表示名は VisitZone.cs の行と同じ出どころ"),
+            ("DevWarpCatalog.cs", "\"ui.building.\" + entrance.BuildingId",
+                "屋内のある建物（Models/Interiors/<id>.json）。OtherKeySources_ExistInEveryDictionary が見る"),
+            ("DevWarpCatalog.cs", "\"ui.building.\" + interior.Id",
+                "屋内のある建物（Models/Interiors/<id>.json）。OtherKeySources_ExistInEveryDictionary が見る"),
+            ("DevWarpCatalog.cs", "\"ui.dev.time.\" + key",
+                "DevWarpCatalog.Times の朝・昼・夕・夜。DevWarpCatalogTests.Times_HaveALabelInEveryDictionary が見る"),
             ("WorldBounds.cs", "ToastKey",
                 "定数 ui.hud.returned_to_campus。KeyShapedLiterals_ExistInEveryDictionary が見る")
         };
