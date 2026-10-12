@@ -30,6 +30,7 @@ namespace KCD.Editor
             rect.gameObject.SetActive(false);
             SettingsView view = host.AddComponent<SettingsView>();
             view.Bind(rect.gameObject, heading, body);
+            view.BindTap(AddLinkTapArea(rect, body));
             return view;
         }
 
@@ -52,6 +53,7 @@ namespace KCD.Editor
             rect.gameObject.SetActive(false);
             CreditsView view = host.AddComponent<CreditsView>();
             view.Bind(rect.gameObject, heading, body);
+            view.BindTap(AddScreenTapArea(rect));
             return view;
         }
 

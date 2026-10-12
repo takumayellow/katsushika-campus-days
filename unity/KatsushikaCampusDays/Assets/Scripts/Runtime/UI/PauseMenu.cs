@@ -6,6 +6,7 @@ namespace KCD
     /// <summary>
     /// Esc で開くメニュー。再開 / セーブ / ロード / 設定 / タイトルへ を上下で選ぶ。タイトルへは確認してから戻る。
     /// ボタンイベントに頼らずキーボードだけで完結させ、シーン内参照の配線を減らしている。
+    /// 指で遊んでいるときは、行を叩くとその行に決まる（確認の「はい」「いいえ」も同じ, #187）。
     /// </summary>
     public sealed class PauseMenu : MonoBehaviour
     {
@@ -16,7 +17,7 @@ namespace KCD
         public readonly struct FrameInput
         {
             public FrameInput(int frame, bool menu = false, bool submit = false, int vertical = 0,
-                bool consumed = false, bool cancel = false)
+                bool consumed = false, bool cancel = false, int tap = -1)
             {
                 Frame = frame;
                 Menu = menu;
@@ -24,6 +25,7 @@ namespace KCD
                 Vertical = vertical;
                 Consumed = consumed;
                 Cancel = cancel;
+                Tap = tap;
             }
 
             /// <summary>このフレームの番号（Time.frameCount）。</summary>
@@ -46,6 +48,9 @@ namespace KCD
 
             /// <summary>戻る（<see cref="KCDInput.CancelPressed"/>。Esc / 東ボタン）。「タイトルへ戻る」の確認でだけ使う。</summary>
             public bool Cancel { get; }
+
+            /// <summary>指で叩いた行の番号。叩いていなければ -1。確認の間は 0 =「はい」、1 =「いいえ」。</summary>
+            public int Tap { get; }
         }
 
         /// <summary>「タイトルへ戻る」の確認の選択肢の位置。上が「はい」、下が「いいえ」。</summary>
@@ -66,8 +71,18 @@ namespace KCD
         [SerializeField] private GameObject _root;
         [SerializeField] private TMP_Text _bodyLabel;
         [SerializeField] private SettingsView _settings;
+        [SerializeField] private TmpLinkTap _tap;
 
         private int _index;
+
+        /// <summary>叩いた行の番号。次の <see cref="Update"/> が <see cref="FrameInput.Tap"/> にして渡す。無ければ -1。</summary>
+        private int _pendingTap = -1;
+
+        /// <summary>叩いたときに確認を出していたか。Update までに一覧と確認が入れ替わっていたら、叩いた行を捨てる。</summary>
+        private bool _pendingTapConfirming;
+
+        /// <summary>行を叩けるリンク付きで書いているか。入力の種類が変わったら書き直す。</summary>
+        private bool _drawnForTouch;
 
         /// <summary>時間を止めて封鎖を掛けているか。設定パネルを出している間（本体は隠れている）も true。</summary>
         private bool _paused;
@@ -114,6 +129,12 @@ namespace KCD
             _bodyLabel = body;
         }
 
+        /// <summary>行を叩く受け口。SceneBuilder から差し込む。</summary>
+        public void BindTap(TmpLinkTap tap)
+        {
+            _tap = tap;
+        }
+
         private void Start()
         {
             if (_root != null)
@@ -122,9 +143,22 @@ namespace KCD
             }
         }
 
+        private void OnEnable()
+        {
+            if (_tap != null)
+            {
+                _tap.Tapped += OnTapped;
+            }
+        }
+
         /// <summary>開いたまま無効にされたり、シーンごと消されたりしても、止めた時間と封鎖を残さない (#62)。</summary>
         private void OnDisable()
         {
+            if (_tap != null)
+            {
+                _tap.Tapped -= OnTapped;
+            }
+
             Abandon();
         }
 
@@ -138,6 +172,7 @@ namespace KCD
         {
             _settingsRequestedFrame = KCDInput.NoFrame;
             _confirmingTitle = false;
+            _pendingTap = -1;
             if (!_paused)
             {
                 return;
@@ -160,15 +195,44 @@ namespace KCD
 
         private void Update()
         {
+            if (IsOpen && InputMode.IsTouch != _drawnForTouch)
+            {
+                Redraw();
+            }
+
             QuestLogView log = HUD.Instance != null ? HUD.Instance.QuestLogView : null;
             int frame = Time.frameCount;
+            int tap = _pendingTapConfirming == _confirmingTitle ? _pendingTap : -1;
+            _pendingTap = -1;
             Tick(new FrameInput(
                 frame,
                 menu: KCDInput.MenuPressed,
                 submit: KCDInput.SubmitPressed,
                 vertical: KCDInput.MenuVertical,
                 consumed: KCDInput.ModalClosedThisFrame || (log != null && log.ClosedByMenuFrame == frame),
-                cancel: KCDInput.CancelPressed));
+                cancel: KCDInput.CancelPressed,
+                tap: tap));
+        }
+
+        /// <summary>
+        /// 叩いたリンクを次の Update に預ける。マウスのクリックは TmpLinkTap が捨て、ここでは指で遊んでいるときだけ受ける。
+        /// 行の外を叩いたときは何もしない。
+        /// </summary>
+        private void OnTapped(string linkId)
+        {
+            if (!InputMode.IsTouch || !IsOpen)
+            {
+                return;
+            }
+
+            _pendingTap = TapIndex(linkId, _confirmingTitle);
+            _pendingTapConfirming = _confirmingTitle;
+        }
+
+        /// <summary>叩いたリンクの行の番号。確認の間は 0 =「はい」、1 =「いいえ」。行の外や形の違う id は -1。</summary>
+        public static int TapIndex(string linkId, bool confirming)
+        {
+            return TmpLinkTap.ChoiceIn(linkId, confirming ? 2 : EntryKeys.Length);
         }
 
         /// <summary>1 フレーム分の処理。<see cref="Update"/> が毎フレーム呼ぶ。テストから直接呼ぶ。</summary>
@@ -242,6 +306,15 @@ namespace KCD
                 AudioManager.Instance?.PlayUi("ui_move");
             }
 
+            if (input.Tap >= 0 && input.Tap < EntryKeys.Length)
+            {
+                _index = input.Tap;
+                Redraw();
+                AudioManager.Instance?.PlayUi("ui_confirm");
+                Execute(_index, input.Frame);
+                return;
+            }
+
             if (input.Submit)
             {
                 AudioManager.Instance?.PlayUi("ui_confirm");
@@ -281,9 +354,10 @@ namespace KCD
                 AudioManager.Instance?.PlayUi(open ? "ui_open" : "ui_close");
             }
 
-            // 開き直しても閉じても、選んだだけでまだ開いていない設定パネルと、出していた確認は持ち越さない。
+            // 開き直しても閉じても、選んだだけでまだ開いていない設定パネルと、出していた確認と、叩いた行は持ち越さない。
             _settingsRequestedFrame = KCDInput.NoFrame;
             _confirmingTitle = false;
+            _pendingTap = -1;
             _root.SetActive(open);
             Time.timeScale = open ? 0f : 1f;
             _paused = open;
@@ -323,33 +397,55 @@ namespace KCD
                 return;
             }
 
+            _drawnForTouch = InputMode.IsTouch;
+            _bodyLabel.text = Compose(_confirmingTitle, _confirmingTitle ? _confirmIndex : _index, _drawnForTouch);
+        }
+
+        /// <summary>
+        /// 本体の文面。確認の間は問いと「はい」「いいえ」、それ以外は項目の一覧。selected の行にだけ ▶ と色を付ける。
+        /// links なら各行を <c>&lt;link="choice:N"&gt;</c> で囲み、叩けるようにする。
+        /// </summary>
+        public static string Compose(bool confirming, int selected, bool links)
+        {
             var builder = new System.Text.StringBuilder(256);
-            if (_confirmingTitle)
+            if (confirming)
             {
                 // 全角 28 字は文字の大きさ 30 のままだと約 840 になり、ラベルの内側の幅 784 を越えて末尾だけ次の行に落ちる。
                 // 85% (25.5) なら約 714 で 1 行に収まる。
                 builder.Append("<size=85%>");
                 builder.Append(L.Get("ui.pause.confirm_title", "セーブしていない進行は失われます。タイトルへ戻りますか？"));
                 builder.Append("</size>\n\n");
-                AppendEntry(builder, L.Get("ui.common.yes", "はい"), _confirmIndex == ConfirmYes);
-                AppendEntry(builder, L.Get("ui.common.no", "いいえ"), _confirmIndex == ConfirmNo);
+                AppendEntry(builder, ConfirmYes, L.Get("ui.common.yes", "はい"), selected == ConfirmYes, links);
+                AppendEntry(builder, ConfirmNo, L.Get("ui.common.no", "いいえ"), selected == ConfirmNo, links);
             }
             else
             {
                 for (int i = 0; i < EntryKeys.Length; i++)
                 {
-                    AppendEntry(builder, L.Get(EntryKeys[i], EntryFallbacks[i]), i == _index);
+                    AppendEntry(builder, i, L.Get(EntryKeys[i], EntryFallbacks[i]), i == selected, links);
                 }
             }
 
-            _bodyLabel.text = builder.ToString();
+            return builder.ToString();
         }
 
-        private static void AppendEntry(System.Text.StringBuilder builder, string label, bool selected)
+        private static void AppendEntry(System.Text.StringBuilder builder, int index, string label, bool selected,
+            bool links)
         {
+            if (links)
+            {
+                builder.Append("<link=\"choice:").Append(index).Append("\">");
+            }
+
             builder.Append(selected ? "<color=#FFD98A>▶ " : "   ");
             builder.Append(label);
-            builder.Append(selected ? "</color>\n" : "\n");
+            builder.Append(selected ? "</color>" : string.Empty);
+            if (links)
+            {
+                builder.Append("</link>");
+            }
+
+            builder.Append('\n');
         }
 
         /// <summary>
@@ -364,6 +460,13 @@ namespace KCD
                 return;
             }
 
+            if (input.Tap == ConfirmYes || input.Tap == ConfirmNo)
+            {
+                _confirmIndex = input.Tap;
+                ConfirmChoice();
+                return;
+            }
+
             if (input.Vertical != 0)
             {
                 // 選択肢は 2 つなので、上でも下でももう片方へ移る。
@@ -372,11 +475,15 @@ namespace KCD
                 AudioManager.Instance?.PlayUi("ui_move");
             }
 
-            if (!input.Submit)
+            if (input.Submit)
             {
-                return;
+                ConfirmChoice();
             }
+        }
 
+        /// <summary>確認でカーソルのある方に決める。「いいえ」なら一覧へ戻り、「はい」ならタイトルへ戻る。</summary>
+        private void ConfirmChoice()
+        {
             if (_confirmIndex != ConfirmYes)
             {
                 EndTitleConfirm();

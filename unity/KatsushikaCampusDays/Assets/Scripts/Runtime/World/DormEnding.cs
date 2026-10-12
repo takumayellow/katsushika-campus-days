@@ -39,8 +39,12 @@ namespace KCD
         [SerializeField] private TMP_Text _heading;
         [SerializeField] private TMP_Text _body;
         [SerializeField] private TMP_Text _choice;
+        [SerializeField] private TmpLinkTap _tap;
 
         private CanvasGroup _fade;
+
+        /// <summary>下段の案内を指のときの文面で書いているか。入力の種類が変わったら書き直す。</summary>
+        private bool _choiceForTouch;
         private bool _played;
         private bool _subscribed;
         private bool _showing;
@@ -115,9 +119,17 @@ namespace KCD
                   + "<size=85%>この一日は数えない。</size>";
         }
 
-        /// <summary>下段の案内。<see cref="ShouldReturnToTitle"/> が示すとおり Enter でタイトルへ戻る。</summary>
-        public static string ChoiceText(bool english)
+        /// <summary>
+        /// 下段の案内。<see cref="ShouldReturnToTitle"/> が示すとおり Enter でタイトルへ戻る。
+        /// 指で遊んでいるときは、どこを叩いても戻る (#187)。
+        /// </summary>
+        public static string ChoiceText(bool english, bool touch = false)
         {
+            if (touch)
+            {
+                return english ? "Tap — back to the title" : "タップでタイトルへ";
+            }
+
             return english ? "Enter — back to the title" : "Enter でタイトルへ";
         }
 
@@ -150,6 +162,12 @@ namespace KCD
             _choice = choice;
         }
 
+        /// <summary>どこを叩いてもタイトルへ戻る受け口。DormEndingFactory から差し込む。</summary>
+        public void BindTap(TmpLinkTap tap)
+        {
+            _tap = tap;
+        }
+
         private void Awake()
         {
             _fade = BuildFadeOverlay();
@@ -158,10 +176,19 @@ namespace KCD
         private void OnEnable()
         {
             TrySubscribe();
+            if (_tap != null)
+            {
+                _tap.Tapped += OnTapped;
+            }
         }
 
         private void OnDisable()
         {
+            if (_tap != null)
+            {
+                _tap.Tapped -= OnTapped;
+            }
+
             if (_subscribed && DialogueSystem.Instance != null)
             {
                 DialogueSystem.Instance.Finished -= OnDialogueFinished;
@@ -204,8 +231,22 @@ namespace KCD
                 TrySubscribe();
             }
 
+            if (_showing && InputMode.IsTouch != _choiceForTouch)
+            {
+                PaintChoice(L.IsEnglish);
+            }
+
             if (ShouldReturnToTitle(_showing, Time.unscaledTime - _openedAt,
                     KCDInput.SubmitPressed || KCDInput.InteractPressed))
+            {
+                Close();
+            }
+        }
+
+        /// <summary>指で遊んでいるときに叩いたら、Enter と同じ条件でタイトルへ戻る。</summary>
+        private void OnTapped(string linkId)
+        {
+            if (InputMode.IsTouch && ShouldReturnToTitle(_showing, Time.unscaledTime - _openedAt, true))
             {
                 Close();
             }
@@ -337,9 +378,15 @@ namespace KCD
                 _body.text = BodyText(hours, english);
             }
 
+            PaintChoice(english);
+        }
+
+        private void PaintChoice(bool english)
+        {
+            _choiceForTouch = InputMode.IsTouch;
             if (_choice != null)
             {
-                _choice.text = ChoiceText(english);
+                _choice.text = ChoiceText(english, _choiceForTouch);
             }
         }
 

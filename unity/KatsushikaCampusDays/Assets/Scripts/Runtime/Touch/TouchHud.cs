@@ -17,6 +17,7 @@ namespace KCD
         [SerializeField] private TMP_Text _jumpLabel;
         [SerializeField] private TMP_Text _interactLabel;
         [SerializeField] private TMP_Text _sprintLabel;
+        [SerializeField] private TMP_Text _questLabel;
 
         /// <summary>SceneBuilder から差し込む。controls は既定で止めておく（PC で仮想のゲームパッドを作らない）。</summary>
         public void Bind(GameObject controls, CanvasGroup play, CanvasGroup pause)
@@ -27,11 +28,12 @@ namespace KCD
         }
 
         /// <summary>ボタンの文字。言語を切り替えたときに書き直す。</summary>
-        public void BindLabels(TMP_Text jump, TMP_Text interact, TMP_Text sprint)
+        public void BindLabels(TMP_Text jump, TMP_Text interact, TMP_Text sprint, TMP_Text quest = null)
         {
             _jumpLabel = jump;
             _interactLabel = interact;
             _sprintLabel = sprint;
+            _questLabel = quest;
         }
 
         /// <summary>スティックとボタンを出すか。指で遊んでいて、会話やメニューで操作を止めていないとき。</summary>
@@ -113,6 +115,11 @@ namespace KCD
             if (_sprintLabel != null)
             {
                 _sprintLabel.text = L.Pick("走る", "Run");
+            }
+
+            if (_questLabel != null)
+            {
+                _questLabel.text = L.Pick("クエスト", "Quests");
             }
         }
     }

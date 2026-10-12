@@ -66,7 +66,7 @@ namespace KCD.Tests
         public void クレジット画面の先頭はタイトルと同じ帰属表示(string locale)
         {
             string line = In(locale, MapAttribution.Line);
-            string credits = In(locale, CreditsView.BuildText);
+            string credits = In(locale, () => CreditsView.BuildText());
 
             StringAssert.StartsWith(line, credits, locale + ": クレジット画面の 1 行目がタイトル画面の帰属表示と違う");
             StringAssert.Contains(MapAttribution.CopyrightUrl, credits, locale + ": クレジット画面に OSM の著作権ページの URL が無い");

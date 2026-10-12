@@ -66,6 +66,7 @@ namespace KCD.Editor
 
             DormEnding view = host.AddComponent<DormEnding>();
             view.Bind(rect.gameObject, heading, body, choice);
+            view.BindTap(UIFactory.AddScreenTapArea(rect));
             EditorPaths.Report("裏エンドの画面を置きました（" + CanvasName + "、重ね順 "
                 + DormEnding.PanelSortingOrder + "）。");
             return view;

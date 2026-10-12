@@ -85,6 +85,11 @@ namespace KCD.Tests
 
         private static PauseMenu.FrameInput Down(int frame) => new PauseMenu.FrameInput(frame, vertical: 1);
 
+        private static PauseMenu.FrameInput Tap(int frame, int row) => new PauseMenu.FrameInput(frame, tap: row);
+
+        /// <summary>行の並び（EntryKeys）での「再開」の位置。</summary>
+        private const int ResumeRow = 0;
+
         /// <summary>行の並び（EntryKeys）での「設定」の位置。</summary>
         private const int SettingsRow = 3;
 
@@ -408,6 +413,152 @@ namespace KCD.Tests
             Assert.IsFalse(KCDInput.IsBlockedBy(pause));
             Assert.AreEqual(1f, Time.timeScale);
             Assert.AreEqual(0, _titleReturns);
+        }
+
+        // ---- 指で叩く (#187) ----
+
+        [Test]
+        public void Tap_OnResume_ClosesThePause()
+        {
+            PauseMenu pause = MakePause();
+            pause.Tick(Menu(800));
+
+            pause.Tick(Tap(801, ResumeRow));
+
+            Assert.IsFalse(pause.IsOpen, "「再開」を叩いてもポーズが閉じない");
+            Assert.AreEqual(1f, Time.timeScale);
+        }
+
+        [Test]
+        public void Tap_OnSettings_OpensOnTheNextFrame()
+        {
+            PauseMenu pause = MakePause();
+            SettingsView settings = MakeSettings();
+            pause.Settings = settings;
+            pause.Tick(Menu(810));
+
+            // カーソルが「再開」にあっても、叩いた行に決まる。開くのは Enter と同じく次のフレーム (#103)。
+            pause.Tick(Tap(811, SettingsRow));
+            Assert.IsFalse(settings.IsOpen, "「設定」を叩いたフレームで設定が開いた");
+
+            pause.Tick(Idle(812));
+            Assert.IsTrue(settings.IsOpen, "「設定」を叩いても設定が開かない");
+            Assert.IsTrue(pause.IsPaused);
+        }
+
+        [Test]
+        public void Tap_OnReturnToTitle_AsksFirst_ThenYesReturns()
+        {
+            PauseMenu pause = MakePauseCountingTitleReturns();
+            pause.Tick(Menu(820));
+
+            pause.Tick(Tap(821, TitleRow));
+            Assert.AreEqual(0, _titleReturns, "叩いただけで確かめずにタイトルへ戻った");
+            Assert.IsTrue(pause.IsConfirmingReturnToTitle, "「タイトルへ戻る」を叩いても確認が出ない");
+
+            // 確認の間の 0 は「はい」。
+            pause.Tick(Tap(822, 0));
+            Assert.AreEqual(1, _titleReturns, "「はい」を叩いてもタイトルへ戻らない");
+            Assert.IsFalse(pause.IsConfirmingReturnToTitle);
+        }
+
+        [Test]
+        public void Tap_OnNo_GoesBackToTheList()
+        {
+            PauseMenu pause = MakePauseCountingTitleReturns();
+            pause.Tick(Menu(830));
+            pause.Tick(Tap(831, TitleRow));
+
+            pause.Tick(Tap(832, 1));
+
+            Assert.AreEqual(0, _titleReturns, "「いいえ」を叩いたらタイトルへ戻った");
+            Assert.IsFalse(pause.IsConfirmingReturnToTitle, "「いいえ」を叩いても確認が消えない");
+            Assert.IsTrue(pause.IsOpen, "「いいえ」を叩いたらポーズまで閉じた");
+        }
+
+        [Test]
+        public void Tap_WhileClosed_DoesNotOpenOrRunAnything()
+        {
+            PauseMenu pause = MakePauseCountingTitleReturns();
+
+            pause.Tick(Tap(840, TitleRow));
+
+            Assert.IsFalse(pause.IsOpen);
+            Assert.IsFalse(pause.IsConfirmingReturnToTitle);
+            Assert.AreEqual(1f, Time.timeScale);
+        }
+
+        [Test]
+        public void Tap_OutsideTheRows_DoesNothing()
+        {
+            PauseMenu pause = MakePauseCountingTitleReturns();
+            pause.Tick(Menu(850));
+
+            pause.Tick(Tap(851, -1));
+            pause.Tick(Tap(852, PauseMenu.EntryCount));
+
+            Assert.IsTrue(pause.IsOpen, "行の外を叩いたらポーズが閉じた");
+            Assert.IsFalse(pause.IsConfirmingReturnToTitle);
+        }
+
+        // ---- 設定パネルを叩く ----
+
+        private const int SettingsCloseRow = 5;
+
+        [Test]
+        public void SettingsTap_OnClose_ClosesAndCallsBack()
+        {
+            SettingsView settings = MakeSettings();
+            int closed = 0;
+            settings.Open(() => closed++);
+
+            settings.ApplyTap(SettingsCloseRow, 0);
+
+            Assert.IsFalse(settings.IsOpen, "「閉じる」を叩いても閉じない");
+            Assert.AreEqual(1, closed, "閉じたあとに呼び出し元へ戻らない");
+        }
+
+        [Test]
+        public void SettingsTap_OnAnotherRow_OnlySelectsIt()
+        {
+            SettingsView settings = MakeSettings();
+            int closed = 0;
+            settings.Open(() => closed++);
+
+            settings.ApplyTap(2, 0);
+
+            Assert.IsTrue(settings.IsOpen, "行の名前を叩いたら閉じた");
+            Assert.AreEqual(2, settings.SelectedRow);
+            Assert.AreEqual(0, closed);
+        }
+
+        [Test]
+        public void SettingsTap_WhileClosed_DoesNothing()
+        {
+            SettingsView settings = MakeSettings();
+            int closed = 0;
+            settings.Open(() => closed++);
+            settings.ApplyTap(SettingsCloseRow, 0);
+
+            settings.ApplyTap(SettingsCloseRow, 0);
+            settings.ApplyTap(2, 0);
+
+            Assert.IsFalse(settings.IsOpen, "閉じた設定が叩いて開いた");
+            Assert.AreEqual(1, closed, "閉じたあとに叩いて、もう一度呼び出し元へ戻った");
+            Assert.AreEqual(SettingsCloseRow, settings.SelectedRow, "閉じたあとに叩いて選んでいる行が変わった");
+        }
+
+        [Test]
+        public void SettingsTap_OutsideTheRows_DoesNothing()
+        {
+            SettingsView settings = MakeSettings();
+            settings.Open(null);
+
+            settings.ApplyTap(-1, 0);
+            settings.ApplyTap(SettingsCloseRow + 1, 0);
+
+            Assert.IsTrue(settings.IsOpen);
+            Assert.AreEqual(0, settings.SelectedRow);
         }
     }
 }
