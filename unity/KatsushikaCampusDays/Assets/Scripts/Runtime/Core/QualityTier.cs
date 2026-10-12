@@ -142,10 +142,18 @@ namespace KCD
             }
         }
 
-        /// <summary>設定を保存していないときの段。Web 版は Medium（今の見た目のまま）, それ以外は High。</summary>
-        public static QualityTier DefaultFor(RuntimePlatform platform)
+        /// <summary>
+        /// 設定を保存していないときの段。Web 版は Medium（今の見た目のまま）, それ以外は High。
+        /// スマホ・タブレットのブラウザで開いた Web 版は, 熱と電池を抑えるため Low にする (#187)。
+        /// </summary>
+        public static QualityTier DefaultFor(RuntimePlatform platform, bool mobile = false)
         {
-            return platform == RuntimePlatform.WebGLPlayer ? QualityTier.Medium : QualityTier.High;
+            if (platform != RuntimePlatform.WebGLPlayer)
+            {
+                return QualityTier.High;
+            }
+
+            return mobile ? QualityTier.Low : QualityTier.Medium;
         }
 
         /// <summary>
@@ -195,11 +203,11 @@ namespace KCD
         }
 
         /// <summary>保存した段。保存が無いか読めなければ, そのプラットフォームの既定。</summary>
-        public static QualityTier Load(RuntimePlatform platform)
+        public static QualityTier Load(RuntimePlatform platform, bool mobile = false)
         {
             return TryParse(PlayerPrefs.GetString(PrefKey, string.Empty), out QualityTier tier)
                 ? tier
-                : DefaultFor(platform);
+                : DefaultFor(platform, mobile);
         }
 
         public static void Save(QualityTier tier)

@@ -15,15 +15,13 @@
     <div id="unity-container">
       <h1 id="kcd-title">葛飾キャンパスデイズ</h1>
 
-      <!-- 指だけで操作する端末（スマホ・タブレット）では、ゲームを読み込む前にこれを出す (#73)。
-           操作はキーボードとマウス、またはゲームパッドだけで、タッチ操作は作っていない。
-           「それでも読み込む」を押すまで Build/ のファイルは取りに行かない。 -->
-      <section id="kcd-pc-only" hidden>
-        <h2 id="kcd-pc-only-title">PC 向けのゲームです</h2>
-        <p>キーボードとマウス、またはゲームパッドで操作します。タッチ操作には対応していないので、この端末では歩き回れません。</p>
-        <p>PC のブラウザで次のアドレスを開いてください。<br><span id="kcd-pc-only-url"></span></p>
-        <p class="kcd-sub">読み込むと数十 MB の通信があります。</p>
-        <button type="button" id="kcd-pc-only-continue">それでも読み込む</button>
+      <!-- 指だけで操作する端末（スマホ・タブレット）では、ゲームを読み込む前にこれを出す (#73 #187)。
+           モバイル回線で知らずに数十 MB を落とさないよう、「読み込む」を押すまで Build/ のファイルは取りに行かない。 -->
+      <section id="kcd-data-notice" hidden>
+        <h2 id="kcd-data-notice-title">読み込む前に</h2>
+        <p>はじめて開くときは数十 MB の通信があります。Wi-Fi につないで読み込むのがおすすめです。2 回目からはブラウザに残った分を使います。</p>
+        <p class="kcd-sub">画面を横向きにして遊んでください。左側で歩き、右側をなぞると見回せます。</p>
+        <button type="button" id="kcd-data-notice-continue">読み込む</button>
       </section>
 
       <div id="unity-fullscreen-container">
@@ -160,6 +158,10 @@
         autoSyncPersistentDataPath: true,
       };
 
+      // スマホ・タブレットは画面の画素密度が 2〜3 倍あり、そのまま描くと画素の数が PC の数倍になって
+      // 熱と電池を食う。1.5 倍で止め、ブラウザに引き伸ばさせる (#187)。
+      const MOBILE_MAX_DPR = 1.5;
+
       const container = document.querySelector("#unity-container");
 
       // 指だけで操作する端末か (#73)。主な入力が粗いポインタでホバーできず、マウスやペンの
@@ -174,9 +176,10 @@
 
       function applyMobileLayout() {
         if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || isTouchOnly()) {
-          // スマホ・タブレットは画面いっぱいに広げる。
+          // スマホ・タブレットは画面いっぱいに広げ、描く画素の密度に上限を掛ける。
           container.classList.add("unity-mobile");
           canvas.classList.add("unity-mobile");
+          config.devicePixelRatio = Math.min(window.devicePixelRatio || 1, MOBILE_MAX_DPR);
         }
       }
 
@@ -267,14 +270,13 @@
         document.body.appendChild(script);
       }
 
-      // 指だけの端末では、案内を出して「それでも読み込む」を待つ (#73)。
+      // 指だけの端末では、通信量の案内を出して「読み込む」を待つ (#73 #187)。
       if (isTouchOnly()) {
-        const pcOnly = document.querySelector("#kcd-pc-only");
-        document.querySelector("#kcd-pc-only-url").textContent = location.href.split("#")[0];
+        const notice = document.querySelector("#kcd-data-notice");
         container.classList.add("kcd-gated");
-        pcOnly.hidden = false;
-        document.querySelector("#kcd-pc-only-continue").addEventListener("click", () => {
-          pcOnly.hidden = true;
+        notice.hidden = false;
+        document.querySelector("#kcd-data-notice-continue").addEventListener("click", () => {
+          notice.hidden = true;
           container.classList.remove("kcd-gated");
           startLoading();
         }, { once: true });

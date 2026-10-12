@@ -108,7 +108,7 @@ namespace KCD
                 return;
             }
 
-            s_Current = QualityTiers.Load(QualityTiers.TargetPlatform);
+            s_Current = QualityTiers.Load(QualityTiers.TargetPlatform, Application.isMobilePlatform);
             s_Loaded = true;
         }
 
