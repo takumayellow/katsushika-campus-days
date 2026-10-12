@@ -4,6 +4,10 @@
 入口の立て看板（建物名）だけにし、店名もブランドの色の板も出さない。店名は会話文とクエスト文にだけ出る。
 """
 
+import glob
+import os
+import re
+
 import pytest
 
 from kcd_lib import buildings, geom, mats
@@ -52,4 +56,23 @@ def test_kyoso_is_built(building_materials):
 
 def test_no_building_wears_a_store_sign(building_materials):
     branded = {bid: _branded(names) for bid, names in building_materials.items() if _branded(names)}
+    assert branded == {}
+
+
+MODELS = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+                      "unity", "KatsushikaCampusDays", "Assets", "Models")
+
+
+def test_exported_models_have_no_store_sign_materials():
+    """書き出し済みの FBX にも店の色板が無い。屋内の窓の外の近景（research1.fbx 等）も含める。"""
+    paths = sorted(glob.glob(os.path.join(MODELS, "Campus", "*.fbx"))
+                   + glob.glob(os.path.join(MODELS, "Interiors", "*.fbx")))
+    assert paths, "FBX が見つからない"
+    pattern = re.compile(rb"sign_[a-z_]*(?:%s)" % b"|".join(b.encode() for b in BRANDS))
+    branded = {}
+    for path in paths:
+        with open(path, "rb") as f:
+            found = sorted({m.decode() for m in pattern.findall(f.read())})
+        if found:
+            branded[os.path.basename(path)] = found
     assert branded == {}
