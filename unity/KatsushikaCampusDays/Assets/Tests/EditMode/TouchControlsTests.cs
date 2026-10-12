@@ -187,15 +187,6 @@ namespace KCD.Tests
             Assert.AreEqual(expected, TouchHud.ShowsPlayControls(touch, blocked));
         }
 
-        [TestCase(false, false, false, false)]
-        [TestCase(true, false, false, true)]
-        [TestCase(true, true, false, false)]
-        [TestCase(true, true, true, true)]
-        public void TouchHud_ShowsPauseButton_StaysDuringPause(bool touch, bool blocked, bool paused, bool expected)
-        {
-            Assert.AreEqual(expected, TouchHud.ShowsPauseButton(touch, blocked, paused));
-        }
-
         [Test]
         public void TmpLinkTap_Pick_InsideWinsOverTheNeighboursMargin()
         {

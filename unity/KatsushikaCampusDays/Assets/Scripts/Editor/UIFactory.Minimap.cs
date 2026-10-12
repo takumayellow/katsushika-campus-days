@@ -22,6 +22,7 @@ namespace KCD.Editor
 
             RectTransform rect = Rect(parent, "Minimap", new Vector2(1f, 1f), new Vector2(1f, 1f),
                 new Vector2(-40f, -40f), new Vector2(MinimapSize, MinimapSize));
+            rect.gameObject.AddComponent<KeepPointerSize>();
 
             RectTransform frameRect = Centered(rect, "Frame", MinimapSize);
             Image frame = frameRect.gameObject.AddComponent<Image>();

@@ -36,16 +36,13 @@ namespace KCD
             _questLabel = quest;
         }
 
-        /// <summary>スティックとボタンを出すか。指で遊んでいて、会話やメニューで操作を止めていないとき。</summary>
+        /// <summary>
+        /// スティックとボタン（ポーズのボタンも）を出すか。指で遊んでいて、会話やメニューで操作を止めていないとき。
+        /// ポーズ中は「ゲームに戻る」の行を叩いて閉じる。ボタンを残すと、上の真ん中でポーズと設定の枠に重なる。
+        /// </summary>
         public static bool ShowsPlayControls(bool touch, bool gameplayBlocked)
         {
             return touch && !gameplayBlocked;
-        }
-
-        /// <summary>ポーズのボタンを出すか。ポーズ中（設定を開いている間も）は閉じるために出したまま。</summary>
-        public static bool ShowsPauseButton(bool touch, bool gameplayBlocked, bool paused)
-        {
-            return touch && (!gameplayBlocked || paused);
         }
 
         private void OnEnable()
@@ -81,11 +78,9 @@ namespace KCD
                 return;
             }
 
-            bool blocked = KCDInput.GameplayBlocked;
-            PauseMenu pause = HUD.Instance != null ? HUD.Instance.PauseMenu : null;
-            bool paused = pause != null && pause.IsPaused;
-            Show(_play, ShowsPlayControls(true, blocked));
-            Show(_pause, ShowsPauseButton(true, blocked, paused));
+            bool show = ShowsPlayControls(true, KCDInput.GameplayBlocked);
+            Show(_play, show);
+            Show(_pause, show);
         }
 
         private static void Show(CanvasGroup group, bool show)

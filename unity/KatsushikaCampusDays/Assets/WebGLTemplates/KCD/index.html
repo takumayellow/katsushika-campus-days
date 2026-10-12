@@ -44,6 +44,13 @@
           <span id="kcd-overlay-text">クリックでマウス視点　·　Esc でマウスを解放　·　Ctrl+F で全画面</span>
           <button type="button" class="kcd-fullscreen">⛶ 全画面</button>
         </div>
+
+        <!-- スマホ・タブレットを縦に持っている間だけ覆う (#187)。画面は横持ちの前提で組んでいる。
+             全画面でも出るよう、全画面にする箱の中に置く。 -->
+        <div id="kcd-rotate" role="status">
+          <div id="kcd-rotate-icon" aria-hidden="true"></div>
+          <p>横向きにしてください</p>
+        </div>
       </div>
 
       <div id="unity-warning"> </div>

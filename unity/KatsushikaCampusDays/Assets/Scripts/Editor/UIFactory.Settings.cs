@@ -17,6 +17,7 @@ namespace KCD.Editor
             RectTransform rect = Rect(parent, "Settings", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
                 Vector2.zero, new Vector2(960f, 620f));
             Backdrop(rect, PanelDark);
+            KeepInCanvas(rect);
 
             RectTransform headingBox = Rect(rect, "Heading", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
                 new Vector2(0f, -28f), new Vector2(900f, 70f));
@@ -40,6 +41,7 @@ namespace KCD.Editor
             RectTransform rect = Rect(parent, "Credits", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
                 Vector2.zero, new Vector2(1240f, 720f));
             Backdrop(rect, PanelDark);
+            KeepInCanvas(rect);
 
             RectTransform headingBox = Rect(rect, "Heading", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
                 new Vector2(0f, -28f), new Vector2(1100f, 70f));
