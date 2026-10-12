@@ -29,7 +29,7 @@ namespace KCD.Editor
     /// 1 キャラにつき 顔（正面・35 度・真横）と全身（正面・35 度）を撮る。
     ///
     /// 描画の有効・無効は取り込んだまま触らない。Blender で焼いた輪郭シェル（&lt;id&gt;_outline）は
-    /// CharacterImporter が無効にしている。有効にすると KCD/Toon の Outline パス（Cull Front）が
+    /// CharacterImporter が無効にし、メッシュも空にしている。有効にすると KCD/Toon の Outline パス（Cull Front）が
     /// シェルの手前側を輪郭色で描き、服や髪の外向きの面が真っ黒に塗りつぶされる。
     ///
     /// キャラは空中（地面から <see cref="Altitude"/> m 上）に置くので、建物や木が写り込まない。
