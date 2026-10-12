@@ -162,6 +162,11 @@
       // 熱と電池を食う。1.5 倍で止め、ブラウザに引き伸ばさせる (#187)。
       const MOBILE_MAX_DPR = 1.5;
 
+      // テクスチャを ASTC で圧縮した data (#187)。DXT を読めない GPU（スマホの多く）では、Unity は DXT の
+      // テクスチャを RGBA32 に展開してから載せるので、テクスチャのメモリが何倍にもなる。
+      // 名前は tools/deploy_pages.py --build がビルドの後に書き込む。書き込まれていなければ DXT だけを使う。
+      var astcDataUrl = null; // KCD_ASTC_DATA_URL
+
       const container = document.querySelector("#unity-container");
 
       // 指だけで操作する端末か (#73)。主な入力が粗いポインタでホバーできず、マウスやペンの
@@ -172,6 +177,27 @@
         return matchMedia("(pointer: coarse)").matches
           && matchMedia("(hover: none)").matches
           && !matchMedia("(any-pointer: fine)").matches;
+      }
+
+      // 読む data のテクスチャの形式。DXT を読めず ASTC を読める GPU なら "astc"、それ以外は "dxt"。
+      // ?textures=astc / ?textures=dxt で上書きできる（端末で見比べる用）。
+      function textureFormat() {
+        const forced = new URLSearchParams(location.search).get("textures");
+        if (forced === "astc" || forced === "dxt") return forced;
+        const gl = document.createElement("canvas").getContext("webgl2");
+        if (!gl) return "dxt";
+        const dxt = gl.getExtension("WEBGL_compressed_texture_s3tc");
+        const astc = gl.getExtension("WEBGL_compressed_texture_astc");
+        // 調べるためだけに作った描画の文脈は、すぐ手放す（端末ごとに同時に持てる数が限られる）。
+        const lose = gl.getExtension("WEBGL_lose_context");
+        if (lose) lose.loseContext();
+        return !dxt && astc ? "astc" : "dxt";
+      }
+
+      function chooseTextureData() {
+        if (astcDataUrl && config.dataUrl && textureFormat() === "astc") {
+          config.dataUrl = astcDataUrl;
+        }
       }
 
       function applyMobileLayout() {
@@ -225,6 +251,7 @@
       // ローダーを差し込んでゲームを読み込む。ここを呼ぶまで Build/ のファイルは取りに行かない。
       function startLoading() {
         applyMobileLayout();
+        chooseTextureData();
         var script = document.createElement("script");
         script.src = loaderUrl;
         // ローダーが取れないと onload が来ず、進み具合もエラーも出ないまま止まる。

@@ -61,6 +61,35 @@ Windows 版のフレームの刻み（#15）もここに書く。元の記録は
 
 - 配信の設定は gzip（webGLCompressionFormat 1）で、Data Caching が有効。2 回目からの読み込みでは、data をブラウザの IndexedDB / Cache API から読む。
 
+### 1.6 テクスチャを ASTC で圧縮した data（#187、2026-10-12、ローカルのビルド）
+
+`deploy_pages.py --build` は、テクスチャを DXT で圧縮したビルドと ASTC で圧縮したビルドを作り、ASTC の data を同じ Build/ に置く。
+wasm・framework・loader は 2 本でハッシュまで同じだった。
+
+| ファイル | 大きさ | gzip を解いた大きさ |
+|---|---|---|
+| data（DXT） | 58,793,471 B（56.07 MiB） | 78,290,087 B（74.66 MiB） |
+| data（ASTC） | 63,216,436 B（60.29 MiB） | 82,939,829 B（79.10 MiB） |
+| wasm | 10,963,928 B（10.46 MiB） | |
+| framework・loader・index.html・style.css・ライセンス 2 つ | 157,974 B | |
+| 1 台の端末が読む分（ASTC の data のとき） | 70.9 MiB | |
+| zip 全体（data 2 つ） | 127.0 MiB | |
+
+- data の中で違うのは data.unity3d（gzip を解いて 40,902,148 B と 45,551,890 B）と boot.config の build-guid だけ。
+  ほかのファイル（global-metadata.dat、sharedassets0.resource など）はバイトまで同じ。
+- ビルドレポートのテクスチャは DXT で 33.3 MB、ASTC で 35.5 MB。ASTC のブロックは 6×6。
+- この PC の GPU（RTX 5070 Ti、ANGLE の D3D11）は ASTC を読めない。`?textures=astc` で開くと ASTC の data を読み、
+  Unity がテクスチャを展開する（コンソールに `RGBA Compressed ASTC6X6 ... not supported, decompressing texture`）。
+  smoke で比べると、展開の分だけ重くなる。スマホの GPU で DXT の data を読むときも、同じように展開する。
+
+  | | DXT の data | ASTC の data（展開する） |
+  |---|---|---|
+  | キャンパスでの Unity のヒープ | 368.8 MiB | 442.5 MiB |
+  | Campus のシーンの読み込み（scene_load） | 827 ms | 1274 ms |
+  | コンソールのエラー | 0 件 | 0 件 |
+- Unity 6（6000.6.2f1）では、`EditorUserBuildSettings.webGLBuildSubtarget` を変えてもビルドの形式は変わらない。
+  `BuildPlayerOptions.subtarget` で渡す（`BuildPlayer.BuildWebGLVariant`）。
+
 ## 2. 予算
 
 超えそうな変更をするときは、同じ Issue で測り直し、この表を更新する。
@@ -70,15 +99,15 @@ Windows 版のフレームの刻み（#15）もここに書く。元の記録は
 | 描画コール（キャンパス、1 フレーム） | 700 | 最大 580（公開版、歩き） | 今の最大に約 20% の幅を足した。1.2 の傾きで見積もると 120 回で +0.54 ms、CPU が 4 倍遅い端末では +2.2 ms。今の 4.0〜4.7 ms も 4 倍にすると 16〜19 ms で、60 fps の 16.7 ms を割るおそれがある。そのため、増やす余裕は小さく取った（見積もり。遅い CPU では未計測） |
 | 三角形（キャンパス、1 フレーム） | 900k | 742k（公開版、立ち） | 今に約 20% の幅を足した。この PC では GPU が律速ではない（1.2）。内蔵 GPU は未計測なので、そこで測るまでは仮の値 |
 | テクスチャ | 1 枚は 2048 px まで。1 つのシーンに載る分の合計は 64 MiB まで（DXT で見積もる） | 見積もり 29〜50 MiB（下の内訳） | 64 MiB は、2048² の BC3（8 bpp）に mip を付けた 5.3 MiB が 12 枚の量。今の 2048² は 8 枚 |
-| 配信サイズ | 合計 80 MiB、data 64 MiB | 63.4 MiB、data 52.9 MiB | tools/deploy_pages.py の MAX_TOTAL_BYTES と MAX_DATA_BYTES（理由は定数のコメント）。超えたら配信しない |
+| 配信サイズ | 合計 80 MiB、data 64 MiB | 70.9 MiB、data 60.3 MiB（1.6） | tools/deploy_pages.py の MAX_TOTAL_BYTES と MAX_DATA_BYTES（理由は定数のコメント）。1 台の端末が読む量（DXT と ASTC の data の大きい方）で測る。超えたら配信しない |
 | Unity のヒープ（WASM のメモリ） | 512 MiB（仮） | 307 MiB（キャンパスに入った直後、#15） | 初期値は 256 MiB。拡張は Geometric（1 回に 20%、1 回の上限 96 MiB）なので、307 → 369 → 442 → 531 MiB になる。512 MiB は 4 回目の拡張をしない線。ピークを測っていないので仮の値 |
 
 ### 2.1 テクスチャの内訳（見積もり）
 
 見積もりの前提:
 
-- WebGL の圧縮形式は、テクスチャごとの上書き（.meta の WebGL の overridden）も ProjectSettings の既定も指定していない。そのため、既定（デスクトップ向けの DXT）と見なした。
-- ただし、Build Profile で選んだ形式は Player Settings より優先され、その値は Library に入って版管理されない（Unity の手引き webgl-texture-compression）。
+- WebGL の圧縮形式は、テクスチャごとの上書き（.meta の WebGL の overridden）を指定していない。ビルドの形式は `BuildPlayer.BuildWebGL` が
+  DXT と ASTC の 2 本で決める（1.6）。表は DXT で見積もった。
 - ビルドした data の中身では確かめていない。
 - 透明の無い画像を BC1（4 bpp）、ある画像を BC3（8 bpp）とし、どちらになるか分からない画像は幅で書いた。
 
@@ -93,7 +122,11 @@ Windows 版のフレームの刻み（#15）もここに書く。元の記録は
 
 - 顔の画像には、FBX の横の *.fbm/ にも同じ画像の写しがある。マテリアルが参照しているのは外の face.png だけで、*.fbm/ の写しはどのマテリアルからも参照されていない（GUID を grep して確かめた）。そのため、ビルドに入るのは 1 枚ずつと見なした。
 - dev/assets の #59 で、面のテクスチャ 10 枚（512²、JPEG）が入る予定。BC1 に mip を付けて 1 枚 0.17 MiB、10 枚で約 1.7 MiB。
-- 端末が DXT を扱えないと、Unity はソフトウェアで展開する。そのときは RGBA32 になり、2048² に mip を付けて 1 枚 21.3 MiB に増える（モバイルのブラウザ）。
+- DXT を扱えず ASTC を扱える GPU（iPhone と多くの Android）では、ページが ASTC の data を読むので、テクスチャは圧縮したまま GPU に載る。
+- DXT も ASTC も扱えない GPU では、Unity がソフトウェアで展開する。そのときは RGBA32 になり、2048² に mip を付けて 1 枚 21.3 MiB に増える。
+- 圧縮しない設定のテクスチャは、どちらのビルドでもそのまま載る。外壁の煉瓦（Textures/surfaces/brick_red.jpg、1024²）は
+  .meta の既定が textureCompression 0 で、ビルドレポートで 4.0 MB ある。BC1 に mip を付ければ約 0.67 MiB になる。
+  この .meta は焼く道具が書く（#109）ので、直すなら道具の側で直す。
 - 描画に使う面（シャドウマップ・色・深度）は画質の段（3 章）ごとに変わるので、この表には入れていない。
 
 ### 2.2 タブのメモリ

@@ -26,9 +26,17 @@ Pages に載せるだけなので、git のサイズ制限（1 ファイル 100 
     参照は buildUrl + "/<名前>" と, 段階読み込みのときの primaryDataUrls / secondaryDataUrls の
     配列から読む。loader・framework・wasm・data のどれかの参照を読み取れなければ zip を作らない。
 
+ASTC の data (#187):
+    Unity の BuildPlayer.BuildWebGL は, テクスチャを DXT で圧縮したビルドを build/WebGL に,
+    ASTC で圧縮したビルドを build/WebGL-ASTC に出す。2 本で違うのは data だけなので, --build は
+    ASTC の data を build/WebGL/Build/ に写し, index.html の astcDataUrl に名前を書き込む。
+    どちらを読むかは index.html が端末の GPU を見て決める。ローダー・framework・wasm の名前が
+    2 本で違えば, data が噛み合わないとみて止める。
+
 配信サイズ (#70):
-    zip を作った後, 中のファイルの合計と data の大きさを測り, 上限（MAX_TOTAL_BYTES /
+    zip を作った後, 1 台の端末が読むファイルの合計と data の大きさを測り, 上限（MAX_TOTAL_BYTES /
     MAX_DATA_BYTES, 決め方は定数のコメント）を超えていれば配信しない。--allow-oversize で通す。
+    端末は DXT と ASTC の data のどちらか一方しか読まないので, 大きい方で測る。
     --no-deploy のときは超えていても zip を残し, 超えたことだけを知らせる。
 """
 
@@ -38,6 +46,7 @@ import argparse
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import zipfile
@@ -66,14 +75,22 @@ BUILD_REF_RE = re.compile(r'buildUrl \+ "/([^"\'\s)]+)')
 # 段階読み込み（PROGRESSIVE_ASSET_LOADING）では data が buildUrl を付けない JSON の配列で入る。
 # ローダーは配列の URL をそのまま取りに行くので, 中身は index.html からの相対パス。
 DATA_URLS_RE = re.compile(r'\b(primaryDataUrls|secondaryDataUrls)\s*:\s*(\[[^\]]*\])')
-# ローダーが起動に必ず読む Build/ のファイルの設定。data は dataUrl か primaryDataUrls のどちらか。
+# ローダーが起動に必ず読む Build/ のファイルの設定と, そのファイル名。data は dataUrl か primaryDataUrls のどちらか。
 LOADER_PART_RES = (
-    ("loaderUrl", re.compile(r'\bloaderUrl\s*=\s*buildUrl \+ "/')),
-    ("frameworkUrl", re.compile(r'\bframeworkUrl\s*:\s*buildUrl \+ "/')),
-    ("codeUrl", re.compile(r'\bcodeUrl\s*:\s*buildUrl \+ "/')),
+    ("loaderUrl", re.compile(r'\bloaderUrl\s*=\s*buildUrl \+ "/([^"\'\s)]+)')),
+    ("frameworkUrl", re.compile(r'\bframeworkUrl\s*:\s*buildUrl \+ "/([^"\'\s)]+)')),
+    ("codeUrl", re.compile(r'\bcodeUrl\s*:\s*buildUrl \+ "/([^"\'\s)]+)')),
 )
 DATA_URL_RE = re.compile(r'\bdataUrl\s*:\s*buildUrl \+ "/')
 DATA_NAME_RE = re.compile(r'\bdataUrl\s*:\s*buildUrl \+ "/([^"\'\s)]+)')
+# テンプレートの ASTC の data の差し込み口と, 名前を書き込んだ後の形 (#187)。
+ASTC_SLOT = "var astcDataUrl = null; // KCD_ASTC_DATA_URL"
+ASTC_DATA_RE = re.compile(r'\bastcDataUrl\s*=\s*buildUrl \+ "/([^"\'\s)]+)')
+# ASTC のビルドの出力先は, WebGL の出力先の名前にこれを付けたもの（BuildPlayer.AstcOutputSuffix）。
+ASTC_DIR_SUFFIX = "-ASTC"
+# Unity が付ける data の名前（内容のハッシュと拡張子）に使う文字。index.html の JS の文字列に書き込み,
+# Build/ の下のファイル名にも使うので, パスの区切り・引用符・< > を通さない。
+ASTC_DATA_NAME_RE = re.compile(r"[0-9A-Za-z][0-9A-Za-z._-]*")
 
 MIB = 1024 * 1024
 # 配信サイズの上限 (#70)。zip に入れた後の, 配信する各ファイルの大きさで測る。
@@ -90,17 +107,26 @@ MIB = 1024 * 1024
 #   約 84 MiB）ので, タブのメモリの予算（docs/WEBGL_BUDGET.md）に響く。
 #   wasm・framework・loader の大きさは Unity の版とコードの量で決まり, ほとんど変わらない。
 #   ふくらむのは data なので, 合計より先に data で止まるよう, data の幅を狭くしてある。
+# どちらも 1 台の端末が読む量で測る (#187)。端末が読むのは DXT か ASTC の data のどちらか一方なので,
+#   大きい方の data で測る。zip と Pages に置く量は data 1 つ分増える。
 MAX_TOTAL_BYTES = 80 * MIB
 MAX_DATA_BYTES = 64 * MIB
 
 
 @dataclass(frozen=True)
 class PayloadSize:
-    """配信する zip の中身の大きさ（バイト）。data は index.html が data として読むファイルの合計。"""
+    """配信する zip の中身の大きさ（バイト）。
+
+    total と data は 1 台の端末が読む量。data は index.html が data として読むファイルの合計で,
+    ASTC の data もあれば, DXT と ASTC の大きい方を取る。total は data 以外のファイルにその data を足したもの。
+    stored は zip に入れた全ファイルの合計（Pages に置く量）, astc_data は ASTC の data の大きさ。
+    """
 
     total: int
     data: int
     files: int
+    stored: int = 0
+    astc_data: int = 0
 
 
 @dataclass(frozen=True)
@@ -227,6 +253,58 @@ def referenced_build_files(html: str) -> list[str]:
     return [path[len("Build/"):] for path in referenced_paths(html) if path.startswith("Build/")]
 
 
+def code_names(html: str) -> dict[str, list[str]]:
+    """loader・framework・wasm の参照のファイル名。ASTC のビルドと突き合わせるのに使う。"""
+    return {name: pattern.findall(html) for name, pattern in LOADER_PART_RES}
+
+
+def astc_data_paths(html: str) -> list[str]:
+    """index.html が ASTC の data として読むファイルの, サイトの根からのパス。"""
+    return list(dict.fromkeys(site_path(f"Build/{name}") for name in ASTC_DATA_RE.findall(html)))
+
+
+def astc_build_dir(build_dir: Path) -> Path:
+    return build_dir.with_name(build_dir.name + ASTC_DIR_SUFFIX)
+
+
+def attach_astc_data(build_dir: Path, astc_dir: Path) -> str:
+    """ASTC のビルドの data を build_dir/Build/ に写し, index.html に名前を書き込む。写した名前を返す。
+
+    BuildPlayer.BuildWebGL はテクスチャの圧縮の形式だけを変えて 2 本ビルドするので, ローダー・
+    framework・wasm は同じ名前（内容のハッシュ）になる。違えば data が噛み合わないとみて止める。
+    data を dataUrl の 1 つで読むビルドに限る。テンプレートも config.dataUrl だけを差し替える。
+    """
+    index = build_dir / "index.html"
+    astc_index = astc_dir / "index.html"
+    for path in (index, astc_index):
+        if not path.is_file():
+            raise FileNotFoundError(f"WebGL ビルドが見つからない: {path}")
+    # newline="" で読み書きし, Unity が出した改行コードをそのまま残す。
+    with open(index, encoding="utf-8", newline="") as f:
+        html = f.read()
+    astc_html = astc_index.read_text(encoding="utf-8")
+
+    names = DATA_NAME_RE.findall(astc_html)
+    if len(names) != 1:
+        raise ValueError(f"{astc_index} から data の名前を 1 つに決められない: {names}")
+    name = names[0]
+    if not ASTC_DATA_NAME_RE.fullmatch(name):
+        raise ValueError(f"{astc_index} の data の名前に使えない文字がある: {name!r}")
+    if code_names(html) != code_names(astc_html):
+        raise ValueError(f"{astc_dir} とローダー・framework・wasm が違う。2 本を同じ Unity の実行でビルドし直す: "
+                         f"{code_names(html)} / {code_names(astc_html)}")
+    if html.count(ASTC_SLOT) != 1:
+        raise ValueError(f"{index} に ASTC の data の差し込み口（{ASTC_SLOT}）が 1 つだけ無い")
+    source = astc_dir / "Build" / name
+    if not source.is_file():
+        raise FileNotFoundError(f"ASTC のビルドの data が無い: {source}")
+
+    shutil.copy2(source, build_dir / "Build" / name)
+    with open(index, "w", encoding="utf-8", newline="") as f:
+        f.write(html.replace(ASTC_SLOT, f'var astcDataUrl = buildUrl + "/{name}";'))
+    return name
+
+
 def missing_loader_parts(html: str) -> list[str]:
     """ローダーが起動に必ず読むのに, index.html から参照を読み取れないもの。
 
@@ -305,12 +383,17 @@ def data_paths(html: str) -> list[str]:
 
 
 def payload_size(zip_path: Path) -> PayloadSize:
-    """zip に入れたファイルの合計と, そのうち data の合計。"""
+    """1 台の端末が読むファイルの合計と, そのうち data の合計。zip 全体の合計も添える。"""
     with zipfile.ZipFile(zip_path) as zf:
         sizes = {info.filename: info.file_size for info in zf.infolist() if not info.is_dir()}
         html = zf.read("index.html").decode("utf-8")
-    data = sum(sizes.get(path, 0) for path in data_paths(html))
-    return PayloadSize(total=sum(sizes.values()), data=data, files=len(sizes))
+    dxt_paths = data_paths(html)
+    data = sum(sizes.get(path, 0) for path in dxt_paths)
+    astc = sum(sizes.get(path, 0) for path in astc_data_paths(html) if path not in dxt_paths)
+    stored = sum(sizes.values())
+    largest = max(data, astc)
+    return PayloadSize(total=stored - data - astc + largest, data=largest, files=len(sizes),
+                       stored=stored, astc_data=astc)
 
 
 def to_mib(size: int) -> str:
@@ -431,6 +514,12 @@ def main(argv: list[str]) -> int:
         if not index.is_file():
             print(f"WebGL ビルドが見つからない: {index}", file=sys.stderr)
             return 1
+        try:
+            astc = attach_astc_data(build_dir, astc_build_dir(build_dir))
+        except (ValueError, FileNotFoundError) as error:
+            print(f"ASTC の data を組み込めない: {error}", file=sys.stderr)
+            return 1
+        print(f"ASTC の data: Build/{astc}")
         stamp_file(index, state, utc_now())
 
     index = build_dir / "index.html"
@@ -451,8 +540,10 @@ def main(argv: list[str]) -> int:
         return rc
 
     size = payload_size(zip_path)
-    print(f"配信サイズ: 合計 {to_mib(size.total)}（上限 {to_mib(MAX_TOTAL_BYTES)}）, "
+    print(f"配信サイズ（1 台が読む分）: 合計 {to_mib(size.total)}（上限 {to_mib(MAX_TOTAL_BYTES)}）, "
           f"data {to_mib(size.data)}（上限 {to_mib(MAX_DATA_BYTES)}）")
+    if size.astc_data:
+        print(f"  ASTC の data {to_mib(size.astc_data)}, zip 全体 {to_mib(size.stored)}")
     oversize = size_refusal(size)
     if args.no_deploy:
         if oversize is not None:
