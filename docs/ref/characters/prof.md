@@ -26,8 +26,10 @@
 ## ゲームの教授にしたこと
 
 - 服は前を開けた紺の背広・水色のシャツ・紺のネクタイ・紺のズボン（`outfit="suit"`）。いちばん多いスーツとネクタイの組み合わせに合わせた。
-- 髪は黒の短髪。眼鏡は教授の記号として掛けさせ、写真に多い細い銀縁にした（`glasses_tube=0.009`）。
-- 40 代の男に見えるよう、顎の張った輪郭・太い眉・小さめの瞳にし、まつ毛とハイライトを控えめにした。
+- 髪は黒の短髪を七三に分け、耳を出して襟足を短く整えた形にした（`hair="business"`、`blender/kcd_chara/hair_men.py`）。
+- 眼鏡は教授の記号として掛けさせ、写真に多い細い銀縁にした（`glasses_tube=0.006`）。レンズの中心を目に合わせ、
+  鼻当てを鼻筋に乗せ、つるは耳の付け根の上に掛けて耳の後ろへ下ろす。
+- 40 代の男に見えるよう、顎の張った輪郭・目に近い細めの眉・横長の細い目と小さな虹彩にし、まつ毛とハイライトを控えめにした。
   首は女子と同じ細さだと華奢に見えるので太くした（`neck_r`）。
 
-値は `blender/kcd_chara/params.py` の `prof`、服は `blender/kcd_chara/cloth.py` の `build_suit`。
+値は `blender/kcd_chara/params.py` の `prof`、髪と眼鏡は `blender/kcd_chara/hair_men.py`、服は `blender/kcd_chara/cloth.py` の `build_suit`。

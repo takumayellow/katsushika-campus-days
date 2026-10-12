@@ -248,12 +248,17 @@ def _ribbon(mb: M.MeshBuilder, part: str, mat: str, p: dict, fs: FaceSurface,
                     cap_start=True, cap_end=True)
 
 
-def _eye_curves(cu: float, eye_y: float, rx: float, ry: float, sgn: int):
-    """片目ぶんの（上まつ毛・下まつ毛・二重線）の UV 曲線を返す。"""
+def _eye_curves(cu: float, eye_y: float, rx: float, ry: float, sgn: int,
+                flick_k: float = 1.0, crease: float = 0.36, outer: float = 0.14):
+    """片目ぶんの（上まつ毛・下まつ毛・二重線）の UV 曲線を返す。
+
+    flick_k は目尻の跳ね上げの倍率、crease は二重線の高さ（ry 比）、outer は
+    上まつ毛を目尻の先へ回り込ませる量（半周に対する比）。
+    """
     n = 22
-    th = np.linspace(math.pi * 1.00, -math.pi * 0.14, n)
+    th = np.linspace(math.pi * 1.00, -math.pi * outer, n)
     t = np.linspace(0.0, 1.0, n)
-    flick = np.clip((t - 0.80) / 0.20, 0.0, 1.0) ** 1.6
+    flick = flick_k * np.clip((t - 0.80) / 0.20, 0.0, 1.0) ** 1.6
     up_u = cu + sgn * rx * 1.02 * np.cos(th) * (1.0 + 0.10 * flick)
     up_v = eye_y + ry * 0.99 * np.sin(th) + ry * 0.20 * flick
     up_w = ry * (0.040 + 0.105 * np.exp(-((t - 0.56) / 0.38) ** 2))
@@ -270,7 +275,7 @@ def _eye_curves(cu: float, eye_y: float, rx: float, ry: float, sgn: int):
     th3 = np.linspace(math.pi * 0.92, math.pi * 0.06, n3)
     t3 = np.linspace(0.0, 1.0, n3)
     dl_u = cu + sgn * rx * 1.00 * np.cos(th3)
-    dl_v = eye_y + ry * (0.99 * np.sin(th3) + 0.36)
+    dl_v = eye_y + ry * (0.99 * np.sin(th3) + crease)
     dl_w = ry * (0.020 + 0.016 * np.sin(math.pi * t3))
     return (up_u, up_v, up_w), (lo_u, lo_v, lo_w), (dl_u, dl_v, dl_w)
 
@@ -287,6 +292,24 @@ def _brow_curve(cu: float, eye_y: float, rx: float, ry: float, sgn: int,
           - ry * 0.34 * t ** 2)
     ws = width * (0.55 + 0.45 * np.cos(math.pi * 0.5 * t)) * (1.0 - 0.55 * t ** 2)
     return us, vs, np.maximum(ws, width * 0.16)
+
+
+def _brow_curve_narrow(cu: float, eye_y: float, rx: float, sgn: int,
+                       width: float, arch: float, lift: float):
+    """大人の男の眉。目のすぐ上を通る直線寄りの眉で、眉根が太く眉尻へ細る。
+
+    細い目は ry が小さいので、高さを ry の倍数で決めると眉が目に貼り付く。
+    目の中心からの高さ lift（UV の v）で直接置く。
+    """
+    n = 16
+    t = np.linspace(0.0, 1.0, n)
+    u_in, u_out = cu - sgn * rx * 1.05, cu + sgn * rx * 1.35
+    us = u_in + (u_out - u_in) * t
+    vs = (eye_y + lift + arch * np.sin(math.pi * np.clip(t * 1.15, 0.0, 1.0))
+          - width * 0.60 * t ** 2)
+    # 眉根は少しだけ細めて角を落とし、眉尻へ向けて細らせる
+    ws = width * (0.62 + 0.38 * np.clip(t / 0.18, 0.0, 1.0)) * (1.0 - 0.72 * t ** 1.6)
+    return us, vs, np.maximum(ws, width * 0.22)
 
 
 def _brow_curve_flat(cu: float, eye_y: float, rx: float, ry: float, sgn: int,
@@ -361,9 +384,9 @@ def build_face_parts(mb: M.MeshBuilder, p: dict, fs: FaceSurface, uv_box):
     # 点目は「角の丸い縦長の楕円」。power 3.1 は角の立った四角で、公式の
     # 丸い点目にならない（tus_chara01.jpg の目は 8x13px のほぼ楕円）。
     # sharp 目（教授）はこれまでどおり角を立てる。
+    # narrow 目（教授）は横長の楕円にする。角を立てると細い目が四角い窓に見える。
     _es = p.get("eye_style", "round")
-    power_eye = 2.7 if _es == "round" else (2.2 if _es in ("dot", "ink")
-                                            else 3.1)
+    power_eye = {"round": 2.7, "dot": 2.2, "ink": 2.2, "narrow": 2.0}.get(_es, 3.1)
     # 頭の面が内向きのキャラは、輪郭シェル（身長 x outline.THICKNESS）より
     # 必ず手前に出す。ここが内側に入ると頭の膨張シェルが目を黒く覆ってしまう。
     # 面が外向きなら殻の手前側は背面カリングで消えるので、表面すれすれに置く。
@@ -399,7 +422,10 @@ def build_face_parts(mb: M.MeshBuilder, p: dict, fs: FaceSurface, uv_box):
         dot = p.get("eye_style") in ("dot", "ink")
         if not dot:
             # 点目にはまつ毛も二重線も無い
-            up, lo, dl = _eye_curves(cu, eye_y, eye_rx, eye_ry, sgn)
+            up, lo, dl = _eye_curves(cu, eye_y, eye_rx, eye_ry, sgn,
+                                     flick_k=p.get("lash_flick", 1.0),
+                                     crease=p.get("crease_lift", 0.36),
+                                     outer=0.04 if _es == "narrow" else 0.14)
             # lash_scale は上まつ毛の帯の太さの倍率。大人の男（教授）は細いまぶたの線にし、
             # 下まつ毛も描かない（lash_lower=False）。太いまつ毛は女の子の目の記号になる (#172)。
             _ribbon(mb, name + "_lash_up", "lash", p, fs, uv_box, up[0], up[1],
@@ -417,6 +443,9 @@ def build_face_parts(mb: M.MeshBuilder, p: dict, fs: FaceSurface, uv_box):
             continue
         if dot:
             bu, bv, bwid = _brow_curve_flat(cu, eye_y, eye_rx, eye_ry, sgn, bw)
+        elif p.get("eye_style") == "narrow":
+            bu, bv, bwid = _brow_curve_narrow(cu, eye_y, eye_rx, sgn, bw, ba,
+                                              p.get("brow_lift", 0.080))
         else:
             bu, bv, bwid = _brow_curve(cu, eye_y, eye_rx, eye_ry, sgn, bw, ba)
         side = "l" if sgn > 0 else "r"
