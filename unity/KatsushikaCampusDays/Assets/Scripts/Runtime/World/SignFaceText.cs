@@ -4,8 +4,8 @@ using UnityEngine;
 namespace KCD
 {
     /// <summary>
-    /// 看板の板に貼った文字（入口の立て看板の表と裏、店舗の色板）。
-    /// 浮かぶ名札（BuildingLabel）と違ってカメラを向かず、大きさも変えない。板と一緒に置いたまま読む。
+    /// 入口の立て看板の板の表と裏に貼った建物の名前。
+    /// カメラを向かず、大きさも変えない。板と一緒に置いたまま読む。
     /// 文字は辞書の ui.building.&lt;id&gt; から引き、言語を切り替えるたびに引き直す（#181）。
     /// </summary>
     [RequireComponent(typeof(TextMeshPro))]
@@ -25,6 +25,12 @@ namespace KCD
             _key = key;
             _fallback = fallback;
             Refresh();
+        }
+
+        /// <summary>今の言語での表示名。鍵が空なら fallback をそのまま出す。</summary>
+        public static string Resolve(string key, string fallback)
+        {
+            return string.IsNullOrEmpty(key) ? fallback : L.Get(key, fallback);
         }
 
         private void OnEnable()
@@ -53,7 +59,7 @@ namespace KCD
                 _text = GetComponent<TextMeshPro>();
             }
 
-            _text.text = BuildingLabel.Resolve(_key, _fallback);
+            _text.text = Resolve(_key, _fallback);
         }
     }
 }

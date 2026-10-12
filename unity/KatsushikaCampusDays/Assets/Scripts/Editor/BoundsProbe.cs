@@ -30,7 +30,7 @@ namespace KCD.Editor
                 }
             }
 
-            foreach (string name in new[] { "Player", "Entrance_kyoso", "Entrance_lecture", "Zone_gate_main", "Label_kyoso" })
+            foreach (string name in new[] { "Player", "Entrance_kyoso", "Entrance_lecture", "Zone_gate_main", "SignText_kyoso_front" })
             {
                 GameObject go = GameObject.Find(name);
                 Transform t = go != null ? go.transform : null;

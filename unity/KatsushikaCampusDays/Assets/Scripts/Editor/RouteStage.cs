@@ -135,6 +135,17 @@ namespace KCD.Editor
                     go.layer = buildingLayer;
                 }
 
+                // 沿道の建物も、キャンパスの建物（CampusStage.DressCampus）と同じく裏の面も影に描き、
+                // 角の継ぎ目から光が漏れないようにする (#229)。
+                if (id.StartsWith("bld"))
+                {
+                    MeshRenderer building = go.GetComponent<MeshRenderer>();
+                    if (building != null)
+                    {
+                        building.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.TwoSided;
+                    }
+                }
+
                 GameObjectUtility.SetStaticEditorFlags(go, StaticEditorFlags.BatchingStatic
                     | StaticEditorFlags.OccluderStatic | StaticEditorFlags.OccludeeStatic);
             }
