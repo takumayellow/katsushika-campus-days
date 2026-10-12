@@ -147,7 +147,7 @@ namespace KCD.Tests
         [Test]
         public void TrouserCharacters_AreLeftAlone()
         {
-            // 骨は全員の肌に載っているが、白衣とズボンの布は付いていない。
+            // 骨は全員の肌に載っているが、背広とズボンの布は付いていない。
             int checkedCount = 0;
             foreach (string id in TrouserCharacters)
             {

@@ -76,7 +76,8 @@ class Head:
         hw, hd, hh = p["head_w"], p["head_d"], p["head_h"]
         # 変形後の正規化空間でのはみ出し量を数値で測ってスケールを決める
         # ちびは「角の丸い四角」、高頭身はこれまでどおり卵形
-        self.square = 1.0 if p.get("chibi") else 0.0
+        # head_square で途中の値も選べる（教授は顎の張った大人の男の輪郭にする #172）
+        self.square = float(p.get("head_square", 1.0 if p.get("chibi") else 0.0))
         probe = _head_deform(_sphere_dirs(48, 32), self.square)
         self.sx = (hw * 0.5) / float(np.abs(probe[:, 0]).max())
         self.sy = (hd * 0.5) / float(np.abs(probe[:, 1]).max())
@@ -399,10 +400,13 @@ def build_face_parts(mb: M.MeshBuilder, p: dict, fs: FaceSurface, uv_box):
         if not dot:
             # 点目にはまつ毛も二重線も無い
             up, lo, dl = _eye_curves(cu, eye_y, eye_rx, eye_ry, sgn)
+            # lash_scale は上まつ毛の帯の太さの倍率。大人の男（教授）は細いまぶたの線にし、
+            # 下まつ毛も描かない（lash_lower=False）。太いまつ毛は女の子の目の記号になる (#172)。
             _ribbon(mb, name + "_lash_up", "lash", p, fs, uv_box, up[0], up[1],
-                    up[2], offset=off_lash, thick=thick)
-            _ribbon(mb, name + "_lash_lo", "lash", p, fs, uv_box, lo[0], lo[1],
-                    lo[2], offset=off_lash * 0.82, thick=thick * 0.62)
+                    up[2] * p.get("lash_scale", 1.0), offset=off_lash, thick=thick)
+            if p.get("lash_lower", True):
+                _ribbon(mb, name + "_lash_lo", "lash", p, fs, uv_box, lo[0], lo[1],
+                        lo[2], offset=off_lash * 0.82, thick=thick * 0.62)
             _ribbon(mb, name + "_crease", "eye_rim", p, fs, uv_box, dl[0],
                     dl[1], dl[2], offset=off_lash * 0.70, thick=thick * 0.46)
         bw = p.get("brow_width", 0.038)

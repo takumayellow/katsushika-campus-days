@@ -125,7 +125,7 @@ BASE_COLORS: dict[str, str] = {
     "furoshiki_orange": "#D2782E",
     "bag_tote": "#8D6A4B",
     "glasses": "#C02A2A",
-    "labcoat": "#F5F6F7",
+    "cloth_jacket": "#2B3550",
     "cloth_apron": "#F2E5D2",
     "cloth_skirt_pink": "#D9606E",
     "cloth_pants_gray": "#4C4F58",

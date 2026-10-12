@@ -38,8 +38,8 @@ namespace KCD.Editor
 
         private static readonly Color InariGlasses = new Color(0x2A / 255f, 0x2A / 255f, 0x30 / 255f);
 
-        /// <summary>上着。これがある体では、下に着ているブラウスは元の白のまま残す。</summary>
-        private static readonly string[] OuterSlots = { "cloth_hoodie", "cloth_apron", "labcoat" };
+        /// <summary>上着。これがある体では、下に着ているブラウス（シャツ）は元の色のまま残す。</summary>
+        private static readonly string[] OuterSlots = { "cloth_hoodie", "cloth_apron", "cloth_jacket" };
 
         public static GameObject Build(Transform root)
         {
@@ -354,7 +354,7 @@ namespace KCD.Editor
                     return true;
                 case "cloth_hoodie":
                 case "cloth_apron":
-                case "labcoat":
+                case "cloth_jacket":
                     color = variant.Top;
                     return true;
                 case "cloth_blouse" when !hasOuter:

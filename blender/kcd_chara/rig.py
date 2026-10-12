@@ -400,7 +400,7 @@ CLOTH_LEG: dict[str, dict[str, float]] = {
                   mix=1.00, mix_t=0.60, mix_band=0.30, mix_front=0.35),
     "apron": dict(reach=1.00, hem_pow=0.85, band=0.45,
                   mix=1.00, mix_t=0.60, mix_band=0.30, mix_front=0.35),
-    "labcoat": dict(reach=0.72, hem_pow=1.40, band=0.85),
+    "jacket": dict(reach=0.72, hem_pow=1.40, band=0.85),
     "pants_seat": dict(reach=0.55, hem_pow=1.00, band=0.45),
     # 袴もスカートと同じ理由で前中央に mix が要る。入れる前は botchan の
     # Idle / Walk で前中央の裾が Hips に貼り付いたままになり、前へ出した膝が
@@ -415,7 +415,7 @@ CLOTH_LEG: dict[str, dict[str, float]] = {
 def _cloth_leg_weights(obj, mb: M.MeshBuilder, pts: np.ndarray, a: B.Anatomy,
                        part: str, *, parts=None, z_hi=None, z_lo=None,
                        knee: bool = False, **over) -> None:
-    """スカート・袴・白衣・ズボンの尻を、裾ほど脚へ寄せて包む。
+    """スカート・袴・背広・ズボンの尻を、裾ほど脚へ寄せて包む。
 
     ウェイトは **Hips ＋ その側の UpperLeg ＋ SkirtFront / SkirtBack** に収める
     （前と後ろの境の真横だけ 4 本、ほかは 3 本まで）。
@@ -654,7 +654,7 @@ UNDER_CLOTH = ("blouse", "shirt", "shirt_yoke", "hoodie", "kimono", "kimono_yoke
                "waistband", "obi", "himo")
 # 脚について動く布。胴から最初に当たるのがこれなら写さない。股の素肌まで脚に
 # 振られ、袴の中から外へ出る（botchan の Walk で実測 29.6 → 45.8 mm）。
-LEG_CLOTH = ("skirt", "labcoat", "apron", "hakama", "pants_seat",
+LEG_CLOTH = ("skirt", "jacket", "apron", "hakama", "pants_seat",
              "pants_l", "pants_r", "bootleg_l", "bootleg_r")
 
 
@@ -818,10 +818,10 @@ def override_weights(obj, mb: M.MeshBuilder, p: dict, a: B.Anatomy) -> None:
     _set_exclusive(obj, mb.part_indices("obi", "himo", "waistband"),
                    {"Hips": 0.7, "Spine": 0.3})
 
-    # スカート・白衣・袴・ズボンの尻は Hips ＋ 脚 1 本で包む（_cloth_leg_weights）
+    # スカート・背広・袴・ズボンの尻は Hips ＋ 脚 1 本で包む（_cloth_leg_weights）
     skirt_z = pts[mb.part_indices("skirt"), 2]
     _cloth_leg_weights(obj, mb, pts, a, "skirt")
-    _cloth_leg_weights(obj, mb, pts, a, "labcoat")
+    _cloth_leg_weights(obj, mb, pts, a, "jacket")
     if len(skirt_z):
         # エプロンは真下のスカートと同じ高さ・同じ割合で脚へ寄せる。
         # 別の割合にすると、歩くたびにヒダの尾根がエプロンを突き抜ける。

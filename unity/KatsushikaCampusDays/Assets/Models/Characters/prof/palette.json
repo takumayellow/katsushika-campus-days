@@ -2,15 +2,19 @@
   "materials": [
     {
       "name": "brow",
-      "hex": "C8C8CE"
+      "hex": "2E2C30"
     },
     {
       "name": "cloth_blouse",
-      "hex": "FDFDFA"
+      "hex": "C4D8EC"
+    },
+    {
+      "name": "cloth_jacket",
+      "hex": "2B3550"
     },
     {
       "name": "cloth_pants_gray",
-      "hex": "4C4F58"
+      "hex": "30364A"
     },
     {
       "name": "eye_rim",
@@ -18,19 +22,19 @@
     },
     {
       "name": "glasses",
-      "hex": "AEB4BE"
+      "hex": "9EA4AE"
     },
     {
       "name": "hair",
-      "hex": "DCDCE0"
-    },
-    {
-      "name": "labcoat",
-      "hex": "F5F6F7"
+      "hex": "47454C"
     },
     {
       "name": "lash",
       "hex": "3A3A44"
+    },
+    {
+      "name": "necktie",
+      "hex": "2C3E6B"
     },
     {
       "name": "shoes_loafer",

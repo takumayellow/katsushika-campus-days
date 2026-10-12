@@ -68,10 +68,10 @@
     {
       "id": "mob_e",
       "body": "prof",
-      "label": "教授の体・黒髪・白衣・グレーのズボン",
+      "label": "教授の体・黒髪・グレーの背広・黒のズボン",
       "hair": "#262222",
-      "top": "#fbfbfb",
-      "bottom": "#4b4f57",
+      "top": "#62656c",
+      "bottom": "#2a2b30",
       "shoes": "#2b2b2b",
       "height": 1.75
     },
