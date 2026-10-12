@@ -53,6 +53,12 @@ namespace KCD
         /// <summary>戻り先で向く向き。</summary>
         public float ReturnYaw => _returnYaw;
 
+        /// <summary>登録されている建物の屋内。開発者用ワープメニューの一覧に使う。</summary>
+        public IReadOnlyList<Entry> Entries => _entries;
+
+        /// <summary>出入りの暗転の途中か。</summary>
+        public bool IsBusy => _busy;
+
         /// <summary>SceneBuilder から。</summary>
         public void Register(Entry entry)
         {

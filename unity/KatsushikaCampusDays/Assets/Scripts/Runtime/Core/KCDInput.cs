@@ -346,6 +346,10 @@ namespace KCD
             return ctrlHeld && !altHeld && fPressedThisFrame;
         }
 
+        /// <summary>開発者用ワープメニューを開閉するキー（F2）。<see cref="DevMode"/> が有効なときだけ DevWarpMenu が見る。</summary>
+        public static bool DevMenuPressed =>
+            Keyboard.current != null && Keyboard.current.f2Key.wasPressedThisFrame;
+
         /// <summary>クイックセーブ（F5）。</summary>
         public static bool QuickSavePressed =>
             Keyboard.current != null && Keyboard.current.f5Key.wasPressedThisFrame;
