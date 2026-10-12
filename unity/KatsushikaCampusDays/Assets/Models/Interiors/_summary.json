@@ -1,14 +1,14 @@
 {
- "total_tris": 311766,
- "total_ext_tris": 183217,
+ "total_tris": 313094,
+ "total_ext_tris": 183209,
  "total_text_tris": 64653,
  "buildings": [
   {
    "tris": 44097,
-   "ext_tris": 41108,
+   "ext_tris": 41100,
    "ext_stats": {
     "tris": {
-     "bld": 5862,
+     "bld": 5854,
      "site_furniture": 1666,
      "site_ground": 1944,
      "site_props_beds": 6360,
@@ -123,14 +123,14 @@
    ],
    "signs": 25,
    "text_tris": 24455,
-   "size": 1742844,
+   "size": 1738028,
    "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/research1.fbx",
    "previews": [
     "docs/previews/interior_research1.png"
    ],
    "id": "research1",
    "label": "第1研究棟",
-   "sec": 0.7074742317199707
+   "sec": 0.8205704689025879
   },
   {
    "tris": 50703,
@@ -147,7 +147,7 @@
      "trees": 17792
     },
     "culled_tris": {
-     "site": 4211,
+     "site": 4203,
      "trees": 2823
     },
     "plants": {
@@ -364,10 +364,10 @@
    ],
    "id": "lecture",
    "label": "講義棟",
-   "sec": 0.6397933959960938
+   "sec": 0.7540726661682129
   },
   {
-   "tris": 53637,
+   "tris": 54965,
    "ext_tris": 22431,
    "ext_stats": {
     "tris": {
@@ -561,7 +561,7 @@
    ],
    "signs": 39,
    "text_tris": 16866,
-   "size": 1429308,
+   "size": 1441020,
    "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/research2.fbx",
    "previews": [
     "docs/previews/interior_research2.png",
@@ -569,7 +569,7 @@
    ],
    "id": "research2",
    "label": "第2研究棟",
-   "sec": 0.6768572330474854
+   "sec": 0.8031046390533447
   },
   {
    "tris": 27139,
@@ -596,7 +596,7 @@
      "skipped": 7
     },
     "own": {
-     "bld": 4166,
+     "bld": 4162,
      "door": 68
     },
     "entrance": {
@@ -720,7 +720,7 @@
    ],
    "id": "kyoso",
    "label": "共創棟",
-   "sec": 0.532961368560791
+   "sec": 0.8534481525421143
   },
   {
    "tris": 73136,
@@ -918,7 +918,7 @@
    ],
    "id": "library",
    "label": "図書館",
-   "sec": 0.6103382110595703
+   "sec": 0.7301642894744873
   },
   {
    "tris": 21786,
@@ -1015,7 +1015,7 @@
    ],
    "id": "gym",
    "label": "体育館",
-   "sec": 0.3023514747619629
+   "sec": 0.41358160972595215
   },
   {
    "tris": 23367,
@@ -1095,7 +1095,7 @@
    ],
    "id": "lab1",
    "label": "実験棟1",
-   "sec": 0.2719125747680664
+   "sec": 0.3871426582336426
   },
   {
    "tris": 13568,
@@ -1175,7 +1175,7 @@
    ],
    "id": "lab2",
    "label": "実験棟2",
-   "sec": 0.2481215000152588
+   "sec": 0.25921201705932617
   },
   {
    "tris": 4333,
@@ -1239,7 +1239,7 @@
    ],
    "id": "greenhouse",
    "label": "温室",
-   "sec": 0.1394643783569336
+   "sec": 0.18533873558044434
   }
  ]
 }
