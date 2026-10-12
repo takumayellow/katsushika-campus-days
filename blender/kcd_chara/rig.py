@@ -773,6 +773,56 @@ def _blouse_under_hoodie(obj, mb: M.MeshBuilder, pts, p: dict) -> None:
                         _weights_of(obj, outer), p["height"] * 0.02)
 
 
+# 腕の骨。背広の胸の側では、脇の下より上だけに効かせる。
+ARM_CHAIN = tuple(f"{sd}{seg}" for sd in ("Left", "Right")
+                  for seg in ("UpperArm", "LowerArm", "Hand"))
+# 背広の下に隠れるシャツが拾う外側の布。ズボンも入れて、裾がズボンの中へ
+# 入る所ではズボンのウェイトを拾わせる。
+SUIT_COVER = ("jacket", "jacket_yoke", "sleeve_l", "sleeve_r",
+              "pants_seat", "pants_l", "pants_r")
+
+
+def _suit_yoke_weights(obj, mb: M.MeshBuilder, pts, p: dict) -> None:
+    """背広の胸の側（jacket_yoke）を、脇から下では背骨だけで、腰の継ぎ目では
+    裾の側（jacket、腰は Hips 100%）と同じ Hips で動かす。
+
+    距離のウェイトのままだと、休めの形で腰の横に下りた前腕と手が身頃の脇を
+    引っ張り、腕を下ろす Idle で脇が 30 mm 浮いて、下のシャツとズボンが
+    23 mm 外へ出ていた。腕の骨は脇の下（肩の高さ − 身長の 5%）より上だけ
+    効かせ、身長の 5% かけて 0 へ落とす。腰の継ぎ目から身長の 6% の間は
+    Hips へ寄せて、継ぎ目で裂けないようにする。
+    """
+    idx = mb.part_indices("jacket_yoke")
+    if len(idx) == 0:
+        return
+    h = p["height"]
+    z_sh = p["z"]["shoulder"]
+    seam = p["z"]["waist"]
+    W = _weights_of(obj, idx)
+    for i in idx.tolist():
+        zz = float(pts[i, 2])
+        keep = float(M.smoothstep(z_sh - h * 0.10, z_sh - h * 0.05, zz))
+        w = _mix((({n: v * (keep if n in ARM_CHAIN else 1.0)
+                    for n, v in W[i].items()}, 1.0),))
+        t = float(M.smoothstep(seam, seam + h * 0.06, zz))
+        _write_weights(obj, i, _mix(((w, t), ({"Hips": 1.0}, 1.0 - t))) or {"Hips": 1.0})
+
+
+def _shirt_under_suit(obj, mb: M.MeshBuilder, pts, p: dict) -> None:
+    """背広に隠れたシャツへ、すぐ外の背広（身頃・袖）とズボンのウェイトを写す。
+
+    V の開きから見えるシャツは、光線が背広に当たらないので元のまま。
+    光線の長さは身長の 3%。シャツと背広の隙間は身長の 1.5〜2.3%。
+    _suit_yoke_weights のあと、_hide_under_cloth より先に呼ぶ。
+    """
+    if len(mb.part_indices("jacket_yoke")) == 0:
+        return
+    shirt = mb.part_indices("shirt")
+    outer = mb.part_indices(*SUIT_COVER)
+    _take_cover_weights(obj, mb, pts, shirt, M.triangles(mb.faces, outer),
+                        _weights_of(obj, outer), p["height"] * 0.03)
+
+
 def override_weights(obj, mb: M.MeshBuilder, p: dict, a: B.Anatomy) -> None:
     """髪・小物・スカート類を親ボーンへ寄せる。"""
     me = obj.data
@@ -845,6 +895,8 @@ def override_weights(obj, mb: M.MeshBuilder, p: dict, a: B.Anatomy) -> None:
     for side in ("l", "r"):
         _follow_skin(obj, mb, pts, f"socks_{side}", f"leg_{side}")
     _blouse_under_hoodie(obj, mb, pts, p)
+    _suit_yoke_weights(obj, mb, pts, p)
+    _shirt_under_suit(obj, mb, pts, p)
     _hide_under_cloth(obj, mb, pts, p)
     for side in ("l", "r"):
         bone = "LeftFoot" if side == "l" else "RightFoot"

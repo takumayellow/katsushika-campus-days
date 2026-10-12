@@ -30,7 +30,7 @@ def test_add_box_faces_point_outward(rot_z):
 
 
 def test_band_collar_faces_point_outward():
-    """prof の背広とシャツの帯の襟（cloth._collar）の法線が、胴の軸から外を向く。"""
+    """prof のシャツの襟（suit._shirt_collar）の法線が、胴の軸から外を向く。"""
     p = params.resolve("prof")
     mb = M.MeshBuilder()
     a, *_ = body.build_base(mb, p)
@@ -38,9 +38,8 @@ def test_band_collar_faces_point_outward():
     V = np.array(mb.verts)
     blocks = mb.parts["collar"]
     faces = [f for f in mb.faces if any(s <= f[0] < e for s, e in blocks)]
-    # 帯の襟は 1 周 26 分割（cloth._collar の seg）。シャツは 1 周 26 面、
-    # 背広は前を開けた 26 点の帯で 25 面
-    assert len(faces) >= 26 + 25
+    # 台襟は 1 周 28 分割の 2 段（suit._shirt_collar の seg）。その外に左右の羽根が付く
+    assert len(faces) >= 28 * 2
     for f in faces:
         c = V[list(f)].mean(axis=0)
         assert _newell(V, f) @ np.array([c[0], c[1], 0.0]) > 0, f

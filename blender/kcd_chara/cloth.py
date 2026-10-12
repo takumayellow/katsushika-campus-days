@@ -1500,7 +1500,8 @@ def build_kimono(mb, p, a: B.Anatomy, *, kimono_mat, hakama_mat, shoes,
 # --------------------------------------------------------------------------
 
 
-def _shirt_and_slacks(mb, p, a: B.Anatomy):
+def _shirt_and_slacks(mb, p, a: B.Anatomy, *, collar: bool = True,
+                      yoke_rise: float = 0.028, top: float = 0.014):
     """裾をズボンに入れたシャツと、折り目のないズボン。背広の下と男子学生の普段着。
 
     シャツは素体の肩の稜線に沿わせて肩先の素肌を隠す。ズボンは脚に沿わせ（浮かせると
@@ -1510,13 +1511,17 @@ def _shirt_and_slacks(mb, p, a: B.Anatomy):
     h = p["height"]
     z = p["z"]
     ease, hem, seat, taper = 0.006, -0.012, 0.060, 1.22
+    z_top = z["shoulder"] + h * top
     sh_rings = shell(mb, p, a, "cloth_blouse", "shirt",
-                     z["waist"] - h * 0.010, z["shoulder"] + h * 0.014,
+                     z["waist"] - h * 0.010, z_top,
                      h * 0.008, levels=7, bust=0.0, shoulder=True,
                      follow_body=True)
-    yoke(mb, p, a, "cloth_blouse", "shirt_yoke", sh_rings[-1],
-         z["shoulder"] + h * 0.014, h * 0.008, rise=h * 0.028, bust=0.0)
-    _collar(mb, p, a, "cloth_blouse", z["shoulder"] + h * 0.014, drop=0.040)
+    # 背広の下では、肩は上着が包み、襟は suit.py が台襟と一緒に作る。上端も上着の肩より下に留める
+    if yoke_rise > 0.0:
+        yoke(mb, p, a, "cloth_blouse", "shirt_yoke", sh_rings[-1],
+             z_top, h * 0.008, rise=h * yoke_rise, bust=0.0)
+    if collar:
+        _collar(mb, p, a, "cloth_blouse", z_top, drop=0.040)
     # ズボン
     leg_sleeve(mb, p, a, "cloth_pants_gray", "pants", z["ankle"] + h * hem,
                z["crotch"] + h * 0.004, h * ease, levels=7, taper_top=taper)
@@ -1525,50 +1530,13 @@ def _shirt_and_slacks(mb, p, a: B.Anatomy):
 
 
 def build_suit(mb, p, a: B.Anatomy):
-    """前を開けた背広とシャツとズボン（教授 #172）。
+    """2 つボタンの背広とシャツとネクタイとズボン（教授 #172）。形は suit.py にある。
 
     情報工学科の教員はジャケットかシャツが大半で、白衣の人はいない
-    （docs/ref/characters/prof.md）。丈は尻が隠れる股の少し下まで。
-    前は V 字に開け（襟元で広く、ボタンの留まる腰で狭く、裾でまた少し開く）、
-    中のシャツとネクタイを見せる。
+    （docs/ref/characters/prof.md）。
     """
-    h = p["height"]
-    z = p["z"]
-    _shirt_and_slacks(mb, p, a)
-    shoe(mb, p, a, "shoes_loafer", heel=True, scale=1.12)
-    if "necktie" in p.get("accessories", ()):
-        _necktie(mb, p, a, out=0.006)
-    # 上端はシャツの上端（肩 + 0.014h）より上に置く。下に置くとシャツの縁が
-    # 身頃と肩ヨークの継ぎ目から線になって出る。
-    z_top = z["shoulder"] + h * 0.018
-    # シャツの襟の下の縁（_collar の膨らみ 0.020h）より外へ出す。同じだと背中で点々と出る。
-    inflate = h * 0.024
-    zs = np.linspace(z["crotch"] - h * 0.030, z_top, 10)
-    # 段の間隔が広いと肩の膨らみを弦で横切り、シャツの肩が突き抜ける。
-    # shell(follow_body=True) と同じく素体の段を混ぜる。胸までの 12% に混ぜないと
-    # シャツの身頃が胸の高さで点々と出る。
-    zb = _profile(p, a)[0]
-    zs = np.unique(np.concatenate([zs, zb[(zb > z_top - h * 0.12) & (zb < z_top)]]))
-    # 前の開きの半角（度）。前の中央は -90 度。
-    opening = np.interp(zs, [zs[0], z["waist"], z_top], [14.0, 5.0, 36.0])
-    spans = [(math.radians(-90.0 + o), math.radians(270.0 - o))
-             for o in opening]
-    # 肩先では幅が肩幅で決まり inflate が効かないので、肩パッドの分を足して
-    # シャツ（肩 + 0.014h まで肩幅を保つ）より外へ出す。
-    rings = [garment_rings(p, a, [zz], inflate, seg=26, shoulder=True,
-                           span=s, pad=h * 0.014)[0][0]
-             for zz, s in zip(zs, spans)]
-    with mb.part("jacket"):
-        mb.add_grid(rings, "cloth_jacket", smooth=True, close_u=False)
-    # 肩ヨーク。無いとシャツのヨーク（肩の上へ持ち上がる）が身頃の上端から出る。
-    # 身頃と同じだけ前を開ける（閉じると開きを横切る帯になる）。シャツの
-    # ヨーク（上端 = 肩 + 0.042h）より高く上げて、肩の上でシャツを隠す。
-    yoke(mb, p, a, "cloth_jacket", "jacket_yoke", rings[-1], z_top, inflate,
-         rise=h * 0.034, seg=26, bust=0.0, span=spans[-1])
-    _arm_sleeve(mb, p, a, "cloth_jacket", "sleeve", t_end=0.94, r_scale=1.32,
-                puff=0.10)
-    _collar(mb, p, a, "cloth_jacket", z["shoulder"] + h * 0.012, drop=0.050,
-            span=spans[-1])
+    from . import suit
+    suit.build_suit(mb, p, a)
 
 
 # --------------------------------------------------------------------------
