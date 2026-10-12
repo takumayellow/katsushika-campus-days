@@ -274,6 +274,51 @@ GAIT_TARGET = {
     "Run": dict(v=5.4, duty=0.32, reach=1.02, nf=(8, 18)),
 }
 
+#: 歩き・走りの腕の振りと胸の回旋（角度は度）。
+#:   arm    肩の前後振りの片振幅
+#:   elbow  肘の屈曲 (e0, e1)。屈曲 = e0 + e1 * (0.5 - 0.5f) で、f=+1 が腕を後ろ、
+#:          f=-1 が前に振ったところ。e1 > 0 なら前で深く曲がり後ろで伸びる
+#:   arm_in 前腕を体の中心へ向ける角度
+#:   abd    肩の外転（脇の開き）
+#:   thx    胸郭の逆回旋の比（胸は骨盤と逆向きに骨盤の回旋の thx 倍だけ回る）
+#:
+#: 走りはアニメの女の子の走りとして、肘をほぼ直角に曲げたまま腕を小さく振る（#232）。
+#: 値の根拠（書き出した FBX のボーンの向きからの実測。tools_view/gait_arms.py）:
+#:   - arm 22: 上腕の前後の振れは一般に ±20〜30 度。胸から見た実測は -20〜+24 度
+#:   - elbow (85, 0): 肘は 80〜100 度でほぼ固定。指定値は上腕からの相対角で、A ポーズの
+#:     肘の開きと arm_in が合わさるので、実測の曲がりは 85 度（2 頭身のキャラは 89 度）。
+#:     前で手が跳ね上がらず、手首はバストより下（みらいで 9 cm 下）を通る
+#:   - arm_in 25: 0 だと手首が肩関節より 15 cm 外を通り、腕を横に開いて振るように見える。
+#:     25 度で手首は体の中心線から 17 cm（肩関節のほぼ真下）を通る。30 度を超えると
+#:     手が胴の前に入り、後ろから見て手も鞄も隠れて腕を振っていないように見える
+#:   - abd 0: 走りは脇を締める
+#:   - thx 0.5: 胸の回旋の振幅 6.6 度、肩関節の前後動 1.5 cm。胸が骨盤と同じだけ回ると
+#:     肩の線ごと手が前後に動き、腕の振りが大きく見える
+#:   画面上の手首の前後動（胸の回旋と前傾を含む）はみらいで 0.26 m。
+#: 歩きの値は #43 で見直し中なので変えない。
+GAIT_ARMS = {
+    "Walk": dict(arm=26.0, elbow=(14.0, 24.0), arm_in=0.0, abd=4.0, thx=0.70),
+    "Run": dict(arm=22.0, elbow=(85.0, 0.0), arm_in=25.0, abd=0.0, thx=0.50),
+}
+
+
+def gait_arm_spec(f: float, arm: float, elbow: tuple[float, float], arm_in: float,
+                  abd: float) -> dict:
+    """腕を振る位相 f（左腕で +1 が後ろ、-1 が前）での上腕・前腕の回転（角度はラジアン）。
+
+    右腕は左腕と逆位相で振る。
+    """
+    e0, e1 = elbow
+    spec = {}
+    for side, sgn in (("Left", 1.0), ("Right", -1.0)):
+        fs = f * sgn
+        spec[side + "UpperArm"] = [("Y", -abd * sgn), ("X", arm * fs)]
+        lower = [("X", -(e0 + e1 * (0.5 - 0.5 * fs)))]
+        if arm_in:
+            lower.append(("Z", -sgn * arm_in))     # 手を体の中心へ向ける
+        spec[side + "LowerArm"] = lower
+    return spec
+
 
 def _ease(u: float) -> float:
     u = max(0.0, min(1.0, u))
@@ -421,19 +466,14 @@ class Gait(_Legs):
         self.lat = self.leg * (0.014 if run else 0.024)
         self.yaw = D(6.5 if run else 4.5)           # 骨盤の水平回旋
         self.obl = D(5.0 if run else 4.0)           # 骨盤の傾斜
-        self.thx = 0.95 if run else 0.70            # 胸郭の逆回旋の比
         self.lean = D(11.0 if run else 4.0)         # 前傾
-        # 肩の前後振り（片振幅）。走りの肩関節 ROM は実測で全振幅 50〜65 度なので、
-        # ±33 度（全振幅 66 度）に収める。以前は ±52 度（全振幅 103 度）で、
-        # 短距離走でもやらない大振りになっていた（#43「腕を振りすぎ」）。
-        self.arm = D(33.0 if run else 26.0)
-        # 肘の屈曲 = e0 + e1 * (0.5 - 0.5f)。f=+1 が腕を後ろ、f=-1 が前に振った
-        # ところなので、前で深く曲がり後ろで伸びる（ランニングのセオリーどおり）。
-        # 走りは指定値 72〜88 度（以前は 66〜100 度で肘まで大きく煽っていた）。
-        # ここは上腕からの相対角の「指定値」で、A ポーズの肘の開きと外転のぶん
-        # 浅くなる。書き出した FBX で実測すると曲がりは 60〜72 度（内角 108〜120
-        # 度）で、走りの定説（約 90 度）よりは伸ばし気味。
-        self.elbow = (D(72.0), D(16.0)) if run else (D(14.0), D(24.0))
+        # 腕の振りと胸の回旋（GAIT_ARMS）
+        sw = GAIT_ARMS[kind]
+        self.thx = sw["thx"]
+        self.arm = D(sw["arm"])
+        self.elbow = (D(sw["elbow"][0]), D(sw["elbow"][1]))
+        self.arm_in = D(sw["arm_in"])
+        self.arm_abd = D(sw["abd"])
         self.clear = self.leg * (0.20 if run else 0.12)
         self.hair = 9.0 if run else 5.0
         self.p_heel = D(-6.0 if run else -12.0)     # 接地の瞬間（つま先上げ）
@@ -585,11 +625,8 @@ class Gait(_Legs):
         pitch_t = self.lean * 0.25 + D(1.2) * math.cos(2 * w * (ph - self.hi))
         self.torso(spec, Rp, yaw, roll, self.lean, self.thx, pitch_t)
         # 腕は脚と逆位相（左脚が前に出る接地で左腕は後ろ）
-        e0, e1 = self.elbow
-        for side, sgn in (("Left", 1.0), ("Right", -1.0)):
-            f = math.cos(w * (ph - 0.02)) * sgn
-            spec[side + "UpperArm"] = [("Y", D(-4.0) * sgn), ("X", self.arm * f)]
-            spec[side + "LowerArm"] = [("X", -(e0 + e1 * (0.5 - 0.5 * f)))]
+        spec.update(gait_arm_spec(math.cos(w * (ph - 0.02)), self.arm, self.elbow,
+                                  self.arm_in, self.arm_abd))
         return spec
 
 
