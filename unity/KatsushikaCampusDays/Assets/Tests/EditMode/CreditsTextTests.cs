@@ -45,6 +45,7 @@ namespace KCD.Tests
         private static readonly (string Font, string License, string Holder)[] ShippedFonts =
         {
             ("NotoSansJP-VF.ttf", "NotoSansJP-OFL.txt", "Adobe"),
+            ("KCDUIJP-Thin.ttf", "KCDUIJP-OFL.txt", "Adobe"),
             ("LiberationSans.ttf", "LiberationSans-OFL.txt", "Red Hat"),
         };
 

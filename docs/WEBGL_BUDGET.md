@@ -116,6 +116,66 @@ wasm・framework・loader は 2 本でハッシュまで同じだった。
 - キャンパスに入った直後の Unity のヒープは、どの段も 368.8 MiB だった。
 - 段が変わったことは、設定画面の「画質」の行（低 / 中 / 高）を撮った画像で確かめた。ブラウザのコンソールに出る `[KCD] graphics tier=` は起動したときの段（Medium）で、設定画面で変えたあとには出ない。
 
+### 1.8 data の内訳と減らした分（#70、2026-10-12、dev/game 7f721df、ローカルのビルド）
+
+講義棟（#119）と共創棟（#116）の中を入れる空きを作るため、data を減らした。前と後は同じコミットの上で `deploy_pages.py --build --smoke` を走らせて測った。
+
+| | 前 | 後 | 差 |
+|---|---|---|---|
+| data（ASTC） | 66,016,789 B（62.96 MiB） | 57,411,000 B（54.75 MiB） | −8,605,789 B（−8.21 MiB） |
+| data（DXT） | 60,831,262 B（58.01 MiB） | 52,571,700 B（50.14 MiB） | −8,259,562 B（−7.88 MiB） |
+| wasm | 10,984,230 B | 10,984,230 B | 0 |
+| 1 台の端末が読む分 | 73.6 MiB | 65.4 MiB | −8.2 MiB |
+| キャンパスに入った直後の Unity のヒープ（smoke、1 回ずつ） | 368.8 MiB | 307.2 MiB | 拡張が 1 回減った |
+
+内訳は ASTC の data を展開して測った。data の中のファイルは、1 つずつ gzip（レベル 9）をかけた大きさ。data.unity3d の中は、オブジェクトを UnityPy で取り出し、1 つずつ LZ4 と gzip をかけた大きさ。どちらも見積もりで、合計は実際の data より 0.3〜0.6 MiB 大きく出る。
+
+| data の中のファイル | 前 | 後 |
+|---|---|---|
+| sharedassets0.resource（音声） | 25.22 MiB | 25.22 MiB |
+| data.unity3d（シーンとアセット） | 35.05 MiB | 26.76 MiB |
+| global-metadata.dat（IL2CPP） | 3.06 MiB | 3.06 MiB |
+| unity default resources | 0.19 MiB | 0.19 MiB |
+
+| data.unity3d の種類 | 前 | 後 |
+|---|---|---|
+| Mesh | 18.21 MiB（展開して 84.31 MiB） | 14.77 MiB（55.63 MiB） |
+| Texture2D | 8.70 MiB | 8.15 MiB |
+| Font | 5.80 MiB | 1.62 MiB |
+| AnimationClip | 0.87 MiB | 0.87 MiB |
+| Shader | 0.69 MiB | 0.69 MiB |
+| Material | 0.49 MiB | 0.49 MiB |
+| そのほか | 1.26 MiB | 1.27 MiB |
+
+前の上位 15 件（音声は Vorbis で、gzip はほとんど効かない）:
+
+| | 種類 | 大きさ |
+|---|---|---|
+| NotoSansJP-VF（画面の文字のフォント） | Font | 5.62 MiB |
+| bgm_night | AudioClip | 4.54 MiB |
+| bgm_indoor | AudioClip | 3.95 MiB |
+| bgm_evening / bgm_day / bgm_school_song | AudioClip | 3.64 MiB ずつ |
+| site_props_beds（メインストリートの花壇） | Mesh | 2.11 MiB |
+| bgm_anthem_original | AudioClip | 1.37 MiB |
+| minimap | Texture2D | 1.20 MiB |
+| bgm_title | AudioClip | 0.77 MiB |
+| madonna / mirai / kaname / inari / sora（キャラの体） | Mesh | 0.77 / 0.67 / 0.62 / 0.62 / 0.59 MiB |
+
+減らしたもの:
+
+| 変更 | 前 | 後 | 見た目 |
+|---|---|---|---|
+| 画面の文字のフォントを、可変フォントから `tools/make_ui_font.py` の KCD UI JP（wght 100 に固定、Windows-31J とゲームの字に絞る）に替えた | 5.62 MiB | 1.44 MiB | FontEngine は可変フォントを既定の wght 100 で描くので、字形と字幅は同じ（progress/70/20261012-03） |
+| キャラの外形ハル（`<id>_outline`、8 体）のメッシュを、取り込みで空にした。輪郭は KCD/Toon の Outline パスで出していて、ハルの描画は前から止めてある | 3.18 MiB | 0.01 MiB | 変わらない |
+| キャラの顔テクスチャ（8 枚）を、WebGL では 2048 から 1024 にした（`CharacterFaceImportRules`） | 0.86 MiB | 0.36 MiB | 会話のアップでも目と口の線は潰れない（progress/70/20261012-01、02） |
+| 建物と家具（Models/Campus・Interiors）の取り込みで tangent を作らないようにした。マテリアルは法線マップを使わない | | | 変わらない（progress/70/20261012-04） |
+| スプラッシュの Unity ロゴをビルドに入れない（スプラッシュは前から出していない） | 0.05 MiB | 0 | 変わらない |
+
+- tangent の分は、ほかの 4 つを入れたビルドと比べた実測で、data（ASTC）が 57,744,744 B から 57,411,000 B に 333,744 B（0.32 MiB）減った。
+  tangent は展開すると頂点 1 つに 16 バイトあるが、軸に沿った値が多くよく縮むので、data の上では小さい。
+- これらの設定が戻っていないことは、EditMode の `WebGLDataBudgetTests` が見張る。
+- 残りで大きいのは音声（25.2 MiB、うち BGM 8 曲で 22.1 MiB）とメッシュ（14.8 MiB）。メッシュではメインストリートの花壇（site_props_beds）が 1 つで 2.1 MiB ある。
+
 ## 2. 予算
 
 超えそうな変更をするときは、同じ Issue で測り直し、この表を更新する。
@@ -126,27 +186,27 @@ wasm・framework・loader は 2 本でハッシュまで同じだった。
 |---|---|---|---|
 | 描画コール（キャンパス、1 フレーム） | 700 | Medium で最大 701、High で最大 1,021（1.7、歩き） | 今の最大に約 20% の幅を足した。1.2 の傾きで見積もると 120 回で +0.54 ms、CPU が 4 倍遅い端末では +2.2 ms。今の 4.0〜4.7 ms も 4 倍にすると 16〜19 ms で、60 fps の 16.7 ms を割るおそれがある。そのため、増やす余裕は小さく取った（見積もり。遅い CPU では未計測） |
 | 三角形（キャンパス、1 フレーム） | 900k | Medium で平均 1,118k〜1,178k、High で 1,465k〜1,750k（1.7） | 今に約 20% の幅を足した。この PC では GPU が律速ではない（1.2）。内蔵 GPU は未計測なので、そこで測るまでは仮の値 |
-| テクスチャ | 1 枚は 2048 px まで。1 つのシーンに載る分の合計は 64 MiB まで（DXT で見積もる） | 見積もり 29〜50 MiB（下の内訳） | 64 MiB は、2048² の BC3（8 bpp）に mip を付けた 5.3 MiB が 12 枚の量。今の 2048² は 8 枚 |
-| 配信サイズ | 合計 80 MiB、data 64 MiB | 70.9 MiB、data 60.3 MiB（1.6） | tools/deploy_pages.py の MAX_TOTAL_BYTES と MAX_DATA_BYTES（理由は定数のコメント）。1 台の端末が読む量（DXT と ASTC の data の大きい方）で測る。超えたら配信しない |
-| Unity のヒープ（WASM のメモリ） | 512 MiB（仮） | 368.8 MiB（キャンパスに入った直後、1.7） | 初期値は 256 MiB。拡張は Geometric（1 回に 20%、1 回の上限 96 MiB）なので、256 → 307 → 369 → 442 → 531 MiB になる。キャンパスに入った直後で 2 回拡張している。512 MiB は 4 回目の拡張をしない線。ピークを測っていないので仮の値 |
+| テクスチャ | 1 枚は 2048 px まで。1 つのシーンに載る分の合計は 64 MiB まで（DXT で見積もる） | 見積もり 15〜23 MiB（下の内訳） | 64 MiB は、2048² の BC3（8 bpp）に mip を付けた 5.3 MiB が 12 枚の量。今の WebGL の 2048² はミニマップの 1 枚 |
+| 配信サイズ | 合計 80 MiB、data 64 MiB | 65.4 MiB、data 54.8 MiB（1.8） | tools/deploy_pages.py の MAX_TOTAL_BYTES と MAX_DATA_BYTES（理由は定数のコメント）。1 台の端末が読む量（DXT と ASTC の data の大きい方）で測る。超えたら配信しない |
+| Unity のヒープ（WASM のメモリ） | 512 MiB（仮） | 307.2 MiB（キャンパスに入った直後、1.8） | 初期値は 256 MiB。拡張は Geometric（1 回に 20%、1 回の上限 96 MiB）なので、256 → 307 → 369 → 442 → 531 MiB になる。キャンパスに入った直後で 1 回拡張している。512 MiB は 4 回目の拡張をしない線。ピークを測っていないので仮の値 |
 
 ### 2.1 テクスチャの内訳（見積もり）
 
 見積もりの前提:
 
-- WebGL の圧縮形式は、テクスチャごとの上書き（.meta の WebGL の overridden）を指定していない。ビルドの形式は `BuildPlayer.BuildWebGL` が
-  DXT と ASTC の 2 本で決める（1.6）。表は DXT で見積もった。
-- ビルドした data の中身では確かめていない。
+- WebGL の圧縮形式は、テクスチャごとに上書き（.meta の WebGL の overridden）しない。上書きするのはキャラの顔の最大サイズだけで、形式は自動のまま。
+  ビルドの形式は `BuildPlayer.BuildWebGL` が DXT と ASTC の 2 本で決める（1.6）。表は DXT で見積もった。
+- GPU に載る大きさは、ビルドで確かめていない。data の中の大きさ（gzip 後）は 1.8 に書いた。
 - 透明の無い画像を BC1（4 bpp）、ある画像を BC3（8 bpp）とし、どちらになるか分からない画像は幅で書いた。
 
 | テクスチャ | 数と大きさ | 見積もり |
 |---|---|---|
-| キャラの顔（Models/Characters/*/face.png） | 2048²、mip あり、7 枚 | 18.7〜37.3 MiB |
+| キャラの顔（Models/Characters/*/face.png） | WebGL では 1024²（`CharacterFaceImportRules`）、mip あり、8 枚 | 5.3〜10.7 MiB |
 | ミニマップ（Textures/minimap.png） | 2048²、mip なし、1 枚 | 2〜4 MiB |
 | 屋内の背景（Generated/Backdrops、dev/game） | 2048×512、mip あり、10 枚（透明なし） | 全部で 6.7 MiB |
 | TMP のフォントのアトラス（KCD_JP） | 1024² の Alpha8、Dynamic で足りなくなると 1 枚ずつ増える | 1 枚 1 MiB |
 | 小物（着物の柄、ハート、水面、ミニマップの記号） | 256² 以下 | 0.5 MiB 未満 |
-| 合計（全部が同時に載ったとき） | | 29〜50 MiB |
+| 合計（全部が同時に載ったとき） | | 15〜23 MiB |
 
 - 顔の画像には、FBX の横の *.fbm/ にも同じ画像の写しがある。マテリアルが参照しているのは外の face.png だけで、*.fbm/ の写しはどのマテリアルからも参照されていない（GUID を grep して確かめた）。そのため、ビルドに入るのは 1 枚ずつと見なした。
 - 面のテクスチャ（Textures/surfaces）は 512² が 9 枚と外壁の煉瓦 1024² が 1 枚。.meta の既定（DefaultTexturePlatform）を圧縮（textureCompression 1）にしてあり、

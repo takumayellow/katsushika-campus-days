@@ -43,10 +43,11 @@ EditMode テスト `CreditsTextTests` が、両方に同じ素材の名前が出
 
 | 素材 | 出所・権利者 | 根拠 | 条件・表記 | 確認状況 |
 |---|---|---|---|---|
-| Noto Sans JP（`Assets/Fonts/NotoSansJP-VF.ttf`、Version 2.04。TextMeshPro のフォントアセット `KCD_JP` の元） | © 2014-2021 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source' | フォントの name テーブル（著作権表示とライセンスの欄） | SIL Open Font License 1.1。フォントと一緒にライセンス本文を配る | 確認済み |
+| Noto Sans JP（`Assets/Fonts/NotoSansJP-VF.ttf`、Version 2.04。`KCD UI JP` の元） | © 2014-2021 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source' | フォントの name テーブル（著作権表示とライセンスの欄） | SIL Open Font License 1.1。フォントと一緒にライセンス本文を配る | 確認済み |
+| KCD UI JP（`Assets/Fonts/KCDUIJP-Thin.ttf`。TextMeshPro のフォントアセット `KCD_JP` の元）。Noto Sans JP 2.04 の改変版: 太さを wght 100（Thin。Unity が可変フォントを描くときの既定の太さ）に固定し、文字を Windows-31J とゲームで使う字に絞り、名前を変えた（`tools/make_ui_font.py`） | © 2014-2021 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source' | フォントの name テーブル（著作権表示とライセンスの欄。元のまま残す） | SIL Open Font License 1.1。予約名 'Source' を名前に使わない。フォントと一緒にライセンス本文を配る | 確認済み |
 | Liberation Sans（`Assets/TextMesh Pro/Fonts/LiberationSans.ttf`。TextMeshPro に同梱の `LiberationSans SDF` の元） | Digitized data © 2010 Google Corporation, with Reserved Font Arimo, Tinos and Cousine. © 2012 Red Hat, Inc., with Reserved Font Name Liberation | `Assets/TextMesh Pro/Fonts/LiberationSans - OFL.txt` | SIL Open Font License 1.1 | 確認済み |
 
-ライセンス本文は `Assets/StreamingAssets/Licenses/`（`NotoSansJP-OFL.txt`、`LiberationSans-OFL.txt`）に置く。
+ライセンス本文は `Assets/StreamingAssets/Licenses/`（`NotoSansJP-OFL.txt`、`KCDUIJP-OFL.txt`、`LiberationSans-OFL.txt`）に置く。
 StreamingAssets はビルドにそのまま入るので、配布物にもフォントと一緒に本文が入る。フォントを足したら、ここと `CreditsTextTests.ShippedFonts` と StreamingAssets/Licenses に足す（足さないと `EveryFontFile_HasItsLicense` が落ちる）。
 
 ## キャラクター・店名
