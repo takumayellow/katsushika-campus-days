@@ -17,8 +17,11 @@ namespace KCD.Tests
         private const string PianoClipId = PianoPerformance.DefaultClipId;
         private const string BgmId = "test_bgm";
 
-        /// <summary>手首が IK の目標から離れてよい距離 (m)。</summary>
-        private const float HandReach = 0.4f;
+        /// <summary>手首が鍵盤の目標から離れてよい距離 (m)。演奏中は手が左右に ±0.10、上下に 0.05 動く。</summary>
+        private const float HandReach = 0.2f;
+
+        /// <summary>鍵盤の目標が腕の届く範囲を超えてよい距離 (m)。身を乗り出すので、ほぼ 0。</summary>
+        private const float MaxShortfall = 0.02f;
 
         [UnityTest]
         public IEnumerator Sitting_PlaysThePhraseAndDucksBgm_StandingStopsItAndBgmRecovers()
@@ -81,6 +84,86 @@ namespace KCD.Tests
         }
 
         [UnityTest]
+        public IEnumerator Teleport_WhileSitting_StandsUpStopsTheSongAndBgmRecovers()
+        {
+            yield return DropAudioManager();
+            var rig = new Rig(3f);
+            try
+            {
+                rig.Audio.PlayBgm(BgmId);
+                rig.Seat.Interact(rig.Player.gameObject);
+                yield return PlayModeScenes.Advance(5, 0.6f);
+                Assert.IsTrue(rig.Audio.IsPianoPlaying);
+
+                bool stood = false;
+                rig.Player.SittingChanged += sitting => stood |= !sitting;
+                rig.Player.Teleport(rig.Anchor.position + Vector3.right * 5f, 0f);
+                Assert.IsFalse(rig.Player.IsSitting, "ワープしても座ったまま");
+                Assert.IsTrue(stood, "ワープで立っても SittingChanged(false) が出ない");
+                Assert.IsFalse(rig.Performance.IsPlaying, "ワープしても演奏が続く");
+                Assert.IsFalse(rig.Audio.IsPianoPlaying, "ワープしても曲が止まらない");
+                Assert.IsFalse(KCDInput.MovementLocked, "ワープしても移動が封じられたまま");
+
+                yield return PlayModeScenes.Advance(5, 2.4f);
+                Assert.GreaterOrEqual(rig.Audio.BgmDuck, 0.95f, "ワープのあと BGM が戻らない");
+            }
+            finally
+            {
+                rig.Dispose();
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator StandingUp_StopsInFrontOfAWallBehindTheStool()
+        {
+            yield return DropAudioManager();
+            var rig = new Rig(3f);
+            var wall = new GameObject("Wall");
+            try
+            {
+                wall.transform.SetPositionAndRotation(rig.Anchor.position - rig.Anchor.forward * 1.0f + Vector3.up * 0.5f, rig.Anchor.rotation);
+                wall.AddComponent<BoxCollider>().size = new Vector3(4f, 2f, 0.1f);
+                rig.Seat.Interact(rig.Player.gameObject);
+                yield return PlayModeScenes.Advance(3, 0.2f);
+
+                rig.Player.StandUp();
+                float behind = Vector3.Dot(rig.Player.transform.position - rig.Anchor.position, rig.Anchor.forward);
+                Assert.Greater(behind, -0.95f, "立つと壁の中へ入る (" + behind + " m)");
+                Assert.Less(behind, -0.2f, "壁の手前へも出られない");
+            }
+            finally
+            {
+                Object.Destroy(wall);
+                rig.Dispose();
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator PausedAudio_DoesNotRunDownThePhrase()
+        {
+            yield return DropAudioManager();
+            var rig = new Rig(3f);
+            try
+            {
+                rig.Audio.PlayBgm(BgmId);
+                rig.Seat.Interact(rig.Player.gameObject);
+                AudioListener.pause = true;
+                yield return PlayModeScenes.Advance(5, 4f);
+                Assert.IsTrue(rig.Audio.IsPianoPlaying, "ポーズ中に曲が終わった扱いになる");
+                Assert.IsTrue(rig.Performance.IsPlaying);
+
+                AudioListener.pause = false;
+                yield return PlayModeScenes.Advance(5, 3.6f);
+                Assert.IsFalse(rig.Audio.IsPianoPlaying, "ポーズを解いても曲が終わらない");
+            }
+            finally
+            {
+                AudioListener.pause = false;
+                rig.Dispose();
+            }
+        }
+
+        [UnityTest]
         public IEnumerator PhraseEnding_KeepsThePlayerSeatedAndBgmRecovers()
         {
             yield return DropAudioManager();
@@ -133,53 +216,61 @@ namespace KCD.Tests
             Assert.AreEqual(L.Get("ui.interact.play_piano", "ピアノを弾く"), seat.PromptLabel);
 
             Transform anchor = seat.Anchors[0];
-            Vector3 approach = anchor.position - anchor.forward * 1.1f;
-            player.Teleport(approach, anchor.eulerAngles.y);
-            yield return PlayModeScenes.Advance(5, 0.3f);
-
-            seat.Interact(player.gameObject);
-            Assert.IsTrue(player.IsSitting, "ピアノの椅子に座れない");
-            Assert.IsTrue(performance.IsPlaying, "座っても演奏が始まらない（曲がシーンに入っていない？）");
-            Assert.IsTrue(AudioManager.Instance.IsPianoPlaying);
-
-            yield return PlayModeScenes.Advance(30, 2.0f);
-            Animator animator = player.GetComponentInChildren<Animator>();
-            SitPose pose = player.GetComponentInChildren<SitPose>();
-            Assert.IsNotNull(pose, "体に SitPose が無い");
-            Assert.GreaterOrEqual(pose.KeyboardWeight, 0.99f, "手が鍵盤に上がらない");
-            Assert.LessOrEqual(AudioManager.Instance.BgmDuck, AudioManager.PianoDuckLevel + 0.02f, "BGM が絞られない");
-
-            Transform hand = animator.GetBoneTransform(HumanBodyBones.RightHand);
-            float reach = (hand.position - performance.Keys.position).magnitude;
-            Transform shoulder = animator.GetBoneTransform(HumanBodyBones.RightUpperArm);
-            Transform head = animator.GetBoneTransform(HumanBodyBones.Head);
-            Transform elbow = animator.GetBoneTransform(HumanBodyBones.RightLowerArm);
-            Debug.Log("[piano] head " + head.position.ToString("F2") + " elbow " + elbow.position.ToString("F2")
-                + " scale " + animator.transform.lossyScale.ToString("F2") + " body " + animator.name);
-            Debug.Log("[piano] 右手首から鍵盤の縁まで " + reach.ToString("F3") + " m, anchor " + anchor.position.ToString("F2")
-                + " keys " + performance.Keys.position.ToString("F2") + " hand " + hand.position.ToString("F2")
-                + " shoulder " + shoulder.position.ToString("F2") + " player " + player.transform.position.ToString("F2")
-                + " yaw " + player.transform.eulerAngles.y.ToString("F0") + " anchorYaw " + anchor.eulerAngles.y.ToString("F0"));
-
             string folder = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "..", "logs", "piano"));
             Directory.CreateDirectory(folder);
-            yield return Shoot(Path.Combine(folder, "side.png"), anchor, 1.5f, -0.1f, 1.25f);
-            yield return PlayModeScenes.Advance(10, 0.4f);
-            yield return Shoot(Path.Combine(folder, "back.png"), anchor, 1.1f, -1.9f, 1.9f);
-            yield return PlayModeScenes.Advance(10, 0.4f);
-            yield return Shoot(Path.Combine(folder, "left.png"), anchor, -1.5f, -0.1f, 1.25f);
+            PlayerAppearance appearance = player.GetComponent<PlayerAppearance>();
+            Assert.IsNotNull(appearance, "プレイヤーに PlayerAppearance が無い");
 
-            float toGoal = (hand.position - pose.RightHandGoal).magnitude;
-            Assert.LessOrEqual(toGoal, HandReach, "右手が鍵盤の上の目標に届かない (" + toGoal + " m)");
-            Vector3 toKeys = (performance.Keys.position - shoulder.position).normalized;
-            float forward = Vector3.Dot(hand.position - shoulder.position, toKeys);
-            Assert.GreaterOrEqual(forward, 0.1f, "手が膝の上のまま鍵盤へ伸びない (" + forward + " m)");
+            foreach (string id in GameManager.PlayableCharacterIds)
+            {
+                appearance.Apply(id);
+                yield return PlayModeScenes.Advance(5, 0.3f);
+                player.Teleport(anchor.position - anchor.forward * 1.1f, anchor.eulerAngles.y);
+                yield return PlayModeScenes.Advance(5, 0.3f);
 
-            player.StandUp();
-            Assert.IsFalse(performance.IsPlaying, "立っても演奏が続く");
-            Assert.IsFalse(AudioManager.Instance.IsPianoPlaying, "立っても曲が止まらない");
-            yield return PlayModeScenes.Advance(10, 2.4f);
-            Assert.GreaterOrEqual(AudioManager.Instance.BgmDuck, 0.95f, "立ったあと BGM が戻らない");
+                // バッチモードでは画面に映らず、体のアニメーションが止まる。映っている前提で動かす。
+                player.GetComponentInChildren<Animator>().cullingMode = AnimatorCullingMode.AlwaysAnimate;
+                seat.Interact(player.gameObject);
+                Assert.IsTrue(player.IsSitting, id + ": ピアノの椅子に座れない");
+                Assert.IsTrue(performance.IsPlaying, id + ": 座っても演奏が始まらない（曲がシーンに入っていない？）");
+                Assert.IsTrue(AudioManager.Instance.IsPianoPlaying);
+
+                yield return PlayModeScenes.Advance(30, 2.0f);
+                Animator animator = player.GetComponentInChildren<Animator>();
+                SitPose pose = player.GetComponentInChildren<SitPose>();
+                Assert.IsNotNull(pose, id + ": 体に SitPose が無い");
+                Assert.GreaterOrEqual(pose.KeyboardWeight, 0.99f, id + ": 手が鍵盤に上がらない");
+                Assert.LessOrEqual(AudioManager.Instance.BgmDuck, AudioManager.PianoDuckLevel + 0.02f, "BGM が絞られない");
+
+                Transform hand = animator.GetBoneTransform(HumanBodyBones.RightHand);
+                Transform shoulder = animator.GetBoneTransform(HumanBodyBones.RightUpperArm);
+                float toGoal = (hand.position - pose.RightHandGoal).magnitude;
+                Debug.Log("[piano] " + id + " 手首から目標まで " + toGoal.ToString("F3") + " m, 目標が届かないぶん "
+                    + pose.RightHandShortfall.ToString("F3") + " m, 腕 " + pose.ArmReach.ToString("F3") + " m, 手首から鍵盤まで "
+                    + (hand.position - performance.Keys.position).magnitude.ToString("F3") + " m");
+
+                Debug.Log("[piano] " + id + " 座面から見て 肩 " + anchor.InverseTransformPoint(shoulder.position).ToString("F2")
+                    + " 手首 " + anchor.InverseTransformPoint(hand.position).ToString("F2")
+                    + " 鍵盤 " + anchor.InverseTransformPoint(performance.Keys.position).ToString("F2"));
+                yield return Shoot(Path.Combine(folder, "side-" + id + ".png"), anchor, 1.5f, -0.1f, 1.25f);
+                if (id == "madonna")
+                {
+                    yield return PlayModeScenes.Advance(10, 0.4f);
+                    yield return Shoot(Path.Combine(folder, "back.png"), anchor, 1.1f, -1.9f, 1.9f);
+                    yield return PlayModeScenes.Advance(10, 0.4f);
+                    yield return Shoot(Path.Combine(folder, "left.png"), anchor, -1.5f, -0.1f, 1.25f);
+                }
+
+                Assert.LessOrEqual(pose.RightHandShortfall, MaxShortfall, id + ": 鍵盤が腕の届かない所にある (" + pose.RightHandShortfall + " m)");
+                Assert.LessOrEqual(toGoal, HandReach, id + ": 右手が鍵盤の上の目標に届かない (" + toGoal + " m)");
+
+                player.StandUp();
+                Assert.IsFalse(performance.IsPlaying, id + ": 立っても演奏が続く");
+                Assert.IsFalse(AudioManager.Instance.IsPianoPlaying, "立っても曲が止まらない");
+                yield return PlayModeScenes.Advance(10, 2.4f);
+                Assert.GreaterOrEqual(AudioManager.Instance.BgmDuck, 0.95f, "立ったあと BGM が戻らない");
+            }
+
             AssertNoErrors("ピアノを弾く");
         }
 

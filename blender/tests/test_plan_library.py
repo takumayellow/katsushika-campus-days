@@ -113,9 +113,9 @@ def test_piano_stool_is_the_last_seat_and_has_keys(built):
     keys = empties["seat_library_17_piano"]
     assert "seat_library_17_a0" in empties and "seat_library_17_f" in empties
     assert stool[2] == pytest.approx(D.STAGE[4])
-    assert keys[2] == pytest.approx(D.STAGE[4] + 0.80)
-    # 鍵盤は椅子から 0.58 m 先（ピアノのローカルで +Y が +X 方向）
-    assert (keys[0] - stool[0], keys[1] - stool[1]) == pytest.approx((0.58, 0.0), abs=1e-6)
+    assert keys[2] == pytest.approx(D.STAGE[4] + 0.70)
+    # 鍵盤は椅子から 0.33 m 先（ピアノのローカルで +Y が +X 方向）
+    assert (keys[0] - stool[0], keys[1] - stool[1]) == pytest.approx((0.33, 0.0), abs=1e-6)
 
 
 def test_six_cameras_inside_the_envelope(built):

@@ -410,12 +410,25 @@ namespace KCD
                 return;
             }
 
-            _sitting = false;
-            _stoodUpFrame = Time.frameCount;
-            KCDInput.MovementLocked = false;
-            Teleport(transform.position + transform.forward * _standForward, transform.eulerAngles.y);
-            SittingChanged?.Invoke(false);
+            Teleport(StandPosition(), transform.eulerAngles.y);
         }
+
+        /// <summary>立つ位置。座面から _standForward だけ前（負なら後ろ）へ出るが、壁や家具の手前で止める。</summary>
+        private Vector3 StandPosition()
+        {
+            Vector3 direction = transform.forward * Mathf.Sign(_standForward);
+            float distance = Mathf.Abs(_standForward);
+            Vector3 origin = transform.position + Vector3.up * StandProbeHeight;
+            if (Physics.Raycast(origin, direction, out RaycastHit hit, distance + _controller.radius, ~0, QueryTriggerInteraction.Ignore))
+            {
+                distance = Mathf.Max(0f, hit.distance - _controller.radius);
+            }
+
+            return transform.position + direction * distance;
+        }
+
+        /// <summary>立つ位置を探る高さ (m)。腰より少し上。</summary>
+        private const float StandProbeHeight = 0.5f;
 
         private void OnDisable()
         {
@@ -423,12 +436,21 @@ namespace KCD
             {
                 _sitting = false;
                 KCDInput.MovementLocked = false;
+                SittingChanged?.Invoke(false);
             }
         }
 
         /// <summary>ワープ。CharacterController を一度切らないと座標が戻される。</summary>
         public void Teleport(Vector3 position, float yawDegrees)
         {
+            bool wasSitting = _sitting;
+            if (wasSitting)
+            {
+                _sitting = false;
+                _stoodUpFrame = Time.frameCount;
+                KCDInput.MovementLocked = false;
+            }
+
             _controller.enabled = false;
             transform.SetPositionAndRotation(position, Quaternion.Euler(0f, yawDegrees, 0f));
             _controller.enabled = true;
@@ -436,6 +458,10 @@ namespace KCD
             _horizontalVelocity = Vector3.zero;
             _verticalVelocity = 0f;
             _planarSpeed = 0f;
+            if (wasSitting)
+            {
+                SittingChanged?.Invoke(false);
+            }
         }
     }
 }

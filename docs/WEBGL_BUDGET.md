@@ -188,7 +188,19 @@ wasm・framework・loader は 2 本でハッシュまで同じだった。
 - これらの設定が戻っていないことは、EditMode の `WebGLDataBudgetTests` が見張る。
 - 画面に出す文字（台詞・クエスト・UI・地図の名前など）を足したら、`python tools/make_ui_font.py` でフォントを作り直してコミットする。足した字がフォントに無いと `tools/tests/test_make_ui_font.py` が落ちる（手順は README の「自分でビルドする」）。
 - 残りで大きいのは音声（25.2 MiB、うち BGM 8 曲で 22.1 MiB）とメッシュ（14.8 MiB）。メッシュではメインストリートの花壇（site_props_beds）が 1 つで 2.1 MiB ある。
+### 1.9 図書館のピアノの曲（piano_library）を足したあと（#241、2026-10-12、ローカルのビルド）
 
+`deploy_pages.py --build --no-deploy --smoke` の出力。曲は約 19.5 秒（WAV 3.29 MiB、ビルドでは Vorbis に圧縮される）で、図書館の黒鍵 36 本ぶんの形も増えた。
+
+| ファイル | 大きさ |
+|---|---|
+| data（ASTC） | 66,558,368 B（63.48 MiB） |
+| data（DXT） | 61,385,227 B（58.54 MiB） |
+| wasm | 10,982,414 B（10.47 MiB） |
+| 1 台の端末が読む分（ASTC の data のとき） | 74.1 MiB（上限 80.0 MiB） |
+
+- data は上限 64.0 MiB に対して 63.48 MiB。残りは約 0.5 MiB。
+- スモーク（gl・描画・通信）は通った。キャンパスに入った直後の WASM のヒープは 368.8 MiB。
 ## 2. 予算
 
 超えそうな変更をするときは、同じ Issue で測り直し、この表を更新する。

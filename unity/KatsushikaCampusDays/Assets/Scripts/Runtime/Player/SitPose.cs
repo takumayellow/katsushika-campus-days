@@ -31,6 +31,9 @@ namespace KCD
         /// <summary>肩から手首までの長さに対する、鍵盤へ伸ばす割合。伸び切らない。</summary>
         private const float ArmExtension = 0.92f;
 
+        /// <summary>鍵盤へ身を乗り出す最大の距離 (m)。鍵盤の箱に胴が刺さらない範囲。</summary>
+        private const float MaxApproach = 0.25f;
+
         /// <summary>手を鍵盤へ上げ下ろす秒数。</summary>
         private const float KeyboardBlendSeconds = 0.4f;
 
@@ -44,6 +47,8 @@ namespace KCD
         private Vector3 _keysRight;
         private Layout _layout = Solve(ReferenceHip, ReferenceKnee, 0f);
         private float _armLength = ReferenceArm;
+        private float _approach;
+        private float _appliedApproach;
 
         /// <summary>true にすると座り、false で立つ。ブレンドは自動。</summary>
         public bool Sitting { get; set; }
@@ -69,6 +74,9 @@ namespace KCD
 
         /// <summary>右手が向かう位置（ワールド座標）。鍵盤が遠い体では、肩から腕の届く範囲に収める。</summary>
         public Vector3 RightHandGoal => ReachableKeys(_keysRight, HumanBodyBones.RightUpperArm);
+
+        /// <summary>右手の目標が腕の届く範囲を超えているぶん (m)。0 なら届く。</summary>
+        public float RightHandShortfall => (ReachableKeys(_keysRight, HumanBodyBones.RightUpperArm) - _keysRight).magnitude;
 
         /// <summary>腕を伸ばして届く距離 (m)。座り始めに体から測る。</summary>
         public float ArmReach => _armLength * ArmExtension;
@@ -118,6 +126,29 @@ namespace KCD
             float target = Sitting ? 1f : 0f;
             _weight = Mathf.MoveTowards(_weight, target, Time.deltaTime / Mathf.Max(0.01f, _blendTime));
             _keysWeight = Mathf.MoveTowards(_keysWeight, Sitting && _keysActive ? 1f : 0f, Time.deltaTime / KeyboardBlendSeconds);
+            if (Sitting && _keysActive)
+            {
+                _approach = Mathf.Lerp(_approach, ApproachGoal(), 1f - Mathf.Exp(-8f * Time.deltaTime));
+            }
+        }
+
+        /// <summary>
+        /// 右手が鍵盤の目標へ届くよう、肩を前へ出す距離 (m)。頭身の低い体は腕が短いので、座面を鍵盤へ寄せるだけでは届かない。
+        /// 今の肩の位置から前回の乗り出しぶんを引いて測るので、結果は乗り出しに依らない。
+        /// </summary>
+        private float ApproachGoal()
+        {
+            Transform shoulder = _animator != null && _animator.isHuman ? _animator.GetBoneTransform(HumanBodyBones.RightUpperArm) : null;
+            if (shoulder == null)
+            {
+                return 0f;
+            }
+
+            Vector3 d = _keysRight - (shoulder.position - transform.forward * _appliedApproach);
+            float lateral = Vector3.Dot(d, transform.right);
+            float reach = ArmReach;
+            float reachForward = Mathf.Sqrt(Mathf.Max(0f, reach * reach - lateral * lateral - d.y * d.y));
+            return Mathf.Clamp(Vector3.Dot(d, transform.forward) - reachForward, 0f, MaxApproach);
         }
 
         private void Measure()
@@ -137,6 +168,7 @@ namespace KCD
 
             float legHalfWidth = thigh != null ? Mathf.Abs(Vector3.Dot(thigh.position - transform.position, transform.right)) : 0f;
             _layout = Solve(Height(hips), Height(knee), legHalfWidth);
+            _approach = 0f;
 
             Transform upper = _animator.GetBoneTransform(HumanBodyBones.RightUpperArm);
             Transform lower = _animator.GetBoneTransform(HumanBodyBones.RightLowerArm);
@@ -159,7 +191,8 @@ namespace KCD
                 return;
             }
 
-            _animator.bodyPosition += transform.up * (_layout.HipShift * _weight);
+            _appliedApproach = _approach * _keysWeight * _weight;
+            _animator.bodyPosition += transform.up * (_layout.HipShift * _weight) + transform.forward * _appliedApproach;
 
             Place(AvatarIKGoal.LeftFoot, AvatarIKHint.LeftKnee, Mirror(_layout.Foot), Mirror(_layout.Knee));
             Place(AvatarIKGoal.RightFoot, AvatarIKHint.RightKnee, _layout.Foot, _layout.Knee);

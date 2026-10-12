@@ -74,7 +74,7 @@ README の表の「ループ継ぎ目」は `seam_step_ratio / seam_hf_ratio` �
 | `item_get.wav` | 0.75 s | -1.5 dBFS | -13.0 dBFS | アイテム入手 |
 | `jump.wav` | 0.28 s | -1.5 dBFS | -13.8 dBFS | ジャンプ |
 | `land.wav` | 0.30 s | -1.5 dBFS | -21.8 dBFS | 着地 |
-| `piano_library.wav` | 19.53 s | -1.5 dBFS | -16.3 dBFS |  |
+| `piano_library.wav` | 19.53 s | -1.5 dBFS | -16.3 dBFS | 図書館大ホールのピアノを弾く (PianoPerformance). C major の 5 小節を加算合成のピアノで. 鳴る間 BGM は絞られる (0.15 倍) |
 | `quest_start.wav` | 1.15 s | -1.5 dBFS | -14.2 dBFS | クエスト開始 |
 | `quest_update.wav` | 0.55 s | -1.5 dBFS | -12.3 dBFS | クエスト進行 |
 | `se_chime.wav` | 12.84 s | -1.5 dBFS | -14.1 dBFS | 時報チャイム (12:00 昼休み / 17:00 下校). ウェストミンスターの鐘 E major 4 フレーズ 16 音を校内放送のスピーカー風に. 鳴る間 BGM は止まる (#38) |

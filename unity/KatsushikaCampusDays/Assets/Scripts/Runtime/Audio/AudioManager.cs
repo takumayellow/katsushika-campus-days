@@ -46,7 +46,7 @@ namespace KCD
         private float _duck = 1f;
         private float _duckUntil;
         private float _duckLevel = JingleDuckLevel;
-        private float _pianoUntil;
+        private float _pianoRemaining;
 
         /// <summary>いま鳴っている BGM の id。</summary>
         public string CurrentBgm => _currentBgm;
@@ -55,7 +55,7 @@ namespace KCD
         public float BgmDuck => _duck;
 
         /// <summary>ピアノの演奏中か。クリップの長さが尽きる前に StopPiano が呼ばれたら false。</summary>
-        public bool IsPianoPlaying => Time.unscaledTime < _pianoUntil;
+        public bool IsPianoPlaying => _pianoRemaining > 0f;
 
         /// <summary>いま鳴っている環境音の id。</summary>
         public string CurrentAmbient => _currentAmbient;
@@ -127,6 +127,10 @@ namespace KCD
         {
             UpdateScene();
             UpdateBgmFade(Time.unscaledDeltaTime);
+            if (_pianoRemaining > 0f && !AudioListener.pause)
+            {
+                _pianoRemaining -= Time.unscaledDeltaTime;
+            }
         }
 
         /// <summary>id のクリップ。無ければ null。</summary>
@@ -287,7 +291,7 @@ namespace KCD
             _piano.clip = clip;
             _piano.volume = _seVolume;
             _piano.Play();
-            _pianoUntil = Time.unscaledTime + clip.length;
+            _pianoRemaining = clip.length;
             return true;
         }
 
@@ -295,7 +299,7 @@ namespace KCD
         public void StopPiano()
         {
             _piano.Stop();
-            _pianoUntil = 0f;
+            _pianoRemaining = 0f;
         }
 
         /// <summary>ピアノの演奏中の BGM 音量の倍率。</summary>

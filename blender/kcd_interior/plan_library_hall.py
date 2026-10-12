@@ -249,8 +249,17 @@ def _wings(mb):
 
 
 PIANO = (7.0, 58.0, D.STAGE[4], -math.pi * 0.5)   # グランドピアノの置き場（x, y, 床の高さ, ang）
-STOOL_Y = -0.70            # ピアノ椅子の中心（ピアノのローカル。奥行き 0.30 m、座面の高さ 0.44 m）
-KEYS_Y, KEYS_Z = -0.12, 0.80   # 鍵盤の手前から奥への中ほどと、その高さ
+STOOL_Y = -0.45            # ピアノ椅子の中心（ピアノのローカル。奥行き 0.30 m、座面の高さ 0.44 m）。鍵盤の手前の縁から 0.10 m 空ける
+KEYS_Y, KEYS_Z = -0.12, 0.70   # 鍵盤の手前から奥への中ほどと、その高さ（座面から 0.26 m 上。頭身の低い体でも腕が届く）
+
+
+def _black_keys(mb, t):
+    """黒鍵 36 本（88 鍵・白鍵 52 本。A0 から数えて A・C・D・F・G の右隣）。"""
+    x0, width = -0.72, 1.44 / 52
+    for i in range(51):
+        if i % 7 in (0, 2, 3, 5, 6):
+            cx = x0 + (i + 1) * width
+            t.box_nb(mb, cx - 0.008, -0.13, 0.705, cx + 0.008, -0.02, 0.725, "library_counter_black")
 
 
 def _piano(mb):
@@ -259,20 +268,21 @@ def _piano(mb):
     black = "library_counter_black"
     body = [(-0.75, 0.0), (0.75, 0.0), (0.75, 1.0), (0.55, 1.6), (0.15, 2.0),
             (-0.35, 2.2), (-0.75, 2.0)]
-    mb.add_prism([t.p2(x, y) for x, y in body], t.z + 0.62, t.z + 0.95, black, black)
-    t.box(mb, -0.75, -0.25, 0.72, 0.75, 0.0, 0.80, black)
-    t.plate(mb, -0.72, -0.24, 0.72, -0.02, 0.805, "plastic_white")
+    mb.add_prism([t.p2(x, y) for x, y in body], t.z + 0.52, t.z + 0.85, black, black)
+    t.box(mb, -0.75, -0.25, 0.62, 0.75, 0.0, 0.70, black)
+    t.plate(mb, -0.72, -0.24, 0.72, -0.02, 0.705, "plastic_white")
+    _black_keys(mb, t)
     for lx, ly in ((-0.6, 0.15), (0.6, 0.15), (-0.45, 1.95)):
-        t.box_nb(mb, lx - 0.05, ly - 0.05, 0.0, lx + 0.05, ly + 0.05, 0.62, black)
-    kit.thick_quad(mb, t.p(-0.75, 0.1, 0.95), t.p(-0.75, 2.1, 0.95), t.p(0.3, 1.7, 1.7),
-                   t.p(0.6, 0.2, 1.55), 0.02, black)
-    kit.tube(mb, t.p(0.45, 1.0, 0.95), t.p(0.4, 1.0, 1.62), 0.012, "stainless", seg=4)
+        t.box_nb(mb, lx - 0.05, ly - 0.05, 0.0, lx + 0.05, ly + 0.05, 0.52, black)
+    kit.thick_quad(mb, t.p(-0.75, 0.1, 0.85), t.p(-0.75, 2.1, 0.85), t.p(0.3, 1.7, 1.6),
+                   t.p(0.6, 0.2, 1.45), 0.02, black)
+    kit.tube(mb, t.p(0.45, 1.0, 0.85), t.p(0.4, 1.0, 1.52), 0.012, "stainless", seg=4)
     t.box(mb, -0.4, STOOL_Y - 0.15, 0.0, 0.4, STOOL_Y + 0.15, 0.44, black)
 
 
 def piano_seat(sink):
     """ピアノ椅子の座面を記録する。座ったときの正面は鍵盤の側。
-    piano は鍵盤の中ほど（床から 0.80 m）の点で、Unity の PianoPerformance が手を置く先になる。"""
+    piano は鍵盤の中ほど（床から 0.70 m）の点で、Unity の PianoPerformance が手を置く先になる。"""
     t = kit.T(*PIANO)
     x, y = t.p2(0.0, STOOL_Y)
     seat = FL.seat_mark(sink, x, y, t.z, PIANO[3], hw=0.4, hd=0.15, inner=0.3, depth=0.15)
