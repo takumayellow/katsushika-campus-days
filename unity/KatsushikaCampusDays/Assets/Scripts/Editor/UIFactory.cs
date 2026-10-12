@@ -69,6 +69,7 @@ namespace KCD.Editor
             RectTransform rect = Rect(parent, "Toast", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
                 new Vector2(0f, 96f), new Vector2(1080f, 60f));
             Backdrop(rect, Panel);
+            KeepInCanvas(rect);
 
             CanvasGroup group = rect.gameObject.AddComponent<CanvasGroup>();
             group.alpha = 0f;
@@ -131,6 +132,7 @@ namespace KCD.Editor
             RectTransform rect = Rect(parent, "QuestLog", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
                 Vector2.zero, new Vector2(1000f, 700f));
             Backdrop(rect, new Color(0.05f, 0.07f, 0.11f, 0.92f));
+            KeepInCanvas(rect);
 
             TMP_Text body = Label(rect, "Body", string.Empty, 28f, TextAlignmentOptions.TopLeft);
             rect.gameObject.SetActive(false);
@@ -147,6 +149,7 @@ namespace KCD.Editor
             RectTransform rect = Rect(parent, "Pause", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
                 Vector2.zero, new Vector2(820f, 560f));
             Backdrop(rect, new Color(0.04f, 0.05f, 0.09f, 0.94f));
+            KeepInCanvas(rect);
 
             TMP_Text body = Label(rect, "Body", string.Empty, 30f, TextAlignmentOptions.Center);
             rect.gameObject.SetActive(false);
@@ -163,6 +166,7 @@ namespace KCD.Editor
             RectTransform rect = Rect(parent, "Dialogue", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
                 new Vector2(0f, 48f), new Vector2(1520f, 300f));
             Backdrop(rect, new Color(0.05f, 0.07f, 0.12f, 0.9f));
+            KeepInCanvas(rect);
             AddDialogueTapArea(rect);
 
             // 話者名の札は枠の内側（上端から 14 px 下）に置き、本文はその下から始める。

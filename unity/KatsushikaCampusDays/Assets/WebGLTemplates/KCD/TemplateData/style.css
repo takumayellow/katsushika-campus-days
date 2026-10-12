@@ -164,16 +164,60 @@ body {
   opacity: 0.6;
 }
 
-/* スマホ・タブレットは画面いっぱい。下の案内は場所を取るので隠す。 */
-#unity-container.unity-mobile { padding: 0; gap: 0; }
+/* スマホ・タブレットは画面いっぱい。下の案内は場所を取るので隠す。
+   切り欠きや角の丸みに UI が掛からないよう、安全な範囲（safe area）の内側に置く (#187)。
+   高さは 100dvh。100vh はアドレスバーが隠れたときの高さで、出ている間は下がはみ出す。 */
+#unity-container.unity-mobile {
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
+    env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+  gap: 0;
+  background: #000;
+}
 #unity-container.unity-mobile #kcd-title,
 #unity-container.unity-mobile #kcd-guide,
 #unity-container.unity-mobile #kcd-build { display: none; }
 #unity-container.unity-mobile #unity-fullscreen-container {
   width: 100%;
-  height: 100vh;
+  height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
   aspect-ratio: auto;
   border-radius: 0;
+}
+
+/* 縦持ちの間の覆い。横持ちの画面を縦に縮めると文字が読めないので、持ち替えてもらう。 */
+#kcd-rotate { display: none; }
+@media (orientation: portrait) {
+  #unity-container.unity-mobile #kcd-rotate {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    background: var(--kcd-bg);
+    color: var(--kcd-ink);
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+  }
+}
+#kcd-rotate p { margin: 0; }
+/* 縦長の端末を横に倒す絵。 */
+#kcd-rotate-icon {
+  width: 34px;
+  height: 58px;
+  border: 3px solid var(--kcd-muted);
+  border-radius: 7px;
+  animation: kcd-rotate 2.4s ease-in-out infinite;
+}
+@keyframes kcd-rotate {
+  0%, 25% { transform: rotate(0deg); }
+  55%, 100% { transform: rotate(-90deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  #kcd-rotate-icon { animation: none; transform: rotate(-90deg); }
 }
 
 /* 指だけの端末に読み込み前に出す案内 (#73)。出している間はキャンバスと操作の案内を隠す。 */

@@ -43,6 +43,7 @@ namespace KCD.Editor
             var center = new Vector2(0.5f, 0.5f);
             RectTransform rect = UIFactory.Rect(parent, "DormEnding", center, center, Vector2.zero, PanelSize);
             UIFactory.Backdrop(rect, PanelDark);
+            UIFactory.KeepInCanvas(rect);
 
             RectTransform headingBox = UIFactory.Rect(rect, "Heading", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
                 new Vector2(0f, -36f), new Vector2(900f, 72f));

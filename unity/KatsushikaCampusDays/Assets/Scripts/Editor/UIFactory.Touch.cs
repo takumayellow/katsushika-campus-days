@@ -16,7 +16,7 @@ namespace KCD.Editor
         /// タッチの UI の基準の大きさ。高さに合わせて縮めるので、横長のスマホでもボタンが指の大きさを保つ
         /// （1080 基準の HUD のまま置くと、高さ 390 の画面で 1/3 弱に縮む）。
         /// </summary>
-        private static readonly Vector2 TouchReference = new Vector2(1280f, 720f);
+        private static readonly Vector2 TouchReference = TouchCanvasScale.TouchReference;
 
         /// <summary>HUD より上に描き、HUD より先に指を受ける。</summary>
         private const int TouchSortOrder = 5;
@@ -28,7 +28,7 @@ namespace KCD.Editor
         /// <summary>Campus シーンのタッチの操作 UI。</summary>
         public static TouchHud BuildTouchControls(Transform root)
         {
-            Canvas canvas = CreateCanvas(root, "TouchCanvas", TouchSortOrder);
+            Canvas canvas = CreateCanvas(root, "TouchCanvas", TouchSortOrder, false);
             CanvasScaler scaler = canvas.GetComponent<CanvasScaler>();
             scaler.referenceResolution = TouchReference;
             scaler.matchWidthOrHeight = 1f;
