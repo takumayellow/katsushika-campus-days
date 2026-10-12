@@ -178,7 +178,7 @@ SIGNS = (
      {"anchor": False}),
     ("hang", "出口", "Exit", 0.9, 0.36, 29.85, 49.5, CEIL_CORR, E, "sign_exit_green",
      {"anchor": False}),
-    ("wall", "東京理科大学生協", "Tokyo University of Science Co-op", 3.2, 0.5,
+    ("wall", "生協", "Co-op", 3.2, 0.5,
      40.0, 35.09, 3.0, S, BAND, {}),
     ("wall", "店舗入口はこちら→", "Store Entrance →", 1.2, 0.3, 36.6, 35.09, 1.5, S, BLUE, {}),
     ("hang", "入口", "Entrance", 0.9, 0.36, 38.0, 36.0, CEIL_CORR, 0.0, BLUE, {}),

@@ -311,7 +311,7 @@
    "z": 31.0
   }
  },
- "triangles": 42609,
+ "triangles": 41963,
  "seats": 270,
  "notes": [
   "中廊下・黒いコア・入口ロビー・6 層の吹き抜け・101 の 270 席の段床"
@@ -729,9 +729,9 @@
   {
    "empty": "sign_lecture_15",
    "kind": "wall",
-   "ja": "東京理科大学生協",
-   "en": "Tokyo University of Science Co-op",
-   "tris": 849,
+   "ja": "生協",
+   "en": "Co-op",
+   "tris": 203,
    "pos": {
     "x": 40.0,
     "y": 3.0,
@@ -1167,5 +1167,14 @@
    "align": "center"
   }
  ],
- "text_triangles": 11309
+ "text_triangles": 10663,
+ "ext": {
+  "objects": [
+   "ext_lecture",
+   "ext_lecture_trees"
+  ],
+  "triangles": 41193,
+  "radius": 30.0,
+  "dz": -0.03
+ }
 }
