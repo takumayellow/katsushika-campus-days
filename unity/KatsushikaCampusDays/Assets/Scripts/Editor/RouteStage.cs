@@ -135,6 +135,17 @@ namespace KCD.Editor
                     go.layer = buildingLayer;
                 }
 
+                // 寮と塀もキャンパスの建物と同じく裏の面まで影に描き、角の光の筋をふさぐ (#229)。
+                // bld_route_background は名前に "ground" を含むので、レイヤーの分岐とは分ける。
+                if (id.StartsWith("bld"))
+                {
+                    MeshRenderer building = go.GetComponent<MeshRenderer>();
+                    if (building != null)
+                    {
+                        building.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.TwoSided;
+                    }
+                }
+
                 GameObjectUtility.SetStaticEditorFlags(go, StaticEditorFlags.BatchingStatic
                     | StaticEditorFlags.OccluderStatic | StaticEditorFlags.OccludeeStatic);
             }
