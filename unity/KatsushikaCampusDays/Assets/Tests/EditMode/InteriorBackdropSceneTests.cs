@@ -23,10 +23,10 @@ namespace KCD.Tests
     {
         private const string ScenePath = "Assets/Scenes/Campus.unity";
 
-        /// <summary>遠景を置く屋内。Assets/Models/Interiors/&lt;id&gt;.json（配置情報）がある 10 棟。</summary>
+        /// <summary>遠景を置く屋内。Assets/Models/Interiors/&lt;id&gt;.json（配置情報）がある 10 棟と寮。</summary>
         private static readonly string[] BuildingIds =
         {
-            "greenhouse", "gym", "kyoso", "lab1", "lab2", "lecture", "library", "research1", "research2", DormRoute.Id,
+            "greenhouse", "gym", "kyoso", "lab1", "lab2", "lecture", "library", "research1", "research2", "cafeteria", DormRoute.Id,
         };
 
         /// <summary>WebGL の予算: 屋内 1 棟につきパノラマ 2048 x 512 を 1 枚まで。</summary>

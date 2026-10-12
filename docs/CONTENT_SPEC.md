@@ -12,7 +12,7 @@
 |------|------|
 | 屋外座標 | `campus.json` と同じ。`x` = 東 (m), `z` = 北 (m)。`y` はシーンを組むときに当たり判定の面へ降ろす（`CollectibleStage.OutdoorFloor`）。 |
 | 屋内位置 | `Models/Interiors/<building>.json` の `empties` にある `poi_*` の名前。Unity 側は同名 Empty（FBX 内 Transform）を `transform.Find` で引き、その **ワールド座標** を使う。 |
-| 建物 id | `campus.json` の `buildings[].id` のうち `on_campus: true` の 9 つ: `research1 research2 lecture kyoso library gym lab1 lab2 greenhouse`。 |
+| 建物 id | `campus.json` の `buildings[].id` のうち `on_campus: true` の 9 つ: `research1 research2 lecture kyoso library gym lab1 lab2 greenhouse`。屋内の id はこれに食堂 `cafeteria`（外観は `research2`）を足した 10 個。 |
 | 場所 id | `CampusProps.PlaceZones` の VisitZone: `gate_main campus_mall mall_bench library_pond`。写真スポット `ps_*` も VisitZone と三脚（`PhotoSpot`）として生成する（後述）。 |
 | NPC id | `inari kaname sora prof`。 |
 | 言語 | 日本語が正。既存 JSON は `text` / `title` / `summary` / `rewardText` をそのまま保ち、英語は `text_en` / `title_en` / `summary_en` / `rewardText_en` を **追加** した。ローダは `_en` を読まなくても動く。 |
@@ -112,7 +112,7 @@ Assets/Data/Ending       → Assets/Resources/KCD/Ending
 | id | order | 開始 | 前提 | ステップ | 報酬 |
 |----|-------|------|------|----------|------|
 | `q_sq_greenhouse` | 11 | prof の話題 `t_sq_greenhouse_start` | q_gym | enter greenhouse → visit `poi_greenhouse_plants` → talk prof | `c_greenhouse_sprout` |
-| `q_sq_lost_card` | 12 | kaname `t_sq_lost_card_start` | q_lunch | visit `poi_research2_ticket` → visit `poi_research2_tray_return` → talk kaname | `ach_cafeteria_regular` |
+| `q_sq_lost_card` | 12 | kaname `t_sq_lost_card_start` | q_lunch | visit `poi_cafeteria_ticket` → visit `poi_cafeteria_tray_return` → talk kaname | `ach_cafeteria_regular` |
 | `q_sq_lab_notebook` | 13 | sora `t_sq_lab_notebook_start` | q_coffee | enter lab1 → collect `c_lab_goggles` ×1 → talk sora | `c_sora_charm` |
 | `q_sq_stray_book` | 14 | inari `t_sq_stray_book_start` | q_park | enter library → visit `poi_library_stacks` → `poi_library_desk` → `poi_library_counter` → talk inari | `c_inari_bookmark` |
 | `q_sq_photo_walk` | 15 | autoStart | q_orientation | visit `ps_mall_view` → `ps_kyoso_facade` → `ps_pond_library` | `ach_photo_walk` |

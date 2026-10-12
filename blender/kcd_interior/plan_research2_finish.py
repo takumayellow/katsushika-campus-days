@@ -145,7 +145,7 @@ def _boards_1f(c):
 def _boards_2f(c):
     pad = 0.1
     rects = tuple((h[0] - pad, h[1] - pad, h[2] + pad, h[3] + pad)
-                  for h in (D.FRONT_HOLE, D.BACK_HOLE, D.R_STAIR_HOLE))
+                  for h in D.HOLES)
     y_lo = min(p[1] for p in D.FLOOR2)
     boards(c.floor, (D.FLOOR2, D.INNER), D.Z2, y_lo, D.COUNTER2_Y, min(p[0] for p in D.FLOOR2),
            D.PART_X, rects, BOARD2, _pick2, glass=True)
@@ -153,7 +153,7 @@ def _boards_2f(c):
 
 def outlet_points():
     """2F の床のコンセントの蓋（長机の組の手前の通路）。"""
-    holes = (D.FRONT_HOLE, D.BACK_HOLE, D.R_STAIR_HOLE)
+    holes = D.HOLES
     out = []
     for x, y in P2.GROUPS2:
         p = (x + 0.8, y - 1.6)
@@ -227,7 +227,7 @@ def cassette_points(floor_poly, z, step, avoid, cols, chain, chain_gap, x_lo, x_
 
 
 def cassettes_1f(hangs=()):
-    holes = (D.FRONT_HOLE, D.BACK_HOLE, D.R_STAIR_HOLE)
+    holes = D.HOLES
     avoid = holes + (S.KITCHEN_RECT, WC_RECT, HALL_WALL_RECT, D.VEST) + S._keep_out(D.C1, hangs)
     return cassette_points(S.FLOOR1, D.C1, 3.0, avoid, D.COLS1, S.SOFFIT_CHAIN,
                            shell.WALL + D.SOFFIT_W + 0.6, D.CLIP_X + 1.0, D.PART_X - 0.8,
@@ -235,7 +235,7 @@ def cassettes_1f(hangs=()):
 
 
 def cassettes_2f(hangs=()):
-    holes = (D.FRONT_HOLE, D.BACK_HOLE, D.R_STAIR_HOLE)
+    holes = D.HOLES
     kitchen2 = (D.NW_X[1], S.KITCHEN2_Y, S.STAIR_EX[1], D.Y_BACK)
     avoid = holes + (kitchen2, D.WOOD_CEIL) + S._keep_out(D.C2, hangs)
     return cassette_points(D.FLOOR2, D.C2, 3.6, avoid, D.COLS2, S.GLASS2_CHAIN, 1.6,

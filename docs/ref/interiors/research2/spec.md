@@ -469,14 +469,10 @@ Y=44 +--+
 - [ ] 材質名がすべて `research2_` で始まり、`mats_research2.py` と Unity の InteriorPalette に同じ行がある。
 - [ ] 著作物の写真・図面をリポジトリに入れていない。`_summary.json` と docs/previews をコミットしていない。
 
-## 12. #171 の分割に要るもの（構造としては作らない。PR 本文に挙げる）
+## 12. 食堂と研究棟ロビーの分割（#171）
 
-- campus.json の棟の分割（食堂・研究棟）、または research2 に 2 つ目の入口。
-- DOORS の行と `spec.py` の原点の決め方: 食堂の入口 A（HEAD (7.4, 10.3)、東南東向き、ワールド (17.1, −15.3)）、研究棟側のロビー（HEAD (26.4, 19.1)、ワールド (38.0, −15.2)）。今の `spec.py` の research2 の `_FACE_OFFSET` は 4.0。
-- registry と InteriorStage の 2 棟化。
-- `ui.building.research2` の英語名を "Research Labs Building No.2" に、食堂の名札、CampusProps の名札の位置。
-- `schedule.json` の entrance research2 のモブ 8 件、`AudioManager` の research2 → `amb_cafeteria`、かなめ（屋外の入口の脇、Distance 3.2）の位置。
-- 3 つのテスト（EntranceTriggerTests / InteriorBackdropSceneTests / MobScheduleTests）。
-- 文言: `q_lunch.summary`「1,400 席」（実物は 1F 730・2F 665）、`quest.q_sq_lost_card` と `dialogue.kaname.t_sq_lost_card_*` の「券売機」「6 台並んでる」（実物はセルフオーダー端末 2〜3 台とえんじのパネルの 2 台）。
-- DESIGN.md §3.4 の表の research2 の行（今は「66,486 / 1〜2F 吹き抜けの大食堂 1,400 席（配膳カウンター 38 m・券売機 6 台・返却口・2F 回廊）」）を、作り直した中身に合わせる提案。
-- 分割できる形: plan では食堂（1F・2F）と研究棟側（ロビー・EV・階段室）を別の関数・別の `furn_` 区画にし、X 23.0 の間仕切り 1 枚で分ける。
+- 外観は 1 棟（`research2`）のまま、扉を 2 つにした。食堂（`cafeteria`、キャンパス (14.5, −22.0)）と研究棟ロビー（`research2`、キャンパス (40.9, −22.0)）で、屋内も別の FBX。
+- 切り目は host-local X 23.08。X 23.0 に厚さ 0.16 m の間仕切りが 1 枚あり、食堂は西側、ロビーは東側。ロビーの原点は host − (26.4, 15.16)。
+- 食堂は 1F 学食と 2F。実物は 1F 730 席・2F 665 席（TL-C）で、ゲームの見た目の席は 1F 260・2F 214。1F と 2F の間に吹き抜けは無い。研究棟ロビーは EV・階段室・案内板（6F 会議室 / 4F・5F 研究室 / 3F 事務室 / 1F・2F 食堂）だけで、上階は作らない。
+- 名札は日本語「第2研究棟」「食堂」、英語 "Research Labs Building No.2" "Cafeteria"。
+- 実測: cafeteria 51,325 / 75,000 三角形・1.28 MB、research2 3,576 / 20,000 三角形・0.33 MB。

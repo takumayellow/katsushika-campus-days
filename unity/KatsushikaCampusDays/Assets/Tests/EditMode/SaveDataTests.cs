@@ -200,6 +200,29 @@ namespace KCD.Tests
         }
 
         [Test]
+        public void Sanitize_Version2InsideResearch2_StandsAtTheReturnPointOutside()
+        {
+            // 版 2 までの research2 は今の食堂。中の位置は新しいロビーでは使えない。
+            var old = new SaveData
+            {
+                SaveVersion = 2,
+                InteriorId = "research2",
+                HasPosition = true,
+                PlayerX = 1250f, PlayerY = 0f, PlayerZ = 30f,
+                ReturnX = 14.5f, ReturnY = 0f, ReturnZ = -22f
+            };
+
+            SaveData data = SaveDataRules.Sanitize(old);
+
+            Assert.IsFalse(data.HasPosition);
+            Assert.AreEqual(SavePlacement.ReturnPoint, SaveDataRules.Placement(data, true));
+            Assert.AreEqual(14.5f, data.ReturnX, 1e-4f);
+
+            old.SaveVersion = SaveData.CurrentVersion;
+            Assert.IsTrue(SaveDataRules.Sanitize(old).HasPosition, "今の版の research2（ロビー）の位置はそのまま使う");
+        }
+
+        [Test]
         public void Sanitize_ReplacesValuesThatCannotBeUsed()
         {
             var broken = new SaveData

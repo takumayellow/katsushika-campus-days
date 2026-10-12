@@ -60,7 +60,7 @@ namespace KCD
         public const int DefaultQuestTotal = 15;
         public const int DefaultCollectibleTotal = 20;
         public const int DefaultPhotoTotal = 6;
-        public const int DefaultBuildingTotal = 9;
+        public const int DefaultBuildingTotal = 10;
 
         private int _tQuests = DefaultQuestTotal;
         private int _tCollectibles = DefaultCollectibleTotal;

@@ -41,6 +41,7 @@ namespace KCD.Tests
         [TestCase("kyoso")]
         [TestCase("lecture")]
         [TestCase("research2")]
+        [TestCase("cafeteria")]
         [TestCase("library")]
         [TestCase("gym")]
         [TestCase("lab1")]

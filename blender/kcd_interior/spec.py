@@ -27,6 +27,7 @@ _FACE_OFFSET = {
     "research1": 6.5,
     "lecture": 4.0,
     "research2": 4.0,
+    "cafeteria": 4.0,
     "kyoso": 4.0,
     "library": 4.0,
     "gym": 3.5,
@@ -80,6 +81,18 @@ def _uvbb_for(bid, uvbb):
     return uvbb
 
 
+# 1 棟の footprint を 2 つの屋内に分ける建物（第2研究棟 = 食堂 + 研究棟のロビー）。
+# 食堂の入口（DOORS の cafeteria）の面に沿った位置を X = 0 とした host の局所座標（host_local）で、
+# 食堂は X が CAFETERIA_X1 まで、ロビーは X が LOBBY_X0 以上・Y が LOBBY_Y0..LOBBY_Y1 の範囲を持つ。
+# 値は plan_research2_dims の CUT_X・PART_X と、ロビーのガラスの面・奥の壁に一致させる
+# （一致は blender/tests/test_plan_cafeteria で確かめる）。
+SPLIT_HOST = "research2"
+CAFETERIA_X1 = 23.08
+LOBBY_X0 = 22.92
+LOBBY_Y0, LOBBY_Y1 = 19.16, 41.35
+LOBBY_DOOR_X = 26.4          # ロビーの入口の中心（host_local の X）
+
+
 class InteriorSpec:
     """1 棟ぶんのローカル座標系と室内エンベロープ。
 
@@ -91,8 +104,9 @@ class InteriorSpec:
     WALL = 0.30  # 外周壁厚（DESIGN.md §3.4）
 
     def __init__(self, bid, display, levels, height, uvbb, ent_uv, inward,
-                 frame):
+                 frame, host=None):
         self.id = bid
+        self.host = host or bid     # footprint を持つ建物の id（外装 bld_<host>）
         self.display = display
         self.levels = max(1, int(levels or 1))
         self.height = float(height or 4.0)
@@ -192,7 +206,7 @@ def build_specs(data, ids=None):
     out = {}
     for b in data["buildings"]:
         bid = b["id"]
-        if ids is not None and bid not in ids:
+        if ids is not None and bid not in ids and not (bid == SPLIT_HOST and "cafeteria" in ids):
             continue
         if not b.get("on_campus"):
             continue
@@ -203,10 +217,32 @@ def build_specs(data, ids=None):
         if len(loop) < 3:
             continue
         uvbb = _uvbb_for(bid, frame.uv_bbox(loop))
+        if bid == SPLIT_HOST:
+            for sid, display, sub in _split(bid, uvbb):
+                if ids is not None and sid not in ids:
+                    continue
+                ent, inward = _entrance_uv(sid, sub)
+                out[sid] = InteriorSpec(sid, display, b.get("levels") if sid == "cafeteria" else 1,
+                                        b.get("height") if sid == "cafeteria" else 4.0,
+                                        sub, ent, inward, frame, host=bid)
+            continue
         ent, inward = _entrance_uv(bid, uvbb)
         out[bid] = InteriorSpec(bid, b.get("display", bid), b.get("levels"),
                                 b.get("height"), uvbb, ent, inward, frame)
     return out
+
+
+def _split(bid, uvbb):
+    """第2研究棟の bbox を食堂とロビーに分ける。(id, 表示名, uvbb) のリスト。"""
+    row = _door_row("cafeteria")
+    ent_u = row[1][0]                       # 食堂の入口の u = host_local の X 0
+    u0, v0, u1, v1 = uvbb
+    vf = v0 - _FACE_OFFSET["cafeteria"]     # host_local の Y 0 の v
+    return [
+        ("cafeteria", "食堂", (u0, v0, ent_u + CAFETERIA_X1, v1)),
+        ("research2", "第2研究棟", (ent_u + LOBBY_X0, vf + LOBBY_Y0,
+                                 u1, vf + LOBBY_Y1)),
+    ]
 
 
 def dump_sidecar(spec, extra, path):

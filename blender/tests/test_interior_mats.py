@@ -26,7 +26,8 @@ def _library(**tables):
 
 
 def test_every_building_has_a_mats_file_in_registry_order():
-    assert list(imats.BUILDING_MATS) == registry.ORDER
+    # 食堂は第2研究棟と同じ建物の材質（research2_*）を使うので、専用の材質ファイルは持たない
+    assert list(imats.BUILDING_MATS) == [b for b in registry.ORDER if b != "cafeteria"]
     for bid, mod in imats.BUILDING_MATS.items():
         assert mod.__name__ == "kcd_interior.mats_%s" % bid
         for kind in ("PALETTE", "TRANSPARENT", "EMISSIVE"):

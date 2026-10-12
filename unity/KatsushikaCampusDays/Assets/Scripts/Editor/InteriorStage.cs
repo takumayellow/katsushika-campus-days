@@ -16,7 +16,7 @@ namespace KCD.Editor
 
         private static readonly string[] Ids =
         {
-            "greenhouse", "gym", "kyoso", "lab1", "lab2", "lecture", "library", "research1", "research2"
+            "greenhouse", "gym", "kyoso", "lab1", "lab2", "lecture", "library", "research1", "research2", "cafeteria"
         };
 
         /// <summary>最初の屋内を置く x。NavMesh の範囲（x ≤ 243）から十分離す。</summary>

@@ -54,8 +54,10 @@ DOORS = [
     ("kyoso", (89.9, -28.0), (0.0, -1.0), "loop", +1, 3.4, STANDARD),
     # 講義棟: 南面（メインストリート側）。曲面のガラスホール（u < 110）から離す
     ("lecture", (120.6, -22.0), (0.0, 1.0), "loop", -1, 3.4, STANDARD),
-    # 第2研究棟: 南面の直線部（u 6..23）の中央。食堂の前
-    ("research2", (14.5, -22.0), (0.0, 1.0), "loop", +1, 3.4, STANDARD),
+    # 食堂（第2研究棟の 1〜2F）: 南面の直線部（u 6..23）の中央
+    ("cafeteria", (14.5, -22.0), (0.0, 1.0), "loop", +1, 3.4, STANDARD),
+    # 第2研究棟の研究棟側: 東の塊の南面のガラスのロビー（u 36..44）
+    ("research2", (40.9, -22.0), (0.0, 1.0), "loop", -1, 3.4, STANDARD),
     # 図書館: 東面。メインストリートの軸（v = -24）の突き当たり
     ("library", (-50.0, -24.0), (-1.0, 0.0), "inner1", +1, 3.4, STANDARD),
     # 体育館: 南面の中央
@@ -67,6 +69,10 @@ DOORS = [
     # 温室: 西の妻面（歩道側）
     ("greenhouse", (80.0, 66.0), (1.0, 0.0), "bbox", +1, 2.4, SMALL),
 ]
+
+# 扉の id と、その扉を付ける外壁を持つ建物が違うとき（1 棟に扉が 2 つ）の対応
+# 食堂は research2 の外観に属する。マテリアル（research2_*）も plan_research2_* のモジュールも research2 と共有する。
+HOSTS = {"cafeteria": "research2"}
 
 
 # --------------------------------------------------------------------------- #
@@ -120,7 +126,7 @@ def plan(data, frame, ctx):
 
     doors = []
     for bid, probe_uv, into_uv, kind, sign_side, sign_z, spec in DOORS:
-        loop = loops.get(bid)
+        loop = loops.get(HOSTS.get(bid, bid))
         if loop is None:
             print("[entrance] %s: campus.json に建物が無いので飛ばします" % bid)
             continue

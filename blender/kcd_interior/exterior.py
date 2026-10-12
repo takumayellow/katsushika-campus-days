@@ -569,7 +569,7 @@ def _collect(sp, src, env, box):
     近い株は近くの形を使う）は入れない。
     (候補の面 [(name, mat, local, plant, 物の番号)], {物の番号: 外接矩形}, 集計 own) を返す。"""
     wx0, wx1, wy0, wy1 = _world_bbox(sp, box)
-    own = BLD_PREFIX + sp.id
+    own = BLD_PREFIX + sp.host
     doors = src.doors.get(sp.id, [])
     cand = []
     gbox = {}   # 物の番号 -> 建物ローカルの外接矩形

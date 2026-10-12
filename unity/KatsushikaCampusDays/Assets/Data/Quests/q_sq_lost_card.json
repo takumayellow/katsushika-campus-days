@@ -2,8 +2,8 @@
   "id": "q_sq_lost_card",
   "title": "食堂の落とし物",
   "title_en": "Lost in the Cafeteria",
-  "summary": "食堂のピークが終わって、券売機のあたりで学生証の落とし物が出た。かなめに頼まれて、券売機から返却口まで持ち主の手がかりを追う。",
-  "summary_en": "The lunch rush is over and a student ID turned up near the ticket machines. Kaname asks you to trace the owner from the ticket machines to the tray return.",
+  "summary": "食堂のピークが終わって、注文端末のあたりで学生証の落とし物が出た。かなめに頼まれて、注文端末から返却口まで持ち主の手がかりを追う。",
+  "summary_en": "The lunch rush is over and a student ID turned up near the order terminals. Kaname asks you to trace the owner from the order terminals to the tray return.",
   "order": 12,
   "autoStart": false,
   "prerequisites": [
@@ -18,14 +18,14 @@
     {
       "id": "s1",
       "type": "visit",
-      "target": "poi_research2_ticket",
-      "text": "第2研究棟 1 階の券売機を調べる",
-      "text_en": "Check the ticket machines on the first floor of Research Building 2"
+      "target": "poi_cafeteria_ticket",
+      "text": "食堂 1 階の注文端末を調べる",
+      "text_en": "Check the order terminals on the first floor of the cafeteria"
     },
     {
       "id": "s2",
       "type": "visit",
-      "target": "poi_research2_tray_return",
+      "target": "poi_cafeteria_tray_return",
       "text": "返却口で落とし主の手がかりを探す",
       "text_en": "Look for a clue about the owner at the tray return"
     },

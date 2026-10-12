@@ -27,7 +27,7 @@ STAIR_EX = (12.8, 12.96)     # 東の壁（洗い場側）
 DISH_GAP = (14.0, 20.0)      # 返却口の奥の開口
 DOOR_H = 2.4
 
-FLOOR1 = D.OUTLINE[3:] + (D.OUTLINE[0], (D.NW_X[1], D.NW_Y))
+FLOOR1 = D.OUTLINE[3:13] + (D.CUT_LOBBY, D.CUT_BACK, D.OUTLINE[0], (D.NW_X[1], D.NW_Y))
 NW_POLY = (D.OUTLINE[0], D.OUTLINE[1], D.OUTLINE[2], D.OUTLINE[3], (D.NW_X[1], D.NW_Y))
 SOFFIT_CHAIN = D.OUTLINE[3:11] + (
     (4.6, D.OUTLINE[10][1] + (4.6 - D.OUTLINE[10][0]) * (D.OUTLINE[11][1] - D.OUTLINE[10][1])
@@ -114,8 +114,10 @@ def _liner(mb, hole, z0, z1, mat):
 #  外周
 # --------------------------------------------------------------------------- #
 def _outer(c):
-    for i in D.E_NW + (D.E_WC, D.E_EAST, D.E_BACK):
+    for i in D.E_NW + (D.E_WC,):
         wall(c, _edge(i), D.Z1, D.C2)
+    # 北の面は研究棟側との間仕切り（X 23）まで
+    wall(c, (D.CUT_BACK, D.OUTLINE[0]), D.Z1, D.C2)
     # 西北西の曲面: 1F は床から天井のガラス、2F はテラスの低い立ち上がりとメッシュの柵
     for i in D.E_TERRACE:
         wall(c, _edge(i), D.Z1, D.Z2, glass=GLASS, header=D.Z2 - D.C1, top=False)
@@ -132,8 +134,8 @@ def _outer(c):
     x0, _y0, x1, _y1 = D.VEST
     shell.glass_entrance(c.wall, x0, x1, D.Z1, 3.0, D.ENTRANCE_Y, frame=SASH1, glass=GLASS)
     c.door_gap = (x0, x1)
-    # 段の面: 1F は研究棟側のロビーまで続くガラス（開かない）、2F は打放し
-    lobby = _edge(D.E_LOBBY)
+    # 段の面: 1F は間仕切りまで続くガラス（開かない）、2F は打放し
+    lobby = (D.OUTLINE[D.E_LOBBY], D.CUT_LOBBY)
     wall(c, lobby, D.Z1, D.Z2, glass=GLASS, header=D.Z2 - D.C1, top=False)
     wall(c, lobby, D.Z2, D.C2)
 
@@ -227,28 +229,15 @@ def _wc(c):
 
 
 def _research(c):
-    """研究棟側との間仕切り（1F・2F とも扉口）、EV の箱、北北東の階段室のガラス。"""
-    a, b = (D.PART_X, D.PART_Y[0]), (D.PART_X, D.PART_Y[1])
-    gap = (D.PART_DOOR[0] - D.PART_Y[0], D.PART_DOOR[1] - D.PART_Y[0])
-    door_part(c, a, b, D.Z1, D.C1, gap)
-    door_part(c, a, b, D.Z2, D.C2, gap)
-    ex0, ey0, ex1, ey1 = D.PART_X, D.EV[1], D.EV[2], D.EV_HALL[3]
-    c.wall.add_prism([(ex0, ey0), (ex1, ey0), (ex1, ey1), (ex0, ey1)], D.Z1, D.C2,
-                     "research2_lobby_panel")
-    y = D.R_STAIR[1]
-    xa, xb = D.EV[2], D.INNER[13][0]
-    c.wall.add_prism([(xa, y - 0.02), (xb, y - 0.02), (xb, y + 0.02), (xa, y + 0.02)],
-                     D.Z1, D.C2, GLASS)
-    for z0, z1 in ((D.Z1, D.C1), (D.Z2, D.C2)):
-        mullions(c.wall, (xa, y - 0.12), (xb, y - 0.12), z0, z1, SASH1, 1.3)
-        kit.box(c.wall, xa, y - 0.06, z1 - 0.12, xb, y + 0.06, z1, SASH1)
+    """研究棟側との間仕切り（1F・2F とも壁。研究棟のロビーは別の屋内）。"""
+    part(c, (D.PART_X, D.CUT_LOBBY[1]), (D.PART_X, D.CUT_BACK[1]), D.Z1, D.C2, thick=0.16)
 
 
 # --------------------------------------------------------------------------- #
 #  床・天井
 # --------------------------------------------------------------------------- #
 def _floors(c):
-    holes = (D.FRONT_HOLE, D.BACK_HOLE, D.R_STAIR_HOLE)
+    holes = D.HOLES
     P.fill(c.floor, FLOOR1, D.Z1, "research2_floor_1f_wood", xmin=D.CLIP_X, ymin=D.CLIP_Y)
     # 尖りの先（外周の閉じの線の外）は床を張らず、柱状の面でふさぐ
     for tip in (_tip_x(), _tip_y()):
@@ -257,7 +246,6 @@ def _floors(c):
     P.fill(c.floor, D.FLOOR2, D.Z2, "research2_floor_2f_oak", holes=holes)
     _liner(c.wall, D.FRONT_HOLE, D.C1, D.Z2, CONCRETE)
     _liner(c.wall, D.BACK_HOLE, D.C1, D.Z2, CONCRETE)
-    _liner(c.wall, D.R_STAIR_HOLE, D.C1, D.Z2, "research2_brick_core")
 
 
 def _tip_x():
@@ -302,7 +290,7 @@ def _soffit(c):
 
 def _ceilings(c):
     w = c.wall
-    holes = (D.FRONT_HOLE, D.BACK_HOLE, D.R_STAIR_HOLE)
+    holes = D.HOLES
     P.fill(w, FLOOR1, D.C1, "research2_ceiling_white", down=True, holes=holes,
            xmin=D.CLIP_X, ymin=D.CLIP_Y)
     _soffit(c)
@@ -369,7 +357,7 @@ def _lights(c, hangs):
             kit.plate(w, x - 0.15, y - 0.15, x + 0.15, y + 0.15, z - 0.01, "light_panel",
                       flip=True)
 
-    holes = (D.FRONT_HOLE, D.BACK_HOLE, D.R_STAIR_HOLE)
+    holes = D.HOLES
     avoid1 = holes + (KITCHEN_RECT,) + _keep_out(D.C1, hangs)
     pts1 = _grid(FLOOR1, D.C1, 3.0, lambda p: p[0] > D.CLIP_X + 1.0, avoid1,
                  SOFFIT_CHAIN, D.SOFFIT_W + shell.WALL + 0.5)

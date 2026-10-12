@@ -260,10 +260,10 @@
       "id": "c_tray_charm",
       "name_ja": "返却口のトレーチャーム",
       "name_en": "Tray-Return Charm",
-      "hint_ja": "第2研究棟の食堂、返却口。トレーの山のいちばん上に乗っている。",
-      "hint_en": "The tray return in the Research Building 2 cafeteria. Sitting on top of the stack of trays.",
-      "building": "research2",
-      "position": "poi_research2_tray_return",
+      "hint_ja": "食堂の返却口。トレーの山のいちばん上に乗っている。",
+      "hint_en": "The tray return in the cafeteria. Sitting on top of the stack of trays.",
+      "building": "cafeteria",
+      "position": "poi_cafeteria_tray_return",
       "rarity": "common",
       "source": "hidden",
       "note_no": 9,
@@ -507,11 +507,11 @@
       "id": "ach_all_buildings",
       "name_ja": "全棟制覇",
       "name_en": "Every Door",
-      "desc_ja": "9 つの建物すべてに入る。",
-      "desc_en": "Enter all nine buildings.",
+      "desc_ja": "10 か所の建物すべてに入る。",
+      "desc_en": "Enter all ten buildings.",
       "condition": {
         "type": "building_count",
-        "value": 9
+        "value": 10
       }
     },
     {
