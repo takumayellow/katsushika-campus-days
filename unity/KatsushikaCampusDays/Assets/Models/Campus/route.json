@@ -172,9 +172,9 @@
   ],
   "objects": [
    "bld_route_background",
-   "bld_dorm",
-   "route_ground",
    "bld_dorm_trim",
+   "route_ground",
+   "bld_dorm",
    "bld_route_fence",
    "route_props_lamp"
   ],
@@ -225,12 +225,16 @@
     "gf": 4.0,
     "up": 3.45,
     "height": 17.8,
-    "balcony_edge": 5,
+    "balcony_edge": [
+     4,
+     5
+    ],
     "balcony_floors": 4,
+    "balcony_units": 18,
     "door": {
      "W": 1.6,
      "H": 2.6,
-     "D": 2.0,
+     "D": 0.5,
      "WO": 2.4,
      "HT": 3.3,
      "CAN_S": 3.0,
@@ -254,7 +258,8 @@
      "yaw": -1.213003830136059,
      "sign_side": -1,
      "sign_z": 3.4,
-     "bearing": 159.5
+     "bearing": 159.5,
+     "CANOPY": false
     }
    },
    "dorm_objects": [
@@ -270,7 +275,7 @@
    "lamps": 8,
    "window_spacing_m": 3.6,
    "window_estimate": 656,
-   "tris": 15098,
+   "tris": 15529,
    "budget": 16000,
    "per_object": {
     "bld_route_background": {
@@ -278,20 +283,20 @@
      "faces": 4790,
      "tris": 9112
     },
-    "bld_dorm": {
-     "verts": 1566,
-     "faces": 1206,
-     "tris": 2400
+    "bld_dorm_trim": {
+     "verts": 1762,
+     "faces": 1142,
+     "tris": 2284
     },
     "route_ground": {
      "verts": 1347,
      "faces": 910,
      "tris": 1820
     },
-    "bld_dorm_trim": {
-     "verts": 540,
-     "faces": 427,
-     "tris": 810
+    "bld_dorm": {
+     "verts": 899,
+     "faces": 691,
+     "tris": 1357
     },
     "bld_route_fence": {
      "verts": 344,
@@ -322,13 +327,13 @@
       "checked": true
      },
      "bld_dorm": {
-      "open_edges": 852,
-      "open_edge_m": 2569.777,
+      "open_edges": 556,
+      "open_edge_m": 1539.121,
       "checked": false
      },
      "bld_dorm_trim": {
-      "open_edges": 146,
-      "open_edge_m": 172.56,
+      "open_edges": 438,
+      "open_edge_m": 876.804,
       "checked": false
      },
      "route_props_lamp": {
@@ -338,7 +343,7 @@
      }
     }
    },
-   "fbx_bytes": 258812,
+   "fbx_bytes": 266764,
    "select": {
     "roads_total": 64,
     "roads_kept": 24,

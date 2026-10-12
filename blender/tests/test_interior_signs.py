@@ -16,7 +16,7 @@ from kcd_interior import registry, shell, signs
 from kcd_interior import spec as ispec
 from kcd_interior.ctx import Ctx
 from kcd_lib import signtext
-from kcd_route import dorm as D
+from kcd_route import dorm_interior as D
 from raycast import first_hit
 
 from conftest import CAMPUS_JSON, REPO
