@@ -147,14 +147,17 @@ namespace KCD
             }
         }
 
-        /// <summary>視点入力。マウス移動量とゲームパッド右スティック。</summary>
+        /// <summary>
+        /// 視点入力。マウス移動量とゲームパッド右スティックと、画面のなぞり（<see cref="TouchInput.Look"/>, #187）。
+        /// 指で遊んでいる間はマウスを見ない。ブラウザは指を離したあとに互換のマウスの動きを送ってくるので、視点が跳ねる。
+        /// </summary>
         public static Vector2 Look
         {
             get
             {
-                var look = Vector2.zero;
+                Vector2 look = TouchInput.Look;
                 Mouse mouse = Mouse.current;
-                if (mouse != null)
+                if (mouse != null && !InputMode.IsTouch)
                 {
                     look += mouse.delta.ReadValue() * 0.06f;
                 }
@@ -169,23 +172,31 @@ namespace KCD
             }
         }
 
-        /// <summary>カメラのズーム操作（ホイール）。前方向が正。</summary>
+        /// <summary>カメラのズーム操作（ホイールと 2 本指のつまみ, #187）。前方向・広げる向きが正。</summary>
         public static float Zoom
         {
             get
             {
+                float zoom = TouchInput.Zoom;
                 Mouse mouse = Mouse.current;
-                return mouse == null ? 0f : mouse.scroll.ReadValue().y * 0.01f;
+                if (mouse != null && !InputMode.IsTouch)
+                {
+                    zoom += mouse.scroll.ReadValue().y * 0.01f;
+                }
+
+                return zoom;
             }
         }
 
         /// <summary>
         /// ダッシュ（押しっぱなし）。Shift は左右どちらでも効く。
         /// 操作説明の「Shift / L トリガー」に合わせ、ゲームパッドは L ボタンと L トリガーの両方を受け付ける。
+        /// 画面の「走る」は切り替え（<see cref="TouchInput.Sprint"/>, #187）。
         /// </summary>
         public static bool Sprint =>
             !GameplayBlocked && !MovementLocked &&
-            ((Keyboard.current != null &&
+            (TouchInput.Sprint ||
+             (Keyboard.current != null &&
               (Keyboard.current.leftShiftKey.isPressed || Keyboard.current.rightShiftKey.isPressed)) ||
              (Gamepad.current != null &&
               (Gamepad.current.leftShoulder.isPressed || Gamepad.current.leftTrigger.isPressed)));

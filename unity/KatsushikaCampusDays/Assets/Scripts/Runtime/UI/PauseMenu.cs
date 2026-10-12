@@ -299,8 +299,15 @@ namespace KCD
                 KCDInput.Unblock(this);
             }
 
-            Cursor.lockState = open ? CursorLockMode.None : CursorLockMode.Locked;
-            Cursor.visible = open;
+            if (open)
+            {
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+            }
+            else
+            {
+                InputMode.CaptureCursor();
+            }
 
             if (open)
             {

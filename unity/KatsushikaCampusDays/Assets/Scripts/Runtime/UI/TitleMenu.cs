@@ -16,6 +16,7 @@ namespace KCD
     /// <summary>
     /// タイトル画面。読めるセーブがあれば「つづきから / はじめから」を ←→ で選んで Enter、
     /// 無ければ Enter でキャラクター選択（はじめから）へ移る。F9 はセーブがあれば「つづきから」。
+    /// 指で遊んでいるときは、選択肢を叩くとそれに決まる。セーブが無ければ画面のどこを叩いてもはじめから (#187)。
     /// </summary>
     public sealed class TitleMenu : MonoBehaviour
     {
@@ -30,6 +31,7 @@ namespace KCD
         [SerializeField] private float _blinkSpeed = 2.2f;
         [SerializeField] private SettingsView _settings;
         [SerializeField] private CreditsView _credits;
+        [SerializeField] private TmpLinkTap _tap;
 
         private bool _moved;
         private float _promptAlphaBase = 1f;
@@ -47,6 +49,9 @@ namespace KCD
         /// <summary>タイトルが出たフレーム。ポーズの「タイトルへ戻る」で押した決定を拾い直さない（#6）。</summary>
         private int _shownFrame = KCDInput.NoFrame;
 
+        /// <summary>案内を指向けに書いているか。入力の種類が変わったら書き直す。</summary>
+        private bool _promptForTouch;
+
         /// <summary>SceneBuilder から差し込む。</summary>
         public void Bind(GameObject titleRoot, GameObject selectRoot, TMP_Text prompt, CharacterSelect select)
         {
@@ -63,6 +68,12 @@ namespace KCD
             _credits = credits;
         }
 
+        /// <summary>案内の文字を叩く受け口。SceneBuilder から差し込む。</summary>
+        public void BindTap(TmpLinkTap tap)
+        {
+            _tap = tap;
+        }
+
         /// <summary>題名と副題。言語切替で書き換えるために持つ。</summary>
         public void BindHeadings(TMP_Text title, TMP_Text subtitle)
         {
@@ -76,15 +87,24 @@ namespace KCD
         private void OnEnable()
         {
             L.LocaleChanged += RefreshPrompt;
+            if (_tap != null)
+            {
+                _tap.Tapped += OnTapped;
+            }
         }
 
         private void OnDisable()
         {
             L.LocaleChanged -= RefreshPrompt;
+            if (_tap != null)
+            {
+                _tap.Tapped -= OnTapped;
+            }
         }
 
         private void RefreshPrompt()
         {
+            _promptForTouch = InputMode.IsTouch;
             if (_titleLabel != null)
             {
                 _titleLabel.text = L.Get("ui.title.name", "葛飾キャンパスデイズ");
@@ -97,6 +117,19 @@ namespace KCD
 
             if (_promptLabel == null)
             {
+                return;
+            }
+
+            if (_promptForTouch)
+            {
+                // 設定とクレジットはキーでしか開けないので、指のときは案内に出さない。
+                _promptLabel.text = !_hasSave
+                    ? L.Pick("タップではじめる", "Tap to start")
+                    : ChoiceLine(_choice,
+                          L.Get("ui.title.continue", "つづきから"),
+                          L.Get("ui.title.new_game", "はじめから"),
+                          true) +
+                      "<size=70%>\n" + L.Pick("えらんでタップ", "Tap a choice") + "</size>";
                 return;
             }
 
@@ -149,8 +182,9 @@ namespace KCD
 
         /// <summary>
         /// セーブがあるときの選択肢の行。並びは <see cref="ChoiceAt"/> と同じで、選んでいる方にだけ ▶ と色を付ける。
+        /// links なら各選択肢を <c>&lt;link="choice:N"&gt;</c> で囲み、叩けるようにする。
         /// </summary>
-        public static string ChoiceLine(int selected, string continueLabel, string newGameLabel)
+        public static string ChoiceLine(int selected, string continueLabel, string newGameLabel, bool links = false)
         {
             var builder = new System.Text.StringBuilder(96);
             int count = ChoiceCount(true);
@@ -162,6 +196,11 @@ namespace KCD
                 }
 
                 string label = ChoiceAt(true, i) == TitleChoice.Continue ? continueLabel : newGameLabel;
+                if (links)
+                {
+                    builder.Append("<link=\"choice:").Append(i).Append("\">");
+                }
+
                 if (i == selected)
                 {
                     builder.Append("<color=").Append(SelectedColor).Append(">▶ ").Append(label).Append("</color>");
@@ -169,6 +208,11 @@ namespace KCD
                 else
                 {
                     builder.Append("　").Append(label);
+                }
+
+                if (links)
+                {
+                    builder.Append("</link>");
                 }
             }
 
@@ -202,6 +246,10 @@ namespace KCD
         {
             SyncTitleVisibility();
             BlinkPrompt();
+            if (!_moved && InputMode.IsTouch != _promptForTouch)
+            {
+                RefreshPrompt();
+            }
 
             if (_moved || IsModalOpen || KCDInput.ModalClosedThisFrame ||
                 KCDInput.IgnoresInput(_shownFrame))
@@ -243,6 +291,48 @@ namespace KCD
             {
                 Choose(TitleChoice.Continue);
             }
+        }
+
+        /// <summary>
+        /// 叩いたときに何を選ぶか。セーブが無ければどこを叩いてもはじめから。
+        /// セーブがあれば叩いた選択肢、選択肢の外なら null（何もしない）。
+        /// </summary>
+        public static TitleChoice? TapChoice(bool hasSave, string linkId)
+        {
+            if (!hasSave)
+            {
+                return TitleChoice.NewGame;
+            }
+
+            if (!TmpLinkTap.TryParseChoice(linkId, out int index) || index >= ChoiceCount(true))
+            {
+                return null;
+            }
+
+            return ChoiceAt(true, index);
+        }
+
+        private void OnTapped(string linkId)
+        {
+            // マウスのクリックでは決めない。Web 版で最初にページを叩いてフォーカスを取ったクリックで始まってしまう。
+            if (!InputMode.IsTouch || _moved || IsModalOpen || KCDInput.ModalClosedThisFrame ||
+                KCDInput.IgnoresInput(_shownFrame))
+            {
+                return;
+            }
+
+            TitleChoice? choice = TapChoice(_hasSave, linkId);
+            if (choice == null)
+            {
+                return;
+            }
+
+            if (_hasSave)
+            {
+                _choice = choice == TitleChoice.Continue ? 0 : 1;
+            }
+
+            Choose(choice.Value);
         }
 
         /// <summary>

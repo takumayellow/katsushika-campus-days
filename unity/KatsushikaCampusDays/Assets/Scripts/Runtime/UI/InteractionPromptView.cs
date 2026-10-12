@@ -49,13 +49,18 @@ namespace KCD
         /// <summary>対象を差し替える。対象が null で手も振れなければ消える。</summary>
         public void SetTarget(Interactable target, bool canWave)
         {
-            bool visible = IsVisible(target != null || canWave, KCDInput.GameplayBlocked);
+            // 指で遊んでいるときは画面のボタンで調べるので、キーの名前を付けない。手を振るボタンは画面に無い (#187)。
+            bool touch = InputMode.IsTouch;
+            bool wave = canWave && !touch;
+            bool visible = IsVisible(target != null || wave, KCDInput.GameplayBlocked);
             _targetAlpha = visible ? 1f : 0f;
 
             if (visible && _label != null)
             {
-                string text = LabelFor(target != null ? target.PromptLabel : null,
-                    canWave ? L.Get("ui.interact.wave", "手を振る") : null);
+                string text = touch
+                    ? target.PromptLabel
+                    : LabelFor(target != null ? target.PromptLabel : null,
+                        wave ? L.Get("ui.interact.wave", "手を振る") : null);
                 if (_label.text != text)
                 {
                     _label.text = text;
