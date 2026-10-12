@@ -239,6 +239,11 @@ namespace KCD.Editor
         /// 取り出された骨盤のヨーと左右の重心移動がまるごと消えて、腰から上が置き去りのまま
         /// 脚だけが動いて見えていた（#43 のくねくね）。3 軸とも Bake Into Pose にして、
         /// クリップに入れた重心移動をそのまま姿勢として再生させる。
+        ///
+        /// マスクにはモデルの全部の骨を入れる。Humanoid のクリップは、マスクに無い Humanoid 外の骨
+        /// （髪の HairFront / HairBack、スカートの SkirtFront / SkirtBack）の曲線を捨てる。
+        /// defaultClipAnimations のマスクは空なので、そのままだと Blender で付けた髪の揺れが再生されなかった（#218）。
+        /// 骨の経路は前回の取り込みから取るので、初めての取り込みや骨を足した直後は SyncSkeletons が取り込み直す。
         /// </summary>
         private void OnPreprocessAnimation()
         {
@@ -253,6 +258,7 @@ namespace KCD.Editor
                 return;
             }
 
+            AvatarMask mask = FullTransformMask(importer.transformPaths);
             foreach (ModelImporterClipAnimation clip in clips)
             {
                 string name = clip.name.ToLowerInvariant();
@@ -265,9 +271,25 @@ namespace KCD.Editor
                 clip.heightFromFeet = false;
                 clip.lockRootPositionXZ = true;       // Root Transform Position (XZ): Bake Into Pose
                 clip.keepOriginalPositionXZ = true;
+                clip.ConfigureClipFromMask(mask);
+                clip.maskType = ClipAnimationMaskType.CreateFromThisModel;
             }
 
             importer.clipAnimations = clips;
+            Object.DestroyImmediate(mask);
+        }
+
+        /// <summary>paths の Transform を全部通すマスク。作ったマスクは呼んだ側で DestroyImmediate する。</summary>
+        private static AvatarMask FullTransformMask(string[] paths)
+        {
+            var mask = new AvatarMask { transformCount = paths.Length };
+            for (int i = 0; i < paths.Length; i++)
+            {
+                mask.SetTransformPath(i, paths[i]);
+                mask.SetTransformActive(i, true);
+            }
+
+            return mask;
         }
 
         /// <summary>
@@ -349,6 +371,7 @@ namespace KCD.Editor
 
         /// <summary>
         /// .fbx.meta に残っている Humanoid の骨格（humanDescription.skeleton）を、取り込んだモデルの骨に合わせる。
+        /// クリップのマスクに足りない骨があるときも取り込み直す（OnPreprocessAnimation）。
         /// 直した FBX の数を返す。SceneBuilder.BuildAll から呼ぶ。
         ///
         /// Humanoid はポーズを付けるとき、骨の長さを FBX ではなくこの骨格から取る。骨格は最初に取り込んだときに
@@ -374,7 +397,7 @@ namespace KCD.Editor
 
                 var model = AssetDatabase.LoadAssetAtPath<GameObject>(path);
                 HumanDescription human = importer.humanDescription;
-                if (model == null || SkeletonMatches(human.skeleton, model))
+                if (model == null || (SkeletonMatches(human.skeleton, model) && ClipMasksCover(importer)))
                 {
                     continue;
                 }
@@ -386,6 +409,43 @@ namespace KCD.Editor
             }
 
             return fixedCount;
+        }
+
+        /// <summary>
+        /// どのクリップのマスクにも、モデルの全部の Transform が入っているか（OnPreprocessAnimation が組むマスク）。
+        /// ModelImporterClipAnimation.transformMask は公開されていないので、シリアライズされた値を読む。
+        /// </summary>
+        private static bool ClipMasksCover(ModelImporter importer)
+        {
+            // マスクを組むときと同じ一覧（今のモデルの Transform）と比べる。骨が増えた直後の取り込みは
+            // 前回の一覧でマスクを組むので、ここで足りない骨が見つかって取り込み直しになる。
+            string[] paths = importer.transformPaths;
+            SerializedProperty clips = new SerializedObject(importer).FindProperty("m_ClipAnimations");
+            if (clips == null)
+            {
+                return false;
+            }
+
+            for (int c = 0; c < clips.arraySize; c++)
+            {
+                SerializedProperty mask = clips.GetArrayElementAtIndex(c).FindPropertyRelative("transformMask");
+                var masked = new HashSet<string>();
+                for (int i = 0; i < mask.arraySize; i++)
+                {
+                    SerializedProperty entry = mask.GetArrayElementAtIndex(i);
+                    if (entry.FindPropertyRelative("m_Weight").floatValue > 0f)
+                    {
+                        masked.Add(entry.FindPropertyRelative("m_Path").stringValue);
+                    }
+                }
+
+                if (!masked.IsSupersetOf(paths))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         /// <summary>モデルの骨（根元以外のすべての Transform）が、骨格に同じ名前・同じ位置と向きで載っているか。</summary>
