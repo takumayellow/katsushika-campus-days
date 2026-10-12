@@ -9,11 +9,11 @@ using UnityEngine.SceneManagement;
 namespace KCD.Tests
 {
     /// <summary>
-    /// 構内の看板の板に名前が貼ってあること (#181)。
+    /// 構内の看板の文字 (#181)。
     ///
-    /// 入口の立て看板 9 枚は、上に浮かぶ名札（BuildingLabel）はあっても、板そのものは表も裏も白紙だった。
-    /// 共創棟の店舗の色板は FBX の面の表が建物の壁の側を向いていて、モールからは色板ごと見えなかった。
-    /// CampusProps.SignFaces が焼いた文字（SignFaceText）と色板を、FBX の板の形と突き合わせて確かめる。
+    /// 入口の立て看板 9 枚の板の表と裏に建物の名前が貼ってあること、同じ名前の文字が 2 か所に出ないこと、
+    /// 建物の外に店の名前もブランドの色の板も出ないことを確かめる。
+    /// CampusProps.SignFaces が焼いた文字（SignFaceText）を、FBX の板の形と突き合わせる。
     /// </summary>
     public sealed class CampusSignFaceTests
     {
@@ -24,9 +24,6 @@ namespace KCD.Tests
 
         /// <summary>入口の立て看板の数（研究棟 2・講義棟・共創棟・図書館・体育館・実験棟 2・温室）。</summary>
         private const int PylonCount = 9;
-
-        /// <summary>CampusProps.AxisV と同じ、モールの側を指す向き（テストのアセンブリは KCD.Editor を参照しない）。</summary>
-        private static readonly Vector3 MallSide = new Vector3(0.41550916f, 0f, 0.90958899f);
 
         /// <summary>文字と板の面のあいだに要る隙間の下限（m）。これより近いと面と文字が交互に描かれてちらつく。</summary>
         private const float MinGap = 0.002f;
@@ -46,26 +43,32 @@ namespace KCD.Tests
         /// <summary>立て看板の周りで、その看板の板と名前を拾う水平の半径（m）。隣の看板は 10 m 以上離れている。</summary>
         private const float PylonReach = 2f;
 
-        /// <summary>共創棟の店舗の色板のマテリアル。ファミリーマートは白い板の上下に緑と青の帯が重なる。</summary>
-        private static readonly string[] StoreMaterials =
-        {
-            "sign_starbucks_green",
-            "sign_familymart_white",
-            "sign_familymart_green",
-            "sign_familymart_blue"
-        };
+        /// <summary>
+        /// 1 枚の看板の表と裏とみなす、2 つの文字の水平の離れの上限（m）。立て看板の表と裏の文字は、
+        /// 板の厚み（0.1 m）と隙間ぶん離れて同じ高さにある。
+        /// </summary>
+        private const float BackToBackReach = 0.5f;
 
-        /// <summary>店名の辞書の鍵と、店名を貼る色板のマテリアル。ファミリーマートは緑と青の帯に挟まれた白い板に貼る。</summary>
-        private static readonly (string Key, string Plate)[] StoreSigns =
+        /// <summary>表と裏の文字の高さの差の上限（m）。</summary>
+        private const float BackToBackHeight = 0.05f;
+
+        /// <summary>
+        /// 建物の外に出さない店の名前（小文字で比べる）。共創棟 1F のスターバックスとファミリーマート、
+        /// キャンパスの外の背景のローソン。店の名前は会話とクエストの文にだけ出る。
+        /// </summary>
+        private static readonly string[] Brands =
         {
-            ("ui.building.starbucks_green", "sign_starbucks_green"),
-            ("ui.building.familymart_green", "sign_familymart_white")
+            "スターバックス", "スタバ", "starbucks",
+            "ファミリーマート", "ファミマ", "familymart",
+            "ローソン", "lawson"
         };
 
         private Scene _scene;
         private readonly Dictionary<string, Transform> _marks = new Dictionary<string, Transform>();
         private readonly List<SignFaceText> _faces = new List<SignFaceText>();
+        private readonly List<TextMeshPro> _texts = new List<TextMeshPro>();
         private readonly List<MeshRenderer> _renderers = new List<MeshRenderer>();
+        private readonly List<Renderer> _allRenderers = new List<Renderer>();
         private readonly List<string> _pylons = new List<string>();
 
         [OneTimeSetUp]
@@ -83,7 +86,9 @@ namespace KCD.Tests
                 }
 
                 _faces.AddRange(root.GetComponentsInChildren<SignFaceText>(false));
+                _texts.AddRange(root.GetComponentsInChildren<TextMeshPro>(true));
                 _renderers.AddRange(root.GetComponentsInChildren<MeshRenderer>(false));
+                _allRenderers.AddRange(root.GetComponentsInChildren<Renderer>(true));
             }
 
             // 立て看板は FBX の sign_<id>（板の中心）に door_<id> と entrance_<id> がそろう建物。
@@ -226,21 +231,13 @@ namespace KCD.Tests
                 }
             }
 
-            foreach ((string key, _) in StoreSigns)
-            {
-                foreach (SignFaceText face in _faces.FindAll(f => f.Key == key))
-                {
-                    CheckReadableFrom(face, MallSide, problems);
-                }
-            }
-
             Assert.IsEmpty(problems, "看板の名前の向き:\n" + string.Join("\n", problems));
         }
 
         [Test]
         public void 看板の名前はどの言語の辞書にもある()
         {
-            Assert.GreaterOrEqual(_faces.Count, PylonCount * 2 + StoreSigns.Length, ScenePath + " の看板の名前が足りない（KCD/シーンを組み直す）");
+            Assert.GreaterOrEqual(_faces.Count, PylonCount * 2, ScenePath + " の看板の名前が足りない（KCD/シーンを組み直す）");
 
             const string Missing = "<missing>";
             var missing = new List<string>();
@@ -248,7 +245,7 @@ namespace KCD.Tests
             {
                 foreach (SignFaceText face in _faces)
                 {
-                    if (string.IsNullOrEmpty(face.Key) || BuildingLabel.Resolve(face.Key, Missing) == Missing)
+                    if (string.IsNullOrEmpty(face.Key) || SignFaceText.Resolve(face.Key, Missing) == Missing)
                     {
                         missing.Add(locale + ": " + face.name + " (" + face.Key + ")");
                     }
@@ -278,82 +275,77 @@ namespace KCD.Tests
         }
 
         [Test]
-        public void 店舗の色板はモールから見えて店名が貼ってある()
+        public void 同じ名前の文字は1枚の看板の表と裏にしか出ない()
         {
+            Assert.GreaterOrEqual(_texts.Count, PylonCount * 2, ScenePath + " に看板の文字が足りない（KCD/シーンを組み直す）");
+
             var problems = new List<string>();
-            var mallBoards = new List<Surface>();
-            foreach (string material in StoreMaterials)
-            {
-                List<Surface> seen = SurfacesOf(material).FindAll(s => SeenFrom(s, MallSide));
-                if (seen.Count == 0)
-                {
-                    problems.Add(material + " の色板の表がモールを向いていない（裏面になって描かれない）");
-                }
-
-                mallBoards.AddRange(seen);
-            }
-
-            var signs = new List<(Surface Board, SignFaceText Face)>();
-            foreach ((string key, string plate) in StoreSigns)
-            {
-                Surface board = mallBoards.Find(s => s.Material == plate);
-                if (board == null)
-                {
-                    continue;
-                }
-
-                List<SignFaceText> faces = FacesNear(key, board.Center, PylonReach);
-                if (faces.Count == 0)
-                {
-                    problems.Add(plate + " の色板に店名（" + key + "）が無い");
-                }
-
-                foreach (SignFaceText face in faces)
-                {
-                    float gap = Vector3.Dot(face.transform.position - board.Center, MallSide);
-                    if (gap <= MinGap || gap > MaxGap)
-                    {
-                        problems.Add(face.name + " が色板の面から " + gap.ToString("F3") + " m（"
-                            + MinGap + "〜" + MaxGap + " m のモールの側に置く）");
-                    }
-
-                    signs.Add((board, face));
-                }
-            }
-
-            Vector3 side = Vector3.Cross(Vector3.up, MallSide);
             ForEachLocale(locale =>
             {
-                foreach ((Surface board, SignFaceText face) in signs)
+                var byText = new Dictionary<string, List<TextMeshPro>>();
+                foreach (TextMeshPro text in _texts)
                 {
-                    TextMeshPro text = Refresh(face);
-                    if (text.textInfo.characterCount == 0)
+                    string shown = Shown(text);
+                    if (string.IsNullOrWhiteSpace(shown))
                     {
-                        problems.Add(locale + ": " + face.name + " が空");
                         continue;
                     }
 
-                    Rect plateRect = RectOf(board.Points, side);
-                    Rect glyphs = RectOf(TextCorners(text), side);
-                    if (!Contains(plateRect, glyphs))
+                    if (!byText.TryGetValue(shown, out List<TextMeshPro> same))
                     {
-                        problems.Add(locale + ": " + face.name + " 「" + text.text + "」が色板 " + Describe(plateRect)
-                            + " からはみ出す " + Describe(glyphs));
+                        same = new List<TextMeshPro>();
+                        byText.Add(shown, same);
                     }
 
-                    // ファミリーマートの緑と青の帯は白い板より手前にある。店名は帯に挟まれた白いところに収める。
-                    foreach (Surface other in mallBoards)
+                    same.Add(text);
+                }
+
+                foreach (KeyValuePair<string, List<TextMeshPro>> pair in byText)
+                {
+                    List<TextMeshPro> same = pair.Value;
+                    if (same.Count == 1 || (same.Count == 2 && BackToBack(same[0].transform, same[1].transform)))
                     {
-                        bool inFront = Vector3.Dot(other.Center - face.transform.position, MallSide) > 0f;
-                        if (other != board && inFront && RectOf(other.Points, side).Overlaps(glyphs))
-                        {
-                            problems.Add(locale + ": " + face.name + " 「" + text.text + "」が手前の " + other.Material + " の板に隠れる");
-                        }
+                        continue;
+                    }
+
+                    problems.Add(locale + ": 「" + pair.Key + "」が " + same.Count + " か所に出る: "
+                        + string.Join(", ", same.ConvertAll(t => t.name + " " + t.transform.position.ToString("F1"))));
+                }
+            });
+
+            Assert.IsEmpty(problems, "同じ名前の文字（1 枚の看板の表と裏だけにする。KCD/シーンを組み直す）:\n" + string.Join("\n", problems));
+        }
+
+        [Test]
+        public void 建物の外に店の名前と店の色の板を出さない()
+        {
+            var problems = new List<string>();
+            ForEachLocale(locale =>
+            {
+                foreach (TextMeshPro text in _texts)
+                {
+                    string shown = Shown(text);
+                    string brand = BrandIn(shown);
+                    if (brand != null)
+                    {
+                        problems.Add(locale + ": " + text.name + " 「" + shown + "」に " + brand);
                     }
                 }
             });
 
-            Assert.IsEmpty(problems, "店舗の色板（KCD/シーンを組み直す）:\n" + string.Join("\n", problems));
+            foreach (Renderer renderer in _allRenderers)
+            {
+                foreach (Material material in renderer.sharedMaterials)
+                {
+                    if (material != null && BrandIn(material.name) != null)
+                    {
+                        problems.Add(renderer.name + " のマテリアル " + material.name);
+                    }
+                }
+            }
+
+            Assert.IsEmpty(problems, "建物の外の店の名前と色の板（blender/build_campus.py から FBX を書き出し直す）:\n"
+                + string.Join("\n", problems));
         }
 
         /// <summary>立て看板 1 枚。距離はどれも板の中心（sign_&lt;id&gt;）から外向き（door_ → entrance_）に測る。</summary>
@@ -365,16 +357,6 @@ namespace KCD.Tests
             public float Front;
             public float Back;
             public Rect White;
-        }
-
-        /// <summary>サブメッシュ 1 つぶんの面。表の向きは三角形の巡る向きから出す（片面のマテリアルは表だけ描く）。</summary>
-        private sealed class Surface
-        {
-            public string Material;
-            public Vector3 Center;
-            public Vector3 Normal;
-            public bool DoubleSided;
-            public List<Vector3> Points;
         }
 
         private Pylon PylonOf(string id)
@@ -393,21 +375,18 @@ namespace KCD.Tests
             };
 
             var points = new List<Vector3>();
-            foreach (Surface surface in SurfacesOf(PylonMaterial))
+            foreach (Vector3 point in PointsOf(PylonMaterial))
             {
-                foreach (Vector3 point in surface.Points)
+                Vector3 offset = point - center;
+                if (new Vector2(offset.x, offset.z).magnitude > PylonReach || Mathf.Abs(offset.y) > 1.5f)
                 {
-                    Vector3 offset = point - center;
-                    if (new Vector2(offset.x, offset.z).magnitude > PylonReach || Mathf.Abs(offset.y) > 1.5f)
-                    {
-                        continue;
-                    }
-
-                    points.Add(point);
-                    float along = Vector3.Dot(offset, normal);
-                    pylon.Front = Mathf.Max(pylon.Front, along);
-                    pylon.Back = Mathf.Min(pylon.Back, along);
+                    continue;
                 }
+
+                points.Add(point);
+                float along = Vector3.Dot(offset, normal);
+                pylon.Front = Mathf.Max(pylon.Front, along);
+                pylon.Back = Mathf.Min(pylon.Back, along);
             }
 
             if (points.Count == 0)
@@ -419,9 +398,10 @@ namespace KCD.Tests
             return pylon;
         }
 
-        private List<Surface> SurfacesOf(string material)
+        /// <summary>material を差したサブメッシュの頂点（ワールド）。</summary>
+        private List<Vector3> PointsOf(string material)
         {
-            var surfaces = new List<Surface>();
+            var points = new List<Vector3>();
             foreach (MeshRenderer renderer in _renderers)
             {
                 var filter = renderer.GetComponent<MeshFilter>();
@@ -432,57 +412,55 @@ namespace KCD.Tests
                 }
 
                 Material[] materials = renderer.sharedMaterials;
+                Matrix4x4 localToWorld = renderer.transform.localToWorldMatrix;
+                Vector3[] vertices = null;
                 for (int s = 0; s < mesh.subMeshCount && s < materials.Length; s++)
                 {
-                    if (materials[s] != null && materials[s].name == material)
+                    if (materials[s] == null || materials[s].name != material)
                     {
-                        surfaces.Add(SurfaceOf(renderer.transform.localToWorldMatrix, mesh, s, materials[s]));
+                        continue;
+                    }
+
+                    vertices = vertices ?? mesh.vertices;
+                    foreach (int index in mesh.GetTriangles(s))
+                    {
+                        points.Add(localToWorld.MultiplyPoint3x4(vertices[index]));
                     }
                 }
             }
 
-            return surfaces;
+            return points;
         }
 
-        private static Surface SurfaceOf(Matrix4x4 localToWorld, Mesh mesh, int subMesh, Material material)
+        /// <summary>いまの言語で出る文字。看板の名前は辞書から引き直す（SignFaceText は編集時に動かない）。</summary>
+        private static string Shown(TextMeshPro text)
         {
-            Vector3[] vertices = mesh.vertices;
-            int[] triangles = mesh.GetTriangles(subMesh);
-            Vector3 winding = Vector3.zero;
-            for (int t = 0; t + 2 < triangles.Length; t += 3)
-            {
-                Vector3 a = vertices[triangles[t]];
-                winding += Vector3.Cross(vertices[triangles[t + 1]] - a, vertices[triangles[t + 2]] - a);
-            }
-
-            var points = new List<Vector3>(triangles.Length);
-            foreach (int index in triangles)
-            {
-                points.Add(localToWorld.MultiplyPoint3x4(vertices[index]));
-            }
-
-            var bounds = new Bounds(points.Count > 0 ? points[0] : Vector3.zero, Vector3.zero);
-            foreach (Vector3 point in points)
-            {
-                bounds.Encapsulate(point);
-            }
-
-            return new Surface
-            {
-                Material = material.name,
-                Center = bounds.center,
-                // 頂点の法線と同じく逆転置で移す（負の拡大で鏡にした物は Unity が裏表を入れ替えて描く）。
-                Normal = localToWorld.inverse.transpose.MultiplyVector(winding).normalized,
-                DoubleSided = material.HasProperty("_Cull") && Mathf.Approximately(material.GetFloat("_Cull"), 0f),
-                Points = points
-            };
+            SignFaceText face = text.GetComponent<SignFaceText>();
+            return face != null ? SignFaceText.Resolve(face.Key, text.text) : text.text;
         }
 
-        /// <summary>from の側から見たとき面が描かれるか。片面なら表が from を向いていること。</summary>
-        private static bool SeenFrom(Surface surface, Vector3 from)
+        /// <summary>2 つの文字が 1 枚の看板の表と裏か。すぐ近くの同じ高さにあり、読める側が逆を向く。</summary>
+        private static bool BackToBack(Transform a, Transform b)
         {
-            float facing = Vector3.Dot(surface.Normal, from);
-            return facing > Aligned || (surface.DoubleSided && facing < -Aligned);
+            Vector3 offset = a.position - b.position;
+            return new Vector2(offset.x, offset.z).magnitude <= BackToBackReach
+                && Mathf.Abs(offset.y) <= BackToBackHeight
+                && Vector3.Dot(a.forward, b.forward) < -Aligned;
+        }
+
+        /// <summary>text に含まれる店の名前。無ければ null。</summary>
+        private static string BrandIn(string text)
+        {
+            string lower = text.ToLowerInvariant();
+            foreach (string brand in Brands)
+            {
+                if (lower.Contains(brand))
+                {
+                    return brand;
+                }
+            }
+
+            return null;
         }
 
         /// <summary>key の名前のうち、center から水平に reach m 以内のもの。</summary>
@@ -519,7 +497,7 @@ namespace KCD.Tests
         private static TextMeshPro Refresh(SignFaceText face)
         {
             TextMeshPro text = face.GetComponent<TextMeshPro>();
-            text.text = BuildingLabel.Resolve(face.Key, text.text);
+            text.text = SignFaceText.Resolve(face.Key, text.text);
             text.ForceMeshUpdate();
             return text;
         }

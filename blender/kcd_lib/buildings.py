@@ -134,23 +134,6 @@ def build_kyoso(mb, b, frame, ctx):
         if other_h < h - 0.5:
             facade.add_solid(mb, loop, other_h, h, "louver_white", edges=[i])
 
-    # 店舗サイン（色板。文字は Unity 側 TMP）。モール側（+v）の 1F 開口の上に帯状に貼る
-    sb_u = u0 + (u1 - u0) * 0.30
-    fm_u = u0 + (u1 - u0) * 0.58
-    z0 = fh - 1.75
-    z1 = fh - 0.15
-
-    def _plate(uc, hw, za, zb, mat, out=0.34):
-        a = frame.xy(uc - hw, v1 + out)
-        bb = frame.xy(uc + hw, v1 + out)
-        mb.add_quad((a[0], a[1], za), (bb[0], bb[1], za),
-                    (bb[0], bb[1], zb), (a[0], a[1], zb), mat)
-
-    _plate(sb_u, 4.6, z0, z1, "sign_starbucks_green")
-    _plate(fm_u, 4.6, z0, z1, "sign_familymart_white")
-    _plate(fm_u, 4.6, z0, z0 + 0.40, "sign_familymart_green", out=0.40)
-    _plate(fm_u, 4.6, z1 - 0.40, z1, "sign_familymart_blue", out=0.40)
-
     mb.add_ngon_flat(loop, h, "roof_grey")
     facade.add_parapet(mb, loop, h, 1.1, 0.4, "louver_white", edges=visible)
     _roof_boxes(mb, frame, (u0, v0, u1, v1), h + 1.1, n=2, du=10.0, dv=4.0, h=3.2)

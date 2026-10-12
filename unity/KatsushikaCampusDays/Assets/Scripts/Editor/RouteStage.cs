@@ -135,8 +135,8 @@ namespace KCD.Editor
                     go.layer = buildingLayer;
                 }
 
-                // 寮と塀もキャンパスの建物と同じく裏の面まで影に描き、角の光の筋をふさぐ (#229)。
-                // bld_route_background は名前に "ground" を含むので、レイヤーの分岐とは分ける。
+                // 沿道の建物も、キャンパスの建物（CampusStage.DressCampus）と同じく裏の面も影に描き、
+                // 角の継ぎ目から光が漏れないようにする (#229)。
                 if (id.StartsWith("bld"))
                 {
                     MeshRenderer building = go.GetComponent<MeshRenderer>();

@@ -422,8 +422,28 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: sign_familymart_blue
+    second: {fileID: 2100000, guid: aee8bce69ab644d4e83d3d713942a548, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: sign_familymart_green
+    second: {fileID: 2100000, guid: aee8bce69ab644d4e83d3d713942a548, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: sign_familymart_white
+    second: {fileID: 2100000, guid: aee8bce69ab644d4e83d3d713942a548, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: sign_plate_blue
     second: {fileID: 2100000, guid: 415293ac12f47cf45a85e6ecebb3c492, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: sign_starbucks_green
+    second: {fileID: 2100000, guid: aee8bce69ab644d4e83d3d713942a548, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
