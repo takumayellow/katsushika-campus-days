@@ -968,7 +968,7 @@ def _glasses(mb, p, head, fs, uv_box, mat: str = "glasses"):
     ez = z0 + (z1 - z0) * fl["eye_y"]
     rx = (x1 - x0) * fl["eye_rx"] * 1.42
     rz = (z1 - z0) * fl["eye_ry"] * 1.28
-    # 縁の太さ（頭幅比）。教授は細い金属の縁にする（太い縁は目を大きく見せる）。
+    # 縁の太さ（頭幅比）
     tube = hw * p.get("glasses_tube", 0.016)
     for sgn in (-1, 1):
         cx = sgn * ex
@@ -1159,6 +1159,10 @@ def build_hair(mb: M.MeshBuilder, p: dict, head, a, fs, uv_box) -> None:
               z_end=chin + hh * p.get("nape_end", 0.10),
               width=0.102, puff=0.85)
 
+    elif style == "business":
+        from . import hair_men
+        hair_men.build_business(mb, p, head)
+
     acc = p.get("hair_accessory")
     if acc == "pin_blue":
         _hairpin(mb, p, head)
@@ -1166,7 +1170,10 @@ def build_hair(mb: M.MeshBuilder, p: dict, head, a, fs, uv_box) -> None:
         _bow(mb, p, head)
     elif acc == "bandana":
         _bandana(mb, p, head)
-    elif acc in ("glasses_red", "glasses_gray"):
+    elif acc == "glasses_gray":
+        from . import hair_men
+        hair_men.build_metal_glasses(mb, p, head, fs, uv_box)
+    elif acc == "glasses_red":
         _glasses(mb, p, head, fs, uv_box)
 
     _ = a

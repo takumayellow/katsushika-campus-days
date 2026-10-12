@@ -311,6 +311,8 @@ def _draw_face_features(arr: np.ndarray, p: dict) -> None:
             _draw_dot_eye(arr, cx, eye_y, eye_rx, eye_ry, sgn, lash)
         elif p.get("eye_style") == "ink":
             _draw_ink_eye(arr, cx, eye_y, eye_rx, eye_ry, sgn, lash, p)
+        elif p.get("eye_style") == "narrow":
+            _draw_narrow_eye(arr, cx, eye_y, eye_rx, eye_ry, sgn, iris, lash, p)
         else:
             _draw_eye(arr, cx, eye_y, eye_rx, eye_ry, sgn, iris, iris_dark,
                       iris_light, lash, p)
@@ -509,6 +511,73 @@ def _draw_eye(arr, cx, cy, rx, ry, sgn, iris, iris_dark, iris_light, lash, p):
         lw * 0.62, soft, taper=(lw * 0.34, lw * 0.34), alpha=0.75)
     arc(arr, (cx - rx * 0.84, cy - ry * 0.74), (cx, cy - ry * 1.02),
         (cx + rx * 0.84, cy - ry * 0.72), lw * 0.22, soft, alpha=0.55)
+
+
+def _uv_aspect(p: dict) -> float:
+    """v の 1 単位が u の 1 単位の何倍のワールド長か（body.build_base の uv_box）。"""
+    z = p.get("z")
+    span_v = (z["top"] - z["chin"] + p["head_h"] * 0.015) if z else p["head_h"] * 1.015
+    return span_v / (p["head_w"] * 1.44)
+
+
+def _ellipse_mask(shape, box, cx, cy, rx, ry, power=2.0, soft=0.0015):
+    r0, r1, c0, c1 = box
+    size = shape[0]
+    cols = (np.arange(c0, c1, dtype=np.float32) + 0.5) / size
+    rows = (np.arange(r0, r1, dtype=np.float32) + 0.5) / size
+    X, Y = np.meshgrid(cols, rows)
+    d = (np.abs((X - cx) / rx) ** power + np.abs((Y - cy) / ry) ** power) ** (1.0 / power)
+    e = soft / max(rx, ry)
+    return _smoothstep(1.0 + e, 1.0 - e, d).astype(np.float32)
+
+
+def _draw_narrow_eye(arr, cx, cy, rx, ry, sgn, iris, lash, p):
+    """大人の男の細い目。sgn=-1 がキャラの右目（正面視で画面左）。
+
+    横長の白目に、ワールドで真円になる小さな濃い虹彩を上寄りに置き、上下の
+    まぶたで少し隠す。虹彩の繊維や大小のハイライトは描かず、光は上外側の
+    小さな 1 点だけにする。虹彩は白目の楕円で切り抜き、まぶたの外へ出さない。
+    """
+    size = arr.shape[0]
+    # 白目（メッシュの白目円盤 rx*0.985 x ry*0.965 より一回り大きく塗る）
+    ellipse(arr, cx, cy, rx * 1.02, ry * 1.02, (0.95, 0.94, 0.93), power=2.0)
+    # 目尻と目頭を少し落とし、上まぶたの落ち影を敷く
+    for s in (-1, 1):
+        ellipse(arr, cx + s * rx * 0.88, cy, rx * 0.22, ry * 0.80,
+                (0.80, 0.76, 0.75), power=2.0, alpha=0.40, feather=0.010)
+    ellipse(arr, cx, cy + ry * 0.62, rx * 1.00, ry * 0.55,
+            (0.70, 0.68, 0.70), power=2.0, alpha=0.55, feather=0.010)
+
+    # 虹彩はいったん写しに描いて、白目の楕円で切り抜いて戻す
+    box = (max(0, int((cy - ry * 1.6) * size)), min(size, int((cy + ry * 1.6) * size) + 1),
+           max(0, int((cx - rx * 1.2) * size)), min(size, int((cx + rx * 1.2) * size) + 1))
+    r0, r1, c0, c1 = box
+    keep = arr[r0:r1, c0:c1].copy()
+    ir_y = ry * 1.00
+    ir_x = ir_y * _uv_aspect(p)
+    icx, icy = cx + sgn * rx * 0.02, cy + ry * 0.10
+    iris_dark = tuple(c * 0.45 for c in iris)
+    iris_mid = tuple(c * 0.85 for c in iris)
+    iris_low = tuple(min(1.0, c * 1.15 + 0.03) for c in iris)
+    vgradient(arr, icx, icy, ir_x, ir_y, iris_dark, iris_low, power=2.0)
+    ellipse(arr, icx, icy - ir_y * 0.30, ir_x * 0.70, ir_y * 0.45, iris_mid,
+            power=2.0, alpha=0.45, feather=0.010)
+    ring(arr, icx, icy, ir_x, ir_y, ir_x * 0.16, iris_dark, power=2.0, alpha=0.95)
+    ellipse(arr, icx, icy, ir_x * 0.45, ir_y * 0.45, (0.07, 0.05, 0.05), power=2.0,
+            feather=0.004)
+    sh = p.get("eye_shine", 1.0)
+    ellipse(arr, icx - sgn * ir_x * 0.40, icy + ir_y * 0.38, ir_x * 0.24 * sh,
+            ir_y * 0.24 * sh, (1.0, 0.99, 0.96), power=2.0, alpha=0.92)
+    m = _ellipse_mask(arr.shape, box, cx, cy, rx * 1.02, ry * 1.02)[..., None]
+    arr[r0:r1, c0:c1] = keep * (1.0 - m) + arr[r0:r1, c0:c1] * m
+    # まぶたの影は虹彩にも乗せる
+    ellipse(arr, cx, cy + ry * 0.78, rx * 0.96, ry * 0.36,
+            tuple(c * 0.55 for c in lash), power=2.0, alpha=0.35, feather=0.008)
+    # 下まぶたは細く薄い線だけ（まつ毛ではない）
+    soft = tuple(min(1.0, c * 0.55 + 0.25) for c in lash)
+    arc(arr, (cx - rx * 0.80, cy - ry * 0.50), (cx, cy - ry * 1.12),
+        (cx + rx * 0.80, cy - ry * 0.50), ry * 0.06, soft, alpha=0.45,
+        taper=(ry * 0.03, ry * 0.03))
 
 
 def _star(arr, cx, cy, r, rgb, alpha=1.0):

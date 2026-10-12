@@ -424,14 +424,18 @@ CHARACTERS: dict[str, dict] = {
         brow_color=_c("#2E2C30"),
         blush_color=_c("#D89080"), blush_strength=0.0,
         mouth_color=_c("#8E4038"), mouth_style="line", mouth_w=0.028,
-        eye_style="sharp", eye_tilt=0.0,
-        brow_width=0.030, brow_arch=0.04,
-        # 大人の男の顔: まつ毛は細い線だけ、目の光は小さく、輪郭は顎を張らせる (#172)
-        lash_scale=0.50, lash_lower=False, eye_shine=0.55, head_square=0.50,
-        hair="short_old", hair_accessory="glasses_gray", nape_end=0.20,
-        glasses_tube=0.009,
+        # 大人の男の顔 (#172): 目は横長の細い目にし、虹彩は小さな濃い茶の円、光は 1 点だけ。
+        # まぶたは上の線 1 本で、目尻の跳ねと下まつ毛は付けない。眉は目に近い直線寄りの眉。
+        # 鼻筋（face_keel）を通して眼鏡を鼻に乗せる。輪郭は顎を張らせる。
+        eye_style="narrow", eye_tilt=0.0,
+        brow_width=0.0120, brow_arch=0.005, brow_lift=0.080,
+        lash_scale=0.95, lash_lower=False, lash_flick=0.0, crease_lift=0.85,
+        eye_shine=0.55, head_square=0.50, face_keel=0.080,
+        hair="business", hair_accessory="glasses_gray",
+        # 細い金属の縁の眼鏡。レンズは目の横幅に対する倍率と、縦横比で決める。
+        glasses_tube=0.0060, glasses_lens=(1.50, 0.60),
         outfit="suit",
-        face_layout=dict(eye_y=0.421, eye_dx=0.190, eye_rx=0.068, eye_ry=0.062),
+        face_layout=dict(eye_y=0.440, eye_dx=0.168, eye_rx=0.066, eye_ry=0.040),
         # 服と髪は情報工学科の教員の写真の傾向に合わせる（docs/ref/characters/prof.md）
         mat_colors={"hair": "#47454C", "eye_l": "#5C4A3E", "eye_r": "#5C4A3E",
                     "glasses": "#9EA4AE", "cloth_blouse": "#C4D8EC",
