@@ -288,6 +288,11 @@ def _pockets(mb, sec: _Section, ln: _Lines, mat="cloth_jacket"):
 
 
 def _buttons(mb, sec: _Section, ln: _Lines, mat="shoes_loafer"):
+    """前の 2 つのボタン。
+
+    材質は靴（shoes_loafer）と同じこげ茶にする。紺の背広に合う色で、材質を増やさないので
+    Unity でサブメッシュと描画コール、.mat（モブの LOD の分も）が増えない。
+    """
     h = sec.h
     for z in (ln.b1, ln.b2):
         pt = sec.point(-math.pi / 2, z)
