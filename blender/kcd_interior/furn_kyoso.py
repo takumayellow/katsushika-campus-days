@@ -6,7 +6,7 @@
 
 import math
 
-from . import kit
+from . import furniture as F, kit, shell
 
 
 def terrazzo(mb, x0, y0, x1, y1, rng, z=0.012, chips=40):
@@ -126,16 +126,6 @@ def side_table(mb, x, y, z=0.0):
     kit.cyl(mb, x, y, z, z + 0.48, 0.03, "kyoso_steel_black", seg=4)
 
 
-def easel(mb, x, y, ang=0.0):
-    """黒板を立て掛けるイーゼル。脚は 3 本の細い管。"""
-    t = kit.T(x, y, 0.0, ang)
-    for px, py in ((-0.36, -0.1), (0.36, -0.1), (0.0, 0.38)):
-        a = t.p(px, py, 0.0)
-        b = t.p(0.0, 0.0, 1.6)
-        kit.tube(mb, a, b, 0.02, "kyoso_wood_oak", seg=4)
-    t.box(mb, -0.42, -0.14, 0.34, 0.42, -0.06, 0.38, "kyoso_wood_oak")
-
-
 def tumbler_shelf(mb, x0, y0, x1, y1, h=1.8, tiers=4, rng=None):
     """忘れ物の棚（4 段）。段ごとに白いルーバー柄のタンブラーを並べる。"""
     kit.box(mb, x0, y0, 0.0, x1, y1, 0.04, "plastic_white")
@@ -152,3 +142,35 @@ def tumbler_shelf(mb, x0, y0, x1, y1, h=1.8, tiers=4, rng=None):
                 continue
             kit.cyl(mb, (x0 + x1) * 0.5, cy, z + 0.03, z + 0.22, 0.045,
                     "plastic_white", seg=6)
+
+
+def seat_mark(sink, x, y, z, ang, hw=0.25, hd=0.25, inner=0.5, depth=0.20):
+    """(x, y) を外形の中心にした座面を 1 つ記録する。ang は座ったときの正面（kit.T と同じ）。"""
+    F._seat(sink, kit.T(x, y, z, ang), len(sink.verts), hw, -hd, hd, inner, depth)
+
+
+def glass_wall(mb, a, b, z1, gaps=(), pitch=1.8, plinth=0.12, door_top=None):
+    """黒い方立てのガラス壁（a から b へ。gaps は a からの距離の区間）。
+
+    gaps の上は door_top まで壁を立てる。ガラスは薄い板、床と天辺に黒い見切りを付ける。
+    """
+    dx, dy = b[0] - a[0], b[1] - a[1]
+    length = math.hypot(dx, dy)
+    ux, uy = dx / length, dy / length
+    shell.partition(mb, a, b, 0.0, z1, "kyoso_steel_black", thick=0.08, gaps=gaps,
+                    glass_top="glass_interior", glass_z=plinth)
+    cuts = sorted(gaps)
+    posts = [0.0, length]
+    n = int(length / pitch)
+    posts += [length * k / (n + 1) for k in range(1, n + 1)]
+    for g in cuts:
+        posts += [g[0], g[1]]
+    for s in posts:
+        if any(g[0] < s < g[1] for g in cuts):
+            continue
+        kit.box_c(mb, a[0] + ux * s, a[1] + uy * s, 0.0, 0.1, 0.1, z1, "kyoso_steel_black")
+    for g in cuts:
+        if door_top is not None and door_top < z1:
+            shell.partition(mb, (a[0] + ux * g[0], a[1] + uy * g[0]),
+                            (a[0] + ux * g[1], a[1] + uy * g[1]), door_top, z1,
+                            "kyoso_steel_black", thick=0.08)
