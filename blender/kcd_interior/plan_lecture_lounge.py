@@ -116,8 +116,8 @@ def _inside(x, y, k=0.82):
 
 def _arc_furniture(c, mb):
     z = D.F3
-    tables = ((39.4, 24.4), (43.4, 25.0), (39.6, 38.6), (43.2, 37.6), (39.2, 43.0),
-              (37.6, 22.8), (45.0, 31.5), (44.0, 42.0))
+    tables = ((38.8, 24.8), (38.8, 27.5), (41.8, 35.0), (38.5, 35.5), (38.5, 40.0),
+              (41.8, 39.0), (38.3, 43.0), (38.9, 31.0))
     for (x, y) in tables:
         if not _inside(x, y):
             continue
@@ -125,7 +125,8 @@ def _arc_furniture(c, mb):
         for k in range(3):
             a = math.radians(30 + 120 * k)
             px, py = x + 0.85 * math.cos(a), y + 0.85 * math.sin(a)
-            FL.cafe_chair(mb, kit.T(px, py, z, kit.face_ang(px, py, x, y)))
+            FL.cafe_chair(mb, kit.T(px, py, z, kit.face_ang(px, py, x, y)),
+                          mat="plastic_white", frame="metal_gray")
     # 西の壁ぎわの自動販売機 2 台
     for y in (D.VENDING_3F[1] + 0.2, D.VENDING_3F[1] + 1.4):
         base = len(mb.verts)

@@ -38,8 +38,9 @@ def steel_shelf(mb, t, w=2.4, d=0.45, h=1.9, goods=("lecture_coop_band", "plasti
 
 
 def cafe_chair(mb, t, mat="lecture_seat_green", frame="metal_dark"):
-    """ラウンジの椅子（30 三角形）。"""
+    """ラウンジの椅子（4 本脚）。"""
     t.box_nb(mb, -0.21, -0.21, 0.42, 0.21, 0.21, 0.46, mat)
     t.box_nb(mb, -0.20, -0.22, 0.46, 0.20, -0.18, 0.84, mat)
-    t.box_nb(mb, -0.16, -0.16, 0.0, -0.12, -0.12, 0.42, frame)
-    t.box_nb(mb, 0.12, 0.12, 0.0, 0.16, 0.16, 0.42, frame)
+    for lx in (-0.18, 0.14):
+        for ly in (-0.18, 0.14):
+            t.box_nb(mb, lx, ly, 0.0, lx + 0.04, ly + 0.04, 0.42, frame)
