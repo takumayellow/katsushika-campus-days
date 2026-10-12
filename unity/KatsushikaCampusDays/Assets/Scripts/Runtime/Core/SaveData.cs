@@ -12,8 +12,8 @@ namespace KCD
     [Serializable]
     public sealed class SaveData
     {
-        /// <summary>今の版。2 で日数・屋内・一日の記録（DayStats）・位置の有無を足した (#61)。</summary>
-        public const int CurrentVersion = 2;
+        /// <summary>今の版。2 で日数・屋内・一日の記録（DayStats）・位置の有無を足した (#61)。3 で食堂（cafeteria）を research2 から分けた (#171)。</summary>
+        public const int CurrentVersion = 3;
 
         /// <summary>
         /// 版番号を持たない最初の形（キャラ・時刻・位置・クエストだけ）。
@@ -164,7 +164,9 @@ namespace KCD
                 data.ReturnY = source.ReturnY;
                 data.ReturnZ = source.ReturnZ;
                 data.ReturnYaw = SanitizeYaw(source.ReturnYaw);
-                data.HasPosition = source.HasPosition && finitePosition;
+                // 版 2 までの research2 は今の食堂。中の座標は新しい research2（ロビー）では使えないので、戻り先の外へ立たせる。
+                bool movedToCafeteria = source.SaveVersion < 3 && source.InteriorId == "research2";
+                data.HasPosition = source.HasPosition && finitePosition && !movedToCafeteria;
                 return data;
             }
 

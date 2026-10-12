@@ -249,6 +249,7 @@ namespace KCD
             switch (buildingId)
             {
                 case "library":
+                case "research2":
                     return "amb_library";
                 case "gym":
                     return "amb_gym";

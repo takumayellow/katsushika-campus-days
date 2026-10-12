@@ -71,6 +71,7 @@ DOORS = [
 ]
 
 # 扉の id と、その扉を付ける外壁を持つ建物が違うとき（1 棟に扉が 2 つ）の対応
+# 食堂は research2 の外観に属する。マテリアル（research2_*）も plan_research2_* のモジュールも research2 と共有する。
 HOSTS = {"cafeteria": "research2"}
 
 

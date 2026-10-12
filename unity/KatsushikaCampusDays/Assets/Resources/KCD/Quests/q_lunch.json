@@ -2,8 +2,8 @@
   "id": "q_lunch",
   "title": "食堂のいちばん忙しい時間",
   "title_en": "The Cafeteria's Busiest Hour",
-  "summary": "食堂は 1 階が 730 席、2 階が 665 席。昼のピークに牛乳が切れたらしい。共創棟 1 階のファミリーマートで牛乳を買って、中川かなめのところへ持っていく。",
-  "summary_en": "The cafeteria has 730 seats on the first floor and 665 on the second. At the lunch peak, they've run out of milk. Buy milk at the convenience store on the first floor of Kyoso Hall and bring it to Nakagawa Kaname.",
+  "summary": "昼の食堂は、席が足りなくなるほど混む。昼のピークに牛乳が切れたらしい。共創棟 1 階のファミリーマートで牛乳を買って、中川かなめのところへ持っていく。",
+  "summary_en": "At lunchtime the cafeteria fills up and seats run short. At the lunch peak, they've run out of milk. Buy milk at the convenience store on the first floor of Kyoso Hall and bring it to Nakagawa Kaname.",
   "order": 3,
   "autoStart": false,
   "prerequisites": [
