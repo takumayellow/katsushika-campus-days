@@ -228,7 +228,7 @@ Y=14.2 +------+----------+----+-------------------+----+-----------+--+--------+
 
 | キー | HEX | rough | metal | 使う所 | 根拠 |
 |---|---|---|---|---|---|
-| kyoso_floor_terrazzo_pale | E6E1D8 | 0.35 | 0 | テラゾーの地 | FM `v_fm_07_04`、KOYO |
+| kyoso_floor_terrazzo_pale | E9DDC6 | 0.35 | 0 | テラゾーの地 | FM `v_fm_07_04`、KOYO |
 | kyoso_floor_terrazzo_mid | A9A69F | 0.38 | 0 | テラゾーの斑（中） | 同上 |
 | kyoso_floor_terrazzo_dark | 5C5D5F | 0.40 | 0 | テラゾーの斑（濃） | 同上 |
 | kyoso_floor_wood_oak | D9B98E | 0.45 | 0 | ラウンジ1・2 のフローリング | MIL `v2_mil_2` |

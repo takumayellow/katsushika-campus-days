@@ -200,7 +200,7 @@ namespace KCD.Editor
             { "research2_roll_white", new Surface("F0EEE8", 0.10f, 0.00f) },
             { "research2_lobby_stone", new Surface("8E8C88", 0.50f, 0.00f) },
             { "research2_floor_mat_black", new Surface("262626", 0.10f, 0.00f) },
-            { "kyoso_floor_terrazzo_pale", new Surface("E6E1D8", 0.65f, 0.00f) },
+            { "kyoso_floor_terrazzo_pale", new Surface("E9DDC6", 0.65f, 0.00f) },
             { "kyoso_floor_terrazzo_mid", new Surface("A9A69F", 0.62f, 0.00f) },
             { "kyoso_floor_terrazzo_dark", new Surface("5C5D5F", 0.60f, 0.00f) },
             { "kyoso_floor_wood_oak", new Surface("D9B98E", 0.55f, 0.00f) },

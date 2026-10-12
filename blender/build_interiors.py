@@ -148,11 +148,11 @@ def add_empty(name, loc, size=0.6):
     return o
 
 
-def add_point_light(name, loc, energy, radius):
+def add_point_light(name, loc, energy, radius, color=(1.0, 0.97, 0.92)):
     data = bpy.data.lights.new(name, type="POINT")
     data.energy = energy
     data.shadow_soft_size = radius
-    data.color = (1.0, 0.97, 0.92)
+    data.color = color
     o = bpy.data.objects.new(name, data)
     o.location = loc
     bpy.context.scene.collection.objects.link(o)
@@ -260,7 +260,8 @@ def build_one(sp, plan, args, eng, ext_src=None):
         if sun is not None:
             sun.data.energy = 1.4
         for i, (x, y, z, energy, radius) in enumerate(c.lights):
-            add_point_light("KCD_IL_%03d" % i, (x, y, z), energy, radius)
+            add_point_light("KCD_IL_%03d" % i, (x, y, z), energy, radius,
+                            **({"color": c.light_color} if c.light_color else {}))
         for idx, (suffix, loc, target, lens) in enumerate(c.cams):
             if suffix.startswith("="):
                 stem = suffix[1:]

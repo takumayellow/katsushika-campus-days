@@ -15,7 +15,7 @@ Unity の InteriorPalette.cs には、統合ブランチで python tools/interio
 
 PALETTE = {
     # 床
-    "kyoso_floor_terrazzo_pale":      ((0.791, 0.753, 0.687), 0.35, 0.0, 1.0),   # E6E1D8
+    "kyoso_floor_terrazzo_pale":      ((0.815, 0.723, 0.565), 0.35, 0.0, 1.0),   # E9DDC6
     "kyoso_floor_terrazzo_mid":       ((0.397, 0.381, 0.347), 0.38, 0.0, 1.0),   # A9A69F
     "kyoso_floor_terrazzo_dark":      ((0.107, 0.109, 0.114), 0.40, 0.0, 1.0),   # 5C5D5F
     "kyoso_floor_wood_oak":           ((0.694, 0.485, 0.270), 0.45, 0.0, 1.0),   # D9B98E
