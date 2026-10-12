@@ -3,7 +3,47 @@ guid: 42e092641c19760458f75bb40a986ecf
 ModelImporter:
   serializedVersion: 24600
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: deck_wood
+    second: {fileID: 2100000, guid: b02c2b62fad9e9241a652a5af023c2cd, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: dorm_cream
+    second: {fileID: 2100000, guid: d5605a52f38fad648a180cc12868b622, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: dorm_white
+    second: {fileID: 2100000, guid: 5f251f4ec383c5e4a8232686b255117f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: glass_frosted
+    second: {fileID: 2100000, guid: d9316b08866a7254aafc54e92df2392d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: metal_charcoal
+    second: {fileID: 2100000, guid: 889f120da6564a64496a84432e13c42a, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: panel_brown
+    second: {fileID: 2100000, guid: 049697bbe4fbf0c4a864de86c7e99e56, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: tile_charcoal
+    second: {fileID: 2100000, guid: 5a6af42042af0a24e9904f8e6e2ace4c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: tile_mauve
+    second: {fileID: 2100000, guid: 7130dd4b42668254492e996e1332ada8, type: 2}
   materials:
     materialImportMode: 1
     materialName: 0

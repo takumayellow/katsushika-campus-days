@@ -227,6 +227,186 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: research1_band_charcoal
+    second: {fileID: 2100000, guid: ebec3178add94a444a183d61d39ec566, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research1_bench_top
+    second: {fileID: 2100000, guid: fd185312577871440b30bae2e91cfa32, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research1_cabinet_white
+    second: {fileID: 2100000, guid: 1a9a5969ea1e83f429fd3d0557092b72, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research1_carpet_grey
+    second: {fileID: 2100000, guid: 34d5e8b99ef05964fa6c249dddcc465d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research1_ceiling
+    second: {fileID: 2100000, guid: 66d2f06a0d1f62e439356518f6d5b438, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research1_chair_green
+    second: {fileID: 2100000, guid: 37dd6aad92b6c2c409c7c85dabdee995, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research1_chair_white
+    second: {fileID: 2100000, guid: 7ba336db21597f841a2ca6a9683cfd07, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research1_concrete
+    second: {fileID: 2100000, guid: fb7724f0c3d8fbb4999492bb319fc1bb, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research1_counter_front
+    second: {fileID: 2100000, guid: d78066cf40d20b041a53942dfad8d8f4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research1_counter_top
+    second: {fileID: 2100000, guid: 120808676342d784c8783231b6defb39, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research1_door_lightblue
+    second: {fileID: 2100000, guid: 0657e3c026c8dca4a87bba5bc29b5655, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research1_door_white
+    second: {fileID: 2100000, guid: 665eb872613e3b243ab18351aa15c1c9, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research1_engine_dark
+    second: {fileID: 2100000, guid: 19c39b91ff9ef5243b2c11f55e3bdd43, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research1_engine_metal
+    second: {fileID: 2100000, guid: 4420887a188b7b146bf9912c446f4c83, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research1_ev_door
+    second: {fileID: 2100000, guid: 7e07b8591747f8548b685607258d7d34, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research1_floor_corridor
+    second: {fileID: 2100000, guid: c45c974cac48420488b58f0bcb52dc56, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research1_floor_navy
+    second: {fileID: 2100000, guid: d23f080f612292a46b15d10a5d57d7d1, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research1_floor_strip
+    second: {fileID: 2100000, guid: 8fe0e1bbaed61804298a0d84f8123d03, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research1_frame_black
+    second: {fileID: 2100000, guid: 35fe2dfe57eabbf46a54784e638d8e6d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research1_glass
+    second: {fileID: 2100000, guid: 2e4b20103c1d32a469b9bfdc98567281, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research1_light_panel
+    second: {fileID: 2100000, guid: d287677ae56c46641997eaf265eca922, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research1_locker_grey
+    second: {fileID: 2100000, guid: c534b16202c6d7d4db6a9ebb20a01b39, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research1_mullion_white
+    second: {fileID: 2100000, guid: cd7c96150727f9e4ba650ebb7a591586, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research1_navy_panel
+    second: {fileID: 2100000, guid: 4a10c90d1c5ad4148b5e4161b6c07247, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research1_red_outlet
+    second: {fileID: 2100000, guid: f35bafb368ab1994683a5fa573190cd0, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research1_skylight_glow
+    second: {fileID: 2100000, guid: 96a400fe4bc78134cad25becc1b9ad2e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research1_slab_exposed
+    second: {fileID: 2100000, guid: fd7acf91fdeecf944919fff719fe9c43, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research1_steel_leg
+    second: {fileID: 2100000, guid: dbce1ca557aa89641bc6230b17fde6f2, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research1_sus_hairline
+    second: {fileID: 2100000, guid: d7915ae6a4b5dda4a9a81743509ad69b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research1_table_white
+    second: {fileID: 2100000, guid: 85dd733888f67b14c9d11b644f281d8d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research1_tile_dark
+    second: {fileID: 2100000, guid: 346e37c8aa5c5ab488553790f1bab50d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research1_tile_light
+    second: {fileID: 2100000, guid: 24e4945e4d81061459e622a26b6d8d49, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research1_tile_mid
+    second: {fileID: 2100000, guid: a5745f7f132710c4cb8d9aa6e0e3576d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research1_vinyl_lightgrey
+    second: {fileID: 2100000, guid: 68229fe973fde2947ae1f4500557074c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research1_wall_white
+    second: {fileID: 2100000, guid: 764b61f866a396a45b50d685e48823a8, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research1_whiteboard
+    second: {fileID: 2100000, guid: c7c31f9e2a463df4e88642297f4665fd, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: sb_wood
     second: {fileID: 2100000, guid: 5b1b17c62b2a8e7468b469d3b5955630, type: 2}
   - first:
