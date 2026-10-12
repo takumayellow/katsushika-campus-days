@@ -99,7 +99,7 @@ namespace KCD.Editor
             { "panel_brown", "9A7A68" },
             { "deck_wood", "746967" },
             { "metal_charcoal", "3A4048" },
-            // モール北側の花壇（#56。blender/kcd_lib/mats.py と同じ色）
+            // メインストリート北側の花壇（#56。blender/kcd_lib/mats.py と同じ色）
             { "bed_soil", "5A4331" },
             { "flower_leaf", "3E7A2E" },
             { "flower_red", "D9434E" },

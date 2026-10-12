@@ -209,7 +209,7 @@ namespace KCD
         }
 
         /// <summary>
-        /// 撮影のトーストに出す名前。写真スポットならその名前（「モールの見通し」など）、
+        /// 撮影のトーストに出す名前。写真スポットならその名前（「メインストリートの見通し」など）、
         /// 一覧に無い id ならその id、自由撮影ならファイル名。
         /// </summary>
         public static string LabelFor(string spotId, string fileName)

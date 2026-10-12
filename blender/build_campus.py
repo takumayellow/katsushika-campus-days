@@ -282,7 +282,7 @@ def build_campus(data, frame, rng, max_trees, park):
     sign_mb = MeshBuilder("site_props_signs")
     site.build_signs(sign_mb, frame, ctx)
     objects.append(sign_mb.to_object(scene_coll))
-    # 入口の駐輪場は実物に無いので置かない（#56）。代わりにモール北側の花壇
+    # 入口の駐輪場は実物に無いので置かない（#56）。代わりにメインストリート北側の花壇
     beds_mb = MeshBuilder("site_props_beds")
     site.build_mall_beds(beds_mb, frame, occ, data, ctx)
     objects.append(beds_mb.to_object(scene_coll))

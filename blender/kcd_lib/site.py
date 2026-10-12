@@ -1,4 +1,4 @@
-"""外構: 地面・キャンパスモール・道路・水盤・公園・小物（DESIGN.md §3.2）。"""
+"""外構: 地面・メインストリート・道路・水盤・公園・小物（DESIGN.md §3.2）。"""
 
 import math
 import random
@@ -6,7 +6,7 @@ import random
 from . import geom, props
 
 # 高さレイヤ（z ファイティング回避のため 3 mm ずつ段を付ける）
-# 歩ける面どうしの段差は最大でも モール 0.021 − 外周の地面 0.000 = 2.1 cm。
+# 歩ける面どうしの段差は最大でも メインストリート 0.021 − 外周の地面 0.000 = 2.1 cm。
 # 半径 0.28 m のカプセルが 2 cm の段に当たる角度は約 22 度なので、坂と同じに越えられる。
 # 以前は 1.0〜7.5 cm の段と、敷地の縁に 31 cm の落差（外周 -0.30）があり、
 # 歩くだけでジャンプ・着地の判定が出ていた（#30）。
@@ -18,7 +18,7 @@ Z_AREA = 0.009       # グラウンド・広場・駐車場
 Z_ROAD = 0.012       # 車道（帯の厚み 0.06 m は地面の下へ埋まる）
 Z_LINE = 0.015       # 車道の白線（厚みなし。車道から 3 mm）
 Z_FOOT = 0.018       # 歩道・水盤の前の石張り
-Z_MALL = 0.021       # キャンパスモールと正門前の広場
+Z_MALL = 0.021       # メインストリートと正門前の広場
 Z_WATER = 0.060      # 水盤の水面（縁石 0.36 の内側だけ）
 # 水盤の底。水は半透明（mats.py の water: alpha 0.80、Unity 側も 0.58）なので底が透けて見える。
 # 以前は Z_WATER - 0.45 = -0.390 で、敷地の芝（Z_CAMPUS = 0.006）と歩道（Z_FOOT = 0.018）が
@@ -29,16 +29,16 @@ Z_BASIN_FLOOR = 0.030
 Z_BASIN_RIM = 0.36   # 水盤の縁石の天端（意図した段差）
 PATH_THICKNESS = 0.06   # 道路・歩道の帯の厚み（縁の隙間を隠す）
 
-# キャンパスモール（OSM の直線 footway が v = -24 を u = -56..199 で走る）
+# メインストリート（OSM の直線 footway が v = -24 を u = -56..199 で走る）
 MALL_V = -24.0
 MALL_HW = 6.0
 MALL_U0 = -57.0
 MALL_U1 = 197.0
 
-# モール北側の花壇（航空写真では舗装の北に幅 3〜4 m の植栽帯が u -10..170 で続く。#56）
+# メインストリート北側の花壇（航空写真では舗装の北に幅 3〜4 m の植栽帯が u -10..170 で続く。#56）
 BED_V = (MALL_V + MALL_HW - 3.6, MALL_V + MALL_HW)   # v -21.6..-18.0
 BED_LEN = 9.0        # 1 基の長さ
-BED_GAP = 3.0        # 花壇どうしの間（モールから北へ抜けられる）
+BED_GAP = 3.0        # 花壇どうしの間（メインストリートから北へ抜けられる）
 BED_WALL = 0.2       # 縁石の厚み
 BED_TOP = 0.45       # 縁石の天端。stepOffset 0.40 より高いので、歩いては上がれない
 BED_SOIL = 0.38      # 土の面
@@ -50,15 +50,15 @@ FLOWERS = ("flower_purple", "flower_white", "flower_pink", "flower_red", "flower
 FLOWER_EYES = {"flower_yellow": "flower_orange", "flower_orange": "flower_red"}
 
 # 図書館を囲む堀のような水盤（水面の矩形 (u0, v0, u1, v1) のリスト）。
-# 実物は図書館の東面と南面に沿う幅 約 10 m の帯で、モール（v -30..-18）が橋になって
+# 実物は図書館の東面と南面に沿う幅 約 10 m の帯で、メインストリート（v -30..-18）が橋になって
 # 入口へ渡る。航空写真（国土地理院 z18）に campus.json の外形を重ねて測った (#56)。
 # 以前は図書館の東 60 m の芝生に 60 x 25 m の池を 1 枚置いていたが、実物にそんな池は無い。
-# 縁石（BASIN_RIM）の外がモールの舗装・図書館の北東角・南の歩道に掛からないよう、
+# 縁石（BASIN_RIM）の外がメインストリートの舗装・図書館の北東角・南の歩道に掛からないよう、
 # 矩形の端はそこから縁石の幅だけ引いてある。
 # Unity 側の CampusStage.Basins と同じ数値にすること（BasinKeepoutTests が突き合わせる）。
 BASINS = [
-    (-59.5, -16.4, -50.0, 24.0),    # 東の堀（モールの北）
-    (-59.5, -78.0, -50.0, -31.6),   # 東の堀（モールの南）
+    (-59.5, -16.4, -50.0, 24.0),    # 東の堀（メインストリートの北）
+    (-59.5, -78.0, -50.0, -31.6),   # 東の堀（メインストリートの南）
     (-100.0, -78.0, -59.5, -66.0),  # 南の池（図書館の南面）
 ]
 BASIN_RIM = 1.6     # 縁石の幅（腰かけられる）
@@ -197,7 +197,7 @@ def build_paths(mb, data, occ):
 
 
 def build_mall(mb, frame, occ):
-    """石畳（グレー 2 色の市松）の キャンパスモール。"""
+    """石畳（グレー 2 色の市松）の メインストリート。"""
     tile = 2.0
     nu = int((MALL_U1 - MALL_U0) / tile)
     nv = int((MALL_HW * 2) / tile)
@@ -277,7 +277,7 @@ def _edge_xy(frame, axis, c, t):
 
 
 def _mall_bed_gaps(data, frame, ctx):
-    """花壇を置かない u の区間。モール北縁を横切る歩道と、北側の建物の入口の前。"""
+    """花壇を置かない u の区間。メインストリート北縁を横切る歩道と、北側の建物の入口の前。"""
     vc = sum(BED_V) * 0.5
     gaps = []
     for p in data.get("paths", []):
@@ -292,14 +292,14 @@ def _mall_bed_gaps(data, frame, ctx):
     for dr in (ctx.get("door_frames") or {}).values():
         u, v = frame.uv(dr["origin"])
         if v < BED_V[1] or v > BED_V[1] + 12.0:
-            continue   # モールの北に面した入口だけ
+            continue   # メインストリートの北に面した入口だけ
         half = dr["APRON_S"] + BED_KEEP
         gaps.append((u - half, u + half))
     return gaps
 
 
 def build_mall_beds(mb, frame, occ, data, ctx):
-    """モール北側の立ち上がり花壇（石の縁石 + 土 + 花のかたまり）。
+    """メインストリート北側の立ち上がり花壇（石の縁石 + 土 + 花のかたまり）。
 
     長さ BED_LEN の花壇を BED_GAP おきに並べ、歩道と入口の前は空ける。縁石の天端 BED_TOP は
     stepOffset より高いので、プレイヤーも NPC も花壇の上は歩かない（ジャンプなら乗れる）。
@@ -337,8 +337,8 @@ def _flowers(mb, frame, u0, v0, u1, v1, k):
     """花壇の植え込み。葉の丸い株を隙間なく 3 列に並べ、株の表面に平たい 5 弁の花を散らす。
 
     株は隣と少し重なる大きさにして土を隠す。株ごとに FLOWERS の 1 色を主にして、3 株ずつの塊を
-    列と花壇でずらす（一色の帯にしない）。花は株の面に沿わせつつモール（-v）の側へ少し向ける。
-    実物の花壇は南のモールに面していて、花は日の当たる側を向く。"""
+    列と花壇でずらす（一色の帯にしない）。花は株の面に沿わせつつメインストリート（-v）の側へ少し向ける。
+    実物の花壇は南のメインストリートに面していて、花は日の当たる側を向く。"""
     rows = 3
     n = max(1, int(round((u1 - u0) / 0.95)))
     du = (u1 - u0) / n
@@ -367,7 +367,7 @@ PETAL_W = math.radians(33.0)     # 花びらの肩の開き（花びらの軸か
 PETAL_SHOULDER = 0.72            # 肩の位置（花冠の半径の割合）。幅の広い丸みのある花びらにする
 BLOOM_LIFT = 0.015     # 株の面から花の中心までの浮き [m]
 LEAN_SLOPE = 0.6       # 株の面の傾きにどれだけ沿わせるか
-LEAN_TOWARD = 0.22     # モールの側へ向ける強さ（水平成分）
+LEAN_TOWARD = 0.22     # メインストリートの側へ向ける強さ（水平成分）
 
 
 def _plant_profile(t):
@@ -481,7 +481,7 @@ def build_basin(mb, frame, occ):
     for u0, v0, u1, v1 in BASINS:
         occ.stamp_poly(frame.rect(u0 - BASIN_RIM, v0 - BASIN_RIM, u1 + BASIN_RIM, v1 + BASIN_RIM),
                        margin=2.0)
-    # 図書館の東、モールの南は木の無い芝生広場（航空写真）。散布の木を入れない
+    # 図書館の東、メインストリートの南は木の無い芝生広場（航空写真）。散布の木を入れない
     occ.stamp_poly(frame.rect(*LIBRARY_LAWN))
 
 
@@ -596,7 +596,7 @@ def build_basin_keepout(frame, hard):
 
 
 def build_street_furniture(mb, frame, hard):
-    """ベンチと照明柱。どちらもモール舗装の内側に置く（DESIGN §3.2: 20 m 間隔）。"""
+    """ベンチと照明柱。どちらもメインストリート舗装の内側に置く（DESIGN §3.2: 20 m 間隔）。"""
     ang = math.atan2(frame.u[1], frame.u[0])
     u = MALL_U0 + 6.0
     while u < MALL_U1 - 6.0:
@@ -625,8 +625,8 @@ def collect_trees(data, frame, occ, hard, rng, park_density=1.0 / 150.0, max_tre
     """
     trees = []
 
-    # 1) モール両脇の列植（8 m 間隔）。舗装の内側 1.4 m に植栽帯を取るので、
-    #    モールの外の建物へ入り込むことはない。
+    # 1) メインストリート両脇の列植（8 m 間隔）。舗装の内側 1.4 m に植栽帯を取るので、
+    #    メインストリートの外の建物へ入り込むことはない。
     u = MALL_U0 + 4.0
     while u < MALL_U1 - 4.0:
         for v, off in ((MALL_V - MALL_HW + 1.4, 0.0), (MALL_V + MALL_HW - 1.4, 4.0)):

@@ -37,7 +37,7 @@
         "stone_light",
         "stone_dark"
       ],
-      "note": "モールと広場の舗装。四角い現代的な敷石（tags: city, modern, square）。歴史的な玉石は葛飾キャンパスに合わない。目地は AO と Displacement から焼く。tile_cm は API に登録が無いため、敷石 1 枚 ≒ 50cm × 4 枚で 200cm と置いた。"
+      "note": "メインストリートと広場の舗装。四角い現代的な敷石（tags: city, modern, square）。歴史的な玉石は葛飾キャンパスに合わない。目地は AO と Displacement から焼く。tile_cm は API に登録が無いため、敷石 1 枚 ≒ 50cm × 4 枚で 200cm と置いた。"
     },
     {
       "asset": "Asphalt033",
@@ -74,7 +74,7 @@
       "materials": [
         "bed_soil"
       ],
-      "note": "モール北側の花壇の土 (#56)。tile_cm は API の dimensionX。"
+      "note": "メインストリート北側の花壇の土 (#56)。tile_cm は API の dimensionX。"
     },
     {
       "asset": "Concrete034",

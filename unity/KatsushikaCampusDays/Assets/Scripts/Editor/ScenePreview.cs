@@ -237,8 +237,8 @@ namespace KCD.Editor
             },
 
             // ここから下はキャンパス（#56）。site.py の (u, v) を CampusProps.Local で読み替えた値:
-            //   堀 BASINS = 東の帯 u -59.5..-50（モールで途切れる）+ 南の池 u -100..-59.5 / v -78..-66
-            //   モール MALL_V = -24、花壇はモールの北縁の内側 v -21.6..-18.0（BED_V）/ 牛乳 (u 94.9, v -29.7)、葉は公園の LeafSpots
+            //   堀 BASINS = 東の帯 u -59.5..-50（メインストリートで途切れる）+ 南の池 u -100..-59.5 / v -78..-66
+            //   メインストリート MALL_V = -24、花壇はメインストリートの北縁の内側 v -21.6..-18.0（BED_V）/ 牛乳 (u 94.9, v -29.7)、葉は公園の LeafSpots
             new Shot
             {
                 Name = "shot_campus_moat",
@@ -267,7 +267,7 @@ namespace KCD.Editor
                 Look = new Vector3(43.38f, 0.5f, -37.40f),    // (u 55, v -16)
                 Fov = 0f,
                 Sun = OutdoorSun,
-                Note = "モールの北縁の花壇（間は歩道と入口の前）",
+                Note = "メインストリートの北縁の花壇（間は歩道と入口の前）",
             },
             new Shot
             {
@@ -293,7 +293,7 @@ namespace KCD.Editor
             {
                 Name = "shot_item_milk",
                 Space = Frame.World,
-                Eye = new Vector3(75.19f, 1.35f, -65.24f),    // (u 95.5, v -28.1) モール側から
+                Eye = new Vector3(75.19f, 1.35f, -65.24f),    // (u 95.5, v -28.1) メインストリート側から
                 Look = new Vector3(73.97f, 0.42f, -66.49f),   // 共創棟の売店前
                 Fov = 40f,
                 Sun = OutdoorSun,
@@ -364,7 +364,7 @@ namespace KCD.Editor
                 Look = new Vector3(88.77f, 0.1f, -61.99f),    // (u 106.5, v -19.5)
                 Fov = 0f,
                 Sun = OutdoorSun,
-                Note = "モールの舗装と花壇の土",
+                Note = "メインストリートの舗装と花壇の土",
             },
             new Shot
             {

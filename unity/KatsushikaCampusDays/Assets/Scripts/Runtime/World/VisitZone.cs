@@ -3,7 +3,7 @@ using UnityEngine;
 namespace KCD
 {
     /// <summary>
-    /// 「ここに来たら進む」場所。キャンパスモール・水盤前・公園などに置く見えない箱。
+    /// 「ここに来たら進む」場所。メインストリート・水盤前・公園などに置く見えない箱。
     /// 入ると QuestSystem に visit を報告する。
     /// </summary>
     [RequireComponent(typeof(BoxCollider))]

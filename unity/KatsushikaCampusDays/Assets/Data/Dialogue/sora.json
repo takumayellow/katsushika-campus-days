@@ -12,8 +12,8 @@
           "text_en": "You caught up. Well done."
         },
         {
-          "text": "……このベンチ、モールでいちばん日当たりがいいの。ケヤキの隙間が、ここだけ空いてるから。",
-          "text_en": "...This bench gets the best sun on the whole mall. There's a gap in the zelkova trees, right here."
+          "text": "……このベンチ、並木道でいちばん日当たりがいいの。ケヤキの隙間が、ここだけ空いてるから。",
+          "text_en": "...This bench gets the best sun on the whole of Main Street. There's a gap in the zelkova trees, right here."
         },
         {
           "speaker": "自分",
@@ -31,8 +31,8 @@
       "requiresActiveQuest": "q_coffee",
       "lines": [
         {
-          "text": "ベンチ、モールの真ん中あたり。石畳が市松になってるとこ。",
-          "text_en": "The bench is about halfway along the mall. Where the paving turns to checkerboard."
+          "text": "ベンチ、並木道の真ん中あたり。石畳が市松になってるとこ。",
+          "text_en": "The bench is about halfway along Main Street. Where the paving turns to checkerboard."
         },
         {
           "text": "ラテが冷めるまであと、たぶん 7 分。わたしは先に行ってるね。",
@@ -59,8 +59,8 @@
           "text_en": "The first-floor coffee shop opens onto the learning square, and everyone's in there doing seminar consultations. Sit alone and you get pulled in."
         },
         {
-          "text": "だからモールのベンチまで付き合って。冷める前に。",
-          "text_en": "So come with me to the bench on the mall. Before it goes cold."
+          "text": "だからメインストリートのベンチまで付き合って。冷める前に。",
+          "text_en": "So come with me to the bench on Main Street. Before it goes cold."
         }
       ]
     },

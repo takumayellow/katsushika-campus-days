@@ -6,7 +6,7 @@ using UnityEngine.Rendering;
 namespace KCD.Editor
 {
     /// <summary>
-    /// モールの照明柱に夜の明かりを付ける (#8)。
+    /// メインストリートの照明柱に夜の明かりを付ける (#8)。
     ///
     /// campus.fbx の照明柱（site_furniture の中、site.py の build_street_furniture）は形だけで、夜も灯らなかった。
     /// 実ライトは足さない（StreetLights の説明）。灯具の位置を site_furniture の頂点から拾い
@@ -24,7 +24,7 @@ namespace KCD.Editor
         public const string ShaderName = "KCD/LampGlow";
         public const string MeshPath = EditorPaths.GeneratedFolder + "/Meshes/StreetLampGlow.asset";
 
-        /// <summary>光だまりの半径（m）。灯具の高さ 4 m に対して少し広め。モールの幅は 12 m。</summary>
+        /// <summary>光だまりの半径（m）。灯具の高さ 4 m に対して少し広め。メインストリートの幅は 12 m。</summary>
         public const float PoolRadius = 5.5f;
 
         /// <summary>光だまりの分割。16 角形 × 2 重の輪。</summary>

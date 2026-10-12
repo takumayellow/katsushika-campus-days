@@ -82,7 +82,7 @@ namespace KCD.Tests
             StringAssert.Contains(name, label);
             Assert.AreNotEqual(name, label, "写真スポットだと分かる文言が付いていない");
 
-            Assert.AreEqual(L.Get("ui.place.mall_bench", "モールのベンチ"), VisitZone.PlaceLabel("mall_bench", "モールのベンチ"));
+            Assert.AreEqual(L.Get("ui.place.mall_bench", "メインストリートのベンチ"), VisitZone.PlaceLabel("mall_bench", "メインストリートのベンチ"));
             Assert.AreEqual("どこかの場所", VisitZone.PlaceLabel("place_not_in_dictionary", "どこかの場所"));
         }
 

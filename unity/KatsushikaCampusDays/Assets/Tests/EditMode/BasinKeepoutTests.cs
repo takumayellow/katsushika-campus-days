@@ -118,7 +118,7 @@ namespace KCD.Tests
             Assert.AreEqual(PyFloat(py, "Z_BASIN_RIM"), CsConst(cs, "BasinRimTopY"), 1e-4f, "縁石の天端が違う");
             Assert.AreEqual(PyFloat(py, "Z_WATER"), CsConst(cs, "BasinWaterY"), 1e-4f, "水面の高さが違う");
 
-            // 水盤の底は水面より下、かつ一番高い地面（モールの舗装）より上（透けて見える底を石にする）。
+            // 水盤の底は水面より下、かつ一番高い地面（メインストリートの舗装）より上（透けて見える底を石にする）。
             float floor = PyFloat(py, "Z_BASIN_FLOOR");
             Assert.Less(floor, PyFloat(py, "Z_WATER"), "水盤の底が水面より上にある");
             Assert.Greater(floor, PyFloat(py, "Z_MALL"), "水盤の底より舗装のほうが高いと、水越しに芝が見える");
@@ -165,7 +165,7 @@ namespace KCD.Tests
             float navTop = CsConst(cs, "BasinWallBottomY") + CsConst(cs, "BasinNavHeight");
             Assert.Greater(navTop, CsConst(cs, "BasinRimTopY"), "除外する箱が縁石の天端より低い");
 
-            // 東の堀はモールで途切れる。除外する箱がモールの舗装に深く掛かると、モールを NPC が通れなくなる。
+            // 東の堀はメインストリートで途切れる。除外する箱がメインストリートの舗装に深く掛かると、メインストリートを NPC が通れなくなる。
             float mallV = PyFloat(py, "MALL_V");
             float mallHw = PyFloat(py, "MALL_HW");
             float mall0 = mallV - mallHw;
@@ -182,7 +182,7 @@ namespace KCD.Tests
 
                 float overlap = Mathf.Min(r.w + margin, mall1) - Mathf.Max(r.y - margin, mall0);
                 Assert.LessOrEqual(overlap, 0.2f,
-                    "水盤 " + r + " の NavMesh の除外がモールに " + overlap + " m 掛かる");
+                    "水盤 " + r + " の NavMesh の除外がメインストリートに " + overlap + " m 掛かる");
             }
         }
 

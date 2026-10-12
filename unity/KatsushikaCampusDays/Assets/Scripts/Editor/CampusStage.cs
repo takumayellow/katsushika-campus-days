@@ -580,7 +580,7 @@ namespace KCD.Editor
 
         /// <summary>
         /// 水面の矩形 (x = u0, y = v0, z = u1, w = v1)。site.py の BASINS。図書館の東と南を L 字に囲む。
-        /// 1 枚目はモールの北、2・3 枚目はモールの南（東の帯と南の帯）。
+        /// 1 枚目はメインストリートの北、2・3 枚目はメインストリートの南（東の帯と南の帯）。
         /// </summary>
         public static readonly Vector4[] Basins =
         {

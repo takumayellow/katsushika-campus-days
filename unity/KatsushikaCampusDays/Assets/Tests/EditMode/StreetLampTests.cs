@@ -11,7 +11,7 @@ using UnityEngine.SceneManagement;
 namespace KCD.Tests
 {
     /// <summary>
-    /// モールの照明柱の夜の明かり (#8)。灯具の位置は site_furniture の頂点から拾い（StreetLampLayout）、
+    /// メインストリートの照明柱の夜の明かり (#8)。灯具の位置は site_furniture の頂点から拾い（StreetLampLayout）、
     /// 実ライトを使わずに加算合成の KCD/LampGlow で描く。明るさは SkyPalette の LampGlow。
     /// </summary>
     public sealed class StreetLampTests
@@ -66,7 +66,7 @@ namespace KCD.Tests
         [Test]
         public void Layout_FindsEachLampHeadAboveTheBenches()
         {
-            // モールの両側の照明柱は横に 4.32 m・縦に 9.46 m（斜めに 10.4 m）離れている（campus.fbx の実測）。
+            // メインストリートの両側の照明柱は横に 4.32 m・縦に 9.46 m（斜めに 10.4 m）離れている（campus.fbx の実測）。
             var vertices = new List<Vector3>();
             AddBench(vertices, new Vector3(3f, 0f, 2f));
             AddLamp(vertices, new Vector3(14.32f, 0f, 14.46f));
@@ -193,7 +193,7 @@ namespace KCD.Tests
 
                 Assert.IsNotNull(lights, ScenePath + " に StreetLights が無い（KCD/シーンを組み直す）");
 
-                // campus.fbx の照明柱は 28 本。モールに 22 本（site.py の 12 か所 × 両側から、建物にかかる 2 本を除く）と、
+                // campus.fbx の照明柱は 28 本。メインストリートに 22 本（site.py の 12 か所 × 両側から、建物にかかる 2 本を除く）と、
                 // 公園の園路沿いに 6 本（park.py の build_furniture）。
                 IReadOnlyList<Vector3> lamps = lights.Lamps;
                 Assert.That(lamps.Count, Is.InRange(24, 32), "照明柱の数が campus.fbx と合わない");
