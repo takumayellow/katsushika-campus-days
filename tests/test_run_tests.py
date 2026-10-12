@@ -82,6 +82,21 @@ def test_tasklist_without_unity_is_empty(text):
     assert run_tests.parse_tasklist_csv(text) == []
 
 
+def test_exited_unity_left_in_tasklist_is_not_counted():
+    # 終わったのにハンドルが残って tasklist に出続ける Unity.exe は、動いているものに数えない
+    alive = {41236: True, 63316: False}
+    assert run_tests.drop_exited([41236, 63316], alive=alive.__getitem__) == [41236]
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows のプロセス API を使う")
+def test_this_process_is_alive_and_unknown_pid_is_not():
+    assert run_tests.windows_process_alive(os.getpid())
+    proc = subprocess.Popen([sys.executable, "-c", "pass"])
+    proc.wait()
+    # Popen がハンドルを持ったまま終わったプロセス = tasklist に残る形
+    assert not run_tests.windows_process_alive(proc.pid)
+
+
 def test_busy_unity_stops_without_wait():
     out = io.StringIO()
     assert not run_tests.wait_for_free_unity(False, 60, 0, out, probe=lambda: [41236])
