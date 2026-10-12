@@ -156,6 +156,19 @@ namespace KCD.Editor
                     go.layer = buildingLayer;
                 }
 
+                // 上のレイヤーの分岐とは分ける。bld_background は名前に "ground" を含み、そちらの分岐に入る。
+                if (id.StartsWith("bld"))
+                {
+                    // 建物は角柱を並べた形で、角で面ごとに法線が分かれている。影を落とすときは頂点を法線の逆へ
+                    // 押す（normal bias）ので、片面だけだと角で壁どうしが離れ、影の中に光の筋が通る。
+                    // 裏の面も影に描いて隙間をふさぐ (#229)。影のパスで描く三角形は建物の分だけ増える。
+                    MeshRenderer building = go.GetComponent<MeshRenderer>();
+                    if (building != null)
+                    {
+                        building.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.TwoSided;
+                    }
+                }
+
                 GameObjectUtility.SetStaticEditorFlags(go, StaticEditorFlags.BatchingStatic
                     | StaticEditorFlags.OccluderStatic | StaticEditorFlags.OccludeeStatic);
             }
