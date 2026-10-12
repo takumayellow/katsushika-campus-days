@@ -72,7 +72,7 @@ Windows 版のプレイ画面。正門からモールの並木を見たところ
 
 ## 自分でビルドする
 
-必要なもの: Unity 6000.6.2f1（Hub 版、URP テンプレート）、Blender 4.5、Python 3.11 以上（numpy）。
+必要なもの: Unity 6000.6.2f1（Hub 版、URP テンプレート）、Blender 4.5、Python 3.11 以上（numpy・Pillow）。
 
 ```bash
 # 1. 地図 → キャンパス外構 FBX（Blender）。raw_overpass.json は Overpass API の `out geom;` 出力
@@ -82,8 +82,9 @@ python tools/osm_extract.py
 "/c/Program Files/Blender Foundation/Blender 4.5/blender.exe" -b --python blender/build_interiors.py
 "/c/Program Files/Blender Foundation/Blender 4.5/blender.exe" -b --python tools/render_minimap.py
 
-# 2. 音声（約 6 分）
+# 2. 音声（約 6 分）と、地面・外壁のテクスチャ（ambientCG から約 50 MB 落とす。焼いた jpg はリポジトリに入っている）
 python tools/audio/build_audio.py
+python tools/fetch_textures.py
 
 # 3. Unity: 取り込み → シーン生成 → Windows ビルド（unity/README.md に詳細）
 export UNITY='/c/Program Files/Unity/Hub/Editor/6000.6.2f1/Editor/Unity.exe'
@@ -139,6 +140,7 @@ blender/build_campus.py     ◀────────────────�
 blender/build_characters.py                                  ─▶ unity/.../Assets/Models/Characters/<id>/
 blender/build_interiors.py                                   ─▶ unity/.../Assets/Models/Interiors/*.fbx + *.json
 tools/audio/build_audio.py                                   ─▶ unity/.../Assets/Audio/{BGM,SE,Ambient}/*.wav
+tools/fetch_textures.py                                      ─▶ unity/.../Assets/Textures/surfaces/*.jpg（ambientCG）+ tiling.json
 Unity -batchmode -executeMethod KCD.Editor.SceneBuilder.BuildAll   ─▶ Scenes/{Title,Campus}.unity
 Unity -batchmode -executeMethod KCD.Editor.BuildPlayer.BuildWindows ─▶ build/Windows/
 ```
@@ -152,7 +154,7 @@ Overpass の生データ 2 つは大きいので gitignore。寮への道の分�
 | 場所 | 内容 |
 | --- | --- |
 | `blender/` | 外構・キャラ 7 体・建物内部 9 棟の生成スクリプト（`kcd_lib` / `kcd_chara` / `kcd_interior`） |
-| `tools/` | OSM 抽出（キャンパス／寮への道）、ミニマップ描画、音声合成、Unity ログ検査、スモーク起動、zip 化 |
+| `tools/` | OSM 抽出（キャンパス／寮への道）、ミニマップ描画、音声合成、面のテクスチャ取得、Unity ログ検査、スモーク起動、zip 化 |
 | `unity/KatsushikaCampusDays/` | Unity プロジェクト。`Assets/Scripts/Editor` がシーンを組み立て、`Runtime` がゲーム本体 |
 | `unity/KatsushikaCampusDays/Assets/Data/` | クエスト・会話・収集物・ローカライズ・モブ・リザルトの JSON |
 | `docs/` | 設計書、データ仕様、クレジット、プレビュー画像、スクリーンショット |
@@ -162,6 +164,7 @@ Overpass の生データ 2 つは大きいので gitignore。寮への道の分�
 素材ごとの出所・権利・確認状況は [docs/CREDITS.md](docs/CREDITS.md)。ゲーム内のクレジット画面も同じ内容。
 
 - 地図データ © OpenStreetMap contributors (ODbL)。https://www.openstreetmap.org/copyright
+- 地面・舗装・芝・外壁のテクスチャ: [ambientCG](https://ambientcg.com/) (CC0 1.0) の素材から作ったもの。使った素材は [docs/CREDITS.md](docs/CREDITS.md)
 - 音楽: 東京理科大学校歌（作詞 佐治巌 / 作曲 大和憲史）。歌唱は東北きりたん（NEUTRINO）、ピアノ伴奏はヤマハの自動採譜（Piano Sheet Converter）を手直ししたもの。校歌の権利は未確認で、配布前に確かめる項目を CREDITS.md に並べている
 - 効果音・環境音・ジングルは numpy で合成したオリジナル
 - 「坊っちゃん」「マドンナちゃん」は東京理科大学の公式キャラクター。本作は非公式・非営利のファンメイドで、3D モデルは独自に制作している

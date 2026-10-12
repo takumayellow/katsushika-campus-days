@@ -8,6 +8,9 @@ split_by_grid が凹多角形を三角形に割るのに使う）。ここでは
 巻き方向で返す。Blender の実装（BLI_scanfill）も多角形自身の法線（Newell 法）で投影して割るので、
 向きは入力に従う。反時計回り（上から見て）の敷地の外形を渡した site_ground が
 build_campus.check_site_ground の「下向きの水平面なし」を通っていることと合う。
+
+mathutils.bvhtree.BVHTree は import を通すためだけに置く（kcd_interior/closure.py が読み込む）。
+FromPolygons を呼ぶと NotImplementedError で落ちる。
 """
 
 import sys
@@ -30,6 +33,14 @@ class Vector(tuple):
 
 class Matrix(tuple):
     """mathutils.Matrix の代わり。"""
+
+
+class BVHTree:
+    """mathutils.bvhtree.BVHTree の代わり。木を作ろうとしたら落ちる。"""
+
+    @classmethod
+    def FromPolygons(cls, *args, **kwargs):
+        raise NotImplementedError("mathutils.bvhtree is stubbed: Blender is not available under pytest")
 
 
 def _newell(pts):
@@ -107,7 +118,8 @@ def _find_ear(p2, idx, sign, strict):
 
 
 def install():
-    """sys.modules に bpy / bmesh / mathutils / mathutils.geometry のスタブを入れる（何度呼んでもよい）。"""
+    """sys.modules に bpy / bmesh / mathutils / mathutils.geometry / mathutils.bvhtree の
+    スタブを入れる（何度呼んでもよい）。"""
     if getattr(sys.modules.get("mathutils"), "_kcd_stub", False):
         return
     for name in ("bpy", "bmesh"):
@@ -119,5 +131,9 @@ def install():
     geometry = types.ModuleType("mathutils.geometry")
     geometry.tessellate_polygon = tessellate_polygon
     mathutils.geometry = geometry
+    bvhtree = types.ModuleType("mathutils.bvhtree")
+    bvhtree.BVHTree = BVHTree
+    mathutils.bvhtree = bvhtree
     sys.modules["mathutils"] = mathutils
     sys.modules["mathutils.geometry"] = geometry
+    sys.modules["mathutils.bvhtree"] = bvhtree

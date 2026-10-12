@@ -3,7 +3,32 @@ guid: af405902f193d0740b783edd8e6bead7
 ModelImporter:
   serializedVersion: 24600
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: door_frosted
+    second: {fileID: 2100000, guid: 752abecb98e9fc24d8ba86d8c0039b94, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: fabric_yellow
+    second: {fileID: 2100000, guid: fe8abe078ba7d2d428982dbdba837581, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: floor_carpet_gold
+    second: {fileID: 2100000, guid: 0477aa9d8d3a79f4b99369bdcef061e3, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: floor_wood_light
+    second: {fileID: 2100000, guid: 82e9a275233a58847961628fd6e0d017, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: wallpaper_orange
+    second: {fileID: 2100000, guid: e94db9d407348d948999303f8bf3c2e7, type: 2}
   materials:
     materialImportMode: 1
     materialName: 0

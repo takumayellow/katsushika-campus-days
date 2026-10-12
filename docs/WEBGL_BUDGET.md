@@ -149,12 +149,12 @@ wasm・framework・loader は 2 本でハッシュまで同じだった。
 | 合計（全部が同時に載ったとき） | | 29〜50 MiB |
 
 - 顔の画像には、FBX の横の *.fbm/ にも同じ画像の写しがある。マテリアルが参照しているのは外の face.png だけで、*.fbm/ の写しはどのマテリアルからも参照されていない（GUID を grep して確かめた）。そのため、ビルドに入るのは 1 枚ずつと見なした。
-- dev/assets の #59 で、面のテクスチャ 10 枚（512²、JPEG）が入る予定。BC1 に mip を付けて 1 枚 0.17 MiB、10 枚で約 1.7 MiB。
+- 面のテクスチャ（Textures/surfaces）は 512² が 9 枚と外壁の煉瓦 1024² が 1 枚。.meta の既定（DefaultTexturePlatform）を圧縮（textureCompression 1）にしてあり、
+  BC1 に mip を付けて 512² が 1 枚 0.17 MiB、煉瓦が約 0.67 MiB、全部で約 2.2 MiB。
+  .meta は tools/fetch_textures.py が data/textures/TextureImporter.meta.template から書く。圧縮の設定は tools/tests/test_fetch_textures.py が見張る。
 - DXT を扱えず ASTC を扱える GPU（iPhone と多くの Android）では、ページが ASTC の data を読むので、テクスチャは圧縮したまま GPU に載る。
 - DXT も ASTC も扱えない GPU では、Unity がソフトウェアで展開する。そのときは RGBA32 になり、2048² に mip を付けて 1 枚 21.3 MiB に増える。
-- 圧縮しない設定のテクスチャは、どちらのビルドでもそのまま載る。外壁の煉瓦（Textures/surfaces/brick_red.jpg、1024²）は
-  .meta の既定が textureCompression 0 で、ビルドレポートで 4.0 MB ある。BC1 に mip を付ければ約 0.67 MiB になる。
-  この .meta は焼く道具が書く（#109）ので、直すなら道具の側で直す。
+- 圧縮しない設定（textureCompression 0）のテクスチャは、どちらのビルドでもそのまま載る。512² の RGB に mip を付けると 1 枚 1.0 MB になる。
 - 描画に使う面（シャドウマップ・色・深度）は画質の段（3 章）ごとに変わるので、この表には入れていない。
 
 ### 2.2 タブのメモリ

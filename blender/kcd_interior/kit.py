@@ -252,10 +252,13 @@ def lift(mb, base, dz):
     for i in range(base, len(mb.verts)):
         x, y, z = mb.verts[i]
         mb.verts[i] = (x, y, z + dz)
-    for seat in getattr(mb, "seats", None) or ():
-        if seat["vi"] < base:
-            continue
-        for key in ("c", "f", "s"):
-            x, y, z = seat[key]
-            seat[key] = (x, y, z + dz)
-        seat["anchors"] = [(x, y, z + dz) for x, y, z in seat["anchors"]]
+    seats = getattr(mb, "seats", None) or []
+    for j, seat in enumerate(seats):
+        if seat["vi"] >= base:
+            seats[j] = moved_seat(seat, lambda p: (p[0], p[1], p[2] + dz))
+
+
+def moved_seat(seat, fn):
+    """座面の記録（furniture._seat）の点をすべて fn で写した新しい dict。"""
+    return dict(seat, c=fn(seat["c"]), f=fn(seat["f"]), s=fn(seat["s"]),
+                anchors=[fn(a) for a in seat["anchors"]])

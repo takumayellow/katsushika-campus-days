@@ -152,6 +152,306 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: research2_band_enji
+    second: {fileID: 2100000, guid: ce755e362fbe1f440808ebfaad375bd6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_band_light
+    second: {fileID: 2100000, guid: 87660a925df147445aa7cba90dfb6d4d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_board_green
+    second: {fileID: 2100000, guid: 00ea9e7b3da6c794eaf2e4880a2755b8, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_brick_core
+    second: {fileID: 2100000, guid: fa2837d1bf1ee034f954b3c12c9f9cde, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_cassette_white
+    second: {fileID: 2100000, guid: 2cccc64722f7b7246a8b4ccfc37ce094, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_ceiling_2f_white
+    second: {fileID: 2100000, guid: 10c6a644ccc33ff42975c1b616b14bf6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_ceiling_white
+    second: {fileID: 2100000, guid: 11f41a442e365e545b2320487ac32dd5, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_ceiling_wood
+    second: {fileID: 2100000, guid: 1211f7513cea96143b9b339d50a50bae, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_chair_shell_dark
+    second: {fileID: 2100000, guid: 31383784cd0656547b9986a5b9c6d8f0, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_chair_shell_green
+    second: {fileID: 2100000, guid: cfa7181cbb1457841b9696940d8d8327, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_chair_shell_orange
+    second: {fileID: 2100000, guid: a7fbec43ffc6643489d192490e2f3131, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_chair_shell_red
+    second: {fileID: 2100000, guid: 99ad5570565ee334fb966faafe5d26a8, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_chair_shell_white
+    second: {fileID: 2100000, guid: d085fa2e6f66ef842af86d8d64c025b8, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_chair_walnut
+    second: {fileID: 2100000, guid: c3266fe33650fc94197bd17d095e8988, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_chair_wood_light
+    second: {fileID: 2100000, guid: 7a2067fda5139dd46bd1459bdc491862, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_chair_wood_orange
+    second: {fileID: 2100000, guid: 6700757b4bf344143bd69b0ddf04ae02, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_chrome
+    second: {fileID: 2100000, guid: 4043777c02bca5e4eb64c0f5e1f6bebf, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_column_2f
+    second: {fileID: 2100000, guid: e52435d3ee8adf74eb8655b386636988, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_column_concrete
+    second: {fileID: 2100000, guid: 161b0d1d381d76a4fbcb2fd09898ab09, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_cork
+    second: {fileID: 2100000, guid: e01e040b96ddc0642aab2d467750a7e6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_counter_orange
+    second: {fileID: 2100000, guid: f50fcdefcd3b77640b13b80850dbc9b6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_display_blue
+    second: {fileID: 2100000, guid: 7a2b1bf7767d5fd4aafd6adb44d70a73, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_door_steel
+    second: {fileID: 2100000, guid: 6a80e007ecfce214eab94c3f87c9f688, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_floor_1f_dark
+    second: {fileID: 2100000, guid: e618f1079a4062d41a2a71e1a2b0bbb1, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_floor_1f_honey
+    second: {fileID: 2100000, guid: 19b29531f7a60a342ae2d3c66362b619, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_floor_1f_wood
+    second: {fileID: 2100000, guid: fefa007b1d1f9c441ab7d60f9c8da986, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_floor_2f_honey
+    second: {fileID: 2100000, guid: 33d7615c16cb16d4c9f4a1082c432869, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_floor_2f_oak
+    second: {fileID: 2100000, guid: bcfe74379db28ec4caba3a35e527187b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_floor_mat_black
+    second: {fileID: 2100000, guid: 8334df328612ba54bafb029c8f4069fc, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_floor_tape_red
+    second: {fileID: 2100000, guid: 1c94dd841a5c2af4c9ed0e0ea15b96a9, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_glass
+    second: {fileID: 2100000, guid: 0e3be7075b8c1004b8a72d648273accf, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_glow_warm
+    second: {fileID: 2100000, guid: 85757c5c2c661f243a1961226b73b081, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_grille_black
+    second: {fileID: 2100000, guid: 30c8b9c60f45ca343ba3ba987f56c3fe, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_ground_brick
+    second: {fileID: 2100000, guid: 42e46e0645d5342419cd9f1e39030018, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_island_front
+    second: {fileID: 2100000, guid: e56be67536ce66e4192b67dd0b52199a, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_island_top
+    second: {fileID: 2100000, guid: 877d02f550764cd42bcc262f7628582e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_kiosk_black
+    second: {fileID: 2100000, guid: befd2fae59cd15c438ef509f89113b2b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_kiosk_white
+    second: {fileID: 2100000, guid: bb2be6cc8e4972740b131a09a85c800d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_led_linear
+    second: {fileID: 2100000, guid: c715b0bad26711547806506f48d61b82, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_lobby_panel
+    second: {fileID: 2100000, guid: 354ac772bdccbc24c84e64fc36977218, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_lobby_stone
+    second: {fileID: 2100000, guid: a98e8c785f812854b99af24541b7abf4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_mesh_fence
+    second: {fileID: 2100000, guid: 756ff41ea97ab09479fde481896111de, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_monitor_black
+    second: {fileID: 2100000, guid: d69d439de1b14614a871a3b607277aa0, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_mullion_dark
+    second: {fileID: 2100000, guid: aa3781ad1bf763343bba60103b225ad9, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_panel_grey
+    second: {fileID: 2100000, guid: 79ab146bc81dbcc458f99b5bd3ed64e2, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_roll_white
+    second: {fileID: 2100000, guid: ca463e99325f6f448a52e6cc73184a9e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_sash_2f
+    second: {fileID: 2100000, guid: f96a5520dd2431b40bdaafb6f9dc8e67, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_sign_black
+    second: {fileID: 2100000, guid: 63f2b1b6afa35fc46ba5fc467675150f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_soffit
+    second: {fileID: 2100000, guid: b54229dfd8a87aa40be346a1e7e394f6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_stainless
+    second: {fileID: 2100000, guid: 42160195bfea26b47bcd1defb3663dfc, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_steel_dark
+    second: {fileID: 2100000, guid: 91bab473fabc1674ab8903d83fa82d6d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_table_white
+    second: {fileID: 2100000, guid: b5fb633f5ec03ca4396178e985c70c32, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_terrace_white
+    second: {fileID: 2100000, guid: b83ac63e88b7ea8458d31ba3a4d48fec, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_tray_black
+    second: {fileID: 2100000, guid: e2afbf28d2361244cb6544564fef8097, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_tray_lime
+    second: {fileID: 2100000, guid: 587a78fb4cf7ed14eb0ce842ec9b81c2, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_wall_charcoal
+    second: {fileID: 2100000, guid: 1c40e9b58871c684b85f9de49dea73af, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_wall_concrete
+    second: {fileID: 2100000, guid: 735a6af38ca29554ea9c8b5235684516, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_wall_lilac
+    second: {fileID: 2100000, guid: 0375d644dbcf8fe46abc86ee2666b12b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_wall_orange
+    second: {fileID: 2100000, guid: b59e6a94050b4b945b6e4eab442a0c72, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: research2_wood_wall
+    second: {fileID: 2100000, guid: 480b0413093f6d5468693f19cbf8ffe3, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: sb_wood
     second: {fileID: 2100000, guid: 5b1b17c62b2a8e7468b469d3b5955630, type: 2}
   - first:

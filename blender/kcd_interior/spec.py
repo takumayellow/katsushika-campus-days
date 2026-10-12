@@ -10,44 +10,66 @@ FBX を axis_forward='-Z' / axis_up='Y' で書き出すので、Unity では
   Unity(+X) = Blender(+X)、Unity(+Y) = Blender(+Z)、Unity(+Z) = Blender(+Y)
 となり、契約どおり **Unity の +Z が「入口から内部へ」** になる。
 
-外壁面（ファサード）はローカル Y = spec.y_face にある。spec.y_face は
-外装側が entrance Empty を壁からどれだけ手前に置いたかの距離で、
-buildings.py の各ビルダーと 1 対 1 で対応させている（ここがズレると
-Unity で内外の位置が合わないので、変更時は両方直すこと）。
+入口の向きと、入口の面に沿った位置は、キャンパスの扉（kcd_lib/entrances.py の DOORS）
+から導く。屋内の外周は footprint の外接矩形なので、入口の開口はその矩形の面の上に置き、
+原点は面から _FACE_OFFSET だけ外に取る。外壁面（ファサード）はローカル Y = spec.y_face にある。
 """
 
 import json
 import math
 import os
 
-from kcd_lib import geom
+from kcd_lib import entrances, geom
 
-# 建物 id -> (entrance を決める関数, 内向き方向)
-#   内向き方向 "+v" / "-v" / "-u" は campus frame (u, v) 上の向き。
-#   entrance_uv は buildings.py の ctx["entrance"] と完全に一致させる。
+# 入口の開口（外接矩形の面）から原点までの距離 [m]。屋内の間取りはこの距離を前提に
+# 入口まわりを置いているので、棟ごとの値を変えない。DOORS に無い棟は _FACE_OFFSET_DEFAULT。
+_FACE_OFFSET = {
+    "research1": 6.5,
+    "lecture": 4.0,
+    "research2": 4.0,
+    "kyoso": 4.0,
+    "library": 4.0,
+    "gym": 3.5,
+    "lab1": 3.0,
+    "lab2": 3.0,
+    "greenhouse": 2.5,
+}
+_FACE_OFFSET_DEFAULT = 3.0
+
+# DOORS の「建物へ向かう向き」(du, dv) -> 内向き方向
+_INWARD = {(0, 1): "+v", (0, -1): "-v", (-1, 0): "-u", (1, 0): "+u"}
+
+
+def _door_row(bid):
+    for row in entrances.DOORS:
+        if row[0] == bid:
+            return row
+    return None
 
 
 def _entrance_uv(bid, uvbb):
+    """入口の原点 (u, v) と内向き方向。
+
+    uvbb は屋内の外周（_uvbb_for の外接矩形）。内向きは DOORS の「建物へ向かう向き」、
+    面に沿った位置は DOORS の探索の起点と同じにする（扉は起点から軸に沿って壁を探すので、
+    扉の中心も同じ位置にある）。DOORS に無い棟は南面（-v 側）の中央。
+    """
     u0, v0, u1, v1 = uvbb
-    du = u1 - u0
-    if bid == "research1":
-        return ((u0 + u1) * 0.5, v0 - 6.5), "+v"
-    if bid == "lecture":
-        return (u0 + du * 0.40, v0 - 4.0), "+v"
-    if bid == "research2":
-        return ((u0 + u1) * 0.5, v0 - 4.0), "+v"
-    if bid == "kyoso":
-        # build_kyoso は footprint を +v 側へ 10.5 m 広げている
-        return (u0 + du * 0.30 - 8.0, v0 + 10.5 + 4.0), "-v"
-    if bid == "library":
-        return (u1 + 4.0, -24.0), "-u"
-    if bid == "gym":
-        return (u0 + du * 0.5, v0 - 3.5), "+v"
-    if bid in ("lab1", "lab2"):
-        return ((u0 + u1) * 0.5, v0 - 3.0), "+v"
-    if bid == "greenhouse":
-        return ((u0 + u1) * 0.5, v0 - 2.5), "+v"
-    return ((u0 + u1) * 0.5, v0 - 3.0), "+v"
+    off = _FACE_OFFSET.get(bid, _FACE_OFFSET_DEFAULT)
+    row = _door_row(bid)
+    if row is None:
+        return ((u0 + u1) * 0.5, v0 - off), "+v"
+    _bid, probe, into = row[:3]
+    inward = _INWARD.get(tuple(into))
+    if inward is None:
+        raise ValueError("%s: DOORS の向き %s が軸に沿っていない" % (bid, into))
+    if inward == "+v":
+        return (probe[0], v0 - off), inward
+    if inward == "-v":
+        return (probe[0], v1 + off), inward
+    if inward == "-u":
+        return (u1 + off, probe[1]), inward
+    return (u0 - off, probe[1]), inward
 
 
 def _uvbb_for(bid, uvbb):
@@ -181,7 +203,7 @@ def build_specs(data, ids=None):
         if len(loop) < 3:
             continue
         uvbb = _uvbb_for(bid, frame.uv_bbox(loop))
-        ent, inward = _entrance_uv(bid, frame.uv_bbox(loop))
+        ent, inward = _entrance_uv(bid, uvbb)
         out[bid] = InteriorSpec(bid, b.get("display", bid), b.get("levels"),
                                 b.get("height"), uvbb, ent, inward, frame)
     return out

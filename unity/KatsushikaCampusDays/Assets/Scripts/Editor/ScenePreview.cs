@@ -55,7 +55,7 @@ namespace KCD.Editor
 
             /// <summary>
             /// 寮の屋内のローカル座標（Unity の向きで x = 右, y = 上, z = 入口から奥）。
-            /// blender/kcd_route/dorm.py の (x, y) がそのまま (x, z) になる。
+            /// blender/kcd_route/dorm_interior.py の (x, y) がそのまま (x, z) になる。
             /// </summary>
             DormInterior,
 
@@ -115,12 +115,13 @@ namespace KCD.Editor
         /// 屋外の座標は data/osm/route.json の実測値から起こしてある:
         ///   寮の重心 (-464.52, 202.0) / 玄関 (-455.83, 183.24) 方位 159.5 度 / 高さ 17.8 m・5 階建て
         ///   西門 z 227.83..251.83（x = -340 付近の西壁）/ 前面道路は tertiary 幅 9.0 m
-        /// 屋内の座標は blender/kcd_route/dorm.py の間取りから（Blender の (x, y) = Unity の (x, z)）:
+        /// 屋内の座標は blender/kcd_route/dorm_interior.py の間取りから（Blender の (x, y) = Unity の (x, z)）:
         ///   部屋 x -8.00..8.00 / z 2.80..40.80、壁厚 0.30 なので内法は x -7.70..7.70 / z 3.10..40.50
         ///   天井 2.70 / 間仕切りの天端 3.20 / 玄関ホール z 3.10..12.60 / 中廊下の壁は x ±1.60
         ///   spawn_dorm (0, 0, 4.60) / exit_dorm (0, 0, 3.35) / 寮長 npc_dorm_head (2.60, 0, 9.60)
-        ///   管理人カウンター x 4.02..4.38, z 9.20..11.60 / ラウンジは西・食堂は東（z 12.60..23.00）
-        /// 屋内 3 枚の構図は dorm.py の c.cam(...) のプレビュー画角を、
+        ///   管理人カウンター x 4.02..4.38, z 9.20..11.60 / ラウンジは西（z 12.60..19.74）・食堂は東（z 12.60..24.60）
+        ///   中廊下は z 34.40 でエレベーターホールに抜ける
+        /// 屋内の構図は dorm_interior.py の c.cam(...) のプレビュー画角を、
         /// 目の高さ（1.6-1.7 m）と Unity の縦画角に読み替えたもの。
         /// </summary>
         private static readonly Shot[] Shots =
@@ -162,7 +163,7 @@ namespace KCD.Editor
                 Eye = new Vector3(0f, 1.7f, 4.1f),
                 Look = new Vector3(0.6f, 1.25f, 12.4f),
                 Fov = 0f,
-                Note = "玄関ホールを入口から奥へ。突き当たりは z 12.60 の間仕切り",
+                Note = "玄関ホールを入口から奥へ。奥は z 12.60 の間仕切りと中廊下の入口",
             },
             new Shot
             {
@@ -180,7 +181,7 @@ namespace KCD.Editor
                 Eye = new Vector3(-1.9f, 1.65f, 13.6f),
                 Look = new Vector3(-6.2f, 1.1f, 20f),
                 Fov = 52f,
-                Note = "ラウンジ（西・z 12.60..23.00）。dorm.py の cam \"lounge\" と同じ構図",
+                Note = "ラウンジ（西・z 12.60..19.74）。dorm_interior.py の cam \"lounge\" と同じ構図",
             },
             new Shot
             {
@@ -189,7 +190,7 @@ namespace KCD.Editor
                 Eye = new Vector3(0f, 1.7f, 13.4f),
                 Look = new Vector3(0f, 1.5f, 34f),
                 Fov = 46f,
-                Note = "中廊下（x ±1.60 の壁のあいだ）を奥へ。突き当たりは居室エリアの仕切り",
+                Note = "中廊下（x ±1.60 の壁のあいだ）を奥へ。突き当たりはエレベーターホール",
             },
 
             // 窓の外の遠景（#60）。窓は外周の壁の腰 0.95 m から 2.55 m まで（dorm.py の envelope）。
@@ -352,10 +353,75 @@ namespace KCD.Editor
                 Sun = OutdoorSun,
                 Note = "E 街区の遊具（ぶらんこ）",
             },
+
+            // 面のテクスチャ（#80・#109）。blender/tools_view/surfaces_before_after.py の CLOSE_SPECS と同じ視点を
+            // CampusProps.Local で読み替えた値。目の高さ 1.6 m
+            new Shot
+            {
+                Name = "shot_surface_mall_paving",
+                Space = Frame.World,
+                Eye = new Vector3(93.31f, 1.6f, -70.11f),     // (u 114, v -25)
+                Look = new Vector3(88.77f, 0.1f, -61.99f),    // (u 106.5, v -19.5)
+                Fov = 0f,
+                Sun = OutdoorSun,
+                Note = "モールの舗装と花壇の土",
+            },
+            new Shot
+            {
+                Name = "shot_surface_research1_brick",
+                Space = Frame.World,
+                Eye = new Vector3(27.07f, 1.6f, -108.02f),    // (u 69.5, v -87)
+                Look = new Vector3(24.48f, 2.2f, -98.04f),    // (u 63, v -79)
+                Fov = 0f,
+                Sun = OutdoorSun,
+                Note = "第1研究棟のレンガの階段コア",
+            },
+            new Shot
+            {
+                Name = "shot_surface_road_grass",
+                Space = Frame.World,
+                Eye = new Vector3(49.30f, 1.6f, -123.12f),    // (u 96, v -91.5)
+                Look = new Vector3(65.93f, 0f, -125.22f),     // (u 112, v -86.5)
+                Fov = 0f,
+                Sun = OutdoorSun,
+                Note = "車道のアスファルトと芝生",
+            },
+
+            // 屋内の正面（#120・#169）。座標は Models/Interiors/<id>.json の empties と同じ屋内のローカル座標
+            new Shot
+            {
+                Name = "shot_research1_atrium",
+                Space = Frame.Interior,
+                Building = "research1",
+                Eye = new Vector3(0f, 1.6f, 18.5f),           // spawn_research1 の少し手前
+                Look = new Vector3(0f, 3.0f, 33f),            // 吹き抜けの奥の窓口の看板
+                Fov = 0f,
+                Note = "第1研究棟 1F の吹き抜けとフロアガイド",
+            },
+            new Shot
+            {
+                Name = "shot_research2_dining",
+                Space = Frame.Interior,
+                Building = "research2",
+                Eye = new Vector3(0f, 1.6f, 8f),
+                Look = new Vector3(-12f, 1.2f, 26f),
+                Fov = 0f,
+                Note = "第2研究棟 1F の食堂",
+            },
+            new Shot
+            {
+                Name = "shot_library_reading",
+                Space = Frame.Interior,
+                Building = "library",
+                Eye = new Vector3(0f, 1.6f, 7f),
+                Look = new Vector3(-1f, 1.5f, 28f),
+                Fov = 0f,
+                Note = "図書館 1F の入口から閲覧席",
+            },
         };
 
         /// <summary>
-        /// spawn_dorm のローカル座標。dorm.py の entry_kit(spawn_depth=1.50) と
+        /// spawn_dorm のローカル座標。dorm_interior.py の entry_kit(spawn_depth=1.50) と
         /// y_face 2.80 + 壁厚 0.30 から z = 4.60。ここからローカル原点を逆算する。
         /// </summary>
         private static readonly Vector3 DormSpawnLocal = new Vector3(0f, 0f, 4.6f);

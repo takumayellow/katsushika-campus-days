@@ -1,10 +1,10 @@
 # 図書館棟 写真索引（場所別）
 
-Issue #110 の調査用。写真はすべて scratchpad の `research/library/` 配下にだけ置き、リポジトリには入れていない。
+Issue #110 の調査用。写真・図面・動画のフレームはすべて scratchpad にだけ置き、リポジトリには入れていない。第 1 回（2026-09-24）の分は `research/library/` 配下、第 2 回（2026-10-03）の分は `interiors/library/img/`（写真・図）と `interiors/library/img/vid/`（動画のフレーム）にある。
 
-- 場所は、索引の説明と私が写真を見た結果から分けた。キーワードで機械的に振り分けたので、1 枚が別の場所にも当てはまることがある。
-- 「向き・内容」は索引の説明をそのまま使った。`spec.md` の根拠に使った写真は、実際に Read で見て確かめてある。
-- ライセンスは、どれも権利者の明示が無いので「unknown/copyrighted」。ゲームやリポジトリに写真そのものを入れてはいけない。
+- 第 1 回の分は場所ごとに並べた。場所は、索引の説明と写真を見た結果から分けた。キーワードで振り分けたので、1 枚が別の場所にも当てはまることがある。「向き・内容」は索引の説明をそのまま使った。
+- 第 2 回の分は末尾の「2026-10-03 の追加」に資料ごとにまとめた。「向き・内容」は写真・フレームを見て書いた。動画のフレームは、ファイル名の 4 桁が動画の中の時刻（分秒）。
+- ライセンスは、c01（CC BY-SA 4.0）を除いて権利者の明示が無いので「unknown/copyrighted」。ゲームやリポジトリに写真そのものを入れてはいけない。
 
 ## ホール（客席）
 
@@ -235,3 +235,97 @@ Issue #110 の調査用。写真はすべて scratchpad の `research/library/` 
 | `official/photos/tuslife_katsushika_01.jpg` | キャンパスモール、奥に図書館棟 | 東京理科大学 | unknown/copyrighted | https://www.tus.ac.jp/tuslife/campus/katsushika/index.html |
 | `official/photos/tuslife_katsushika_07.jpg` | 未来わくわく館(葛飾区の施設、図書館棟1F) | 東京理科大学 | unknown/copyrighted | https://www.tus.ac.jp/tuslife/campus/katsushika/index.html |
 | `official/photos/bunseki_p1_1.jpg` | モールと彫刻、遠景に図書館棟(モノクロ) / PDF から抽出 | 野々村誠(ぶんせき 2017) | unknown/copyrighted | https://www.jsac.or.jp/bunseki/pdf/bunseki2017/201705konnichiwa.pdf |
+
+## 2026-10-03 の追加
+
+### 図書館公式（`img/off*`）
+
+| ファイル | 向き・内容 | 撮影者・権利者 | ライセンス | 出典 |
+|---|---|---|---|---|
+| `img/off01_20250401_図書館案内_【葛飾】館内マップ2025_1階.png` | 1F の館内マップ（請求記号の配置、正面出入口が図の下辺） | 東京理科大学図書館 | unknown/copyrighted | https://tuslibrary.admin.tus.ac.jp/library-information-katsushika |
+| `img/off02_20250401_図書館案内_【葛飾】館内マップ2025_全体.png` | 1F・2F の館内マップ全体 | 東京理科大学図書館 | unknown/copyrighted | https://tuslibrary.admin.tus.ac.jp/library-information-katsushika |
+| `img/off03_01_図書館入り口.jpg` | 1F 入口。入館ゲートと「入館」の表示、濃い木目の天井 | 東京理科大学図書館 | unknown/copyrighted | https://tuslibrary.admin.tus.ac.jp/library-information-katsushika |
+| `img/off04_02_カウンター・デジタルサイネージ大.jpg` | 1F カウンター。赤い本体と黒い上板の L 字、「受付」の札、奥の壁の 2×2 面のサイネージ、「ITサポート室」 | 東京理科大学図書館 | unknown/copyrighted | https://tuslibrary.admin.tus.ac.jp/library-information-katsushika |
+| `img/off05_03_中央ロビー.jpg` | 1F 中央ロビー。赤い曲線のソファ、白い丸テーブル、展示台 | 東京理科大学図書館 | unknown/copyrighted | https://tuslibrary.admin.tus.ac.jp/library-information-katsushika |
+| `img/off06_04_メディアラウンジ.jpg` | 1F メディアラウンジ。窓辺の箱形のソファ | 東京理科大学図書館 | unknown/copyrighted | https://tuslibrary.admin.tus.ac.jp/library-information-katsushika |
+| `img/off07_11_閲覧席_1.jpg` | 2F 閲覧席（キャレル）。木の机と白い仕切り板 | 東京理科大学図書館 | unknown/copyrighted | https://tuslibrary.admin.tus.ac.jp/library-information-katsushika |
+| `img/off08_12_グループ学習室.jpg` | 2F グループ学習室。ガラスの箱、濃い壁の大きな数字、「グループ学習室」のスタンド | 東京理科大学図書館 | unknown/copyrighted | https://tuslibrary.admin.tus.ac.jp/library-information-katsushika |
+| `img/off09_13_黙考書院.jpg` | 2F 黙考書院。白いスリッパーチェア、全面ガラスとロールスクリーン | 東京理科大学図書館 | unknown/copyrighted | https://tuslibrary.admin.tus.ac.jp/library-information-katsushika |
+| `img/off10_14_ブックポスト.jpg`、`img/off10_14_ブックダスト.jpg` | 館外のブックポスト | 東京理科大学図書館 | unknown/copyrighted | https://tuslibrary.admin.tus.ac.jp/library-information-katsushika |
+| `img/off11_06_自動貸出機.jpg` | 1F 自動貸出機 | 東京理科大学図書館 | unknown/copyrighted | https://tuslibrary.admin.tus.ac.jp/library-information-katsushika |
+
+### 設計・施工・記事（`img/`）
+
+| ファイル | 向き・内容 | 撮影者・権利者 | ライセンス | 出典 |
+|---|---|---|---|---|
+| `img/core_01.jpg` | 公園側の全景 | coretokyo | unknown/copyrighted | http://coretokyoweb.jp/?page=work&id=29 |
+| `img/core_02.jpg` | 3F ホワイエ。傾いたアルミ鋳物の外殻と光る目地、ガラス床、深紅のカーペット | coretokyo | unknown/copyrighted | http://coretokyoweb.jp/?page=work&id=29 |
+| `img/core_03.jpg` | 1F 吹抜けの俯瞰。段状ギャラリー、赤いソファ、市松のカーペット | coretokyo | unknown/copyrighted | http://coretokyoweb.jp/?page=work&id=29 |
+| `img/core_04.jpg` | 1F から見上げ。ホールの底面、トップライトの帯、有孔板の照明ボックス、上階のブリッジ | coretokyo | unknown/copyrighted | http://coretokyoweb.jp/?page=work&id=29 |
+| `img/core_05.jpg` | 断面図（図書館の上に大ホール） | coretokyo | unknown/copyrighted | http://coretokyoweb.jp/?page=work&id=29 |
+| `img/core_06.jpg` | 1 階平面図 | coretokyo | unknown/copyrighted | http://coretokyoweb.jp/?page=work&id=29 |
+| `img/nikken_03.jpg`〜`img/nikken_07.jpg` | 外観・ホワイエ・ガラス床・図書館内観（02 と 04 は図書館ではない） | 日建設計 | unknown/copyrighted | https://www.nikken.jp/ja/projects/education/tokyo_university_of_science.html |
+| `img/nikken_08.jpg` | 矩計図 1/100（階高 5,000 / 5,000 / 6,000、「ホール前室」「ホール 2 階席入口」「強化合わせガラス」「アルミキャスト t7」の注記） | 日建設計 | unknown/copyrighted | https://www.nikken.jp/ja/projects/education/tokyo_university_of_science.html |
+| `img/nkr_0783-*.jpg`・`img/nkr_0784-*.jpg`・`img/nkr_0783-000-2.png` | 日建設計の旧サイトの記事の写真（L 字の中二階、ガラスの床とトップライト） | 日建設計 | unknown/copyrighted | https://web.archive.org/web/2015/http://www.nikken.co.jp/ja/archives/ndvukb000001a3q9.html |
+| `img/asc_011.jpg` | 大ホール。舞台から客席の 3 ブロック、側壁の折れ面、シャンデリア | アセント | unknown/copyrighted | https://ascent-jp.com/archives/pro-audio/tus-katsushika/ |
+| `img/asc_02.jpg` | 大ホールの客席と青灰の通路 | アセント | unknown/copyrighted | https://ascent-jp.com/archives/pro-audio/tus-katsushika/ |
+| `img/asc_031.jpg` | 大ホール。舞台側から後方。2 階席の光る前面、調整室の窓、後壁の両開き扉と誘導灯、側扉 | アセント | unknown/copyrighted | https://ascent-jp.com/archives/pro-audio/tus-katsushika/ |
+| `img/asc_041.jpg` | 大ホールの座席（木のシェルと濃紺の張地） | アセント | unknown/copyrighted | https://ascent-jp.com/archives/pro-audio/tus-katsushika/ |
+| `img/asc_05.jpg` | 音響機器 | アセント | unknown/copyrighted | https://ascent-jp.com/archives/pro-audio/tus-katsushika/ |
+| `img/ieice_hall_crop.png` | 大ホールの客席（「大ホールは 3〜4 階、600 席」のキャプション） | 電子情報通信学会 | unknown/copyrighted | https://www.jstage.jst.go.jp/article/essfr/7/2/7_158/_pdf |
+| `img/ieice_libin_crop.png` | 図書館の内観 | 電子情報通信学会 | unknown/copyrighted | https://www.jstage.jst.go.jp/article/essfr/7/2/7_158/_pdf |
+| `img/ieice_libext_crop.png` | 図書館棟の外観 | 電子情報通信学会 | unknown/copyrighted | https://www.jstage.jst.go.jp/article/essfr/7/2/7_158/_pdf |
+| `img/tuslife_05.jpg`・`img/tuslife_10.jpg`・`img/tuslife_11.jpg` | 図書館の内観（10 = 段のカウンター机と白い椅子、市松のカーペット） | 東京理科大学 | unknown/copyrighted | https://www.tus.ac.jp/tuslife/campus/katsushika/ |
+| `img/mt_1200.jpg` | 軸測図 | 見学記録の作者 | unknown/copyrighted | https://mirutake.sakura.ne.jp/Gekisya/13/302rika1/rika1.htm |
+| `img/mt_sec.jpg` | 断面図（舞台が奥、2 階席が入口側） | 見学記録の作者 | unknown/copyrighted | https://mirutake.sakura.ne.jp/Gekisya/13/302rika1/sec.jpg |
+| `img/pdf_isij2016_map_*.png`・`img/pdf_jspe2023_map_*.png` | 学会の会場案内の PDF のページ（3F 平面） | 各学会 | unknown/copyrighted | https://secand.jp/site/map_info.php?recordID=339 ほか |
+| `img/c01_commons_library_ext.jpg` | 図書館棟の外観（2021-05-15） | しんぎんぐきゃっと | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:TUS,_Katsushika_Library.jpg |
+
+- `img/c02〜c05_commons_*.jpg` は図書館ではないので使っていない。
+
+### 動画のフレーム（`img/vid/`）
+
+| ファイル | 向き・内容 | 撮影者・権利者 | ライセンス | 出典 |
+|---|---|---|---|---|
+| `img/vid/v01_hyakkei_0024_gallery_overview.jpg` | 1F 吹抜けと段状ギャラリーの全景 | 東京理科大学（理科大百景#4、2016） | unknown/copyrighted | https://www.youtube.com/watch?v=eN-SG-4xdxQ（0:24） |
+| `img/vid/v01_hyakkei_0031_gallery_overview2.jpg` | 段状ギャラリーの本の壁 | 東京理科大学（理科大百景#4、2016） | unknown/copyrighted | https://www.youtube.com/watch?v=eN-SG-4xdxQ（0:31） |
+| `img/vid/v01_hyakkei_0048_counter_wall.jpg` | カウンターの奥の壁。2×2 面のサイネージ「OPAC の使い方」、黒い横ルーバー帯 | 東京理科大学（理科大百景#4、2016） | unknown/copyrighted | https://www.youtube.com/watch?v=eN-SG-4xdxQ（0:48） |
+| `img/vid/v01_hyakkei_0057_opac_area.jpg` | OPAC の島 | 東京理科大学（理科大百景#4、2016） | unknown/copyrighted | https://www.youtube.com/watch?v=eN-SG-4xdxQ（0:57） |
+| `img/vid/v01_hyakkei_0103_opac.jpg` | OPAC 端末（白、黒い 1 本脚）とタッチ式サイネージ | 東京理科大学（理科大百景#4、2016） | unknown/copyrighted | https://www.youtube.com/watch?v=eN-SG-4xdxQ（1:03） |
+| `img/vid/v01_hyakkei_0115_newbooks.jpg` | 新着図書のブックトラック「新着図書 今週分」 | 東京理科大学（理科大百景#4、2016） | unknown/copyrighted | https://www.youtube.com/watch?v=eN-SG-4xdxQ（1:15） |
+| `img/vid/v01_hyakkei_0122_pclocker.jpg` | ノートPC貸出ロッカー | 東京理科大学（理科大百景#4、2016） | unknown/copyrighted | https://www.youtube.com/watch?v=eN-SG-4xdxQ（1:22） |
+| `img/vid/v01_hyakkei_0138_mokko_sign.jpg` | 黙考書院の看板（暗赤の木の板、彫り文字） | 東京理科大学（理科大百景#4、2016） | unknown/copyrighted | https://www.youtube.com/watch?v=eN-SG-4xdxQ（1:38） |
+| `img/vid/v01_hyakkei_0146_mokko.jpg` | 黙考書院の室内 | 東京理科大学（理科大百景#4、2016） | unknown/copyrighted | https://www.youtube.com/watch?v=eN-SG-4xdxQ（1:46） |
+| `img/vid/v01_hyakkei_0155_mokko2.jpg` | 黙考書院のラグとスリッパーチェア | 東京理科大学（理科大百景#4、2016） | unknown/copyrighted | https://www.youtube.com/watch?v=eN-SG-4xdxQ（1:55） |
+| `img/vid/v01_hyakkei_0202_carrel.jpg` | 2F キャレル | 東京理科大学（理科大百景#4、2016） | unknown/copyrighted | https://www.youtube.com/watch?v=eN-SG-4xdxQ（2:02） |
+| `img/vid/v01_hyakkei_0211_tamokuteki2.jpg` | 多目的室2 のガラス扉と室名 | 東京理科大学（理科大百景#4、2016） | unknown/copyrighted | https://www.youtube.com/watch?v=eN-SG-4xdxQ（2:11） |
+| `img/vid/v01_hyakkei_0219_tamokuteki_in.jpg` | 多目的室の室内 | 東京理科大学（理科大百景#4、2016） | unknown/copyrighted | https://www.youtube.com/watch?v=eN-SG-4xdxQ（2:19） |
+| `img/vid/v01_hyakkei_0223_group.jpg` | グループ学習室 | 東京理科大学（理科大百景#4、2016） | unknown/copyrighted | https://www.youtube.com/watch?v=eN-SG-4xdxQ（2:23） |
+| `img/vid/v01_hyakkei_0231_pairwork.jpg` | ペアワークの席（黒い曲線のソファ） | 東京理科大学（理科大百景#4、2016） | unknown/copyrighted | https://www.youtube.com/watch?v=eN-SG-4xdxQ（2:31） |
+| `img/vid/v01_hyakkei_0238_balcony.jpg` | 2F 吹抜け際のカウンター机 | 東京理科大学（理科大百景#4、2016） | unknown/copyrighted | https://www.youtube.com/watch?v=eN-SG-4xdxQ（2:38） |
+| `img/vid/v02_tour25_0241_ext_front.jpg` | 図書館棟の正面 | 東京理科大学（キャンパス紹介、2025） | unknown/copyrighted | https://www.youtube.com/watch?v=STq8wbtKA4A（2:41） |
+| `img/vid/v02_tour25_0245_gallery.jpg` | 段状ギャラリーの 3 段の本の壁、市松のカーペット、木のスラット天井 | 東京理科大学（キャンパス紹介、2025） | unknown/copyrighted | https://www.youtube.com/watch?v=STq8wbtKA4A（2:45） |
+| `img/vid/v02_tour25_0247_gallery_m.jpg` | 段のカウンター机とガラス手すり | 東京理科大学（キャンパス紹介、2025） | unknown/copyrighted | https://www.youtube.com/watch?v=STq8wbtKA4A（2:47） |
+| `img/vid/v02_tour25_0249_gallery_r.jpg` | 段状ギャラリーの右側 | 東京理科大学（キャンパス紹介、2025） | unknown/copyrighted | https://www.youtube.com/watch?v=STq8wbtKA4A（2:49） |
+| `img/vid/v02_tour25_0251_opac_sofa.jpg` | OPAC と赤いソファ | 東京理科大学（キャンパス紹介、2025） | unknown/copyrighted | https://www.youtube.com/watch?v=STq8wbtKA4A（2:51） |
+| `img/vid/v02_tour25_0259_mokko_door.jpg` | 黙考書院の扉（ウェンジ色の両開き、フリットのガラス）と看板 | 東京理科大学（キャンパス紹介、2025） | unknown/copyrighted | https://www.youtube.com/watch?v=STq8wbtKA4A（2:59） |
+| `img/vid/v02_tour25_0301_mokko_in.jpg` | 黙考書院の室内 | 東京理科大学（キャンパス紹介、2025） | unknown/copyrighted | https://www.youtube.com/watch?v=STq8wbtKA4A（3:01） |
+| `img/vid/v02_tour25_0303_mokko_window.jpg` | 黙考書院の全面ガラスとロールスクリーン | 東京理科大学（キャンパス紹介、2025） | unknown/copyrighted | https://www.youtube.com/watch?v=STq8wbtKA4A（3:03） |
+| `img/vid/v02_tour25_0307_bridge.jpg` | 上階のブリッジ | 東京理科大学（キャンパス紹介、2025） | unknown/copyrighted | https://www.youtube.com/watch?v=STq8wbtKA4A（3:07） |
+| `img/vid/v02_tour25_0309_stair.jpg` | 大階段（深紅のカーペット、木の踏板）と浮き階段 | 東京理科大学（キャンパス紹介、2025） | unknown/copyrighted | https://www.youtube.com/watch?v=STq8wbtKA4A（3:09） |
+| `img/vid/v02_tour25_0311_foyer.jpg` | 3F ホワイエ。外殻と光る目地、インフォメーション | 東京理科大学（キャンパス紹介、2025） | unknown/copyrighted | https://www.youtube.com/watch?v=STq8wbtKA4A（3:11） |
+| `img/vid/v02_tour25_0313_hall.jpg` | 大ホールの客席 | 東京理科大学（キャンパス紹介、2025） | unknown/copyrighted | https://www.youtube.com/watch?v=STq8wbtKA4A（3:13） |
+| `img/vid/v02_tour25_0316_hall2.jpg` | 大ホールの 2 階席の前面 | 東京理科大学（キャンパス紹介、2025） | unknown/copyrighted | https://www.youtube.com/watch?v=STq8wbtKA4A（3:16） |
+| `img/vid/v03_piano14_0030_stage.jpg` | 大ホールの舞台とグランドピアノ | 東京理科大学（2014） | unknown/copyrighted | https://www.youtube.com/watch?v=jRD-t5c4iBQ（0:30） |
+| `img/vid/v04_taiko26_0010_stage_wide.jpg` | 大ホールの舞台の全幅（奥壁の木のパネル、ルーバー） | 和太鼓樹（2026） | unknown/copyrighted | https://www.youtube.com/watch?v=XCWYnj8aUFM（0:10） |
+| `img/vid/v05_band26_0001_stage_left.jpg` | 大ホールの舞台の下手 | pipipi（2026） | unknown/copyrighted | https://www.youtube.com/watch?v=TKA7jvSgIyc（0:01） |
+| `img/vid/v06_walk26_0509_pool.jpg` | 正面の外。列柱とリフレクティングプール | ゆっくり大学探訪（2026） | unknown/copyrighted | https://www.youtube.com/watch?v=KVPQPdmfBTg（5:09） |
+| `img/vid/v06_walk26_0527_entrance.jpg` | 入口の外 | ゆっくり大学探訪（2026） | unknown/copyrighted | https://www.youtube.com/watch?v=KVPQPdmfBTg（5:27） |
+| `img/vid/v06_walk26_0536_windbox.jpg` | 風除室 | ゆっくり大学探訪（2026） | unknown/copyrighted | https://www.youtube.com/watch?v=KVPQPdmfBTg（5:36） |
+| `img/vid/v07_yomi16_0107_gallery.jpg` | 赤いソファと段状ギャラリー | 読売新聞（2016） | unknown/copyrighted | https://www.youtube.com/watch?v=fUHdrLELR-E（1:07） |
+| `img/vid/v07_yomi16_0116_stacks.jpg` | 2F 開架書架。有孔パネルの天井と白い格子の照明 | 読売新聞（2016） | unknown/copyrighted | https://www.youtube.com/watch?v=fUHdrLELR-E（1:16） |
+| `img/vid/v07_yomi16_0122_aisle.jpg` | 書架の間の通路と閲覧机 | 読売新聞（2016） | unknown/copyrighted | https://www.youtube.com/watch?v=fUHdrLELR-E（1:22） |
+| `img/vid/v07_yomi16_0125_group4.jpg` | グループ学習室の大きな数字「4」 | 読売新聞（2016） | unknown/copyrighted | https://www.youtube.com/watch?v=fUHdrLELR-E（1:25） |
+| `img/vid/v08_tour23_1045.jpg` | 風除室の館内案内板（2F / 1F の見出し） | キタロクチャンネル（2023） | unknown/copyrighted | https://www.youtube.com/watch?v=HbHY3z88Qq4（10:45） |
+| `img/vid/v08_tour23_1053.jpg` | 入館ゲートと濃い木目の天井 | キタロクチャンネル（2023） | unknown/copyrighted | https://www.youtube.com/watch?v=HbHY3z88Qq4（10:53） |
+| `img/vid/v08_tour23_1055.jpg` | ゲートの先の 1F | キタロクチャンネル（2023） | unknown/copyrighted | https://www.youtube.com/watch?v=HbHY3z88Qq4（10:55） |

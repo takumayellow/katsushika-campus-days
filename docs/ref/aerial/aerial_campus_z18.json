@@ -1,0 +1,45 @@
+{
+ "files": [
+  "aerial_campus_z18.jpg",
+  "aerial_campus_z18_osm.jpg (x2 upsampled, annotated)"
+ ],
+ "layer": "ort",
+ "tile_url": "https://cyberjapandata.gsi.go.jp/xyz/ort/{z}/{x}/{y}.jpg",
+ "zoom": 18,
+ "tiles_x": [
+  232915,
+  232919
+ ],
+ "tiles_y": [
+  103143,
+  103147
+ ],
+ "crop_px_in_tile_mosaic": [
+  54,
+  131,
+  1199,
+  1052
+ ],
+ "ground_m_per_px": 0.4845,
+ "bbox_local_m": {
+  "x": [
+   -235,
+   320
+  ],
+  "z": [
+   -235,
+   210
+  ]
+ },
+ "local_to_pixel": "tile-space Web Mercator: lat=lat0+z/110954.786, lon=lon0+x/90422.693, then px=(tileX-232915)*256-54, py=(tileY-103143)*256-131",
+ "origin": {
+  "lat": 35.771909746153845,
+  "lon": 139.86296726153847
+ },
+ "same_capture_as": "seamlessphoto z18 (mean abs pixel diff 5/255, JPEG only); ort tiles are ~1.7x larger and sharper",
+ "capture_date": "unknown; tile metadata x-amz-meta-last-modified = 2020-08-04, so capture is 2020 or earlier",
+ "license": "地理院タイル一覧 (https://maps.gsi.go.jp/development/ichiran.html) の「2. 基本測量成果以外で出典の記載のみで利用可能なもの」に載るタイル (ort)。国土地理院コンテンツ利用規約 (https://www.gsi.go.jp/kikakuchousei/kikakuchousei40182.html) に従い、出典と加工したことを記載して申請なしで利用 (2026-09-24 確認)",
+ "citation": "出典：国土地理院 電子国土基本図（オルソ画像）を加工して作成",
+ "osm_attribution": "aerial_campus_z18_osm.jpg の線 (建物・道・区域): © OpenStreetMap contributors, ODbL 1.0 (https://www.openstreetmap.org/copyright)",
+ "fetched": "2026-09-24"
+}
