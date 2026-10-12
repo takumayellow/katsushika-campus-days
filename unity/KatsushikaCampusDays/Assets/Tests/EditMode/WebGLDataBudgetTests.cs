@@ -101,6 +101,39 @@ namespace KCD.Tests
             }
         }
 
+        /// <summary>法線マップは tangent が無いと正しく描けない。CampusMeshesHaveNoTangents の前提。</summary>
+        [Test]
+        public void CampusMaterialsHaveNoNormalMap()
+        {
+            string[] guids = AssetDatabase.FindAssets("t:Model", CampusFolders);
+            Assert.IsNotEmpty(guids, "キャンパスのモデルが無い");
+            int materials = 0;
+            foreach (string guid in guids)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                var model = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                Assert.IsNotNull(model, path);
+                foreach (Renderer renderer in model.GetComponentsInChildren<Renderer>(true))
+                {
+                    foreach (Material material in renderer.sharedMaterials)
+                    {
+                        if (material == null)
+                        {
+                            continue;
+                        }
+
+                        materials++;
+                        Assert.IsFalse(material.HasProperty("_BumpMap") && material.GetTexture("_BumpMap") != null,
+                            path + " の " + material.name + " に法線マップ（_BumpMap）がある");
+                        Assert.IsFalse(material.IsKeywordEnabled("_NORMALMAP"),
+                            path + " の " + material.name + " で _NORMALMAP が有効");
+                    }
+                }
+            }
+
+            Assert.Greater(materials, 0, "キャンパスのモデルに材質が無い");
+        }
+
         [Test]
         public void ScreenFontIsTheSubset()
         {

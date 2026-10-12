@@ -9,7 +9,8 @@ unity/KatsushikaCampusDays/Assets/Fonts/KCDUIJP-Thin.ttf を作る (#70)。
 - 太さの軸 wght を WEIGHT（100、Thin）に固定する。Unity の FontEngine は可変フォントを既定の太さ（wght 100）で
   描くので、画面の字形と字幅は変わらない（2026-10-12 に FontEngine の advance と幅を比べて確かめた）。
   可変の差分の表（gvar / HVAR）が無くなる
-- 文字を ASCII・Latin-1・Windows-31J（JIS X 0208 全部と NEC / IBM 拡張）と、Assets の中の文字に絞る
+- 文字を ASCII・Latin-1・Windows-31J（JIS X 0208 全部と NEC / IBM 拡張）と、Assets の中の文字と
+  data/osm/campus.json の名前の文字に絞る
 - 組版の表（GSUB / GPOS / GDEF / BASE）は残す。TextMeshPro が詰めと置き換えに使う
 - 名前を "KCD UI JP" に変える。SIL Open Font License 1.1 の改変版なので予約名（'Source'）を名前に
   使わない。著作権（nameID 0）とライセンス（13 / 14）の欄は元のまま残す
@@ -27,6 +28,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import re
 from pathlib import Path
 
@@ -37,6 +39,8 @@ SRC = ASSETS / "Fonts" / "NotoSansJP-VF.ttf"
 SRC_OFL = ASSETS / "StreamingAssets" / "Licenses" / "NotoSansJP-OFL.txt"
 OUT = ASSETS / "Fonts" / "KCDUIJP-Thin.ttf"
 OUT_OFL = ASSETS / "StreamingAssets" / "Licenses" / "KCDUIJP-OFL.txt"
+# Assets の外で、画面に出る名前の元になるもの（OpenStreetMap の建物と道の名前）。ゲームは実行中に data/ を読まない
+OSM_JSON = (REPO / "data" / "osm" / "campus.json",)
 
 WEIGHT = 100
 FAMILY = "KCD UI JP"
@@ -53,7 +57,10 @@ TIMESTAMP = 3874608000
 # 画面に出る文字が書かれうるファイル。台詞・ローカライズは JSON、定型文は C#、
 # シーン・プレハブ・アセットの TextMeshPro の本文は YAML（ASCII 以外は \uXXXX）
 TEXT_SUFFIXES = (".json", ".cs", ".txt", ".csv", ".unity", ".prefab", ".asset")
-_YAML_ESCAPE = re.compile(r"\\u([0-9a-fA-F]{4})")
+YAML_SUFFIXES = (".unity", ".prefab", ".asset")
+# JSON・C#・YAML の文字列の \uXXXX（サロゲートの対は 1 字にする）と、C# の \UXXXXXXXX
+_ESCAPE = re.compile(r"\\u([dD][89abAB][0-9a-fA-F]{2})\\u([dD][c-fC-F][0-9a-fA-F]{2})"
+                     r"|\\u([0-9a-fA-F]{4})|\\U([0-9a-fA-F]{8})")
 
 
 def _windows31j() -> set[int]:
@@ -69,17 +76,45 @@ def _windows31j() -> set[int]:
     return out
 
 
-def text_codepoints(assets: Path = ASSETS) -> set[int]:
-    """Assets の中のテキストに出てくる ASCII 以外の文字（制御文字を除く）。"""
+def escaped_codepoints(text: str) -> set[int]:
+    """text の中の \\u / \\U のエスケープが表す文字。"""
+    cps = set()
+    for high, low, bmp, astral in _ESCAPE.findall(text):
+        if high:
+            cps.add(0x10000 + ((int(high, 16) - 0xD800) << 10) + (int(low, 16) - 0xDC00))
+        else:
+            cps.add(int(bmp or astral, 16))
+    return cps
+
+
+def _json_strings(value) -> list[str]:
+    if isinstance(value, str):
+        return [value]
+    if isinstance(value, dict):
+        return [s for k, v in value.items() for s in _json_strings(k) + _json_strings(v)]
+    if isinstance(value, list):
+        return [s for v in value for s in _json_strings(v)]
+    return []
+
+
+def text_codepoints(assets: Path = ASSETS, extra_json: tuple[Path, ...] = OSM_JSON) -> set[int]:
+    """Assets の中のテキストと extra_json の文字列に出てくる ASCII 以外の文字（制御文字を除く）。
+
+    EditMode テスト ScreenFontGlyphTests も同じ文字を集めて KCD_JP を確かめる。集め方を変えたらそちらも揃える。
+    """
     cps = set()
     for path in sorted(assets.rglob("*")):
         if path.suffix not in TEXT_SUFFIXES or not path.is_file():
             continue
         text = path.read_text(encoding="utf-8", errors="ignore")
+        if path.suffix in YAML_SUFFIXES and not text.startswith("%YAML"):
+            continue  # バイナリで保存されたアセット（NavMesh など）
         cps.update(ord(c) for c in text if ord(c) > 0x7E)
-        if path.suffix in (".unity", ".prefab", ".asset"):
-            cps.update(int(h, 16) for h in _YAML_ESCAPE.findall(text))
-    return {cp for cp in cps if cp >= 0xA0 and not 0xD800 <= cp <= 0xDFFF}
+        cps.update(escaped_codepoints(text))
+    for path in extra_json:
+        for s in _json_strings(json.loads(path.read_text(encoding="utf-8"))):
+            cps.update(ord(c) for c in s if ord(c) > 0x7E)
+    return {cp for cp in cps if 0xA0 <= cp <= 0x10FFFF and not 0xD800 <= cp <= 0xDFFF}
 
 
 def codepoints(assets: Path = ASSETS) -> set[int]:
