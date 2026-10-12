@@ -4,10 +4,14 @@ import pytest
 
 import stubs
 from kcd_interior import plan_lecture_coop as COOP
+from kcd_interior import plan_lecture_core as CORE
 from kcd_interior import plan_lecture_dims as D
 from kcd_interior import plan_lecture_east as EAST
 from kcd_interior import plan_lecture_esc as ESC
 from kcd_interior import plan_lecture_hall as HL
+from kcd_interior import plan_lecture_lounge as LOUNGE
+from kcd_interior import plan_lecture_north as NORTH
+from kcd_interior import plan_lecture_101 as R101
 from kcd_interior import plan_lecture_shell as SH
 from kcd_interior import plan_lecture_signs as SG
 from kcd_interior import plan_lecture_upper as UP
@@ -96,9 +100,9 @@ def test_hall_rows_are_low_steps():
 
 
 def test_direct_stair_is_low_steps_and_reaches_2f():
-    assert EAST.ST_RISE <= STEP_OFFSET
-    assert EAST.ST_RISE * EAST.ST_STEPS * 2 == pytest.approx(D.F2)
-    assert EAST.ST_LAND[1] <= D.DIRECT_STAIR_Y[1] - EAST.ST_STEPS * EAST.ST_RUN + 1e-6
+    assert D.DIRECT_RISE <= STEP_OFFSET
+    assert D.DIRECT_RISE * D.DIRECT_STEPS * 2 == pytest.approx(D.F2)
+    assert EAST.ST_LAND[1] <= D.DIRECT_STAIR_Y[1] - D.DIRECT_STEPS * D.DIRECT_RUN + 1e-6
 
 
 def test_poi_names_keep_the_nine_and_add_four():
@@ -298,3 +302,68 @@ def test_no_point_light_next_to_the_escalator_hole(lspec):
 
 def test_escalator_fits_its_budget(esc):
     assert 0 < esc.tris() <= ESC_CAP
+
+
+# ---- 区画ごと: 三角形の上限と、頂点が footprint の内側にあること ----
+
+def _build_east(c):
+    EAST.build(c)
+
+
+def _build_coop(c):
+    COOP.build(c, c.furn("coop"))
+
+
+def _build_lounge(c):
+    LOUNGE.build(c, c.furn("lounge"))
+
+
+def _build_north(c):
+    NORTH.build(c, c.furn("north"))
+
+
+def _build_core(c):
+    CORE.build(c, {k: c.furn(k) for k in ("corridor", "lobby")}, SG.hang_roots())
+
+
+def _build_r101(c):
+    R101.build(c.furn("hall_front"))
+
+
+# 区画: (組み立て, 三角形の上限)。上限は現在の値に 1 割強の余裕を見たもの。
+SECTIONS = {
+    "east": (_build_east, 1300),
+    "coop": (_build_coop, 1900),
+    "lounge": (_build_lounge, 4000),
+    "north": (_build_north, 4700),
+    "core": (_build_core, 3700),
+    "r101": (_build_r101, 1900),
+}
+
+
+@pytest.fixture(scope="module", params=sorted(SECTIONS))
+def section(request, lspec):
+    build, cap = SECTIONS[request.param]
+    c = Ctx(lspec)
+    build(c)
+    return request.param, c, cap
+
+
+def test_section_fits_its_triangle_cap(section):
+    name, c, cap = section
+    assert 0 < c.tris() <= cap, name
+
+
+def test_section_stays_on_the_footprint(section, lspec):
+    name, c, _ = section
+    vs = [v for mb in c.builders() for v in mb.verts]
+    tol = 0.01
+    assert min(v[0] for v in vs) >= lspec.x0 - tol and max(v[0] for v in vs) <= lspec.x1 + tol, name
+    assert min(v[1] for v in vs) >= lspec.y_face - tol and max(v[1] for v in vs) <= lspec.y_back + tol, name
+
+
+def test_lounge_has_no_zero_length_wall():
+    """弦の側の壁は、南の端が弧の端と一致するとき作らない。"""
+    walls = LOUNGE.chord_walls()
+    assert len(walls) == 1
+    assert all(abs(b[1] - a[1]) > 0.1 for a, b in walls)

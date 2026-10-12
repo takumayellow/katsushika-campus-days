@@ -101,8 +101,8 @@ def _arc_room(c):
         p = pts[i]
         kit.cyl(c.wall, p[0], p[1], z0, z1, 0.14, COL, seg=8)
     # 弦の側の壁: 南の端と、北の閉じ
-    shell.partition(c.wall, (CX, CY - RY), (CX, Y_CHORD[0]), z0, z1, WALL)
-    shell.partition(c.wall, (CX, Y_CHORD[1]), (CX, CY + RY), z0, z1, WALL)
+    for a, b in chord_walls():
+        shell.partition(c.wall, a, b, z0, z1, WALL)
     # 天井の細い光（放射状）と点光源
     for yy in (24.0, 29.0, 38.0, 43.0):
         shell.light_strip(c.wall, CX + 1.0, yy, CX + 6.5, yy + 0.16, z1, mat=COOL)
@@ -132,6 +132,12 @@ def _arc_furniture(c, mb):
         base = len(mb.verts)
         shell.vending(mb, CX + 0.45, y, ang=-math.pi * 0.5)
         kit.lift(mb, base, z)
+
+
+def chord_walls():
+    """弦の側の壁の線分。南の端が弧の端と一致するときは作らない（長さ 0 の壁になる）。"""
+    runs = (((CX, CY - RY), (CX, Y_CHORD[0])), ((CX, Y_CHORD[1]), (CX, CY + RY)))
+    return [(a, b) for a, b in runs if abs(b[1] - a[1]) > 1e-6]
 
 
 def build(c, mb):
