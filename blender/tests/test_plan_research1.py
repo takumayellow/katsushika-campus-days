@@ -22,6 +22,7 @@ STAND_STEP = 0.55      # Unity の StandUp が前へ出す距離
 CAPSULE_R = 0.31       # プレイヤーのカプセルの半径
 TABLE_R = 0.45         # 丸テーブルの天板の半径
 TOP = D.Z_SKY + 0.05   # トップライトより上に何も出さない
+STEP_MAX = 0.4         # Unity の stepOffset
 
 
 def _ear_candidates(contours):
@@ -143,3 +144,77 @@ def test_six_cameras(built):
 def test_triangles_fit_the_cap_and_top(built):
     assert built.tris() <= INT_CAP
     assert max(p[2] for f in _faces(built) for p in f) <= TOP
+
+
+def _sections(c):
+    out = {"floor": c.floor, "wall": c.wall}
+    out.update({name.split("_", 3)[3]: mb for name, mb in c.furns})
+    return out
+
+
+def test_sections_stay_on_the_footprint(built):
+    s, tol = built.spec, 0.01
+    for name, mb in _sections(built).items():
+        vs = mb.verts
+        assert min(v[0] for v in vs) >= s.x0 - tol and max(v[0] for v in vs) <= s.x1 + tol, name
+        assert min(v[1] for v in vs) >= s.y_face - tol and max(v[1] for v in vs) <= s.y_back + tol, name
+
+
+def _in_polygon(poly, x, y):
+    inside = False
+    for (ax, ay), (bx, by) in zip(poly, poly[1:] + poly[:1]):
+        if (ay > y) != (by > y) and x < ax + (y - ay) * (bx - ax) / (by - ay):
+            inside = not inside
+    return inside
+
+
+def test_pois_npcs_and_cameras_are_inside_the_walls(built):
+    pts = [p[1:3] for p in D.POIS] + [n[:2] for n in D.NPCS] + [cam[1][:2] for cam in D.CAMS if cam[0] != "top"]
+    assert [p for p in pts if not _in_polygon(list(D.FOOT), *p)] == []
+    for _, _, _, z in D.POIS:
+        assert z in (D.Z1, D.Z2)
+    for _, _, z in D.NPCS:
+        assert z == D.Z1
+    for cam in D.CAMS:
+        assert 0.0 < cam[1][2] <= 100.0 and 0.0 <= cam[2][2] < 100.0
+
+
+def _flights():
+    from kcd_interior import plan_research1_core as core
+    west = [(D.W_STAIR[0], D.W_STAIR[1], f[0], f[1], f[2], f[3]) for f in D.W_FLIGHTS]
+    e1, e2 = D.E_FLIGHT1, D.E_FLIGHT2
+    east = [(e1[0], e1[1], e1[2], e1[3], D.Z1, 2.25), (e2[0], e2[1], e2[2], e2[3], 2.25, D.Z2)]
+    return core, west, east
+
+
+def test_stair_steps_are_climbable():
+    core, west, east = _flights()
+    for x0, x1, y0, y1, z0, z1 in west + east:
+        n = max(1, int(round((z1 - z0) / core.RISE)))
+        assert 0.0 < (z1 - z0) / n <= STEP_MAX
+        assert abs(y1 - y0) / n >= 0.25
+        assert x1 - x0 >= 0.9
+    assert west[-1][5] == D.Z2 and east[-1][5] == D.Z2
+
+
+def test_stair_has_headroom_under_the_slab():
+    core, west, east = _flights()
+    holes = ((D.W_HOLE, west), (D.E_HOLE, east))
+    for (hx0, hy0, hx1, hy1), flights in holes:
+        for x0, x1, y0, y1, _z0, _z1 in flights:
+            assert hx0 <= x0 and x1 <= hx1 and hy0 <= min(y0, y1) and max(y0, y1) <= hy1
+    assert core.Z_UNDER < D.Z2
+
+
+def test_quest_and_collectible_destinations_exist(built):
+    import json
+    from pathlib import Path
+    data = Path(CAMPUS_JSON).parent.parent.parent / "unity" / "KatsushikaCampusDays" / "Assets" / "Data"
+    quest = json.loads((data / "Quests" / "q_sq_lab_tour.json").read_text(encoding="utf-8"))
+    targets = {s["target"] for s in quest["steps"] if str(s.get("target", "")).startswith("poi_research1_")}
+    coll = json.loads((data / "Collectibles" / "collectibles.json").read_text(encoding="utf-8"))
+    items = coll["collectibles"]
+    targets |= {i["position"] for i in items
+                if i.get("building") == "research1" and str(i.get("position", "")).startswith("poi_")}
+    names = {n for n, _ in built.empties}
+    assert targets and targets <= names, targets - names
