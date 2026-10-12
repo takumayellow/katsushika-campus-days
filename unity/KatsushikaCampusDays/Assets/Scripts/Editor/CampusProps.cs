@@ -1,11 +1,10 @@
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
 
 namespace KCD.Editor
 {
     /// <summary>
-    /// キャンパスに置く目印。入口トリガー・建物の名札・クエストの到達判定・拾い物。
+    /// キャンパスに置く目印。入口トリガー・入口の立て看板の名前・クエストの到達判定・拾い物。
     /// 座標は Blender 側と同じローカル軸 (u = 第1研究棟の長手, v = 直交) で書く。
     /// 看板の板に貼る文字は CampusProps.SignFaces.cs。
     /// </summary>
@@ -13,9 +12,6 @@ namespace KCD.Editor
     {
         /// <summary>第1研究棟の長辺から決めたキャンパスの向き。build_campus.make_frame と同じ値。</summary>
         private static readonly Vector2 AxisU = new Vector2(0.90958899f, -0.41550916f);
-
-        /// <summary>モール側（+v）を指す向き。店舗サインの表を決めるのに使う。</summary>
-        private static Vector3 AxisV => new Vector3(-AxisU.y, 0f, AxisU.x);
 
         private static readonly Dictionary<string, string> BuildingNames = new Dictionary<string, string>
         {
@@ -27,9 +23,7 @@ namespace KCD.Editor
             { "gym", "体育館" },
             { "lab1", "第1実験棟" },
             { "lab2", "第2実験棟" },
-            { "greenhouse", "温室" },
-            { "starbucks_green", "スターバックス" },
-            { "familymart_green", "ファミリーマート" }
+            { "greenhouse", "温室" }
         };
 
         /// <summary>
@@ -78,14 +72,14 @@ namespace KCD.Editor
         /// <summary>モールの反対側（図書館側）を向く角度。</summary>
         public static float PlayerYaw => Mathf.Atan2(-AxisU.x, -AxisU.y) * Mathf.Rad2Deg;
 
-        /// <summary>入口・名札・到達判定・拾い物をまとめて置く。</summary>
+        /// <summary>入口・看板の名前・到達判定・拾い物をまとめて置く。</summary>
         public static void Build(Transform root)
         {
             var props = new GameObject("Props");
             props.transform.SetParent(root, false);
 
             PlaceEntrances(props.transform);
-            PlaceSigns(props.transform);
+            PlaceSignFaces(props.transform, FontLibrary.Ensure());
             PlaceZones(props.transform);
             PlaceCollectables(props.transform);
         }
@@ -263,122 +257,6 @@ namespace KCD.Editor
             {
                 EditorPaths.Report("door_<id> の無い入口が " + legacy + " 個あります。campus.fbx を作り直してください（blender/build_campus.py）。");
             }
-        }
-
-        /// <summary>FBX の sign_&lt;id&gt; に浮かぶ名札を付ける。</summary>
-        private static void PlaceSigns(Transform parent)
-        {
-            TMP_FontAsset font = FontLibrary.Ensure();
-            Material signMaterial = FontLibrary.EnsureSignMaterial(font, 0.18f, new Color32(24, 30, 40, 220));
-            int count = 0;
-
-            foreach (KeyValuePair<string, string> pair in BuildingNames)
-            {
-                if (!SignAnchor(pair.Key, out Vector3 anchor))
-                {
-                    continue;
-                }
-
-                var go = new GameObject("Label_" + pair.Key);
-                go.transform.SetParent(parent, false);
-                go.transform.position = anchor;
-
-                TextMeshPro text = go.AddComponent<TextMeshPro>();
-                text.text = pair.Value;
-                text.fontSize = BuildingLabel.FontSize;
-                text.fontStyle = FontStyles.Bold;
-                text.alignment = TextAlignmentOptions.Center;
-                text.color = Color.white;
-                if (font != null)
-                {
-                    text.font = font;
-                }
-
-                // outlineWidth / outlineColor は編集時に renderer.material でマテリアルを複製するので使わず、
-                // 縁取りを持たせた共有マテリアルを差す（#64）。
-                if (signMaterial != null)
-                {
-                    text.fontSharedMaterial = signMaterial;
-                }
-
-                text.rectTransform.sizeDelta = new Vector2(12f, 3f);
-                go.AddComponent<BuildingLabel>().Bind("ui.building." + pair.Key, pair.Value);
-                count++;
-            }
-
-            EditorPaths.Report("建物の名札を " + count + " 個置きました。");
-            PlaceSignFaces(parent, font);
-        }
-
-        /// <summary>
-        /// 店舗の名札を色板の中心から持ち上げる高さ（m）。色板の上端（中心 + 0.8 m）より上に出し、
-        /// 色板に貼った店名（<see cref="PlaceSignFaces"/>）と重ねない (#181)。
-        /// </summary>
-        private const float StoreLabelRise = 1.8f;
-
-        /// <summary>
-        /// 名札を吊るす位置。sign_&lt;id&gt;（扉の脇の立て看板の板の中心）の上、sign_ が無い建物は入口の上に、
-        /// 店舗は色板の手前の、色板より上に出す。
-        /// </summary>
-        private static bool SignAnchor(string buildingId, out Vector3 position)
-        {
-            Transform sign = CampusStage.FindChild("sign_" + buildingId);
-            if (sign != null)
-            {
-                position = sign.position + Vector3.up * 2.6f;
-                return true;
-            }
-
-            Transform entrance = CampusStage.FindChild("entrance_" + buildingId);
-            if (entrance != null)
-            {
-                position = entrance.position + Vector3.up * 6f;
-                return true;
-            }
-
-            if (PlateCenter("sign_" + buildingId, out Vector3 plate))
-            {
-                position = plate + AxisV * 0.9f + Vector3.up * StoreLabelRise;
-                return true;
-            }
-
-            position = Vector3.zero;
-            return false;
-        }
-
-        /// <summary>指定マテリアルが貼られたサブメッシュの中心をワールド座標で返す。</summary>
-        private static bool PlateCenter(string materialName, out Vector3 center)
-        {
-            center = Vector3.zero;
-            GameObject campus = CampusStage.Instance;
-            if (campus == null)
-            {
-                return false;
-            }
-
-            foreach (MeshRenderer renderer in campus.GetComponentsInChildren<MeshRenderer>())
-            {
-                var filter = renderer.GetComponent<MeshFilter>();
-                Mesh mesh = filter != null ? filter.sharedMesh : null;
-                if (mesh == null)
-                {
-                    continue;
-                }
-
-                Material[] materials = renderer.sharedMaterials;
-                for (int i = 0; i < materials.Length && i < mesh.subMeshCount; i++)
-                {
-                    if (materials[i] == null || materials[i].name != materialName)
-                    {
-                        continue;
-                    }
-
-                    center = renderer.transform.TransformPoint(mesh.GetSubMesh(i).bounds.center);
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         /// <summary>クエストの visit ステップが見ている場所。</summary>

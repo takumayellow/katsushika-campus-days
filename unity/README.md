@@ -91,7 +91,7 @@ PowerShell から叩くときは変換が無いので `&` と `--%` を使う。
 | --- | --- |
 | `Assets/Scenes/{Title,Campus}.unity` | `SceneBuilder` |
 | キャンパス本体・MeshCollider・樹木 | `CampusStage` |
-| 入口トリガー・名札・到達判定・拾い物 | `CampusProps` |
+| 入口トリガー・立て看板の名前・到達判定・拾い物 | `CampusProps` |
 | プレイヤー・カメラ・NPC | `ActorFactory` |
 | HUD・ミニマップ・会話・ポーズ | `UIFactory` / `UIKit` |
 | マテリアル（URP Lit / KCD Toon） | `MaterialLibrary` |

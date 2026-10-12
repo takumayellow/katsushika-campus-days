@@ -147,7 +147,7 @@ namespace KCD.Editor
 
         /// <summary>
         /// 撮るときに消すもの: その建物の外装（bld_&lt;id&gt; と bld_&lt;id&gt;_*。目がその中にある）、
-        /// 人（SkinnedMeshRenderer）、建物の名札、屋内の並び（x &gt; 900 m）、近景が受け持つ範囲にすっぽり入る
+        /// 人（SkinnedMeshRenderer）、屋内の並び（x &gt; 900 m）、近景が受け持つ範囲にすっぽり入る
         /// キャンパスの地物（Campus・Trees の下）。
         /// 消したものは返して、撮り終わったら戻す。
         /// </summary>
@@ -190,12 +190,7 @@ namespace KCD.Editor
                 return true;
             }
 
-            if (renderer is SkinnedMeshRenderer || renderer.bounds.center.x > InteriorSlotX)
-            {
-                return true;
-            }
-
-            return renderer.GetComponentInParent<BuildingLabel>(true) != null;
+            return renderer is SkinnedMeshRenderer || renderer.bounds.center.x > InteriorSlotX;
         }
 
         /// <summary>campus.fbx か trees.fbx から置いたものか（親をたどって SiteRoots の名前に当たるか）。</summary>
