@@ -134,16 +134,51 @@ def ticket_floor(mb, x, y, z, ang):
 
 
 # ---- 島型カウンター・ワゴン・返却口 ----
+_BUTTONS = {
+    "tea": ("research2_tray_lime", "research2_tray_lime", "research2_band_light"),
+    "water": ("research2_kiosk_white", "research2_kiosk_white", "research2_band_light"),
+}
+
+
+def water_server(mb, x, y, z, ang, kind="tea"):
+    """卓上の給茶機・給水機（幅 0.5 x 奥行 0.4 x 高さ 0.66。正面が +Y、ang で向ける）。
+
+    黒樹脂の頭部に表示窓と 3 つのボタン、その下にステンレスの押し板と 2 本の注ぎ口。
+    頭部の下はコップを置く凹みで、ステンレスの水受け皿に黒いグレーチングが載る。
+    kind は "tea"（緑のボタン）か "water"（白のボタン）。
+    """
+    t = T(x, y, z, ang)
+    t.box_nb(mb, -0.25, -0.2, 0.0, 0.25, 0.2, 0.04, STAINLESS)
+    # 背板（コップの凹みの奥）
+    t.box_nb(mb, -0.25, -0.2, 0.04, 0.25, 0.0, 0.64, STAINLESS)
+    # 水受け皿とグレーチング
+    t.box_nb(mb, -0.25, 0.0, 0.04, 0.25, 0.2, 0.08, STAINLESS)
+    t.plate(mb, -0.21, 0.03, 0.21, 0.17, 0.081, "research2_tray_black")
+    for k in range(5):
+        sx = -0.19 + 0.08 * k
+        t.box_nb(mb, sx, 0.03, 0.08, sx + 0.04, 0.17, 0.095, "research2_grille_black")
+    # 頭部（黒樹脂）と天板
+    t.box_nb(mb, -0.25, -0.2, 0.4, 0.25, 0.22, 0.64, "research2_kiosk_black")
+    t.box_nb(mb, -0.26, -0.21, 0.64, 0.26, 0.23, 0.66, STAINLESS)
+    # 表示窓とボタン
+    t.vplate(mb, -0.04, 0.221, -0.2, 0.221, 0.53, 0.6, "research2_display_blue")
+    for sx, mat in zip((0.03, 0.09, 0.15), _BUTTONS[kind]):
+        t.box_nb(mb, sx, 0.22, 0.54, sx + 0.05, 0.235, 0.6, mat)
+    # 押し板と注ぎ口
+    t.box_nb(mb, -0.14, 0.22, 0.43, 0.14, 0.235, 0.49, STAINLESS)
+    t.box_nb(mb, -0.14, 0.05, 0.36, 0.14, 0.17, 0.4, CHROME)
+    for sx in (-0.07, 0.07):
+        t.cyl(mb, sx, 0.11, 0.29, 0.36, 0.02, CHROME, seg=6)
+
+
 def island(mb, x, y, z, length, depth=0.8):
     """灰色の島型カウンター（中心 (x, y)、長手が X）と給茶機・給水機・黄緑の板。"""
     hl, hd = length * 0.5, depth * 0.5
     kit.box_nb(mb, x - hl + 0.04, y - hd + 0.04, z, x + hl - 0.04, y + hd - 0.04, z + 0.86,
                "research2_island_front")
     kit.box(mb, x - hl, y - hd, z + 0.86, x + hl, y + hd, z + 0.9, "research2_island_top")
-    for dx in (-hl + 0.45, hl - 0.95):
-        kit.box_nb(mb, x + dx, y - 0.22, z + 0.9, x + dx + 0.5, y + 0.22, z + 1.55, WHITE)
-        kit.box_nb(mb, x + dx + 0.12, y - 0.24, z + 1.2, x + dx + 0.38, y - 0.22, z + 1.45,
-                   "research2_kiosk_black")
+    for dx, kind in ((-hl + 0.45, "tea"), (hl - 0.95, "water")):
+        water_server(mb, x + dx + 0.25, y, z + 0.9, math.pi, kind)
     kit.plate(mb, x - 0.55, y - 0.3, x + 0.55, y + 0.3, z + 0.905, "research2_tray_lime")
 
 
