@@ -12,6 +12,7 @@ namespace KCD.Tests
     /// Campus シーンに焼き込んだモブの学生を守る (#22)。シーンの開き方は CampusNpcNavMeshTests と同じ。
     ///
     /// - 人は MobScheduler.MaxActive 人ぶん焼き込み、どれも非アクティブ（実行中は貸し借りだけで Instantiate しない）。
+    ///   見た目は枠ごとに違い、足の運びとまばたきの周期も枠ごとにずらしてある。
     /// - NavMeshAgent はシーンでは止めてある (#63)。当たり判定は trigger だけ（プレイヤーを押さない）。
     /// - 色は .mat で分け、MaterialPropertyBlock を使わない（SRP Batcher から外さない）。遠い段は輪郭のパスを切る。
     /// - 時間割のどの行き先も NavMesh の上にあり、道のりの隣り合う点どうしが NavMesh でつながっている。
@@ -71,10 +72,21 @@ namespace KCD.Tests
                 MobWalker walker = scheduler.PoolAt(i);
                 Assert.IsNotNull(walker, i + " 番目の枠が空");
                 Assert.IsTrue(seen.Add(walker), walker.name + " が 2 つの枠に入っている");
-                variants.Add(walker.VariantId);
+                Assert.IsTrue(variants.Add(walker.VariantId), i + " 番目の枠の見た目 " + walker.VariantId + " がほかの枠と同じ");
             }
+        }
 
-            Assert.GreaterOrEqual(variants.Count, 4, "見た目の組み合わせが少ない");
+        [Test]
+        public void 周期は枠ごとにずらしてある()
+        {
+            MobScheduler scheduler = Scheduler;
+            for (int i = 0; i < scheduler.PoolSize; i++)
+            {
+                MobWalker walker = scheduler.PoolAt(i);
+                BlinkPhase phase = walker.GetComponentInChildren<BlinkPhase>(true);
+                Assert.IsNotNull(phase, walker.name + " に BlinkPhase が無い");
+                Assert.AreEqual(BlinkPhase.OffsetForMob(i), phase.Offset, 1e-5f, walker.name + " の周期のずらし幅");
+            }
         }
 
         [Test]

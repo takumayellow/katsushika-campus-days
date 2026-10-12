@@ -56,6 +56,38 @@ namespace KCD.Tests
         }
 
         [Test]
+        public void MobSlots_NeverStartInStep()
+        {
+            // モブは同じ体の人が何人もいるので、体ではなく枠ごとにずらす。枠どうしも名前のある人とも、
+            // 1 周の 2% 以上離す（黄金比で散らした 32 個の点のいちばん近い 2 つが 2.1%）。
+            const float MinGap = 0.02f;
+            var offsets = new List<float>();
+            foreach (string id in BlinkPhase.CharacterOrder)
+            {
+                offsets.Add(BlinkPhase.OffsetFor(id));
+            }
+
+            int named = offsets.Count;
+            for (int slot = 0; slot < MobScheduler.MaxActive; slot++)
+            {
+                float offset = BlinkPhase.OffsetForMob(slot);
+                Assert.That(offset, Is.InRange(0f, 1f), "枠 " + slot);
+                Assert.Less(offset, 1f, "枠 " + slot);
+                offsets.Add(offset);
+            }
+
+            for (int a = 0; a < offsets.Count; a++)
+            {
+                for (int b = Mathf.Max(a + 1, named); b < offsets.Count; b++)
+                {
+                    Assert.GreaterOrEqual(
+                        BlinkPhase.CircularDistance(offsets[a], offsets[b]), MinGap,
+                        "並び " + a + " と枠 " + (b - named) + " の周期が近い");
+                }
+            }
+        }
+
+        [Test]
         public void CircularDistance_WrapsAroundTheCycle()
         {
             Assert.AreEqual(0.1f, BlinkPhase.CircularDistance(0.95f, 0.05f), 1e-5f);

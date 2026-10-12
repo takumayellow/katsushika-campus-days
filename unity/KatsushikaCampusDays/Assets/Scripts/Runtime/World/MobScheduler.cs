@@ -66,6 +66,11 @@ namespace KCD
         private float[] _keys = Array.Empty<float>();
         private float[] _distances = Array.Empty<float>();
 
+        // 台詞ごとの、いま見えている人のうちその台詞を言った人の数と、最後に選んだ順番（0 はまだ選んでいない）。
+        private readonly int[] _lineHolders = new int[MobTalker.LinesPerBand];
+        private readonly int[] _lineIssued = new int[MobTalker.LinesPerBand];
+        private int _lineClock;
+
         private MobSchedule.Band _band;
         private int _spawnedThisBand;
         private float _nextSpawnAt;
@@ -143,6 +148,54 @@ namespace KCD
         public void RequestTierUpdate()
         {
             _tierDue = true;
+        }
+
+        /// <summary>
+        /// 話しかけられた人 walker に言わせる台詞の番号を選ぶ。同じ時間帯の台詞を言っていて、いま見えている
+        /// ほかの人が持っていない台詞から選ぶ（<see cref="ChooseLine"/>）。見えている人は
+        /// <see cref="DefaultDrawnCount"/> 人までで、台詞は <see cref="MobTalker.LinesPerBand"/> 本あるので重ならない。
+        /// </summary>
+        public int ClaimLine(MobWalker walker)
+        {
+            Array.Clear(_lineHolders, 0, _lineHolders.Length);
+            string band = walker != null ? walker.BandId : null;
+            foreach (MobWalker other in _pool)
+            {
+                if (other == null || other == walker || !other.IsRunning || other.Tier == MobTier.Hidden)
+                {
+                    continue;
+                }
+
+                int line = other.LineIndex;
+                if (line >= 0 && line < _lineHolders.Length && other.BandId == band)
+                {
+                    _lineHolders[line]++;
+                }
+            }
+
+            int index = ChooseLine(_lineHolders, _lineIssued, walker != null ? walker.Slot : 0);
+            _lineIssued[index] = ++_lineClock;
+            return index;
+        }
+
+        /// <summary>
+        /// 持っている人がいちばん少ない台詞を選ぶ。並んだら最後に選んでからいちばん間があいた台詞
+        /// （issued が小さい方）、それも並んだら start から数えて先の台詞。
+        /// </summary>
+        public static int ChooseLine(int[] holders, int[] issued, int start)
+        {
+            int count = Mathf.Min(holders.Length, issued.Length);
+            int best = 0;
+            for (int k = 0; k < count; k++)
+            {
+                int i = (int)(((long)Mathf.Max(0, start) + k) % count);
+                if (k == 0 || holders[i] < holders[best] || (holders[i] == holders[best] && issued[i] < issued[best]))
+                {
+                    best = i;
+                }
+            }
+
+            return best;
         }
 
         /// <summary>道のりを歩き終えた人の枠を返す。</summary>

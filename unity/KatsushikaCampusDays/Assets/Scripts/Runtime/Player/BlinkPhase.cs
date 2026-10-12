@@ -59,6 +59,15 @@ namespace KCD
             return Mathf.Repeat(index * GoldenFraction, 1f);
         }
 
+        /// <summary>
+        /// モブの枠 slot のずらし幅。同じ体のモブが何人いても揃わないよう、体ではなく枠の番号で決める。
+        /// 名前のあるキャラクターの並びの続きの番号を使うので、名前のある人ともモブどうしとも重ならない。
+        /// </summary>
+        public static float OffsetForMob(int slot)
+        {
+            return Mathf.Repeat((CharacterOrder.Length + Mathf.Max(0, slot)) * GoldenFraction, 1f);
+        }
+
         /// <summary>周期の上で 2 つのずらし幅がどれだけ離れているか（0〜0.5）。</summary>
         public static float CircularDistance(float a, float b)
         {

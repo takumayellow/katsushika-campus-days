@@ -74,6 +74,21 @@ namespace KCD
 
         public const float StandSpreadMax = 3f;
 
+        /// <summary>
+        /// 立ち止まっているときの Idle の再生速さの幅。枠ごとにこの間で違う速さにし、
+        /// 同じ体の人が並んで立っても息づかいやまばたきが揃い続けないようにする。
+        /// </summary>
+        public const float IdleTempoMin = 0.88f;
+
+        public const float IdleTempoMax = 1.12f;
+
+        /// <summary>この速さ（m/s）から上は歩きの再生速さを足の運びに合わせ、枠ごとの速さを掛けない（足が滑らないように）。</summary>
+        public const float TempoFadeSpeed = 0.3f;
+
+        // 枠の番号に掛けて Idle の速さを並べ替える数。枠の数（24）と互いに素なので、どの枠も違う速さになり、
+        // 続けて貸す（同じ所に続けて出やすい）枠どうしは速さが大きく離れる。
+        private const int TempoStride = 7;
+
         private static readonly int SpeedHash = Animator.StringToHash("Speed");
         private static readonly int GaitRateHash = Animator.StringToHash("GaitRate");
         private static readonly int TalkHash = Animator.StringToHash("Talk");
@@ -109,6 +124,8 @@ namespace KCD
         private bool _hasGaitRate;
         private bool _hasTalk;
         private bool _talking;
+        private float _tempo = 1f;
+        private int _lineIndex = -1;
 
         /// <summary>見た目の組み合わせの id（mob_a など）。</summary>
         public string VariantId => _variantId;
@@ -122,6 +139,12 @@ namespace KCD
         public bool IsRunning => _running;
 
         public MobTier Tier => _tier;
+
+        /// <summary>話しかけたときに言った台詞の番号。まだ話していない（か、見えなくなって忘れた）なら -1。</summary>
+        public int LineIndex => _lineIndex;
+
+        /// <summary>Idle の再生速さに掛ける数（<see cref="IdleTempoFor"/>）。</summary>
+        public float Tempo => _tempo;
 
         /// <summary>話しかけられて立ち止まっている最中か。</summary>
         public bool IsHeld => Time.time < _heldUntil;
@@ -150,6 +173,37 @@ namespace KCD
             _slot = slot;
             _agent = GetComponent<NavMeshAgent>();
             _step = 1;
+            _tempo = IdleTempoFor(slot);
+        }
+
+        /// <summary>
+        /// 話しかけられて言う台詞の番号を MobScheduler に選ばせて覚える。枠を貸してくれた MobScheduler が無ければ
+        /// 枠の番号から決める。
+        /// </summary>
+        public int ClaimLine()
+        {
+            _lineIndex = _owner != null ? _owner.ClaimLine(this) : _slot % MobTalker.LinesPerBand;
+            return _lineIndex;
+        }
+
+        /// <summary>
+        /// 枠 slot の Idle の再生速さ。<see cref="IdleTempoMin"/>〜<see cref="IdleTempoMax"/> を枠の数で等分した値を、
+        /// 枠の番号に <see cref="TempoStride"/> を掛けた順に割り当てる。
+        /// </summary>
+        public static float IdleTempoFor(int slot)
+        {
+            int slots = MobScheduler.MaxActive;
+            int rank = (int)(((long)Mathf.Max(0, slot) * TempoStride) % slots);
+            return Mathf.Lerp(IdleTempoMin, IdleTempoMax, rank / (float)(slots - 1));
+        }
+
+        /// <summary>
+        /// 足の運びから決めた再生速さ rate に、枠ごとの速さ tempo を掛ける。止まっているときは tempo をそのまま掛け、
+        /// <see cref="TempoFadeSpeed"/> に近づくほど 1 に寄せて、歩いているときは足の運びのままにする。
+        /// </summary>
+        public static float ApplyTempo(float rate, float speed, float tempo)
+        {
+            return rate * Mathf.Lerp(tempo, 1f, Mathf.Clamp01(speed / TempoFadeSpeed));
         }
 
         /// <summary>
@@ -176,6 +230,7 @@ namespace KCD
             _heldUntil = -1f;
             _wasHeld = false;
             _stepAccum = 0f;
+            _lineIndex = -1;
 
             transform.position = hit.position;
             if (_owner.TryGetWaypoint(route.Waypoints[nextIndex].Key, out Vector3 target))
@@ -239,6 +294,7 @@ namespace KCD
             _waitUntil = -1f;
             _heldUntil = -1f;
             _wasHeld = false;
+            _lineIndex = -1;
             ApplyTier(MobTier.Hidden, false);
             _tier = MobTier.Hidden;
             _tierDirty = true;
@@ -290,6 +346,14 @@ namespace KCD
             _step = Mathf.Max(1, step);
             ApplyTier(tier, stepped);
             _tier = tier;
+
+            // 見えなくなった人は話した台詞を忘れる。台詞は見えている人どうしで重ならないように選ぶので、
+            // 見えていない人が台詞を持ったまま戻ってくると、見えている人と同じ台詞になり得る。
+            if (tier == MobTier.Hidden)
+            {
+                _lineIndex = -1;
+            }
+
             _tierDirty = false;
         }
 
@@ -531,6 +595,7 @@ namespace KCD
             RefreshAnimatorParameters();
             float speed = held ? 0f : _agent.velocity.magnitude;
             PlayerAnimatorDriver.SolveGait(speed, out float blend, out float rate);
+            rate = ApplyTempo(rate, speed, _tempo);
             if (_hasGaitRate)
             {
                 _animator.SetFloat(GaitRateHash, rate, 0.15f, dt);
