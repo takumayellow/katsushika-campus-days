@@ -488,17 +488,19 @@ def _draw_eye(arr, cx, cy, rx, ry, sgn, iris, iris_dark, iris_light, lash, p):
         _star(arr, cx, icy, ir_x * 0.30, (1.0, 1.0, 1.0), alpha=0.82)
 
     # --- ハイライト 2 個（大: 上外側 / 小: 下内側、瞳孔をはさんで対角）
+    # eye_shine はハイライトの大きさの倍率。大きく光る目は幼さの記号なので、大人は小さくする。
     hi = (1.0, 0.995, 0.97)
-    ellipse(arr, cx - sgn * ir_x * 0.36, icy + ir_y * 0.42, ir_x * 0.32,
-            ir_y * 0.30, hi, power=2.0)
-    ellipse(arr, cx - sgn * ir_x * 0.30, icy + ir_y * 0.50, ir_x * 0.16,
-            ir_y * 0.14, (1.0, 1.0, 1.0), power=2.0)
-    ellipse(arr, cx + sgn * ir_x * 0.36, icy - ir_y * 0.44, ir_x * 0.17,
-            ir_y * 0.16, hi, power=2.0, alpha=0.92)
+    sh = p.get("eye_shine", 1.0)
+    ellipse(arr, cx - sgn * ir_x * 0.36, icy + ir_y * 0.42, ir_x * 0.32 * sh,
+            ir_y * 0.30 * sh, hi, power=2.0)
+    ellipse(arr, cx - sgn * ir_x * 0.30, icy + ir_y * 0.50, ir_x * 0.16 * sh,
+            ir_y * 0.14 * sh, (1.0, 1.0, 1.0), power=2.0)
+    ellipse(arr, cx + sgn * ir_x * 0.36, icy - ir_y * 0.44, ir_x * 0.17 * sh,
+            ir_y * 0.16 * sh, hi, power=2.0, alpha=0.92)
 
     # --- まつ毛の落ち影（本体はメッシュ）
     lw = p.get("lash_width", 0.0)
-    lw = lw if lw > 0 else rx * 0.20
+    lw = (lw if lw > 0 else rx * 0.20) * p.get("lash_scale", 1.0)
     soft = tuple(min(1.0, c * 0.55 + 0.12) for c in lash)
     arc(arr,
         (cx - rx * 1.00, cy + ry * 0.20),

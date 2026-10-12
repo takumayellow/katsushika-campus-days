@@ -108,7 +108,7 @@ def test_split_hakama_below_the_knee_follows_the_shins_not_the_skirt_bones(cid):
             assert "SkirtFront" not in w and "SkirtBack" not in w
 
 
-@pytest.mark.parametrize("part", ["labcoat", "pants_seat"])
+@pytest.mark.parametrize("part", ["jacket", "pants_seat"])
 def test_other_leg_cloth_does_not_use_the_skirt_bones(part):
     for cid in params.ALL_IDS:
         _, mb, _ = _build(cid)

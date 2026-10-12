@@ -968,7 +968,8 @@ def _glasses(mb, p, head, fs, uv_box, mat: str = "glasses"):
     ez = z0 + (z1 - z0) * fl["eye_y"]
     rx = (x1 - x0) * fl["eye_rx"] * 1.42
     rz = (z1 - z0) * fl["eye_ry"] * 1.28
-    tube = hw * 0.016
+    # 縁の太さ（頭幅比）。教授は細い金属の縁にする（太い縁は目を大きく見せる）。
+    tube = hw * p.get("glasses_tube", 0.016)
     for sgn in (-1, 1):
         cx = sgn * ex
         yy = fs.y_at(cx, ez) - hw * 0.055
