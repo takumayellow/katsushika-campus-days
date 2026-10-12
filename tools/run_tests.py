@@ -8,7 +8,7 @@
     python tools/run_tests.py --skip-unity        # pytest だけ（Unity を使えないとき）
     python tools/run_tests.py --dry-run           # 何を実行するかだけ出す
 
-Unity.exe はマシンで 1 台だけ動かす約束なので、tasklist に Unity.exe がいれば起動しない
+Unity.exe はマシンで 1 台だけ動かす約束なので、tasklist に動いている Unity.exe がいれば起動しない
 （--wait なら居なくなるまで待つ）。他のセッションの Unity は止めない。
 
 各プラットフォームの結果は unity/logs/tests_<platform>.xml と .log に絶対パスで書く
@@ -98,6 +98,35 @@ def parse_tasklist_csv(text: str, image: str = UNITY_IMAGE) -> list[int]:
     return pids
 
 
+def windows_process_alive(pid: int) -> bool:
+    """PID のプロセスがまだ動いていれば True。
+
+    終わったプロセスでも、誰かがハンドルを握っている間は tasklist に出続ける（固まった
+    テストの残りなど）。終了コードが STILL_ACTIVE かで見分ける。調べられなければ動いている扱い。
+    """
+    import ctypes
+
+    process_query_limited_information = 0x1000
+    still_active = 259
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.OpenProcess.restype = ctypes.c_void_p
+    handle = kernel32.OpenProcess(process_query_limited_information, False, pid)
+    if not handle:
+        return True
+    try:
+        code = ctypes.c_ulong()
+        if not kernel32.GetExitCodeProcess(ctypes.c_void_p(handle), ctypes.byref(code)):
+            return True
+        return code.value == still_active
+    finally:
+        kernel32.CloseHandle(ctypes.c_void_p(handle))
+
+
+def drop_exited(pids: list[int], alive=windows_process_alive) -> list[int]:
+    """tasklist に残っているだけの、終わったプロセスを除く。"""
+    return [pid for pid in pids if alive(pid)]
+
+
 def running_unity_pids() -> list[int]:
     """いま動いている Unity.exe の PID。調べられなければ空。"""
     if os.name == "nt":
@@ -110,7 +139,7 @@ def running_unity_pids() -> list[int]:
             ).stdout
         except (OSError, subprocess.SubprocessError) as error:
             raise RuntimeError(f"tasklist を実行できません: {error}") from error
-        return parse_tasklist_csv(raw.decode("mbcs", errors="replace"))
+        return drop_exited(parse_tasklist_csv(raw.decode("mbcs", errors="replace")))
 
     try:
         raw = subprocess.run(
