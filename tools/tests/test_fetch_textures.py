@@ -437,12 +437,16 @@ def test_ensure_meta_writes_once(unity_project):
 
 
 def test_ensure_meta_image_matches_unity(unity_project):
-    """画像の .meta は、Unity 6.6 が書いた water_ripple.png.meta と GUID・sRGB 以外が同じ。"""
+    """画像の .meta は、Unity 6.6 が書いた water_ripple.png.meta と GUID・sRGB・既定の圧縮以外が同じ。"""
     path = unity_project / "Assets" / "Textures" / "a.jpg"
     assert ft.ensure_meta(path) is True
     ours = ft.meta_path(path).read_text(encoding="utf-8").splitlines()
     reference = ft.ROOT / "unity" / "KatsushikaCampusDays" / "Assets" / "Generated" / "Textures" / "water_ripple.png.meta"
-    theirs = reference.read_text(encoding="utf-8").splitlines()
+    reference_text = reference.read_text(encoding="utf-8")
+    assert _default_platform_compression(reference_text) == 0
+    theirs = re.sub(
+        r"(buildTarget: DefaultTexturePlatform\n(?:    .*\n)*?    textureCompression: )0\n", r"\g<1>1\n", reference_text, count=1
+    ).splitlines()
     assert "    sRGBTexture: 1" in ours
     assert [line.replace("sRGBTexture: 1", "sRGBTexture: 0") for line in ours[2:]] == theirs[2:]
     assert "  serializedVersion: 13" in ours
@@ -640,3 +644,20 @@ def test_committed_meta_guids_are_unique_in_project(manifest):
 def test_check_passes_on_committed_textures(capsys):
     """リポジトリの jpg が平均色・模様の濃さ・継ぎ目の基準をすべて満たしている。"""
     assert ft.main(["--check"]) == 0, capsys.readouterr().out
+
+
+def _default_platform_compression(meta_text):
+    match = re.search(
+        r"buildTarget: DefaultTexturePlatform\n(?:    .*\n)*?    textureCompression: (\d+)\n", meta_text
+    )
+    assert match, "DefaultTexturePlatform の textureCompression が無い"
+    return int(match.group(1))
+
+
+def test_surface_textures_are_compressed_on_every_platform():
+    """WebGL と Standalone は上書きしていない（overridden 0）ので、既定の設定がそのままビルドに出る。
+    既定を圧縮にしておけば、512² の面は BC1 / ASTC で 1 枚 0.2 MiB ほどで済む（圧縮しないと 1.0 MB）。"""
+    metas = [ft.TEXTURE_IMPORTER] + sorted((ft.UNITY_PROJECT / "Assets" / "Textures" / "surfaces").glob("*.jpg.meta"))
+    assert len(metas) > 1
+    for meta in metas:
+        assert _default_platform_compression(meta.read_text(encoding="utf-8")) == 1, meta
