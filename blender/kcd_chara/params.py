@@ -114,16 +114,18 @@ BUILDS = {
         arm_len=(0.170, 0.150, 0.082),
         head_w=0.800, head_d=0.828,
     ),
-    # 成人男性（教授）: 肩幅 = 頭幅 x 1.56、腕の直径 = 頭幅 x 0.22、首 = 頭幅 x 0.47
-    # （首が女子と同じ細さだと、大人の男の顔を載せても華奢に見える #172）
+    # 成人男性（教授）: 肩幅 = 頭幅 x 1.40、腕の直径 = 頭幅 x 0.22、首 = 頭幅 x 0.42
+    # （首が女子と同じ細さだと、大人の男の顔を載せても華奢に見える #172）。
+    # 肩幅は背広の肩パッドの分を残して決める。素体の肩を広げると、背広を着せたときに
+    # 頭が肩幅の半分ほどしかなく、男子学生と並べると頭だけ小さく見える。
     "sturdy": dict(
-        shoulder_half=0.780, shoulder_ry=0.345,
+        shoulder_half=0.700, shoulder_ry=0.345,
         bust_rx=0.560, bust_ry=0.400, bust_bulge=0.015,
         underbust_rx=0.510, underbust_ry=0.365,
         waist_rx=0.478, waist_ry=0.345,
         hip_rx=0.520, hip_ry=0.380,
         crotch_rx=0.495, crotch_ry=0.365,
-        neck_r=0.235,
+        neck_r=0.210,
         arm_r=(0.110, 0.095, 0.070), hand=0.130,
         leg_r=(0.300, 0.205, 0.140), foot=(0.245, 0.700, 0.185),
         arm_len=(0.172, 0.152, 0.086),
@@ -416,7 +418,7 @@ CHARACTERS: dict[str, dict] = {
     "prof": dict(
         id="prof",
         jp="教授",
-        height=1.72, heads=6.4, build="sturdy",
+        height=1.72, heads=6.25, build="sturdy",
         skin=_c("#E4BA9E"),
         hair_color=_c("#47454C"),
         eye_color=_c("#5C4A3E"),
@@ -438,8 +440,9 @@ CHARACTERS: dict[str, dict] = {
         face_layout=dict(eye_y=0.440, eye_dx=0.168, eye_rx=0.066, eye_ry=0.040),
         # 服と髪は情報工学科の教員の写真の傾向に合わせる（docs/ref/characters/prof.md）
         mat_colors={"hair": "#47454C", "eye_l": "#5C4A3E", "eye_r": "#5C4A3E",
-                    "glasses": "#9EA4AE", "cloth_blouse": "#C4D8EC",
-                    "cloth_pants_gray": "#30364A"},
+                    "glasses": "#9EA4AE", "cloth_blouse": "#EDEFF2",
+                    "cloth_jacket": "#2B3550", "cloth_pants_gray": "#2B3550",
+                    "necktie": "#7A3040"},
         accessories=("necktie",),
         sign_items=("紺の背広", "銀縁眼鏡", "ネクタイ"),
         outward_faces=True,
