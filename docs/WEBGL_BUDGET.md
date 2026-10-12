@@ -114,7 +114,7 @@ GPU のメモリ（テクスチャと描画に使う面）は、これとは別�
 
 - 表示: 日本語では 低 / 中 / 高、英語では Low / Medium / High。
 - 保存: PlayerPrefs の `KCD.QualityTier` に low / medium / high を入れる。
-- 保存が無いときの既定: Web 版は Medium、Windows 版は High。
+- 保存が無いときの既定: Web 版は Medium、Windows 版は High。スマホ・タブレットのブラウザ（`Application.isMobilePlatform`）で開いた Web 版は Low（3.6）。
 - エディタ: ビルド先を WebGL にしていれば Web 版と同じ扱いになる。
 
 ### 3.1 段ごとの値
@@ -205,7 +205,7 @@ GPU のメモリ（テクスチャと描画に使う面）は、これとは別�
 
 ### 3.5 Web 版で High を選んだとき（見積もり、未計測）
 
-Web 版でも High を選べる。既定は Medium なので、High になるのは設定画面で選んだ人だけ。2 章の予算は既定の Medium で守り、High は公開前に 5.4 の手順で Web 版で測って、この節の値を実測に置き換える。
+Web 版でも High を選べる。PC の Web 版の既定は Medium なので、High になるのは設定画面で選んだ人だけ。2 章の予算は既定の Medium で守り、High は公開前に 5.4 の手順で Web 版で測って、この節の値を実測に置き換える。
 
 描画コールと三角形:
 
@@ -218,7 +218,7 @@ Web 版でも High を選べる。既定は Medium なので、High になるの
 
 GPU のメモリ（ビューポート 1280×900、devicePixelRatio 1 のとき）:
 
-- テンプレート（WebGLTemplates/KCD/index.html）は config.devicePixelRatio を入れていないので、Unity はブラウザの devicePixelRatio のまま描く。
+- PC では、テンプレート（WebGLTemplates/KCD/index.html）は config.devicePixelRatio を入れないので、Unity はブラウザの devicePixelRatio のまま描く（スマホ・タブレットは 3.6）。
 - 色の面は HDR の 32 bit（B10G11R11、4 B/画素）。深度の面は D32_SFloat_S8_UInt（8 B/画素と見なした。com.unity.render-pipelines.core の Runtime/Utilities/CoreUtils.cs 1944〜1951 行で、WebGL はこの形式になる）。
 - Medium: 1024×720 = 737,280 画素。色 4 B + 深度 8 B = 12 B/画素で 8.44 MiB。
 - High: 1280×900 = 1,152,000 画素。MSAA 2x の色 8 B + MSAA 2x の深度 16 B + 解決した色 4 B = 28 B/画素で 30.76 MiB。
@@ -230,6 +230,28 @@ GPU のメモリ（ビューポート 1280×900、devicePixelRatio 1 のとき�
 描く量:
 
 - 色と深度に書くサンプルの数は、Medium の約 3.1 倍（画素 1.56 倍 × MSAA 2）。ピクセルシェーダーを走らせる回数は画素の数に比例し、約 1.56 倍（MSAA でも、ピクセルシェーダーは 1 画素に 1 回で、サンプルごとには走らない）。
+
+### 3.6 スマホ・タブレットで開いたとき（#187、見積もり、実機では未計測）
+
+テンプレートは、UA が iPhone / iPad / iPod / Android か、指だけで操作する端末（`pointer: coarse` かつ `hover: none` で、細かいポインタが無い）なら、
+`config.devicePixelRatio` に `min(devicePixelRatio, 1.5)` を入れる。画質の段は、保存が無ければ Low になる。
+
+横持ちの 844×390（CSS px）、devicePixelRatio 3 の画面で比べる。描く面は renderScale を掛けた大きさ、画面の面はキャンバスの大きさ。
+
+| | キャンバス | 描く面（renderScale） | 描く画素 | 描く面の色と深度（12 B/画素） | 画面の面（4 B/画素） |
+|---|---|---|---|---|---|
+| 上限なし・Medium（変える前） | 2532×1170 | 2026×936（0.8） | 1,896,336 | 21.70 MiB | 11.30 MiB |
+| 上限 1.5・Medium | 1266×585 | 1013×468（0.8） | 474,084 | 5.43 MiB | 2.83 MiB |
+| 上限 1.5・Low（既定） | 1266×585 | 886×410（0.7） | 363,260 | 4.16 MiB | 2.83 MiB |
+
+- Playwright のスマホのエミュレーション（844×390、DPR 3、`is_mobile`）で、キャンバスが 1266×585 になり、設定の画質が「低」で始まることを確かめた。
+  Unity のヒープは読み込み直後 256.0 MiB、キャンパスで 368.75 MiB で、同じビルドを PC の画面で動かした smoke（`deploy_pages.py --smoke`）の 256.0 MiB / 368.8 MiB と同じだった。
+- 描く画素は、変える前の 0.19 倍（約 5 分の 1）。ピクセルシェーダーを走らせる回数も同じ割合で減る。
+- GPU のメモリは、描く面と画面の面で 33.00 MiB から 6.99 MiB へ、約 26 MiB 減る。シャドウマップ（2 B/画素）も 1024² の 2 MiB から 512² の 0.5 MiB になり、1.5 MiB 減る。
+- Low はポストプロセスを切るので、Bloom の縮小などの途中の面も無くなる（3.3）。
+- 文字と UI は Unity のキャンバスの中で描くので、上限 1.5 では DPR 3 の画面で少しぼやける。844×390 のエミュレーションで、HUD とメニューの文字が読めることは確かめた。
+- iPadOS の Safari は UA が Mac を名乗るため、`Application.isMobilePlatform` が偽になり、画質の既定は Medium のまま。描く解像度の上限は、指だけの端末の判定で掛かる。
+- ヒープと data の中身は PC と同じ（2.2）。スマホのブラウザがタブに許すメモリは、端末ごとに違い、ここでは測れない。
 
 ## 4. Windows 版のフレームの刻み（#15）
 

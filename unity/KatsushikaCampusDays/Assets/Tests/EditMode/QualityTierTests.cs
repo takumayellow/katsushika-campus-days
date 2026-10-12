@@ -115,6 +115,24 @@ namespace KCD.Tests
         }
 
         [Test]
+        public void DefaultFor_MobileWebIsLow()
+        {
+            Assert.AreEqual(QualityTier.Low, QualityTiers.DefaultFor(RuntimePlatform.WebGLPlayer, true));
+            Assert.AreEqual(QualityTier.Medium, QualityTiers.DefaultFor(RuntimePlatform.WebGLPlayer, false));
+            Assert.AreEqual(QualityTier.High, QualityTiers.DefaultFor(RuntimePlatform.Android, true), "Web 版でなければ変えない");
+        }
+
+        [Test]
+        public void Load_OnMobileWeb_PrefersTheSavedTier()
+        {
+            PlayerPrefs.DeleteKey(QualityTiers.PrefKey);
+            Assert.AreEqual(QualityTier.Low, QualityTiers.Load(RuntimePlatform.WebGLPlayer, true));
+
+            QualityTiers.Save(QualityTier.High);
+            Assert.AreEqual(QualityTier.High, QualityTiers.Load(RuntimePlatform.WebGLPlayer, true), "選んだ段は既定より優先");
+        }
+
+        [Test]
         public void SaveAndLoad_RoundTripEveryTier()
         {
             foreach (QualityTier tier in QualityTiers.All)
