@@ -1,4 +1,4 @@
-"""共創棟 1F の店: スターバックス風のカフェとファミリーマート風のコンビニ。"""
+"""共創棟 1F の店: カフェとコンビニ。内装の色だけで雰囲気を出し、店名・ロゴは描かない。"""
 
 import math
 
@@ -34,11 +34,10 @@ def starbucks(c, mb, bar):
     kit.box(mb, -5.6, 10.52, 0.0, -4.8, 10.6, 2.0, "plastic_white")
     _on_top(mb, 1.0, lambda: F.espresso_machine(mb, -9.0, 9.35, math.pi))
     _on_top(mb, 1.0, lambda: F.register(mb, -6.0, 9.35, math.pi))
-    # 箱の西面: 受け渡し窓, オークの台, 茶色の文様の壁, サイレン
+    # 箱の西面: 受け渡し窓, オークの台, 茶色の文様の壁
     kit.box(mb, -13.56, 10.75, 0.9, -13.5, 11.85, 1.9, "plastic_black")
     kit.box(mb, -13.8, 10.7, 0.0, -13.5, 11.9, 0.9, WOOD)
     kit.box(mb, -13.56, 12.0, 0.0, -13.5, 14.0, 3.0, "kyoso_sb_pattern")
-    FK.siren(mb, -13.5, 13.2, 3.0)
     # ガラス沿いのカウンター席
     F.counter(bar, -13.0, 4.4, -4.5, 5.0, h=1.0, body=WOOD, top=WOOD, toe=False)
     for k in range(12):
@@ -55,8 +54,6 @@ def familymart(c, mb):
     FK.glass_wall(mb, (x1, y0), (x1, y1), 3.4, gaps=((1.7, 3.5),), door_top=3.4)
     FK.glass_wall(mb, (x0, y0 + 0.02), (x1, y0 + 0.02), 3.4)
     kit.box(mb, -38.15, y0, 3.4, -38.0, y1, 4.6, "kyoso_fm_white")
-    kit.box(mb, -38.17, y0, 3.5, -38.0, y1, 3.62, "kyoso_fm_green")
-    kit.box(mb, -38.17, y0, 3.66, -38.0, y1, 3.69, "kyoso_fm_blue")
     for gx in (-47.8, -45.6, -43.4):
         F.gondola(mb, gx, 11.4, math.pi * 0.5, length=3.0, rng=rng)
     for fx in (-48.0, -44.0, -40.0):

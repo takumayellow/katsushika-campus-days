@@ -14,7 +14,7 @@ from conftest import CAMPUS_JSON
 SEED = 1709
 INT_CAP = 45000
 N_SIGNS = 23
-CAMS = ["", "_ls", "_sbback", "_2f", "_top", "_store"]
+CAMS = ["", "_ls", "_sbback", "_2f", "_lounge2f", "_top", "_store"]
 
 
 def _ear_candidates(contours):
@@ -74,7 +74,7 @@ def test_signs_are_numbered_in_spec_order(built):
     assert "忘れもの" in ja
 
 
-def test_six_cameras(built):
+def test_cameras(built):
     assert [cam[0] for cam in built.cams] == CAMS
 
 

@@ -74,18 +74,6 @@ def sb_box(mb, x0, y0, x1, y1, top, r=0.7):
                  "kyoso_sb_sage")
 
 
-def siren(mb, x, y, z, r=0.4):
-    """-X を向いた壁のサイレンの円盤（白い縁 + 光る緑）。"""
-    ring, disc = [], []
-    for k in range(16):
-        a = 2.0 * math.pi * k / 16
-        ring.append((x - 0.03, y + r * math.cos(a), z + r * math.sin(a)))
-        disc.append((x - 0.05, y + r * 0.82 * math.cos(a), z + r * 0.82 * math.sin(a)))
-    kit.tube(mb, (x, y, z), (x - 0.04, y, z), r, "plastic_white", seg=16)
-    mb.add_face(list(reversed(ring)), "plastic_white")
-    mb.add_face(list(reversed(disc)), "kyoso_siren_green")
-
-
 def deck(mb, x0, y0, x1, y1, tiers=3, rise=0.2, run=0.6):
     """南（-Y）と東（+X）へ下りる段床。踏面はオーク、蹴込みは黒。"""
     for k in range(tiers):

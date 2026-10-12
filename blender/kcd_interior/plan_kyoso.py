@@ -35,6 +35,12 @@ def build(c):
     Z.lounges(c, M["lounges"])
     SIGNS.build(c, c.wall)
 
+    # プレビュー用の照明: 1F は天井の下、2F は 2F の天井の下
+    c.lights_from([(x, y) for x in range(-50, 31, 6) for y in (8.0, 11.6)], D.Z_CEIL - 0.1,
+                  energy=230.0, radius=1.6)
+    c.lights_from([(x, y) for x in (-13.0, -8.0, -3.5) for y in (6.5, 10.0, 13.0)],
+                  D.Z2 + 3.0, energy=170.0, radius=1.4)
+
     for name, x, y, z in D.POIS:
         c.poi(name, x, y, z)
     for x, y, z in D.NPCS:
