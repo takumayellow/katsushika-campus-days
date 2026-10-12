@@ -31,7 +31,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import bpy  # noqa: E402
 
-from kcd_lib import entrances, mats, render  # noqa: E402
+from kcd_lib import entrances, mats, render, uv  # noqa: E402
 from kcd_interior import closure, exterior, imats, registry, signs, spec as ispec  # noqa: E402
 from kcd_interior.ctx import Ctx  # noqa: E402
 
@@ -171,6 +171,7 @@ def mesh_tris(ext=False):
 
 def export_fbx(path):
     os.makedirs(os.path.dirname(path), exist_ok=True)
+    uv.write_scene(bpy.context.scene)
     bpy.ops.export_scene.fbx(filepath=path, **FBX_OPTS)
     return os.path.getsize(path)
 

@@ -70,7 +70,7 @@ namespace KCD.Editor
         /// <summary>キャンパス側のマテリアル名 → 基本色（RGB hex）。</summary>
         private static readonly Dictionary<string, string> CampusColors = new Dictionary<string, string>
         {
-            { "asphalt", "3C3C3C" },
+            { "asphalt", "6A6A68" },
             { "brick_red", "654F44" },
             { "concrete_light", "D8D6D0" },
             { "concrete_grey", "B4B2AC" },
@@ -141,7 +141,17 @@ namespace KCD.Editor
             { "item_red", "C8323C" },
             { "item_navy", "25335A" },
             { "glass_item", "BFE3EA" },
-            { "glass_marble", "7FC4E0" }
+            { "glass_marble", "7FC4E0" },
+            // 道路の白線・校庭の土・背景の建物（blender/kcd_lib/mats.py と同じ色）。
+            // ここに無かったので、どれも B0B0AC の灰色で .mat が作られていた。
+            { "line_white", "F3F3F1" },
+            { "soil", "AA957C" },
+            { "bg_wall_0", "C7C1B3" },
+            { "bg_wall_1", "B2B0A9" },
+            { "bg_wall_2", "A3A3A1" },
+            { "bg_wall_3", "D1CCC2" },
+            { "bg_wall_4", "8F8F90" },
+            { "bg_wall_5", "B8B2A4" }
         };
 
         /// <summary>宝石の自己発光の強さ（基本色に掛ける）。</summary>

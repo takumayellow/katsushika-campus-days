@@ -60,11 +60,23 @@ StreamingAssets はビルドにそのまま入るので、配布物にもフォ�
 ## 3D モデル・テクスチャ
 
 建物・木・内装・キャラクターの形とテクスチャ（`Assets/Models/`、`Assets/Textures/`）は、このリポジトリの Blender 4.5 の Python スクリプト（`blender/`）で生成した本作のオリジナル。
-建物の形は上の地図データに基づく。外から画像素材は取り込んでいない。2026-09-24 時点で `Assets` にある画像は、
-キャラクターの顔・柄（`Assets/Models/Characters/*/`、`blender/kcd_chara/`）、ミニマップ（`tools/render_minimap.py`）、
-ミニマップの印（`Assets/Generated/UI/minimap_*.png`、`Scripts/Editor/MinimapAssets.cs` が描く）だけで、どれもスクリプトの出力。
+建物の形は上の地図データに基づく。キャラクターの顔・柄（`Assets/Models/Characters/*/`、`blender/kcd_chara/`）、ミニマップ（`tools/render_minimap.py`）、
+ミニマップの印（`Assets/Generated/UI/minimap_*.png`、`Scripts/Editor/MinimapAssets.cs` が描く）もスクリプトの出力。
 
-外壁の煉瓦のテクスチャ（`Assets/Textures/surfaces/brick_red.jpg`、#109）だけは例外で、[ambientCG](https://ambientcg.com/) の Bricks092（CC0 1.0）から煉瓦の肌の粒を借り、`tools/brick_bond.py` で張り方・1 枚ずつの色・目地を組み直したもの。
+地面・舗装・芝・土・コンクリート・煉瓦の面のテクスチャ（`Assets/Textures/surfaces/`、#59 #109）は [ambientCG](https://ambientcg.com/) の素材から作った。
+`tools/fetch_textures.py` が `data/textures/surfaces.json` に書いた素材を取得し、平均色を `MaterialLibrary.cs` の CampusColors に合わせて焼き直す。
+煉瓦だけは素材から肌の粒を借り、`tools/brick_bond.py` で張り方・1 枚ずつの色・目地を組み直している。
+
+| 素材 | 使っている面 | 条件・表記 | 確認状況 |
+|---|---|---|---|
+| [PavingStones136](https://ambientcg.com/a/PavingStones136) | stone_light・stone_dark（舗装） | CC0 1.0（表記は義務ではない） | 確認済み（2026-09-24） |
+| [Asphalt033](https://ambientcg.com/a/Asphalt033) | asphalt（車道・駐車場） | 同上 | 確認済み（2026-09-24） |
+| [Grass004](https://ambientcg.com/a/Grass004) | grass・grass_dark（芝地） | 同上 | 確認済み（2026-09-24） |
+| [Ground048](https://ambientcg.com/a/Ground048) | bed_soil（花壇の土） | 同上 | 確認済み（2026-09-24） |
+| [Concrete034](https://ambientcg.com/a/Concrete034) | concrete_light・concrete_grey・concrete_dark（外壁） | 同上 | 確認済み（2026-09-24） |
+| [Bricks092](https://ambientcg.com/a/Bricks092) | brick_red（外壁の煉瓦） | 同上 | 確認済み |
+
+> Created using PavingStones136, Asphalt033, Grass004, Ground048, Concrete034 and Bricks092 from ambientCG.com, licensed under the Creative Commons CC0 1.0 Universal License.
 
 ## 参考資料（`docs/ref`、ゲームには入らない）
 
@@ -74,9 +86,11 @@ StreamingAssets はビルドにそのまま入るので、配布物にもフォ�
 | `tus_symbole.jpg` / `tus_symbole02.jpg` / `tus_symbole03.jpg` | 校旗など大学のシンボルの画像 | 東京理科大学 | 未確認 |
 | `katsushika_map.png` | 葛飾キャンパスの公式鳥瞰図 | 東京理科大学 | 未確認 |
 | `nikken_02.jpg` 〜 `nikken_09.jpg` | キャンパスの建物の写真（日建設計） | 日建設計（撮影者を含む） | 未確認 |
+| `aerial/` | 地面・舗装・芝の色を決めるときに見た航空写真。国土地理院の地理院タイル（電子国土基本図（オルソ画像））をつなぎ合わせて切り出したもの。出典：国土地理院 電子国土基本図（オルソ画像）を加工して作成 | 国土地理院 | 確認済み（`docs/ref/aerial/README.md`） |
+| `commons/` | 煉瓦・舗装・芝の色を決めるときに見た構内の写真 12 枚（長辺 1024 px に縮小）。写真：あばさー（パブリックドメイン）、Nyao148（CC BY-SA 3.0）、しんぎんぐきゃっと（CC BY-SA 4.0）、Higa4（CC0 1.0）、Souka Kinmei（CC BY 4.0）、Wikimedia Commons より | 各撮影者。ファイルごとの作者・元画像・ライセンスは `docs/ref/commons/README.md` | 確認済み |
 
 どれもモデルを作るときの参照で、ゲームにもビルドにも入らない。ただしリポジトリが公開なので、GitHub 上では誰でも取得できる状態にある。
-公開の許諾の記録は無く、置き続けてよいかは未確認。
+大学と日建設計の画像は公開の許諾の記録が無く、置き続けてよいかは未確認。
 
 ## ソフトウェア
 
