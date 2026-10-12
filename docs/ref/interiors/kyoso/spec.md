@@ -239,7 +239,6 @@ Y=14.2 +------+----------+----+-------------------+----+-----------+--+--------+
 | kyoso_concrete_exposed | B9B7B2 | 0.85 | 0 | 打放しの柱 | TUS1024 `_02` |
 | kyoso_column_pale | C9CCCB | 0.60 | 0 | 板状の柱型（淡いグレー） | MIL `v2_mil_2` |
 | kyoso_column_bluegrey | A9BBC2 | 0.60 | 0 | 板状の柱型（淡い青灰） | 同上 |
-| kyoso_column_grey | 8C8F91 | 0.60 | 0 | 灰色塗装の柱・壁（段床の背後） | TUS1024 `_02` |
 | kyoso_column_base | 4B4D50 | 0.60 | 0 | 柱の足元・黒い蹴込み | 同上 |
 | kyoso_wall_bluegrey | 4A5560 | 0.70 | 0 | スタバまわりの濃い青灰の壁・柱パネル | TB `in_3` `oth_3` |
 | kyoso_projection_wall | CFCBC4 | 0.80 | 0 | 投影壁・上階のスラブの小口 | YT t=124〜130 |
@@ -247,7 +246,6 @@ Y=14.2 +------+----------+----+-------------------+----+-----------+--+--------+
 | kyoso_sb_sage | 8FA898 | 0.50 | 0 | フェイシア・カウンターの台輪 | FM `v_fm_06_01` |
 | kyoso_sage_grey | 9DB0AA | 0.55 | 0 | スタバの箱 | FM `v_fm_06_02` |
 | kyoso_sb_pattern | B07A55 | 0.60 | 0 | 箱の西面の茶色の文様の壁 | FM `v_fm_06_03` |
-| kyoso_sb_pattern_line | 3A2A20 | 0.60 | 0 | 文様の線 | 同上 |
 | kyoso_sb_copper | A8653A | 0.35 | 0.80 | フェイシアの銅色の帯 | FM `v_fm_06_01` |
 | kyoso_sb_top | F1EFEA | 0.25 | 0 | カウンターの白い天板 | 同上 |
 | kyoso_tile_hex_white | F2F2EE | 0.30 | 0 | 背面の六角タイル | 同上 |

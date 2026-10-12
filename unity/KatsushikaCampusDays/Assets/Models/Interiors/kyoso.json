@@ -2171,7 +2171,7 @@
    "z": 12.72
   }
  },
- "triangles": 31326,
+ "triangles": 31335,
  "seats": 118,
  "notes": [
   "1F=ラーニングスクエア・スターバックス・ファミリーマート、2F=ラウンジ。q_coffee の舞台"
@@ -2521,9 +2521,9 @@
   {
    "empty": "sign_kyoso_15",
    "kind": "wall",
-   "ja": "忘れもの",
+   "ja": "忘れ物",
    "en": "Lost & Found",
-   "tris": 332,
+   "tris": 341,
    "pos": {
     "x": -2.0,
     "y": 7.3,
@@ -2726,7 +2726,7 @@
    "align": "center"
   }
  ],
- "text_triangles": 8524,
+ "text_triangles": 8533,
  "ext": {
   "objects": [
    "ext_kyoso",

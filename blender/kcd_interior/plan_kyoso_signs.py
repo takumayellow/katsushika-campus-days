@@ -37,7 +37,7 @@ def build(c, mb):
       both=False)
     h(c, mb, -15.0, 5.6, D.Z_CEIL2, W, ja="ラウンジ", en="Lounge", w=1.2, h=0.4, drop=0.6,
       both=False)
-    w(c, mb, -2.0, 12.2, 7.3, W, ja="忘れもの", en="Lost & Found", w=1.0, h=0.4)
+    w(c, mb, -2.0, 12.2, 7.3, W, ja="忘れ物", en="Lost & Found", w=1.0, h=0.4)
     w(c, mb, -2.0, 9.5, 7.6, W, ja="葛飾学生支援課", en="Student Support Office", w=1.6, h=0.4)
     w(c, mb, -55.3, 6.8, 2.7, S, ja="エレベーター", en="Elevators", w=1.0, h=0.3)
     w(c, mb, -50.5, 6.8, 1.5, S, ja="本学関係者以外の\n立ち入りは\nご遠慮ください",

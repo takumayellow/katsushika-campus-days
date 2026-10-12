@@ -325,6 +325,11 @@ def fitted_glyph(ch, size, tol=None, candidates=None, fnt=None):
         while t <= TOL_MAX + 1e-9:
             steps.append(t)
             t = round(t + TOL_STEP, 3)
+        # 粗くしても辺が短い字（細い輪郭が重なる字）は、始めより細かい tol で辺が WELD 以上になることがある
+        t = round(tol_for(size) - TOL_STEP, 3)
+        while t >= TOL_STEP - 1e-9:
+            steps.append(t)
+            t = round(t - TOL_STEP, 3)
     for t in steps:
         hit = glyph(ch, t, candidates, fnt)
         if hit[2] * size >= WELD:
