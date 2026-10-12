@@ -13,7 +13,6 @@ KNOWN_WARNINGS = [
     "Manual synchronization of Unity Application.persistentDataPath via JS_FileSystem_Sync() is "
     "deprecated and will be later removed in a future Unity version. The persistent data "
     "directory will be automatically synchronized instead on file modification.",
-    "Failed to create agent because there is no valid NavMesh",
     "getFrequency() is not supported for compressed sound.",
     "Additional Lights Cookie Format (GrayscaleHigh) is not supported by the platform. Falling "
     "back to 32-bit format (RGBA8 UNorm)",
@@ -64,8 +63,15 @@ def test_unknown_warning_is_kept_but_only_fails_in_strict_mode():
 
 def test_known_warning_text_as_console_error_is_not_allowed():
     # 警告の規則は、同じ文面でも console.error なら許さない。
-    verdict = classify([ConsoleEntry("error", "Failed to create agent because there is no valid NavMesh")])
+    verdict = classify([ConsoleEntry("error", "getFrequency() is not supported for compressed sound.")])
     assert not verdict.ok
+
+
+def test_navmesh_agent_failure_is_not_allowed():
+    # NPC が NavMesh に載れない警告は #63 で出なくなった。また出たら知らせる。
+    verdict = classify([warning("Failed to create agent because there is no valid NavMesh")])
+    assert not verdict.allowed
+    assert not verdict.ok_strict
 
 
 def test_warning_rule_does_not_allow_an_exception():

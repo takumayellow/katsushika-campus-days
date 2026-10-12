@@ -150,7 +150,8 @@ def main(argv: list[str] | None = None) -> int:
     from playwright.sync_api import sync_playwright
 
     with sync_playwright() as playwright:
-        browser = playwright.chromium.launch(channel=args.channel or None, headless=True)
+        browser = playwright.chromium.launch(channel=args.channel or None, headless=True,
+                                             args=["--mute-audio"])
         try:
             page = browser.new_page(viewport={"width": 1280, "height": 720})
             messages = attach(page)

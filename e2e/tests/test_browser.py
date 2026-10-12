@@ -35,9 +35,14 @@ def test_software_mode_uses_swiftshader():
     assert "--enable-gpu" not in config.args
 
 
-def test_any_mode_adds_only_memory_info():
+def test_any_mode_adds_only_memory_info_and_mute():
     assert launch_config("chrome", headless=False, gl="any").args == (
-        "--enable-precise-memory-info",)
+        "--enable-precise-memory-info", "--mute-audio")
+
+
+@pytest.mark.parametrize("gl", ["gpu", "software", "any"])
+def test_every_mode_mutes_the_game(gl):
+    assert "--mute-audio" in launch_config("msedge", headless=True, gl=gl).args
 
 
 @pytest.mark.parametrize("browser, gl", [("firefox", "gpu"), ("msedge", "vulkan")])
