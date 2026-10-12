@@ -193,6 +193,36 @@ namespace KCD.Editor
                 Note = "中廊下（x ±1.60 の壁のあいだ）を奥へ。突き当たりはエレベーターホール",
             },
 
+            // 上の階・大浴場・屋上（#113）。高さは 2 階 3.30、屋上 6.60 を足した目の高さ。
+            new Shot
+            {
+                Name = "shot_dorm_lounge2",
+                Space = Frame.DormInterior,
+                Eye = new Vector3(-6.6f, 4.95f, 3.8f),
+                Look = new Vector3(3.0f, 4.2f, 8.5f),
+                Fov = 60f,
+                Note = "2 階のラウンジ。dorm_interior.py の cam \"lounge2\" の向き",
+            },
+            new Shot
+            {
+                Name = "shot_dorm_bath_men",
+                Space = Frame.DormInterior,
+                Eye = new Vector3(-3.05f, 1.7f, 29.6f),
+                Look = new Vector3(-3.3f, 0.9f, 34.0f),
+                Fov = 70f,
+                Note = "男子の大浴場（浴室 x -4.38..-1.62、y 29.40..34.40）。西の浴槽と東のシャワーを入口の奥から",
+            },
+            new Shot
+            {
+                Name = "shot_dorm_roof",
+                Space = Frame.DormInterior,
+                Eye = new Vector3(6.5f, 8.3f, 8.0f),
+                Look = new Vector3(-3.5f, 7.0f, 36.0f),
+                Fov = 55f,
+                Sun = OutdoorSun,
+                Note = "屋上のテラス。塔屋に向かって",
+            },
+
             // 窓の外の遠景（#60）。窓は外周の壁の腰 0.95 m から 2.55 m まで（dorm.py の envelope）。
             new Shot
             {

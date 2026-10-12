@@ -372,7 +372,7 @@ def _elevator_hall(c, xw):
     F.bench(mb, xw + 0.30, 37.40, ang=-math.pi * 0.5, w=1.80, back=True)
     sh.notice_board(mb, -3.00, y_s, 0.95, ang=0.0, w=2.00, h=1.10, sheets=5,
                     rng=c.rng)
-    sh.ceiling_lights(c.wall, xw, y_s, ix1, iy1, Z_CEIL, sx=3.0, sy=3.0)
+    sh.ceiling_lights(c.wall, xw, y_s, ix1, iy1, Z_CEIL, sx=3.0, sy=3.0, holes=[CORE])
     c.poi("corridor_end", 0.0, iy1 - 3.40)
     return mb
 
