@@ -298,6 +298,60 @@ namespace KCD.Editor
                 Sun = OutdoorSun,
                 Note = "売店前の牛乳を近くから",
             },
+
+            // にいじゅくみらい公園（#168）。座標は data/osm/park.json（x = 東, z = 北）:
+            //   池 x -126..-100 / z -147..-82、せせらぎは東へ z -105..-155、橋 (-67.9, -104.8)..(-66.7, -101.0)
+            //   地球釜 (-131, -136.5) 半径 2.4、パーゴラ (-24..-11, -118..-111)、遊具 (190, 97) ぶらんこ・(208, 36) すべり台
+            new Shot
+            {
+                Name = "shot_park_pond",
+                Space = Frame.World,
+                Eye = new Vector3(-82f, 16f, -152f),
+                Look = new Vector3(-112f, 0f, -112f),
+                Fov = 0f,
+                Sun = OutdoorSun,
+                Note = "公園の池とせせらぎを南東の上から",
+            },
+            new Shot
+            {
+                Name = "shot_park_bridge",
+                Space = Frame.World,
+                Eye = new Vector3(-58f, 2.2f, -99f),
+                Look = new Vector3(-67.3f, 0.5f, -103f),
+                Fov = 0f,
+                Sun = OutdoorSun,
+                Note = "せせらぎを渡る木の橋を東から",
+            },
+            new Shot
+            {
+                Name = "shot_park_kama",
+                Space = Frame.World,
+                Eye = new Vector3(-124f, 2.2f, -130f),
+                Look = new Vector3(-131f, 0.6f, -136.5f),
+                Fov = 0f,
+                Sun = OutdoorSun,
+                Note = "池の西の端の地球釜",
+            },
+            new Shot
+            {
+                Name = "shot_park_pergola",
+                Space = Frame.World,
+                Eye = new Vector3(-17f, 2.2f, -128f),
+                Look = new Vector3(-17.5f, 1.4f, -114f),
+                Fov = 0f,
+                Sun = OutdoorSun,
+                Note = "せせらぎを跨ぐパーゴラを南から",
+            },
+            new Shot
+            {
+                Name = "shot_park_play",
+                Space = Frame.World,
+                Eye = new Vector3(182f, 3f, 86f),
+                Look = new Vector3(190f, 1f, 97f),
+                Fov = 0f,
+                Sun = OutdoorSun,
+                Note = "E 街区の遊具（ぶらんこ）",
+            },
         };
 
         /// <summary>

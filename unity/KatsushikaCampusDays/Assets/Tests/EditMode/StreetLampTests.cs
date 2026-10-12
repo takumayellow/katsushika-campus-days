@@ -193,9 +193,10 @@ namespace KCD.Tests
 
                 Assert.IsNotNull(lights, ScenePath + " に StreetLights が無い（KCD/シーンを組み直す）");
 
-                // campus.fbx の照明柱は 22 本（site.py の 12 か所 × モールの両側から、建物にかかる 2 本を除く）。
+                // campus.fbx の照明柱は 28 本。モールに 22 本（site.py の 12 か所 × 両側から、建物にかかる 2 本を除く）と、
+                // 公園の園路沿いに 6 本（park.py の build_furniture）。
                 IReadOnlyList<Vector3> lamps = lights.Lamps;
-                Assert.That(lamps.Count, Is.InRange(16, 24), "照明柱の数が campus.fbx と合わない");
+                Assert.That(lamps.Count, Is.InRange(24, 32), "照明柱の数が campus.fbx と合わない");
                 for (int i = 0; i < lamps.Count; i++)
                 {
                     for (int j = i + 1; j < lamps.Count; j++)

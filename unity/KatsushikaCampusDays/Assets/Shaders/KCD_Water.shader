@@ -1,4 +1,4 @@
-// Katsushika Campus Days — 屋外の水面（図書館の堀と池）(URP 17 / Unity 6)
+// Katsushika Campus Days — 屋外の水面（図書館の堀と池、公園の池とせせらぎ）(URP 17 / Unity 6)
 // 縁からの距離で色を段に変え、縁石の際に暗い帯と白い線を引く。さざ波は同じテクスチャを 2 枚ずらして流し、
 // 空の色をフレネルで映して、太陽のきらめきを足す (#58)。
 //
@@ -171,12 +171,14 @@ Shader "KCD/Water"
             }
 
             // 水際からの距離（m）。矩形ごとの内側の距離の最大を取る。
+            // どの矩形からも 0.5 m より外の水（公園の池とせせらぎ・地球釜。#168）は縁石が無いので、
+            // 暗い帯と白い線を引かず、浅い色のまま塗る。
             float EdgeDistance(float2 p)
             {
                 float d = max(BasinInterior(p, _Basin0), BasinInterior(p, _Basin1));
                 d = max(d, BasinInterior(p, _Basin2));
                 d = max(d, BasinInterior(p, _Basin3));
-                return max(d, 0.0);
+                return d < -0.5 ? _RimShadeWidth + 0.05 : max(d, 0.0);
             }
 
             Varyings WaterVertex(Attributes input)

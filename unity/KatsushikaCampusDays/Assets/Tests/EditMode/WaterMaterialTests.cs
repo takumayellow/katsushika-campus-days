@@ -15,7 +15,7 @@ using ProgramType = UnityEditor.Rendering.ShaderType;
 namespace KCD.Tests
 {
     /// <summary>
-    /// 屋外の水面（図書館の堀と池、site_water）を KCD/Water で描くことを守る (#58)。
+    /// 屋外の水面（図書館の堀と池、公園の池とせせらぎ。site_water）を KCD/Water で描くことを守る (#58, #168)。
     ///
     /// 以前の水は URP Lit の半透明で、平らな板に空が映るだけの氷のような見た目だった。
     /// KCD/Water は縁からの距離で色を段に変え、縁石の際に暗い帯と白い線を引き、さざ波を 2 枚ずらして流し、
@@ -36,6 +36,9 @@ namespace KCD.Tests
 
         /// <summary>水面の頂点が水盤の角に乗っているとみなす距離（m）。FBX の書き出しと取り込みの丸めを見込む。</summary>
         private const float CornerTolerance = 0.01f;
+
+        /// <summary>どの水盤の矩形からもこれより外の水は、縁石の無い水（公園の池とせせらぎ・地球釜）。シェーダと同じ値。</summary>
+        private const float OpenWaterGap = 0.5f;
 
         /// <summary>シェーダが受け取る水盤の矩形。WaterMaterial.ShaderBasins が入れる。</summary>
         private static readonly string[] BasinProperties = { "_Basin0", "_Basin1", "_Basin2", "_Basin3" };
@@ -335,7 +338,7 @@ namespace KCD.Tests
 
                     samples++;
                     float truth = DistanceToShore(p, shore);
-                    float estimate = ShaderEdgeDistance(p, rects);
+                    float estimate = ShaderEdgeDistance(p, rects, rimWidth);
                     if (estimate - truth > worstOver)
                     {
                         worstOver = estimate - truth;
@@ -481,6 +484,11 @@ namespace KCD.Tests
                     var campus = new Vector2(
                         world.x * axis.x + world.z * axis.y,
                         -world.x * axis.y + world.z * axis.x);
+                    if (Interior(campus, basins) < -OpenWaterGap)
+                    {
+                        continue;
+                    }
+
                     // 2 枚の水盤が角を共有するところは、同じ頂点が両方の角に当たる。
                     float nearestDistance = float.PositiveInfinity;
                     for (int c = 0; c < corners.Count; c++)
@@ -506,6 +514,70 @@ namespace KCD.Tests
                 {
                     Assert.IsTrue(hit[c], "水盤の角 (u, v) = " + corners[c] + " に水面の頂点が無い");
                 }
+            }
+            finally
+            {
+                EditorSceneManager.CloseScene(scene, true);
+            }
+        }
+
+        [Test]
+        public void 水盤の外の公園の池とせせらぎには_縁の暗い帯も白い線も出ない()
+        {
+            string source = ReadAsset("Shaders", "KCD_Water.shader");
+            Assert.IsTrue(Regex.IsMatch(source, @"return d < -0\.5 \? _RimShadeWidth \+ 0\.05 : max\(d, 0\.0\);"),
+                "KCD_Water.shader の EdgeDistance が ShaderEdgeDistance と違う（両方を一緒に直す）");
+
+            Material material = LoadWaterMaterial();
+            var rects = new List<Vector4>();
+            foreach (string name in BasinProperties)
+            {
+                rects.Add(material.GetVector(name));
+            }
+
+            float rimWidth = material.GetFloat("_RimShadeWidth");
+            float foamReach = material.GetFloat("_FoamWidth") * (1f + material.GetFloat("_FoamWobble"));
+            List<Vector2> open = OpenWaterVertices(CampusBasins());
+            Assert.Greater(open.Count, 50, WaterObjectName + " に水盤の外の水（公園の池とせせらぎ。#168）が無い");
+            foreach (Vector2 p in open)
+            {
+                float edge = ShaderEdgeDistance(p, rects, rimWidth);
+                Assert.Greater(edge, rimWidth, "公園の水 (u, v) = " + p + " に縁石の暗い帯が出る");
+                Assert.Greater(edge, foamReach, "公園の水 (u, v) = " + p + " に縁の白い線が出る");
+            }
+        }
+
+        /// <summary>Campus シーンの site_water の頂点のうち、水盤の矩形から OpenWaterGap より外のもの（キャンパスの u, v）。</summary>
+        private static List<Vector2> OpenWaterVertices(List<Vector4> basins)
+        {
+            Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Additive);
+            try
+            {
+                Vector2 axis = CampusAxisU();
+                var open = new List<Vector2>();
+                foreach (GameObject root in scene.GetRootGameObjects())
+                {
+                    foreach (MeshFilter filter in root.GetComponentsInChildren<MeshFilter>(true))
+                    {
+                        if (filter.gameObject.name != WaterObjectName || filter.sharedMesh == null)
+                        {
+                            continue;
+                        }
+
+                        Matrix4x4 toWorld = filter.transform.localToWorldMatrix;
+                        foreach (Vector3 v in filter.sharedMesh.vertices)
+                        {
+                            Vector3 world = toWorld.MultiplyPoint3x4(v);
+                            var campus = new Vector2(world.x * axis.x + world.z * axis.y, -world.x * axis.y + world.z * axis.x);
+                            if (Interior(campus, basins) < -OpenWaterGap)
+                            {
+                                open.Add(campus);
+                            }
+                        }
+                    }
+                }
+
+                return open;
             }
             finally
             {
@@ -652,8 +724,18 @@ namespace KCD.Tests
 
         // --- 縁からの距離 ---
 
-        /// <summary>シェーダの EdgeDistance と同じ計算。矩形ごとの内側の距離の最大（0 未満は 0）。</summary>
-        private static float ShaderEdgeDistance(Vector2 p, List<Vector4> rects)
+        /// <summary>
+        /// シェーダの EdgeDistance と同じ計算。矩形ごとの内側の距離の最大（0 未満は 0）。
+        /// どの矩形からも OpenWaterGap より外は縁石の無い水なので、暗い帯の幅より少し奥の距離を返す。
+        /// </summary>
+        private static float ShaderEdgeDistance(Vector2 p, List<Vector4> rects, float rimWidth)
+        {
+            float d = Interior(p, rects);
+            return d < -OpenWaterGap ? rimWidth + 0.05f : Mathf.Max(d, 0f);
+        }
+
+        /// <summary>矩形ごとの、いちばん近い辺までの距離（外なら負）の最大。</summary>
+        private static float Interior(Vector2 p, List<Vector4> rects)
         {
             float d = float.NegativeInfinity;
             foreach (Vector4 r in rects)
@@ -662,7 +744,7 @@ namespace KCD.Tests
                 d = Mathf.Max(d, inside);
             }
 
-            return Mathf.Max(d, 0f);
+            return d;
         }
 
         private static bool InsideAny(Vector2 p, List<Vector4> rects)
