@@ -1,17 +1,22 @@
-"""実験棟2（lab2）の屋内だけで使う材質。imats.py が共有の材質と合わせて登録する。
+"""第2実験棟（lab2）の屋内だけで使う材質。imats.py が共有の材質と合わせて登録する。
 
-名前は "lab2_" で始め、英小文字・数字・_ だけで書く（Unity は名前を小文字にして探す）。
-共有の材質（imats.py の COMMON_*）と同じ名前は使えない。共有の材質で足りる色はここに書かない。
-値の形は imats.py と同じ:
-
-  PALETTE      名前 -> ((r, g, b), roughness, metallic, 1.0)    色は線形 RGB（0〜1）
-  TRANSPARENT  名前 -> ((r, g, b), roughness, metallic, alpha)  透けるもの（0 < alpha < 1）
-  EMISSIVE     名前 -> ((r, g, b), strength)                   この棟の PALETTE の材質を光らせる
-
-Unity の InteriorPalette.cs には、統合ブランチで python tools/interior_palette.py が写す。
+名前は "lab2_" で始め、英小文字・数字・_ だけで書く。値の形は mats_kyoso.py と同じ。
+色は構造実験棟の一般的な仕上げ（docs/ref/interiors/lab2/spec.md の推定）を sRGB の式で線形にしたもの。
 """
 
-PALETTE = {}
+PALETTE = {
+    "lab2_floor_strong":      ((0.200, 0.205, 0.200), 0.55, 0.0, 1.0),    # 強固な床（打放しのコンクリート）
+    "lab2_anchor_hole":       ((0.020, 0.021, 0.022), 0.70, 0.0, 1.0),    # アンカー穴
+    "lab2_reaction_concrete": ((0.380, 0.385, 0.375), 0.80, 0.0, 1.0),    # 反力壁
+    "lab2_frame_steel":       ((0.040, 0.090, 0.300), 0.40, 0.55, 1.0),   # 反力フレームの鉄骨（青）
+    "lab2_crane_yellow":      ((0.800, 0.540, 0.020), 0.48, 0.30, 1.0),   # 天井クレーン
+    "lab2_actuator_grey":     ((0.570, 0.585, 0.590), 0.35, 0.65, 1.0),
+    "lab2_specimen_concrete": ((0.470, 0.465, 0.440), 0.88, 0.0, 1.0),    # 供試体
+    "lab2_rebar":             ((0.330, 0.150, 0.080), 0.70, 0.40, 1.0),   # 鉄筋
+    "lab2_table_steel":       ((0.250, 0.265, 0.275), 0.38, 0.65, 1.0),   # 振動台
+    "lab2_rail_red":          ((0.550, 0.045, 0.035), 0.45, 0.10, 1.0),   # 安全柵
+    "lab2_roof_deck":         ((0.300, 0.305, 0.310), 0.75, 0.10, 1.0),   # ホールの屋根の裏と梁
+}
 
 TRANSPARENT = {}
 

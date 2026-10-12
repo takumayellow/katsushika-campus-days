@@ -147,6 +147,76 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: lab1_bench_orange
+    second: {fileID: 2100000, guid: 00b7710748cf5174ca7ef7f4ba127d61, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lab1_cable_rack
+    second: {fileID: 2100000, guid: 3453b5bd54050ec4580b0f358897f6ba, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lab1_ceiling_slab
+    second: {fileID: 2100000, guid: e39495e8cbb67e145bafeb2fdcd4c284, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lab1_duct
+    second: {fileID: 2100000, guid: b37bb5e1df6bef840847c3e8ef638ef9, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lab1_floor_epoxy_green
+    second: {fileID: 2100000, guid: c6635a8f5f3d0044dafef8bbdbf63b87, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lab1_lane_yellow
+    second: {fileID: 2100000, guid: 747c2c010a40dd44ebbd7d074a4bdd59, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lab1_machine_blue
+    second: {fileID: 2100000, guid: a9ae4733ac47a704b88832ab51bdb8d7, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lab1_machine_cream
+    second: {fileID: 2100000, guid: 13f370324f0517c489600b08130a33f2, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lab1_machine_grey
+    second: {fileID: 2100000, guid: f40a64fa25efaef4b9c282014a494c41, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lab1_nmr_blue
+    second: {fileID: 2100000, guid: 4f8a588031230e6478ffb48eacf09472, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lab1_rig_green
+    second: {fileID: 2100000, guid: 470ea90f59dd655479e63c0f9a24a16c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lab1_shutter
+    second: {fileID: 2100000, guid: 08fe88b6e6389fc44a8d29a6a7c5ac08, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lab1_stock_steel
+    second: {fileID: 2100000, guid: ad59c232f688d9545b7fc646134bb967, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lab1_tool_red
+    second: {fileID: 2100000, guid: 9edeecf7b5403b64093ddf55830cfb40, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: light_strip
     second: {fileID: 2100000, guid: 114452ef7602fca4d8c2252e38345b88, type: 2}
   - first:

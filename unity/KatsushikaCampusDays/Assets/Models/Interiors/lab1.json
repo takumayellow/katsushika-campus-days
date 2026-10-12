@@ -31,114 +31,307 @@
    "z": 3.55
   },
   "sign_lab1_1": {
-   "x": -11.687,
-   "y": 2.05,
-   "z": 7.02
+   "x": -2.25,
+   "y": 2.9,
+   "z": 6.2
   },
   "sign_lab1_2": {
-   "x": 0.969,
+   "x": -12.05,
    "y": 2.05,
-   "z": 7.02
+   "z": 6.2
   },
   "sign_lab1_3": {
-   "x": 13.626,
+   "x": 5.45,
    "y": 2.05,
-   "z": 7.02
+   "z": 6.2
+  },
+  "sign_lab1_4": {
+   "x": 10.95,
+   "y": 2.05,
+   "z": 6.2
+  },
+  "sign_lab1_5": {
+   "x": 13.85,
+   "y": 2.05,
+   "z": 6.2
+  },
+  "sign_lab1_6": {
+   "x": 15.804,
+   "y": 3.29,
+   "z": 4.8
+  },
+  "sign_lab1_7": {
+   "x": 1.9,
+   "y": 2.6,
+   "z": 17.5
+  },
+  "sign_lab1_8": {
+   "x": -9.0,
+   "y": 2.57,
+   "z": 25.817
   },
   "poi_lab1_lab": {
-   "x": -12.637,
+   "x": -8.5,
    "y": 0.0,
-   "z": 12.2
+   "z": 15.8
   },
   "npc_lab1_1": {
-   "x": -15.237,
+   "x": -11.6,
    "y": 0.0,
-   "z": 12.2
+   "z": 15.8
   },
   "npc_lab1_2": {
-   "x": -10.037,
+   "x": -3.0,
    "y": 0.0,
-   "z": 12.2
-  },
-  "poi_lab1_lab_b": {
-   "x": 0.019,
-   "y": 0.0,
-   "z": 12.2
+   "z": 20.0
   },
   "npc_lab1_3": {
-   "x": -1.381,
+   "x": 8.0,
    "y": 0.0,
-   "z": 16.3
+   "z": 21.8
+  },
+  "sign_lab1_9": {
+   "x": 14.1,
+   "y": 2.1,
+   "z": 27.4
   },
   "poi_lab1_prep": {
-   "x": 12.676,
+   "x": 16.4,
+   "y": 0.0,
+   "z": 26.0
+  },
+  "sign_lab1_10": {
+   "x": 6.9,
+   "y": 1.75,
+   "z": 9.0
+  },
+  "npc_lab1_4": {
+   "x": 3.2,
+   "y": 0.0,
+   "z": 11.2
+  },
+  "npc_lab1_5": {
+   "x": 10.0,
+   "y": 0.0,
+   "z": 8.8
+  },
+  "poi_lab1_lab_b": {
+   "x": 15.3,
+   "y": 0.0,
+   "z": 13.7
+  },
+  "npc_lab1_6": {
+   "x": 17.6,
+   "y": 0.0,
+   "z": 8.4
+  },
+  "seat_lab1_01": {
+   "x": -6.466,
+   "y": 0.0,
+   "z": 5.75
+  },
+  "seat_lab1_01_f": {
+   "x": -6.466,
+   "y": 0.0,
+   "z": 5.97
+  },
+  "seat_lab1_01_s": {
+   "x": -5.566,
+   "y": 0.0,
+   "z": 5.75
+  },
+  "seat_lab1_01_a0": {
+   "x": -7.066,
+   "y": 0.0,
+   "z": 5.77
+  },
+  "seat_lab1_01_a1": {
+   "x": -6.466,
+   "y": 0.0,
+   "z": 5.77
+  },
+  "seat_lab1_01_a2": {
+   "x": -5.866,
+   "y": 0.0,
+   "z": 5.77
+  },
+  "seat_lab1_02": {
+   "x": -11.5,
+   "y": 0.0,
+   "z": 8.25
+  },
+  "seat_lab1_02_f": {
+   "x": -11.5,
    "y": 0.0,
    "z": 8.45
   },
-  "seat_lab1_01": {
-   "x": 11.343,
+  "seat_lab1_02_s": {
+   "x": -11.3,
    "y": 0.0,
-   "z": 3.6
+   "z": 8.25
   },
-  "seat_lab1_01_f": {
-   "x": 11.343,
+  "seat_lab1_02_a0": {
+   "x": -11.5,
    "y": 0.0,
-   "z": 3.82
+   "z": 8.35
   },
-  "seat_lab1_01_s": {
-   "x": 12.243,
+  "seat_lab1_03": {
+   "x": -10.4,
    "y": 0.0,
-   "z": 3.6
+   "z": 10.95
   },
-  "seat_lab1_01_a0": {
-   "x": 10.743,
+  "seat_lab1_03_f": {
+   "x": -10.4,
    "y": 0.0,
-   "z": 3.62
+   "z": 10.75
   },
-  "seat_lab1_01_a1": {
-   "x": 11.343,
+  "seat_lab1_03_s": {
+   "x": -10.6,
    "y": 0.0,
-   "z": 3.62
+   "z": 10.95
   },
-  "seat_lab1_01_a2": {
-   "x": 11.943,
+  "seat_lab1_03_a0": {
+   "x": -10.4,
    "y": 0.0,
-   "z": 3.62
+   "z": 10.85
+  },
+  "seat_lab1_04": {
+   "x": -6.5,
+   "y": 0.0,
+   "z": 8.25
+  },
+  "seat_lab1_04_f": {
+   "x": -6.5,
+   "y": 0.0,
+   "z": 8.45
+  },
+  "seat_lab1_04_s": {
+   "x": -6.3,
+   "y": 0.0,
+   "z": 8.25
+  },
+  "seat_lab1_04_a0": {
+   "x": -6.5,
+   "y": 0.0,
+   "z": 8.35
+  },
+  "seat_lab1_05": {
+   "x": -5.4,
+   "y": 0.0,
+   "z": 10.95
+  },
+  "seat_lab1_05_f": {
+   "x": -5.4,
+   "y": 0.0,
+   "z": 10.75
+  },
+  "seat_lab1_05_s": {
+   "x": -5.6,
+   "y": 0.0,
+   "z": 10.95
+  },
+  "seat_lab1_05_a0": {
+   "x": -5.4,
+   "y": 0.0,
+   "z": 10.85
+  },
+  "seat_lab1_06": {
+   "x": 15.0,
+   "y": 0.0,
+   "z": 8.85
+  },
+  "seat_lab1_06_f": {
+   "x": 15.0,
+   "y": 0.0,
+   "z": 9.05
+  },
+  "seat_lab1_06_s": {
+   "x": 15.2,
+   "y": 0.0,
+   "z": 8.85
+  },
+  "seat_lab1_06_a0": {
+   "x": 15.0,
+   "y": 0.0,
+   "z": 8.95
+  },
+  "seat_lab1_07": {
+   "x": 16.0,
+   "y": 0.0,
+   "z": 8.85
+  },
+  "seat_lab1_07_f": {
+   "x": 16.0,
+   "y": 0.0,
+   "z": 9.05
+  },
+  "seat_lab1_07_s": {
+   "x": 16.2,
+   "y": 0.0,
+   "z": 8.85
+  },
+  "seat_lab1_07_a0": {
+   "x": 16.0,
+   "y": 0.0,
+   "z": 8.95
+  },
+  "seat_lab1_08": {
+   "x": 17.0,
+   "y": 0.0,
+   "z": 8.85
+  },
+  "seat_lab1_08_f": {
+   "x": 17.0,
+   "y": 0.0,
+   "z": 9.05
+  },
+  "seat_lab1_08_s": {
+   "x": 17.2,
+   "y": 0.0,
+   "z": 8.85
+  },
+  "seat_lab1_08_a0": {
+   "x": 17.0,
+   "y": 0.0,
+   "z": 8.95
   }
  },
- "triangles": 23367,
- "seats": 40,
+ "triangles": 19552,
+ "seats": 0,
  "notes": [
-  "廊下 + 実験室 2 室 + 準備室 1 室（実験台・ドラフト・ボンベ・薬品庫）"
+  "廊下 + 機械工作工場1（L 字・旋盤とフライス盤）+ NMR + 田村研 + 小林研 + 工具室"
  ],
  "objects": [
   "floor_lab1",
   "wall_lab1",
   "furn_lab1_01_entry",
   "furn_lab1_02_corridor",
-  "furn_lab1_03_lab01",
-  "furn_lab1_04_lab02",
-  "furn_lab1_05_prep03"
+  "furn_lab1_03_shop",
+  "furn_lab1_04_annex",
+  "furn_lab1_05_crib",
+  "furn_lab1_06_nmr",
+  "furn_lab1_07_tamura",
+  "furn_lab1_08_kobayashi"
  ],
  "signs": [
   {
    "empty": "sign_lab1_1",
    "kind": "wall",
-   "ja": "実験室 1",
-   "en": "Lab 1",
-   "tris": 262,
+   "ja": "機械工作工場1",
+   "en": "Machine Shop 1",
+   "tris": 526,
    "pos": {
-    "x": -11.687,
-    "y": 2.05,
-    "z": 7.02
+    "x": -2.25,
+    "y": 2.9,
+    "z": 6.2
    },
    "facing": {
     "x": -0.0,
     "y": 0.0,
     "z": -1.0
    },
-   "w": 0.7,
-   "h": 0.28,
+   "w": 2.4,
+   "h": 0.46,
    "faces": 1,
    "plate": "sign_plate_blue",
    "text": "plastic_white",
@@ -147,21 +340,21 @@
   {
    "empty": "sign_lab1_2",
    "kind": "wall",
-   "ja": "実験室 2",
-   "en": "Lab 2",
-   "tris": 277,
+   "ja": "工場 入口",
+   "en": "Shop Entrance",
+   "tris": 297,
    "pos": {
-    "x": 0.969,
+    "x": -12.05,
     "y": 2.05,
-    "z": 7.02
+    "z": 6.2
    },
    "facing": {
     "x": -0.0,
     "y": 0.0,
     "z": -1.0
    },
-   "w": 0.7,
-   "h": 0.28,
+   "w": 0.9,
+   "h": 0.3,
    "faces": 1,
    "plate": "sign_plate_blue",
    "text": "plastic_white",
@@ -170,34 +363,197 @@
   {
    "empty": "sign_lab1_3",
    "kind": "wall",
-   "ja": "準備室",
-   "en": "Prep Room",
-   "tris": 326,
+   "ja": "NMR室",
+   "en": "NMR Room",
+   "tris": 205,
    "pos": {
-    "x": 13.626,
+    "x": 5.45,
     "y": 2.05,
-    "z": 7.02
+    "z": 6.2
    },
    "facing": {
     "x": -0.0,
     "y": 0.0,
     "z": -1.0
    },
-   "w": 0.7,
-   "h": 0.28,
+   "w": 0.9,
+   "h": 0.3,
    "faces": 1,
    "plate": "sign_plate_blue",
    "text": "plastic_white",
    "align": "center"
+  },
+  {
+   "empty": "sign_lab1_4",
+   "kind": "wall",
+   "ja": "田村研究室",
+   "en": "Tamura Lab",
+   "tris": 355,
+   "pos": {
+    "x": 10.95,
+    "y": 2.05,
+    "z": 6.2
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.9,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_lab1_5",
+   "kind": "wall",
+   "ja": "小林研究室",
+   "en": "Kobayashi Lab",
+   "tris": 393,
+   "pos": {
+    "x": 13.85,
+    "y": 2.05,
+    "z": 6.2
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.9,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_lab1_6",
+   "kind": "hanging",
+   "ja": "階段・EV  2F〜4F",
+   "en": "Stairs / EV  2F-4F",
+   "tris": 762,
+   "pos": {
+    "x": 15.804,
+    "y": 3.29,
+    "z": 4.8
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 2.6,
+   "h": 0.42,
+   "faces": 2,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center",
+   "drop": 0.3
+  },
+  {
+   "empty": "sign_lab1_7",
+   "kind": "wall",
+   "ja": "安全第一  保護メガネ着用",
+   "en": "Safety First  Wear Eye Protection",
+   "tris": 955,
+   "pos": {
+    "x": 1.9,
+    "y": 2.6,
+    "z": 17.5
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 3.0,
+   "h": 0.5,
+   "faces": 1,
+   "plate": "lab1_lane_yellow",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": "sign_lab1_8",
+   "kind": "hanging",
+   "ja": "ワイヤ放電加工機 / フライス盤",
+   "en": "Wire EDM  /  Milling",
+   "tris": 1378,
+   "pos": {
+    "x": -9.0,
+    "y": 2.57,
+    "z": 25.817
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 3.6,
+   "h": 0.46,
+   "faces": 2,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center",
+   "drop": 1.0
+  },
+  {
+   "empty": "sign_lab1_9",
+   "kind": "wall",
+   "ja": "工具室",
+   "en": "Tool Crib",
+   "tris": 197,
+   "pos": {
+    "x": 14.1,
+    "y": 2.1,
+    "z": 27.4
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 0.9,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_lab1_10",
+   "kind": "wall",
+   "ja": "強磁場注意  ペースメーカ",
+   "en": "Strong Magnetic Field",
+   "tris": 700,
+   "pos": {
+    "x": 6.9,
+    "y": 1.75,
+    "z": 9.0
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.5,
+   "h": 0.46,
+   "faces": 1,
+   "plate": "lab1_lane_yellow",
+   "text": "plastic_black",
+   "align": "center"
   }
  ],
- "text_triangles": 865,
+ "text_triangles": 5768,
  "ext": {
   "objects": [
    "ext_lab1",
    "ext_lab1_trees"
   ],
-  "triangles": 9999,
+  "triangles": 9861,
   "radius": 30.0,
   "dz": -0.03
  }

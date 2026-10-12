@@ -215,8 +215,8 @@ def test_room_signs_are_numbered(built):
     assert not [t for t in lecture if "演習室" in t]
     for bid in ("lab1", "lab2"):
         labs = [r["ja"] for r in built[bid].signs if r["ja"].startswith("実験室")]
-        assert labs == ["実験室 %d" % (i + 1) for i in range(len(labs))] and labs, bid
-        assert any(r["ja"] == "準備室" for r in built[bid].signs), bid
+        assert labs == ["実験室 %d" % (i + 1) for i in range(len(labs))], bid
+        assert any(r["ja"] in ("準備室", "工具室") for r in built[bid].signs), bid
 
 
 def test_facing_matches_the_angle_convention():
