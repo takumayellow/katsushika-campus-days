@@ -202,3 +202,19 @@ Unity 側（`DormStage.BuildEntrance`）は玄関を route.json の `door` / `do
 * 航空写真: 地理院タイル（`ort` / `seamlessphoto`、ズーム 18）、Esri World Imagery（ズーム 19）
 * 3D 都市モデル: PLATEAU の建物 LOD1 / LOD2（国土交通省）
 * 高さ: OpenStreetMap（Overpass API。軒高 17.8 m は `height`）
+
+## 居室の階・大浴場・屋上 (#113)
+
+屋内は 1 階（風除室・ホール・食堂・ラウンジ・キッチン・男湯・女湯）に加え、2 階（ラウンジ・廊下・見本の居室・
+ランドリー・キッチンコーナー）と屋上テラスを持つ。階段は 1F-2F の折り返しと、2F から塔屋へ上がる直階段。
+
+| モジュール | 中身 |
+|---|---|
+| `kcd_route/dorm_levels.py` | 階高・階段室などの共有定数 |
+| `kcd_route/dorm_stairs.py` | 折り返し階段、塔屋の直階段 |
+| `kcd_route/dorm_floor2.py` | 2F のスラブ・外周・間仕切り・ラウンジ・廊下・居室・ランドリー・キッチン |
+| `kcd_route/dorm_bath.py` | 男湯の浴槽・シャワー・脱衣室 |
+| `kcd_route/dorm_roof.py` | 屋上のベンチ・植栽・看板 |
+| `kcd_route/dorm_rooms_props.py` | 階段・ベッド・洗濯機・浴槽などの小物 |
+
+仕様と出典は `docs/ref/interiors/dorm/spec.md`。
