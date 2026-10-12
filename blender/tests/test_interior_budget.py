@@ -49,4 +49,4 @@ def test_a_building_without_a_cap_is_rejected():
 def test_near_view_keeps_its_per_building_and_total_caps():
     rows = [_row("lecture", 1000, 50001)]
 
-    assert bi.over_budget(rows, 1000, 180001) == ["lecture の近景 50001 > 50000", "近景の合計 180001 > 180000"]
+    assert bi.over_budget(rows, 1000, 200001) == ["lecture の近景 50001 > 50000", "近景の合計 200001 > 200000"]

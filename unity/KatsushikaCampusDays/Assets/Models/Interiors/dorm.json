@@ -107,8 +107,8 @@
   },
   "sign_dorm_8": {
    "x": 5.6,
-   "y": 2.42,
-   "z": 40.49
+   "y": 2.35,
+   "z": 39.9
   },
   "poi_dorm_corridor_end": {
    "x": 0.0,
@@ -311,7 +311,7 @@
    "z": 36.8
   }
  },
- "triangles": 11192,
+ "triangles": 13775,
  "seats": 7,
  "notes": [
   "寮長 = npc_dorm_1 / poi_dorm_kanrinin（玄関ホール、管理人カウンターの手前）",
@@ -335,6 +335,241 @@
   "furn_dorm_07_corridor",
   "furn_dorm_08_elevator"
  ],
+ "signs": [
+  {
+   "empty": "sign_dorm_1",
+   "kind": "wall",
+   "ja": "管理人室",
+   "en": "Manager's Office",
+   "tris": 441,
+   "pos": {
+    "x": 4.1,
+    "y": 2.3,
+    "z": 11.95
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.2,
+   "h": 0.36,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_dorm_2",
+   "kind": "wall",
+   "ja": "居住者専用",
+   "en": "Residents Only",
+   "tris": 415,
+   "pos": {
+    "x": 0.0,
+    "y": 2.48,
+    "z": 6.51
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 1.4,
+   "h": 0.28,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_dorm_3",
+   "kind": "wall",
+   "ja": "ラウンジ",
+   "en": "Lounge",
+   "tris": 170,
+   "pos": {
+    "x": -1.51,
+    "y": 2.45,
+    "z": 17.6
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.0,
+   "h": 0.28,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_dorm_4",
+   "kind": "wall",
+   "ja": "食堂",
+   "en": "Dining Hall",
+   "tris": 237,
+   "pos": {
+    "x": 1.51,
+    "y": 2.45,
+    "z": 14.3
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.2,
+   "h": 0.28,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "男湯",
+   "en": "Men",
+   "tris": 140,
+   "pos": {
+    "x": -3.72,
+    "y": 2.4,
+    "z": 26.91
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.7,
+   "h": 0.24,
+   "faces": 1,
+   "plate": "curtain_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "女湯",
+   "en": "Women",
+   "tris": 163,
+   "pos": {
+    "x": -2.32,
+    "y": 2.4,
+    "z": 26.91
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.7,
+   "h": 0.24,
+   "faces": 1,
+   "plate": "cushion_red",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_dorm_5",
+   "kind": "wall",
+   "ja": "大浴場",
+   "en": "Public Bath",
+   "tris": 266,
+   "pos": {
+    "x": -1.51,
+    "y": 2.45,
+    "z": 24.65
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.2,
+   "h": 0.28,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_dorm_6",
+   "kind": "wall",
+   "ja": "キッチン",
+   "en": "Kitchen",
+   "tris": 155,
+   "pos": {
+    "x": 1.51,
+    "y": 2.45,
+    "z": 31.2
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.2,
+   "h": 0.28,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_dorm_7",
+   "kind": "hanging",
+   "ja": "エレベーター",
+   "en": "Elevators",
+   "tris": 372,
+   "pos": {
+    "x": 0.0,
+    "y": 2.31,
+    "z": 37.9
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 1.8,
+   "h": 0.34,
+   "faces": 2,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center",
+   "drop": 0.22
+  },
+  {
+   "empty": "sign_dorm_8",
+   "kind": "hanging",
+   "ja": "階段",
+   "en": "Stairs",
+   "tris": 212,
+   "pos": {
+    "x": 5.6,
+    "y": 2.35,
+    "z": 39.9
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.8,
+   "h": 0.26,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center",
+   "drop": 0.22
+  }
+ ],
+ "text_triangles": 2571,
  "operator": "共立メンテナンス（学生会館ドーミー）",
  "not_university": "大学直営ではない（ゲーム内で『大学の寮』と断定しない）",
  "off_campus": true,

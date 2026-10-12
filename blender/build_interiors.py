@@ -67,7 +67,7 @@ INT_BUDGET_ONE = {        # 屋内 1 棟
     "lab2": 30000,
     "greenhouse": 15000,
 }
-EXT_BUDGET = 180000       # 近景の合計
+EXT_BUDGET = 200000       # 近景の合計
 EXT_BUDGET_ONE = 50000    # 近景 1 棟
 
 # 屋内の入口とキャンパスの扉の照合。屋内の内向きと扉の外向き法線の内積の上限と、
