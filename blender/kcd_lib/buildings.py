@@ -308,9 +308,12 @@ def build_gym(mb, b, frame, ctx):
 
 
 # --------------------------------------------------------------------------- #
-#  実験棟 — 格子窓 + レンガコア + 屋上排気ダクト
+#  実験棟 — 格子窓 + レンガコア + 屋上排気ダクト（第2実験棟）。第1実験棟は build_lab1
 # --------------------------------------------------------------------------- #
 def build_lab_low(mb, b, frame, ctx):
+    if b["id"] == "lab1":
+        build_lab1(mb, b, frame, ctx)
+        return
     loop = geom.ensure_ccw(geom.dedup(b["footprint"]))
     h = b["height"]
     lv = max(1, b["levels"] or 2)
@@ -328,6 +331,238 @@ def build_lab_low(mb, b, frame, ctx):
         p = frame.xy(u0 + (u1 - u0) * t, (v0 + v1) * 0.5)
         mb.add_cylinder(p[0], p[1], h + 0.9, h + 4.2, 0.85, "metal_grey", seg=10)
     # 入口と看板は kcd_lib.entrances が置く
+
+
+# --------------------------------------------------------------------------- #
+#  第1実験棟 — 4F・17 m。東西はレンガの壁、南北は白い縦フィンの格子窓。
+#  東面に外階段の切り込み、西に 1 階建ての別棟（docs/ref/exterior/lab1.md）
+# --------------------------------------------------------------------------- #
+LAB1_ANNEX_JOIN = ((41.5, 51.5), (41.7, 46.2))   # 別棟と本体が接する 2 頂点（uv、北・南）
+LAB1_JOIN_TOL = 1.0
+LAB1_ANNEX_H = 4.6       # 別棟の屋根の高さ（1 階分）
+LAB1_PARAPET = 1.0       # 本体のパラペットの高さ
+LAB1_WIN_SEG = 2.4       # 南北の窓の割り付け
+LAB1_FIN_PITCH = 1.2     # 南北の白い縦フィンの間隔
+LAB1_FIN_D = 0.40        # フィンの出
+LAB1_FIN_W = 0.16        # フィンの見付
+LAB1_SLOT_T = 0.55       # 東面の階段の切り込みの位置（南端からの比）
+LAB1_SLOT_W = 3.4        # 切り込みの幅
+LAB1_SLOT_D = 1.6        # 切り込みの奥行
+LAB1_LANDING_D = 1.5     # 階段の踊り場の張り出し
+LAB1_CANOPY_D = 2.0      # 南面の 2 階の床の高さの庇の出
+LAB1_CANOPY_GAP = 3.8    # 入口の庇と重ならないよう、扉の中心から庇を切る半幅
+
+
+def _lab1_split(loop, frame):
+    """外形を本体と西の別棟に分ける。戻り値 (本体, 別棟)。どちらも反時計回りで、
+    本体の最後の辺と別棟の最後の辺が、両者の接する壁（同じ 2 頂点）になる。"""
+    def _find(target):
+        best = min(range(len(loop)), key=lambda i: math.dist(frame.uv(loop[i]), target))
+        if math.dist(frame.uv(loop[best]), target) > LAB1_JOIN_TOL:
+            raise ValueError("lab1: 別棟の接点 %s が外形に見つからない" % (target,))
+        return best
+
+    jn, js = (_find(t) for t in LAB1_ANNEX_JOIN)
+    n = len(loop)
+    main = [loop[(js + k) % n] for k in range((jn - js) % n + 1)]
+    annex = [loop[(jn + k) % n] for k in range((js - jn) % n + 1)]
+    if len(annex) < 3 or len(main) < 4:
+        raise ValueError("lab1: 外形を本体と別棟に分けられない")
+    return main, annex
+
+
+def _lab1_facing(frame, a, b):
+    """辺 a→b の外向きの向き（"n" / "s" / "e" / "w"）。"""
+    nrm = geom.outward_normal(a, b)
+    nu, nv = geom.dot(nrm, frame.u), geom.dot(nrm, frame.v)
+    if abs(nv) >= abs(nu):
+        return "n" if nv > 0 else "s"
+    return "e" if nu > 0 else "w"
+
+
+def _lab1_edge(a, b):
+    d = geom.sub(b, a)
+    L = geom.length(d)
+    e = geom.mul(d, 1.0 / L)
+    return e, (e[1], -e[0]), L
+
+
+def _lab1_wall(mb, a, b, z0, z1, mat):
+    """a→b の右（外）を向く壁。"""
+    mb.add_quad((a[0], a[1], z0), (b[0], b[1], z0), (b[0], b[1], z1), (a[0], a[1], z1), mat)
+
+
+def _lab1_local_rect(p, e, n, t0, t1, d0, d1):
+    """辺のローカル座標（t = 辺に沿う距離、d = 外への距離）の矩形を XY の 4 点にする。"""
+    return [facade._P(p, e, n, t, 0.0, d)[:2] for t, d in ((t0, d0), (t1, d0), (t1, d1), (t0, d1))]
+
+
+def _lab1_fins(mb, a, b, z0, z1):
+    """格子窓の前に白い縦フィンを LAB1_FIN_PITCH ごとに立てる（辺の両端は角と干渉するので除く）。"""
+    e, n, L = _lab1_edge(a, b)
+    k = int(L / LAB1_FIN_PITCH)
+    if k < 2:
+        return
+    step = L / k
+    hw = LAB1_FIN_W * 0.5
+    for i in range(1, k):
+        t = i * step
+        p0, p1, p2, p3 = _lab1_local_rect(a, e, n, t - hw, t + hw, 0.0, LAB1_FIN_D)
+        # p0 → p3 → p2 → p1 の順に、外から見える 3 面（両脇と正面）を張る
+        _lab1_wall(mb, p0, p3, z0, z1, "louver_white")
+        _lab1_wall(mb, p3, p2, z0, z1, "louver_white")
+        _lab1_wall(mb, p2, p1, z0, z1, "louver_white")
+
+
+def _lab1_grid(mb, poly, i, fh, lv):
+    """南北の面（poly の辺 i）: 白い床の帯 + 暗いガラス、2 階から上に白い縦フィン。"""
+    kw = dict(wall="louver_white", glass="glass_dark", seg=LAB1_WIN_SEG, header=0.6,
+              inset=0.35, mullion=0.22, edges=[i], side_reveals=False)
+    # 1 階は腰壁を高くして扉に見えないようにする（#39）
+    facade.add_facade(mb, poly, 0.0, fh, 0, 1, sill=0.9, **kw)
+    facade.add_facade(mb, poly, 0.0, fh, 1, lv, sill=0.45, **kw)
+    _lab1_fins(mb, poly[i], poly[(i + 1) % len(poly)], fh, fh * lv)
+
+
+def _lab1_stair_slot(mb, a, b, fh, lv):
+    """東面: レンガの 2 つの塊の間に外階段の切り込み。2 階から上を LAB1_SLOT_D 引っ込め、
+    各階の床の高さに踊り場を張り出す。1 階は外形どおりの壁（当たり判定を変えない）。"""
+    e, n, L = _lab1_edge(a, b)
+    h = fh * lv
+    t0 = L * LAB1_SLOT_T
+    t1 = t0 + LAB1_SLOT_W
+    dz = -LAB1_SLOT_D
+
+    def pt(t, d):
+        return facade._P(a, e, n, t, 0.0, d)[:2]
+
+    def rect(r0, r1, d0, d1):
+        return _lab1_local_rect(a, e, n, r0, r1, d0, d1)
+
+    _lab1_wall(mb, pt(0.0, 0.0), pt(t0, 0.0), 0.0, h, "brick_red")
+    _lab1_wall(mb, pt(t1, 0.0), pt(L, 0.0), 0.0, h, "brick_red")
+    # 1 階: 切り込みの下は明るい壁に小窓
+    _lab1_wall(mb, pt(t0, 0.0), pt(t1, 0.0), 0.0, fh, "concrete_light")
+    _lab1_wall(mb, pt(t0 + 0.6, 0.02), pt(t1 - 0.6, 0.02), 1.2, 3.2, "glass_dark")
+    # 切り込みの両脇（レンガの塊の小口）と奥の壁、上の天井
+    _lab1_wall(mb, pt(t0, 0.0), pt(t0, dz), fh, h, "brick_red")
+    _lab1_wall(mb, pt(t1, dz), pt(t1, 0.0), fh, h, "brick_red")
+    _lab1_wall(mb, pt(t0, dz), pt(t1, dz), fh, h, "concrete_light")
+    mb.add_ngon_flat(rect(t0, t1, dz, 0.0), h, "concrete_light", flip=True)
+    for f in range(1, lv):
+        z = f * fh
+        # 階段室の窓（奥の壁）
+        _lab1_wall(mb, pt(t0 + 0.5, dz + 0.02), pt(t1 - 0.5, dz + 0.02), z + 0.9, z + 3.4,
+                   "glass_dark")
+        # 踊り場の床版と、コンクリートの手すり壁（正面と両脇）
+        mb.add_slab(rect(t0, t1, dz, LAB1_LANDING_D), z - 0.25, z, "concrete_light")
+        rails = ((t0, t1, LAB1_LANDING_D - 0.2, LAB1_LANDING_D),
+                 (t0, t0 + 0.2, 0.0, LAB1_LANDING_D - 0.2),
+                 (t1 - 0.2, t1, 0.0, LAB1_LANDING_D - 0.2))
+        for r0, r1, d0, d1 in rails:
+            mb.add_prism(rect(r0, r1, d0, d1), z, z + 1.1, "concrete_light", "concrete_light")
+
+
+def _lab1_door_t(a, b, frame):
+    """入口（kcd_lib.entrances.DOORS）の探索線が辺 a→b に当たる位置（辺に沿う距離）。"""
+    from . import entrances
+    for bid, (pu, pv), (du, dv), *_rest in entrances.DOORS:
+        if bid != "lab1":
+            continue
+        o = frame.xy(pu, pv)
+        d = frame.xy(du, dv)
+        e, _n, L = _lab1_edge(a, b)
+        den = geom.cross(d, e)
+        if abs(den) < 1e-9:
+            return None
+        t = geom.cross(geom.sub(a, o), d) / den
+        return t if 0.0 <= t <= L else None
+    return None
+
+
+def _lab1_canopy(mb, a, b, z, door_t):
+    """南面の 2 階の床の高さの庇。入口の庇（kcd_lib.entrances）の上だけ切る。"""
+    e, n, L = _lab1_edge(a, b)
+    spans = [(0.0, L)]
+    if door_t is not None:
+        spans = [(0.0, door_t - LAB1_CANOPY_GAP), (door_t + LAB1_CANOPY_GAP, L)]
+    for t0, t1 in spans:
+        if t1 - t0 > 1.0:
+            mb.add_slab(_lab1_local_rect(a, e, n, t0, t1, 0.0, LAB1_CANOPY_D), z - 0.3, z,
+                        "concrete_light")
+
+
+def _lab1_roof_units(mb, frame, uvbb, z):
+    """屋上の設備（空中写真の配置）: 北の縁の長い箱、南寄りの白い長い箱と中くらいの箱、
+    室外機の列（西と東）、北西の丸い機器。"""
+    u0, v0, u1, v1 = uvbb
+    boxes = [
+        (u0 + 5.0, v1 - 3.8, u1 - 4.0, v1 - 1.4, 2.0, "metal_white"),
+        (u0 + 12.0, v0 + 2.0, u0 + 23.0, v0 + 4.6, 2.4, "metal_white"),
+        (u0 + 15.0, v0 + 6.0, u0 + 20.0, v0 + 8.6, 2.0, "metal_white"),
+    ]
+    for r in range(2):
+        for c in range(5):
+            uc = u0 + 4.0 + c * 1.7
+            vc = v1 - 10.0 - r * 2.4
+            boxes.append((uc - 0.6, vc - 0.5, uc + 0.6, vc + 0.5, 1.4, "metal_grey"))
+    for r in range(3):
+        for c in range(4):
+            uc = u1 - 10.0 + c * 2.0
+            vc = v0 + 3.5 + r * 3.0
+            boxes.append((uc - 0.7, vc - 0.6, uc + 0.7, vc + 0.6, 1.6, "metal_grey"))
+    for bu0, bv0, bu1, bv1, bh, mat in boxes:
+        mb.add_prism(_uv_rect(frame, bu0, bv0, bu1, bv1), z, z + bh, mat, "metal_white")
+    cx, cy = frame.xy(u0 + 5.5, v1 - 6.5)
+    mb.add_cylinder(cx, cy, z, z + 1.4, 1.6, "metal_white", seg=14)
+
+
+def build_lab1(mb, b, frame, ctx):
+    loop = geom.ensure_ccw(geom.dedup(b["footprint"]))
+    h = b["height"]
+    lv = max(1, b["levels"] or 4)
+    fh = h / lv
+    main, annex = _lab1_split(loop, frame)
+
+    # 本体。最後の辺は別棟と接する壁（別棟の屋根より上だけ見える）
+    nm = len(main)
+    def _longest(side):
+        return max((i for i in range(nm - 1) if _lab1_facing(frame, main[i], main[i + 1]) == side),
+                   key=lambda i: math.dist(main[i], main[i + 1]))
+
+    long_east, long_south = _longest("e"), _longest("s")
+    brick, grid = [], []
+    for i in range(nm):
+        a, c = main[i], main[(i + 1) % nm]
+        side = _lab1_facing(frame, a, c)
+        if i == nm - 1:
+            _lab1_wall(mb, a, c, LAB1_ANNEX_H, h, "brick_red")
+            brick.append(i)
+        elif i == long_east:
+            _lab1_stair_slot(mb, a, c, fh, lv)
+            brick.append(i)
+        elif side in ("e", "w"):
+            _lab1_wall(mb, a, c, 0.0, h, "brick_red")
+            brick.append(i)
+        else:
+            _lab1_grid(mb, main, i, fh, lv)
+            grid.append(i)
+            if i == long_south:
+                _lab1_canopy(mb, a, c, fh, _lab1_door_t(a, c, frame))
+    mb.add_ngon_flat(main, h, "roof_grey")
+    facade.add_parapet(mb, main, h, LAB1_PARAPET, 0.35, "louver_white", edges=grid)
+    facade.add_parapet(mb, main, h, LAB1_PARAPET, 0.35, "brick_red", edges=brick)
+    _lab1_roof_units(mb, frame, frame.uv_bbox(main), h)
+
+    # 西の別棟（1 階建て）。最後の辺は本体と接するので壁を出さない
+    outer = list(range(len(annex) - 1))
+    facade.add_facade(mb, annex, 0.0, LAB1_ANNEX_H - 0.35, 0, 1,
+                      wall="concrete_grey", glass="glass_dark", seg=2.6,
+                      sill=1.15, header=0.45, inset=0.40, mullion=0.34, edges=outer)
+    facade.add_solid(mb, annex, LAB1_ANNEX_H - 0.35, LAB1_ANNEX_H, "concrete_grey", edges=outer)
+    mb.add_ngon_flat(annex, LAB1_ANNEX_H, "roof_grey")
+    facade.add_parapet(mb, annex, LAB1_ANNEX_H, 0.6, 0.3, "concrete_light", edges=outer)
+    # 入口と看板は kcd_lib.entrances が置く（南面）
 
 
 # --------------------------------------------------------------------------- #
