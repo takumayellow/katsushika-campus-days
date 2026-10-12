@@ -31,7 +31,7 @@ namespace KCD.Editor
             },
             new NpcSpot
             {
-                Id = "kaname", Name = "中川 かなめ", BuildingId = "research2",
+                Id = "kaname", Name = "中川 かなめ", BuildingId = "cafeteria",
                 Distance = 3.2f, Fallback = new Vector2(-8.5f, -6.5f), WanderRadius = 4f
             },
             new NpcSpot

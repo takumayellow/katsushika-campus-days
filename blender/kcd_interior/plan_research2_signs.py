@@ -2,7 +2,7 @@
 
 看板の裏に当たる面（黒い案内板・打放しの壁・えんじの帯・オレンジの帯・藤色の壁・柱）は
 各階のモジュールが作る。ここは文言と位置だけを持つ。M は plan_research2 が作る家具の
-MeshBuilder の辞書。同じ形の板が並ぶ所（窓口の札・2F の帯・EV の階数）は 2 枚目から
+MeshBuilder の辞書。同じ形の板が並ぶ所（窓口の札・2F の帯）は 2 枚目から
 anchor=False（Empty を置かない）。
 """
 
@@ -114,16 +114,6 @@ SCREEN_2F_HALVES = ((-0.3, "準備中", "Preparing"), (0.3, "お渡し可能", "
 LILAC_Y = 12.6
 LILAC_Z = D.Z2 + 1.6
 
-# ---- 研究棟側（案内板・館名・EV の階数）----
-RESEARCH = (
-    ("research", D.INNER[D.E_EAST][0], 30.0, 1.6, FACE_W, "6F 会議室\n4F・5F 研究室\n3F 事務室\n1F・2F 食堂",
-     "6F Meeting / 4-5F Labs\n3F Office / 1-2F Cafeteria",
-     dict(w=1.4, h=1.6, plate=BLUE, frame="metal_white", out=0.04)),
-    ("research", D.PART_X + 0.12, 21.0, 2.3, FACE_E, "第2研究棟", "Research Labs Building No.2",
-     dict(w=1.6, h=0.5, plate=CHARCOAL, frame="metal_white", out=0.03)),
-)
-EV_Z = 2.75                               # EV の枠（高さ 2.6）の上
-
 # ---- トイレの扉・非常口 ----
 WC_SIGN = ("seats1", 6.6, D.WC[3] + 0.16, 2.3, FACE_N, "トイレ・多目的トイレ", "Restrooms",
            dict(w=1.6, h=0.5, plate=WHITE, frame="metal_white", out=0.03))
@@ -190,14 +180,6 @@ def _lilac(c, M):
                en="2F Menu", w=1.0, h=1.4, plate=BLUE, frame="metal_white", out=0.02)
 
 
-def _ev(c, M):
-    x = D.EV[2]
-    for z, ja, en in ((D.Z1 + EV_Z, "1", "1F"), (D.Z2 + EV_Z, "2", "2F")):
-        for k, y in enumerate(D.EV_Y):
-            _wall(c, M, ("research", x, y, z, FACE_E, ja, en,
-                         dict(w=0.3, h=0.2, **_flat(SCREEN, 0.03))), anchor=k == 0)
-
-
 def build(c, M):
     for row in HALL:
         _wall(c, M, row)
@@ -213,9 +195,6 @@ def build(c, M):
     _wall(c, M, TRAY_2F)
     _wall(c, M, MOBILE)
     _screen(c, M, "counters2", SCREEN_2F, SCREEN_2F_HALVES)
-    for row in RESEARCH:
-        _wall(c, M, row)
-    _ev(c, M)
     _wall(c, M, WC_SIGN)
     for row in EXIT_HANGS:
         _hang(c, M, row)

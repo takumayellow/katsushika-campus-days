@@ -419,7 +419,7 @@
               "z": -26.0
             },
             {
-              "entrance": "research2"
+              "entrance": "cafeteria"
             }
           ],
           "end": "despawn"
@@ -494,7 +494,7 @@
           "weight": 1,
           "waypoints": [
             {
-              "entrance": "research2"
+              "entrance": "cafeteria"
             },
             {
               "x": -1.0,
@@ -537,7 +537,7 @@
               "z": -38.0
             },
             {
-              "entrance": "research2"
+              "entrance": "cafeteria"
             }
           ],
           "end": "despawn"
@@ -683,7 +683,7 @@
           "weight": 2,
           "waypoints": [
             {
-              "entrance": "research2"
+              "entrance": "cafeteria"
             },
             {
               "x": 26.0,
@@ -823,7 +823,7 @@
               "z": -26.0
             },
             {
-              "entrance": "research2"
+              "entrance": "cafeteria"
             }
           ],
           "end": "despawn"
@@ -978,7 +978,7 @@
           "weight": 1,
           "waypoints": [
             {
-              "entrance": "research2"
+              "entrance": "cafeteria"
             },
             {
               "x": -1.0,

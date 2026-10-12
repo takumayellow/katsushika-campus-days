@@ -400,13 +400,13 @@ namespace KCD.Editor
             },
             new Shot
             {
-                Name = "shot_research2_dining",
+                Name = "shot_cafeteria_dining",
                 Space = Frame.Interior,
-                Building = "research2",
+                Building = "cafeteria",
                 Eye = new Vector3(0f, 1.6f, 8f),
                 Look = new Vector3(-12f, 1.2f, 26f),
                 Fov = 0f,
-                Note = "第2研究棟 1F の食堂",
+                Note = "食堂 1F",
             },
             new Shot
             {

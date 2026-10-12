@@ -92,7 +92,7 @@ namespace KCD.Tests
                 Quests = quests, QuestTotal = 15,
                 Collectibles = collectibles, CollectibleTotal = 20,
                 Photos = photos, PhotoTotal = 6,
-                Buildings = buildings, BuildingTotal = 9
+                Buildings = buildings, BuildingTotal = 10
             };
         }
 
@@ -104,12 +104,12 @@ namespace KCD.Tests
             StringAssert.Contains("クエスト  8 / 15", ja);
             StringAssert.Contains("隠しアイテム  7 / 20", ja);
             StringAssert.Contains("写真  3 / 6", ja);
-            StringAssert.Contains("入った建物  4 / 9", ja);
+            StringAssert.Contains("入った建物  4 / 10", ja);
 
             string en = FormalEnding.RecapText(1, Result(8, 0, 0, 4), true);
             StringAssert.Contains("day 1", en);
             StringAssert.Contains("Quests  8 / 15", en);
-            StringAssert.Contains("Buildings entered  4 / 9", en);
+            StringAssert.Contains("Buildings entered  4 / 10", en);
         }
 
         [Test]
@@ -117,7 +117,7 @@ namespace KCD.Tests
         {
             string text = FormalEnding.RecapText(0, Result(-4, -1, 99, -3), false);
             StringAssert.Contains("1 日目", text, "0 日目を出した");
-            StringAssert.Contains("入った建物  0 / 9", text);
+            StringAssert.Contains("入った建物  0 / 10", text);
             StringAssert.Contains("写真  6 / 6", text, "総数で頭打ちにならない");
             StringAssert.DoesNotContain("-", text, "負の数が出た");
             StringAssert.Contains("1 日目", FormalEnding.RecapText(1, null, false), "リザルトが無いと落ちる");

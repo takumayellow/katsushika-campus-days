@@ -17,6 +17,7 @@ namespace KCD.Editor
         {
             { "research1", "第1研究棟" },
             { "research2", "第2研究棟" },
+            { "cafeteria", "食堂" },
             { "lecture", "講義棟" },
             { "kyoso", "共創棟" },
             { "library", "図書館" },
@@ -34,6 +35,7 @@ namespace KCD.Editor
         {
             { "research1", new Vector2(76.6f, -101.7f) },
             { "research2", new Vector2(-2.9f, 8.0f) },
+            { "cafeteria", new Vector2(-2.9f, 8.0f) },
             { "lecture", new Vector2(118.3f, -40.4f) },
             { "kyoso", new Vector2(96.9f, -88.1f) },
             { "library", new Vector2(-93.6f, 25.7f) },

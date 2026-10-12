@@ -18,7 +18,7 @@ namespace KCD.Tests
     {
         private static readonly string[] KnownBuildings =
         {
-            "greenhouse", "gym", "kyoso", "lab1", "lab2", "lecture", "library", "research1", "research2"
+            "greenhouse", "gym", "kyoso", "lab1", "lab2", "lecture", "library", "research1", "research2", "cafeteria"
         };
 
         /// <summary>夕方に帰る出口: 正門と、北西の駅側（キャンパスの外へ出る道の端）。</summary>

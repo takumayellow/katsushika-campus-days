@@ -535,17 +535,17 @@ namespace KCD.Tests
         }
 
         [Test]
-        public void DormIsNotCountedAsOneOfTheNineBuildings()
+        public void DormIsNotCountedAsOneOfTheTenBuildings()
         {
-            // Assets/Data/Ending/result.json の totals.buildings は 9（本編の屋内の数）。
-            // 寮を DayStats.NoteEnter に混ぜると 10/9 になってしまう。
+            // Assets/Data/Ending/result.json の totals.buildings は 10（本編の屋内の数）。
+            // 寮を DayStats.NoteEnter に混ぜると 11/10 になってしまう。
             string path = Path.Combine(Application.dataPath, "Data", "Ending", "result.json");
             var node = MiniJson.Deserialize(File.ReadAllText(path)) as Dictionary<string, object>;
             Assert.IsNotNull(node, path + " はオブジェクトとして読めない");
 
             var totals = MiniJson.GetObject(node, "totals");
             Assert.IsNotNull(totals, "result.json に totals が無い");
-            Assert.AreEqual(9, MiniJson.GetInt(totals, "buildings"), "屋内の数が変わったら寮の扱いを見直すこと");
+            Assert.AreEqual(10, MiniJson.GetInt(totals, "buildings"), "屋内の数が変わったら寮の扱いを見直すこと");
         }
     }
 }

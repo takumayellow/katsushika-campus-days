@@ -149,12 +149,12 @@ namespace KCD.Tests
         }
 
         [Test]
-        public void BuildingCount_NeedsAllNineBuildings()
+        public void BuildingCount_NeedsAllTenBuildings()
         {
             CollectibleCatalog catalog = Catalog();
 
-            Assert.IsFalse(Met(catalog, "ach_all_buildings", Record(buildings: 8)));
-            Assert.IsTrue(Met(catalog, "ach_all_buildings", Record(buildings: 9)));
+            Assert.IsFalse(Met(catalog, "ach_all_buildings", Record(buildings: 9)));
+            Assert.IsTrue(Met(catalog, "ach_all_buildings", Record(buildings: 10)));
         }
 
         [Test]

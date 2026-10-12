@@ -256,7 +256,7 @@ namespace KCD
                     return "amb_greenhouse";
                 case "kyoso":
                     return "amb_cafe";
-                case "research2":
+                case "cafeteria":
                     return "amb_cafeteria";
                 default:
                     return "amb_library";
