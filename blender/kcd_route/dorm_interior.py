@@ -40,32 +40,15 @@ from kcd_interior import furniture as F              # noqa: E402
 from kcd_interior import shell as sh                 # noqa: E402
 from kcd_interior import signs                       # noqa: E402
 from kcd_interior.spec import InteriorSpec           # noqa: E402
+from kcd_route import dorm_bath, dorm_floor2, dorm_roof, dorm_stairs  # noqa: E402
 from kcd_route import dorm_interior_props as P       # noqa: E402
 from kcd_route.dorm import DISPLAY, ID, NOT_UNIVERSITY, OPERATOR, entrance_of  # noqa: E402
 
-# 屋内の寸法
-X0, X1 = -8.00, 8.00
-Y_FACE, Y_BACK = 2.80, 40.80      # 2.80 = 玄関の風除室 D 2.0 + 0.8（entrances と同じ）
-Z_CEIL = 2.70
-Z_PART = 3.20                     # 間仕切りの天端（天井 2.70 より上まで立てる）
-# 外周壁の天端。間仕切りの天端 + ジャンプ 1.10 m より高くしておく。ここが低いと
-# 「天井裏の間仕切り天端に立って外へ出られる」判定が残る（kcd_interior/closure.py）
-Z_TOP = 4.45
-Z_WIN_TOP = 2.55                  # 窓の上端（天井より下。header = Z_TOP - これ）
-Z_HEAD = 2.20                     # 開口の上の垂れ壁の下端
-DOOR_W = 3.20                     # 入口の開口（= entrances.STANDARD の W * 2）
-CORR_X = 1.60                     # 中廊下の壁の芯（廊下の有効幅 = 3.04 m）
-Y_LOCK = 6.60                     # 風除室とホールの境（オートロックの内扉）
-X_VEST = 3.20                     # 風除室の幅の半分
-Y_CROSS = 12.60                   # 玄関ホールとラウンジ／食堂の境
-# 外形の切り欠き: y 19.89 より奥は西側が x -4.68 までしかない（route.json の footprint）
-X_NOTCH, Y_NOTCH = -4.68, 19.89
-Y_NOTCH_WALL = Y_NOTCH - 0.15     # 切り欠きをふさぐ壁（厚み 0.30）の芯
-X_NOTCH_WALL = X_NOTCH + 0.15
-Y_BATH = 27.00                    # 湯上がり処と大浴場（入れない）の境
-Y_KITCHEN = 24.60                 # 食堂と厨房（入れない）の境
-Y_KCORNER = 28.80                 # 厨房とキッチンコーナーの境
-Y_EV = 34.40                      # 中廊下とエレベーターホールの境
+# 屋内の寸法（階をまたぐものは dorm_levels.py）
+from kcd_route.dorm_levels import (  # noqa: E402,F401
+    CORR_X, DOOR_W, X0, X1, X_NOTCH_WALL, X_VEST, Y_BACK, Y_BATH, Y_CROSS,
+    CORE, Y_EV, Y_FACE, Y_KCORNER, Y_KITCHEN, Y_LOCK, Y_NOTCH_WALL, Z2, Z_CEIL,
+    Z_HEAD, Z_PART, Z_WIN_TOP, ZR)
 
 
 # --------------------------------------------------------------------------- #
@@ -115,7 +98,7 @@ def _partitions(c):
     _wall(c, (CORR_X, Y_CROSS), (CORR_X, Y_EV),
           gaps=[(0.80, 2.60), (7.80, 9.60), (17.60, 19.60)])
     # 湯上がり処／大浴場、食堂／厨房、厨房／キッチンコーナー
-    _wall(c, (xw, Y_BATH), (-CORR_X, Y_BATH))
+    _wall(c, (xw, Y_BATH), (-CORR_X, Y_BATH), gaps=[dorm_bath.men_gap(xw)])
     sh.partition(c.wall, (CORR_X, Y_KITCHEN), (ix1, Y_KITCHEN), 0.0, Z_PART,
                  gaps=[(2.00, 5.00)])
     sh.partition(c.wall, (3.60, Y_KITCHEN), (6.60, Y_KITCHEN), 0.0, 0.95)  # 配膳口の腰壁
@@ -302,11 +285,14 @@ def _bath(c, xw):
     y_n = Y_BATH - sh.PART * 0.5
 
     kit.plate(c.floor, xw, y_s, x_in, y_n, 0.006, "floor_wood")
-    for x, mat, ja, en in ((-3.72, "curtain_blue", "男湯", "Men"),
+    # 男湯の引き戸は開けてある（暖簾は頭の高さに掛かるので掛けない）。女湯の扉は閉める
+    sh.door(mb, dorm_bath.MEN_X, y_n, ang=math.pi, w=dorm_bath.MEN_W, h=2.05,
+            leaf="metal_white", glass="door_frosted", open_=0.86)
+    sh.door(mb, -2.32, y_n - 0.05, ang=math.pi, w=0.85, h=2.05, leaf="metal_white",
+            glass="door_frosted", open_=0.0)
+    P.noren(mb, -2.32, y_n - 0.16, math.pi, "cushion_red")
+    for x, mat, ja, en in ((dorm_bath.MEN_X, "curtain_blue", "男湯", "Men"),
                            (-2.32, "cushion_red", "女湯", "Women")):
-        sh.door(mb, x, y_n - 0.05, ang=math.pi, w=0.85, h=2.05, leaf="metal_white",
-                glass="door_frosted", open_=0.0)
-        P.noren(mb, x, y_n - 0.16, math.pi, mat)
         signs.wall(c, mb, x, y_n - 0.01, 2.40, ang=math.pi, ja=ja, en=en, w=0.70,
                    h=0.24, plate=mat, anchor=False)
     for y in (20.80, 22.10):
@@ -379,17 +365,14 @@ def _elevator_hall(c, xw):
     kit.box(mb, 2.52, iy1 - 2.30, 0.92, 2.68, iy1 - 2.10, 1.10, "plastic_black")
     signs.hanging(c, mb, 0.0, iy1 - 2.60, Z_CEIL, ang=math.pi, ja="エレベーター",
                   en="Elevators", w=1.80, h=0.34, drop=0.22)
-    # 階段（鉄扉は閉めてある）
-    sh.door(mb, 5.60, iy1 - 0.05, ang=math.pi, w=0.95, h=2.10, leaf="metal_gray",
-            open_=0.0)
-    # 奥の外壁は腰から上が窓の帯なので、階段の看板は扉の手前に天井から吊る
-    signs.hanging(c, mb, 5.60, iy1 - 0.60, Z_CEIL, ang=math.pi, ja="階段", en="Stairs",
-                  w=0.80, h=0.26, drop=0.22, both=False)
+    # 階段室（東奥、CORE）の入口は西の壁の南寄り。看板は入口の手前に天井から吊る
+    signs.hanging(c, mb, CORE[0] - 0.40, CORE[1] + 0.45, Z_CEIL, ang=math.pi * 0.5,
+                  ja="階段", en="Stairs", w=0.80, h=0.26, drop=0.22, both=False)
     # 西の腰かけと掲示板
     F.bench(mb, xw + 0.30, 37.40, ang=-math.pi * 0.5, w=1.80, back=True)
     sh.notice_board(mb, -3.00, y_s, 0.95, ang=0.0, w=2.00, h=1.10, sheets=5,
                     rng=c.rng)
-    sh.ceiling_lights(c.wall, xw, y_s, ix1, iy1, Z_CEIL, sx=3.0, sy=3.0)
+    sh.ceiling_lights(c.wall, xw, y_s, ix1, iy1, Z_CEIL, sx=3.0, sy=3.0, holes=[CORE])
     c.poi("corridor_end", 0.0, iy1 - 3.40)
     return mb
 
@@ -402,9 +385,10 @@ def build(c):
     # 躯体（床 + 外周壁 + 入口ガラススクリーン + 天井）
     common.envelope(c, Z_CEIL, floor_mat="floor_tile_grey", door_w=DOOR_W,
                     glass="glass_clear", sill=0.95,
-                    header=Z_TOP - Z_WIN_TOP, seg=3.2,
-                    wall="wall_white", z_top=Z_TOP, ceil=True,
-                    ceil_mat="ceiling_white", grid=2.4, floor_thick=0.30)
+                    header=Z2 - Z_WIN_TOP, seg=3.2,
+                    wall="wall_white", z_top=Z2, ceil=False, floor_thick=0.30)
+    sh.ceiling(c.wall, _ix0, s.inner()[1], s.inner()[2], iy1, Z_CEIL, "ceiling_white",
+               grid=2.4, holes=[CORE])
     common.entry_kit(c, Z_CEIL, door_w=DOOR_W, spawn_depth=1.50, bin_x=5.60)
     xw = _partitions(c)
 
@@ -417,12 +401,37 @@ def build(c):
     _corridor(c)
     _elevator_hall(c, xw)
 
+    # 以降は後から足した階・部屋（c.furn の番号は上の 8 グループのあと）
+    dorm_bath.build(c, xw)
+    dorm_stairs.main_stair(c)
+    dorm_floor2.shell(c, xw)
+    dorm_stairs.roof_stair(c)
+    dorm_floor2.lounge(c)
+    dorm_floor2.corridor(c)
+    dorm_floor2.sample_room(c)
+    dorm_floor2.laundry(c)
+    dorm_floor2.kitchen_corner(c)
+    dorm_floor2.hall(c, xw)
+    dorm_roof.build(c)
+
     # プレビュー用の明かり
     for x, y in ((0.0, 4.8), (-4.0, 9.5), (2.0, 9.5), (-4.6, 14.6), (-4.6, 18.0),
                  (3.4, 15.0), (5.6, 19.0), (3.4, 23.0), (4.6, 31.6), (-2.0, 37.4),
                  (3.4, 37.4)):
         c.light(x, y, Z_CEIL - 0.15, 190.0, 1.6)
     c.light(-3.0, 24.2, Z_CEIL - 0.15, 120.0, 1.2)       # 大浴場前は狭いので 1 灯
+    c.light(-3.0, 28.2, Z_CEIL - 0.15, 90.0, 1.2)        # 男湯の脱衣所
+    c.light(-3.0, 31.0, Z_CEIL - 0.15, 140.0, 1.4)       # 男湯の浴室
+    c.light(-3.0, 33.4, Z_CEIL - 0.15, 90.0, 1.2)
+    c.light(5.3, 36.6, Z_CEIL - 0.15, 90.0, 1.4)         # 階段室（1F）
+    zc = Z2 + Z_CEIL - 0.15
+    for x, y in ((-3.5, 6.0), (3.5, 6.0), (-3.4, 12.0), (4.6, 13.0), (4.6, 31.6),
+                 (-2.0, 37.4), (3.4, 37.4)):
+        c.light(x, y, zc, 190.0, 1.6)
+    for y in (16.0, 24.0, 32.0):
+        c.light(0.0, y, zc, 90.0, 1.2)
+    for x, y in ((-5.0, 12.0), (6.0, 20.0), (-3.0, 38.0), (0.0, 10.0), (0.0, 30.0)):
+        c.light(x, y, ZR + 4.0, 900.0, 9.0)               # 屋上は日なた
     for y in (16.0, 24.0, 32.0):
         c.light(0.0, y, Z_CEIL - 0.15, 90.0, 1.2)
 
@@ -435,14 +444,26 @@ def build(c):
     c.cam("kitchen", (2.05, 30.20, 2.20), (7.40, 32.40, 0.90), 17.0)
     c.cam("elevator", (-3.90, 35.00, 2.20), (3.60, 40.40, 1.20), 18.0)
     c.cam("corridor", (0.0, 13.40, 1.95), (0.0, iy1 - 0.20, 1.55), 24.0)
+    c.cam("stair", (3.60, 35.90, 1.65), (6.00, 38.40, 1.10), 18.0)
+    c.cam("bath_men", (-2.15, 30.00, 2.00), (-4.00, 33.80, 0.60), 17.0)
+    c.cam("lounge2", (-7.20, 3.40, Z2 + 2.10), (4.00, 8.20, Z2 + 0.90), 18.0)
+    c.cam("corridor2", (0.0, 9.40, Z2 + 1.90), (0.0, iy1 - 0.20, Z2 + 1.50), 24.0)
+    c.cam("room", (-2.00, 10.90, Z2 + 2.10), (-5.60, 12.90, Z2 + 0.80), 17.0)
+    c.cam("laundry", (2.00, 10.30, Z2 + 2.20), (7.40, 15.40, Z2 + 0.90), 17.0)
+    c.cam("kitchen2", (2.05, 29.20, Z2 + 2.20), (7.40, 32.40, Z2 + 0.90), 17.0)
+    c.cam("elevator2", (-3.90, 35.00, Z2 + 2.20), (3.60, 39.90, Z2 + 1.20), 18.0)
+    c.cam("roof", (-6.80, 20.00, ZR + 2.60), (3.00, 6.00, ZR + 0.40), 20.0)
+    c.cam("roof2", (6.50, 8.00, ZR + 2.20), (-3.50, 36.00, ZR + 1.00), 20.0)
 
     c.note("運営は %s。%s" % (OPERATOR, NOT_UNIVERSITY))
     c.note("ミニマップはキャンパス外なので黒のまま（#41 の仕様）")
-    c.note("1F の間取りは推定（公開図面なし）。設備の種類は公式の記載、色と什器は館内写真から")
-    c.note("1F に居室は無い（居室は 2F 女子 23 室、3–5F 男子 77 室）ので扉も並べない")
-    c.note("ランドリーは居室階（2–5F）の各階にある（公式の記載）ので 1F には置かない")
+    c.note("間取りは推定（公開図面なし）。設備の種類は公式の記載、色と什器は館内写真から")
+    c.note("1F に居室は無い。2F（女子 23 室）は共用部と居室のサンプル 1 室だけ作る（居室は計 100 室、"
+           "3–5F の男子 77 室は作らない）。居室の広さ 11.34 ㎡は公式の記載")
+    c.note("ランドリー・キッチンコーナー・ラウンジは 2F にもある（公式の記載）。3–5F は作らない")
+    c.note("階段は東奥の折り返し 1F-2F と、2F 北西から塔屋へ上がる直階段。屋上はテラス（推定の配置）")
     c.note("食堂・カフェラウンジ・大浴場は公式に階の記載が無く、1F に置いたのは推定")
-    c.note("入れない所: 管理人室・大浴場（すりガラスの扉）・厨房・エレベーター・階段・"
+    c.note("入れない所: 管理人室・女湯（扉は閉）・厨房・エレベーター・居室（サンプル以外）・"
            "西奥の切り欠き（外形の外）")
     return c
 

@@ -266,7 +266,7 @@ namespace KCD.Editor
             }
 
             string name = material.name.ToLowerInvariant();
-            return name.StartsWith("plant_green") || name.StartsWith("leaf");
+            return name.StartsWith("plant_green") || name.StartsWith("plant_yellow") || name.StartsWith("leaf");
         }
 
         /// <summary>

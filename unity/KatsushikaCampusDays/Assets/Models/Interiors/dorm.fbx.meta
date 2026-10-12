@@ -7,6 +7,11 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: deck_dark
+    second: {fileID: 2100000, guid: d9c2127057d9c82449a63760f3d20364, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: door_frosted
     second: {fileID: 2100000, guid: 752abecb98e9fc24d8ba86d8c0039b94, type: 2}
   - first:
@@ -22,13 +27,43 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: floor_laundry_yellow
+    second: {fileID: 2100000, guid: 6ed6aa7cce01c55499d4e2e20bd1131c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: floor_tile_dark
+    second: {fileID: 2100000, guid: 984df40b6ae5a0c44ac81a94ab2436f8, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: floor_wood_light
     second: {fileID: 2100000, guid: 82e9a275233a58847961628fd6e0d017, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: mirror_glass
+    second: {fileID: 2100000, guid: 22d3271e7d1d0a142a1445e2afd3bb12, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: plant_yellow
+    second: {fileID: 2100000, guid: 8907f3d0b6a93eb49bf777dc19344f4d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: wallpaper_orange
     second: {fileID: 2100000, guid: e94db9d407348d948999303f8bf3c2e7, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: washer_lid
+    second: {fileID: 2100000, guid: 89685c942cec829478faa33fe117078b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: water_bath
+    second: {fileID: 2100000, guid: 155441a6fa20b974c9a667ecc16b2c2f, type: 2}
   materials:
     materialImportMode: 1
     materialName: 0
