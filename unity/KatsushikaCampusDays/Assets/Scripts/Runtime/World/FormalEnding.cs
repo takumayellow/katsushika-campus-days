@@ -58,6 +58,7 @@ namespace KCD
         [SerializeField] private GameObject _root;
         [SerializeField] private TMP_Text _heading;
         [SerializeField] private TMP_Text _body;
+        [SerializeField] private TmpLinkTap _tap;
         [SerializeField] private TMP_Text _choice;
 
         private CanvasGroup _fade;
@@ -71,6 +72,9 @@ namespace KCD
         private int _page;
         private float _openedAt;
         private string[] _pages;
+
+        /// <summary>下段の案内を指のときの文面で書いているか。入力の種類が変わったら書き直す。</summary>
+        private bool _choiceForTouch;
 
         /// <summary>ページを出している最中か。</summary>
         public bool IsShowing => _showing;
@@ -120,16 +124,18 @@ namespace KCD
             }
         }
 
-        /// <summary>下段の案内。最後のページだけ「キャンパスに戻る」。</summary>
-        public static string ChoiceText(int page, bool english)
+        /// <summary>下段の案内。最後のページだけ「キャンパスに戻る」。指で遊んでいるときは「タップで」と書く (#187)。</summary>
+        public static string ChoiceText(int page, bool english, bool touch = false)
         {
             string counter = "  (" + (Mathf.Clamp(page, 0, PageCount - 1) + 1) + "/" + PageCount + ")";
+            // 日本語は「Enter で」と「タップで」で空白の有無が違うので、言い方ごと書き分ける。
+            string key = touch ? (english ? "Tap — " : "タップで") : (english ? "Enter — " : "Enter で");
             if (page >= PageCount - 1)
             {
-                return (english ? "Enter — back to campus" : "Enter でキャンパスに戻る") + counter;
+                return key + (english ? "back to campus" : "キャンパスに戻る") + counter;
             }
 
-            return (english ? "Enter — next" : "Enter で次へ") + counter;
+            return key + (english ? "next" : "次へ") + counter;
         }
 
         /// <summary>
@@ -229,6 +235,12 @@ namespace KCD
             _choice = choice;
         }
 
+        /// <summary>どこを叩いても次へ送る受け口。FormalEndingFactory から差し込む。</summary>
+        public void BindTap(TmpLinkTap tap)
+        {
+            _tap = tap;
+        }
+
         private void Awake()
         {
             _fade = BuildFadeOverlay();
@@ -237,10 +249,19 @@ namespace KCD
         private void OnEnable()
         {
             TrySubscribe();
+            if (_tap != null)
+            {
+                _tap.Tapped += OnTapped;
+            }
         }
 
         private void OnDisable()
         {
+            if (_tap != null)
+            {
+                _tap.Tapped -= OnTapped;
+            }
+
             SubscribeQuests(null);
             if (_subscribedDialogue && DialogueSystem.Instance != null)
             {
@@ -275,8 +296,22 @@ namespace KCD
         {
             TrySubscribe();
 
+            if (_showing && InputMode.IsTouch != _choiceForTouch)
+            {
+                PaintChoice(L.IsEnglish);
+            }
+
             if (ShouldAdvance(_showing, Time.unscaledTime - _openedAt,
                     KCDInput.SubmitPressed || KCDInput.InteractPressed))
+            {
+                NextPage();
+            }
+        }
+
+        /// <summary>指で遊んでいるときに叩いたら、Enter と同じ条件で次へ送る。</summary>
+        private void OnTapped(string linkId)
+        {
+            if (InputMode.IsTouch && ShouldAdvance(_showing, Time.unscaledTime - _openedAt, true))
             {
                 NextPage();
             }
@@ -421,11 +456,7 @@ namespace KCD
                 _body.textWrappingMode = _page == PageCount - 1 ? TextWrappingModes.NoWrap : TextWrappingModes.Normal;
             }
 
-            if (_choice != null)
-            {
-                _choice.text = ChoiceText(_page, english);
-            }
-
+            PaintChoice(english);
             _showing = true;
             _openedAt = Time.unscaledTime;
         }
@@ -436,6 +467,15 @@ namespace KCD
             if (_showing)
             {
                 NextPage();
+            }
+        }
+
+        private void PaintChoice(bool english)
+        {
+            _choiceForTouch = InputMode.IsTouch;
+            if (_choice != null)
+            {
+                _choice.text = ChoiceText(_page, english, _choiceForTouch);
             }
         }
 

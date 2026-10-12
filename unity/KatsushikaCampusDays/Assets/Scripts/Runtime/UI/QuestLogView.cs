@@ -6,11 +6,16 @@ namespace KCD
 {
     /// <summary>
     /// Tab で開く一覧。受注中・完了済みをまとめて 1 枚のテキストに流し込む。
+    /// 指で遊んでいるときは、HUD のボタンで開き、どこを叩いても閉じる (#187)。
     /// </summary>
     public sealed class QuestLogView : MonoBehaviour
     {
         [SerializeField] private GameObject _root;
         [SerializeField] private TMP_Text _bodyLabel;
+        [SerializeField] private TmpLinkTap _tap;
+
+        /// <summary>閉じ方の案内を指のときの文面で書いているか。入力の種類が変わったら書き直す。</summary>
+        private bool _drawnForTouch;
 
         private readonly StringBuilder _builder = new StringBuilder(1024);
         private QuestSystem _quests;
@@ -26,6 +31,29 @@ namespace KCD
         {
             _root = root;
             _bodyLabel = body;
+        }
+
+        /// <summary>どこを叩いても閉じる受け口。SceneBuilder から差し込む。</summary>
+        public void BindTap(TmpLinkTap tap)
+        {
+            _tap = tap;
+        }
+
+        private void OnEnable()
+        {
+            if (_tap != null)
+            {
+                _tap.Tapped += OnTapped;
+            }
+        }
+
+        /// <summary>マウスのクリックは TmpLinkTap が捨て、ここでは指で遊んでいるときだけ受ける。</summary>
+        private void OnTapped(string linkId)
+        {
+            if (IsOpen && InputMode.IsTouch)
+            {
+                SetOpen(false);
+            }
         }
 
         private void Start()
@@ -56,6 +84,11 @@ namespace KCD
         /// <summary>開いたまま無効にされても、自分の封鎖を残さない。</summary>
         private void OnDisable()
         {
+            if (_tap != null)
+            {
+                _tap.Tapped -= OnTapped;
+            }
+
             KCDInput.Unblock(this);
         }
 
@@ -65,6 +98,11 @@ namespace KCD
             if (ResultScreen.IsAnyOpen || DormEnding.IsAnyShowing || FormalEnding.IsAnyShowing)
             {
                 return;
+            }
+
+            if (IsOpen && InputMode.IsTouch != _drawnForTouch)
+            {
+                Rebuild();
             }
 
             if (KCDInput.QuestLogPressed)
@@ -141,6 +179,13 @@ namespace KCD
 
             _builder.Length = 0;
             Compose(_builder, _quests);
+            _drawnForTouch = InputMode.IsTouch;
+            if (_drawnForTouch)
+            {
+                _builder.Append("\n<size=70%><alpha=#99>").Append(L.Pick("タップで閉じる", "Tap to close"))
+                    .Append("<alpha=#FF></size>");
+            }
+
             _bodyLabel.text = _builder.ToString();
         }
 

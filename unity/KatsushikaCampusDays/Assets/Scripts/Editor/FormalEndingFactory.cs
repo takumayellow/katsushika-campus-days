@@ -60,6 +60,7 @@ namespace KCD.Editor
 
             FormalEnding view = host.AddComponent<FormalEnding>();
             view.Bind(rect.gameObject, heading, body, choice);
+            view.BindTap(UIFactory.AddScreenTapArea(rect));
             EditorPaths.Report("エンディングの画面を置きました（" + CanvasName + "、重ね順 "
                 + FormalEnding.PanelSortingOrder + "）。");
             return view;

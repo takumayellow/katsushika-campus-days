@@ -5,13 +5,17 @@ namespace KCD
 {
     /// <summary>
     /// クレジット画面。地図データの帰属表示（ODbL）は必須なので、辞書が欠けても既定文で必ず出す。
-    /// Esc / Enter で閉じる。
+    /// Esc / Enter で閉じる。指で遊んでいるときは、どこを叩いても閉じる (#187)。
     /// </summary>
     public sealed class CreditsView : MonoBehaviour
     {
         [SerializeField] private GameObject _root;
         [SerializeField] private TMP_Text _heading;
         [SerializeField] private TMP_Text _body;
+        [SerializeField] private TmpLinkTap _tap;
+
+        /// <summary>案内の行を指のときの文面で書いているか。入力の種類が変わったら書き直す。</summary>
+        private bool _drawnForTouch;
 
         public bool IsOpen => _root != null && _root.activeSelf;
 
@@ -21,6 +25,37 @@ namespace KCD
             _root = root;
             _heading = heading;
             _body = body;
+        }
+
+        /// <summary>どこを叩いても閉じる受け口。SceneBuilder から差し込む。</summary>
+        public void BindTap(TmpLinkTap tap)
+        {
+            _tap = tap;
+        }
+
+        private void OnEnable()
+        {
+            if (_tap != null)
+            {
+                _tap.Tapped += OnTapped;
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (_tap != null)
+            {
+                _tap.Tapped -= OnTapped;
+            }
+        }
+
+        /// <summary>マウスのクリックは TmpLinkTap が捨て、ここでは指で遊んでいるときだけ受ける。</summary>
+        private void OnTapped(string linkId)
+        {
+            if (IsOpen && InputMode.IsTouch)
+            {
+                Close();
+            }
         }
 
         public void Open()
@@ -54,6 +89,11 @@ namespace KCD
                 return;
             }
 
+            if (InputMode.IsTouch != _drawnForTouch)
+            {
+                Redraw();
+            }
+
             if (KCDInput.MenuPressed || KCDInput.CancelPressed || KCDInput.SubmitPressed)
             {
                 Close();
@@ -66,10 +106,10 @@ namespace KCD
         /// 80% の行は 25 px の高さを取る。見出しの行だけ 26 px にして補足は 80% で書き、今の 17 行で約 490 px。
         /// 行を足すときは、1 行 52 字（80% の全角）を超えて折り返さないかも見る。
         /// </summary>
-        public static string BuildText()
+        public static string BuildText(bool touch = false)
         {
-            return BuildBody() + "\n\n<size=75%><alpha=#99>" + L.Pick("Esc / Enter で戻る", "Esc / Enter: back")
-                + "<alpha=#FF></size>";
+            string back = touch ? L.Pick("タップで戻る", "Tap to go back") : L.Pick("Esc / Enter で戻る", "Esc / Enter: back");
+            return BuildBody() + "\n\n<size=75%><alpha=#99>" + back + "<alpha=#FF></size>";
         }
 
         /// <summary>案内の行（「Esc / Enter で戻る」）を除いた本文。エンディングの最後のページも使う (#176)。</summary>
@@ -128,9 +168,10 @@ namespace KCD
                 _heading.text = L.Get("ui.credits.heading", "クレジット");
             }
 
+            _drawnForTouch = InputMode.IsTouch;
             if (_body != null)
             {
-                _body.text = BuildText();
+                _body.text = BuildText(_drawnForTouch);
             }
         }
     }

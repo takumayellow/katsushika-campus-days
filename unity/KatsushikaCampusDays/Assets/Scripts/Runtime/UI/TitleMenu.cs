@@ -16,11 +16,17 @@ namespace KCD
     /// <summary>
     /// タイトル画面。読めるセーブがあれば「つづきから / はじめから」を ←→ で選んで Enter、
     /// 無ければ Enter でキャラクター選択（はじめから）へ移る。F9 はセーブがあれば「つづきから」。
-    /// 指で遊んでいるときは、選択肢を叩くとそれに決まる。セーブが無ければ画面のどこを叩いてもはじめから (#187)。
+    /// 指で遊んでいるときは、選択肢を叩くとそれに決まる。セーブが無ければ画面のどこを叩いてもはじめから。
+    /// 案内の「クレジット」「設定」を叩くと、それぞれのパネルが開く (#187)。
     /// </summary>
     public sealed class TitleMenu : MonoBehaviour
     {
         private const string SelectedColor = "#FFD98A";
+
+        /// <summary>指のときの案内で、クレジットと設定を開くリンクの id。</summary>
+        public const string CreditsLink = "credits";
+
+        public const string SettingsLink = "settings";
 
         [SerializeField] private GameObject _titleRoot;
         [SerializeField] private GameObject _selectRoot;
@@ -122,14 +128,14 @@ namespace KCD
 
             if (_promptForTouch)
             {
-                // 設定とクレジットはキーでしか開けないので、指のときは案内に出さない。
+                string touchExtras = TouchExtras(L.Pick("クレジット", "Credits"), L.Pick("設定", "Settings"));
                 _promptLabel.text = !_hasSave
-                    ? L.Pick("タップではじめる", "Tap to start")
+                    ? TouchStartLine(L.Pick("タップではじめる", "Tap to start")) + "<size=70%>" + touchExtras + "</size>"
                     : ChoiceLine(_choice,
                           L.Get("ui.title.continue", "つづきから"),
                           L.Get("ui.title.new_game", "はじめから"),
                           true) +
-                      "<size=70%>\n" + L.Pick("えらんでタップ", "Tap a choice") + "</size>";
+                      "<size=70%>\n" + L.Pick("えらんでタップ", "Tap a choice") + touchExtras + "</size>";
                 return;
             }
 
@@ -151,6 +157,22 @@ namespace KCD
                 L.Get("ui.title.new_game", "はじめから"));
             string hint = L.Get("ui.title.continue_hint", "← → でえらぶ　Enter で決定　（F9 でもつづきから）");
             _promptLabel.text = line + "<size=70%>\n" + hint + extras + "</size>";
+        }
+
+        /// <summary>
+        /// セーブが無いときの「タップではじめる」。どこを叩いてもはじめるが、TmpLinkTap はリンクの周りも
+        /// リンクとして拾うので、すぐ下のクレジットに取られないよう、この行もリンクにして近い方を選ばせる。
+        /// </summary>
+        public static string TouchStartLine(string label)
+        {
+            return "<link=\"choice:0\">" + label + "</link>";
+        }
+
+        /// <summary>指のときの案内の最後の行。クレジットと設定を <c>&lt;link&gt;</c> で囲み、叩けば開く。</summary>
+        public static string TouchExtras(string creditsLabel, string settingsLabel)
+        {
+            return "\n<link=\"" + CreditsLink + "\">" + creditsLabel + "</link>　/　<link=\"" + SettingsLink + "\">"
+                + settingsLabel + "</link>";
         }
 
         /// <summary>選択肢の数。セーブが無ければ「はじめから」の 1 つだけ。</summary>
@@ -318,6 +340,18 @@ namespace KCD
             if (!InputMode.IsTouch || _moved || IsModalOpen || KCDInput.ModalClosedThisFrame ||
                 KCDInput.IgnoresInput(_shownFrame))
             {
+                return;
+            }
+
+            if (linkId == CreditsLink && _credits != null)
+            {
+                _credits.Open();
+                return;
+            }
+
+            if (linkId == SettingsLink && _settings != null)
+            {
+                _settings.Open(null);
                 return;
             }
 

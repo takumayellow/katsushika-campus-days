@@ -69,13 +69,26 @@ namespace KCD
         /// <summary>"choice:N" の N を読む。形が違えば false。</summary>
         public static bool TryParseChoice(string id, out int index)
         {
+            return TryParse(id, ChoicePrefix, out index);
+        }
+
+        /// <summary>"choice:N" の N が 0 以上 count 未満ならその N。形が違うか範囲の外なら -1。</summary>
+        public static int ChoiceIn(string id, int count)
+        {
+            return TryParseChoice(id, out int index) && index < count ? index : -1;
+        }
+
+        /// <summary>prefix のすぐ後ろに続く 0 以上の整数を読む（"inc:3" と "inc:" なら 3）。形が違えば false。</summary>
+        public static bool TryParse(string id, string prefix, out int index)
+        {
             index = -1;
-            if (string.IsNullOrEmpty(id) || !id.StartsWith(ChoicePrefix, StringComparison.Ordinal))
+            if (string.IsNullOrEmpty(id) || string.IsNullOrEmpty(prefix) ||
+                !id.StartsWith(prefix, StringComparison.Ordinal))
             {
                 return false;
             }
 
-            return int.TryParse(id.Substring(ChoicePrefix.Length), System.Globalization.NumberStyles.None,
+            return int.TryParse(id.Substring(prefix.Length), System.Globalization.NumberStyles.None,
                 System.Globalization.CultureInfo.InvariantCulture, out index);
         }
 

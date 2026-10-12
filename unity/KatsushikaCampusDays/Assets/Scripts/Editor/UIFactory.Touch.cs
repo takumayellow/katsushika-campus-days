@@ -47,6 +47,10 @@ namespace KCD.Editor
 
             TouchStick stick = BuildStick(play);
 
+            // クエストログはポーズのボタンの右隣。ログを開くと操作を止めるので、閉じるのはログ自体を叩く。
+            TMP_Text questLabel = BuildPadButton(play, "QuestLogButton", new Vector2(130f, -64f), 104f,
+                "<Gamepad>/select", 20f, new Vector2(0.5f, 1f));
+
             TMP_Text jumpLabel = BuildPadButton(play, "Jump", new Vector2(-120f, 130f), 140f,
                 "<Gamepad>/buttonSouth", 30f);
             TMP_Text interactLabel = BuildPadButton(play, "Interact", new Vector2(-290f, 105f), 124f,
@@ -66,7 +70,7 @@ namespace KCD.Editor
 
             TouchHud hud = canvas.gameObject.AddComponent<TouchHud>();
             hud.Bind(controls.gameObject, playGroup, pauseGroup);
-            hud.BindLabels(jumpLabel, interactLabel, sprintLabel);
+            hud.BindLabels(jumpLabel, interactLabel, sprintLabel, questLabel);
             return hud;
         }
 
@@ -97,6 +101,19 @@ namespace KCD.Editor
             HitArea(area);
             TmpLinkTap tap = area.gameObject.AddComponent<TmpLinkTap>();
             tap.Bind(text);
+            return tap;
+        }
+
+        /// <summary>
+        /// どこを叩いても閉じる・進む画面の受け口。パネルからはみ出して画面を覆う板を敷く。
+        /// パネルを閉じると板も一緒に止まる。叩いた場所は見ないので、文字の link は要らない。
+        /// </summary>
+        public static TmpLinkTap AddScreenTapArea(RectTransform panel)
+        {
+            TmpLinkTap tap = AddLinkTapArea(panel, null);
+            var area = (RectTransform)tap.transform;
+            area.offsetMin = new Vector2(-2000f, -2000f);
+            area.offsetMax = new Vector2(2000f, 2000f);
             return tap;
         }
 

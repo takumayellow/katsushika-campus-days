@@ -137,6 +137,7 @@ namespace KCD.Editor
 
             QuestLogView view = host.AddComponent<QuestLogView>();
             view.Bind(rect.gameObject, body);
+            view.BindTap(AddScreenTapArea(rect));
             return view;
         }
 
@@ -152,6 +153,7 @@ namespace KCD.Editor
 
             PauseMenu view = host.AddComponent<PauseMenu>();
             view.Bind(rect.gameObject, body);
+            view.BindTap(AddLinkTapArea(rect, body));
             return view;
         }
 
