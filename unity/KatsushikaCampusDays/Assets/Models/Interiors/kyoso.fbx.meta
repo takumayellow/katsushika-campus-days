@@ -182,6 +182,156 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: kyoso_ceiling_void
+    second: {fileID: 2100000, guid: d5d00ad29d5ef714389cf65aeeb79f9f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: kyoso_chalkboard
+    second: {fileID: 2100000, guid: 4e5047e0851969b43b3b790cf0d348ad, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: kyoso_column_base
+    second: {fileID: 2100000, guid: cfeca941fc23af7448964ac9b3c3b0fe, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: kyoso_column_bluegrey
+    second: {fileID: 2100000, guid: e47fc54749e0ed64f94c9463f7a1de58, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: kyoso_column_pale
+    second: {fileID: 2100000, guid: f5b9c6c21fc27c648b414e77b2951dda, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: kyoso_concrete_exposed
+    second: {fileID: 2100000, guid: 5a275725772c7d141946cc16358f6c88, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: kyoso_floor_carpet_grey
+    second: {fileID: 2100000, guid: bd08cc748b5812f47b9172b72e4bd99c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: kyoso_floor_terrazzo_dark
+    second: {fileID: 2100000, guid: 1b0bda5dc3b0c3b46af1238a79902278, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: kyoso_floor_terrazzo_mid
+    second: {fileID: 2100000, guid: 028af1ab3efef42468cbc0662ebe0d6a, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: kyoso_floor_terrazzo_pale
+    second: {fileID: 2100000, guid: 391ec630360239f4aa6134f54e7a5672, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: kyoso_floor_wood_oak
+    second: {fileID: 2100000, guid: 94c0f379a94cf104d8c573c241deeac0, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: kyoso_fm_white
+    second: {fileID: 2100000, guid: 4d81715b335a2bc4987eff8249602b60, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: kyoso_glass_frosted
+    second: {fileID: 2100000, guid: f00334cd7109259439884a44611bf323, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: kyoso_info_beige
+    second: {fileID: 2100000, guid: e0171e91c6aad5645bffce75d72147ae, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: kyoso_louver_wood
+    second: {fileID: 2100000, guid: cb7a8d8b27d5f7c458f5721723404156, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: kyoso_projection_wall
+    second: {fileID: 2100000, guid: af38025210b36e44eab7035391f5799b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: kyoso_sage_grey
+    second: {fileID: 2100000, guid: 92752fdfdcc2f62438df1f1e99064796, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: kyoso_sb_copper
+    second: {fileID: 2100000, guid: f4034ee4e51880c4dbd76f3e9d8f6164, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: kyoso_sb_pattern
+    second: {fileID: 2100000, guid: 4e050d08b2186b946b9328b3f169629f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: kyoso_sb_sage
+    second: {fileID: 2100000, guid: d92e26f390eeec14a9788bf685a5ff07, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: kyoso_sb_top
+    second: {fileID: 2100000, guid: bdf87a075775dbe4ab69a325b182bc53, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: kyoso_sofa_beige
+    second: {fileID: 2100000, guid: f3567f4d251d4444180990c138917cd0, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: kyoso_sofa_charcoal
+    second: {fileID: 2100000, guid: d2025e2a4d2024f4e842a733ef9e1fe5, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: kyoso_sofa_grey
+    second: {fileID: 2100000, guid: 51d2925352ca81a41921bb8803cdd3b1, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: kyoso_steel_black
+    second: {fileID: 2100000, guid: 2d50ebfb8b85289478e978147cdfa928, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: kyoso_tile_hex_white
+    second: {fileID: 2100000, guid: 983c045a40dc20344b78de9884f42a34, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: kyoso_wall_bluegrey
+    second: {fileID: 2100000, guid: 2a6bfde9f97771d41863aa2be3785956, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: kyoso_wall_terracotta
+    second: {fileID: 2100000, guid: f9e12766b770bd54cb05ea35bf1e1a79, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: kyoso_wc_taupe
+    second: {fileID: 2100000, guid: fd3eea59a5fea8d4cb9748cf827cd885, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: kyoso_wood_oak
+    second: {fileID: 2100000, guid: 1db2d2e75f2db454da5b5252df69dfc9, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: light_panel
     second: {fileID: 2100000, guid: 4d37b4f0eef136f4aa5ba6e98b2e0b73, type: 2}
   - first:
