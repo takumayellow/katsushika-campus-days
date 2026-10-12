@@ -68,7 +68,7 @@ def test_exported_models_have_no_store_sign_materials():
     paths = sorted(glob.glob(os.path.join(MODELS, "Campus", "*.fbx"))
                    + glob.glob(os.path.join(MODELS, "Interiors", "*.fbx")))
     assert paths, "FBX が見つからない"
-    pattern = re.compile(rb"sign_[a-z_]*(?:%s)" % b"|".join(b.encode() for b in BRANDS))
+    pattern = re.compile(rb"sign_(?:%s)" % b"|".join(b.encode() for b in BRANDS))
     branded = {}
     for path in paths:
         with open(path, "rb") as f:
