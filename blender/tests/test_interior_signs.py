@@ -214,8 +214,10 @@ def test_room_signs_are_numbered(built):
     assert "104" in lecture
     assert not [t for t in lecture if "演習室" in t]
     for bid in ("lab1", "lab2"):
-        labs = [r["ja"] for r in built[bid].signs if r["ja"].startswith("実験室")]
-        assert labs == ["実験室 %d" % (i + 1) for i in range(len(labs))], bid
+        labs = [r["ja"] for r in built[bid].signs
+                if r["ja"].startswith(("実験室", "機械工学科 研究室"))]
+        assert bid == "lab2" or labs, bid
+        assert [t.rsplit(" ", 1)[1] for t in labs] == [str(i + 1) for i in range(len(labs))], bid
         assert any(r["ja"] in ("準備室", "工具室") for r in built[bid].signs), bid
 
 

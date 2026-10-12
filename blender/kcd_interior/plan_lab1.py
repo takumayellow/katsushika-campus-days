@@ -1,4 +1,4 @@
-"""第1実験棟 (lab1): 1F の機械工作工場1・NMR・田村研究室・小林研究室。
+"""第1実験棟 (lab1): 1F の機械工作工場1・NMR・機械工学科の研究室 2 室。
 
 入口が長辺にあるので、入口の面に沿って廊下を通し、その奥の左に機械工作工場1（L 字）、
 右に研究室を 3 室並べる。写真の根拠と推定の区別は docs/ref/interiors/lab1/spec.md。
@@ -13,7 +13,7 @@ Z_TOP = 4.50
 COR_Y1 = 6.30        # 廊下の奥の面（間仕切りの中心線）
 X_SPLIT = 2.00       # 工場の主棟と研究室の列の境
 Y_ROOMS = 16.00      # 研究室の奥の面 = 工場の離れとの境
-X_DIV = (7.0, 13.0)  # NMR | 田村研究室 | 小林研究室 の境
+X_DIV = (7.0, 13.0)  # NMR | 研究室 1 | 研究室 2 の境
 SHOP_GAP = (-4.0, -0.5)    # 工場の大きな開口（入口の正面）
 SHOP_DOOR = -13.0          # 工場のもう一つの入口
 ROOM_DOORS = (4.5, 10.0, 15.0)
@@ -36,9 +36,9 @@ def build(c):
     _annex(c, iy1, ix1)
     _crib(c, ix1, iy1)
     _nmr(c)
-    _tamura(c)
-    _kobayashi(c)
-    c.note("廊下 + 機械工作工場1（L 字・旋盤とフライス盤）+ NMR + 田村研 + 小林研 + 工具室")
+    _room_a(c)
+    _room_b(c)
+    c.note("廊下 + 機械工作工場1（L 字・旋盤とフライス盤）+ NMR + 研究室 2 室 + 工具室")
 
 
 def _ceilings(c, ix0, iy0, ix1, iy1):
@@ -104,11 +104,11 @@ def _corridor(c, ix0, iy0, ix1):
                ja="機械工作工場1", en="Machine Shop 1", w=2.4, h=0.46)
     signs.wall(c, cor, SHOP_DOOR + 0.95, COR_Y1 - 0.10, 2.05, ang=math.pi,
                ja="工場 入口", en="Shop Entrance", w=0.90, h=0.30)
-    for d, dx, ja, en in zip(ROOM_DOORS, (0.95, 0.95, -1.15),
-                             ("NMR室", "田村研究室", "小林研究室"),
-                             ("NMR Room", "Tamura Lab", "Kobayashi Lab")):
+    for d, dx, ja, en in zip(ROOM_DOORS, (0.95, 1.35, -1.45),
+                             ("NMR室", "機械工学科 研究室 1", "機械工学科 研究室 2"),
+                             ("NMR Room", "Mech. Eng. Lab 1", "Mech. Eng. Lab 2")):
         signs.wall(c, cor, d + dx, COR_Y1 - 0.10, 2.05, ang=math.pi, ja=ja,
-                   en=en, w=0.90, h=0.30)
+                   en=en, w=1.40 if dx > 1.0 or dx < -1.0 else 0.90, h=0.30)
         shell.exit_sign(w, d, COR_Y1 - 0.06, 2.85, ang=math.pi)
     # 工場の開口の脇の掲示板
     shell.notice_board(cor, SHOP_GAP[1] + 1.3, COR_Y1 - 0.10, 1.58, ang=math.pi,
@@ -223,8 +223,8 @@ def _crib(c, ix1, iy1):
                       rng=c.rng)
     FL.tool_chest(mb, ix1 - 0.5, cy + 2.2, ang=math.pi * 0.5)
     FL.tool_chest(mb, ix1 - 0.5, cy + 3.2, ang=math.pi * 0.5)
-    F.counter(mb, cx + 0.5, cy + 1.5, cx + 0.5 + 0.7, cy + 3.4)
-    signs.wall(c, mb, cx + 0.10, cy + 3.4, 2.1, ang=-math.pi * 0.5,
+    F.counter(mb, cx + 0.5, cy + 2.6, cx + 0.5 + 0.7, cy + 4.5)
+    signs.wall(c, mb, cx + 0.10, cy + 3.6, 2.1, ang=-math.pi * 0.5,
                ja="工具室", en="Tool Crib", w=0.9, h=0.30)
     c.poi("prep", cx + 2.4, cy + 2.0, 0.0)
 
@@ -248,8 +248,8 @@ def _nmr(c):
     c.cam("nmr", (x1 - 0.9, 7.3, 1.7), (x0 + 1.5, 13.5, 1.2), lens=20.0)
 
 
-def _tamura(c):
-    mb = c.furn("tamura")
+def _room_a(c):
+    mb = c.furn("room_a")
     x0, x1 = X_DIV[0], X_DIV[1]
     cx = (x0 + x1) * 0.5
     kit.plate(c.floor, x0, COR_Y1, x1, Y_ROOMS, 0.014, "floor_resin_grey")
@@ -267,8 +267,8 @@ def _tamura(c):
     c.npc(cx, 8.8, 0.0)
 
 
-def _kobayashi(c):
-    mb = c.furn("kobayashi")
+def _room_b(c):
+    mb = c.furn("room_b")
     x0, x1 = X_DIV[1], 19.0
     cx = (x0 + x1) * 0.5
     kit.plate(c.floor, x0, COR_Y1, x1, Y_ROOMS, 0.014, "floor_resin_grey")
@@ -286,4 +286,4 @@ def _kobayashi(c):
     shell.fire_extinguisher(mb, x0 + 0.5, 7.2)
     c.poi("lab_b", x0 + 2.3, 13.7, 0.0)
     c.npc(x1 - 1.4, 8.4, 0.0)
-    c.cam("kobayashi", (x1 - 0.8, 7.2, 1.8), (x0 + 2.2, 14.2, 1.2), lens=20.0)
+    c.cam("room_b", (x1 - 0.8, 7.2, 1.8), (x0 + 2.2, 14.2, 1.2), lens=20.0)

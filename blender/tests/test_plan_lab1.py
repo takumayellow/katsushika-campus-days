@@ -13,10 +13,10 @@ TRI_CAP = 35000
 SIGNS = 10
 POIS = {"lab": (-8.5, 15.8), "prep": (16.4, 26.0), "lab_b": (15.3, 13.7)}
 NPCS = 6
-CAMS = ["", "shop", "annex", "nmr", "kobayashi"]
+CAMS = ["", "shop", "annex", "nmr", "room_b"]
 # 区画ごとの三角形の上限（現在の値に 1 割強の余裕）。wall は看板の文字を含む。
 SECTION_CAPS = {
-    "floor": 30, "wall": 2530, "entry": 180, "corridor": 3810, "shop": 5860, "annex": 1520, "crib": 1500, "nmr": 1120, "tamura": 1150, "kobayashi": 2280,
+    "floor": 30, "wall": 2530, "entry": 180, "corridor": 3810, "shop": 5860, "annex": 1520, "crib": 1500, "nmr": 1120, "room_a": 1150, "room_b": 2280,
 }
 
 
@@ -126,6 +126,8 @@ def test_cameras_are_not_inside_solids(built):
 
 
 def test_every_door_can_be_walked_through(built):
-    doors = [(d, plan_lab1.COR_Y1) for d in plan_lab1.ROOM_DOORS + (plan_lab1.SHOP_DOOR,)]
+    doors = [(d, plan_lab1.COR_Y1 - 0.5) for d in plan_lab1.ROOM_DOORS + (plan_lab1.SHOP_DOOR,)]
+    cx, cy = plan_lab1.CRIB
+    doors += [(cx - 0.5, cy + 1.6), (cx, cy + 1.6), (cx + 0.9, cy + 1.6)]
     for x, y in doors:
-        assert labkit.clearance(built, x, y - 0.5) >= labkit.DOOR_CLEAR, x
+        assert labkit.clearance(built, x, y) >= labkit.DOOR_CLEAR, (x, y)
