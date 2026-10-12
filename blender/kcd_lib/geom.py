@@ -241,3 +241,45 @@ class Frame:
             us.append(u)
             vs.append(v)
         return (min(us), min(vs), max(us), max(vs))
+
+    def uv_notch(self, poly, tol=0.6):
+        """L 字の外形の欠けた角を uv の矩形 (u0, v0, u1, v1) で返す。L 字でなければ None。
+
+        外接矩形の 4 隅のうち tol 以内に頂点が無い隅がちょうど 1 つで、外接矩形の
+        どの辺からも tol より離れた頂点（入隅）がちょうど 1 つのときだけ L 字とみなす。
+        """
+        uvs = [self.uv(p) for p in poly]
+        u0, v0, u1, v1 = self.uv_bbox(poly)
+        missing = [(cu, cv) for cu in (u0, u1) for cv in (v0, v1)
+                   if not any(abs(u - cu) <= tol and abs(v - cv) <= tol for u, v in uvs)]
+        inner = [(u, v) for u, v in uvs
+                 if min(u - u0, u1 - u) > tol and min(v - v0, v1 - v) > tol]
+        if len(missing) != 1 or len(inner) != 1:
+            return None
+        (cu, cv), (iu, iv) = missing[0], inner[0]
+        return (min(cu, iu), min(cv, iv), max(cu, iu), max(cv, iv))
+
+
+def l_rect_uv(bbox, notch):
+    """外接矩形 bbox から角の矩形 notch を欠いた L 字を、反時計回りの uv の頂点列で返す。
+
+    notch が None なら矩形の 4 隅をそのまま返す。
+    """
+    u0, v0, u1, v1 = bbox
+    corners = [(u0, v0), (u1, v0), (u1, v1), (u0, v1)]
+    if notch is None:
+        return corners
+    nu0, nv0, nu1, nv1 = notch
+    out = []
+    for k, (cu, cv) in enumerate(corners):
+        if not (nu0 - 1e-6 <= cu <= nu1 + 1e-6 and nv0 - 1e-6 <= cv <= nv1 + 1e-6):
+            out.append((cu, cv))
+            continue
+        iu = nu0 if abs(cu - nu1) < abs(cu - nu0) else nu1
+        iv = nv0 if abs(cv - nv1) < abs(cv - nv0) else nv1
+        # 偶数番の隅へは v 方向の辺で、奇数番の隅へは u 方向の辺で入ってくる
+        if k % 2 == 0:
+            out.extend([(cu, iv), (iu, iv), (iu, cv)])
+        else:
+            out.extend([(iu, cv), (iu, iv), (cu, iv)])
+    return out

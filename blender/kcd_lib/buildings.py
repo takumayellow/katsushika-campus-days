@@ -331,32 +331,55 @@ def build_lab_low(mb, b, frame, ctx):
 
 
 # --------------------------------------------------------------------------- #
-#  温室 — 白フレームの切妻ガラス
+#  温室 — 白フレームの陸屋根のガラス箱（L 字。北東の角が欠ける）
 # --------------------------------------------------------------------------- #
+GH_FASCIA = 0.25     # 屋根の縁の白い鼻隠しの高さ（上端が建物の高さ）
+GH_BAR_U = 1.25      # 屋根ガラスの桟の間隔（u 方向）
+GH_BAR_V = 1.8       # 屋根ガラスの桟の間隔（v 方向）
+GH_BAR_W = 0.07      # 桟の幅
+
+
+def _gh_roof_bars(mb, frame, rects, z):
+    """屋根ガラスの上の白い桟。rects は uv の矩形 (u0, v0, u1, v1) の列。"""
+    hw = GH_BAR_W * 0.5
+    for u0, v0, u1, v1 in rects:
+        n = max(1, int(round((u1 - u0) / GH_BAR_U)))
+        for i in range(1, n):
+            u = u0 + (u1 - u0) * i / n
+            mb.add_prism(_uv_rect(frame, u - hw, v0, u + hw, v1), z, z + 0.06,
+                         "metal_white", "metal_white")
+        m = max(1, int(round((v1 - v0) / GH_BAR_V)))
+        for j in range(1, m):
+            v = v0 + (v1 - v0) * j / m
+            mb.add_prism(_uv_rect(frame, u0, v - hw, u1, v + hw), z, z + 0.06,
+                         "metal_white", "metal_white")
+
+
 def build_greenhouse(mb, b, frame, ctx):
     loop = geom.ensure_ccw(geom.dedup(b["footprint"]))
-    u0, v0, u1, v1 = frame.uv_bbox(loop)
-    rect = _uv_rect(frame, u0, v0, u1, v1)
-    wall_h = 2.0
-    ridge = b["height"]
-    facade.add_curtain_wall(mb, rect, 0.0, wall_h, 0, 1, seg=1.6, inset=0.08,
+    bbox = frame.uv_bbox(loop)
+    notch = frame.uv_notch(loop)
+    uvs = geom.l_rect_uv(bbox, notch)
+    shape = [frame.xy(u, v) for u, v in uvs]
+    top = b["height"]
+    wall_h = top - GH_FASCIA
+    facade.add_curtain_wall(mb, shape, 0.0, wall_h, 0, 1, seg=1.0, inset=0.08,
                             ground_sill=0.5)
-    vm = (v0 + v1) * 0.5
-    a = frame.xy(u0, v0)
-    bb = frame.xy(u1, v0)
-    c = frame.xy(u1, v1)
-    d = frame.xy(u0, v1)
-    r0 = frame.xy(u0, vm)
-    r1 = frame.xy(u1, vm)
-    mb.add_quad((a[0], a[1], wall_h), (bb[0], bb[1], wall_h),
-                (r1[0], r1[1], ridge), (r0[0], r0[1], ridge), "glass_clear")
-    mb.add_quad((c[0], c[1], wall_h), (d[0], d[1], wall_h),
-                (r0[0], r0[1], ridge), (r1[0], r1[1], ridge), "glass_clear")
-    mb.add_face([(a[0], a[1], wall_h), (r0[0], r0[1], ridge), (d[0], d[1], wall_h)],
-                "metal_white")
-    mb.add_face([(bb[0], bb[1], wall_h), (c[0], c[1], wall_h), (r1[0], r1[1], ridge)],
-                "metal_white")
-    # 入口は kcd_lib.entrances が置く（西の妻面）
+    mb.add_ngon_flat(shape, wall_h, "glass_clear")
+    u0, v0, u1, v1 = bbox
+    if notch is None:
+        rects = [bbox]
+    else:
+        # 欠けた角の v の帯と、残りの帯に分ける（どちらも矩形）
+        nv = notch[1] if notch[3] >= v1 - 1e-6 else notch[3]
+        lo, hi = (v0, nv), (nv, v1)
+        cut = hi if notch[3] >= v1 - 1e-6 else lo
+        full = lo if cut is hi else hi
+        cu0, cu1 = (u0, notch[0]) if notch[2] >= u1 - 1e-6 else (notch[2], u1)
+        rects = [(u0, full[0], u1, full[1]), (cu0, cut[0], cu1, cut[1])]
+    _gh_roof_bars(mb, frame, rects, wall_h)
+    facade.add_parapet(mb, shape, wall_h, GH_FASCIA, 0.12, "metal_white")
+    # 入口は kcd_lib.entrances が置く（西面）
 
 
 # --------------------------------------------------------------------------- #

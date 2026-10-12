@@ -29,6 +29,8 @@ RAY_IN = 0.05        # 横レイの始点は内面からこれだけ室内側
 RAY_OUT = 0.25       # 外面からこれだけ外まで撃つ
 
 EDGE_NAMES = ("入口(-Y)", "右(+X)", "奥(+Y)", "左(-X)")
+_SIDE_NAMES = {(0, -1): EDGE_NAMES[0], (1, 0): EDGE_NAMES[1],
+               (0, 1): EDGE_NAMES[2], (-1, 0): EDGE_NAMES[3]}
 
 
 def _gather(objects, name_filter=None):
@@ -124,16 +126,50 @@ class Scene:
         return out
 
 
+def _outline(env):
+    """躯体外面の輪郭（反時計回り、入口の辺から）。
+
+    env["notch"] = [x0, y0, x1, y1] があれば、外接矩形からその角を欠いた L 字にする。
+    """
+    x0, x1, y0, y1 = env["x0"], env["x1"], env["y_face"], env["y_back"]
+    pts = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
+    notch = env.get("notch")
+    if not notch:
+        return pts
+    nx0, ny0, nx1, ny1 = notch
+    cu = 0 if abs(nx0 - x0) < 1e-3 else 1        # 欠けた角の x の側（0 = x0 側）
+    cv = 0 if abs(ny0 - y0) < 1e-3 else 1        # 欠けた角の y の側（0 = 入口側）
+    k = {(0, 0): 0, (1, 0): 1, (1, 1): 2, (0, 1): 3}[(cu, cv)]
+    iu = nx1 if cu == 0 else nx0                 # 入隅の x
+    iv = ny1 if cv == 0 else ny0                 # 入隅の y
+    cx, cy = pts[k]
+    if k % 2 == 0:
+        mid = [(cx, iv), (iu, iv), (iu, cy)]
+    else:
+        mid = [(iu, cy), (iu, iv), (cx, iv)]
+    return pts[:k] + mid + pts[k + 1:]
+
+
 def _edges(env, wall):
-    """外周 4 辺: (辺番号, 内面上の始点, 終点, 外向き単位ベクトル)。"""
-    x0, x1 = env["x0"] + wall, env["x1"] - wall
-    y0, y1 = env["y_face"] + wall, env["y_back"] - wall
-    return [
-        (0, (x0, y0), (x1, y0), (0.0, -1.0)),
-        (1, (x1, y0), (x1, y1), (1.0, 0.0)),
-        (2, (x1, y1), (x0, y1), (0.0, 1.0)),
-        (3, (x0, y1), (x0, y0), (-1.0, 0.0)),
-    ]
+    """外周の各辺: (辺番号, 内面上の始点, 終点, 外向き単位ベクトル)。
+
+    矩形なら 4 辺（EDGE_NAMES の順）。L 字なら 6 辺。内面は外面を壁厚だけ内へ寄せた線。
+    """
+    pts = _outline(env)
+    n = len(pts)
+    outs = []
+    for i in range(n):
+        a, b = pts[i], pts[(i + 1) % n]
+        L = math.hypot(b[0] - a[0], b[1] - a[1])
+        # 反時計回りなので外向きは進む向きの右手
+        outs.append(((b[1] - a[1]) / L, -(b[0] - a[0]) / L))
+    inner = []
+    for i in range(n):
+        # 直交する 2 辺を壁厚だけ内へ寄せた線の交点
+        o0, o1 = outs[i - 1], outs[i]
+        inner.append((pts[i][0] - wall * (o0[0] + o1[0]),
+                      pts[i][1] - wall * (o0[1] + o1[1])))
+    return [(i, inner[i], inner[(i + 1) % n], outs[i]) for i in range(n)]
 
 
 def open_at(scene, px, py, out, zf, wall, two_sided, step):
@@ -183,7 +219,8 @@ def measure(objects, meta, two_sided=False, step=0.05):
                     continue
                 s0, s1 = start - step * 0.5, prev + step * 0.5
                 gaps.append({
-                    "edge": ei, "name": EDGE_NAMES[ei], "z": zk,
+                    "edge": ei, "name": _SIDE_NAMES[(round(out[0]), round(out[1]))],
+                    "z": zk,
                     "s0": round(s0, 3), "s1": round(s1, 3),
                     "width": round(s1 - s0, 3),
                     "a": (round(a[0] + d[0] * s0, 2), round(a[1] + d[1] * s0, 2)),

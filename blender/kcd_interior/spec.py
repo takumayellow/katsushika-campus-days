@@ -99,6 +99,8 @@ class InteriorSpec:
     x0..x1 : 躯体外面のローカル X 範囲
     y_face : 入口側ファサード外面のローカル Y（= 原点から壁までの距離）
     y_back : 奥側ファサード外面のローカル Y
+    notch  : 外装を L 字で建てる棟（温室）の欠けた角。躯体外面のローカル矩形
+             (x0, y0, x1, y1)。矩形の棟は None
     """
 
     WALL = 0.30  # 外周壁厚（DESIGN.md §3.4）
@@ -121,6 +123,17 @@ class InteriorSpec:
         ys = [p[1] for p in pts]
         self.x0, self.x1 = min(xs), max(xs)
         self.y_face, self.y_back = min(ys), max(ys)
+        self.notch = None
+
+    def set_notch_uv(self, notch_uv):
+        """uv の欠けた角 (u0, v0, u1, v1) をローカル矩形にして notch に入れる。"""
+        if notch_uv is None:
+            self.notch = None
+            return
+        u0, v0, u1, v1 = notch_uv
+        pts = [self.to_local_uv(c) for c in ((u0, v0), (u1, v1))]
+        self.notch = (min(p[0] for p in pts), min(p[1] for p in pts),
+                      max(p[0] for p in pts), max(p[1] for p in pts))
 
     # ---- 座標変換 ----
     def to_local_uv(self, uv):
@@ -227,8 +240,12 @@ def build_specs(data, ids=None):
                                         sub, ent, inward, frame, host=bid)
             continue
         ent, inward = _entrance_uv(bid, uvbb)
-        out[bid] = InteriorSpec(bid, b.get("display", bid), b.get("levels"),
-                                b.get("height"), uvbb, ent, inward, frame)
+        sp = InteriorSpec(bid, b.get("display", bid), b.get("levels"),
+                          b.get("height"), uvbb, ent, inward, frame)
+        if style == "greenhouse":
+            # 外装（kcd_lib.buildings.build_greenhouse）と同じ L 字にする
+            sp.set_notch_uv(frame.uv_notch(loop))
+        out[bid] = sp
     return out
 
 
@@ -263,6 +280,8 @@ def dump_sidecar(spec, extra, path):
                      "y_back": round(spec.y_back, 3)},
         "wall_thickness": spec.WALL,
     }
+    if spec.notch:
+        meta["envelope"]["notch"] = [round(v, 3) for v in spec.notch]
     meta.update(extra)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as fp:

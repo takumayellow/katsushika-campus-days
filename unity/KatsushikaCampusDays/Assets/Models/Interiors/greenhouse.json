@@ -11,7 +11,13 @@
   "x0": -5.34,
   "x1": 5.401,
   "y_face": 2.5,
-  "y_back": 9.973
+  "y_back": 9.973,
+  "notch": [
+   -5.34,
+   6.49,
+   -3.315,
+   9.973
+  ]
  },
  "wall_thickness": 0.3,
  "spawn": {
@@ -46,10 +52,10 @@
    "z": 9.833
   }
  },
- "triangles": 4333,
+ "triangles": 3991,
  "seats": 0,
  "notes": [
-  "切妻ガラス屋根の温室（棟木は入口の妻面から奥へ・栽培ベンチ 4 列・鉢植え・灌水パイプ）"
+  "陸屋根のガラス温室（L 字・白い梁の格子屋根・栽培ベンチ 4 台・鉢植え・灌水パイプ）"
  ],
  "objects": [
   "floor_greenhouse",
@@ -88,7 +94,7 @@
    "ext_greenhouse",
    "ext_greenhouse_trees"
   ],
-  "triangles": 5172,
+  "triangles": 5269,
   "radius": 30.0,
   "dz": -0.03
  }

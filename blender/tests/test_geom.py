@@ -225,3 +225,50 @@ def test_campus_frame_follows_research1(campus_data, campus_frame):
     edge = geom.normalize(geom.sub(poly[(i + 1) % len(poly)], poly[i]))
     assert abs(geom.dot(edge, campus_frame.u)) == pytest.approx(1.0)
     assert campus_frame.u[0] >= 0  # 東向きにそろえる
+
+
+# --------------------------------------------------------------------------- #
+#  L 字の欠けた角（温室 #114）
+# --------------------------------------------------------------------------- #
+GH_UV = [(95.47, 60.6), (95.55, 69.28), (92.07, 69.31), (92.08, 71.31),
+         (88.17, 71.34), (88.08, 60.66)]
+
+
+def _rot_frame(deg):
+    a = math.radians(deg)
+    return geom.Frame((math.cos(a), math.sin(a)))
+
+
+@pytest.mark.parametrize("deg", [0.0, -24.55, 37.0])
+def test_uv_notch_finds_the_cut_corner(deg):
+    f = _rot_frame(deg)
+    poly = [f.xy(u, v) for u, v in GH_UV]
+    n = f.uv_notch(poly)
+    assert n == pytest.approx((92.07, 69.31, 95.55, 71.34), abs=1e-6)
+
+
+def test_uv_notch_is_none_for_rect_and_other_shapes():
+    f = _rot_frame(0.0)
+    assert f.uv_notch([(0, 0), (10, 0), (10, 5), (0, 5)]) is None
+    # 2 つ欠けた（T 字に近い）形は L 字ではない
+    t = [(0, 0), (10, 0), (10, 3), (7, 3), (7, 6), (3, 6), (3, 3), (0, 3)]
+    assert f.uv_notch(t) is None
+
+
+@pytest.mark.parametrize("corner", range(4))
+def test_l_rect_uv_is_ccw_and_has_bbox_minus_notch_area(corner):
+    u0, v0, u1, v1 = 0.0, 0.0, 8.0, 10.0
+    cu, cv = [(u0, v0), (u1, v0), (u1, v1), (u0, v1)][corner]
+    iu, iv = 5.0 if cu == u1 else 3.0, 7.0 if cv == v1 else 2.0
+    notch = (min(cu, iu), min(cv, iv), max(cu, iu), max(cv, iv))
+    loop = geom.l_rect_uv((u0, v0, u1, v1), notch)
+    assert len(loop) == 6
+    area = (u1 - u0) * (v1 - v0) - (notch[2] - notch[0]) * (notch[3] - notch[1])
+    assert geom.poly_area(loop) == pytest.approx(area)
+    # 各辺は u か v の軸に平行
+    for a, b in zip(loop, loop[1:] + loop[:1]):
+        assert a[0] == b[0] or a[1] == b[1]
+
+
+def test_l_rect_uv_without_notch_is_the_rect():
+    assert geom.l_rect_uv((0, 0, 2, 3), None) == [(0, 0), (2, 0), (2, 3), (0, 3)]
