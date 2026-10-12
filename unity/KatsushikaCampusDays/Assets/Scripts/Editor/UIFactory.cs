@@ -11,6 +11,13 @@ namespace KCD.Editor
     /// </summary>
     public static partial class UIFactory
     {
+        /// <summary>「E 話す」の表示の下端と高さ。</summary>
+        private const float PromptBottom = 190f;
+        private const float PromptHeight = 64f;
+
+        /// <summary>指のときの知らせの下端。「話す」のボタンに隠れないよう、案内のすぐ上に出す。</summary>
+        private const float ToastTouchBottom = PromptBottom + PromptHeight + 8f;
+
         /// <summary>Campus シーンの表示一式。HUD を返す。</summary>
         public static HUD BuildCampusUI(Transform root, GameObject player)
         {
@@ -51,7 +58,7 @@ namespace KCD.Editor
         private static InteractionPromptView BuildPrompt(GameObject host, RectTransform parent)
         {
             RectTransform rect = Rect(parent, "Prompt", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
-                new Vector2(0f, 190f), new Vector2(460f, 64f));
+                new Vector2(0f, PromptBottom), new Vector2(460f, PromptHeight));
             Backdrop(rect, Panel);
 
             CanvasGroup group = rect.gameObject.AddComponent<CanvasGroup>();
@@ -70,6 +77,7 @@ namespace KCD.Editor
                 new Vector2(0f, 96f), new Vector2(1080f, 60f));
             Backdrop(rect, Panel);
             KeepInCanvas(rect);
+            rect.gameObject.AddComponent<TouchPosition>().Bind(new Vector2(0f, ToastTouchBottom));
 
             CanvasGroup group = rect.gameObject.AddComponent<CanvasGroup>();
             group.alpha = 0f;
@@ -88,6 +96,7 @@ namespace KCD.Editor
             RectTransform rect = Rect(parent, "QuestTracker", new Vector2(0f, 1f), new Vector2(0f, 1f),
                 new Vector2(40f, -40f), new Vector2(520f, 150f));
             Backdrop(rect, Panel);
+            rect.gameObject.AddComponent<KeepLeftOfCenter>();
 
             RectTransform titleRect = Rect(rect, "TitleRow", new Vector2(0f, 1f), new Vector2(0f, 1f),
                 new Vector2(0f, 0f), new Vector2(520f, 54f));
@@ -113,6 +122,7 @@ namespace KCD.Editor
             RectTransform rect = Rect(parent, "Clock", new Vector2(1f, 1f), new Vector2(1f, 1f),
                 new Vector2(-40f, ClockTop), new Vector2(300f, 108f));
             Backdrop(rect, Panel);
+            rect.gameObject.AddComponent<KeepPointerSize>();
 
             RectTransform timeRect = Rect(rect, "TimeRow", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
                 new Vector2(0f, -4f), new Vector2(300f, 62f));

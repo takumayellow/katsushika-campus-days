@@ -56,8 +56,9 @@ namespace KCD.Editor
             TMP_Text interactLabel = BuildPadButton(play, "Interact", new Vector2(-290f, 105f), 124f,
                 "<Gamepad>/buttonWest", 26f);
 
+            // ジャンプと右上の時計の間。横持ちのスマホで、上下どちらとも 10 px ほど空く。
             RectTransform sprintRect = Rect(play, "Sprint", new Vector2(1f, 0f), new Vector2(0.5f, 0.5f),
-                new Vector2(-120f, 300f), new Vector2(104f, 104f));
+                new Vector2(-120f, 277f), new Vector2(104f, 104f));
             Image sprintFace = Disc(sprintRect, TouchFace);
             TMP_Text sprintLabel = Label(sprintRect, "Label", string.Empty, 26f, TextAlignmentOptions.Center);
             sprintRect.gameObject.AddComponent<TouchSprintButton>().Bind(stick, sprintFace);

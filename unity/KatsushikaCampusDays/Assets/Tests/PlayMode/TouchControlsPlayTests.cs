@@ -206,9 +206,13 @@ namespace KCD.Tests
             yield return Press(pauseButton);
             Assert.IsTrue(pause.IsPaused, "ポーズのボタンを押してもポーズにならない");
             Assert.AreEqual(0f, play.alpha, "ポーズ中もスティックとボタンが出ている");
-            Assert.AreEqual(1f, pauseGroup.alpha, "ポーズ中に、閉じるためのポーズのボタンが隠れた");
-            yield return Press(pauseButton);
-            Assert.IsFalse(pause.IsPaused, "ポーズのボタンをもう一度押してもポーズが閉じない");
+            yield return null;
+            Assert.AreEqual(0f, pauseGroup.alpha, "ポーズ中もポーズのボタンが出ていて、ポーズの枠の見出しに重なる");
+            Assert.IsFalse(pauseGroup.blocksRaycasts);
+            pause.Tick(new PauseMenu.FrameInput(Time.frameCount, tap: 0));
+            Assert.IsFalse(pause.IsPaused, "「ゲームに戻る」の行を叩いてもポーズが閉じない");
+            yield return null;
+            Assert.AreEqual(1f, pauseGroup.alpha, "ポーズを閉じてもポーズのボタンが戻らない");
 
             InputMode.Force(InputKind.Pointer);
             yield return PlayModeScenes.Advance(2, 0f);

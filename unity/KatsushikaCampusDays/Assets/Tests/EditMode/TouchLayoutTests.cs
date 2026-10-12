@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -76,6 +77,51 @@ namespace KCD.Tests
             Assert.AreEqual(1f, FitInCanvas.ScaleToFit(new Vector2(w, h), new Vector2(cw, ch), 16f));
         }
 
+        // ---- KeepPointerSize ----
+
+        [Test]
+        public void KeepPointerSize_Factor_CancelsTheTouchEnlargement()
+        {
+            Assert.AreEqual(1f, KeepPointerSize.Factor(false));
+            Assert.AreEqual(1f, KeepPointerSize.Factor(true) * 1.5f, 1e-6f);
+        }
+
+        // ---- KeepLeftOfCenter ----
+
+        [Test]
+        public void ScaleToShare_LeavesTheTrackerAloneOnAWideScreen()
+        {
+            // 横持ちのスマホ（Canvas 幅 1412）。左端から 40 + 520 = 560 まで届いても半分に届かない。
+            Assert.AreEqual(1f, KeepLeftOfCenter.ScaleToShare(560f, 1412f, KeepLeftOfCenter.Share));
+        }
+
+        [Test]
+        public void ScaleToShare_ShrinksTheTrackerOnAFourByThreeScreen()
+        {
+            // 4:3 のタブレット（Canvas 幅 1108）。真ん中のポーズのボタンの手前で止める。
+            float scale = KeepLeftOfCenter.ScaleToShare(560f, 1108f, KeepLeftOfCenter.Share);
+            Assert.AreEqual(1108f * KeepLeftOfCenter.Share / 560f, scale, 1e-5f);
+            Assert.Less(scale, 1f);
+        }
+
+        [TestCase(0f, 1108f)]
+        [TestCase(560f, 0f)]
+        public void ScaleToShare_LeavesTheScaleAloneWhenSizesAreNotReady(float extent, float width)
+        {
+            Assert.AreEqual(1f, KeepLeftOfCenter.ScaleToShare(extent, width, KeepLeftOfCenter.Share));
+        }
+
+        // ---- TouchPosition ----
+
+        [Test]
+        public void TouchPosition_PositionFor_RaisesOnlyAboveTheButtons()
+        {
+            var pointer = new Vector2(0f, 96f);
+            var touch = new Vector2(0f, 262f);
+            Assert.AreEqual(pointer, TouchPosition.PositionFor(false, pointer, touch));
+            Assert.AreEqual(touch, TouchPosition.PositionFor(true, pointer, touch));
+        }
+
         // ---- シーン ----
 
         [Test]
@@ -88,6 +134,33 @@ namespace KCD.Tests
         public void CampusScene_CanvasesFollowTouchAndPanelsFit()
         {
             CheckScene(CampusScenePath, CampusPanels);
+        }
+
+        [Test]
+        public void CampusScene_HudCornersStayOutOfTheButtons()
+        {
+            Scene scene = EditorSceneManager.OpenScene(CampusScenePath, OpenSceneMode.Additive);
+            try
+            {
+                List<RectTransform> rects = scene.GetRootGameObjects()
+                    .SelectMany(r => r.GetComponentsInChildren<RectTransform>(true)).ToList();
+                RectTransform Find(string name) => rects.FirstOrDefault(r => r.name == name);
+
+                Assert.IsNotNull(Find("Minimap")?.GetComponent<KeepPointerSize>(), "Minimap に KeepPointerSize が無い（KCD/シーンを組み直す）");
+                Assert.IsNotNull(Find("Clock")?.GetComponent<KeepPointerSize>(), "Clock に KeepPointerSize が無い（KCD/シーンを組み直す）");
+                Assert.IsNotNull(Find("QuestTracker")?.GetComponent<KeepLeftOfCenter>(), "QuestTracker に KeepLeftOfCenter が無い（KCD/シーンを組み直す）");
+                TouchPosition toast = Find("Toast")?.GetComponent<TouchPosition>();
+                Assert.IsNotNull(toast, "Toast に TouchPosition が無い（KCD/シーンを組み直す）");
+                RectTransform prompt = Find("Prompt");
+                Assert.IsNotNull(prompt, "Prompt が無い");
+                float touchBottom = new SerializedObject(toast).FindProperty("_touchPosition").vector2Value.y;
+                Assert.GreaterOrEqual(touchBottom, prompt.anchoredPosition.y + prompt.sizeDelta.y,
+                    "指のときの知らせが「話す」の案内に重なる（場所が入っていない）");
+            }
+            finally
+            {
+                EditorSceneManager.CloseScene(scene, true);
+            }
         }
 
         private static void CheckScene(string path, IEnumerable<string> panels)
