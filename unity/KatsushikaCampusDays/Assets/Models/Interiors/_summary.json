@@ -1,7 +1,7 @@
 {
- "total_tris": 310280,
- "total_ext_tris": 193181,
- "total_text_tris": 78840,
+ "total_tris": 303814,
+ "total_ext_tris": 193685,
+ "total_text_tris": 87664,
  "buildings": [
   {
    "tris": 44097,
@@ -130,7 +130,7 @@
    ],
    "id": "research1",
    "label": "第1研究棟",
-   "sec": 0.8913300037384033
+   "sec": 0.8379311561584473
   },
   {
    "tris": 43739,
@@ -259,7 +259,7 @@
    ],
    "id": "lecture",
    "label": "講義棟",
-   "sec": 0.8764021396636963
+   "sec": 0.8160805702209473
   },
   {
    "tris": 3576,
@@ -329,7 +329,7 @@
    ],
    "id": "research2",
    "label": "第2研究棟",
-   "sec": 0.24897503852844238
+   "sec": 0.22789883613586426
   },
   {
    "tris": 51325,
@@ -527,7 +527,7 @@
    "previews": [],
    "id": "cafeteria",
    "label": "食堂",
-   "sec": 0.794396162033081
+   "sec": 0.7347919940948486
   },
   {
    "tris": 31335,
@@ -1025,7 +1025,7 @@
    ],
    "id": "kyoso",
    "label": "共創棟",
-   "sec": 0.8619582653045654
+   "sec": 0.7762620449066162
   },
   {
    "tris": 73496,
@@ -1228,7 +1228,7 @@
    ],
    "id": "library",
    "label": "図書館",
-   "sec": 0.8355932235717773
+   "sec": 0.7411091327667236
   },
   {
    "tris": 21786,
@@ -1325,21 +1325,21 @@
    ],
    "id": "gym",
    "label": "体育館",
-   "sec": 0.4006357192993164
+   "sec": 0.41277194023132324
   },
   {
-   "tris": 23367,
-   "ext_tris": 9999,
+   "tris": 20058,
+   "ext_tris": 10016,
    "ext_stats": {
     "tris": {
      "bld": 4870,
      "site_ground": 363,
      "site_props_signs": 120,
-     "trees": 4646
+     "trees": 4663
     },
     "culled_tris": {
      "site": 2698,
-     "trees": 1842
+     "trees": 1825
     },
     "plants": {
      "near": 0,
@@ -1364,9 +1364,12 @@
     "wall_lab1",
     "furn_lab1_01_entry",
     "furn_lab1_02_corridor",
-    "furn_lab1_03_lab01",
-    "furn_lab1_04_lab02",
-    "furn_lab1_05_prep03"
+    "furn_lab1_03_shop",
+    "furn_lab1_04_annex",
+    "furn_lab1_05_crib",
+    "furn_lab1_06_nmr",
+    "furn_lab1_07_room_a",
+    "furn_lab1_08_room_b"
    ],
    "ext_objects": [
     "ext_lab1",
@@ -1378,26 +1381,64 @@
     "sign_lab1_1",
     "sign_lab1_2",
     "sign_lab1_3",
+    "sign_lab1_4",
+    "sign_lab1_5",
+    "sign_lab1_6",
+    "sign_lab1_7",
+    "sign_lab1_8",
     "poi_lab1_lab",
     "npc_lab1_1",
     "npc_lab1_2",
-    "poi_lab1_lab_b",
     "npc_lab1_3",
+    "sign_lab1_9",
     "poi_lab1_prep",
+    "sign_lab1_10",
+    "npc_lab1_4",
+    "npc_lab1_5",
+    "poi_lab1_lab_b",
+    "npc_lab1_6",
     "seat_lab1_01",
     "seat_lab1_01_f",
     "seat_lab1_01_s",
     "seat_lab1_01_a0",
     "seat_lab1_01_a1",
-    "seat_lab1_01_a2"
+    "seat_lab1_01_a2",
+    "seat_lab1_02",
+    "seat_lab1_02_f",
+    "seat_lab1_02_s",
+    "seat_lab1_02_a0",
+    "seat_lab1_03",
+    "seat_lab1_03_f",
+    "seat_lab1_03_s",
+    "seat_lab1_03_a0",
+    "seat_lab1_04",
+    "seat_lab1_04_f",
+    "seat_lab1_04_s",
+    "seat_lab1_04_a0",
+    "seat_lab1_05",
+    "seat_lab1_05_f",
+    "seat_lab1_05_s",
+    "seat_lab1_05_a0",
+    "seat_lab1_06",
+    "seat_lab1_06_f",
+    "seat_lab1_06_s",
+    "seat_lab1_06_a0",
+    "seat_lab1_07",
+    "seat_lab1_07_f",
+    "seat_lab1_07_s",
+    "seat_lab1_07_a0",
+    "seat_lab1_08",
+    "seat_lab1_08_f",
+    "seat_lab1_08_s",
+    "seat_lab1_08_a0"
    ],
-   "seats": 40,
+   "seats": 0,
    "notes": [
-    "廊下 + 実験室 2 室 + 準備室 1 室（実験台・ドラフト・ボンベ・薬品庫）"
+    "廊下 + 機械工作工場1（L 字・旋盤とフライス盤）+ NMR + 研究室 2 室 + 工具室"
    ],
-   "signs": 3,
-   "text_tris": 865,
-   "size": 565116,
+   "signs": 10,
+   "text_tris": 6274,
+   "size": 652940,
    "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/lab1.fbx",
    "previews": [
     "docs/previews/interior_lab1.png",
@@ -1405,21 +1446,21 @@
    ],
    "id": "lab1",
    "label": "実験棟1",
-   "sec": 0.37342000007629395
+   "sec": 0.3736453056335449
   },
   {
-   "tris": 13568,
-   "ext_tris": 8467,
+   "tris": 10411,
+   "ext_tris": 8954,
    "ext_stats": {
     "tris": {
-     "bld": 2683,
+     "bld": 2807,
      "site_ground": 365,
      "site_props_signs": 110,
-     "trees": 5309
+     "trees": 5672
     },
     "culled_tris": {
-     "site": 2117,
-     "trees": 2951
+     "site": 1993,
+     "trees": 2588
     },
     "plants": {
      "near": 0,
@@ -1443,10 +1484,10 @@
     "floor_lab2",
     "wall_lab2",
     "furn_lab2_01_entry",
-    "furn_lab2_02_hall",
-    "furn_lab2_03_corridor",
-    "furn_lab2_04_lab01",
-    "furn_lab2_05_prep02"
+    "furn_lab2_02_foyer",
+    "furn_lab2_03_hall",
+    "furn_lab2_04_control",
+    "furn_lab2_05_prep"
    ],
    "ext_objects": [
     "ext_lab2",
@@ -1457,27 +1498,44 @@
     "exit_lab2",
     "sign_lab2_1",
     "sign_lab2_2",
-    "poi_lab2_lab",
+    "sign_lab2_3",
     "npc_lab2_1",
-    "npc_lab2_2",
+    "sign_lab2_4",
+    "sign_lab2_5",
+    "poi_lab2_lab",
     "poi_lab2_lab_b",
+    "npc_lab2_2",
     "npc_lab2_3",
+    "npc_lab2_4",
+    "sign_lab2_6",
     "poi_lab2_prep",
+    "npc_lab2_5",
     "seat_lab2_01",
     "seat_lab2_01_f",
     "seat_lab2_01_s",
     "seat_lab2_01_a0",
     "seat_lab2_01_a1",
-    "seat_lab2_01_a2"
+    "seat_lab2_01_a2",
+    "seat_lab2_02",
+    "seat_lab2_02_f",
+    "seat_lab2_02_s",
+    "seat_lab2_02_a0",
+    "seat_lab2_02_a1",
+    "seat_lab2_02_a2",
+    "seat_lab2_03",
+    "seat_lab2_03_f",
+    "seat_lab2_03_s",
+    "seat_lab2_03_a0",
+    "seat_lab2_03_a1",
+    "seat_lab2_03_a2"
    ],
-   "seats": 21,
+   "seats": 0,
    "notes": [
-    "玄関ホール（入口が短辺）から廊下を奥へ",
-    "廊下 + 実験室 1 室 + 準備室 1 室（実験台・ドラフト・ボンベ・薬品庫）"
+    "玄関ホール + 吹き抜けの実験ホール（天井クレーン・反力壁・反力フレーム・振動台） + 計測制御室 + 準備室"
    ],
-   "signs": 2,
-   "text_tris": 588,
-   "size": 456572,
+   "signs": 6,
+   "text_tris": 4003,
+   "size": 498604,
    "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/lab2.fbx",
    "previews": [
     "docs/previews/interior_lab2.png",
@@ -1485,7 +1543,7 @@
    ],
    "id": "lab2",
    "label": "実験棟2",
-   "sec": 0.2866241931915283
+   "sec": 0.32244086265563965
   },
   {
    "tris": 3991,
@@ -1549,7 +1607,7 @@
    ],
    "id": "greenhouse",
    "label": "温室",
-   "sec": 0.22545838356018066
+   "sec": 0.17890620231628418
   }
  ]
 }
