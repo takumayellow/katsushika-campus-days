@@ -231,14 +231,24 @@ namespace KCD
             }
         }
 
-        private static float Step(float value, int direction)
+        /// <summary>
+        /// 音量を 1 段（10%）動かす。既定の音量は段の途中（0.55 など）にあるので、
+        /// 表示している段（<see cref="Level"/>）から動かし、1 回で 2 段動いたり動かなかったりしないようにする。
+        /// </summary>
+        public static float Step(float value, int direction)
         {
-            return Mathf.Clamp01(Mathf.Round((value + direction * 0.1f) * 10f) / 10f);
+            return Mathf.Clamp(Level(value) + direction, 0, 10) / 10f;
+        }
+
+        /// <summary>音量を表示する段（0〜10）。</summary>
+        public static int Level(float value)
+        {
+            return Mathf.Clamp(Mathf.RoundToInt(value * 10f), 0, 10);
         }
 
         private static string Bar(float value)
         {
-            int filled = Mathf.Clamp(Mathf.RoundToInt(value * 10f), 0, 10);
+            int filled = Level(value);
             return new string('■', filled) + new string('□', 10 - filled) + "  " + (filled * 10) + "%";
         }
 

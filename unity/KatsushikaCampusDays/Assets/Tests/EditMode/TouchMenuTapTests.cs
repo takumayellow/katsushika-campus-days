@@ -117,6 +117,26 @@ namespace KCD.Tests
         }
 
         [Test]
+        public void SettingsView_Step_MovesOneShownLevelFromTheDefaults()
+        {
+            foreach (float value in new[] { AudioManager.DefaultBgmVolume, AudioManager.DefaultSeVolume,
+                         AudioManager.DefaultAmbientVolume })
+            {
+                int shown = SettingsView.Level(value);
+                Assert.AreEqual(shown + 1, SettingsView.Level(SettingsView.Step(value, 1)), "▶ で 1 段上がらない: " + value);
+                Assert.AreEqual(shown - 1, SettingsView.Level(SettingsView.Step(value, -1)), "◀ で 1 段下がらない: " + value);
+            }
+        }
+
+        [TestCase(1f, 1, 1f)]
+        [TestCase(0f, -1, 0f)]
+        [TestCase(0.3f, 1, 0.4f)]
+        public void SettingsView_Step_StaysOnTheGridAndInRange(float value, int direction, float expected)
+        {
+            Assert.AreEqual(expected, SettingsView.Step(value, direction), 1e-6f);
+        }
+
+        [Test]
         public void SettingsView_AppendRow_KeysKeepTheOldText()
         {
             var builder = new StringBuilder();
@@ -188,6 +208,15 @@ namespace KCD.Tests
 
             StringAssert.Contains("<link=\"" + TitleMenu.CreditsLink + "\">クレジット</link>", extras);
             StringAssert.Contains("<link=\"" + TitleMenu.SettingsLink + "\">設定</link>", extras);
+        }
+
+        [Test]
+        public void TitleMenu_TouchStartLine_IsALinkThatStarts()
+        {
+            string line = TitleMenu.TouchStartLine("タップではじめる");
+
+            Assert.AreEqual("<link=\"choice:0\">タップではじめる</link>", line);
+            Assert.AreEqual(TitleChoice.NewGame, TitleMenu.TapChoice(false, "choice:0"));
         }
 
         [Test]

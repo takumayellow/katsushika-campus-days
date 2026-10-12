@@ -130,7 +130,7 @@ namespace KCD
             {
                 string touchExtras = TouchExtras(L.Pick("クレジット", "Credits"), L.Pick("設定", "Settings"));
                 _promptLabel.text = !_hasSave
-                    ? L.Pick("タップではじめる", "Tap to start") + "<size=70%>" + touchExtras + "</size>"
+                    ? TouchStartLine(L.Pick("タップではじめる", "Tap to start")) + "<size=70%>" + touchExtras + "</size>"
                     : ChoiceLine(_choice,
                           L.Get("ui.title.continue", "つづきから"),
                           L.Get("ui.title.new_game", "はじめから"),
@@ -157,6 +157,15 @@ namespace KCD
                 L.Get("ui.title.new_game", "はじめから"));
             string hint = L.Get("ui.title.continue_hint", "← → でえらぶ　Enter で決定　（F9 でもつづきから）");
             _promptLabel.text = line + "<size=70%>\n" + hint + extras + "</size>";
+        }
+
+        /// <summary>
+        /// セーブが無いときの「タップではじめる」。どこを叩いてもはじめるが、TmpLinkTap はリンクの周りも
+        /// リンクとして拾うので、すぐ下のクレジットに取られないよう、この行もリンクにして近い方を選ばせる。
+        /// </summary>
+        public static string TouchStartLine(string label)
+        {
+            return "<link=\"choice:0\">" + label + "</link>";
         }
 
         /// <summary>指のときの案内の最後の行。クレジットと設定を <c>&lt;link&gt;</c> で囲み、叩けば開く。</summary>
