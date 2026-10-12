@@ -105,11 +105,12 @@ class TierResult:
     scenes: dict[str, dict] = field(default_factory=dict)
     heap_campus: int | None = None
     canvas: tuple[int, int] | None = None
-    graphics_log: str | None = None
+    # 起動時の「[KCD] graphics tier=」の行。設定画面で段を変える前の値で, 変えたあとには出ない。
+    startup_log: str | None = None
 
     def as_dict(self) -> dict:
         return {"tier": self.tier, "scenes": self.scenes, "heap_campus": self.heap_campus,
-                "canvas": self.canvas, "graphics_log": self.graphics_log}
+                "canvas": self.canvas, "startup_log": self.startup_log}
 
 
 @dataclass
@@ -192,7 +193,7 @@ def _enter_campus(page: Page, console: list[str], options: PerfOptions) -> None:
 
 def _measure_tier(page: Page, console: list[str], tier: str, options: PerfOptions) -> TierResult:
     result = TierResult(tier)
-    result.graphics_log = next((line for line in console if "[KCD] graphics tier=" in line), None)
+    result.startup_log = next((line for line in console if "[KCD] graphics tier=" in line), None)
     _press(page, ["o"] + ["ArrowDown"] * QUALITY_ROW + tier_keys(tier))
     _save_canvas(page, options.out_dir / f"{tier}-settings.png")
     _press(page, ["Escape"])

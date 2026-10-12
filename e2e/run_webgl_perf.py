@@ -74,6 +74,7 @@ def main(argv: list[str]) -> int:
     from kcd_e2e.browser import launch_config
     from kcd_e2e.perf import PerfOptions, run_perf, uncapped_args
     from kcd_e2e.server import serve_build
+    from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
     base = launch_config(args.browser, headless=not args.headed, gl="gpu")
     launch = dataclasses.replace(base, args=base.args + uncapped_args(args.uncapped))
@@ -86,13 +87,15 @@ def main(argv: list[str]) -> int:
                               frozen_s=args.frozen_seconds)
         try:
             result = run_perf(options)
-        except TimeoutError as error:
+        except (TimeoutError, PlaywrightTimeoutError) as error:
             print(error, file=sys.stderr)
             return 1
         print(format_table(result))
         for session in result.sessions:
             heap = session.heap_campus / 2**20 if session.heap_campus else float("nan")
-            print(f"{session.tier}: canvas {session.canvas} / heap {heap:.1f} MiB / {session.graphics_log}")
+            print(f"{session.tier}: canvas {session.canvas} / heap {heap:.1f} MiB")
+        if result.sessions:
+            print(f"起動時: {result.sessions[0].startup_log}")
         print(f"結果: {out_dir}")
         return 0
 
