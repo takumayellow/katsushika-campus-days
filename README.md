@@ -121,6 +121,13 @@ python -m pytest e2e                               # スモークの部品の単
 PlayMode のテスト（`Assets/Tests/PlayMode`）は Title と Campus を読み込んで動かすので、
 `SceneBuilder.BuildAll` でシーンを作り直したあとに回す。
 
+画面に出す文字（台詞・クエスト・UI・地図の名前など）を Assets の JSON・C#・シーン・プレハブに足したら、
+`python tools/make_ui_font.py` を走らせ、変わった `Assets/Fonts/KCDUIJP-Thin.ttf` をコミットする（fontTools が要る。
+`requirements-test.txt` に入っている）。画面の文字のフォント（TextMeshPro の `KCD_JP` の元）は、WebGL の data を
+小さくするため Windows-31J とゲームの中の字だけを持つ。作り直さずに Windows-31J の外の字（JIS 第 3・第 4 水準の漢字、
+絵文字など）を足すと、画面では豆腐になり、`python -m pytest -q tools/tests/test_make_ui_font.py` が無い字を挙げて落ちる。
+看板の字は Blender で焼くので、`tools/make_sign_font.py` で作る。
+
 E2E スモーク（`e2e/`）は、読み込み時間・Build/ の応答・コンソールのエラー・キャンバスの描画・
 キャンバス内の案内（`#kcd-overlay`）・Enter でのキャラ選択とキャンパス入りを確かめ、
 `build/e2e/<対象>-<日時>/` に `metrics.json`（時間と wasm / JS のヒープ）とスクリーンショットを残す。

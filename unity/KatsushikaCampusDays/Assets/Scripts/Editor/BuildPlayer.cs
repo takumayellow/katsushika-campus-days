@@ -255,6 +255,9 @@ namespace KCD.Editor
             PlayerSettings.defaultScreenHeight = 1080;
             PlayerSettings.fullScreenMode = FullScreenMode.FullScreenWindow;
             PlayerSettings.runInBackground = true;
+            // スプラッシュは出さない（m_ShowUnitySplashScreen 0）。それでもロゴを出す設定のままだと,
+            // ロゴの画像（2.7 MB）がビルドに入る (#70)。
+            PlayerSettings.SplashScreen.showUnityLogo = false;
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Standalone, ScriptingImplementation.Mono2x);
         }
     }

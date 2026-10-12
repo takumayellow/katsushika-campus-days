@@ -18,12 +18,14 @@ namespace KCD.Editor
         /// <summary>取り込み規則を変えたら上げる。既存の FBX が取り込み直される。</summary>
         public override uint GetVersion()
         {
-            return 8;
+            return 9;
         }
 
         /// <summary>
         /// Blender 側の外形ハル（<id>_outline）は本体と同じ巻き方向で出力されていて本体を覆ってしまう。
-        /// 輪郭はシェーダの Outline パスで出すので、ハルの描画は止める。
+        /// 輪郭はシェーダの Outline パスで出すので、ハルの描画は止め、メッシュも空にする。
+        /// シーンにはキャラの階層の写しがあってハルのメッシュを参照しているので、空にしないとメッシュがビルドに入り、
+        /// WebGL の data を 8 体で約 3 MiB 使う (#70)。
         /// </summary>
         private void OnPostprocessModel(GameObject root)
         {
@@ -54,6 +56,11 @@ namespace KCD.Editor
                 if (renderer.name.EndsWith("_outline", System.StringComparison.Ordinal))
                 {
                     renderer.enabled = false;
+                    if (renderer.sharedMesh != null)
+                    {
+                        renderer.sharedMesh.Clear();
+                    }
+
                     continue;
                 }
 
@@ -227,6 +234,9 @@ namespace KCD.Editor
                 importer.meshCompression = ModelImporterMeshCompression.Off;
                 importer.addCollider = false;
                 importer.importNormals = ModelImporterNormals.Import;
+                // 建物と家具のマテリアルは法線マップを使わないので tangent を作らない。
+                // 作ると頂点 1 つに 16 バイト増え、WebGL の data を約 0.3 MiB 使う (#70)。
+                importer.importTangents = ModelImporterTangents.None;
                 importer.weldVertices = false;
             }
         }

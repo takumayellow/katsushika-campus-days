@@ -158,12 +158,13 @@ namespace KCD
             return _axis != Vector3.zero;
         }
 
-        /// <summary>前の骨と腿・腰を全部持つ肌（輪郭線の複製も同じ骨を使うので、どれか 1 つでよい）。</summary>
+        /// <summary>前の骨と腿・腰を全部持つ肌。輪郭線の複製（_outline）は同じ骨を持つが、取り込みでメッシュを空にしてあるので除く。</summary>
         private static SkinnedMeshRenderer FindRenderer(GameObject body)
         {
             foreach (SkinnedMeshRenderer smr in body.GetComponentsInChildren<SkinnedMeshRenderer>(true))
             {
-                if (smr.sharedMesh != null && IndexOf(smr.bones, FrontBone) >= 0 && IndexOf(smr.bones, BackBone) >= 0)
+                if (smr.sharedMesh != null && smr.sharedMesh.vertexCount > 0
+                    && IndexOf(smr.bones, FrontBone) >= 0 && IndexOf(smr.bones, BackBone) >= 0)
                 {
                     return smr;
                 }

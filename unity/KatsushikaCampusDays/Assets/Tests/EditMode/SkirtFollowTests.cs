@@ -67,6 +67,27 @@ namespace KCD.Tests
         }
 
         [Test]
+        public void EmptyOutlineHullBeforeTheSkin_IsSkipped()
+        {
+            // 輪郭線の複製（_outline）は肌と同じ骨を持つが、取り込みでメッシュを空にしてある（#70）。
+            Rig rig = BuildRig(Quaternion.identity);
+            var skin = rig.Follow.GetComponentInChildren<SkinnedMeshRenderer>();
+            var hull = new GameObject("Skin_outline");
+            hull.transform.SetParent(rig.Follow.transform, false);
+            hull.transform.SetAsFirstSibling();
+            var empty = new Mesh();
+            _created.Add(empty);
+            var hullRenderer = hull.AddComponent<SkinnedMeshRenderer>();
+            hullRenderer.bones = skin.bones;
+            hullRenderer.sharedMesh = empty;
+            rig.LeftUpper.localRotation = Quaternion.AngleAxis(-40f, Vector3.right);
+
+            rig.Follow.Apply();
+
+            AssertPointsAlong(rig.Front, Thigh(rig.LeftUpper, rig.LeftLower), "空のハルを飛ばして肌の骨で回す");
+        }
+
+        [Test]
         public void BothLegsAhead_FrontTakesTheFurthest_BackStays()
         {
             Rig rig = BuildRig(Quaternion.identity);
