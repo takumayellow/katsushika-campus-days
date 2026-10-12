@@ -2,16 +2,16 @@
   "generator": "tools/audio/build_audio.py (pure numpy synthesis, no sampled material)",
   "samplerate": 44100,
   "bit_depth": 16,
-  "generated_sec": 4.0,
+  "generated_sec": 10.7,
   "suggested_volume": {
     "BGM": 0.55,
     "SE": 0.8,
     "Ambient": 0.35
   },
   "summary": {
-    "file_count": 58,
-    "total_bytes": 236568412,
-    "total_duration_sec": 1347.17,
+    "file_count": 59,
+    "total_bytes": 240014136,
+    "total_duration_sec": 1366.71,
     "clipped_samples_total": 0,
     "min_loop_spec_corr": 0.3574,
     "max_seam_step_ratio": 0.9986,
@@ -554,6 +554,27 @@
       "name": "land",
       "category": "SE",
       "path": "unity/KatsushikaCampusDays/Assets/Audio/SE/land.wav",
+      "suggested_volume": 0.8
+    },
+    {
+      "file": "piano_library.wav",
+      "samplerate": 44100,
+      "channels": 2,
+      "duration_sec": 19.533,
+      "bytes": 3445724,
+      "peak_dbfs": -1.5,
+      "rms_dbfs": -16.27,
+      "clipped_samples": 0,
+      "dc_offset": -0.0,
+      "centroid_hz_mean": 1201.2,
+      "centroid_hz_min": 341.4,
+      "centroid_hz_max": 5453.6,
+      "rms_env_min_dbfs": -60.62,
+      "rms_env_max_dbfs": -12.29,
+      "loop": false,
+      "name": "piano_library",
+      "category": "SE",
+      "path": "unity/KatsushikaCampusDays/Assets/Audio/SE/piano_library.wav",
       "suggested_volume": 0.8
     },
     {

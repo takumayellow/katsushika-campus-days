@@ -371,8 +371,13 @@ namespace KCD
             _verticalVelocity = Mathf.Max(_verticalVelocity, _gravity * 2f);
         }
 
+        /// <summary>立ったとき座っていた向きの前へ出す距離 (m)。</summary>
+        public const float DefaultStandForward = 0.55f;
+
+        private float _standForward = DefaultStandForward;
+
         /// <summary>座る。anchor の位置に置き、anchor の前方を向く。移動は MovementLocked で止める。</summary>
-        public void SitAt(Transform anchor)
+        public void SitAt(Transform anchor, float standForward = DefaultStandForward)
         {
             if (anchor == null || _sitting)
             {
@@ -392,6 +397,7 @@ namespace KCD
             _planarSpeed = 0f;
             _sitting = true;
             _sitTime = Time.time;
+            _standForward = standForward;
             KCDInput.MovementLocked = true;
             SittingChanged?.Invoke(true);
         }
@@ -407,7 +413,7 @@ namespace KCD
             _sitting = false;
             _stoodUpFrame = Time.frameCount;
             KCDInput.MovementLocked = false;
-            Teleport(transform.position + transform.forward * 0.55f, transform.eulerAngles.y);
+            Teleport(transform.position + transform.forward * _standForward, transform.eulerAngles.y);
             SittingChanged?.Invoke(false);
         }
 

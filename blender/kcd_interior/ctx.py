@@ -108,6 +108,7 @@ class Ctx:
             seat_<id>_<nn>_f     正面の辺の中点（中心からの向きが座ったときの正面）
             seat_<id>_<nn>_s     側面の辺の中点（中心からの距離が幅の半分）
             seat_<id>_<nn>_a<k>  座る位置（床の高さ。PlayerController.SitAt のアンカー）
+            seat_<id>_<nn>_<key> 家具ごとの付属の点（seat["extra"]。ピアノの鍵盤は _piano）
 
         Unity の SeatFactory.PlaceInterior がこれを読み、座る操作（SeatInteractable）と
         乗り上げ防止の見えない壁を付ける。戻り値は書き出した座面の数。
@@ -123,6 +124,8 @@ class Ctx:
             self._put(name + "_s", *seat["s"])
             for k, a in enumerate(seat["anchors"]):
                 self._put("%s_a%d" % (name, k), *a)
+            for key, p in (seat.get("extra") or {}).items():
+                self._put("%s_%s" % (name, key), *p)
         return len(seats)
 
     # ---- プレビュー ----

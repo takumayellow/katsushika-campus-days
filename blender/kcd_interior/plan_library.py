@@ -38,6 +38,7 @@ def _seats(c, sink):
         if ang is None:
             ang = _island_facing(x, y)
         FL.seat_mark(sink, x, y, z - D.SEAT_H, ang)
+    PH.piano_seat(sink)
 
 
 def build(c):

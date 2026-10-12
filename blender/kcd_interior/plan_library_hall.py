@@ -248,9 +248,14 @@ def _wings(mb):
     FL.door(mb, x1, 61.0, z, math.pi * 0.5, open_=0.0)
 
 
+PIANO = (7.0, 58.0, D.STAGE[4], -math.pi * 0.5)   # グランドピアノの置き場（x, y, 床の高さ, ang）
+STOOL_Y = -0.70            # ピアノ椅子の中心（ピアノのローカル。奥行き 0.30 m、座面の高さ 0.44 m）
+KEYS_Y, KEYS_Z = -0.12, 0.80   # 鍵盤の手前から奥への中ほどと、その高さ
+
+
 def _piano(mb):
     """上手のグランドピアノ。鍵盤は -X を向き、屋根は客席（-Y）の側へ開く。"""
-    t = kit.T(7.0, 58.0, D.STAGE[4], -math.pi * 0.5)
+    t = kit.T(*PIANO)
     black = "library_counter_black"
     body = [(-0.75, 0.0), (0.75, 0.0), (0.75, 1.0), (0.55, 1.6), (0.15, 2.0),
             (-0.35, 2.2), (-0.75, 2.0)]
@@ -262,7 +267,16 @@ def _piano(mb):
     kit.thick_quad(mb, t.p(-0.75, 0.1, 0.95), t.p(-0.75, 2.1, 0.95), t.p(0.3, 1.7, 1.7),
                    t.p(0.6, 0.2, 1.55), 0.02, black)
     kit.tube(mb, t.p(0.45, 1.0, 0.95), t.p(0.4, 1.0, 1.62), 0.012, "stainless", seg=4)
-    t.box(mb, -0.4, -1.0, 0.0, 0.4, -0.65, 0.5, black)
+    t.box(mb, -0.4, STOOL_Y - 0.15, 0.0, 0.4, STOOL_Y + 0.15, 0.44, black)
+
+
+def piano_seat(sink):
+    """ピアノ椅子の座面を記録する。座ったときの正面は鍵盤の側。
+    piano は鍵盤の中ほど（床から 0.80 m）の点で、Unity の PianoPerformance が手を置く先になる。"""
+    t = kit.T(*PIANO)
+    x, y = t.p2(0.0, STOOL_Y)
+    seat = FL.seat_mark(sink, x, y, t.z, PIANO[3], hw=0.4, hd=0.15, inner=0.3, depth=0.15)
+    seat["extra"] = {"piano": t.p(0.0, KEYS_Y, KEYS_Z)}
 
 
 def _props(mb):
