@@ -260,5 +260,8 @@ def lift(mb, base, dz):
 
 def moved_seat(seat, fn):
     """座面の記録（furniture._seat）の点をすべて fn で写した新しい dict。"""
-    return dict(seat, c=fn(seat["c"]), f=fn(seat["f"]), s=fn(seat["s"]),
-                anchors=[fn(a) for a in seat["anchors"]])
+    moved = dict(seat, c=fn(seat["c"]), f=fn(seat["f"]), s=fn(seat["s"]),
+                 anchors=[fn(a) for a in seat["anchors"]])
+    if seat.get("extra"):
+        moved["extra"] = {k: fn(p) for k, p in seat["extra"].items()}
+    return moved

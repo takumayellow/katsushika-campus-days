@@ -95,15 +95,27 @@ def test_hanging_sign_roots_skip_the_ceiling_lights(built):
     assert roots == pytest.approx(hung, abs=1e-3)
 
 
-def test_sixteen_seats_in_table_order(built):
+def test_seventeen_seats_in_table_order(built):
     got = [p for n, p in built.empties if n.startswith("seat_library_") and n.count("_") == 2]
-    assert len(got) == 16
+    assert len(got) == 17
     for (x, y, _z), (sx, sy, sz, _ang) in zip(got, D.SEATS):
         assert (x, y) == pytest.approx((sx, sy), abs=0.3)
     for n, p in built.empties:
         if n.startswith("seat_library_") and n.count("_") == 2:
             k = int(n.rsplit("_", 1)[1]) - 1
-            assert p[2] == pytest.approx(D.SEATS[k][2] - D.SEAT_H)
+            if k < len(D.SEATS):
+                assert p[2] == pytest.approx(D.SEATS[k][2] - D.SEAT_H)
+
+
+def test_piano_stool_is_the_last_seat_and_has_keys(built):
+    empties = dict(built.empties)
+    stool = empties["seat_library_17"]
+    keys = empties["seat_library_17_piano"]
+    assert "seat_library_17_a0" in empties and "seat_library_17_f" in empties
+    assert stool[2] == pytest.approx(D.STAGE[4])
+    assert keys[2] == pytest.approx(D.STAGE[4] + 0.70)
+    # 鍵盤は椅子から 0.33 m 先（ピアノのローカルで +Y が +X 方向）
+    assert (keys[0] - stool[0], keys[1] - stool[1]) == pytest.approx((0.33, 0.0), abs=1e-6)
 
 
 def test_six_cameras_inside_the_envelope(built):

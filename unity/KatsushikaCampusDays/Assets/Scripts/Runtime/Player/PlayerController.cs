@@ -371,8 +371,13 @@ namespace KCD
             _verticalVelocity = Mathf.Max(_verticalVelocity, _gravity * 2f);
         }
 
+        /// <summary>立ったとき座っていた向きの前へ出す距離 (m)。</summary>
+        public const float DefaultStandForward = 0.55f;
+
+        private float _standForward = DefaultStandForward;
+
         /// <summary>座る。anchor の位置に置き、anchor の前方を向く。移動は MovementLocked で止める。</summary>
-        public void SitAt(Transform anchor)
+        public void SitAt(Transform anchor, float standForward = DefaultStandForward)
         {
             if (anchor == null || _sitting)
             {
@@ -392,6 +397,7 @@ namespace KCD
             _planarSpeed = 0f;
             _sitting = true;
             _sitTime = Time.time;
+            _standForward = standForward;
             KCDInput.MovementLocked = true;
             SittingChanged?.Invoke(true);
         }
@@ -404,12 +410,25 @@ namespace KCD
                 return;
             }
 
-            _sitting = false;
-            _stoodUpFrame = Time.frameCount;
-            KCDInput.MovementLocked = false;
-            Teleport(transform.position + transform.forward * 0.55f, transform.eulerAngles.y);
-            SittingChanged?.Invoke(false);
+            Teleport(StandPosition(), transform.eulerAngles.y);
         }
+
+        /// <summary>立つ位置。座面から _standForward だけ前（負なら後ろ）へ出るが、壁や家具の手前で止める。</summary>
+        private Vector3 StandPosition()
+        {
+            Vector3 direction = transform.forward * Mathf.Sign(_standForward);
+            float distance = Mathf.Abs(_standForward);
+            Vector3 origin = transform.position + Vector3.up * StandProbeHeight;
+            if (Physics.Raycast(origin, direction, out RaycastHit hit, distance + _controller.radius, ~0, QueryTriggerInteraction.Ignore))
+            {
+                distance = Mathf.Max(0f, hit.distance - _controller.radius);
+            }
+
+            return transform.position + direction * distance;
+        }
+
+        /// <summary>立つ位置を探る高さ (m)。腰より少し上。</summary>
+        private const float StandProbeHeight = 0.5f;
 
         private void OnDisable()
         {
@@ -417,12 +436,21 @@ namespace KCD
             {
                 _sitting = false;
                 KCDInput.MovementLocked = false;
+                SittingChanged?.Invoke(false);
             }
         }
 
         /// <summary>ワープ。CharacterController を一度切らないと座標が戻される。</summary>
         public void Teleport(Vector3 position, float yawDegrees)
         {
+            bool wasSitting = _sitting;
+            if (wasSitting)
+            {
+                _sitting = false;
+                _stoodUpFrame = Time.frameCount;
+                KCDInput.MovementLocked = false;
+            }
+
             _controller.enabled = false;
             transform.SetPositionAndRotation(position, Quaternion.Euler(0f, yawDegrees, 0f));
             _controller.enabled = true;
@@ -430,6 +458,10 @@ namespace KCD
             _horizontalVelocity = Vector3.zero;
             _verticalVelocity = 0f;
             _planarSpeed = 0f;
+            if (wasSitting)
+            {
+                SittingChanged?.Invoke(false);
+            }
         }
     }
 }

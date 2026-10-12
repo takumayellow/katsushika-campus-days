@@ -153,6 +153,35 @@ def build_armature(p: dict, a: B.Anatomy, name: str):
     return arm, pos
 
 
+#: 手に持つ・担ぐ小物（トート・風呂敷）を丸ごと動かす追加ボーン。Unity は座っている間
+#: この骨の localScale を 0 にして小物を消す（鍵盤の上に鞄が浮くため）。
+BAG_BONE = "Bag"
+
+
+def add_bag_bone(arm, p: dict, a: B.Anatomy) -> bool:
+    """小物を持つキャラにだけ Bag ボーンを足す。足したら True。"""
+    if not {"tote", "furoshiki"} & set(p.get("accessories", ())):
+        return False
+    from . import cloth
+
+    if p.get("bag_mount") == "shoulder":
+        parent, head = "UpperChest", a.shoulder * np.array([-1.0, 1.0, 1.0])
+    else:
+        parent, head = "RightHand", cloth.grip_point(a)
+    tail = head + np.array([0.0, 0.0, -p["height"] * 0.02])
+
+    bpy.context.view_layer.objects.active = arm
+    bpy.ops.object.mode_set(mode="EDIT")
+    b = arm.data.edit_bones.new(BAG_BONE)
+    b.head = tuple(float(x) for x in head)
+    b.tail = tuple(float(x) for x in tail)
+    b.roll = 0.0
+    b.parent = arm.data.edit_bones[parent]
+    b.use_connect = False
+    bpy.ops.object.mode_set(mode="OBJECT")
+    return True
+
+
 # --------------------------------------------------------------------------
 # ウェイト
 # --------------------------------------------------------------------------
@@ -902,7 +931,10 @@ def override_weights(obj, mb: M.MeshBuilder, p: dict, a: B.Anatomy) -> None:
         bone = "LeftFoot" if side == "l" else "RightFoot"
         _set_exclusive(obj, mb.part_indices(f"shoes_{side}", f"foot_{side}"),
                        {bone: 1.0})
-    if p.get("bag_mount") == "shoulder":
+    arm = getattr(obj, "parent", None)
+    if arm is not None and BAG_BONE in arm.data.bones:
+        _set_exclusive(obj, mb.part_indices("bag"), {BAG_BONE: 1.0})
+    elif p.get("bag_mount") == "shoulder":
         _set_exclusive(obj, mb.part_indices("bag"), {"UpperChest": 1.0})
     else:
         _set_exclusive(obj, mb.part_indices("bag"), {"RightHand": 1.0})
