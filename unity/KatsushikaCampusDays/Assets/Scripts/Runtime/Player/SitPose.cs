@@ -37,9 +37,14 @@ namespace KCD
         /// <summary>手を鍵盤へ上げ下ろす秒数。</summary>
         private const float KeyboardBlendSeconds = 0.4f;
 
+        /// <summary>小物のボーン名（blender/kcd_chara/rig.py の BAG_BONE）。</summary>
+        private const string BagBone = "Bag";
+
         [SerializeField] private float _blendTime = 0.25f;
 
         private Animator _animator;
+        private Transform _bag;
+        private Vector3 _bagScale = Vector3.one;
         private float _weight;
         private float _keysWeight;
         private bool _keysActive;
@@ -113,6 +118,43 @@ namespace KCD
         private void Awake()
         {
             _animator = GetComponent<Animator>();
+            _bag = FindBag(transform);
+            _bagScale = _bag != null ? _bag.localScale : Vector3.one;
+        }
+
+        /// <summary>手に持つ・担ぐ小物（Blender の Bag ボーン）。持たない体では null。</summary>
+        public Transform Bag => _bag;
+
+        /// <summary>
+        /// 鍵盤を弾いている間、小物（鞄・風呂敷）をスケール 0 で消す。手が鍵盤へ上がると、手に掛けた
+        /// 鞄が譜面台のあたりに浮いて鍵盤に重なる。手を戻したら元の大きさに戻す。
+        /// </summary>
+        private void LateUpdate()
+        {
+            if (_bag == null)
+            {
+                return;
+            }
+
+            bool hide = _keysActive || _keysWeight > 0f;
+            Vector3 scale = hide ? Vector3.zero : _bagScale;
+            if (_bag.localScale != scale)
+            {
+                _bag.localScale = scale;
+            }
+        }
+
+        private static Transform FindBag(Transform root)
+        {
+            foreach (Transform t in root.GetComponentsInChildren<Transform>(true))
+            {
+                if (t.name == BagBone)
+                {
+                    return t;
+                }
+            }
+
+            return null;
         }
 
         private void Update()

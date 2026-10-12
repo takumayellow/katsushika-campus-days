@@ -240,6 +240,7 @@ def build_character(cid: str, out_root: str, face_size: int, fbx_opts: dict,
 
     arm, pos = rig.build_armature(p, a, cid)
     method = rig.bind(obj, arm, pos)
+    rig.add_bag_bone(arm, p, a)
     rig.override_weights(obj, mb, p, a)
 
     keys = shapes.build_shape_keys(obj, mb, p)

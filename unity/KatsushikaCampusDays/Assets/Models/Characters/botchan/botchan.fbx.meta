@@ -178,6 +178,8 @@ ModelImporter:
         weight: 1
       - path: Armature/Hips/Spine/Chest/UpperChest/RightShoulder/RightUpperArm/RightLowerArm/RightHand
         weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/Bag
+        weight: 1
       - path: Armature/Hips/LeftUpperLeg
         weight: 1
       - path: Armature/Hips/LeftUpperLeg/LeftLowerLeg
@@ -266,6 +268,8 @@ ModelImporter:
       - path: Armature/Hips/Spine/Chest/UpperChest/RightShoulder/RightUpperArm/RightLowerArm
         weight: 1
       - path: Armature/Hips/Spine/Chest/UpperChest/RightShoulder/RightUpperArm/RightLowerArm/RightHand
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/Bag
         weight: 1
       - path: Armature/Hips/LeftUpperLeg
         weight: 1
@@ -356,6 +360,8 @@ ModelImporter:
         weight: 1
       - path: Armature/Hips/Spine/Chest/UpperChest/RightShoulder/RightUpperArm/RightLowerArm/RightHand
         weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/Bag
+        weight: 1
       - path: Armature/Hips/LeftUpperLeg
         weight: 1
       - path: Armature/Hips/LeftUpperLeg/LeftLowerLeg
@@ -444,6 +450,8 @@ ModelImporter:
       - path: Armature/Hips/Spine/Chest/UpperChest/RightShoulder/RightUpperArm/RightLowerArm
         weight: 1
       - path: Armature/Hips/Spine/Chest/UpperChest/RightShoulder/RightUpperArm/RightLowerArm/RightHand
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/Bag
         weight: 1
       - path: Armature/Hips/LeftUpperLeg
         weight: 1
@@ -534,6 +542,8 @@ ModelImporter:
         weight: 1
       - path: Armature/Hips/Spine/Chest/UpperChest/RightShoulder/RightUpperArm/RightLowerArm/RightHand
         weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/Bag
+        weight: 1
       - path: Armature/Hips/LeftUpperLeg
         weight: 1
       - path: Armature/Hips/LeftUpperLeg/LeftLowerLeg
@@ -622,6 +632,8 @@ ModelImporter:
       - path: Armature/Hips/Spine/Chest/UpperChest/RightShoulder/RightUpperArm/RightLowerArm
         weight: 1
       - path: Armature/Hips/Spine/Chest/UpperChest/RightShoulder/RightUpperArm/RightLowerArm/RightHand
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/Bag
         weight: 1
       - path: Armature/Hips/LeftUpperLeg
         weight: 1
@@ -964,6 +976,11 @@ ModelImporter:
       parentName: Chest
       position: {x: -0, y: 0.07436895, z: 0}
       rotation: {x: -3.5527137e-15, y: 0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Bag
+      parentName: UpperChest
+      position: {x: 0.20070954, y: 0.027330995, z: 0}
+      rotation: {x: 1, y: 6.87116e-22, z: 0.0000000754979, w: 6.123234e-17}
       scale: {x: 1, y: 1, z: 1}
     - name: LeftShoulder
       parentName: UpperChest

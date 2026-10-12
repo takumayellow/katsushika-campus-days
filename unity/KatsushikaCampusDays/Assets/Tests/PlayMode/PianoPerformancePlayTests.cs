@@ -261,6 +261,16 @@ namespace KCD.Tests
                     yield return Shoot(Path.Combine(folder, "left.png"), anchor, -1.5f, -0.1f, 1.25f);
                 }
 
+                if (id != "madonna")
+                {
+                    Assert.IsNotNull(pose.Bag, id + ": 鞄を持つ体に Bag ボーンが無い");
+                }
+
+                if (pose.Bag != null)
+                {
+                    Assert.Less(BagExtent(pose), 0.01f, id + ": 弾いている間も鞄が鍵盤のあたりに残っている");
+                }
+
                 Assert.LessOrEqual(pose.RightHandShortfall, MaxShortfall, id + ": 鍵盤が腕の届かない所にある (" + pose.RightHandShortfall + " m)");
                 Assert.LessOrEqual(toGoal, HandReach, id + ": 右手が鍵盤の上の目標に届かない (" + toGoal + " m)");
 
@@ -269,9 +279,53 @@ namespace KCD.Tests
                 Assert.IsFalse(AudioManager.Instance.IsPianoPlaying, "立っても曲が止まらない");
                 yield return PlayModeScenes.Advance(10, 2.4f);
                 Assert.GreaterOrEqual(AudioManager.Instance.BgmDuck, 0.95f, "立ったあと BGM が戻らない");
+                if (pose.Bag != null)
+                {
+                    Assert.Greater(BagExtent(pose), 0.05f, id + ": 立ったあと鞄が戻らない");
+                }
             }
 
             AssertNoErrors("ピアノを弾く");
+        }
+
+        /// <summary>
+        /// 体のメッシュのうち Bag ボーンだけに付いた頂点（鞄・風呂敷）が、いま張る大きさ (m)。
+        /// 骨のスケールを 0 にすると 1 点に潰れて 0 になる。体は 1 枚のスキンメッシュなので、Renderer の bounds では鞄だけを測れない。
+        /// </summary>
+        private static float BagExtent(SitPose pose)
+        {
+            SkinnedMeshRenderer renderer = pose.GetComponentInChildren<SkinnedMeshRenderer>();
+            Assert.IsNotNull(renderer, "体に SkinnedMeshRenderer が無い");
+            int bagIndex = System.Array.IndexOf(renderer.bones, pose.Bag);
+            Assert.GreaterOrEqual(bagIndex, 0, "Bag ボーンが SkinnedMeshRenderer の骨に入っていない");
+
+            var baked = new Mesh();
+            renderer.BakeMesh(baked, true);
+            Vector3[] vertices = baked.vertices;
+            BoneWeight[] weights = renderer.sharedMesh.boneWeights;
+            var bounds = new Bounds();
+            bool any = false;
+            for (int i = 0; i < weights.Length && i < vertices.Length; i++)
+            {
+                if (weights[i].boneIndex0 != bagIndex || weights[i].weight0 < 0.99f)
+                {
+                    continue;
+                }
+
+                if (!any)
+                {
+                    bounds = new Bounds(vertices[i], Vector3.zero);
+                    any = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(vertices[i]);
+                }
+            }
+
+            Object.Destroy(baked);
+            Assert.IsTrue(any, "Bag ボーンだけに付いた頂点が無い");
+            return bounds.size.magnitude;
         }
 
         /// <summary>
