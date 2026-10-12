@@ -12,6 +12,7 @@ namespace KCD.Tests
     /// 朝は門か北西の駅側から建物へ 18 人、昼はメインストリート・池・北側に散って 20 人、午後は建物の間を 14 人、
     /// 夕方は門か駅側へ 10 人、夜はほとんど誰もいない（2 人）。8 時より前は誰も出さない (#165)。
     /// どの時間帯も同時に出す上限の 24 人を超えない。見た目は男女がおよそ 3 対 7 (#165)。
+    /// 見た目は枠と同じ数だけあり、どの 2 つも体か色で見分けがつく。
     /// </summary>
     public sealed class MobScheduleTests
     {
@@ -27,6 +28,9 @@ namespace KCD.Tests
 
         /// <summary>男の体。ほかは女の体。</summary>
         private static readonly HashSet<string> MaleBodies = new HashSet<string> { "prof", "student_m" };
+
+        /// <summary>見て違う色だと分かる色差（CIE76 の ΔE）。</summary>
+        private const float DistinctDeltaE = 20f;
 
         private static string DataPath => Path.Combine(Application.dataPath, "Data", "Mobs", "schedule.json");
 
@@ -170,6 +174,40 @@ namespace KCD.Tests
         }
 
         [Test]
+        public void 見た目は枠の数だけある()
+        {
+            // MobStage は枠 i に Variants[i % 数] を焼き込むので、枠より少ないと同じ見た目の人が同時に出る。
+            Assert.GreaterOrEqual(Load().Variants.Count, MobScheduler.MaxActive);
+        }
+
+        [Test]
+        public void どの2つの見た目も見分けがつく()
+        {
+            // 体・髪・上・下のうち 2 つ以上が違う。同じ体どうしは上の色が必ず違う（遠目でいちばん目に入る）。
+            IReadOnlyList<MobSchedule.Variant> variants = Load().Variants;
+            var failures = new List<string>();
+            for (int a = 0; a < variants.Count; a++)
+            {
+                for (int b = a + 1; b < variants.Count; b++)
+                {
+                    MobSchedule.Variant x = variants[a];
+                    MobSchedule.Variant y = variants[b];
+                    bool sameBody = x.BodyId == y.BodyId;
+                    bool hair = DeltaE(x.Hair, y.Hair) >= DistinctDeltaE;
+                    bool top = DeltaE(x.Top, y.Top) >= DistinctDeltaE;
+                    bool bottom = DeltaE(x.Bottom, y.Bottom) >= DistinctDeltaE;
+                    int differences = (sameBody ? 0 : 1) + (hair ? 1 : 0) + (top ? 1 : 0) + (bottom ? 1 : 0);
+                    if (differences < 2 || (sameBody && !top))
+                    {
+                        failures.Add(x.Id + " と " + y.Id);
+                    }
+                }
+            }
+
+            CollectionAssert.IsEmpty(failures, "見分けにくい見た目の組");
+        }
+
+        [Test]
         public void 男女はおよそ3対7で並びのどこを切っても偏らない()
         {
             // MobStage は枠 i に Variants[i % 数] を焼き込み、MobPool は枠を順に貸す。
@@ -268,6 +306,38 @@ namespace KCD.Tests
         {
             Assert.IsTrue(strings.TryGetValue(key, out object value), path + " に " + key + " が無い");
             Assert.IsFalse(string.IsNullOrEmpty(value as string), path + " の " + key + " が空");
+        }
+
+        /// <summary>sRGB の 2 色の CIE76 色差。</summary>
+        private static float DeltaE(Color a, Color b)
+        {
+            Vector3 p = Lab(a);
+            Vector3 q = Lab(b);
+            return Vector3.Distance(p, q);
+        }
+
+        private static Vector3 Lab(Color c)
+        {
+            float r = Linear(c.r);
+            float g = Linear(c.g);
+            float b = Linear(c.b);
+            float x = (0.4124f * r + 0.3576f * g + 0.1805f * b) / 0.95047f;
+            float y = 0.2126f * r + 0.7152f * g + 0.0722f * b;
+            float z = (0.0193f * r + 0.1192f * g + 0.9505f * b) / 1.08883f;
+            float fx = LabCurve(x);
+            float fy = LabCurve(y);
+            float fz = LabCurve(z);
+            return new Vector3(116f * fy - 16f, 500f * (fx - fy), 200f * (fy - fz));
+        }
+
+        private static float Linear(float c)
+        {
+            return c <= 0.04045f ? c / 12.92f : Mathf.Pow((c + 0.055f) / 1.055f, 2.4f);
+        }
+
+        private static float LabCurve(float t)
+        {
+            return t > 0.008856f ? Mathf.Pow(t, 1f / 3f) : 7.787f * t + 16f / 116f;
         }
     }
 }

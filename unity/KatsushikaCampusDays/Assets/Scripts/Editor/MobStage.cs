@@ -16,6 +16,9 @@ namespace KCD.Editor
     /// SRP Batcher がまとめるので、マテリアルが増えても描画の準備は増えない。テクスチャは元の顔のものを
     /// 共有するので、テクスチャのメモリも増えない。
     ///
+    /// 枠 i には variants[i] を焼き込む。variants は枠と同じ数だけあるので、同時に出る人の見た目はみな違う。
+    /// 足の運びとまばたきの周期も枠ごとにずらす（BlinkPhase.OffsetForMob）。
+    ///
     /// 遠くで使う「_lod1」は同じ色で輪郭のパス（SRPDefaultUnlit）を切ったもの。
     /// 色を変えない部分（顔・目・肌・靴下など）は、近くでは名前のある NPC と同じ元の .mat を使う。
     ///
@@ -66,6 +69,14 @@ namespace KCD.Editor
             Physics.SyncTransforms();
 
             ResolveWaypoints(root, schedule, out string[] keys, out Vector3[] positions);
+
+            // 枠と見た目を 1 対 1 にし、同時に出る人が全員違う見た目になるようにする。
+            if (schedule.Variants.Count < MobScheduler.MaxActive)
+            {
+                EditorPaths.Report(string.Format(
+                    "モブの見た目が {0} 通りで枠の {1} より少ないので、同じ見た目の人が同時に出ます: {2}",
+                    schedule.Variants.Count, MobScheduler.MaxActive, SchedulePath));
+            }
 
             var cache = new Dictionary<string, Material>();
             var pool = new MobWalker[MobScheduler.MaxActive];
@@ -220,6 +231,13 @@ namespace KCD.Editor
             Animator animator = body.GetComponent<Animator>();
             if (animator != null)
             {
+                // 同じ体のモブどうしで足の運びとまばたきが揃わないよう、周期のずらし幅を枠ごとにする。
+                BlinkPhase phase = animator.GetComponent<BlinkPhase>();
+                if (phase != null)
+                {
+                    phase.Offset = BlinkPhase.OffsetForMob(index);
+                }
+
                 // Mid の間引き更新と Hidden で Animator を止めても、歩きの状態が最初に巻き戻らないように。
                 animator.keepAnimatorStateOnDisable = true;
                 animator.writeDefaultValuesOnDisable = false;

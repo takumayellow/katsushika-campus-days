@@ -5,15 +5,17 @@ namespace KCD
     /// <summary>
     /// モブの学生に話しかけたときの返事。会話ウィンドウは開かず、時間帯に合った一言か会釈を
     /// トーストで出して、少しだけ立ち止まってこちらを向く (#22)。クエストの「会った」には数えない。
+    /// 一言は初めて話しかけたときに MobScheduler が選び、見えている人どうしで同じ台詞にならない。
+    /// 同じ人に続けて話しかけると会釈を返す。
     /// </summary>
     [RequireComponent(typeof(Collider))]
     public sealed class MobTalker : Interactable
     {
-        /// <summary>時間帯ごとの台詞の数（ui.mob.line.&lt;band&gt;.0 と .1）。</summary>
-        public const int LinesPerBand = 2;
-
-        /// <summary>台詞ではなく会釈だけ返す割合。</summary>
-        public const float NodChance = 0.34f;
+        /// <summary>
+        /// 時間帯ごとの台詞の数（ui.mob.line.&lt;band&gt;.0〜.7）。見えている人（MobScheduler.DefaultDrawnCount 人まで）が
+        /// みな違う台詞を言えるだけ用意する。
+        /// </summary>
+        public const int LinesPerBand = 8;
 
         /// <summary>話しかけられて立ち止まる秒数。</summary>
         public const float HoldSeconds = 1.8f;
@@ -65,11 +67,31 @@ namespace KCD
             Vector3 toward = interactor != null ? interactor.transform.position : transform.position + transform.forward;
             _walker.Hold(HoldSeconds, toward);
 
+            string said;
+            if (!RepliesWithNod(_walker.BandId, _walker.LineIndex))
+            {
+                int index = _walker.ClaimLine();
+                said = PickLine(_walker.BandId, index);
+            }
+            else
+            {
+                said = Nod();
+            }
+
             HUD hud = HUD.Instance;
             if (hud != null)
             {
-                hud.ShowToast(PickLine(_walker.BandId, Random.value, Random.Range(0, LinesPerBand)), false);
+                hud.ShowToast(said, false);
             }
+        }
+
+        /// <summary>
+        /// 会釈だけ返すか。台詞の番号 lineIndex をもう持っている人（一度言った人）と、時間帯 bandId の
+        /// 分からない人は会釈を返す。それ以外は初めて話しかけられた人で、台詞の番号を借りて一言言う。
+        /// </summary>
+        public static bool RepliesWithNod(string bandId, int lineIndex)
+        {
+            return lineIndex >= 0 || string.IsNullOrEmpty(bandId);
         }
 
         public static string LineKey(string bandId, int index)
@@ -77,14 +99,20 @@ namespace KCD
             return "ui.mob.line." + bandId + "." + index;
         }
 
-        /// <summary>
-        /// 返事を選ぶ。nodRoll（0〜1）が <see cref="NodChance"/> 未満か、時間帯が分からないか、
-        /// その時間帯の台詞が辞書に無ければ会釈。そうでなければ lineIndex 番目の台詞をかぎ括弧で包む。
-        /// </summary>
-        public static string PickLine(string bandId, float nodRoll, int lineIndex)
+        /// <summary>会釈の返事。</summary>
+        public static string Nod()
         {
-            string nod = L.Get("ui.mob.nod", "（軽く会釈してくれた）");
-            if (string.IsNullOrEmpty(bandId) || nodRoll < NodChance)
+            return L.Get("ui.mob.nod", "（軽く会釈してくれた）");
+        }
+
+        /// <summary>
+        /// 返事を選ぶ。時間帯が分からないか、その時間帯の台詞が辞書に無ければ会釈。
+        /// そうでなければ lineIndex 番目の台詞をかぎ括弧で包む。
+        /// </summary>
+        public static string PickLine(string bandId, int lineIndex)
+        {
+            string nod = Nod();
+            if (string.IsNullOrEmpty(bandId))
             {
                 return nod;
             }

@@ -125,6 +125,43 @@ namespace KCD.Tests
         }
 
         [Test]
+        public void 立っているときの速さは枠ごとに違う()
+        {
+            int slots = MobScheduler.MaxActive;
+            for (int a = 0; a < slots; a++)
+            {
+                float tempo = MobWalker.IdleTempoFor(a);
+                Assert.That(tempo, Is.InRange(MobWalker.IdleTempoMin, MobWalker.IdleTempoMax), "枠 " + a);
+                for (int b = a + 1; b < slots; b++)
+                {
+                    Assert.Greater(Mathf.Abs(tempo - MobWalker.IdleTempoFor(b)), 0.01f, "枠 " + a + " と " + b + " の速さが近い");
+                }
+            }
+        }
+
+        [Test]
+        public void 続けて貸す枠どうしは速さが大きく違う()
+        {
+            // MobPool は枠を順に貸すので、隣り合う枠の人は同じ入口から続けて出て並びやすい。
+            int slots = MobScheduler.MaxActive;
+            for (int a = 0; a < slots; a++)
+            {
+                float gap = Mathf.Abs(MobWalker.IdleTempoFor(a) - MobWalker.IdleTempoFor((a + 1) % slots));
+                Assert.Greater(gap, 0.05f, "枠 " + a + " と次の枠");
+            }
+        }
+
+        [Test]
+        public void 枠ごとの速さは止まっているときだけ掛ける()
+        {
+            Assert.AreEqual(0.9f, MobWalker.ApplyTempo(1f, 0f, 0.9f), 1e-5f);
+            Assert.AreEqual(1.6f, MobWalker.ApplyTempo(1.6f, MobWalker.TempoFadeSpeed, 0.9f), 1e-5f, "歩いているときは足の運びのまま");
+            Assert.AreEqual(1.6f, MobWalker.ApplyTempo(1.6f, 1.4f, 1.1f), 1e-5f);
+            float half = MobWalker.ApplyTempo(1f, MobWalker.TempoFadeSpeed * 0.5f, 0.9f);
+            Assert.That(half, Is.InRange(0.9f, 1f), "途中はなめらかに 1 へ寄る");
+        }
+
+        [Test]
         public void 他の_NPC_より道を譲る()
         {
             // NavMeshAgent の avoidancePriority は数が大きいほど譲る側。名前のある NPC は Unity の既定の 50 のまま。

@@ -66,13 +66,13 @@ Material:
     - _VertexColor: 0
     - _ZWrite: 1
     m_Colors:
-    - _BaseColor: {r: 0.9254902, g: 0.92156863, b: 0.9019608, a: 1}
+    - _BaseColor: {r: 0.7254902, g: 0.654902, b: 0.81960785, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _HairRingColor: {r: 1, g: 1, b: 1, a: 1}
     - _OutlineColor: {r: 0.11999995, g: 0.09999997, b: 0.13999996, a: 1}
     - _RimColor: {r: 1, g: 1, b: 1, a: 1}
-    - _ShadeColor: {r: 0.769, g: 0.7539424, b: 0.8088542, a: 1}
-    - _ShadeColor2: {r: 0.5814706, g: 0.56870586, b: 0.64788234, a: 1}
+    - _ShadeColor: {r: 0.70239717, g: 0.63984495, b: 0.8236, a: 1}
+    - _ShadeColor2: {r: 0.4914706, g: 0.44870588, b: 0.6108235, a: 1}
     - _SpecularColor: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

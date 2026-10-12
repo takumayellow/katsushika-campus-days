@@ -20,6 +20,15 @@ namespace KCD.Tests
         }
 
         [Test]
+        public void 色だけで描く人数は台詞の本数までに丸める()
+        {
+            Assert.AreEqual(MobScheduler.DefaultDrawnCount, MobScheduler.DrawnLimit(MobScheduler.DefaultDrawnCount));
+            Assert.AreEqual(MobTalker.LinesPerBand, MobScheduler.DrawnLimit(MobTalker.LinesPerBand + 4));
+            Assert.AreEqual(MobTalker.LinesPerBand, MobScheduler.DrawnLimit(int.MaxValue));
+            Assert.AreEqual(0, MobScheduler.DrawnLimit(-3));
+        }
+
+        [Test]
         public void 上限の人数が出ていても描くのは近い順に決まった人数だけ()
         {
             int near = 0;
