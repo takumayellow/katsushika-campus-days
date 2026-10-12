@@ -278,7 +278,7 @@ def build_library(mb, b, frame, ctx):
             mb.add_quad(prev[i], prev[j], cur[j], cur[i], "metal_white")
         prev = cur
 
-    # 入口と看板は kcd_lib.entrances が置く（東面・モールの突き当たり）
+    # 入口と看板は kcd_lib.entrances が置く（東面・メインストリートの突き当たり）
     ctx["library_uv"] = (u0, v0, u1, v1)
 
 

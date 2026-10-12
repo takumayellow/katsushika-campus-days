@@ -10,7 +10,7 @@
       --fbx <campus.fbx> --mode textured --out-dir <出力先> \
       [--trees-fbx <trees.fbx> --trees-json <trees.json>] [--palette-ref origin/main]
 
-出力: <out-dir>/<視点>-<mode>.png（1280x720、全景・モール・図書館と地上目線の 3 視点）
+出力: <out-dir>/<視点>-<mode>.png（1280x720、全景・メインストリート・図書館と地上目線の 3 視点）
 
 - 色は Unity の MaterialLibrary.cs（CampusColors → InteriorPalette → B0B0AC）を読んで決める。
   --palette-ref を渡すと、その ref の .cs を読む（before を main の色で描くため）。

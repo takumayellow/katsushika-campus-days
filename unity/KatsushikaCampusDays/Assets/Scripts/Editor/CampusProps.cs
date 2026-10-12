@@ -60,16 +60,16 @@ namespace KCD.Editor
         }
 
         /// <summary>
-        /// 正門前の広場（u 197..211 の石畳）の外側の端。理科大通りからモールへ向かって立つ。
+        /// 正門前の広場（u 197..211 の石畳）の外側の端。理科大通りからメインストリートへ向かって立つ。
         /// 正門ゾーン gate_main は u 183..207 なので, その中 (u=186) に置くと最初の目標が背中側になり
-        /// カメラもゾーンの中から始まる (#37)。u=210 なら正門とモールが正面, 4.2 m 後ろのカメラ (u≈214) もゾーンの外。
+        /// カメラもゾーンの中から始まる (#37)。u=210 なら正門とメインストリートが正面, 4.2 m 後ろのカメラ (u≈214) もゾーンの外。
         /// </summary>
         public static Vector3 PlayerSpawn => Ground(Local(PlayerSpawnU, -24f));
 
         /// <summary>スポーンの u 座標。gate_main ゾーンの端 (207) より外, 広場の端 (211) より内。</summary>
         public const float PlayerSpawnU = 210f;
 
-        /// <summary>モールの反対側（図書館側）を向く角度。</summary>
+        /// <summary>メインストリートの反対側（図書館側）を向く角度。</summary>
         public static float PlayerYaw => Mathf.Atan2(-AxisU.x, -AxisU.y) * Mathf.Rad2Deg;
 
         /// <summary>入口・看板の名前・到達判定・拾い物をまとめて置く。</summary>
@@ -263,8 +263,8 @@ namespace KCD.Editor
         private static void PlaceZones(Transform parent)
         {
             Zone(parent, "gate_main", "理科大通り 正門", Local(195f, -24f), new Vector3(24f, 8f, 18f));
-            Zone(parent, "campus_mall", "キャンパスモール", Local(70f, -24f), new Vector3(60f, 8f, 14f));
-            Zone(parent, "mall_bench", "モールのベンチ", Local(69f, -26.6f), new Vector3(10f, 6f, 10f));
+            Zone(parent, "campus_mall", "メインストリート", Local(70f, -24f), new Vector3(60f, 8f, 14f));
+            Zone(parent, "mall_bench", "メインストリートのベンチ", Local(69f, -26.6f), new Vector3(10f, 6f, 10f));
             // 堀の東の縁石と芝生広場（u -54..-40, v -56..-28）。水面には入れないので岸側に取る。
             Zone(parent, "library_pond", "図書館の水盤", Local(-47f, -42f), new Vector3(14f, 8f, 28f));
         }

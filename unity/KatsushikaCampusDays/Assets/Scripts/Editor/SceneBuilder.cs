@@ -175,7 +175,7 @@ namespace KCD.Editor
             EditorPaths.Report("NPC を " + Npcs.Length + " 人置きました。");
         }
 
-        /// <summary>キャンパスモールの中心を向く角度。だいたいプレイヤーが来る方角になる。</summary>
+        /// <summary>メインストリートの中心を向く角度。だいたいプレイヤーが来る方角になる。</summary>
         private static float YawTowardMall(Vector3 position)
         {
             var mall = new Vector3(53.7f, position.y, -50.92f);

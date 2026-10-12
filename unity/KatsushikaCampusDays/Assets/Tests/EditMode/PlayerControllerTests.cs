@@ -81,7 +81,7 @@ namespace KCD.Tests
         [Test]
         public void SnappedVerticalMotion_GroundSnapCoversEveryGroundLayerStep()
         {
-            // blender/kcd_lib/site.py の高さレイヤ: 外周 0.000 〜 モール 0.021。一番大きい段差は 2.1 cm。
+            // blender/kcd_lib/site.py の高さレイヤ: 外周 0.000 〜 メインストリート 0.021。一番大きい段差は 2.1 cm。
             // 入口の石張り (kcd_lib/entrances.py APRON_Z 0.12) から芝 0.006 への 11.4 cm は吸い付ききらないが、
             // 残りは 1.4 cm で skinWidth (0.028) の内側に入るので接地は外れない。
             const float LargestGroundLayerStep = 0.021f;

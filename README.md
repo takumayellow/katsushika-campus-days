@@ -55,18 +55,18 @@ Windows の配布 zip は `python tools/package_windows.py` で作る。名前�
 CREDITS.md を CREDITS.txt として同梱する。地図データの帰属（© OpenStreetMap contributors, ODbL）は
 タイトル画面の右下とクレジット画面に出る。
 
-<img src="docs/screenshots/campus.jpg" alt="正門からモールを見たプレイ画面" width="100%">
+<img src="docs/screenshots/campus.jpg" alt="正門からメインストリートを見たプレイ画面" width="100%">
 
-Windows 版のプレイ画面。正門からモールの並木を見たところで、左上が進行中のクエスト、右上がミニマップと時刻。
+Windows 版のプレイ画面。正門からメインストリートの並木を見たところで、左上が進行中のクエスト、右上がミニマップと時刻。
 
 <p>
 <img src="docs/screenshots/talk.jpg" alt="花之木いなりとの会話" width="49%">
 <img src="docs/screenshots/interior.jpg" alt="図書館 1 階の閲覧席" width="49%">
 <img src="docs/screenshots/entrance.jpg" alt="図書館の入口と看板" width="49%">
-<img src="docs/screenshots/dusk.jpg" alt="夕暮れのモール" width="49%">
+<img src="docs/screenshots/dusk.jpg" alt="夕暮れのメインストリート" width="49%">
 </p>
 
-左上から順に、花之木いなりとの会話、図書館 1 階の閲覧席、図書館の入口と看板、17 時台の夕暮れのモール。
+左上から順に、花之木いなりとの会話、図書館 1 階の閲覧席、図書館の入口と看板、17 時台の夕暮れのメインストリート。
 どれも Windows 版を `-kcd-*` の起動引数（`SmokeDirector`）で場面を指定して起こし、1600×900 の窓で撮った。
 会話の 1 枚だけはカメラをプレイヤーの斜め後ろ 4 m に置き直していて、ほかは本編の追従カメラのまま。
 

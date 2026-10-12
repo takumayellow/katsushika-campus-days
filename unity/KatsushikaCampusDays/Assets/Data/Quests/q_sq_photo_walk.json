@@ -2,8 +2,8 @@
   "id": "q_sq_photo_walk",
   "title": "キャンパス写真散歩",
   "title_en": "Campus Photo Walk",
-  "summary": "モールを歩きながら、キャンパスがいちばん綺麗に見える場所を 3 箇所まわる。カメラを構える場所は、地面の三脚マークが目印。",
-  "summary_en": "Walk the mall and visit three of the spots where the campus looks its best. A tripod mark on the ground shows where to stand.",
+  "summary": "メインストリートを歩きながら、キャンパスがいちばん綺麗に見える場所を 3 箇所まわる。カメラを構える場所は、地面の三脚マークが目印。",
+  "summary_en": "Walk Main Street and visit three of the spots where the campus looks its best. A tripod mark on the ground shows where to stand.",
   "order": 15,
   "autoStart": true,
   "prerequisites": [
@@ -19,8 +19,8 @@
       "id": "s1",
       "type": "visit",
       "target": "ps_mall_view",
-      "text": "モールの見通しの撮影ポイントに立つ",
-      "text_en": "Stand at the photo spot looking down the mall"
+      "text": "メインストリートの見通しの撮影ポイントに立つ",
+      "text_en": "Stand at the photo spot looking down Main Street"
     },
     {
       "id": "s2",

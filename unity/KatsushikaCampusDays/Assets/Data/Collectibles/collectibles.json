@@ -29,8 +29,8 @@
       "id": "c_mall_pin",
       "name_ja": "石畳のピンバッジ",
       "name_en": "Cobblestone Pin Badge",
-      "hint_ja": "モールの石畳が市松になっているあたり。目地に挟まっている。",
-      "hint_en": "Where the mall's paving turns to a checkerboard. Wedged in a joint between stones.",
+      "hint_ja": "メインストリートの石畳が市松になっているあたり。目地に挟まっている。",
+      "hint_en": "Where Main Street's paving turns to a checkerboard. Wedged in a joint between stones.",
       "building": null,
       "position": {
         "x": 96.7,
@@ -39,15 +39,15 @@
       "rarity": "common",
       "source": "hidden",
       "note_no": 2,
-      "note_ja": "モールを端から端まで歩いて、誰ともすれ違わなかった。まだ人が少ない。",
-      "note_en": "We walked the mall end to end and passed no one. There aren't many of us yet."
+      "note_ja": "メインストリートを端から端まで歩いて、誰ともすれ違わなかった。まだ人が少ない。",
+      "note_en": "We walked Main Street end to end and passed no one. There aren't many of us yet."
     },
     {
       "id": "c_bench_coin",
       "name_ja": "ベンチの下の記念コイン",
       "name_en": "Coin Under the Bench",
-      "hint_ja": "モールでいちばん日当たりのいいベンチ。座らずに、のぞき込む。",
-      "hint_en": "The sunniest bench on the mall. Don't sit, look underneath.",
+      "hint_ja": "並木道でいちばん日当たりのいいベンチ。座らずに、のぞき込む。",
+      "hint_en": "The sunniest bench on Main Street. Don't sit, look underneath.",
       "building": null,
       "position": {
         "x": 48.8,
@@ -360,8 +360,8 @@
   "photo_spots": [
     {
       "id": "ps_mall_view",
-      "name_ja": "モールの見通し",
-      "name_en": "Down the Mall",
+      "name_ja": "メインストリートの見通し",
+      "name_en": "Down Main Street",
       "building": null,
       "position": {
         "x": 96.7,

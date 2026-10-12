@@ -10,7 +10,7 @@ namespace KCD
     /// build_street_furniture）。ベンチは高さ 0.92 m まで、照明柱は高さ 4 m の柱の上に灯具
     /// （0.55 × 0.30 m の箱と、その下面の 0.45 × 0.22 m の発光面）が載る。メッシュの一番低い頂点より
     /// <see cref="MinHeadHeight"/> 高い頂点だけを残し、水平に <see cref="ClusterRadius"/> 以内のものを
-    /// 1 本の灯具にまとめる。灯具どうしはモールの両側で 10 m、並びで 20 m 離れているので混ざらない。
+    /// 1 本の灯具にまとめる。灯具どうしはメインストリートの両側で 10 m、並びで 20 m 離れているので混ざらない。
     /// </summary>
     public static class StreetLampLayout
     {

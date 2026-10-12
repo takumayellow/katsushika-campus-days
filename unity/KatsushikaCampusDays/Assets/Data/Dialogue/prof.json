@@ -35,8 +35,8 @@
           "text_en": "I've asked the key holder to wait one more minute. Sixty seconds, starting from here."
         },
         {
-          "text": "モールを北へ折れれば体育館だ。Shift を押しっぱなしで走りなさい。",
-          "text_en": "Turn north off the mall and you'll reach the gym. Hold Shift and run."
+          "text": "メインストリートを北へ折れれば体育館だ。Shift を押しっぱなしで走りなさい。",
+          "text_en": "Turn north off Main Street and you'll reach the gym. Hold Shift and run."
         }
       ]
     },
@@ -240,8 +240,8 @@
           "text_en": "Good morning. You're one of the Information Engineering students. You were on the list."
         },
         {
-          "text": "このモールは全長 250 m ある。南西の金町駅側から、北東の図書館まで、まっすぐ一本。",
-          "text_en": "This mall is 250 metres long. From the Kanamachi Station end in the southwest to the library in the northeast, one straight line."
+          "text": "このメインストリートは全長 250 m ある。南西の金町駅側から、北東の図書館まで、まっすぐ一本。",
+          "text_en": "Main Street is 250 metres long. From the Kanamachi Station end in the southwest to the library in the northeast, one straight line."
         },
         {
           "text": "迷ったら、とにかくこの石畳の上を歩きなさい。だいたいどこかに着く。",

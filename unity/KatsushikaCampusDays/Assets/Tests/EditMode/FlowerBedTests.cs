@@ -8,7 +8,7 @@ using UnityEngine;
 namespace KCD.Tests
 {
     /// <summary>
-    /// モールの花壇の花が、ゲームのパレットにある色で campus.fbx に載っていることを守る (#58)。
+    /// メインストリートの花壇の花が、ゲームのパレットにある色で campus.fbx に載っていることを守る (#58)。
     ///
     /// 花の色は blender/kcd_lib/site.py の FLOWERS（と花の中心の FLOWER_EYES）が決め、
     /// Unity の色は MaterialLibrary.CampusColors が決める。Blender に色を足して CampusColors に足し忘れると、
