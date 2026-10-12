@@ -259,10 +259,37 @@ y=230）に対して頭が 79 px（髪の先 y=20〜顎 y=99）で **2.80 頭身
   付け、脚の肌（`leg_l` / `leg_r`）からは腕のボーンを外す（`rig._legs_without_arms`）。
   外す前の madonna は袂が腰まで伸び、腿の付け根（腕のウェイト最大 0.58）が袴の色の
   三角になって腰から突き出ていた。
-- 走りの腕は肩の片振幅 22 度・肘 85 度で固定・前腕を内へ 25 度・胸の逆回旋 0.5
-  （`anim.GAIT_ARMS`、値の根拠はその上のコメント）。書き出した FBX の実測で、mirai の
-  上腕は胸から見て -20〜+24 度、手首はバストの 9 cm 下（Z 0.916 m）まで、体の中心線
-  から 17 cm（肩関節のほぼ真下）を通る（#232）。
+- 走り（`Run`）はランニングの一般的な目安に合わせている（#232）。目安と出典:
+
+  | 部位 | 目安 | 出典 |
+  |---|---|---|
+  | 接地の膝 | 屈曲 13〜20 度でほぼ伸びる。すねは鉛直から 5〜8 度以内、足は体の少し前 | [Souza 2016](https://escholarship.org/content/qt5v48m34m/qt5v48m34m.pdf)、[IJSPT の 2D 走動作チェック](https://ijspt.scholasticahq.com/article/74726.pdf) |
+  | 立脚中期の膝 | 屈曲 40〜45 度 | [Souza 2016](https://escholarship.org/content/qt5v48m34m/qt5v48m34m.pdf)、[JOSPT 2016](https://www.jospt.org/doi/10.2519/jospt.2016.6280) |
+  | 遊脚 | 膝 90〜125 度に畳む。腿は遊脚の後半に前へ 50〜55 度 | Novacheck 1998（[Physiopedia の要約](https://www.physio-pedia.com/Running_Biomechanics)） |
+  | 腕 | 肩から前後に振る。肘の屈曲 70〜90 度前後、手は腰の横を通る | [Intermountain Health](https://intermountainhealthcare.org/blogs/efficient-running-mechanics)、[Biomechanics of sprint running](https://en.wikipedia.org/wiki/Biomechanics_of_sprint_running) |
+  | キーポーズ | 接地 → 沈み込み → 通過 → 伸び上がり（滞空） | [Rusty Animator](https://rustyanimator.com/run-cycle/)、[AnimSchool](https://blog.animschool.edu/2024/04/10/the-key-poses-of-a-run-cycle/) |
+
+  脚は `anim.GAIT_TARGET["Run"]`（接地率 0.27、接地中に足が進む距離 = 脚長の 0.85 倍）と
+  `anim.Gait` の走りの値（立脚中期の脚の縮み `k_mid` 0.925、接地位置 `y0`、遊脚の
+  `clear_peak` / `swing_tan`）で決まる。腕は `anim.GAIT_ARMS["Run"]`（肩の片振幅 24 度・
+  振りの中心を前へ 9 度・肘の屈曲 60〜89 度・前腕を内へ 25 度・胸の逆回旋 0.5。
+  値の根拠はその上のコメント）。gait_fk（`blender/tests/gait_fk.py`）で組み立てた
+  mirai の実測:
+
+  | 項目 | 値 |
+  |---|---|
+  | 接地の膝の屈曲 / すねの傾き | 18.7 度 / 5.8 度（足首が膝の前） |
+  | 接地の足の位置 | 腰より脚長の 0.25 倍前 |
+  | 立脚中の膝の屈曲の最大 | 44.1 度 |
+  | 遊脚の膝の屈曲の最大 / 腿の前の最大 | 93 度 / 48.7 度 |
+  | 接地直前の膝 | 18.8 度以上（伸ばし切らない） |
+  | 上腕の前後（画面） / 鉛直からの開き | -24.6〜+23.8 度 / 最大 24.9 度 |
+  | 肘の屈曲 | 60（後ろ）〜89 度（前） |
+  | 手首 | バストの 1.4 cm 下まで、体の中心線から 16 cm |
+
+  2 頭身のキャラは歩幅に対して脚が短く、接地は周期の 1 割前後しかない。
+  遊脚の後半は膝が 11.7 度で伸びたまま前へ運ぶ。目安は `test_chara_run_legs.py` と
+  `test_chara_run_arms.py` で確かめる。
   `anim.make_action` はフレームごとに `scene.frame_set(f)` してから姿勢を作って
   キーを打つ。順番を逆にすると、`frame_set` が打ち済みのキーで姿勢を上書きし、
   全キーが 1 キー目と同じ姿勢になる（脚が止まったまま滑る）。

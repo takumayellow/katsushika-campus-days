@@ -271,7 +271,7 @@ FPS = 24.0
 #: duty = 接地している割合、reach = 接地中に足が進む距離 / 脚長、nf = フレーム数の下限と上限。
 GAIT_TARGET = {
     "Walk": dict(v=2.6, duty=0.45, reach=0.95, nf=(10, 22)),
-    "Run": dict(v=5.4, duty=0.32, reach=1.02, nf=(8, 18)),
+    "Run": dict(v=5.4, duty=0.27, reach=0.85, nf=(8, 18)),
 }
 
 #: 歩き・走りの腕の振りと胸の回旋（角度は度）。
@@ -281,38 +281,42 @@ GAIT_TARGET = {
 #:   arm_in 前腕を体の中心へ向ける角度
 #:   abd    肩の外転（脇の開き）
 #:   thx    胸郭の逆回旋の比（胸は骨盤と逆向きに骨盤の回旋の thx 倍だけ回る）
+#:   fwd    上腕の振りの中心を前へずらす角度
 #:
-#: 走りはアニメの女の子の走りとして、肘をほぼ直角に曲げたまま腕を小さく振る（#232）。
+#: 走りは肩から上腕を前後に振り、肘は振りに合わせて開閉する（#232）。上腕は脇の近くに
+#: 下ろしたまま、前で肘を深く曲げて手が上がり、後ろで肘が開いて手が腰の横を通る。
 #: 値の根拠（書き出した FBX のボーンの向きからの実測。tools_view/gait_arms.py）:
-#:   - arm 22: 上腕の前後の振れは一般に ±20〜30 度。胸から見た実測は -20〜+24 度
-#:   - elbow (85, 0): 肘は 80〜100 度でほぼ固定。指定値は上腕からの相対角で、A ポーズの
-#:     肘の開きと arm_in が合わさるので、実測の曲がりは 85 度（2 頭身のキャラは 89 度）。
-#:     前で手が跳ね上がらず、手首はバストより下（みらいで 9 cm 下）を通る
+#:   - arm 24, fwd 9: 胴は前傾しているので、胸から見て前後対称に振ると画面では後ろへ
+#:     偏り、肘が後ろへ上がって見える。振りの中心を 9 度前へ寄せ、画面上の上腕は
+#:     みらいで -24〜+24 度（胸から見て -13〜+35 度）。上腕の鉛直からの開きは最大 25 度
+#:   - elbow (55, 34): 屈曲は前で深く後ろで浅い。指定値は上腕からの相対角で、A ポーズの
+#:     肘の開きと arm_in が合わさるので、実測の曲がりは 60〜89 度（2 頭身のキャラは
+#:     64〜93 度）。前へ振りきったときの手首はバストのすぐ下（みらいで 1.4 cm 下）
 #:   - arm_in 25: 0 だと手首が肩関節より 15 cm 外を通り、腕を横に開いて振るように見える。
-#:     25 度で手首は体の中心線から 17 cm（肩関節のほぼ真下）を通る。30 度を超えると
+#:     25 度で手首は体の中心線から 16 cm（肩関節のほぼ真下）を通る。30 度を超えると
 #:     手が胴の前に入り、後ろから見て手も鞄も隠れて腕を振っていないように見える
 #:   - abd 0: 走りは脇を締める
 #:   - thx 0.5: 胸の回旋の振幅 6.6 度、肩関節の前後動 1.5 cm。胸が骨盤と同じだけ回ると
 #:     肩の線ごと手が前後に動き、腕の振りが大きく見える
-#:   画面上の手首の前後動（胸の回旋と前傾を含む）はみらいで 0.26 m。
+#:   画面上の手首の前後動（胸の回旋と前傾を含む）はみらいで 0.31 m。
 #: 歩きの値は #43 で見直し中なので変えない。
 GAIT_ARMS = {
-    "Walk": dict(arm=26.0, elbow=(14.0, 24.0), arm_in=0.0, abd=4.0, thx=0.70),
-    "Run": dict(arm=22.0, elbow=(85.0, 0.0), arm_in=25.0, abd=0.0, thx=0.50),
+    "Walk": dict(arm=26.0, elbow=(14.0, 24.0), arm_in=0.0, abd=4.0, thx=0.70, fwd=0.0),
+    "Run": dict(arm=24.0, elbow=(55.0, 34.0), arm_in=25.0, abd=0.0, thx=0.50, fwd=9.0),
 }
 
 
 def gait_arm_spec(f: float, arm: float, elbow: tuple[float, float], arm_in: float,
-                  abd: float) -> dict:
+                  abd: float, fwd: float = 0.0) -> dict:
     """腕を振る位相 f（左腕で +1 が後ろ、-1 が前）での上腕・前腕の回転（角度はラジアン）。
 
-    右腕は左腕と逆位相で振る。
+    右腕は左腕と逆位相で振る。fwd は振りの中心を前へずらす角度。
     """
     e0, e1 = elbow
     spec = {}
     for side, sgn in (("Left", 1.0), ("Right", -1.0)):
         fs = f * sgn
-        spec[side + "UpperArm"] = [("Y", -abd * sgn), ("X", arm * fs)]
+        spec[side + "UpperArm"] = [("Y", -abd * sgn), ("X", arm * fs - fwd)]
         lower = [("X", -(e0 + e1 * (0.5 - 0.5 * fs)))]
         if arm_in:
             lower.append(("Z", -sgn * arm_in))     # 手を体の中心へ向ける
@@ -459,7 +463,7 @@ class Gait(_Legs):
         # 上下動は振幅を決め打ちせず、接地中の脚が届く高さから逆算する（_fit）。
         # 立脚中期に膝をどれだけ曲げるかだけを与える: 歩きは伸ばし気味、走りは沈める。
         self.k_end = 0.985
-        self.k_mid = 0.870 if run else 0.950
+        self.k_mid = 0.925 if run else 0.950
         # 膝がいちばん曲がる接地位相と、伸び切る位相（歩きは早めに曲げて蹴り出しで伸ばす）
         u_peak, self.k_span = (0.45, 0.92) if run else (0.28, 0.78)
         self.k_skew = math.log(0.5) / math.log(u_peak / self.k_span)
@@ -474,14 +478,20 @@ class Gait(_Legs):
         self.elbow = (D(sw["elbow"][0]), D(sw["elbow"][1]))
         self.arm_in = D(sw["arm_in"])
         self.arm_abd = D(sw["abd"])
+        self.arm_fwd = D(sw["fwd"])
         self.clear = self.leg * (0.20 if run else 0.12)
+        # 遊脚: 足を持ち上げる山の位相と、両端で足が後ろへ流れる速さ（接地中の速さとの比）。
+        # 走りは蹴り出した脚をすぐ畳み、前へ振った脚を伸ばし切って突き出さずに降ろす。
+        self.clear_peak = 0.40 if run else 0.50
+        self.swing_tan = 0.40 if run else 1.0
         self.hair = 9.0 if run else 5.0
         self.p_heel = D(-6.0 if run else -12.0)     # 接地の瞬間（つま先上げ）
         self.p_toe = D(38.0 if run else 30.0)       # 蹴り出し（かかと上げ）
         self.roll_in = 0.10 if run else 0.18        # 足裏が着くまで
         self.roll_out = 0.50 if run else 0.62       # かかとが離れるまで
         self.foot_x = self.ank_x * (0.35 if run else 0.55)
-        self.y0 = self.heel - 0.42 * self.exc       # 接地時のかかとの前後位置
+        # 接地時のかかとの前後位置。走りは足を体の少し前に降ろす（すねがほぼ鉛直）。
+        self.y0 = self.heel - (0.32 if run else 0.42) * self.exc
 
         self.zz = [0.0] * 48                        # 骨盤の高さ（_fit が埋める）
         self.sink = 0.0
@@ -527,10 +537,11 @@ class Gait(_Legs):
         """遊脚。両端の速度を接地中とそろえて滑らかにつなぐ。"""
         a0, _ = self._stance(1.0)
         a1, _ = self._stance(0.0)
-        m = self.exc * (1.0 - self.duty) / self.duty
+        m = self.exc * (1.0 - self.duty) / self.duty * self.swing_tan
         y = _hermite(a0.y, a1.y, m, m, u)
+        k = math.log(0.5) / math.log(self.clear_peak)
         z = (_hermite(a0.z, a1.z, 0.0, 0.0, u)
-             + self.clear * math.sin(math.pi * u) ** 1.2)
+             + self.clear * math.sin(math.pi * u ** k) ** 1.2)
         p0, p1 = self.p_toe, self.p_heel
         mid = D(-9.0)
         if u < 0.35:
@@ -626,7 +637,7 @@ class Gait(_Legs):
         self.torso(spec, Rp, yaw, roll, self.lean, self.thx, pitch_t)
         # 腕は脚と逆位相（左脚が前に出る接地で左腕は後ろ）
         spec.update(gait_arm_spec(math.cos(w * (ph - 0.02)), self.arm, self.elbow,
-                                  self.arm_in, self.arm_abd))
+                                  self.arm_in, self.arm_abd, self.arm_fwd))
         return spec
 
 

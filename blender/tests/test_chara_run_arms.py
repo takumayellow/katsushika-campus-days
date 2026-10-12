@@ -1,10 +1,14 @@
 """走りの腕の振り (#232)。
 
-アニメの女の子の走りとして、上腕は前後 ±20〜30 度、肘は 80〜100 度でほぼ固定し、手は
-バストより下・肩関節のほぼ真下を通る（横に開かず、体の中心線も越えない）。歩きの腕は #43 で見直し中なので変えない。
+上腕は脇の近くに下ろしたまま肩から前後に振り、肘は振りに合わせて開閉する（前で深く、
+後ろで浅く曲がる）。ランニングの肘の屈曲は 70〜90 度前後で、振りの間ずっと同じではない。
+手はバストより下、肩関節のほぼ真下を通る（横に開かず、体の中心線も越えない）。
+歩きの腕は #43 で見直し中なので変えない。
 
-角度は胸から見たもの（胴のひねりと前傾は含めない）。ボーンの向きに腕下ろしを合成した
-モーションの回転を当てて求める（test_chara_arms と同じ方法）。
+肘の曲がりと手の位置は胸から見たもの（胴のひねりと前傾は含めない）。ボーンの向きに
+腕下ろしを合成したモーションの回転を当てて求める（test_chara_arms と同じ方法）。
+上腕の振りと開きは画面で見える向き（胴の前傾と回旋を含む）で、gait_fk で組み立てた
+関節の位置から測る。
 """
 
 import math
@@ -12,11 +16,13 @@ import math
 import numpy as np
 import pytest
 
+import gait_fk
 from kcd_chara import anim, body, params
 
 TALL = [cid for cid in params.ALL_IDS if not params.resolve(cid).get("chibi")]
 CHIBI = [cid for cid in params.ALL_IDS if params.resolve(cid).get("chibi")]
 PHASES = np.linspace(-1.0, 1.0, 17)
+CYCLE = [i / 24 for i in range(24)]
 
 
 def _rot(axis, ang):
@@ -39,11 +45,11 @@ def _swing(kind, f):
     a = anim.GAIT_ARMS[kind]
     D = math.radians
     return anim.gait_arm_spec(f, D(a["arm"]), (D(a["elbow"][0]), D(a["elbow"][1])),
-                              D(a["arm_in"]), D(a["abd"]))
+                              D(a["arm_in"]), D(a["abd"]), D(a["fwd"]))
 
 
 def _arm(name, f, side):
-    """走りの位相 f での (肩, 上腕, 前腕)。"""
+    """腕を振る位相 f での (肩, 上腕, 前腕)。胸から見た向き。"""
     p = params.resolve(name)
     a = body.Anatomy(p)
     flip = np.array([1.0 if side == "Left" else -1.0, 1.0, 1.0])
@@ -54,19 +60,19 @@ def _arm(name, f, side):
     return sh, Ru @ (el - sh), Rl @ (wr - el)
 
 
-def _front(v):
-    """横から見て鉛直下向きから前（-y）へ何度出るか。"""
-    return math.degrees(math.atan2(-v[1], -v[2]))
-
-
 def _bend(upper, fore):
     return math.degrees(math.acos(np.dot(upper, fore) / np.linalg.norm(upper) / np.linalg.norm(fore)))
+
+
+def _world(name, side):
+    """1 周期の画面上の腕の角度（gait_fk.arm）。"""
+    return [gait_fk.arm(gait_fk.joints(name, "Run", ph), side) for ph in CYCLE]
 
 
 def test_walk_arms_are_unchanged():
     """歩きの腕は #43 で保留中なので、値も回転も元のまま。"""
     assert anim.GAIT_ARMS["Walk"] == dict(arm=26.0, elbow=(14.0, 24.0), arm_in=0.0,
-                                          abd=4.0, thx=0.70)
+                                          abd=4.0, thx=0.70, fwd=0.0)
     D = math.radians
     for f in PHASES:
         spec = _swing("Walk", f)
@@ -78,40 +84,59 @@ def test_walk_arms_are_unchanged():
 
 @pytest.mark.parametrize("side", ["Left", "Right"])
 @pytest.mark.parametrize("name", params.ALL_IDS)
-def test_run_upper_arm_swings_within_30_degrees(name, side):
-    fronts = [_front(_arm(name, f, side)[1]) for f in PHASES]
-    assert -30.0 < min(fronts) and max(fronts) < 30.0, (name, side, min(fronts), max(fronts))
-    # 前後とも 15 度以上は振る（棒立ちで走らない）
-    assert min(fronts) < -15.0 and max(fronts) > 15.0, (name, side, fronts)
+def test_run_upper_arm_swings_fore_and_aft_evenly(name, side):
+    """画面上の上腕は前後とも 18〜30 度振り、前傾した胴に引かれて後ろへ偏らない。"""
+    sw = [a["swing"] for a in _world(name, side)]
+    assert -30.0 < min(sw) < -18.0 and 18.0 < max(sw) < 30.0, (name, side, min(sw), max(sw))
+    assert abs(max(sw) + min(sw)) < 6.0, (name, side, min(sw), max(sw))
+
+
+@pytest.mark.parametrize("side", ["Left", "Right"])
+@pytest.mark.parametrize("name", TALL)
+def test_run_upper_arm_stays_down(name, side):
+    """上腕は鉛直下向きから 28 度より開かない（肘を持ち上げたまま走らない）。"""
+    lift = max(a["lift"] for a in _world(name, side))
+    assert lift < 28.0, (name, side, lift)
+
+
+@pytest.mark.parametrize("side", ["Left", "Right"])
+@pytest.mark.parametrize("name", CHIBI)
+def test_chibi_run_upper_arm_stays_down(name, side):
+    """2 頭身のキャラは腕下ろしが浅い（まどんなは袂を見せるため 24 度開く）ので 36 度まで。"""
+    lift = max(a["lift"] for a in _world(name, side))
+    assert lift < 36.0, (name, side, lift)
 
 
 @pytest.mark.parametrize("side", ["Left", "Right"])
 @pytest.mark.parametrize("name", params.ALL_IDS)
-def test_run_elbow_stays_near_right_angle(name, side):
+def test_run_elbow_opens_and_closes_with_the_swing(name, side):
     bends = [_bend(*_arm(name, f, side)[1:]) for f in PHASES]
-    assert 80.0 < min(bends) and max(bends) < 100.0, (name, side, min(bends), max(bends))
-    assert max(bends) - min(bends) < 5.0, (name, side, bends)
+    assert 55.0 < min(bends) < 70.0 and 80.0 < max(bends) < 100.0, (name, side, min(bends), max(bends))
+    assert max(bends) - min(bends) > 20.0, (name, side, bends)
+    # 前へ振ったとき（f=-1 は左腕が前）に深く、後ろへ振ったときに浅く曲がる
+    front, back = (bends[0], bends[-1]) if side == "Left" else (bends[-1], bends[0])
+    assert front - back > 20.0, (name, side, front, back)
 
 
 @pytest.mark.parametrize("side", ["Left", "Right"])
 @pytest.mark.parametrize("name", TALL)
 def test_run_hand_stays_below_the_bust(name, side):
+    """前へ振りきって肘が深く曲がっても、手首はバストより下を通る。"""
     bust = params.resolve(name)["z"]["bust"]
     for f in PHASES:
         sh, upper, fore = _arm(name, f, side)
         wrist = sh + upper + fore
-        # 胸の前で手が跳ね上がらない。バストより 6 cm 以上下を通る
-        assert wrist[2] < bust - 0.06, (name, side, f, wrist[2] - bust)
+        assert wrist[2] < bust, (name, side, f, wrist[2] - bust)
 
 
 @pytest.mark.parametrize("side", ["Left", "Right"])
 @pytest.mark.parametrize("name", CHIBI)
 def test_chibi_run_hand_stays_near_the_bust(name, side):
-    """2 頭身のキャラは胴が短く、肘を直角に曲げると手首がバストの高さに来る。3 cm までは許す。"""
+    """2 頭身のキャラは胴が短く、前で肘を曲げると手首がバストの高さに来る。6 cm までは許す。"""
     bust = params.resolve(name)["z"]["bust"]
     for f in PHASES:
         sh, upper, fore = _arm(name, f, side)
-        assert (sh + upper + fore)[2] < bust + 0.03, (name, side, f)
+        assert (sh + upper + fore)[2] < bust + 0.06, (name, side, f)
 
 
 @pytest.mark.parametrize("side", ["Left", "Right"])

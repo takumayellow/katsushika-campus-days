@@ -14,9 +14,9 @@ docs/previews の他の PNG と同じ画づくりになる。
 --action Jump のように渡すと Run 以外の Action も描ける（#49 のスカート・袴の確認用）。
 出力名の run はその Action 名の小文字になる（例: <id>_jump_side.png）。
 
---arm / --elbow / --arm-in / --abd / --thx を渡すと Run の腕と胸の回旋だけ差し替えて
-描ける（修正前後の比較用）。
-  --arm 33 --elbow 72,16 --arm-in 0 --abd 4 --thx 0.95   # #232 を直す前の値
+--arm / --elbow / --arm-in / --abd / --thx / --fwd を渡すと Run の腕と胸の回旋だけ
+差し替えて描ける（修正前後の比較用。脚は今の値のまま）。
+  --arm 33 --elbow 72,16 --arm-in 0 --abd 4 --thx 0.95 --fwd 0   # #232 を直す前の腕
 """
 
 from __future__ import annotations
@@ -60,6 +60,8 @@ def parse_args(argv):
                     help="Run の肩の外転を度で上書きする")
     ap.add_argument("--thx", type=float, default=None,
                     help="Run の胸郭の逆回旋の比を上書きする")
+    ap.add_argument("--fwd", type=float, default=None,
+                    help="Run の腕の振りの中心を前へずらす角度を度で上書きする")
     return ap.parse_args(argv)
 
 
@@ -116,6 +118,8 @@ def main():
         attrs["arm_abd"] = math.radians(args.abd)
     if args.thx is not None:
         attrs["thx"] = args.thx
+    if args.fwd is not None:
+        attrs["arm_fwd"] = math.radians(args.fwd)
     if attrs:
         override_gait(attrs)
 
