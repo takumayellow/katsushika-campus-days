@@ -197,10 +197,10 @@ def floors(c):
     quad(ya, yb, "gym_floor_wood")
     # サブアリーナ（レジン床）
     x0, y0, x1s, y1 = D.SUB
-    kit.plate(c.floor, x0, y0, x1s + 0.4, y1, z, "gym_floor_resin_yellow")
+    _floor(c, x0, y0, x1s + 0.4, y1, z, "gym_floor_resin_yellow")
     # 用具庫の床（ゴム）
     sx0, sy0, sx1, sy1 = D.STORE
-    kit.plate(c.floor, sx0 + 0.3, sy0, sx1, sy1, z, "gym_floor_grey")
+    _floor(c, sx0 + 0.3, sy0, sx1, sy1, z, "gym_floor_grey")
 
 
 def _clip(poly, x0, y0, x1, y1):
@@ -229,17 +229,27 @@ def _clip(poly, x0, y0, x1, y1):
     return pts
 
 
+def _floor(c, x0, y0, x1, y1, z, mat):
+    """矩形を FOOT の内側に切った床板（外壁の外へはみ出さない）。"""
+    pts = _clip(D.FOOT, x0, y0, x1, y1)
+    if len(pts) >= 3:
+        c.floor.add_face([(p[0], p[1], z) for p in pts], mat)
+
+
 def _ceil(c, x0, y0, x1, y1, z, mat):
     """矩形を FOOT の内側に切った天井板。下面だけを室内に見せる。"""
     pts = _clip(D.FOOT, x0, y0, x1, y1)
     if len(pts) >= 3:
-        c.wall.add_prism(pts, z, z + 0.10, CEIL, CEIL, mat)
+        # 下を向く 1 枚の面（上に立てる面を作らない）
+        c.wall.add_face([(p[0], p[1], z) for p in reversed(pts)], mat)
 
 
 def ceilings(c):
     ax0 = -27.8
     # アリーナの屋根（トラスの上）
-    _ceil(c, ax0, 4.5, 2.3, 39.3, D.C_HALL, "gym_ceiling_dark")
+    _ceil(c, ax0, 4.5, 2.3, 39.3, D.C_HALL + 0.02, "gym_ceiling_dark")
+    # 用具庫の上（西壁の天端の上を蓋う。天井 C_STORE の上で見えない）
+    _ceil(c, ax0, 37.0, -7.1, 48.3, D.C_HALL + 0.02, "gym_ceiling_dark")
     # エントランスホールの西側（観覧席の下）
     _ceil(c, -3.7, 4.7, 2.0, 47.6, D.C_STAND, "gym_ceiling_offwhite")
     # 2F の室
@@ -261,8 +271,23 @@ def deck(c, holes_stair=True):
                     side_mat=CEIL, holes=hole)
 
 
+def fence(c):
+    """外形の包絡（直方体）の外面に、室内を向いた見えない当たり判定の板を張る。
+
+    FOOT は斜めの辺と切り欠きを持つので、包絡の辺では壁の外面の外へ抜けられるように
+    測られる。壁の外は元から行けない場所なので、板は動ける範囲を変えない。
+    """
+    sp = c.spec
+    x0, x1, ya, yb = sp.x0, sp.x1, sp.y_face, sp.y_back
+    top = D.C_HALL
+    ring = ((x0, ya), (x1, ya), (x1, yb), (x0, yb))
+    for i, a in enumerate(ring):
+        kit.vplate(c.wall, a, ring[(i + 1) % 4], Z_BASE, top, CONC, flip=True)
+
+
 def build(c):
     _outer(c)
+    fence(c)
     floors(c)
     ceilings(c)
     deck(c)
