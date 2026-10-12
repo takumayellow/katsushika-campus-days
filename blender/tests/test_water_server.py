@@ -57,3 +57,31 @@ def test_cup_recess_is_open_between_tray_and_head():
     assert zs
     # 水受けの上（0.095）から注ぎ口の先（0.29）までは何も無い
     assert not [z for z in zs if 0.1 < z < 0.28]
+
+
+def _normal(face):
+    n = [0.0, 0.0, 0.0]
+    for i in range(len(face)):
+        p, q = face[i], face[(i + 1) % len(face)]
+        n[0] += (p[1] - q[1]) * (p[2] + q[2])
+        n[1] += (p[2] - q[2]) * (p[0] + q[0])
+        n[2] += (p[0] - q[0]) * (p[1] + q[1])
+    return n
+
+
+@pytest.mark.parametrize("ang,front_y", [(0.0, 1.0), (3.141592653589793, -1.0)])
+def test_display_window_faces_the_front(ang, front_y):
+    mb = MeshBuilder("t")
+    FR.water_server(mb, 0.0, 0.0, 0.0, ang, "tea")
+    blue = [i for i, mi in enumerate(mb.face_mat) if mb.mat_names[mi] == "research2_display_blue"]
+
+    assert blue
+    for i in blue:
+        n = _normal([mb.verts[j] for j in mb.faces[i]])
+        assert n[1] * front_y > 0.0
+
+
+def test_stands_on_the_counter_top():
+    mb = _build("tea")
+
+    assert min(v[2] for v in mb.verts) == pytest.approx(0.0)

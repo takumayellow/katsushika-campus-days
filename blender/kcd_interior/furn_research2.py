@@ -145,7 +145,7 @@ def water_server(mb, x, y, z, ang, kind="tea"):
 
     黒樹脂の頭部に表示窓と 3 つのボタン、その下にステンレスの押し板と 2 本の注ぎ口。
     頭部の下はコップを置く凹みで、ステンレスの水受け皿に黒いグレーチングが載る。
-    kind は "tea"（緑のボタン）か "water"（青のボタン）。
+    kind は "tea"（緑のボタン）か "water"（白のボタン）。
     """
     t = T(x, y, z, ang)
     t.box_nb(mb, -0.25, -0.2, 0.0, 0.25, 0.2, 0.04, STAINLESS)
@@ -161,7 +161,7 @@ def water_server(mb, x, y, z, ang, kind="tea"):
     t.box_nb(mb, -0.25, -0.2, 0.4, 0.25, 0.22, 0.64, "research2_kiosk_black")
     t.box_nb(mb, -0.26, -0.21, 0.64, 0.26, 0.23, 0.66, STAINLESS)
     # 表示窓とボタン
-    t.vplate(mb, -0.2, 0.221, -0.04, 0.221, 0.53, 0.6, "research2_display_blue")
+    t.vplate(mb, -0.04, 0.221, -0.2, 0.221, 0.53, 0.6, "research2_display_blue")
     for sx, mat in zip((0.03, 0.09, 0.15), _BUTTONS[kind]):
         t.box_nb(mb, sx, 0.22, 0.54, sx + 0.05, 0.235, 0.6, mat)
     # 押し板と注ぎ口
