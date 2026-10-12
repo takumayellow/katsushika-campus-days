@@ -64,6 +64,13 @@ namespace KCD.Editor
 
             // まばたきが全員で揃わないよう、周期の始まりをずらす（#193）。
             animator.gameObject.AddComponent<BlinkPhase>().Offset = BlinkPhase.OffsetFor(characterId);
+
+            // スカート・袴の前と後ろの中央を腿について行かせる（#49）。
+            if (SkirtFollow.HasSkirtBones(animator.gameObject))
+            {
+                animator.gameObject.AddComponent<SkirtFollow>();
+            }
+
             return body;
         }
 

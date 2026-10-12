@@ -89,6 +89,48 @@ def _apply(arm, spec: dict, prev: dict | None = None) -> list:
     return touched
 
 
+#: SkirtFront / SkirtBack を、腿の振り角の何倍だけ回すか（Unity の SkirtFollow.Follow と同じ値）
+SKIRT_FOLLOW = 1.0
+
+
+def _signed_angle(a: Vector, b: Vector, axis: Vector) -> float:
+    """axis に垂直な面へ落とした a から b への角度（axis まわりの右ねじが正）。"""
+    pa = a - axis * a.dot(axis)
+    pb = b - axis * b.dot(axis)
+    return math.atan2(axis.dot(pa.cross(pb)), pa.dot(pb))
+
+
+def skirt_rotations(arm) -> dict:
+    """今のポーズで SkirtFront / SkirtBack に掛ける回転（アーマチュアの軸。_apply に渡す形）。
+
+    腿の向き（股関節 → 膝）を腰から見た向きに直し、レストからの前への振り角を左右で測る。
+    SkirtFront は前へいちばん出ている腿の分だけ前へ、SkirtBack は後ろへいちばん出ている
+    腿の分だけ後ろへ回す。その向きへ出ている腿が無ければ回さない。
+    Unity の SkirtFollow が同じ計算をする（Humanoid のクリップは追加ボーンを動かさないため）。
+    """
+    pb = arm.pose.bones
+    if "SkirtFront" not in pb or "SkirtBack" not in pb or "Hips" not in pb:
+        return {}
+    bpy.context.view_layer.update()
+    hips = pb["Hips"]
+    # 腰のレストからの回転を外す（腰ごと前に傾いても、腿との相対角だけを見る）
+    undo = (hips.matrix.to_3x3() @ hips.bone.matrix_local.to_3x3().inverted()).inverted()
+    forward = Vector((0.0, -1.0, 0.0))
+    angles = []
+    axes = Vector()
+    for side in ("Left", "Right"):
+        up, lo = pb[side + "UpperLeg"], pb[side + "LowerLeg"]
+        rest = Vector(lo.bone.head_local) - Vector(up.bone.head_local)
+        axis = rest.cross(forward).normalized()
+        angles.append(_signed_angle(rest, undo @ (lo.head - up.head), axis))
+        axes += axis
+    axis = axes.normalized()
+    return {
+        "SkirtFront": Matrix.Rotation(max(0.0, *angles) * SKIRT_FOLLOW, 3, axis),
+        "SkirtBack": Matrix.Rotation(min(0.0, *angles) * SKIRT_FOLLOW, 3, axis),
+    }
+
+
 def make_action(arm, name: str, nframes: int, poser, *, loop: bool = True,
                 keys: int = 9):
     """poser(t) -> spec。t は 0..1。loop=True なら最終フレームで先頭に戻る。"""
@@ -120,6 +162,9 @@ def make_action(arm, name: str, nframes: int, poser, *, loop: bool = True,
         bpy.context.scene.frame_set(f)
         _reset(arm)
         touched = _apply(arm, poser(t % 1.0 if loop else t), prev)
+        skirt = skirt_rotations(arm)
+        if skirt:
+            touched += _apply(arm, skirt, prev)
         for pb, path in touched:
             pb.keyframe_insert(data_path=path, frame=f)
         for prop in props:
