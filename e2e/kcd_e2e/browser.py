@@ -50,8 +50,9 @@ def launch_config(browser: str, headless: bool, gl: str,
     if gl not in GL_MODES:
         raise ValueError(f"gl は {GL_MODES} のどれか: {gl}")
 
-    # performance.memory を丸めずに返させる（ヒープの記録用）。
-    args = ["--enable-precise-memory-info"]
+    # performance.memory を丸めずに返させる（ヒープの記録用）。確かめている間はゲームの音を出さない
+    # （音の処理は止めずに出力だけ消すので、音声まわりの警告やエラーはそのまま拾える）。
+    args = ["--enable-precise-memory-info", "--mute-audio"]
     if gl == "gpu":
         args += ["--enable-gpu", "--ignore-gpu-blocklist"]
         if platform == "win32":

@@ -68,10 +68,6 @@ ALLOWLIST: tuple[AllowRule, ...] = (
         "Unity 6 の予告。テンプレートの createUnityInstance に autoSyncPersistentDataPath を"
         "渡していないと出る。セーブは今の方式で書けている"),
     AllowRule(
-        r"^Failed to create agent because there is no valid NavMesh",
-        "キャンパスの NPC 4 体の NavMeshAgent が作れない。#63 で追う。NPC が歩かないだけで"
-        "プレイヤーの操作は続く"),
-    AllowRule(
         r"^getFrequency\(\) is not supported for compressed sound\.",
         "Unity の WebGL 音声層が、ブラウザが展開する圧縮音声の周波数を聞いたときに出す。"
         "再生は続く。音を出せる Chromium でだけ出て、headless の Edge では出ない"),
