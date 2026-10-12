@@ -68,6 +68,19 @@ namespace KCD.Tests
         }
 
         [Test]
+        public void 一度言った人と時間帯の分からない人は会釈を返す()
+        {
+            Assert.IsFalse(MobTalker.RepliesWithNod("lunch", -1), "初めて話しかけた人は一言言う");
+            for (int index = 0; index < MobTalker.LinesPerBand; index++)
+            {
+                Assert.IsTrue(MobTalker.RepliesWithNod("lunch", index), index + " 番を言った人は 2 回目に会釈");
+            }
+
+            Assert.IsTrue(MobTalker.RepliesWithNod(null, -1));
+            Assert.IsTrue(MobTalker.RepliesWithNod(string.Empty, -1));
+        }
+
+        [Test]
         public void 見えている人より台詞が多い()
         {
             Assert.GreaterOrEqual(MobTalker.LinesPerBand, MobScheduler.DefaultDrawnCount);

@@ -68,8 +68,7 @@ namespace KCD
             _walker.Hold(HoldSeconds, toward);
 
             string said;
-            // 時間帯の分からない人は台詞を持たないので、番号を借りずに会釈だけ返す。
-            if (_walker.LineIndex < 0 && !string.IsNullOrEmpty(_walker.BandId))
+            if (!RepliesWithNod(_walker.BandId, _walker.LineIndex))
             {
                 int index = _walker.ClaimLine();
                 said = PickLine(_walker.BandId, index);
@@ -84,6 +83,15 @@ namespace KCD
             {
                 hud.ShowToast(said, false);
             }
+        }
+
+        /// <summary>
+        /// 会釈だけ返すか。台詞の番号 lineIndex をもう持っている人（一度言った人）と、時間帯 bandId の
+        /// 分からない人は会釈を返す。それ以外は初めて話しかけられた人で、台詞の番号を借りて一言言う。
+        /// </summary>
+        public static bool RepliesWithNod(string bandId, int lineIndex)
+        {
+            return lineIndex >= 0 || string.IsNullOrEmpty(bandId);
         }
 
         public static string LineKey(string bandId, int index)

@@ -144,6 +144,15 @@ namespace KCD
             return false;
         }
 
+        /// <summary>
+        /// 色だけで描く人数 drawnCount を、台詞の本数（<see cref="MobTalker.LinesPerBand"/>）までに丸める。
+        /// 見えている人がそれより多いと、話しかけたときに同じ台詞を言う人が出てしまう。
+        /// </summary>
+        public static int DrawnLimit(int drawnCount)
+        {
+            return Mathf.Clamp(drawnCount, 0, MobTalker.LinesPerBand);
+        }
+
         /// <summary>次の Update で描き方を決め直す（話しかけられた人を近い段に上げるため）。</summary>
         public void RequestTierUpdate()
         {
@@ -548,7 +557,7 @@ namespace KCD
                 MobWalker walker = _pool[_order[rank]];
                 MobTier tier = PickTier(
                     rank, _distances[rank], walker.IsHeld, walker.Tier,
-                    _nearCount, _nearDistance, _drawnCount, _drawnDistance);
+                    _nearCount, _nearDistance, DrawnLimit(_drawnCount), _drawnDistance);
                 walker.SetTier(tier, _steppedMidAnimation, _midAnimationStep);
             }
 
