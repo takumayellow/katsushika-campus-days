@@ -1,5 +1,6 @@
 """どの建物にも共通する躯体まわり（床・外周壁・入口・天井・サイン類）。"""
 
+import contextlib
 import math
 
 from . import furniture as F
@@ -33,6 +34,7 @@ def envelope(c, z_ceil, floor_mat="floor_tile_white", door_w=6.0,
                          s.y_face + shell.WALL * 0.5)
     if ceil:
         shell.ceiling(c.wall, ix0, iy0, ix1, iy1, z_ceil, ceil_mat, grid=grid)
+    c.door_gap = (d0, d1)
     return (d0, d1)
 
 
@@ -56,11 +58,6 @@ def entry_kit(c, z_ceil, door_w=6.0, spawn_depth=1.5, bin_x=None):
     return mb
 
 
-def sign_board(c, mb, x, y, z, ang=0.0, w=1.8, h=0.55):
-    shell.wall_sign(mb, x, y, z, ang=ang, w=w, h=h)
-    c.sign(x, y, z)
-
-
 def corridor_run(c, mb, x0, x1, y, z_ceil, pitch=9.0, both=True):
     """廊下の定番設備を等間隔に置く（誘導灯・消火器・掲示板・ベンチ）。"""
     n = max(1, int((x1 - x0) / pitch))
@@ -78,3 +75,43 @@ def window_planters(c, mb, x0, x1, y, n=4):
     for i in range(n):
         cx = x0 + (x1 - x0) * (i + 0.5) / n
         shell.planter(mb, cx, y, r=0.40, h=0.44, leaf_h=1.4)
+
+
+@contextlib.contextmanager
+def turned(c, ox, oy, ang):
+    """ブロックの中で置いた物を、原点のまわりに ang 回してから (ox, oy) へ動かす。
+
+    メッシュの頂点・座面・Empty・看板の記録（c.signs の位置と向き）・プレビューの照明とカメラが対象。
+    軸に沿って組んだ間取りを向きを変えて使うためのもの。回すだけなので面の表裏は変わらない。
+    """
+    co, si = math.cos(ang), math.sin(ang)
+
+    def mv(p):
+        return ((ox + co * p[0] - si * p[1], oy + si * p[0] + co * p[1])
+                + tuple(p[2:]))
+
+    marks = {id(mb): (len(mb.verts), len(getattr(mb, "seats", None) or ()))
+             for mb in c.builders()}
+    n_emp, n_light, n_cam = len(c.empties), len(c.lights), len(c.cams)
+    n_sign = len(c.signs)
+    yield
+    for mb in c.builders():
+        v0, s0 = marks.get(id(mb), (0, 0))
+        mb.verts[v0:] = [mv(v) for v in mb.verts[v0:]]
+        seats = getattr(mb, "seats", None)
+        if seats:
+            seats[s0:] = [kit.moved_seat(st, mv) for st in seats[s0:]]
+    c.empties[n_emp:] = [(n, mv(p)) for n, p in c.empties[n_emp:]]
+    c.lights[n_light:] = [mv(lt) for lt in c.lights[n_light:]]
+    c.cams[n_cam:] = [(sfx, mv(a), mv(b), lens)
+                      for sfx, a, b, lens in c.cams[n_cam:]]
+    c.signs[n_sign:] = [_turned_sign(r, mv, co, si) for r in c.signs[n_sign:]]
+
+
+def _turned_sign(rec, mv, co, si):
+    """看板の記録（位置と向きは Unity の並び。y が上）を turned と同じだけ回して動かす。"""
+    p, f = rec["pos"], rec["facing"]
+    x, y = mv((p["x"], p["z"]))
+    fx, fy = co * f["x"] - si * f["z"], si * f["x"] + co * f["z"]
+    return dict(rec, pos={"x": round(x, 3), "y": p["y"], "z": round(y, 3)},
+                facing={"x": round(fx, 4), "y": 0.0, "z": round(fy, 4)})

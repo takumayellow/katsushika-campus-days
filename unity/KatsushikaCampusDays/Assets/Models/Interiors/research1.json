@@ -2,14 +2,14 @@
  "id": "research1",
  "display": "第1研究棟",
  "entrance_world": {
-  "x": 73.0954,
-  "z": -127.5594
+  "x": 72.6507,
+  "z": -127.3563
  },
  "yaw_deg": 24.5514,
  "campus_frame_deg": -24.5514,
  "envelope": {
-  "x0": -71.23,
-  "x1": 71.23,
+  "x0": -70.741,
+  "x1": 71.719,
   "y_face": 6.5,
   "y_back": 43.146
  },
@@ -36,9 +36,9 @@
    "z": 17.6
   },
   "sign_research1_1": {
-   "x": 0.0,
-   "y": 2.6,
-   "z": 19.6
+   "x": -7.3,
+   "y": 2.3,
+   "z": 19.83
   },
   "poi_research1_reception": {
    "x": -9.5,
@@ -77,7 +77,7 @@
   },
   "sign_research1_3": {
    "x": 0.0,
-   "y": 2.6,
+   "y": 2.82,
    "z": 9.6
   },
   "poi_research1_lab_a": {
@@ -96,9 +96,9 @@
    "z": 39.0
   },
   "sign_research1_4": {
-   "x": -26.9,
-   "y": 2.2,
-   "z": 27.18
+   "x": -26.7,
+   "y": 2.1,
+   "z": 27.3
   },
   "poi_research1_professor": {
    "x": -6.6,
@@ -111,9 +111,9 @@
    "z": 41.846
   },
   "sign_research1_5": {
-   "x": -6.95,
-   "y": 2.2,
-   "z": 27.18
+   "x": -6.7,
+   "y": 2.1,
+   "z": 27.3
   },
   "poi_research1_lab_b": {
    "x": 13.0,
@@ -131,9 +131,9 @@
    "z": 39.0
   },
   "sign_research1_6": {
-   "x": 14.1,
-   "y": 2.2,
-   "z": 27.18
+   "x": 14.3,
+   "y": 2.1,
+   "z": 27.3
   },
   "seat_research1_01": {
    "x": 9.0,
@@ -421,7 +421,7 @@
    "z": 32.18
   }
  },
- "triangles": 40439,
+ "triangles": 45185,
  "seats": 6,
  "notes": [
   "1F ロビー（受付・ソファ・掲示板）+ EV3 基 + 廊下 142 m + 研究室2室 + 教授室"
@@ -437,12 +437,224 @@
   "furn_research1_06_professor",
   "furn_research1_07_lab_b"
  ],
+ "signs": [
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "1号機",
+   "en": "Elevator 1",
+   "tris": 265,
+   "pos": {
+    "x": -5.2,
+    "y": 2.86,
+    "z": 19.83
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 1.3,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "screen_blue",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "2号機",
+   "en": "Elevator 2",
+   "tris": 281,
+   "pos": {
+    "x": 0.0,
+    "y": 2.86,
+    "z": 19.83
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 1.3,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "screen_blue",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "3号機",
+   "en": "Elevator 3",
+   "tris": 305,
+   "pos": {
+    "x": 5.2,
+    "y": 2.86,
+    "z": 19.83
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 1.3,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "screen_blue",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": "sign_research1_1",
+   "kind": "wall",
+   "ja": "エレベーター",
+   "en": "Elevators",
+   "tris": 225,
+   "pos": {
+    "x": -7.3,
+    "y": 2.3,
+    "z": 19.83
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 1.8,
+   "h": 0.5,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_research1_2",
+   "kind": "hanging",
+   "ja": "第1研究棟\n館内案内",
+   "en": "Research Building 1\nFloor Guide",
+   "tris": 1944,
+   "pos": {
+    "x": 0.0,
+    "y": 2.55,
+    "z": 8.4
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 1.6,
+   "h": 1.1,
+   "faces": 2,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center",
+   "drop": 0.3
+  },
+  {
+   "empty": "sign_research1_3",
+   "kind": "hanging",
+   "ja": "インフォメーション",
+   "en": "Information",
+   "tris": 590,
+   "pos": {
+    "x": 0.0,
+    "y": 2.82,
+    "z": 9.6
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 3.6,
+   "h": 0.46,
+   "faces": 2,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center",
+   "drop": 0.35
+  },
+  {
+   "empty": "sign_research1_4",
+   "kind": "wall",
+   "ja": "研究室 A",
+   "en": "Laboratory A",
+   "tris": 326,
+   "pos": {
+    "x": -26.7,
+    "y": 2.1,
+    "z": 27.3
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 1.1,
+   "h": 0.34,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_research1_5",
+   "kind": "wall",
+   "ja": "教授室",
+   "en": "Professor's Office",
+   "tris": 445,
+   "pos": {
+    "x": -6.7,
+    "y": 2.1,
+    "z": 27.3
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 1.1,
+   "h": 0.34,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_research1_6",
+   "kind": "wall",
+   "ja": "研究室 B",
+   "en": "Laboratory B",
+   "tris": 353,
+   "pos": {
+    "x": 14.3,
+    "y": 2.1,
+    "z": 27.3
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 1.1,
+   "h": 0.34,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  }
+ ],
+ "text_triangles": 4734,
  "ext": {
   "objects": [
    "ext_research1",
    "ext_research1_trees"
   ],
-  "triangles": 25633,
+  "triangles": 25610,
   "radius": 30.0,
   "dz": -0.03
  }

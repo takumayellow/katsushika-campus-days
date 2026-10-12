@@ -2,7 +2,7 @@
 
 import math
 
-from . import common, furniture as F, kit, shell
+from . import common, furniture as F, kit, shell, signs
 
 CEIL = 11.60         # トラス下端より上のスラブ
 TRUSS_Z = 10.40
@@ -40,7 +40,9 @@ def build(c):
                        h=1.2, rng=c.rng)
     # 窓台（4.2 m）より下の南の壁に、コート側を向けて掛ける
     shell.clock(c.wall, cx + 5.2, iy0 + 0.01, 3.30, ang=0.0, r=0.34)
-    common.sign_board(c, ent, cx, iy0 + 0.30, 2.45, ang=0.0, w=2.6, h=0.6)
+    # 入口のガラススクリーン（高さ 3.20）の上の壁に、コート側を向けて掛ける
+    signs.wall(c, ent, cx, iy0, 3.70, ang=0.0, ja="体育館", en="Gymnasium",
+               w=2.6, h=0.6)
     shell.vending(ent, ix1 - 1.6, iy0 + 2.4, ang=-math.pi * 0.5)
     shell.vending(ent, ix1 - 1.6, iy0 + 4.0, ang=-math.pi * 0.5, mat="fm_green")
 
@@ -343,8 +345,8 @@ def _storage(c, x0, x1, y0, y1, cx, hall_y1):
     kit.box(w, sx0 - 0.06, sy0 + 2.0, 2.40, sx0 + 0.06, sy0 + 5.2, 4.10,
             "metal_gray")
     shell.exit_sign(w, sx0 - 0.10, sy0 + 3.6, 3.60, ang=-math.pi * 0.5)
-    common.sign_board(c, mb, sx0 - 0.16, sy0 + 6.4, 2.40, ang=-math.pi * 0.5,
-                      w=1.4, h=0.40)
+    signs.wall(c, mb, sx0 - 0.11, sy0 + 6.4, 2.40, ang=math.pi * 0.5,
+               ja="器具庫", en="Equipment Storage", w=1.4, h=0.40)
     # 棚とボールかご
     for i in range(3):
         F.bookshelf(mb, sx1 - 0.7, sy0 + 1.2 + i * 2.2, ang=math.pi * 0.5,

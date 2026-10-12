@@ -2,7 +2,7 @@
 
 import math
 
-from . import common, furniture as F, kit, shell
+from . import common, furniture as F, kit, shell, signs
 
 CEIL = 3.90          # 1F 天井
 SLAB = 4.30          # 2F 床スラブ上面
@@ -86,7 +86,10 @@ def _lobby(c, x0, y0, x1, y1, well):
     shell.column(w, x1 - 1.4, y0 + 5.2, 0.0, CEIL, size=0.55)
 
     # 館内案内サイン + ベンチ（階段の上り口をふさがないよう奥の壁ぞいに、入口を向けて置く）
-    common.sign_board(c, mb, x0 + 0.4, y1 - 0.30, 2.05, ang=math.pi, w=2.4, h=0.9)
+    # 奥は全面ガラスなので、ガラスの室内側の面（内壁面 + GLASS_IN）に貼る
+    signs.wall(c, mb, x0 + 0.4, y1 + shell.GLASS_IN, 2.05, ang=math.pi,
+               ja="館内案内\n1F ストア・カフェ　2F ラウンジ",
+               en="Floor Guide  1F Store & Cafe / 2F Lounge", w=2.4, h=0.9)
     F.bench(mb, -2.4, y1 - 0.7, ang=math.pi, w=2.2, back=True)
     F.bench(mb, 2.4, y1 - 0.7, ang=math.pi, w=2.2, back=True)
     shell.planter(mb, x1 - 1.0, y0 + 1.4, r=0.46, h=0.50, leaf_h=1.7)
@@ -136,12 +139,10 @@ def _cafe(c, x0, y0, x1, y1):
     # 店員はカウンター（cy..cy+0.80）の中ではなく、バックバーとの間の通路に
     c.npc(x0 + 4.0, cy + 1.35, 0.0)
     c.npc(x0 + 7.4, cy + 1.35, 0.0)
-    # メニューボードはカウンターの上に吊り、客席（-Y）へ向ける
-    common.sign_board(c, mb, x0 + 6.0, cy + 0.30, 2.55, ang=math.pi, w=3.0,
-                      h=0.62)
-    for sx in (x0 + 4.9, x0 + 7.1):
-        kit.tube(mb, (sx, cy + 0.27, 2.90), (sx, cy + 0.27, CAFE_CEIL), 0.008,
-                 "metal_dark", seg=3)
+    # メニューボードはバックバー（高さ 2.30）の上のサインカラーの壁（面 y1 - 0.16）に掛け、
+    # 客席（-Y）へ向ける
+    signs.wall(c, mb, x0 + 6.0, y1 - 0.16, 2.95, ang=math.pi, ja="メニュー", en="Menu",
+               w=3.0, h=0.62)
 
     # 客席（丸テーブル + 長机のコミュナルテーブル）
     for i in range(7):
@@ -213,8 +214,9 @@ def _cvs(c, x0, y0, x1, y1):
     F.register(mb, x1 - 2.6, y0 + 1.30)
     c.poi("store", x1 - 3.4, y0 + 2.9, 0.0)
     c.npc(x1 - 3.4, y0 + 2.35, 0.0)   # カウンターの天板に埋まらない位置
-    common.sign_board(c, mb, x1 - 3.4, y0 + 0.95, 2.35, ang=math.pi,
-                      w=2.6, h=0.55)
+    # レジの上に天井から吊る（後ろに壁が無いので両面に文字）
+    signs.hanging(c, mb, x1 - 3.4, y0 + 1.35, CEIL, ja="レジ", en="Checkout",
+                  w=2.0, h=0.44, drop=0.55)
 
     # ゴンドラ（棚）列
     rows = 5
@@ -297,5 +299,5 @@ def _second_floor(c, x0, y0, x1, y1, well):
             c.npc(cx + 2.6, y0 + 1.4, SLAB)
     kit.lift(mb, base2f, SLAB)
     shell.exit_sign(w, x1 - 0.6, y0 + 0.6, SLAB + 2.60)
-    common.sign_board(c, mb, x0 + 2.0, y1 - 0.24, SLAB + 2.10, ang=math.pi,
-                      w=2.0, h=0.55)
+    signs.wall(c, mb, x0 + 2.0, y1 + shell.GLASS_IN, SLAB + 2.10, ang=math.pi,
+               ja="ラウンジ", en="Lounge", w=2.0, h=0.55)

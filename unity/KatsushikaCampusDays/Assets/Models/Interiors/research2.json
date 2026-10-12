@@ -2,14 +2,14 @@
  "id": "research2",
  "display": "第2研究棟",
  "entrance_world": {
-  "x": -1.9285,
-  "z": -17.9728
+  "x": 6.0634,
+  "z": -21.6235
  },
  "yaw_deg": 24.5514,
  "campus_frame_deg": -24.5514,
  "envelope": {
-  "x0": -40.663,
-  "x1": 40.663,
+  "x0": -49.45,
+  "x1": 31.877,
   "y_face": 4.0,
   "y_back": 44.327
  },
@@ -17,215 +17,1617 @@
  "spawn": {
   "x": 0.0,
   "y": 0.0,
-  "z": 5.8
+  "z": 7.4
  },
  "empties": {
   "spawn_research2": {
    "x": 0.0,
    "y": 0.0,
-   "z": 5.8
+   "z": 7.4
   },
   "exit_research2": {
    "x": 0.0,
    "y": 0.0,
-   "z": 4.55
+   "z": 6.6
   },
   "sign_research2_1": {
-   "x": -30.363,
-   "y": 2.8,
-   "z": 35.527
+   "x": 1.0,
+   "y": 1.1,
+   "z": 12.9
   },
   "sign_research2_2": {
-   "x": -23.363,
-   "y": 2.8,
-   "z": 35.527
+   "x": 0.75,
+   "y": 2.45,
+   "z": 12.9
   },
   "sign_research2_3": {
-   "x": -16.363,
-   "y": 2.8,
-   "z": 35.527
+   "x": 0.75,
+   "y": 1.75,
+   "z": 12.9
   },
   "sign_research2_4": {
-   "x": -9.363,
-   "y": 2.8,
-   "z": 35.527
+   "x": 2.05,
+   "y": 2.3,
+   "z": 12.9
   },
   "sign_research2_5": {
-   "x": -2.363,
-   "y": 2.8,
-   "z": 35.527
+   "x": -3.9,
+   "y": 0.95,
+   "z": 12.27
   },
   "sign_research2_6": {
-   "x": 4.637,
-   "y": 2.8,
-   "z": 35.527
+   "x": -4.6,
+   "y": 2.05,
+   "z": 8.6
   },
-  "poi_research2_counter": {
-   "x": -13.363,
-   "y": 0.0,
-   "z": 35.027
+  "sign_research2_7": {
+   "x": -4.42,
+   "y": 2.05,
+   "z": 10.0
   },
-  "npc_research2_1": {
-   "x": -28.363,
-   "y": 0.0,
-   "z": 36.127
+  "sign_research2_8": {
+   "x": -4.45,
+   "y": 1.5,
+   "z": 12.0
   },
-  "npc_research2_2": {
-   "x": -20.363,
-   "y": 0.0,
-   "z": 36.127
+  "sign_research2_9": {
+   "x": -18.0,
+   "y": 2.5,
+   "z": 33.4
   },
-  "npc_research2_3": {
-   "x": -12.363,
-   "y": 0.0,
-   "z": 36.127
+  "sign_research2_10": {
+   "x": -10.0,
+   "y": 2.5,
+   "z": 33.4
   },
-  "npc_research2_4": {
-   "x": -4.363,
-   "y": 0.0,
-   "z": 36.127
+  "sign_research2_11": {
+   "x": -4.0,
+   "y": 2.5,
+   "z": 33.4
   },
-  "npc_research2_5": {
-   "x": 3.637,
-   "y": 0.0,
-   "z": 36.127
+  "sign_research2_12": {
+   "x": -19.2,
+   "y": 1.96,
+   "z": 33.45
+  },
+  "sign_research2_13": {
+   "x": -8.3,
+   "y": 2.0,
+   "z": 33.35
+  },
+  "sign_research2_14": {
+   "x": 17.0,
+   "y": 2.89,
+   "z": 33.0
+  },
+  "sign_research2_15": {
+   "x": -4.6,
+   "y": 1.6,
+   "z": 19.99
+  },
+  "sign_research2_16": {
+   "x": -13.8,
+   "y": 1.5,
+   "z": 28.49
+  },
+  "sign_research2_17": {
+   "x": 8.424,
+   "y": 6.4,
+   "z": 12.601
+  },
+  "sign_research2_18": {
+   "x": -5.0,
+   "y": 7.4,
+   "z": 33.0
+  },
+  "sign_research2_19": {
+   "x": -17.0,
+   "y": 7.4,
+   "z": 33.0
+  },
+  "sign_research2_20": {
+   "x": 7.5,
+   "y": 7.35,
+   "z": 33.0
+  },
+  "sign_research2_21": {
+   "x": 5.0,
+   "y": 6.3,
+   "z": 33.0
+  },
+  "sign_research2_22": {
+   "x": -21.3,
+   "y": 6.6,
+   "z": 32.95
+  },
+  "sign_research2_23": {
+   "x": 31.577,
+   "y": 1.6,
+   "z": 30.0
+  },
+  "sign_research2_24": {
+   "x": 23.12,
+   "y": 2.3,
+   "z": 21.0
+  },
+  "sign_research2_25": {
+   "x": 26.4,
+   "y": 2.75,
+   "z": 32.0
+  },
+  "sign_research2_26": {
+   "x": 26.4,
+   "y": 7.55,
+   "z": 32.0
+  },
+  "sign_research2_27": {
+   "x": 6.6,
+   "y": 2.3,
+   "z": 19.06
+  },
+  "sign_research2_28": {
+   "x": 0.0,
+   "y": 2.82,
+   "z": 7.0
+  },
+  "sign_research2_29": {
+   "x": 3.5,
+   "y": 8.02,
+   "z": 17.6
   },
   "poi_research2_ticket": {
-   "x": -34.363,
+   "x": -6.2,
    "y": 0.0,
-   "z": 10.3
+   "z": 8.5
   },
-  "npc_research2_6": {
-   "x": -33.963,
+  "poi_research2_counter": {
+   "x": -8.0,
    "y": 0.0,
-   "z": 10.5
+   "z": 31.6
   },
   "poi_research2_tray_return": {
-   "x": 32.363,
+   "x": 17.0,
    "y": 0.0,
-   "z": 40.627
+   "z": 32.8
   },
   "poi_research2_hall": {
-   "x": 0.0,
+   "x": -18.0,
    "y": 0.0,
-   "z": 23.664
+   "z": 21.0
+  },
+  "npc_research2_1": {
+   "x": -8.0,
+   "y": 0.0,
+   "z": 34.6
+  },
+  "npc_research2_2": {
+   "x": 2.0,
+   "y": 0.0,
+   "z": 34.6
+  },
+  "npc_research2_3": {
+   "x": 17.0,
+   "y": 0.0,
+   "z": 35.2
+  },
+  "npc_research2_4": {
+   "x": -6.0,
+   "y": 0.0,
+   "z": 9.6
+  },
+  "npc_research2_5": {
+   "x": -20.0,
+   "y": 0.0,
+   "z": 18.0
+  },
+  "npc_research2_6": {
+   "x": -28.0,
+   "y": 0.0,
+   "z": 24.0
   },
   "npc_research2_7": {
-   "x": -31.963,
+   "x": -12.0,
    "y": 0.0,
-   "z": 17.37
+   "z": 7.5
   },
   "npc_research2_8": {
-   "x": -20.963,
-   "y": 0.0,
-   "z": 22.13
+   "x": -6.0,
+   "y": 4.8,
+   "z": 34.6
   },
   "npc_research2_9": {
-   "x": -9.963,
-   "y": 0.0,
-   "z": 26.89
+   "x": 0.0,
+   "y": 4.8,
+   "z": 20.0
   },
   "npc_research2_10": {
-   "x": 1.037,
-   "y": 0.0,
-   "z": 17.37
+   "x": -30.0,
+   "y": 4.8,
+   "z": 16.0
   },
   "npc_research2_11": {
-   "x": 12.037,
+   "x": 27.5,
    "y": 0.0,
-   "z": 22.13
+   "z": 30.0
   },
   "npc_research2_12": {
-   "x": 23.037,
+   "x": 1.0,
    "y": 0.0,
-   "z": 26.89
+   "z": 11.6
   },
   "seat_research2_01": {
-   "x": -10.0,
+   "x": -21.4,
    "y": 0.0,
-   "z": 5.49
+   "z": 18.25
   },
   "seat_research2_01_f": {
-   "x": -10.0,
+   "x": -21.4,
    "y": 0.0,
-   "z": 5.72
+   "z": 18.5
   },
   "seat_research2_01_s": {
-   "x": -8.9,
+   "x": -21.15,
    "y": 0.0,
-   "z": 5.49
+   "z": 18.25
   },
   "seat_research2_01_a0": {
-   "x": -10.733,
+   "x": -21.4,
    "y": 0.0,
-   "z": 5.52
-  },
-  "seat_research2_01_a1": {
-   "x": -10.0,
-   "y": 0.0,
-   "z": 5.52
-  },
-  "seat_research2_01_a2": {
-   "x": -9.267,
-   "y": 0.0,
-   "z": 5.52
+   "z": 18.3
   },
   "seat_research2_02": {
-   "x": 10.0,
+   "x": -21.4,
    "y": 0.0,
-   "z": 5.49
+   "z": 19.75
   },
   "seat_research2_02_f": {
-   "x": 10.0,
+   "x": -21.4,
    "y": 0.0,
-   "z": 5.72
+   "z": 19.5
   },
   "seat_research2_02_s": {
-   "x": 11.1,
+   "x": -21.65,
    "y": 0.0,
-   "z": 5.49
+   "z": 19.75
   },
   "seat_research2_02_a0": {
-   "x": 9.267,
+   "x": -21.4,
    "y": 0.0,
-   "z": 5.52
+   "z": 19.7
   },
-  "seat_research2_02_a1": {
-   "x": 10.0,
+  "seat_research2_03": {
+   "x": -20.6,
    "y": 0.0,
-   "z": 5.52
+   "z": 18.25
   },
-  "seat_research2_02_a2": {
-   "x": 10.733,
+  "seat_research2_03_f": {
+   "x": -20.6,
    "y": 0.0,
-   "z": 5.52
+   "z": 18.5
+  },
+  "seat_research2_03_s": {
+   "x": -20.35,
+   "y": 0.0,
+   "z": 18.25
+  },
+  "seat_research2_03_a0": {
+   "x": -20.6,
+   "y": 0.0,
+   "z": 18.3
+  },
+  "seat_research2_04": {
+   "x": -20.6,
+   "y": 0.0,
+   "z": 19.75
+  },
+  "seat_research2_04_f": {
+   "x": -20.6,
+   "y": 0.0,
+   "z": 19.5
+  },
+  "seat_research2_04_s": {
+   "x": -20.85,
+   "y": 0.0,
+   "z": 19.75
+  },
+  "seat_research2_04_a0": {
+   "x": -20.6,
+   "y": 0.0,
+   "z": 19.7
+  },
+  "seat_research2_05": {
+   "x": -15.4,
+   "y": 0.0,
+   "z": 18.25
+  },
+  "seat_research2_05_f": {
+   "x": -15.4,
+   "y": 0.0,
+   "z": 18.5
+  },
+  "seat_research2_05_s": {
+   "x": -15.15,
+   "y": 0.0,
+   "z": 18.25
+  },
+  "seat_research2_05_a0": {
+   "x": -15.4,
+   "y": 0.0,
+   "z": 18.3
+  },
+  "seat_research2_06": {
+   "x": -15.4,
+   "y": 0.0,
+   "z": 19.75
+  },
+  "seat_research2_06_f": {
+   "x": -15.4,
+   "y": 0.0,
+   "z": 19.5
+  },
+  "seat_research2_06_s": {
+   "x": -15.65,
+   "y": 0.0,
+   "z": 19.75
+  },
+  "seat_research2_06_a0": {
+   "x": -15.4,
+   "y": 0.0,
+   "z": 19.7
+  },
+  "seat_research2_07": {
+   "x": -14.6,
+   "y": 0.0,
+   "z": 18.25
+  },
+  "seat_research2_07_f": {
+   "x": -14.6,
+   "y": 0.0,
+   "z": 18.5
+  },
+  "seat_research2_07_s": {
+   "x": -14.35,
+   "y": 0.0,
+   "z": 18.25
+  },
+  "seat_research2_07_a0": {
+   "x": -14.6,
+   "y": 0.0,
+   "z": 18.3
+  },
+  "seat_research2_08": {
+   "x": -14.6,
+   "y": 0.0,
+   "z": 19.75
+  },
+  "seat_research2_08_f": {
+   "x": -14.6,
+   "y": 0.0,
+   "z": 19.5
+  },
+  "seat_research2_08_s": {
+   "x": -14.85,
+   "y": 0.0,
+   "z": 19.75
+  },
+  "seat_research2_08_a0": {
+   "x": -14.6,
+   "y": 0.0,
+   "z": 19.7
+  },
+  "seat_research2_09": {
+   "x": -21.4,
+   "y": 0.0,
+   "z": 22.25
+  },
+  "seat_research2_09_f": {
+   "x": -21.4,
+   "y": 0.0,
+   "z": 22.5
+  },
+  "seat_research2_09_s": {
+   "x": -21.15,
+   "y": 0.0,
+   "z": 22.25
+  },
+  "seat_research2_09_a0": {
+   "x": -21.4,
+   "y": 0.0,
+   "z": 22.3
+  },
+  "seat_research2_10": {
+   "x": -21.4,
+   "y": 0.0,
+   "z": 23.75
+  },
+  "seat_research2_10_f": {
+   "x": -21.4,
+   "y": 0.0,
+   "z": 23.5
+  },
+  "seat_research2_10_s": {
+   "x": -21.65,
+   "y": 0.0,
+   "z": 23.75
+  },
+  "seat_research2_10_a0": {
+   "x": -21.4,
+   "y": 0.0,
+   "z": 23.7
+  },
+  "seat_research2_11": {
+   "x": -20.6,
+   "y": 0.0,
+   "z": 22.25
+  },
+  "seat_research2_11_f": {
+   "x": -20.6,
+   "y": 0.0,
+   "z": 22.5
+  },
+  "seat_research2_11_s": {
+   "x": -20.35,
+   "y": 0.0,
+   "z": 22.25
+  },
+  "seat_research2_11_a0": {
+   "x": -20.6,
+   "y": 0.0,
+   "z": 22.3
+  },
+  "seat_research2_12": {
+   "x": -20.6,
+   "y": 0.0,
+   "z": 23.75
+  },
+  "seat_research2_12_f": {
+   "x": -20.6,
+   "y": 0.0,
+   "z": 23.5
+  },
+  "seat_research2_12_s": {
+   "x": -20.85,
+   "y": 0.0,
+   "z": 23.75
+  },
+  "seat_research2_12_a0": {
+   "x": -20.6,
+   "y": 0.0,
+   "z": 23.7
+  },
+  "seat_research2_13": {
+   "x": -15.4,
+   "y": 0.0,
+   "z": 22.25
+  },
+  "seat_research2_13_f": {
+   "x": -15.4,
+   "y": 0.0,
+   "z": 22.5
+  },
+  "seat_research2_13_s": {
+   "x": -15.15,
+   "y": 0.0,
+   "z": 22.25
+  },
+  "seat_research2_13_a0": {
+   "x": -15.4,
+   "y": 0.0,
+   "z": 22.3
+  },
+  "seat_research2_14": {
+   "x": -15.4,
+   "y": 0.0,
+   "z": 23.75
+  },
+  "seat_research2_14_f": {
+   "x": -15.4,
+   "y": 0.0,
+   "z": 23.5
+  },
+  "seat_research2_14_s": {
+   "x": -15.65,
+   "y": 0.0,
+   "z": 23.75
+  },
+  "seat_research2_14_a0": {
+   "x": -15.4,
+   "y": 0.0,
+   "z": 23.7
+  },
+  "seat_research2_15": {
+   "x": -14.6,
+   "y": 0.0,
+   "z": 22.25
+  },
+  "seat_research2_15_f": {
+   "x": -14.6,
+   "y": 0.0,
+   "z": 22.5
+  },
+  "seat_research2_15_s": {
+   "x": -14.35,
+   "y": 0.0,
+   "z": 22.25
+  },
+  "seat_research2_15_a0": {
+   "x": -14.6,
+   "y": 0.0,
+   "z": 22.3
+  },
+  "seat_research2_16": {
+   "x": -14.6,
+   "y": 0.0,
+   "z": 23.75
+  },
+  "seat_research2_16_f": {
+   "x": -14.6,
+   "y": 0.0,
+   "z": 23.5
+  },
+  "seat_research2_16_s": {
+   "x": -14.85,
+   "y": 0.0,
+   "z": 23.75
+  },
+  "seat_research2_16_a0": {
+   "x": -14.6,
+   "y": 0.0,
+   "z": 23.7
+  },
+  "seat_research2_17": {
+   "x": -12.911,
+   "y": 4.8,
+   "z": 7.599
+  },
+  "seat_research2_17_f": {
+   "x": -12.963,
+   "y": 4.8,
+   "z": 7.355
+  },
+  "seat_research2_17_s": {
+   "x": -13.156,
+   "y": 4.8,
+   "z": 7.651
+  },
+  "seat_research2_17_a0": {
+   "x": -12.922,
+   "y": 4.8,
+   "z": 7.551
+  },
+  "seat_research2_18": {
+   "x": -12.324,
+   "y": 4.8,
+   "z": 7.476
+  },
+  "seat_research2_18_f": {
+   "x": -12.375,
+   "y": 4.8,
+   "z": 7.232
+  },
+  "seat_research2_18_s": {
+   "x": -12.569,
+   "y": 4.8,
+   "z": 7.528
+  },
+  "seat_research2_18_a0": {
+   "x": -12.334,
+   "y": 4.8,
+   "z": 7.427
+  },
+  "seat_research2_19": {
+   "x": -11.737,
+   "y": 4.8,
+   "z": 7.353
+  },
+  "seat_research2_19_f": {
+   "x": -11.788,
+   "y": 4.8,
+   "z": 7.108
+  },
+  "seat_research2_19_s": {
+   "x": -11.982,
+   "y": 4.8,
+   "z": 7.404
+  },
+  "seat_research2_19_a0": {
+   "x": -11.747,
+   "y": 4.8,
+   "z": 7.304
+  },
+  "seat_research2_20": {
+   "x": -10.611,
+   "y": 4.8,
+   "z": 7.117
+  },
+  "seat_research2_20_f": {
+   "x": -10.663,
+   "y": 4.8,
+   "z": 6.872
+  },
+  "seat_research2_20_s": {
+   "x": -10.856,
+   "y": 4.8,
+   "z": 7.168
+  },
+  "seat_research2_20_a0": {
+   "x": -10.622,
+   "y": 4.8,
+   "z": 7.068
+  },
+  "seat_research2_21": {
+   "x": -10.024,
+   "y": 4.8,
+   "z": 6.994
+  },
+  "seat_research2_21_f": {
+   "x": -10.075,
+   "y": 4.8,
+   "z": 6.749
+  },
+  "seat_research2_21_s": {
+   "x": -10.269,
+   "y": 4.8,
+   "z": 7.045
+  },
+  "seat_research2_21_a0": {
+   "x": -10.034,
+   "y": 4.8,
+   "z": 6.945
+  },
+  "seat_research2_22": {
+   "x": -9.437,
+   "y": 4.8,
+   "z": 6.87
+  },
+  "seat_research2_22_f": {
+   "x": -9.488,
+   "y": 4.8,
+   "z": 6.626
+  },
+  "seat_research2_22_s": {
+   "x": -9.682,
+   "y": 4.8,
+   "z": 6.922
+  },
+  "seat_research2_22_a0": {
+   "x": -9.447,
+   "y": 4.8,
+   "z": 6.822
   }
  },
- "triangles": 64210,
- "seats": 1400,
+ "triangles": 53637,
+ "seats": 474,
  "notes": [
-  "食堂 1F 1164 席",
-  "2F 回廊 200 席",
-  "食堂 合計 1400 席",
-  "1〜2F 吹き抜けの大食堂。配膳カウンター 38 m・券売機 6 台・返却口・2F 回廊"
+  "1F 食堂（配膳口・返却口・窓際の下がり天井）+ 2F 食堂（カフェテリア。木の天井・厨房前のカウンター・テラス）+ 研究棟側のロビーと EV ホール",
+  "客席 1F 260 席・2F 214 席（テラスの 20 席は入れないので数えない）"
  ],
  "objects": [
   "floor_research2",
   "wall_research2",
-  "furn_research2_01_entry",
-  "furn_research2_02_gallery",
-  "furn_research2_03_serving",
-  "furn_research2_04_ops",
-  "furn_research2_05_tables",
-  "furn_research2_06_chairs",
-  "furn_research2_07_green"
+  "furn_research2_01_hall",
+  "furn_research2_02_serving",
+  "furn_research2_03_seats1",
+  "furn_research2_04_stairs",
+  "furn_research2_05_counters2",
+  "furn_research2_06_seats2",
+  "furn_research2_07_terrace",
+  "furn_research2_08_research"
  ],
+ "signs": [
+  {
+   "empty": "sign_research2_1",
+   "kind": "wall",
+   "ja": "2F フードコート",
+   "en": "FOOD COURT",
+   "tris": 267,
+   "pos": {
+    "x": 1.0,
+    "y": 1.1,
+    "z": 12.9
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 2.6,
+   "h": 0.5,
+   "faces": 1,
+   "plate": "research2_sign_black",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_research2_2",
+   "kind": "wall",
+   "ja": "食堂1階\nそのまま1階で\n注文してください",
+   "en": "1F: order here",
+   "tris": 677,
+   "pos": {
+    "x": 0.75,
+    "y": 2.45,
+    "z": 12.9
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.8,
+   "h": 0.65,
+   "faces": 1,
+   "plate": "paper_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": "sign_research2_3",
+   "kind": "wall",
+   "ja": "食堂2階\n奥↑か手前→の\n階段で2階へ進む",
+   "en": "2F: take the stairs",
+   "tris": 912,
+   "pos": {
+    "x": 0.75,
+    "y": 1.75,
+    "z": 12.9
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.8,
+   "h": 0.65,
+   "faces": 1,
+   "plate": "paper_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": "sign_research2_4",
+   "kind": "wall",
+   "ja": "→\nトイレ\n多目的\nトイレ\n階段",
+   "en": "Restrooms\nStairs",
+   "tris": 552,
+   "pos": {
+    "x": 2.05,
+    "y": 2.3,
+    "z": 12.9
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.6,
+   "h": 1.2,
+   "faces": 1,
+   "plate": "research2_wall_charcoal",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_research2_5",
+   "kind": "wall",
+   "ja": "11:45〜12:30\n理科大生\n優先時間帯",
+   "en": "11:45-12:30\nTUS students first",
+   "tris": 978,
+   "pos": {
+    "x": -3.9,
+    "y": 0.95,
+    "z": 12.27
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.6,
+   "h": 0.9,
+   "faces": 1,
+   "plate": "research2_kiosk_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": "sign_research2_6",
+   "kind": "wall",
+   "ja": "【葛飾店 1F 専用券売機】\nキャッシュレス決済のみ",
+   "en": "1F Order Kiosks\nCashless only",
+   "tris": 1110,
+   "pos": {
+    "x": -4.6,
+    "y": 2.05,
+    "z": 8.6
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.6,
+   "h": 0.5,
+   "faces": 1,
+   "plate": "research2_kiosk_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": "sign_research2_7",
+   "kind": "wall",
+   "ja": "【葛飾店 1F 専用券売機】",
+   "en": "1F Order Kiosks",
+   "tris": 693,
+   "pos": {
+    "x": -4.42,
+    "y": 2.05,
+    "z": 10.0
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.6,
+   "h": 0.5,
+   "faces": 1,
+   "plate": "research2_kiosk_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": "sign_research2_8",
+   "kind": "wall",
+   "ja": "1階\n定食・丼\n500円〜",
+   "en": "1F Set Meals & Bowls\nfrom ¥500",
+   "tris": 725,
+   "pos": {
+    "x": -4.45,
+    "y": 1.5,
+    "z": 12.0
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 0.6,
+   "h": 0.85,
+   "faces": 1,
+   "plate": "paper_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": "sign_research2_9",
+   "kind": "wall",
+   "ja": "本日のランチ",
+   "en": "TODAY'S LUNCH",
+   "tris": 324,
+   "pos": {
+    "x": -18.0,
+    "y": 2.5,
+    "z": 33.4
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 2.4,
+   "h": 0.5,
+   "faces": 1,
+   "plate": "research2_band_enji",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_research2_10",
+   "kind": "wall",
+   "ja": "麺",
+   "en": "NOODLES",
+   "tris": 225,
+   "pos": {
+    "x": -10.0,
+    "y": 2.5,
+    "z": 33.4
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 2.4,
+   "h": 0.5,
+   "faces": 1,
+   "plate": "research2_band_enji",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_research2_11",
+   "kind": "wall",
+   "ja": "丼・カレー",
+   "en": "DON・CURRY",
+   "tris": 246,
+   "pos": {
+    "x": -4.0,
+    "y": 2.5,
+    "z": 33.4
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 2.4,
+   "h": 0.5,
+   "faces": 1,
+   "plate": "research2_band_enji",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_research2_12",
+   "kind": "hanging",
+   "ja": "B",
+   "en": "Set B",
+   "tris": 109,
+   "pos": {
+    "x": -19.2,
+    "y": 1.96,
+    "z": 33.45
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.6,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "research2_kiosk_white",
+   "text": "plastic_black",
+   "align": "center",
+   "drop": 0.09
+  },
+  {
+   "empty": null,
+   "kind": "hanging",
+   "ja": "D",
+   "en": "Set D",
+   "tris": 95,
+   "pos": {
+    "x": -16.8,
+    "y": 1.96,
+    "z": 33.45
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.6,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "research2_kiosk_white",
+   "text": "plastic_black",
+   "align": "center",
+   "drop": 0.09
+  },
+  {
+   "empty": null,
+   "kind": "hanging",
+   "ja": "麺",
+   "en": "Noodles",
+   "tris": 205,
+   "pos": {
+    "x": -10.0,
+    "y": 1.96,
+    "z": 33.45
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.6,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "research2_kiosk_white",
+   "text": "plastic_black",
+   "align": "center",
+   "drop": 0.09
+  },
+  {
+   "empty": null,
+   "kind": "hanging",
+   "ja": "丼",
+   "en": "Rice Bowl",
+   "tris": 161,
+   "pos": {
+    "x": -5.0,
+    "y": 1.96,
+    "z": 33.45
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.6,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "research2_kiosk_white",
+   "text": "plastic_black",
+   "align": "center",
+   "drop": 0.09
+  },
+  {
+   "empty": null,
+   "kind": "hanging",
+   "ja": "カレー",
+   "en": "Curry",
+   "tris": 96,
+   "pos": {
+    "x": -3.0,
+    "y": 1.96,
+    "z": 33.45
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.6,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "research2_kiosk_white",
+   "text": "plastic_black",
+   "align": "center",
+   "drop": 0.09
+  },
+  {
+   "empty": "sign_research2_13",
+   "kind": "wall",
+   "ja": "準備中の番号",
+   "en": "Preparing",
+   "tris": 437,
+   "pos": {
+    "x": -8.3,
+    "y": 2.0,
+    "z": 33.35
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.6,
+   "h": 0.7,
+   "faces": 1,
+   "plate": "research2_monitor_black",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "お呼出中の番号",
+   "en": "Available",
+   "tris": 370,
+   "pos": {
+    "x": -7.7,
+    "y": 2.0,
+    "z": 33.35
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.6,
+   "h": 0.7,
+   "faces": 1,
+   "plate": "research2_monitor_black",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_research2_14",
+   "kind": "hanging",
+   "ja": "食器返却口",
+   "en": "Tray Return",
+   "tris": 345,
+   "pos": {
+    "x": 17.0,
+    "y": 2.89,
+    "z": 33.0
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 1.8,
+   "h": 0.42,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center",
+   "drop": 0.5
+  },
+  {
+   "empty": "sign_research2_15",
+   "kind": "wall",
+   "ja": "自動販売券 →",
+   "en": "Ticket Machines →",
+   "tris": 461,
+   "pos": {
+    "x": -4.6,
+    "y": 1.6,
+    "z": 19.99
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.6,
+   "h": 0.5,
+   "faces": 1,
+   "plate": "research2_kiosk_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": "sign_research2_16",
+   "kind": "wall",
+   "ja": "葛飾食堂\n週間メニュー",
+   "en": "Weekly Menu",
+   "tris": 500,
+   "pos": {
+    "x": -13.8,
+    "y": 1.5,
+    "z": 28.49
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.6,
+   "h": 0.85,
+   "faces": 1,
+   "plate": "paper_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": "sign_research2_17",
+   "kind": "wall",
+   "ja": "2F Cafeteria\n営業時間 11:00-14:00\nレギュラーメニュー\n週替わりメニュー\n¥550〜",
+   "en": "2F Menu",
+   "tris": 1008,
+   "pos": {
+    "x": 8.424,
+    "y": 6.4,
+    "z": 12.601
+   },
+   "facing": {
+    "x": -0.9982,
+    "y": 0.0,
+    "z": 0.0598
+   },
+   "w": 1.0,
+   "h": 1.4,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_research2_18",
+   "kind": "wall",
+   "ja": "C エスニック ゴロゴロカレー",
+   "en": "C ETHNIC GOROGORO CURRY",
+   "tris": 532,
+   "pos": {
+    "x": -5.0,
+    "y": 7.4,
+    "z": 33.0
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 2.4,
+   "h": 0.48,
+   "faces": 1,
+   "plate": "research2_counter_orange",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_research2_19",
+   "kind": "wall",
+   "ja": "A ガパオライス",
+   "en": "A Gapao Rice",
+   "tris": 343,
+   "pos": {
+    "x": -17.0,
+    "y": 7.4,
+    "z": 33.0
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 2.4,
+   "h": 0.48,
+   "faces": 1,
+   "plate": "research2_counter_orange",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "B ベトナムフォー",
+   "en": "B Vietnamese Pho",
+   "tris": 394,
+   "pos": {
+    "x": -11.0,
+    "y": 7.4,
+    "z": 33.0
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 2.4,
+   "h": 0.48,
+   "faces": 1,
+   "plate": "research2_counter_orange",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "D ハッシュドビーフオムライス",
+   "en": "D Hashed Beef Omurice",
+   "tris": 513,
+   "pos": {
+    "x": 1.0,
+    "y": 7.4,
+    "z": 33.0
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 2.4,
+   "h": 0.48,
+   "faces": 1,
+   "plate": "research2_counter_orange",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_research2_20",
+   "kind": "wall",
+   "ja": "トレー",
+   "en": "Trays",
+   "tris": 82,
+   "pos": {
+    "x": 7.5,
+    "y": 7.35,
+    "z": 33.0
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.6,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "research2_kiosk_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": "sign_research2_21",
+   "kind": "wall",
+   "ja": "モバイルオーダー\n＆\nキャッシュレス決済",
+   "en": "Mobile Order &\nCashless Payment",
+   "tris": 755,
+   "pos": {
+    "x": 5.0,
+    "y": 6.3,
+    "z": 33.0
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.8,
+   "h": 1.1,
+   "faces": 1,
+   "plate": "paper_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": "sign_research2_22",
+   "kind": "wall",
+   "ja": "準備中",
+   "en": "Preparing",
+   "tris": 320,
+   "pos": {
+    "x": -21.3,
+    "y": 6.6,
+    "z": 32.95
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.6,
+   "h": 0.7,
+   "faces": 1,
+   "plate": "research2_monitor_black",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "お渡し可能",
+   "en": "Available",
+   "tris": 310,
+   "pos": {
+    "x": -20.7,
+    "y": 6.6,
+    "z": 32.95
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.6,
+   "h": 0.7,
+   "faces": 1,
+   "plate": "research2_monitor_black",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_research2_23",
+   "kind": "wall",
+   "ja": "6F 会議室\n4F・5F 研究室\n3F 事務室\n1F・2F 食堂",
+   "en": "6F Meeting / 4-5F Labs\n3F Office / 1-2F Cafeteria",
+   "tris": 1433,
+   "pos": {
+    "x": 31.577,
+    "y": 1.6,
+    "z": 30.0
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.4,
+   "h": 1.6,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_research2_24",
+   "kind": "wall",
+   "ja": "第2研究棟",
+   "en": "Research Labs Building No.2",
+   "tris": 717,
+   "pos": {
+    "x": 23.12,
+    "y": 2.3,
+    "z": 21.0
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.6,
+   "h": 0.5,
+   "faces": 1,
+   "plate": "research2_wall_charcoal",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_research2_25",
+   "kind": "wall",
+   "ja": "1",
+   "en": "1F",
+   "tris": 26,
+   "pos": {
+    "x": 26.4,
+    "y": 2.75,
+    "z": 32.0
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 0.3,
+   "h": 0.2,
+   "faces": 1,
+   "plate": "research2_monitor_black",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "1",
+   "en": "1F",
+   "tris": 26,
+   "pos": {
+    "x": 26.4,
+    "y": 2.75,
+    "z": 35.3
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 0.3,
+   "h": 0.2,
+   "faces": 1,
+   "plate": "research2_monitor_black",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_research2_26",
+   "kind": "wall",
+   "ja": "2",
+   "en": "2F",
+   "tris": 38,
+   "pos": {
+    "x": 26.4,
+    "y": 7.55,
+    "z": 32.0
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 0.3,
+   "h": 0.2,
+   "faces": 1,
+   "plate": "research2_monitor_black",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "2",
+   "en": "2F",
+   "tris": 38,
+   "pos": {
+    "x": 26.4,
+    "y": 7.55,
+    "z": 35.3
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 0.3,
+   "h": 0.2,
+   "faces": 1,
+   "plate": "research2_monitor_black",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_research2_27",
+   "kind": "wall",
+   "ja": "トイレ・多目的トイレ",
+   "en": "Restrooms",
+   "tris": 355,
+   "pos": {
+    "x": 6.6,
+    "y": 2.3,
+    "z": 19.06
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 1.6,
+   "h": 0.5,
+   "faces": 1,
+   "plate": "research2_kiosk_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": "sign_research2_28",
+   "kind": "hanging",
+   "ja": "非常口",
+   "en": "EXIT",
+   "tris": 244,
+   "pos": {
+    "x": 0.0,
+    "y": 2.82,
+    "z": 7.0
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 0.62,
+   "h": 0.26,
+   "faces": 2,
+   "plate": "sign_exit_green",
+   "text": "plastic_black",
+   "align": "center",
+   "drop": 0.25
+  },
+  {
+   "empty": "sign_research2_29",
+   "kind": "hanging",
+   "ja": "非常口",
+   "en": "EXIT",
+   "tris": 244,
+   "pos": {
+    "x": 3.5,
+    "y": 8.02,
+    "z": 17.6
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 0.62,
+   "h": 0.26,
+   "faces": 2,
+   "plate": "sign_exit_green",
+   "text": "plastic_black",
+   "align": "center",
+   "drop": 0.25
+  }
+ ],
+ "text_triangles": 16866,
  "ext": {
   "objects": [
    "ext_research2",
    "ext_research2_trees"
   ],
-  "triangles": 27475,
+  "triangles": 24164,
   "radius": 30.0,
   "dz": -0.03
  }

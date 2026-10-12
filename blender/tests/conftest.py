@@ -1,8 +1,8 @@
 """blender/ の純 Python 部分を Blender なしで試す (#68)。
 
-bpy / bmesh / mathutils をスタブに差し替えてから kcd_lib / kcd_route を import する。
-スタブの中身は stubs.py。建物内部（kcd_interior, build_interiors.py など）は dev/interior の担当なので
-ここでは扱わない。
+bpy / bmesh / mathutils をスタブに差し替えてから kcd_lib / kcd_route / kcd_interior を import する。
+スタブの中身は stubs.py。建物内部（kcd_interior, build_interiors.py）は Blender の要らない部分
+（三角数の上限・材質の合成など）だけをここで試す。
 """
 
 import json
