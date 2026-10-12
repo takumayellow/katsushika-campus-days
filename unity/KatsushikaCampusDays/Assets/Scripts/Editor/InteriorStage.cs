@@ -310,8 +310,14 @@ namespace KCD.Editor
             }
 
             Transform spawn = Find(interior, "spawn_" + id);
-            Vector3 spawnPosition = spawn != null ? spawn.position : exit.position;
-            InteriorExit.BoxFor(exit.position, spawnPosition, out Vector3 center, out float yaw, out Vector3 size);
+            Vector3 center = exit.position + Vector3.up * 1.2f;
+            float yaw = 0f;
+            var size = new Vector3(InteriorExit.BoxWidth, InteriorExit.BoxHeight, InteriorExit.BoxWidth);
+            if (spawn != null)
+            {
+                InteriorExit.BoxFor(exit.position, spawn.position, out center, out yaw, out size);
+            }
+
             var go = new GameObject("Exit_" + id);
             go.transform.SetParent(interior, false);
             go.transform.position = center;

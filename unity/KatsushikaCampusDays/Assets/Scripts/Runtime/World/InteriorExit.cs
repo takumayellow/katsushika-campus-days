@@ -21,6 +21,9 @@ namespace KCD
         /// <summary>出口の印（exit_&lt;id&gt;）から外側へ、範囲を伸ばす長さ（m）。</summary>
         public const float OutwardReach = 1.5f;
 
+        /// <summary>出口の印（exit_&lt;id&gt;）から内側へ、範囲を伸ばす長さの上限（m）。入った所が奥にあっても部屋の大半を範囲にしない。</summary>
+        public const float InwardReach = 1.5f;
+
         /// <summary>出口の範囲の幅と高さ（m）。</summary>
         public const float BoxWidth = 3f;
         public const float BoxHeight = 2.6f;
@@ -28,7 +31,7 @@ namespace KCD
         /// <summary>
         /// 出口の範囲（向き付きの箱）。入った所から出口の印へ向かう向きに箱を向け、手前の縁を入った所から
         /// SpawnGap だけ離す。入った所が範囲の中にあると、少し戻るだけで外へ出される（#212）。
-        /// 外側の縁は印から OutwardReach の先。center は印の高さ + 1.2 m、yaw は Y 軸まわりの度。
+        /// 外側の縁は印から OutwardReach の先、内側は印から InwardReach まで（入った所が近いときは SpawnGap が優先）。center は印の高さ + 1.2 m、yaw は Y 軸まわりの度。
         /// </summary>
         public static void BoxFor(Vector3 exit, Vector3 spawn, out Vector3 center, out float yaw, out Vector3 size)
         {
@@ -36,7 +39,7 @@ namespace KCD
             toExit.y = 0f;
             float distance = toExit.magnitude;
             Vector3 direction = distance > 1e-4f ? toExit / distance : Vector3.forward;
-            float near = SpawnGap;
+            float near = Mathf.Max(SpawnGap, distance - InwardReach);
             float far = distance + OutwardReach;
             float depth = far - near;
             Vector3 middle = spawn + direction * (near + depth * 0.5f);

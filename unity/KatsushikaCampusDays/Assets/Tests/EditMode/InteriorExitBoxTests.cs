@@ -28,8 +28,24 @@ namespace KCD.Tests
         public void SpawnOnTheMarker_StillGivesABoxAheadOfTheSpawn()
         {
             Vector3 spawn = new Vector3(5f, 0f, 5f);
-            InteriorExit.BoxFor(spawn, spawn, out _, out _, out Vector3 size);
+            InteriorExit.BoxFor(spawn, spawn, out Vector3 center, out float yaw, out Vector3 size);
             Assert.Greater(size.z, 0f);
+            Assert.AreEqual(0f, yaw, 1e-3f);
+            Assert.AreEqual(spawn.x, center.x, 1e-3f + size.z);
+            Assert.AreEqual(spawn.y + 1.2f, center.y, 1e-4f);
+        }
+
+        [Test]
+        public void FarSpawn_KeepsTheDepthToInwardReachPlusOutwardReach()
+        {
+            Vector3 spawn = new Vector3(40f, 0.1f, 7f);
+            Vector3 exit = spawn + Vector3.forward * 6f;
+            InteriorExit.BoxFor(exit, spawn, out Vector3 center, out float yaw, out Vector3 size);
+
+            Assert.AreEqual(InteriorExit.InwardReach + InteriorExit.OutwardReach, size.z, 1e-3f);
+            Vector3 axis = Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;
+            float near = Vector3.Dot(new Vector3(center.x, spawn.y, center.z) - spawn, axis) - size.z * 0.5f;
+            Assert.AreEqual(6f - InteriorExit.InwardReach, near, 1e-3f);
         }
     }
 }
