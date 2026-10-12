@@ -191,7 +191,7 @@ namespace KCD.Editor
                 return interior;
             }
 
-            AddExit(interior.transform, exit);
+            AddExit(interior.transform, exit, spawn);
             PlaceDormHead(interior.transform, spawn);
             Register(loader, interior.transform, spawn, exit, entrance);
 
@@ -330,15 +330,16 @@ namespace KCD.Editor
         }
 
         /// <summary>exit_dorm を踏んだら外へ。本編の屋内と同じ InteriorExit を使う。</summary>
-        private static void AddExit(Transform interior, Transform exit)
+        private static void AddExit(Transform interior, Transform exit, Transform spawn)
         {
+            InteriorExit.BoxFor(exit.position, spawn.position, out Vector3 center, out float yaw, out Vector3 size);
             var go = new GameObject("Exit_" + DormRoute.Id);
             go.transform.SetParent(interior, false);
-            go.transform.position = exit.position + Vector3.up * 1.2f;
-            go.transform.rotation = Quaternion.identity;
+            go.transform.position = center;
+            go.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
             BoxCollider box = go.AddComponent<BoxCollider>();
             box.isTrigger = true;
-            box.size = new Vector3(3f, 2.6f, 3f);
+            box.size = size;
             go.AddComponent<InteriorExit>().BuildingId = DormRoute.Id;
         }
 

@@ -309,13 +309,16 @@ namespace KCD.Editor
                 return;
             }
 
+            Transform spawn = Find(interior, "spawn_" + id);
+            Vector3 spawnPosition = spawn != null ? spawn.position : exit.position;
+            InteriorExit.BoxFor(exit.position, spawnPosition, out Vector3 center, out float yaw, out Vector3 size);
             var go = new GameObject("Exit_" + id);
             go.transform.SetParent(interior, false);
-            go.transform.position = exit.position + Vector3.up * 1.2f;
-            go.transform.rotation = Quaternion.identity;
+            go.transform.position = center;
+            go.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
             BoxCollider box = go.AddComponent<BoxCollider>();
             box.isTrigger = true;
-            box.size = new Vector3(3f, 2.6f, 3f);
+            box.size = size;
             go.AddComponent<InteriorExit>().BuildingId = id;
         }
 
