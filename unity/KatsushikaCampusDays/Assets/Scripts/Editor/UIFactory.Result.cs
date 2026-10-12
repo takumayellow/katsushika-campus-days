@@ -36,6 +36,7 @@ namespace KCD.Editor
             rect.gameObject.SetActive(false);
             ResultScreen view = host.AddComponent<ResultScreen>();
             view.Bind(rect.gameObject, heading, rank, body, choices);
+            view.BindTap(AddLinkTapArea(rect, choices));
             return view;
         }
     }

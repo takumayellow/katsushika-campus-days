@@ -13,11 +13,20 @@ namespace KCD
         private float _startedAt;
         private bool _continued;
 
+        private void OnEnable()
+        {
+            InputMode.Changed += OnInputModeChanged;
+        }
+
+        private void OnDisable()
+        {
+            InputMode.Changed -= OnInputModeChanged;
+        }
+
         private void Start()
         {
             _startedAt = Time.unscaledTime;
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
+            InputMode.CaptureCursor();
 
             // 軌道カメラの初期ヨーはワールド 0 なので、プレイヤーの向きの真後ろへ合わせる
             PlayerController player = FindAnyObjectByType<PlayerController>();
@@ -75,6 +84,18 @@ namespace KCD
             }
 
             hud.ShowToast(L.Pick("東京理科大学 葛飾キャンパス", "Tokyo University of Science, Katsushika Campus"));
+            if (InputMode.IsTouch)
+            {
+                // 指で遊ぶ人にはキーの名前を出さない (#187)。
+                hud.ShowToast(L.Pick(
+                    "左側をなぞって移動　右側をなぞって見回す　2 本指で寄る・引く",
+                    "Drag left to move   Drag right to look   Pinch to zoom"));
+                hud.ShowToast(L.Pick(
+                    "人の近くで「話す」　会話は画面を叩いて進める",
+                    "Tap Talk near people   Tap the box to continue"));
+                return;
+            }
+
             hud.ShowToast(L.Pick(
                 "WASD / 矢印キーで移動　Shift でダッシュ　E で話す　Tab でクエスト",
                 "WASD / Arrows Move   Shift Sprint   E Talk   Tab Quests"));
@@ -96,8 +117,18 @@ namespace KCD
                 return;
             }
 
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
+            InputMode.CaptureCursor();
+        }
+
+        /// <summary>
+        /// 指からマウスに戻ったら、歩いている最中ならカーソルを掴み直す。指に移ったときの解放は InputMode がする。
+        /// </summary>
+        private static void OnInputModeChanged(InputKind kind)
+        {
+            if (kind == InputKind.Pointer && !KCDInput.GameplayBlocked && !ResultScreen.IsAnyOpen)
+            {
+                InputMode.CaptureCursor();
+            }
         }
     }
 }

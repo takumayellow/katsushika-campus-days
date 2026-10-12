@@ -6,6 +6,7 @@ namespace KCD
     /// <summary>
     /// タイトルのキャラクター選択。3 人が回転台に立ち、←→ で切り替え、Enter で決定。
     /// 選ばれていない子はひと回り小さく、後ろに下がって薄くなる。
+    /// 指で遊んでいるときは、名前の両脇の ◀ ▶ を叩いて切り替え、名前を叩いて決定 (#187)。
     /// </summary>
     public sealed class CharacterSelect : MonoBehaviour
     {
@@ -24,12 +25,25 @@ namespace KCD
         [SerializeField] private float _selectedScale = 1f;
         [SerializeField] private float _idleScale = 0.78f;
         [SerializeField] private float _idleDepth = 1.6f;
+        [SerializeField] private TmpLinkTap _tap;
+
+        /// <summary>名前の行の、叩ける部分の id。</summary>
+        public const string PrevLink = "prev";
+
+        /// <summary>名前そのもの。叩くと決定。</summary>
+        public const string PickLink = "pick";
+
+        /// <summary>右の ▶。</summary>
+        public const string NextLink = "next";
 
         private int _index;
         private bool _active;
 
         /// <summary>選択を受け付け始めたフレーム。そのフレームの入力は捨てる（#6）。</summary>
         private int _activatedFrame = KCDInput.NoFrame;
+
+        /// <summary>案内を指向けに書いているか。</summary>
+        private bool _hintForTouch;
 
         /// <summary>SceneBuilder から差し込む。stands は左から順の 3 体。</summary>
         public void Bind(Transform[] stands, TMP_Text nameLabel, TMP_Text taglineLabel, TMP_Text hintLabel)
@@ -38,6 +52,28 @@ namespace KCD
             _nameLabel = nameLabel;
             _taglineLabel = taglineLabel;
             _hintLabel = hintLabel;
+        }
+
+        /// <summary>名前の行を叩く受け口。SceneBuilder から差し込む。</summary>
+        public void BindTap(TmpLinkTap tap)
+        {
+            _tap = tap;
+        }
+
+        private void OnEnable()
+        {
+            if (_tap != null)
+            {
+                _tap.Tapped += OnTapped;
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (_tap != null)
+            {
+                _tap.Tapped -= OnTapped;
+            }
         }
 
         private void Start()
@@ -55,10 +91,12 @@ namespace KCD
 
         private void OnLocaleChanged()
         {
+            _hintForTouch = InputMode.IsTouch;
             if (_hintLabel != null)
             {
-                _hintLabel.text = L.Get(
-                    "ui.select.hint", "← → でえらぶ　Enter で決定　（パッドは十字キーと A ボタン）");
+                _hintLabel.text = _hintForTouch
+                    ? L.Pick("◀ ▶ でえらぶ　名前をタップで決定", "Tap ◀ ▶ to choose   Tap the name to start")
+                    : L.Get("ui.select.hint", "← → でえらぶ　Enter で決定　（パッドは十字キーと A ボタン）");
             }
 
             Refresh();
@@ -75,6 +113,10 @@ namespace KCD
         private void Update()
         {
             AnimateStands();
+            if (InputMode.IsTouch != _hintForTouch)
+            {
+                OnLocaleChanged();
+            }
 
             // タイトルで押した Enter を同じフレームでこちらも拾うと、その場で既定のキャラで決定してしまい、
             // 選択画面が 1 フレームも操作できない（「キャラ選択が出ない」の正体, #6）。
@@ -95,6 +137,36 @@ namespace KCD
             if (KCDInput.SubmitPressed)
             {
                 Confirm();
+            }
+        }
+
+        /// <summary>名前の行の id を ←→ の向きに直す。◀ は -1、▶ は +1、それ以外は 0。</summary>
+        public static int TapStep(string linkId)
+        {
+            return linkId == PrevLink ? -1 : linkId == NextLink ? 1 : 0;
+        }
+
+        private void OnTapped(string linkId)
+        {
+            // マウスのクリックでは選ばない（タイトルと同じ）。キーボードの人は ←→ と Enter で選ぶ。
+            if (!_active || !InputMode.IsTouch || KCDInput.IgnoresInput(_activatedFrame))
+            {
+                return;
+            }
+
+            if (linkId == PickLink)
+            {
+                Confirm();
+                return;
+            }
+
+            int step = TapStep(linkId);
+            int count = Mathf.Min(_stands.Length, GameManager.PlayableCharacterIds.Length);
+            if (step != 0 && count > 0)
+            {
+                _index = Step(_index, step, count);
+                AudioManager.Instance?.PlayUi("ui_move");
+                Refresh();
             }
         }
 
@@ -158,7 +230,9 @@ namespace KCD
             {
                 // 左右に人がいることが名前だけでは分からないので、矢印と「2 / 3」を添える（#6）。
                 string name = L.Get("ui.select." + id + ".name", GameManager.PlayableCharacterNames[_index]);
-                _nameLabel.text = "<color=#FFD98A>◀</color>　" + name + "　<color=#FFD98A>▶</color>" +
+                _nameLabel.text = "<link=\"" + PrevLink + "\"><color=#FFD98A>◀</color></link>　" +
+                                  "<link=\"" + PickLink + "\">" + name + "</link>　" +
+                                  "<link=\"" + NextLink + "\"><color=#FFD98A>▶</color></link>" +
                                   "<size=45%>　" + (_index + 1) + " / " +
                                   GameManager.PlayableCharacterIds.Length + "</size>";
             }

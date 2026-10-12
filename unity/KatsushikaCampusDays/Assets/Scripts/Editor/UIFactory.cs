@@ -43,6 +43,7 @@ namespace KCD.Editor
                 evaluator.Screen = result;
             }
 
+            BuildTouchControls(root);
             return hud;
         }
 
@@ -160,6 +161,7 @@ namespace KCD.Editor
             RectTransform rect = Rect(parent, "Dialogue", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
                 new Vector2(0f, 48f), new Vector2(1520f, 300f));
             Backdrop(rect, new Color(0.05f, 0.07f, 0.12f, 0.9f));
+            AddDialogueTapArea(rect);
 
             // 話者名の札は枠の内側（上端から 14 px 下）に置き、本文はその下から始める。
             // 札を枠の上にはみ出させると、背景から浮いて本文の 1 行目にも重なる。

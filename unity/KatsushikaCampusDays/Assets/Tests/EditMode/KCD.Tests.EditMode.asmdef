@@ -5,6 +5,7 @@
         "KCD.Runtime",
         "Unity.TextMeshPro",
         "UnityEngine.UI",
+        "Unity.InputSystem",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

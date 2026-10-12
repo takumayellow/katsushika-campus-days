@@ -163,9 +163,11 @@ namespace KCD.Editor
 
             CharacterSelect select = host.AddComponent<CharacterSelect>();
             select.Bind(stands, nameLabel, tagline, hint);
+            select.BindTap(UIFactory.AddLinkTapArea(selectRoot, nameLabel));
 
             TitleMenu menu = host.AddComponent<TitleMenu>();
             menu.Bind(titleRoot.gameObject, selectRoot.gameObject, prompt, select);
+            menu.BindTap(UIFactory.AddLinkTapArea(titleRoot, prompt));
 
             BuildMapAttribution(canvasRect);
 

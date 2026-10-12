@@ -6,7 +6,7 @@ namespace KCD
 {
     /// <summary>
     /// 一日の終わりのリザルト。ランクと達成内訳を出し、「もう一日歩く」か「タイトルへ」を選ぶ。
-    /// PauseMenu と同じくキーボードだけで完結させる。
+    /// PauseMenu と同じくキーボードだけで完結させる。指で遊んでいるときは、選択肢を叩くとそれに決まる (#187)。
     /// </summary>
     public sealed class ResultScreen : MonoBehaviour
     {
@@ -19,12 +19,16 @@ namespace KCD
         [SerializeField] private TMP_Text _rankLabel;
         [SerializeField] private TMP_Text _body;
         [SerializeField] private TMP_Text _choices;
+        [SerializeField] private TmpLinkTap _tap;
 
         private ResultData _data;
         private Action _onContinue;
         private Action _onToTitle;
         private int _index;
         private float _openedAt;
+
+        /// <summary>選択肢を叩けるリンク付きで書いているか。入力の種類が変わったら書き直す。</summary>
+        private bool _choicesForTouch;
 
         /// <summary>開いているか。</summary>
         public bool IsOpen => _root != null && _root.activeSelf;
@@ -40,6 +44,28 @@ namespace KCD
             _rankLabel = rank;
             _body = body;
             _choices = choices;
+        }
+
+        /// <summary>選択肢を叩く受け口。SceneBuilder から差し込む。</summary>
+        public void BindTap(TmpLinkTap tap)
+        {
+            _tap = tap;
+        }
+
+        private void OnEnable()
+        {
+            if (_tap != null)
+            {
+                _tap.Tapped += OnTapped;
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (_tap != null)
+            {
+                _tap.Tapped -= OnTapped;
+            }
         }
 
         /// <summary>集計結果を表示して時間を止める。</summary>
@@ -83,8 +109,7 @@ namespace KCD
             Time.timeScale = 1f;
             KCDInput.Unblock(this);
             KCDInput.MarkModalClosed();
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
+            InputMode.CaptureCursor();
             HUD.Instance?.SetGameplayUIVisible(true);
         }
 
@@ -102,6 +127,11 @@ namespace KCD
 
         private void Update()
         {
+            if (IsOpen && InputMode.IsTouch != _choicesForTouch)
+            {
+                Redraw();
+            }
+
             if (!IsOpen || Time.unscaledTime - _openedAt < InputGuardSeconds)
             {
                 return;
@@ -129,6 +159,58 @@ namespace KCD
         public static int StepOf(int horizontal, int vertical)
         {
             return horizontal != 0 ? horizontal : vertical;
+        }
+
+        /// <summary>
+        /// 選択肢の行。選んでいる方にだけ ▶ と色を付ける。
+        /// links なら各選択肢を <c>&lt;link="choice:N"&gt;</c> で囲み、叩けるようにする。
+        /// </summary>
+        public static string ChoiceLine(int selected, string[] labels, bool links)
+        {
+            var builder = new System.Text.StringBuilder(128);
+            for (int i = 0; i < labels.Length; i++)
+            {
+                if (links)
+                {
+                    builder.Append("<link=\"choice:").Append(i).Append("\">");
+                }
+
+                builder.Append(i == selected ? "<color=#FFD98A>▶ " : "   ");
+                builder.Append(labels[i]);
+                builder.Append(i == selected ? "</color>" : string.Empty);
+                if (links)
+                {
+                    builder.Append("</link>");
+                }
+
+                builder.Append(i == labels.Length - 1 ? string.Empty : "      ");
+            }
+
+            return builder.ToString();
+        }
+
+        /// <summary>叩いたリンクの選択肢の番号。選択肢の外や形の違う id は -1。</summary>
+        public static int TapIndex(string linkId)
+        {
+            return TmpLinkTap.TryParseChoice(linkId, out int index) && index < ChoiceKeys.Length ? index : -1;
+        }
+
+        private void OnTapped(string linkId)
+        {
+            // マウスのクリックでは決めない。キーと同じく、開いた直後の誤操作も拾わない。
+            if (!IsOpen || !InputMode.IsTouch || Time.unscaledTime - _openedAt < InputGuardSeconds)
+            {
+                return;
+            }
+
+            int index = TapIndex(linkId);
+            if (index < 0)
+            {
+                return;
+            }
+
+            AudioManager.Instance?.PlayUi("ui_confirm");
+            Choose(index);
         }
 
         /// <summary>
@@ -180,18 +262,16 @@ namespace KCD
                 _body.text = builder.ToString();
             }
 
+            _choicesForTouch = InputMode.IsTouch;
             if (_choices != null)
             {
-                var builder = new System.Text.StringBuilder(128);
+                var labels = new string[ChoiceKeys.Length];
                 for (int i = 0; i < ChoiceKeys.Length; i++)
                 {
-                    builder.Append(i == _index ? "<color=#FFD98A>▶ " : "   ");
-                    builder.Append(L.Get(ChoiceKeys[i], ChoiceFallbacks[i]));
-                    builder.Append(i == _index ? "</color>" : string.Empty);
-                    builder.Append(i == ChoiceKeys.Length - 1 ? string.Empty : "      ");
+                    labels[i] = L.Get(ChoiceKeys[i], ChoiceFallbacks[i]);
                 }
 
-                _choices.text = builder.ToString();
+                _choices.text = ChoiceLine(_index, labels, _choicesForTouch);
             }
         }
 
