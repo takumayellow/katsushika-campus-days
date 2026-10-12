@@ -475,6 +475,7 @@ namespace KCD.Editor
             animator.Update(0.02f);
             if (frame.Pose == "idle")
             {
+                FollowSkirt(body);
                 return;
             }
 
@@ -513,6 +514,25 @@ namespace KCD.Editor
                 animator.Update(dt);
                 left -= dt;
             }
+
+            FollowSkirt(body);
+        }
+
+        /// <summary>ゲームでは LateUpdate で回すスカートの骨を、手で進めた Animator の後に回す（#49）。</summary>
+        private static void FollowSkirt(GameObject body)
+        {
+            if (!SkirtFollow.HasSkirtBones(body))
+            {
+                return;
+            }
+
+            SkirtFollow follow = body.GetComponent<SkirtFollow>();
+            if (follow == null)
+            {
+                follow = body.AddComponent<SkirtFollow>();
+            }
+
+            follow.Apply();
         }
 
         private static Bounds BoundsOf(GameObject body)

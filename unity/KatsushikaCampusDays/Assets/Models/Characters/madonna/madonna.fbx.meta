@@ -590,6 +590,16 @@ ModelImporter:
       position: {x: 0.0000000011132448, y: 0.16586533, z: -0.0000000018033584}
       rotation: {x: 0.000000007379727, y: 0.99942917, z: -0.033784878, w: 0.00000013298467}
       scale: {x: 1, y: 0.99999976, z: 0.9999999}
+    - name: SkirtBack
+      parentName: Hips
+      position: {x: -0, y: -0.015013576, z: 0}
+      rotation: {x: 1, y: -4.622913e-24, z: 0.0000000754979, w: 6.123234e-17}
+      scale: {x: 1, y: 1, z: 1}
+    - name: SkirtFront
+      parentName: Hips
+      position: {x: -0, y: -0.015013576, z: 0}
+      rotation: {x: 1, y: -4.622913e-24, z: 0.0000000754979, w: 6.123234e-17}
+      scale: {x: 1, y: 1, z: 1}
     - name: Spine
       parentName: Hips
       position: {x: -0, y: 0.082466364, z: 0}
