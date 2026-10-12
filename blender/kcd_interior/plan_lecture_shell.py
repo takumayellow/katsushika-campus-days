@@ -83,10 +83,10 @@ def _outer(c):
     wall(c, EAST_S, 0.0, D.F2, glass=GLASS, sill=0.0, header=0.8, gaps=[(sv0, sv1)],
          gap_top=D.CEIL_CORR, top=False)
     wall(c, EAST_S, D.F2, D.F3, glass=GLASS, sill=0.0, header=0.6, top=False)
-    wall(c, EAST_S, D.F3, Z_EAST_TOP)
+    wall(c, EAST_S, D.F3, Z_EAST_TOP, glass=GLASS, sill=0.0, header=0.5)
     wall(c, EAST, 0.0, D.F2, glass=GLASS, sill=0.95, header=0.8, top=False)
     wall(c, EAST, D.F2, D.F3, glass=GLASS, sill=0.95, header=0.6, top=False)
-    wall(c, EAST, D.F3, Z_EAST_TOP)
+    wall(c, EAST, D.F3, Z_EAST_TOP, glass=GLASS, sill=0.0, header=0.5)
     # 生協の北の張り出し（北は窓の帯）・北・西
     wall(c, BUMP_N, 0.0, Z_1F_TOP, glass=GLASS, header=1.2)
     wall(c, BUMP_W, 0.0, Z_1F_TOP)

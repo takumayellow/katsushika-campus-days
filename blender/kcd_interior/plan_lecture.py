@@ -8,18 +8,20 @@
 """
 
 from . import plan_lecture_101 as R101
+from . import plan_lecture_coop as COOP
 from . import plan_lecture_core as CORE
 from . import plan_lecture_dims as D
+from . import plan_lecture_east as EAST
 from . import plan_lecture_esc as ESC
 from . import plan_lecture_hall as HALL
+from . import plan_lecture_lounge as LOUNGE
+from . import plan_lecture_north as NORTH
 from . import plan_lecture_shell as SHELL
 from . import plan_lecture_signs as SIGNS
 from . import plan_lecture_upper as UPPER
 
 # 家具のメッシュ（furn_lecture_<nn>_<区画名>）
-FURN = ("hall_seats", "hall_desks", "hall_front", "corridor", "lobby", "signs")
-# 生協のレジの札の位置（生協のモジュールができるまでの仮置き。カウンターの前の Y 39.0）
-REGISTERS = ((36.6, 39.0), (37.6, 39.0), (38.6, 39.0), (39.6, 39.0))
+FURN = ("hall_seats", "hall_desks", "hall_front", "corridor", "lobby", "signs", "coop", "lounge", "north")
 
 
 def build(c):
@@ -28,13 +30,17 @@ def build(c):
     CORE.build(c, M, SIGNS.hang_roots())
     UPPER.build(c, SIGNS.hang_roots())
     ESC.build(c)
+    EAST.build(c)
+    COOP.build(c, M["coop"])
+    LOUNGE.build(c, M["lounge"])
+    NORTH.build(c, M["north"])
     HALL.build_floor(c.floor)
     seats = HALL.build_seats(c, M["hall_seats"], M["hall_desks"])
     R101.build(M["hall_front"])
     for x in (11.0, 17.8, 24.6):
         for y in (8.0, 13.0, 17.5):
             c.light(x, y, D.CEIL_101 - 0.9, energy=90.0, radius=1.6)
-    SIGNS.build(c, M["signs"], REGISTERS)
+    SIGNS.build(c, M["signs"], COOP.REGISTERS)
     for name, x, y, z in D.POIS:
         c.poi(name, x, y, z)
     for x, y, z in D.NPCS:

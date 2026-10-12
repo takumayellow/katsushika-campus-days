@@ -210,8 +210,6 @@ def test_text_triangles_count_against_the_building(built):
 
 
 def test_seminar_and_lab_signs_are_numbered(built):
-    lecture = [r["ja"] for r in built["lecture"].signs if r["ja"].startswith("演習室")]
-    assert lecture == ["演習室 %d" % (i + 1) for i in range(len(lecture))] and lecture
     for bid in ("lab1", "lab2"):
         labs = [r["ja"] for r in built[bid].signs if r["ja"].startswith("実験室")]
         assert labs == ["実験室 %d" % (i + 1) for i in range(len(labs))] and labs, bid

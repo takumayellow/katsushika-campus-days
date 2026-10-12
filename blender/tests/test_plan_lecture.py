@@ -3,7 +3,9 @@
 import pytest
 
 import stubs
+from kcd_interior import plan_lecture_coop as COOP
 from kcd_interior import plan_lecture_dims as D
+from kcd_interior import plan_lecture_east as EAST
 from kcd_interior import plan_lecture_esc as ESC
 from kcd_interior import plan_lecture_hall as HL
 from kcd_interior import plan_lecture_shell as SH
@@ -25,7 +27,7 @@ NEW_POIS = ("coop", "lounge", "corridor", "health")
 MARGIN = ishell.WALL      # 外周壁の厚み
 HALL_SEATS, HALL_DESKS = 270, 70                       # spec §4
 SEATS_DESKS_CAP = 12720   # spec §4 の見積もり（座席 270 x 44 + 机）
-REGISTERS = ((36.6, 39.0), (37.6, 39.0), (38.6, 39.0), (39.6, 39.0))   # 生協のモジュールが決めるまでの仮置き
+REGISTERS = COOP.REGISTERS
 ESC_CAP = 2200           # エスカレータ 4 区間と 3F→4F（spec §7 のコア・エスカレータ・吹き抜けの内）
 UNDER_CLEAR = 1.6        # spec §1-3: 斜路の下でこれより低い所には入れない
 HEAD_CLEAR = 2.1         # 段の上面から上の区間の腹まで
@@ -91,6 +93,12 @@ def test_hall_rows_are_low_steps():
     assert D.HALL_RISE < STEP_OFFSET
     assert D.HALL_ROWS * D.HALL_RISE == pytest.approx(1.2)
     assert D.DIRECT_RISE < STEP_OFFSET and D.ESC_RISE < STEP_OFFSET
+
+
+def test_direct_stair_is_low_steps_and_reaches_2f():
+    assert EAST.ST_RISE <= STEP_OFFSET
+    assert EAST.ST_RISE * EAST.ST_STEPS * 2 == pytest.approx(D.F2)
+    assert EAST.ST_LAND[1] <= D.DIRECT_STAIR_Y[1] - EAST.ST_STEPS * EAST.ST_RUN + 1e-6
 
 
 def test_poi_names_keep_the_nine_and_add_four():

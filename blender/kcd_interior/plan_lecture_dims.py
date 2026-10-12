@@ -189,7 +189,7 @@ SIGNS = (
     ("wall", "2", "Register 2", 0.36, 0.3, 0.0, 0.0, 1.35, S, BLUE, {"register": 1}),
     ("wall", "3", "Register 3", 0.36, 0.3, 0.0, 0.0, 1.35, S, BLUE, {"register": 2}),
     ("wall", "4", "Register 4", 0.36, 0.3, 0.0, 0.0, 1.35, S, BLUE, {"register": 3}),
-    ("hang", "サービスカウンター", "Service Counter", 1.4, 0.36, 42.0, 38.5, CEIL_CORR, S, BLUE,
+    ("hang", "サービスカウンター", "Service Counter", 1.4, 0.36, 44.5, 38.5, CEIL_CORR, S, BLUE,
      {"both": False}),
     ("hang", "スタッフのいるレジで\nお会計ください", "Please pay at a staffed register", 1.6, 0.5,
      40.0, 38.5, CEIL_CORR, S, BLUE, {"both": False}),

@@ -122,7 +122,7 @@ Issue #119 の調査用。写真・図面はすべて scratchpad の `interiors/
 
 | ファイル | 向き・内容 | 撮影者・権利者 | ライセンス | 出典 |
 |---|---|---|---|---|
-| `img/tuslife_01.jpg`, `02`, `04`〜`14.jpg` | 他の建物（キャンパスモール、研究棟、実験棟、図書館、食堂、体育館、大ホール、運動場、ラーニングスクエア、共創棟） | 東京理科大学 | unknown/copyrighted | https://www.tus.ac.jp/tuslife/campus/katsushika/ |
+| `img/tuslife_01.jpg`, `02`, `04`〜`14.jpg` | 他の建物（メインストリート、研究棟、実験棟、図書館、食堂、体育館、大ホール、運動場、ラーニングスクエア、共創棟） | 東京理科大学 | unknown/copyrighted | https://www.tus.ac.jp/tuslife/campus/katsushika/ |
 | `img/fac_katsu_03.jpg` | 木の天井ルーバーと段状のラウンジ。ページ上のキャプションは「共創棟１階ラーニングスクエア」 | 東京理科大学 | unknown/copyrighted | https://www.tus.ac.jp/tuslife/campus/facility/ |
 | `img/lounge_pic01.jpg`, `img/lounge_img01.png`, `img/lounge_mv01.png` | 国際ラウンジのページの写真。どのキャンパスか書かれていない | 東京理科大学 | unknown/copyrighted | https://www.tus.ac.jp/kokusai_program/program/lounge |
 | `img/nikken_02.jpg`〜`09.jpg`, `img/nikken_sheet.jpg` | 設計者の事例ページ。外観・図書館の内部・列柱・配置図・模型で、講義棟の屋内は無い | 日建設計 | unknown/copyrighted | https://www.nikken.co.jp/ja/projects/education/tokyo_university_of_science.html |
