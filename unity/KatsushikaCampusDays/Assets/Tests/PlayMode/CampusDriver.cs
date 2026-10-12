@@ -136,6 +136,12 @@ namespace KCD.Tests
         {
             yield return Leave();
 
+            if (buildingId == DormRoute.Id)
+            {
+                yield return EnterDorm();
+                yield break;
+            }
+
             EntranceTrigger entrance = FindEntrance(buildingId);
             if (entrance == null)
             {
@@ -169,6 +175,30 @@ namespace KCD.Tests
             yield return Settle();
         }
 
+        /// <summary>寮は専用の入口（DormEntrance）。扉の前に立って E を押す。</summary>
+        private IEnumerator EnterDorm()
+        {
+            DormEntrance door = Object.FindAnyObjectByType<DormEntrance>(FindObjectsInactive.Include);
+            if (door == null)
+            {
+                _problems.Add("寮の入口 Entrance_" + DormRoute.Id + " がシーンに無い");
+                yield break;
+            }
+
+            yield return WaitUntil(() => door.CanInteract);
+            Vector3 outward = door.Outward;
+            _player.Teleport(door.transform.position + outward * EntranceStandOff, Yaw(-outward));
+            yield return null;
+            door.Interact(_player.gameObject);
+            yield return WaitUntil(() => _loader.CurrentId == DormRoute.Id && !KCDInput.GameplayBlocked);
+            if (_loader.CurrentId != DormRoute.Id)
+            {
+                _problems.Add("寮に E で入っても屋内へ移らない（いま '" + _loader.CurrentId + "'）");
+            }
+
+            yield return Settle();
+        }
+
         /// <summary>中にいれば、その建物の出口を踏んで外へ出る。</summary>
         public IEnumerator Leave()
         {
@@ -185,8 +215,9 @@ namespace KCD.Tests
                 yield break;
             }
 
-            // 出口の箱は exit_ の印の 1.2 m 上に浮かせてある（InteriorStage.AddExit）。足もとを印の高さに置く。
-            Vector3 stand = exit.transform.position - Vector3.up * 1.15f;
+            // 出口の箱は入った所から離れた奥側にあり、浮かせてある（InteriorExit.BoxFor）。手前の縁から少し入った所の床に立つ。
+            BoxCollider box = exit.GetComponent<BoxCollider>();
+            Vector3 stand = exit.transform.TransformPoint(new Vector3(0f, 0f, -box.size.z * 0.5f + 0.3f)) - Vector3.up * 1.15f;
             _player.Teleport(stand, _player.transform.eulerAngles.y);
             yield return WaitUntil(() => !_loader.IsInside && !KCDInput.GameplayBlocked);
             if (_loader.IsInside)

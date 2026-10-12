@@ -111,14 +111,13 @@ namespace KCD.Tests
             Assert.AreEqual("kyoso", InteriorLoader.Instance.CurrentId, "共創棟の中へ入れていない");
 
             // 入ってすぐの所から、ロビーの植木鉢・ベンチ・壁へ向けて四方に走らせる。
-            // 入った所は出口の範囲の中にあり、出口を踏み直すと外へ出てしまう（#212）。
-            // 出口から離れた所まで進んでから走らせ、出口を通る向きは飛ばす。
+            // 出口の範囲は入った所から離れているので、入った所から走らせる。出口を通る向きは飛ばす。
             Bounds[] exits = Object.FindObjectsByType<InteriorExit>()
                 .Where(e => e.BuildingId == "kyoso")
                 .Select(e => e.GetComponent<Collider>().bounds)
                 .ToArray();
             Assert.IsNotEmpty(exits, "共創棟の出口が見つからない");
-            Vector3 spawn = ClearOf(player, exits);
+            Vector3 spawn = player.transform.position;
             var bad = new List<string>();
             var charged = new List<Vector2>();
             int tried = 0;
@@ -286,29 +285,6 @@ namespace KCD.Tests
                 bad.Add(string.Format("{0}: {1} で止まった所から戻れない（出発点まで {2:F2} m、いま {3}）",
                     label, hit.ToString("F2"), gap, end.ToString("F2")));
             }
-        }
-
-        /// <summary>
-        /// 入った所から出口と反対の向き（建物の奥）へ、出口の範囲（ExitMargin だけ広げる）から出るまで進んだ床の点。
-        /// 入った直後の向きは出口のほうを向いていることがあるので、向きでなく出口の位置から奥を決める。
-        /// </summary>
-        private static Vector3 ClearOf(PlayerController player, Bounds[] exits)
-        {
-            Vector3 from = player.transform.position;
-            Bounds nearest = exits.OrderBy(e => Flat(e.center - from).magnitude).First();
-            Vector3 inward = Flat(from - nearest.center).normalized;
-            Assert.AreNotEqual(Vector3.zero, inward, "入った所が出口の真ん中にある");
-            for (float d = 0f; d < 4f; d += 0.25f)
-            {
-                Vector3 point = from + inward * d;
-                if (!CrossesAny(exits, point, point) && TryFloor(player, point, out Vector3 floor) && IsFree(player, floor))
-                {
-                    return floor;
-                }
-            }
-
-            Assert.Fail("出口の前に、出口から離れて立てる所が無い（入った所 " + from.ToString("F2") + "）");
-            return from;
         }
 
         /// <summary>
