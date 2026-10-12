@@ -27,6 +27,8 @@ HASHES = {
     "framework": "0f1e2d3c4b5a69788796a5b4c3d2e1f0.framework.js.unityweb",
     "code": "9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b.wasm.unityweb",
 }
+# テクスチャを ASTC で圧縮したビルドの data。ほかのファイルは DXT のビルドと同じ名前になる (#187)。
+ASTC_DATA = "5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a.data.unityweb"
 
 
 # 段階読み込み（PROGRESSIVE_ASSET_LOADING）のときに data の配列へ入るファイル。
@@ -35,11 +37,13 @@ PRIMARY = ["Build/Data/level0.data.unityweb", "Build/Data/globalgamemanagers.dat
 SECONDARY = ["Build/Data/level1.data.unityweb"]
 
 
-def built_index(marker: bool = True, data: str = "url") -> str:
+def built_index(marker: bool = True, data: str = "url", astc: str | None = "slot") -> str:
     """Unity がテンプレートを展開した後の index.html に近い形。
 
     data は data の参照の形: "url" は dataUrl, "arrays" は primaryDataUrls / secondaryDataUrls,
     "none" はどちらも無い（テンプレートが崩れた場合）。
+    astc は ASTC の data の参照: "slot" は名前を書き込む前の差し込み口, None は行が無い,
+    それ以外は書き込んだ data の名前。
     """
     head_marker = f"    {dp.STAMP_MARKER}\n" if marker else ""
     data_lines = {
@@ -48,12 +52,19 @@ def built_index(marker: bool = True, data: str = "url") -> str:
                    f"        secondaryDataUrls: {json.dumps(SECONDARY)},\n"),
         "none": "",
     }[data]
+    if astc is None:
+        astc_line = ""
+    elif astc == "slot":
+        astc_line = f"      {dp.ASTC_SLOT}\n"
+    else:
+        astc_line = f"      var astcDataUrl = buildUrl + \"/{astc}\";\n"
     return (
         "<!DOCTYPE html>\n<html lang=\"ja\">\n  <head>\n    <meta charset=\"utf-8\">\n"
         f"{head_marker}"
         "  </head>\n  <body>\n    <script>\n"
         "      var buildUrl = \"Build\";\n"
         f"      var loaderUrl = buildUrl + \"/{HASHES['loader']}\";\n"
+        f"{astc_line}"
         "      var config = {\n"
         "        arguments: [],\n"
         f"{data_lines}"
@@ -82,6 +93,18 @@ def make_build(tmp_path: Path, html: str | None = None, stale: bool = True) -> P
     return build
 
 
+def make_astc_build(tmp_path: Path, html: str | None = None) -> Path:
+    """BuildPlayer.BuildWebGL が WebGL-ASTC に出すビルド。data の名前だけが DXT のビルドと違う。"""
+    build = tmp_path / ("WebGL" + dp.ASTC_DIR_SUFFIX)
+    (build / "Build").mkdir(parents=True)
+    default = built_index().replace(HASHES["data"], ASTC_DATA)
+    (build / "index.html").write_text(html if html is not None else default, encoding="utf-8")
+    for name in [HASHES["loader"], HASHES["framework"], HASHES["code"]]:
+        (build / "Build" / name).write_bytes(b"x" * 16)
+    (build / "Build" / ASTC_DATA).write_bytes(b"a" * 24)
+    return build
+
+
 # --- テンプレート ---------------------------------------------------------
 
 def test_template_has_stamp_marker_once():
@@ -100,6 +123,10 @@ def test_template_references_build_files_through_placeholders():
         html = html.replace("{{{ " + placeholder + " }}}", HASHES[key])
     assert set(HASHES.values()) <= set(dp.referenced_build_files(html))
     assert dp.missing_loader_parts(html) == []
+
+
+def test_template_has_astc_slot_once():
+    assert TEMPLATE.read_text(encoding="utf-8").count(dp.ASTC_SLOT) == 1
 
 
 def test_template_progressive_data_arrays_are_read():
@@ -361,6 +388,7 @@ def fake(monkeypatch, tmp_path):
     def fake_unity_build(unity, build_dir):
         calls.unity += 1
         make_build(build_dir.parent, stale=True)
+        make_astc_build(build_dir.parent)
 
     monkeypatch.setattr(dp, "unity_build", fake_unity_build)
     monkeypatch.setattr(dp, "upload_release", lambda zip_path, tag, notes: calls.uploads.append(notes))
@@ -386,6 +414,23 @@ def test_build_clean_stamps_and_deploys(monkeypatch, fake):
     assert stamp == dp.BuildStamp(SHA, "clean", "2026-09-24T00:00:00Z")
     assert len(fake.uploads) == 1 and SHA in fake.uploads[0]
     assert fake.dispatched == [dp.TAG]
+
+
+def test_build_attaches_astc_data_to_zip(monkeypatch, fake, tmp_path):
+    monkeypatch.setattr(dp, "git_state", lambda: dp.GitState(SHA))
+    assert dp.main(fake.argv + ["--build", "--no-deploy"]) == 0
+    html = (fake.build / "index.html").read_text(encoding="utf-8")
+    assert dp.astc_data_paths(html) == [f"Build/{ASTC_DATA}"]
+    with zipfile.ZipFile(tmp_path / "dist" / "webgl.zip") as zf:
+        assert zf.read(f"Build/{ASTC_DATA}") == b"a" * 24
+
+
+def test_build_stops_without_astc_build(monkeypatch, fake, tmp_path, capsys):
+    monkeypatch.setattr(dp, "git_state", lambda: dp.GitState(SHA))
+    monkeypatch.setattr(dp, "unity_build", lambda unity, build_dir: make_build(build_dir.parent))
+    assert dp.main(fake.argv + ["--build"]) == 1
+    assert fake.uploads == []
+    assert "ASTC の data を組み込めない" in capsys.readouterr().err
 
 
 def test_build_allow_dirty_stamps_dirty_and_deploys(monkeypatch, fake):
@@ -419,6 +464,101 @@ def test_no_deploy_makes_zip_even_without_stamp(fake, tmp_path):
     assert dp.main(fake.argv + ["--no-deploy"]) == 0
     assert (tmp_path / "dist" / "webgl.zip").is_file()
     assert fake.uploads == []
+
+
+# --- ASTC の data (#187) --------------------------------------------------
+
+def test_code_names_read_loader_framework_and_code():
+    assert dp.code_names(built_index()) == {
+        "loaderUrl": [HASHES["loader"]],
+        "frameworkUrl": [HASHES["framework"]],
+        "codeUrl": [HASHES["code"]],
+    }
+
+
+def test_astc_data_paths_empty_until_attached():
+    assert dp.astc_data_paths(built_index()) == []
+    assert dp.astc_data_paths(built_index(astc=ASTC_DATA)) == [f"Build/{ASTC_DATA}"]
+
+
+def test_astc_build_dir_is_sibling():
+    assert dp.astc_build_dir(Path("build") / "WebGL") == Path("build") / "WebGL-ASTC"
+
+
+def test_attach_copies_data_and_writes_name(tmp_path):
+    build = make_build(tmp_path, stale=False)
+    make_astc_build(tmp_path)
+    assert dp.attach_astc_data(build, tmp_path / "WebGL-ASTC") == ASTC_DATA
+    assert (build / "Build" / ASTC_DATA).read_bytes() == b"a" * 24
+    html = (build / "index.html").read_text(encoding="utf-8")
+    assert dp.ASTC_SLOT not in html
+    assert dp.astc_data_paths(html) == [f"Build/{ASTC_DATA}"]
+    assert dp.referenced_build_files(html).count(ASTC_DATA) == 1
+
+
+@pytest.mark.parametrize("newline", ["\n", "\r\n"])
+def test_attach_keeps_line_endings(tmp_path, newline):
+    build = make_build(tmp_path, stale=False)
+    (build / "index.html").write_bytes(built_index().replace("\n", newline).encode("utf-8"))
+    make_astc_build(tmp_path)
+    dp.attach_astc_data(build, tmp_path / "WebGL-ASTC")
+    raw = (build / "index.html").read_bytes().decode("utf-8")
+    assert raw.count("\r\n") == (raw.count("\n") if newline == "\r\n" else 0)
+
+
+@pytest.mark.parametrize("part", ["loader", "framework", "code"])
+def test_attach_rejects_different_code(tmp_path, part):
+    build = make_build(tmp_path, stale=False)
+    html = built_index().replace(HASHES["data"], ASTC_DATA).replace(HASHES[part], "0" * 32 + ".other")
+    make_astc_build(tmp_path, html=html)
+    with pytest.raises(ValueError, match="ローダー・framework・wasm が違う"):
+        dp.attach_astc_data(build, tmp_path / "WebGL-ASTC")
+    assert not (build / "Build" / ASTC_DATA).exists()
+
+
+@pytest.mark.parametrize("astc", [None, ASTC_DATA])
+def test_attach_rejects_index_without_slot(tmp_path, astc):
+    build = make_build(tmp_path, html=built_index(astc=astc), stale=False)
+    make_astc_build(tmp_path)
+    with pytest.raises(ValueError, match="差し込み口"):
+        dp.attach_astc_data(build, tmp_path / "WebGL-ASTC")
+
+
+def test_attach_rejects_missing_astc_build(tmp_path):
+    build = make_build(tmp_path, stale=False)
+    with pytest.raises(FileNotFoundError):
+        dp.attach_astc_data(build, tmp_path / "WebGL-ASTC")
+
+
+def test_attach_rejects_missing_astc_data_file(tmp_path):
+    build = make_build(tmp_path, stale=False)
+    astc = make_astc_build(tmp_path)
+    (astc / "Build" / ASTC_DATA).unlink()
+    with pytest.raises(FileNotFoundError, match="ASTC のビルドの data が無い"):
+        dp.attach_astc_data(build, astc)
+
+
+def test_attach_rejects_astc_build_with_data_arrays(tmp_path):
+    build = make_build(tmp_path, stale=False)
+    make_astc_build(tmp_path, html=built_index(data="arrays"))
+    with pytest.raises(ValueError, match="data の名前を 1 つに決められない"):
+        dp.attach_astc_data(build, tmp_path / "WebGL-ASTC")
+
+
+@pytest.mark.parametrize("name", [
+    "../x.data.unityweb",
+    "a/../../x.data.unityweb",
+    "..\\..\\x.data.unityweb",
+    "x</script><svg/onload=alert(1)>.data.unityweb",
+    ".data.unityweb",
+])
+def test_attach_rejects_unsafe_data_name(tmp_path, name):
+    build = make_build(tmp_path, stale=False)
+    before = (build / "index.html").read_bytes()
+    make_astc_build(tmp_path, html=built_index().replace(HASHES["data"], name))
+    with pytest.raises(ValueError, match="使えない文字"):
+        dp.attach_astc_data(build, tmp_path / "WebGL-ASTC")
+    assert (build / "index.html").read_bytes() == before
 
 
 # --- 配信サイズ (#70) -----------------------------------------------------
@@ -491,7 +631,30 @@ def test_payload_size_counts_only_zipped_files(tmp_path):
     others = (build / "index.html").stat().st_size + (build / "TemplateData" / "style.css").stat().st_size
     size = dp.payload_size(out)
     # zip に入らない前のビルドの残りは数えない
-    assert size == dp.PayloadSize(total=others + 1000 + 16 * 3, data=1000, files=6)
+    total = others + 1000 + 16 * 3
+    assert size == dp.PayloadSize(total=total, data=1000, files=6, stored=total)
+
+
+@pytest.mark.parametrize("dxt, astc", [(1000, 600), (600, 1000)])
+def test_payload_size_counts_one_data_per_device(tmp_path, dxt, astc):
+    build = make_build(tmp_path, html=built_index(astc=ASTC_DATA))
+    (build / "Build" / HASHES["data"]).write_bytes(b"x" * dxt)
+    (build / "Build" / ASTC_DATA).write_bytes(b"a" * astc)
+    out = tmp_path / "webgl.zip"
+    assert dp.make_zip(build, out) == 0
+    others = (build / "index.html").stat().st_size + (build / "TemplateData" / "style.css").stat().st_size
+    size = dp.payload_size(out)
+    # 端末は DXT か ASTC の一方しか読まないので, 大きい方だけを数える
+    assert size == dp.PayloadSize(total=others + 16 * 3 + max(dxt, astc), data=max(dxt, astc), files=7,
+                                  stored=others + 16 * 3 + dxt + astc, astc_data=astc)
+
+
+def test_deploy_stops_when_astc_data_over_limit(monkeypatch, fake, tmp_path):
+    build = make_build(tmp_path, html=dp.stamp_html(built_index(astc=ASTC_DATA), SHA, "clean", "t"))
+    (build / "Build" / ASTC_DATA).write_bytes(b"a" * 17)
+    monkeypatch.setattr(dp, "MAX_DATA_BYTES", 16)  # DXT の data は 16 バイトで収まる
+    assert dp.main(fake.argv) == 1
+    assert fake.uploads == []
 
 
 def test_payload_size_counts_progressive_data_arrays(tmp_path):

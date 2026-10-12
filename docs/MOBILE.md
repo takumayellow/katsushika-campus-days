@@ -94,7 +94,7 @@ UI を 1.5 倍にすると、1920×1080 で余裕のない並びがはみ出す�
 |------|------|
 | 描く解像度 | スマホ・タブレットは `devicePixelRatio` を 1.5 までにして `createUnityInstance` に渡す。DPR 3 のままだと描く画素が 4 倍になる |
 | 画質の既定 | スマホ・タブレットのブラウザは Low（`QualityTiers.DefaultFor` に `Application.isMobilePlatform` を渡す）。設定で上げられる |
-| テクスチャ | ASTC で 2 本目のビルドを作り、ページが `WEBGL_compressed_texture_astc` の有無で読み込む方を選ぶ（Unity の手引きの「複数のテクスチャ形式でビルドする」）。配信の容量は 2 倍近くになるので `deploy_pages.py` の上限を見直す |
+| テクスチャ | ASTC で 2 本目のビルドを作る（Unity の手引きの「複数のテクスチャ形式でビルドする」）。2 本で違うのは data だけなので、`deploy_pages.py --build` が ASTC の data を同じ Build/ に置く。ページは、GPU が DXT（`WEBGL_compressed_texture_s3tc`）を読めず ASTC（`WEBGL_compressed_texture_astc`）を読めるときだけ ASTC の data を読む。配信サイズの上限は、1 台の端末が読む量（DXT と ASTC の data の大きい方）で測る |
 | 通信量 | 指だけの端末では、読み込む前に通信量（数十 MB）と Wi-Fi を勧める案内を出し、「読み込む」を押すまで Build/ を取りに行かない |
 
 ## 6. 段階
@@ -116,12 +116,14 @@ UI を 1.5 倍にすると、1920×1080 で余裕のない並びがはみ出す�
 操作 UI と HUD が重ならないことを確かめた。縦に持つと「横向きにしてください」が被さる。
 ポーズ中は上の真ん中のポーズのボタンを隠す（ポーズと設定の枠の見出しに重なるため）。閉じるのは「ゲームに戻る」の行を叩く。
 
-4 段目は、DPR の上限・画質の既定・通信量の案内まで済み。844×390、DPR 3 の画面で描く画素は変える前の約 5 分の 1 になる
-（見積もりは `WEBGL_BUDGET.md` 3.6）。ASTC のビルドは配信の容量の上限を見直すことになるので、別の PR にする。
+4 段目も済み。844×390、DPR 3 の画面で描く画素は変える前の約 5 分の 1 になる（見積もりは `WEBGL_BUDGET.md` 3.6）。
+ASTC を読める GPU では ASTC の data を読み、テクスチャを RGBA32 に展開しない（`WEBGL_BUDGET.md` 1.6 と 2.1）。
+URL に `?textures=astc` か `?textures=dxt` を付けると、GPU にかかわらずその data を読む。
 
 ## 7. 確かめ方
 
 - Unity の EditMode: 入力の計算（スティックの量、なぞりの量から角度、走るの切り替え、link の番号）を純粋な関数にして確かめる。
 - Unity の PlayMode: Input System の `InputTestFixture` で仮想の `Touchscreen` を作り、指を置いて動かしたときに `KCDInput.Move` と `Look` が動くことを確かめる。
 - ブラウザ: Playwright のスマホのエミュレーション（`has_touch`、`is_mobile`、844×390、DPR 3）と CDP の `Input.dispatchTouchEvent` で、タイトルからキャンパスに入り、スティックで歩けることを確かめる（音は消す）。
+- テクスチャの data の選び方: `e2e/tests/test_template_textures.py` で、`getExtension` を差し替えて GPU が読める形式を決め、ローダーに渡る data を確かめる。
 - 実機: iPhone の Safari と Android の Chrome での手触り・発熱・メモリの上限は、ここでは確かめられない。各段の PR に「実機で見てほしいこと」を書く。

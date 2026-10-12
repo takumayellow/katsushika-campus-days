@@ -6,7 +6,8 @@
 // どの経路を通るかは、テストが add_init_script で入れる window.__kcdFakeScenario で決める。
 function createUnityInstance(canvas, config, onProgress) {
   const scenario = window.__kcdFakeScenario || "success";
-  const state = { ready: false, release: null };
+  // テンプレートが選んだ data（#187）をテストが読めるよう残す。
+  const state = { ready: false, release: null, dataUrl: config.dataUrl };
   window.__kcdFake = state;
   // テストが途中の見た目を確かめるまで止める。state.release() で先へ進む。
   const paused = () => new Promise((resolve) => { state.release = resolve; });
