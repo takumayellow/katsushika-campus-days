@@ -353,6 +353,71 @@ namespace KCD.Editor
                 Sun = OutdoorSun,
                 Note = "E 街区の遊具（ぶらんこ）",
             },
+
+            // 面のテクスチャ（#80・#109）。blender/tools_view/surfaces_before_after.py の CLOSE_SPECS と同じ視点を
+            // CampusProps.Local で読み替えた値。目の高さ 1.6 m
+            new Shot
+            {
+                Name = "shot_surface_mall_paving",
+                Space = Frame.World,
+                Eye = new Vector3(93.31f, 1.6f, -70.11f),     // (u 114, v -25)
+                Look = new Vector3(88.77f, 0.1f, -61.99f),    // (u 106.5, v -19.5)
+                Fov = 0f,
+                Sun = OutdoorSun,
+                Note = "モールの舗装と花壇の土",
+            },
+            new Shot
+            {
+                Name = "shot_surface_research1_brick",
+                Space = Frame.World,
+                Eye = new Vector3(27.07f, 1.6f, -108.02f),    // (u 69.5, v -87)
+                Look = new Vector3(24.48f, 2.2f, -98.04f),    // (u 63, v -79)
+                Fov = 0f,
+                Sun = OutdoorSun,
+                Note = "第1研究棟のレンガの階段コア",
+            },
+            new Shot
+            {
+                Name = "shot_surface_road_grass",
+                Space = Frame.World,
+                Eye = new Vector3(49.30f, 1.6f, -123.12f),    // (u 96, v -91.5)
+                Look = new Vector3(65.93f, 0f, -125.22f),     // (u 112, v -86.5)
+                Fov = 0f,
+                Sun = OutdoorSun,
+                Note = "車道のアスファルトと芝生",
+            },
+
+            // 屋内の正面（#120・#169）。座標は Models/Interiors/<id>.json の empties と同じ屋内のローカル座標
+            new Shot
+            {
+                Name = "shot_research1_atrium",
+                Space = Frame.Interior,
+                Building = "research1",
+                Eye = new Vector3(0f, 1.6f, 18.5f),           // spawn_research1 の少し手前
+                Look = new Vector3(0f, 3.0f, 33f),            // 吹き抜けの奥の窓口の看板
+                Fov = 0f,
+                Note = "第1研究棟 1F の吹き抜けとフロアガイド",
+            },
+            new Shot
+            {
+                Name = "shot_research2_dining",
+                Space = Frame.Interior,
+                Building = "research2",
+                Eye = new Vector3(0f, 1.6f, 8f),
+                Look = new Vector3(-12f, 1.2f, 26f),
+                Fov = 0f,
+                Note = "第2研究棟 1F の食堂",
+            },
+            new Shot
+            {
+                Name = "shot_library_reading",
+                Space = Frame.Interior,
+                Building = "library",
+                Eye = new Vector3(0f, 1.6f, 7f),
+                Look = new Vector3(-1f, 1.5f, 28f),
+                Fov = 0f,
+                Note = "図書館 1F の入口から閲覧席",
+            },
         };
 
         /// <summary>
