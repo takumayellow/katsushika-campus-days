@@ -143,11 +143,14 @@ namespace KCD
             UpdateHorizontal(deltaTime);
             UpdateVertical(deltaTime);
 
-            Vector3 motion = _horizontalVelocity;
+            // エスカレーターに立っていれば、その分だけ運ばれる（歩く速さには数えない）。
+            Vector3 carry = _wasGrounded ? Escalator.CarryAt(transform.position) : Vector3.zero;
+            Vector3 motion = _horizontalVelocity + carry;
             motion.y = SnappedVerticalMotion(_verticalVelocity, _wasGrounded, deltaTime);
             Vector3 before = transform.position;
             _controller.Move(motion * deltaTime);
-            _planarSpeed = AchievedPlanarSpeed(_horizontalVelocity, transform.position - before, deltaTime);
+            _planarSpeed = AchievedPlanarSpeed(
+                _horizontalVelocity, transform.position - before - carry * deltaTime, deltaTime);
             RecoverIfStuck();
         }
 

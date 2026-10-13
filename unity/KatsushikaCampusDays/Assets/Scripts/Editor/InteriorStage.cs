@@ -10,7 +10,8 @@ namespace KCD.Editor
     /// FBX の Empty: spawn_&lt;id&gt;（入った直後の立ち位置）, exit_&lt;id&gt;（出口）, poi_&lt;id&gt;_*（クエストの visit 先）,
     /// 2 つ目からの扉（BuildingDoors）の spawn_&lt;扉の id&gt; と exit_&lt;扉の id&gt;,
     /// seat_&lt;id&gt;_*（座れる家具。SeatFactory.PlaceInterior が読む）,
-    /// ev_&lt;id&gt;_&lt;階&gt;（エレベーターの乗り場）と lamp_&lt;id&gt;_&lt;階&gt;_*（その階の天井の明かり。InteriorElevatorStage が読む）。
+    /// ev_&lt;id&gt;_&lt;階&gt;（エレベーターの乗り場）と lamp_&lt;id&gt;_&lt;階&gt;_*（その階の天井の明かり。InteriorElevatorStage が読む）,
+    /// esc_&lt;id&gt;_&lt;区間&gt;_lo / _hi（エスカレーターの下の端と上の端。InteriorEscalatorStage が読む）。
     /// </summary>
     public static class InteriorStage
     {
@@ -103,6 +104,7 @@ namespace KCD.Editor
                 AddSafetyFloor(interior.transform, bounds);
                 AddLights(interior.transform, id);
                 int stops = InteriorElevatorStage.Build(interior.transform, id);
+                int escalators = InteriorEscalatorStage.Build(interior.transform, id);
                 foreach (string door in DoorsOf(id))
                 {
                     AddExit(interior.transform, id, door);
@@ -116,7 +118,8 @@ namespace KCD.Editor
 
                 EditorPaths.Report("屋内 " + id + ": x " + bounds.min.x.ToString("F0") + ".." + bounds.max.x.ToString("F0")
                     + " z " + bounds.min.z.ToString("F0") + ".." + bounds.max.z.ToString("F0")
-                    + " poi " + zones + (stops > 0 ? " ev " + stops : string.Empty));
+                    + " poi " + zones + (stops > 0 ? " ev " + stops : string.Empty)
+                    + (escalators > 0 ? " esc " + escalators : string.Empty));
             }
 
             AddOutsideGround(group.transform, FirstSlotX - 200f, cursor + 200f, pits);
@@ -198,7 +201,9 @@ namespace KCD.Editor
                 GameObject go = filter.gameObject;
                 string id = go.name.ToLowerInvariant();
                 // 観葉植物の葉は当たり判定から外す（#30）。窓の外の近景 ext_* は描くだけ（#60）。
-                if (!IsExteriorDressing(go.name))
+                // エスカレーターの段は動かすので、当たり判定（斜めの板が受け持つ）も静的フラグも付けない。
+                bool moving = InteriorEscalatorStage.IsMovingSteps(go.name);
+                if (!IsExteriorDressing(go.name) && !moving)
                 {
                     CampusStage.AttachMeshCollider(go, filter.sharedMesh,
                         CampusStage.ColliderAssetPath(interior.name, go.name));
@@ -207,8 +212,10 @@ namespace KCD.Editor
                 go.layer = id.StartsWith("floor") && groundLayer >= 0
                     ? groundLayer
                     : buildingLayer >= 0 ? buildingLayer : go.layer;
-                GameObjectUtility.SetStaticEditorFlags(go, StaticEditorFlags.BatchingStatic
-                    | StaticEditorFlags.OccluderStatic | StaticEditorFlags.OccludeeStatic);
+                GameObjectUtility.SetStaticEditorFlags(go, moving
+                    ? 0
+                    : StaticEditorFlags.BatchingStatic | StaticEditorFlags.OccluderStatic
+                        | StaticEditorFlags.OccludeeStatic);
 
                 Renderer renderer = go.GetComponent<Renderer>();
                 if (renderer == null || !CountsAsBuilding(renderer))
