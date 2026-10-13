@@ -232,7 +232,7 @@ namespace KCD.Tests
             }
 
             InteriorFloorLights floors = group.AddComponent<InteriorFloorLights>();
-            floors.Configure(new[] { -0.5f, 9.1f, 13.1f }, lights);
+            floors.Configure("research2", new[] { "1F", "3F", "4F" }, new[] { -0.5f, 9.1f, 13.1f }, lights);
 
             floors.Apply(1);
             Assert.AreEqual(1, floors.ActiveFloor);

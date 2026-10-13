@@ -16,7 +16,10 @@ namespace KCD.Editor
         /// <summary>E に反応する距離（m）。</summary>
         public const float PanelRange = 2.4f;
 
-        /// <summary>階の下端を床からどれだけ下にとるか（m）。床の板の厚みより大きく、天井の高さより小さく。</summary>
+        /// <summary>
+        /// 階の下端を床からどれだけ下にとるか（m）。床の板の厚みより大きく、天井の高さより小さく。
+        /// 階高 4.0 m なら次の階の下端は床 +3.5 m で、天井の明かり（床 +2.6〜3.0 m）はその下に収まる。
+        /// </summary>
         public const float FloorMargin = 0.5f;
 
         /// <summary>
@@ -56,7 +59,7 @@ namespace KCD.Editor
                 AddPanel(group.transform, id, stop, all);
             }
 
-            AddFloorLights(interior, all);
+            AddFloorLights(interior, id, all);
             return all.Length;
         }
 
@@ -135,7 +138,7 @@ namespace KCD.Editor
         }
 
         /// <summary>屋内の Lights の下の明かりを、乗り場の高さで階に分けて InteriorFloorLights に渡す。</summary>
-        private static void AddFloorLights(Transform interior, ElevatorPanel.Stop[] stops)
+        private static void AddFloorLights(Transform interior, string id, ElevatorPanel.Stop[] stops)
         {
             Transform group = interior.Find("Lights");
             if (group == null)
@@ -143,14 +146,16 @@ namespace KCD.Editor
                 return;
             }
 
+            var names = new string[stops.Length];
             var bottoms = new float[stops.Length];
             for (int i = 0; i < stops.Length; i++)
             {
+                names[i] = stops[i].Floor;
                 bottoms[i] = stops[i].Landing.position.y - FloorMargin;
             }
 
             InteriorFloorLights floors = group.gameObject.AddComponent<InteriorFloorLights>();
-            floors.Configure(bottoms, group.GetComponentsInChildren<Light>(true));
+            floors.Configure(id, names, bottoms, group.GetComponentsInChildren<Light>(true));
         }
     }
 }

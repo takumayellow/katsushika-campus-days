@@ -44,6 +44,9 @@ namespace KCD
         /// <summary>建物の中にいるか。</summary>
         public bool IsInside => !string.IsNullOrEmpty(CurrentId);
 
+        /// <summary>ミニマップの見出しに出している階（#275）。階の無い建物と外では空。</summary>
+        public string CurrentFloor { get; private set; } = string.Empty;
+
         /// <summary>最後に外へ出た時刻。入口の再発火を抑えるのに使う。</summary>
         public float LastExitAt { get; private set; } = -999f;
 
@@ -160,9 +163,10 @@ namespace KCD
 
         /// <summary>
         /// 同じ建物の中で別の階へ移る（エレベーター, #275）。入ったときに覚えた戻り先はそのまま。
-        /// 着いたらミニマップの見出しを「建物名 階」にする。外にいるとき・暗転の途中は何もせず false。
+        /// 見出しの階は InteriorFloorLights が足の高さから <see cref="ShowFloor"/> で付ける。
+        /// 外にいるとき・暗転の途中は何もせず false。
         /// </summary>
-        public bool MoveWithin(Vector3 position, float yaw, string floor)
+        public bool MoveWithin(Vector3 position, float yaw)
         {
             Entry entry = Find(CurrentId);
             if (entry == null || _busy)
@@ -176,13 +180,26 @@ namespace KCD
                 return false;
             }
 
-            StartCoroutine(Travel(player, position + Vector3.up * 0.15f, yaw, () =>
-            {
-                string caption = string.IsNullOrEmpty(floor) ? entry.DisplayName : entry.DisplayName + " " + floor;
-                Minimap.Instance?.SetIndoor(caption);
-                AutoSave.Request();
-            }));
+            StartCoroutine(Travel(player, position + Vector3.up * 0.15f, yaw, AutoSave.Request));
             return true;
+        }
+
+        /// <summary>
+        /// ミニマップの見出しを「建物名 階」にする（#275）。入ったとき・エレベーターで着いたとき・
+        /// セーブを読んで戻ったときのどれでも、InteriorFloorLights がいる階に合わせて呼ぶ。外では何もしない。
+        /// </summary>
+        public void ShowFloor(string floor)
+        {
+            Entry entry = Find(CurrentId);
+            if (entry == null)
+            {
+                return;
+            }
+
+            CurrentFloor = floor ?? string.Empty;
+            Minimap.Instance?.SetIndoor(string.IsNullOrEmpty(CurrentFloor)
+                ? entry.DisplayName
+                : entry.DisplayName + " " + CurrentFloor);
         }
 
         /// <summary>
@@ -226,6 +243,7 @@ namespace KCD
         private void MarkInside(Entry entry)
         {
             CurrentId = entry.Id;
+            CurrentFloor = string.Empty;
             Minimap.Instance?.SetIndoor(entry.DisplayName);
             QuestObjectiveLocator.Invalidate();
         }
@@ -233,6 +251,7 @@ namespace KCD
         private void MarkOutside()
         {
             CurrentId = string.Empty;
+            CurrentFloor = string.Empty;
             LastExitAt = Time.time;
             Minimap.Instance?.ClearIndoor();
             QuestObjectiveLocator.Invalidate();

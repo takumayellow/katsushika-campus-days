@@ -9,7 +9,7 @@ namespace KCD.Tests
     /// <summary>
     /// 第2研究棟 (#275): 玄関から入り、ロビーのエレベーターの前で「調べる」の候補に乗り場が出て、
     /// 行き先の画面から 3F〜6F の各階へ移れる。着いた階の乗り場だけが候補になり（真下の階の乗り場は拾わない）、
-    /// 点いている明かりはその階のものだけ。1F へ戻って出口から外へ出られる。
+    /// 点いている明かりはその階のものだけで、ミニマップの見出しの階も合う。1F へ戻って出口から外へ出られる。
     /// </summary>
     public sealed class Research2ElevatorPlayTests : SceneTestBase
     {
@@ -87,6 +87,14 @@ namespace KCD.Tests
                 current = target;
                 yield return StandAtDoor(player, stops[current]);
                 CheckFloor(player, prompt, lights, panels, stops, current, bad);
+                if (current == stops.Length - 1)
+                {
+                    // 6F でセーブを読んだときと同じ順（中にいる扱いに戻してから立たせる）でも見出しに階が付く。
+                    InteriorLoader loader = InteriorLoader.Instance;
+                    loader.RestoreInside(BuildingId, loader.ReturnPosition, loader.ReturnYaw);
+                    yield return StandAtDoor(player, stops[current]);
+                    CheckFloor(player, prompt, lights, panels, stops, current, bad);
+                }
             }
 
             Assert.AreEqual(1f, Time.timeScale, "画面を閉じても時間が止まったまま");
@@ -167,6 +175,11 @@ namespace KCD.Tests
             if (lights.ActiveFloor != index)
             {
                 bad.Add(floor + ": 点いている明かりの階が " + lights.ActiveFloor);
+            }
+
+            if (InteriorLoader.Instance.CurrentFloor != floor)
+            {
+                bad.Add(floor + ": ミニマップの見出しの階が「" + InteriorLoader.Instance.CurrentFloor + "」");
             }
 
             int lit = 0;

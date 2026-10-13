@@ -138,7 +138,6 @@ namespace KCD
 
         /// <summary>
         /// i 番目の階へ移る。今の階・範囲の外・乗り場の無い階なら何もせず false。
-        /// 着いたらミニマップの見出しを「建物名 階」にする。
         /// </summary>
         public bool GoTo(int i)
         {
@@ -154,7 +153,7 @@ namespace KCD
             }
 
             Transform landing = _stops[i].Landing;
-            return loader.MoveWithin(landing.position, landing.eulerAngles.y, _stops[i].Floor);
+            return loader.MoveWithin(landing.position, landing.eulerAngles.y);
         }
     }
 }
