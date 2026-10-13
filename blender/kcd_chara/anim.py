@@ -479,7 +479,7 @@ class Gait(_Legs):
         sw = GAIT_ARMS[kind]
         self.thx = sw["thx"]
         self.arm = D(sw["arm"])
-        elbow = over.get("elbow", sw["elbow"])      # 胴が短いキャラは肘を開いて手を下げる
+        elbow = over.get("elbow", sw["elbow"])      # キャラごとに肘の曲げを上書きできる
         self.elbow = (D(elbow[0]), D(elbow[1]))
         self.arm_in = D(sw["arm_in"])
         self.arm_abd = D(sw["abd"])
