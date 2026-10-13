@@ -2,7 +2,8 @@
 
 組み立ての順:
 躯体（plan_lecture_shell）→ 中廊下・コア・入口ロビー・吹き抜け（plan_lecture_core）→
-2F・3F の東側の廊下とエスカレータの穴（plan_lecture_upper）→ エスカレータ 2 列と 3F→4F の上り口（plan_lecture_esc）→
+2F・3F の東側の廊下とエスカレータの穴（plan_lecture_upper）→
+2F・3F の西側の廊下・コア・西ロビー（plan_lecture_west）と教室 14 室（plan_lecture_rooms）→ エスカレータ 2 列と 3F→4F の上り口（plan_lecture_esc）→
 101 の段床と 270 席（plan_lecture_hall）・黒板と木の壁（plan_lecture_101）→ 看板（plan_lecture_signs）→ POI・NPC・カメラ。
 寸法・POI・NPC・カメラ・看板の表は plan_lecture_dims が持つ。
 """
@@ -16,9 +17,11 @@ from . import plan_lecture_esc as ESC
 from . import plan_lecture_hall as HALL
 from . import plan_lecture_lounge as LOUNGE
 from . import plan_lecture_north as NORTH
+from . import plan_lecture_rooms as ROOMS
 from . import plan_lecture_shell as SHELL
 from . import plan_lecture_signs as SIGNS
 from . import plan_lecture_upper as UPPER
+from . import plan_lecture_west as WEST
 
 # 家具のメッシュ（furn_lecture_<nn>_<区画名>）
 FURN = ("hall_seats", "hall_desks", "hall_front", "corridor", "lobby", "signs", "coop", "lounge", "north")
@@ -29,6 +32,7 @@ def build(c):
     SHELL.build(c)
     CORE.build(c, M, SIGNS.hang_roots())
     UPPER.build(c, SIGNS.hang_roots())
+    ROOMS.build(c, WEST.build(c))
     ESC.build(c)
     EAST.build(c)
     COOP.build(c, M["coop"])
@@ -47,4 +51,5 @@ def build(c):
         c.npc(x, y, z)
     for suffix, loc, target, lens in D.CAMS:
         c.cam(suffix, loc, target, lens)
-    c.note("中廊下・黒いコア・入口ロビー・6 層の吹き抜け・101 の %d 席の段床" % seats)
+    c.note("中廊下・黒いコア・入口ロビー・6 層の吹き抜け・101 の %d 席の段床・2F/3F の教室 %d 室"
+           % (seats, len(ROOMS.RD.ROOMS)))
