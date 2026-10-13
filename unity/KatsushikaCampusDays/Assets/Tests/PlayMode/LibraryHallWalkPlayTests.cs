@@ -69,8 +69,8 @@ namespace KCD.Tests
             });
             AssertOnFloor(player, groundY + 10.0f, "3F ホワイエ", bad);
 
-            Transform stool = FindByName(interior, "seat_library_17");
-            Assert.IsNotNull(stool, "舞台のピアノ椅子 seat_library_17 が無い");
+            Transform stool = FindPianoStool(interior);
+            Assert.IsNotNull(stool, "舞台のピアノ椅子（seat_library_<nn> で，seat_library_<nn>_piano の Empty を持つもの）が無い");
             // 椅子は固い当たり判定なので、舞台の手前の地点から椅子へ向かって 0.9 m 手前までを終点にする。
             Vector3 stageApproach = local(-11.1f, 54.6f, 10.0f);
             Vector3 stoolAt = stool.position;
@@ -94,13 +94,28 @@ namespace KCD.Tests
             AssertNoErrors("図書館のホール");
         }
 
-        private static Transform FindByName(Transform root, string name)
+        /// <summary>ピアノ椅子 = 鍵盤の Empty（seat_library_&lt;nn&gt;_piano）を持つ座面。番号が変わっても追従する。</summary>
+        private static Transform FindPianoStool(Transform root)
         {
+            const string suffix = "_piano";
+            var byName = new Dictionary<string, Transform>();
             foreach (Transform t in root.GetComponentsInChildren<Transform>(true))
             {
-                if (t.name == name)
+                if (!byName.ContainsKey(t.name))
                 {
-                    return t;
+                    byName.Add(t.name, t);
+                }
+            }
+
+            foreach (KeyValuePair<string, Transform> kv in byName)
+            {
+                if (kv.Key.StartsWith("seat_library_") && kv.Key.EndsWith(suffix))
+                {
+                    string stoolName = kv.Key.Substring(0, kv.Key.Length - suffix.Length);
+                    if (byName.TryGetValue(stoolName, out Transform stool))
+                    {
+                        return stool;
+                    }
                 }
             }
 
