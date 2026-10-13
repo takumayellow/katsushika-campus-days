@@ -1,7 +1,13 @@
 """build_interiors.over_budget: 屋内の三角数を棟ごとの上限と合計の両方で見る（DESIGN.md §3.4）。"""
 
+import json
+import os
+
 import build_interiors as bi
+from conftest import REPO
 from kcd_interior import registry
+
+INTERIORS = os.path.join(REPO, "unity", "KatsushikaCampusDays", "Assets", "Models", "Interiors")
 
 
 def _row(bid, tris, ext_tris=0):
@@ -50,3 +56,27 @@ def test_near_view_keeps_its_per_building_and_total_caps():
     rows = [_row("lecture", 1000, 50001)]
 
     assert bi.over_budget(rows, 1000, 200001) == ["lecture の近景 50001 > 50000", "近景の合計 200001 > 200000"]
+
+
+def test_library_near_view_is_capped_by_its_spec():
+    rows = [_row("library", 1000, 14470), _row("lecture", 1000, 14470)]
+
+    assert bi.over_budget(rows, 2000, 28940) == ["library の近景 14470 > 14469"]
+
+
+def test_committed_near_views_fit_their_caps():
+    """書き出し済みの屋内 JSON の近景（ext_<id> と ext_<id>_trees の合計）が棟の上限に収まる。"""
+    over = []
+    for fn in sorted(os.listdir(INTERIORS)):
+        if not fn.endswith(".json") or fn.startswith("_"):
+            continue
+        with open(os.path.join(INTERIORS, fn), encoding="utf-8") as f:
+            info = json.load(f)
+        if "ext" not in info:
+            continue   # 近景を入れない棟（寮は build_dorm.py で別に作る）
+        bid = fn[:-len(".json")]
+        cap = bi.EXT_BUDGET_BY_ID.get(bid, bi.EXT_BUDGET_ONE)
+        if info["ext"]["triangles"] > cap:
+            over.append("%s %d > %d" % (bid, info["ext"]["triangles"], cap))
+
+    assert over == []

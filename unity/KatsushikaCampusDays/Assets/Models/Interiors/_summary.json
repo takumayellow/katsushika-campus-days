@@ -1,6 +1,6 @@
 {
  "total_tris": 303814,
- "total_ext_tris": 191712,
+ "total_ext_tris": 190222,
  "total_text_tris": 87664,
  "buildings": [
   {
@@ -1029,7 +1029,7 @@
   },
   {
    "tris": 73496,
-   "ext_tris": 15615,
+   "ext_tris": 14125,
    "ext_stats": {
     "tris": {
      "bld": 1285,
@@ -1038,11 +1038,11 @@
      "site_props_beds": 547,
      "site_props_signs": 46,
      "site_water": 6,
-     "trees": 12050
+     "trees": 10560
     },
     "culled_tris": {
      "site": 542,
-     "trees": 1667
+     "trees": 1317
     },
     "plants": {
      "near": 0,
@@ -1050,7 +1050,8 @@
     },
     "trees": {
      "placed": 63,
-     "skipped": 14
+     "skipped": 14,
+     "coarse": 47
     },
     "own": {
      "bld": 3082,
@@ -1220,7 +1221,7 @@
    ],
    "signs": 33,
    "text_tris": 15916,
-   "size": 1471852,
+   "size": 1445340,
    "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/library.fbx",
    "previews": [
     "docs/previews/interior_library.png",
@@ -1228,7 +1229,7 @@
    ],
    "id": "library",
    "label": "図書館",
-   "sec": 0.622077226638794
+   "sec": 0.6746888160705566
   },
   {
    "tris": 21786,

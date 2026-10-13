@@ -15,7 +15,8 @@
   LANE_TREE m 以内の木も入れない。自分の棟の立て看板（キャンパスで入口の脇に立てたもの）と、
   地面・水面・ほかの棟は残す。
 - 木は幹の位置で選び（幹から外周までが RADIUS + 樹冠の半径以内）、切らずに丸ごと入れる。
-  樹冠が外周 + TREE_MARGIN にかかるものは入れない（切ると断面が見える）。
+  樹冠が外周 + TREE_MARGIN にかかるものは入れない（切ると断面が見える）。COARSE_TRUNK の棟では、
+  幹がそこに書いた距離より遠い木の幹を、回転体の輪の頂点を 1 つおきに抜いた形にする（葉と枝はそのまま）。
 - 建物の中のどこから見ても裏を向いている面は入れない。Unity のキャンパス用マテリアルは
   すべて片面描画（URP Lit / KCD_Toon とも _Cull = Back, MaterialLibrary.EnsureCampus）なので、
   入れても 1 画素も描かれない（隣の棟の向こう側の外壁、樹冠の奥側など）。
@@ -33,6 +34,7 @@ import bpy
 from kcd_lib import entrances, mats
 from kcd_lib.mesh import MeshBuilder, _area3, _clip_half, _is_convex, _newell, _triangulate
 from kcd_lib.site import _PLANT_RINGS, BLOOM_LIFT, BLOOM_R, BLOOM_REACH
+from kcd_lib.trees import _cap
 
 from .spec import campus_frame
 
@@ -44,6 +46,10 @@ DZ = -0.03           # 近景全体を下げる量
 Z_MIN = -0.045       # これより下の頂点は持ち上げる（OuterGround -0.05 / OutsideGround -0.06 より上に置く）
 Z_BURIED = -0.001    # キャンパスでこれより下にしか無い面（車道の帯の埋まった側面）は捨てる
 TREE_MARGIN = 0.3    # 樹冠と外周のあいだに空ける幅
+# 幹の回転体の分割数を半分にする木の、幹から外周までの距離 [m]。近景の三角数が上限を超える棟だけ
+# （図書館は ext_library と ext_library_trees の合計で 14,469, #110）。ここより遠い幹は屋内から
+# 見て太さ 3 度ほどで、12 角と 6 角の差は輪郭で 0.04 m しかない
+COARSE_TRUNK = {"library": 12.0}
 PLANT_NEAR = 12.0    # 花壇の株を近くの形で入れる距離（外周から）。これより遠いと遠くの形（find_plants）
 TOP_RING = _PLANT_RINGS[0][0] / _PLANT_RINGS[-1][0]   # 株の天面の輪から下の輪への倍率
 PLANT_SEG = 7        # 株の角数（site._plant の seg）
@@ -90,6 +96,7 @@ class Source:
         # 樹種 -> (頂点, [(頂点番号, マテリアル, 色)], 樹冠の半径, 原型の姿勢)。
         # 色は頂点カラーで塗るマテリアル（mats.VERTEX_COLORED）の面の sRGB、ほかは None
         self.protos = {}
+        self.coarse = {}   # 樹種 -> 幹の分割数を半分にした面（protos の面と同じ形、coarse_trunk）
         self.trees = []    # (樹種, 4x4 行列, (x, y), 倍率)
 
 
@@ -143,7 +150,9 @@ def load(campus_dir, data):
         faces = _proto_faces(o.data, names)
         crown = max(math.hypot(w.x - mw.translation.x, w.y - mw.translation.y)
                     for w in (mw @ v for v in verts))
-        src.protos[o.name[len(TREE_PREFIX):]] = (verts, faces, crown, mw.copy())
+        species = o.name[len(TREE_PREFIX):]
+        src.protos[species] = (verts, faces, crown, mw.copy())
+        src.coarse[species] = coarse_trunk([tuple(mw @ v) for v in verts], faces)
 
     for o in loaded:
         par = o.parent
@@ -174,6 +183,89 @@ def _proto_faces(me, names):
             i = p.loop_start if attr.domain == "CORNER" else p.vertices[0]
             col = tuple(attr.data[i].color_srgb[:3])
         out.append((tuple(p.vertices), mat, col))
+    return out
+
+
+def _trunk_bands(pts, faces):
+    """幹の回転体の帯（水平な 2 つの輪をつなぐ四角形の環）。
+
+    pts は z が上の座標。帯の四角形は (下 i, 下 i+1, 上 i+1, 上 i) の順（trees._add_trunk）なので、
+    下の 2 点と上の 2 点がそれぞれ同じ高さにある。縦の辺を共有する四角形を 1 つの帯にまとめ、
+    閉じた環になったものだけを、下の輪を回る順の面番号のリストで返す。斜めの枝（_tube）は
+    輪が水平でないので入らない。"""
+    quads = []
+    for fi, (idx, mat, _col) in enumerate(faces):
+        if mat != "trunk" or len(idx) != 4:
+            continue
+        z = [pts[i][2] for i in idx]
+        if abs(z[0] - z[1]) < 1e-5 and abs(z[2] - z[3]) < 1e-5 and z[2] - z[0] > 1e-4:
+            quads.append(fi)
+    # 左の縦の辺（下 i, 上 i）-> 面
+    left = {(_key(pts[faces[fi][0][0]]), _key(pts[faces[fi][0][3]])): fi for fi in quads}
+    bands, seen = [], set()
+    for fi in quads:
+        if fi in seen:
+            continue
+        ring, cur = [], fi
+        while cur is not None and cur not in seen:
+            seen.add(cur)
+            ring.append(cur)
+            idx = faces[cur][0]
+            cur = left.get((_key(pts[idx[1]]), _key(pts[idx[2]])))
+        if cur == fi:
+            bands.append(ring)
+    return bands
+
+
+def coarse_trunk(pts, faces):
+    """幹の回転体の輪の頂点を 1 つおきに抜いた面のリスト（faces と同じ形）。
+
+    pts は原型の頂点を原型の姿勢で置いた座標（z が上）。帯の隣り合う四角形 2 枚を 1 枚にし、
+    天辺の蓋は残った頂点でふさぎ直す。輪どうしで抜く頂点をそろえるので、帯の継ぎ目に隙間は
+    できない。角の数が奇数の環と、抜く頂点がそろわない環はそのまま残す。葉と枝は変えない。"""
+    by_key = {}
+    for i, p in enumerate(pts):
+        by_key.setdefault(_key(p), i)
+    bands = sorted(_trunk_bands(pts, faces), key=lambda b: pts[faces[b[0]][0][0]][2])
+    keep = {}        # 輪の頂点 -> 残すか
+    drop = set()     # 置きかえる面
+    out = []
+    tops = {}        # 天辺の輪の頂点の組 -> 残した頂点（輪を回る順）
+    for ring in bands:
+        n = len(ring)
+        if n % 2:
+            continue
+        lo = [_key(pts[faces[fi][0][0]]) for fi in ring]
+        hi = [_key(pts[faces[fi][0][3]]) for fi in ring]
+        known = [t for t in range(n) if lo[t] in keep or hi[t] in keep]
+        start = 0
+        if known:
+            t = known[0]
+            start = t % 2 if keep.get(lo[t], keep.get(hi[t])) else (t + 1) % 2
+        want = {t: (t - start) % 2 == 0 for t in range(n)}
+        if any(keep.get(k[t], want[t]) != want[t] for k in (lo, hi) for t in range(n)):
+            continue
+        for t in range(n):
+            keep[lo[t]] = keep[hi[t]] = want[t]
+        for t in range(start, start + n, 2):
+            a, b = faces[ring[t % n]], faces[ring[(t + 1) % n]]
+            out.append(((a[0][0], b[0][1], b[0][2], a[0][3]), a[1], a[2]))
+        drop.update(ring)
+        tops[frozenset(hi)] = [hi[t % n] for t in range(start, start + n, 2)]
+    capped = set()
+    for fi, f in enumerate(faces):
+        if fi in drop:
+            continue
+        ks = {_key(pts[i]) for i in f[0]}
+        top = next((ring for ring in tops if f[1] == "trunk" and ks <= ring), None)
+        if top is None:
+            out.append(f)
+            continue
+        if top in capped:
+            continue   # 蓋の 2 枚目以降。蓋は 1 度だけ作り直す
+        capped.add(top)
+        for poly in _cap([pts[by_key[k]] for k in tops[top]]):
+            out.append((tuple(by_key[_key(p)] for p in poly), f[1], f[2]))
     return out
 
 
@@ -529,7 +621,8 @@ def build(sp, src, top, door_gap=None, radius=RADIUS):
       tris        入れた三角数（出どころ別。棟の外装はまとめて bld、木は trees）
       culled_tris 裏を向くので入れなかった三角数（切り出したあとの数。site / trees）
       plants      入れた花壇の株の数（near = 近くの形、far = 遠くの形）
-      trees       入れた木の本数（placed）と、樹冠が外周にかかるので入れなかった本数（skipped）
+      trees       入れた木の本数（placed）と、樹冠が外周にかかるので入れなかった本数（skipped）、
+                  幹を粗くした本数（coarse, COARSE_TRUNK）
       own         入れなかった自分の棟の面の数（外装 bld、石張りを除く扉の部材 door）
       entrance    屋内の入口の前の通り道にかかるので入れなかった設備の数（props）とその面の数
                   （prop_faces）、木の本数（trees）。自分の棟の立て看板は通り道にかかっても入れる"""
@@ -543,7 +636,7 @@ def build(sp, src, top, door_gap=None, radius=RADIUS):
     blocked = set() if lane is None else {
         g for g, b in gbox.items() if _overlaps(b, lane) and not _holds(b, signs)}
     mb, site = _site_mesh(sp, cand, blocked, box, env, corners)
-    tb, forest = _tree_mesh(sp, src, env, lane, corners, radius)
+    tb, forest = _tree_mesh(sp, src, env, lane, corners, radius, COARSE_TRUNK.get(sp.id))
 
     tris = dict(site["tris"])
     if forest["tris"]:
@@ -554,7 +647,8 @@ def build(sp, src, top, door_gap=None, radius=RADIUS):
         "culled_tris": {"site": site["culled"], "trees": forest["culled"]},
         "plants": {"near": sum(1 for v in used.values() if not v),
                    "far": sum(1 for v in used.values() if v)},
-        "trees": {"placed": forest["placed"], "skipped": forest["skipped"]},
+        "trees": {"placed": forest["placed"], "skipped": forest["skipped"],
+                  "coarse": forest["coarse"]},
         "own": own_faces,
         "entrance": {"props": len(blocked), "prop_faces": site["lane_faces"],
                      "trees": forest["lane"]},
@@ -634,14 +728,16 @@ def _site_mesh(sp, cand, blocked, box, env, corners):
     return mb, {"tris": tris, "culled": culled, "used": used, "lane_faces": lane_faces}
 
 
-def _tree_mesh(sp, src, env, lane, corners, radius):
+def _tree_mesh(sp, src, env, lane, corners, radius, coarse=None):
     """幹が外周から radius + 樹冠の半径 以内の木を丸ごと ext_<id>_trees に入れる。
 
     樹冠が外周 + TREE_MARGIN にかかる木と、幹が入口の前の通り道 lane から LANE_TREE 以内の木は
-    入れない。葉は原型の面の色（頂点カラー）を持っていく。(MeshBuilder, 集計) を返す。
-    集計は tris / culled（三角数）と、木の本数 placed / skipped（樹冠が外周にかかる）/ lane（通り道）。"""
+    入れない。幹が外周から coarse より遠い木は、幹の分割数を半分にした形（src.coarse）で入れる。
+    葉は原型の面の色（頂点カラー）を持っていく。(MeshBuilder, 集計) を返す。
+    集計は tris / culled（三角数）と、木の本数 placed / skipped（樹冠が外周にかかる）/ lane（通り道）
+    / coarse（幹を粗くした）。"""
     tb = MeshBuilder(EXT_PREFIX + sp.id + TREES_SUFFIX)
-    tris = culled = placed = skipped = lane_trees = 0
+    tris = culled = placed = skipped = lane_trees = coarse_trees = 0
     for species, m, (x, y), scale in src.trees:
         lx, ly, _ = _to_local(sp, (x, y, 0.0))
         verts, faces, crown, _pm = src.protos[species]
@@ -655,6 +751,9 @@ def _tree_mesh(sp, src, env, lane, corners, radius):
         if lane is not None and _rect_dist(lx, ly, lane) <= LANE_TREE:
             lane_trees += 1
             continue
+        if coarse is not None and d > coarse:
+            faces = src.coarse.get(species, faces)
+            coarse_trees += 1
         world = [m @ v for v in verts]
         local = [_to_local(sp, (w.x, w.y, w.z)) for w in world]
         n_tris = 0
@@ -669,4 +768,4 @@ def _tree_mesh(sp, src, env, lane, corners, radius):
             tris += n_tris
             placed += 1
     return tb, {"tris": tris, "culled": culled, "placed": placed, "skipped": skipped,
-                "lane": lane_trees}
+                "lane": lane_trees, "coarse": coarse_trees}
