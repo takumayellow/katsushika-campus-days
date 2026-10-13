@@ -36,6 +36,48 @@ def _brick_core(mb, frame, uc, v_lo, v_hi, z0, z1, floors, fh, du=8.0):
 # --------------------------------------------------------------------------- #
 #  第1研究棟 — 11F・49.5 m。水平連続窓 + レンガコア + ピロティ + 屋上機械室
 # --------------------------------------------------------------------------- #
+def _hidden_by(loop, others, push=0.4):
+    """loop の辺のうち、ほかのポリゴン（others）に接して見えない辺の番号。辺上 3 点を push だけ
+    外へ出し、全部が同じポリゴンの内側に入れば隠れているとみなす。"""
+    out = set()
+    n = len(loop)
+    for i in range(n):
+        a, b = loop[i], loop[(i + 1) % n]
+        d = geom.sub(b, a)
+        L = geom.length(d)
+        if L < 1e-6:
+            continue
+        e = geom.mul(d, 1.0 / L)
+        nrm = (e[1], -e[0])
+        pts = [(a[0] + e[0] * L * t + nrm[0] * push, a[1] + e[1] * L * t + nrm[1] * push)
+               for t in (0.25, 0.5, 0.75)]
+        if any(all(geom.point_in_poly(p, o) for p in pts) for o in others):
+            out.add(i)
+    return out
+
+
+def _lab_tower_part(mb, part, main_loop, fh):
+    """第1研究棟の北面に沿う細長い部分（campus.json の parts。OSM 1552199070、高さ 47 m）。
+    本体と同じ窓割りで、本体に接する辺には壁を出さない。床の高さは本体に揃え、端数は壁にする。"""
+    ploop = geom.ensure_ccw(geom.dedup(part["footprint"]))
+    ph = float(part["height"])
+    visible = [i for i in range(len(ploop)) if i not in _hidden_by(ploop, [main_loop])]
+    nf = max(1, int(ph / fh))
+    facade.add_facade(mb, ploop, 0.0, fh, 1, nf,
+                      wall="concrete_grey", glass="glass_dark",
+                      seg=3.0, sill=1.15, header=0.45, inset=0.45, mullion=0.36,
+                      edges=visible)
+    facade.add_facade(mb, ploop, 0.0, fh, 0, 1,
+                      wall="concrete_dark", glass="glass_dark",
+                      seg=3.6, sill=0.9, header=0.55, inset=0.55, mullion=0.30,
+                      edges=visible)
+    if ph - nf * fh > 0.05:
+        facade.add_solid(mb, ploop, nf * fh, ph, "concrete_grey", edges=visible)
+    mb.add_ngon_flat(ploop, ph, "roof_grey")
+    facade.add_parapet(mb, ploop, ph, 1.2, 0.45, "concrete_light", edges=visible)
+    return ploop, ph
+
+
 def build_lab_tower(mb, b, frame, ctx):
     loop = geom.ensure_ccw(geom.dedup(b["footprint"]))
     h = b["height"]
@@ -43,16 +85,29 @@ def build_lab_tower(mb, b, frame, ctx):
     fh = h / lv
     u0, v0, u1, v1 = frame.uv_bbox(loop)
 
+    # 北面に沿う細長い部分（parts）。本体の外形はキャンパスの軸（Frame）を決めるので、
+    # 部分は本体に混ぜずに別に建てる（#281）。部分に接する本体の辺は、部分より高い所だけ壁を出す
+    parts = [_lab_tower_part(mb, part, loop, fh) for part in b.get("parts") or []]
+    hidden = {}
+    for ploop, ph in parts:
+        for i in _hidden_by(loop, [ploop]):
+            hidden[i] = max(hidden.get(i, 0.0), ph)
+    visible = [i for i in range(len(loop)) if i not in hidden]
+
     facade.add_facade(mb, loop, 0.0, fh, 1, lv,
                       wall="concrete_grey", glass="glass_dark",
-                      seg=3.0, sill=1.15, header=0.45, inset=0.45, mullion=0.36)
+                      seg=3.0, sill=1.15, header=0.45, inset=0.45, mullion=0.36,
+                      edges=visible)
     facade.add_facade(mb, loop, 0.0, fh, 0, 1,
                       wall="concrete_dark", glass="glass_dark",
-                      seg=3.6, sill=0.9, header=0.55, inset=0.55, mullion=0.30)
+                      seg=3.6, sill=0.9, header=0.55, inset=0.55, mullion=0.30,
+                      edges=visible)
+    for i, other_h in hidden.items():
+        if other_h < h - 0.05:
+            facade.add_solid(mb, loop, other_h, h, "concrete_grey", edges=[i])
 
-    # レンガ色の階段コア（南面のみ。北面は共創棟が全長で接していて、出っ張ると
-    # 共創棟の躯体に 2.7 m 食い込む）。中央のコアは入口の切り欠き（u 111..127）の口を
-    # 塞がないよう東へずらす（#39）
+    # レンガ色の階段コア（南面のみ。北面は細長い部分が全長で接している）。中央のコアは
+    # 入口の切り欠き（u 111..127）の口を塞がないよう東へずらす（#39）
     for t in (0.10, 0.58, 0.90):
         uc = u0 + (u1 - u0) * t
         _brick_core(mb, frame, uc, v0 - 1.4, v0 + 6.0, 0.0, h + 2.2, lv, fh)
@@ -77,70 +132,11 @@ def build_lab_tower(mb, b, frame, ctx):
 
 
 # --------------------------------------------------------------------------- #
-#  共創棟 — 11F・47 m。白ルーバー + ガラス。1F にスタバ / ファミマ
+#  共創棟 — 11F・45 m。グレーの縦フィンの格子とレンガタイルの妻面（kcd_lib/kyoso_exterior.py）
 # --------------------------------------------------------------------------- #
-def _hidden_edges(loop, self_id, ctx, push=0.4):
-    """他棟に接して見えない辺を探す。辺上 3 点を push だけ外へ出し、全部が他棟の
-    フットプリント内なら隠れているとみなす。戻り値 {辺番号: 隠している棟の高さ}。"""
-    out = {}
-    fps = ctx.get("footprints") or []
-    n = len(loop)
-    for i in range(n):
-        a, b = loop[i], loop[(i + 1) % n]
-        d = geom.sub(b, a)
-        L = geom.length(d)
-        if L < 1e-6:
-            continue
-        e = geom.mul(d, 1.0 / L)
-        nrm = (e[1], -e[0])
-        pts = [(a[0] + e[0] * L * t + nrm[0] * push, a[1] + e[1] * L * t + nrm[1] * push)
-               for t in (0.25, 0.5, 0.75)]
-        for fid, fp, fh in fps:
-            if fid == self_id:
-                continue
-            if all(geom.point_in_poly(p, fp) for p in pts):
-                out[i] = max(out.get(i, 0.0), fh)
-    return out
-
-
 def build_kyoso(mb, b, frame, ctx):
-    # OSM 実測のフットプリントをそのまま使う（6 点・722 m²・奥行 5.6〜6.8 m）。
-    loop = geom.ensure_ccw(geom.dedup(b["footprint"]))
-    u0, v0, u1, v1 = frame.uv_bbox(loop)
-    h = b["height"]
-    lv = b["levels"]
-    fh = h / lv
-    n = len(loop)
-
-    def _edge(i):
-        return geom.sub(loop[(i + 1) % n], loop[i])
-
-    # 第1研究棟に接する南辺などは壁を出さない（同一平面で z-fight するだけ）
-    hidden = _hidden_edges(loop, b["id"], ctx)
-    visible = [i for i in range(n) if i not in hidden]
-    louver_edges = [i for i in visible if geom.length(_edge(i)) >= 5.0]
-
-    facade.add_facade(mb, loop, 0.0, fh, 1, lv,
-                      wall="louver_white", glass="glass_clear",
-                      seg=2.6, sill=0.85, header=0.30, inset=0.32, mullion=0.22,
-                      edges=visible)
-    facade.add_louvers(mb, loop, 0.0, fh, 1, lv, mat="louver_white",
-                       depth=0.6, thick=0.10, edges=louver_edges, per_floor=2)
-    # 1F: ラーニングスクエア（全面ガラス）
-    facade.add_curtain_wall(mb, loop, 0.0, fh, 0, 1, seg=3.0, inset=0.30, edges=visible,
-                            ground_sill=0.9)
-    # 隠れた辺は、相手の棟より高い部分だけ壁を出す
-    for i, other_h in hidden.items():
-        if other_h < h - 0.5:
-            facade.add_solid(mb, loop, other_h, h, "louver_white", edges=[i])
-
-    mb.add_ngon_flat(loop, h, "roof_grey")
-    facade.add_parapet(mb, loop, h, 1.1, 0.4, "louver_white", edges=visible)
-    _roof_boxes(mb, frame, (u0, v0, u1, v1), h + 1.1, n=2, du=10.0, dv=4.0, h=3.2)
-
-    # 入口と看板は kcd_lib.entrances が置く
-    ctx["kyoso_mall_v"] = v1
-    ctx["kyoso_rect"] = loop
+    from . import kyoso_exterior
+    kyoso_exterior.build(mb, b, frame, ctx)
 
 
 # --------------------------------------------------------------------------- #

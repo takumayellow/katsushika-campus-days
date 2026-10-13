@@ -392,19 +392,19 @@
     },
     {
       "id": "ps_kyoso_facade",
-      "name_ja": "共創棟のルーバー",
-      "name_en": "Kyoso Hall Louvres",
+      "name_ja": "共創棟の縦フィン",
+      "name_en": "Kyoso Hall Fins",
       "building": null,
       "position": {
-        "x": 60.0,
-        "z": -58.0
+        "x": -7.6,
+        "z": -88.9
       },
       "look_dir": {
-        "x": 0.81,
-        "z": -0.59
+        "x": -0.81,
+        "z": 0.59
       },
-      "caption_ja": "白い縦ルーバーが並ぶ 2025 年竣工の棟。午後は影が縞になる。",
-      "caption_en": "White vertical louvres on the building finished in 2025. In the afternoon the shadows turn to stripes."
+      "caption_ja": "グレーの縦フィンが並ぶ 2024 年竣工の棟。午後は影が縞になる。",
+      "caption_en": "Grey vertical fins on the building finished in 2024. In the afternoon the shadows turn to stripes."
     },
     {
       "id": "ps_gym_catwalk",

@@ -73,11 +73,21 @@ def _entrance_uv(bid, uvbb):
     return (u0 - off, probe[1]), inward
 
 
+# 共創棟の屋内は、外形を実物の矩形（約 72 x 35.5 m）に直す前の細長い帯（長さ 130.146 m・
+# 奥行き 10.5 m）のまま。扉から西へ KYOSO_BAND_W、東へ KYOSO_BAND_E だけ延ばし、奥行きは
+# モール側の面から KYOSO_BAND_D。屋内の間取りを実物の外形に合わせるのは #281 の後半
+KYOSO_BAND_W = 31.081
+KYOSO_BAND_E = 99.065
+KYOSO_BAND_D = 10.5
+
+
 def _uvbb_for(bid, uvbb):
-    """外装側で footprint を拡張している建物は、その拡張後の bbox を返す。"""
+    """屋内の外周（uv の外接矩形）。共創棟は外形と別の帯を返す。"""
     u0, v0, u1, v1 = uvbb
     if bid == "kyoso":
-        return (u0, v0, u1, v0 + 10.5)
+        row = _door_row(bid)
+        pu = row[1][0] if row else (u0 + u1) * 0.5
+        return (pu - KYOSO_BAND_W, v1 - KYOSO_BAND_D, pu + KYOSO_BAND_E, v1)
     return uvbb
 
 

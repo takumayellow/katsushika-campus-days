@@ -54,7 +54,7 @@ SITE_MAX_EDGE = 50.0
 CAM_SPECS = [
     ("campus_overview", (-30.0, -300.0, 205.0), (28.0, -8.0, 18.0), 35.0, 0.0),
     ("campus_mall", (176.0, -24.5, 1.60), (-20.0, -23.0, 10.0), 28.0, 8.0),
-    ("campus_library", (26.0, -47.0, 2.80), (-84.0, -24.0, 17.0), 30.0, 26.0),
+    ("campus_library", (40.0, -34.0, 2.80), (-84.0, -24.0, 17.0), 30.0, 14.0),
     ("campus_lecture", (48.0, -26.0, 1.70), (95.0, -6.0, 11.0), 26.0, 19.0),
 ]
 
@@ -200,7 +200,7 @@ def build_campus(data, frame, rng, max_trees, park):
     parklib.build_water(water_mb, park)
     objects.append(water_mb.to_object(scene_coll))
 
-    # 建物どうしの接触判定（共創棟が第1研究棟に接する辺）と小物配置のために先に集める
+    # 看板・小物の配置のために先に集める
     on_campus = []
     for b in data["buildings"]:
         style = b.get("style") or "background"
@@ -236,19 +236,16 @@ def build_campus(data, frame, rng, max_trees, park):
             continue
         mb = MeshBuilder("bld_%s" % b["id"])
         builder(mb, b, frame, ctx)
-        occ.stamp_poly(loop, margin=3.0)
-        hard.stamp_poly(loop, margin=2.0)
+        # 本体に付く細長い部分（第1研究棟の北面の parts）も同じ余白で占有にする
+        for fp in [loop] + [geom.ensure_ccw(geom.dedup(pt["footprint"])) for pt in b.get("parts") or []]:
+            occ.stamp_poly(fp, margin=3.0)
+            hard.stamp_poly(fp, margin=2.0)
         obj = mb.to_object(scene_coll)
         obj["kcd_id"] = b["id"]
         objects.append(obj)
     objects.append(bg_mb.to_object(scene_coll))
     print("[bg] window quads=%d (spacing %.2f m)"
           % (ctx.get("bg_window_quads", 0), ctx["bg_window_spacing"]))
-
-    # 共創棟はフットプリントを広げているので、そのぶんも占有に反映する
-    if "kyoso_rect" in ctx:
-        occ.stamp_poly(ctx["kyoso_rect"], margin=3.0)
-        hard.stamp_poly(ctx["kyoso_rect"], margin=2.0)
 
     # --- 公園の地球釜・パーゴラ・遊具（建物の占有を入れた後に置く）---
     n_play = parklib.build_props(park_mb, park, occ, hard)

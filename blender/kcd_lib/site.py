@@ -65,7 +65,8 @@ BASIN_RIM = 1.6     # 縁石の幅（腰かけられる）
 # basin_edges の許容差（m）。辺が同じ直線上にあるとみなす差と、捨てる切れ端の長さ。
 # CampusStage.UncoveredSpans と同じ値にする（blender/tests/fixtures/basin_edges.json で突き合わせる）
 BASIN_EDGE_EPS = 1e-4
-# 図書館の東の芝生広場 (u0, v0, u1, v1)。以前の池の跡。実物も木の無い芝生
+# 図書館の東の芝生広場 (u0, v0, u1, v1)。以前の池の跡。実物も木の無い芝生。東側の大半には
+# 共創棟（u -36..37, v -77..-42, #281）が建っていて、そこは建物の占有でも木が入らない
 LIBRARY_LAWN = (-46.0, -100.0, 8.0, -32.0)
 
 

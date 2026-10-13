@@ -37,7 +37,7 @@ namespace KCD.Editor
             { "research2", new Vector2(-2.9f, 8.0f) },
             { "cafeteria", new Vector2(-2.9f, 8.0f) },
             { "lecture", new Vector2(118.3f, -40.4f) },
-            { "kyoso", new Vector2(96.9f, -88.1f) },
+            { "kyoso", new Vector2(-24.2f, -54.3f) },
             { "library", new Vector2(-93.6f, 25.7f) },
             { "gym", new Vector2(28.1f, 48.7f) },
             { "lab1", new Vector2(64.9f, 25.4f) },
@@ -321,7 +321,7 @@ namespace KCD.Editor
         /// </summary>
         private static void PlaceCollectables(Transform parent)
         {
-            Vector3 shop = Outward("kyoso", 4.5f, new Vector2(112.3f, -78f));
+            Vector3 shop = Outward("kyoso", 4.5f, new Vector2(-12.5f, -32.0f));
             PlaceMilkStand(parent, shop);
             GameObject milk = ActorFactory.CreateCollectable(parent, "milk", "牛乳",
                 shop + Vector3.up * (MilkStandHeight + CollectableMeshes.MilkCartonHalfHeight), "white");
