@@ -75,8 +75,8 @@ namespace KCD.Tests
                 local(-27.6f, 13.5f, 10.0f), local(-12.0f, 13.5f, 10.0f), local(-11.0f, 17.1f, 10.0f),
                 local(-7.0f, 17.1f, 11.4f), local(-3.0f, 17.6f, 12.8f), local(-1.6f, 19.8f, 12.8f),
                 local(-1.6f, 33.0f, 12.8f), local(2.25f, 35.0f, 12.8f), local(2.25f, 45.3f, 11.3f),
-                local(2.25f, 53.0f, 10.0f), local(2.25f, 54.6f, 10.0f), local(7.9f, 54.6f, 10.0f),
-                local(7.9f, 57.0f, 10.75f), local(6.0f, 58.0f, 10.75f),
+                local(2.25f, 53.0f, 10.0f), local(2.25f, 54.6f, 10.0f), local(-11.1f, 54.6f, 10.0f),
+                local(-11.1f, 56.8f, 10.75f), local(-12.25f, 56.8f, 10.75f),
             });
             AssertOnFloor(player, groundY + 10.75f, "舞台のピアノのそば", bad);
 
