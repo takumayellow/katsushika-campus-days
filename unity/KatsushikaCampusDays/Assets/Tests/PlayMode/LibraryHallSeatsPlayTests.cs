@@ -8,8 +8,9 @@ namespace KCD.Tests
 {
     /// <summary>
     /// 図書館大ホール (#110): 1 階席の 1 列目の通路の端の席（seat_library_01・02）、西の側方席（seat_library_03）、
-    /// 舞台のピアノ椅子に、通路から歩いて近づいて E の届く所へ入れ、E で座れ、立った直後に体がめり込まず、
-    /// そのあと押し出されずにその場に立っていられる。地点は Blender の屋内座標（x, y, 床からの高さ）で書く。
+    /// 舞台のピアノ椅子に、客席のワープ先（poi_library_hall_seats・poi_library_balcony）から通路を歩いて近づいて
+    /// E の届く所へ入れ、E で座れ、立った直後に体がめり込まず、そのあと押し出されずにその場に立っていられる。
+    /// 道の地点は Blender の屋内座標（x, y, 床からの高さ）で書く。
     /// </summary>
     public sealed class LibraryHallSeatsPlayTests : SceneTestBase
     {
@@ -62,7 +63,11 @@ namespace KCD.Tests
             Transform stool = LibraryInterior.FindPianoStool(interior);
             Assert.IsNotNull(stool, "舞台のピアノ椅子（seat_library_<nn> で，seat_library_<nn>_piano の Empty を持つもの）が無い");
 
-            Vector3 crossAisle = local(-1.6f, 45.3f, 11.3f); // poi_library_hall_seats
+            Transform hallSeats = FindChild(interior, "poi_library_hall_seats");
+            Assert.IsNotNull(hallSeats, "poi_library_hall_seats（客席のワープ先）が無い");
+            Vector3 crossAisle = hallSeats.position; // 横通路の中央
+            Transform balcony = FindChild(interior, "poi_library_balcony");
+            Assert.IsNotNull(balcony, "poi_library_balcony（2 階席のワープ先）が無い");
             Vector3 westAisle = local(-5.5f, 45.3f, 11.3f);
             Vector3 stageApproach = local(-11.1f, 54.6f, 10.0f); // 下手の小階段の下
             Vector3 stoolAt = stool.position;
@@ -72,18 +77,18 @@ namespace KCD.Tests
             stoolAt.y = local(0f, 0f, 10.75f).y;
 
             var bad = new List<string>();
-            // 1 階席: 横通路から縦通路を下り、1 列目の端の席の脇に立つ。
+            // 1 階席: ワープ先の横通路から縦通路を下り、1 列目の端の席の脇に立つ。
             yield return Visit(player, prompt, interior, "seat_library_01", false, crossAisle,
                 new[] { westAisle, local(-5.5f, 53.2f, 10.0f) }, bad);
             yield return Visit(player, prompt, interior, "seat_library_02", false, crossAisle,
                 new[] { local(2.25f, 45.3f, 11.3f), local(2.25f, 53.2f, 10.0f) }, bad);
-            // 2 階席: 後ろの通路から西の縦通路を B1 まで下り、B1 の西の空きを抜けて側方席の前の通路へ。
-            yield return Visit(player, prompt, interior, "seat_library_03", false, local(-1.6f, 30.5f, 17.2f), new[]
+            // 2 階席: ワープ先の後ろの通路から西の縦通路を B1 まで下り、B1 の西の空きを抜けて側方席の前の通路へ。
+            yield return Visit(player, prompt, interior, "seat_library_03", false, balcony.position, new[]
             {
                 local(-12.475f, 30.5f, 17.2f), local(-12.475f, 33.9f, 16.0f), local(-16.6f, 33.9f, 16.0f),
                 local(-16.6f, 35.3f, 16.0f),
             }, bad);
-            // 舞台: 西の縦通路を舞台前まで下り、下手の小階段から椅子の手前へ。
+            // 舞台: ワープ先から西の縦通路を舞台前まで下り、下手の小階段から椅子の手前へ。
             yield return Visit(player, prompt, interior, stool.name, true, crossAisle, new[]
             {
                 westAisle, local(-5.5f, 54.6f, 10.0f), stageApproach, stoolAt,
@@ -261,6 +266,19 @@ namespace KCD.Tests
                 if (hit != controller && !hit.transform.IsChildOf(body))
                 {
                     return hit;
+                }
+            }
+
+            return null;
+        }
+
+        private static Transform FindChild(Transform root, string name)
+        {
+            foreach (Transform t in root.GetComponentsInChildren<Transform>(true))
+            {
+                if (t.name == name)
+                {
+                    return t;
                 }
             }
 
