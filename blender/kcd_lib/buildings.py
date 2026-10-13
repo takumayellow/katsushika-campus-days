@@ -183,39 +183,11 @@ def build_lecture(mb, b, frame, ctx):
 
 
 # --------------------------------------------------------------------------- #
-#  第2研究棟 — 6F・25 m。1〜2F は食堂の大きなガラス面 + 西へ張り出す屋上緑化低層部
+#  第2研究棟 — 6F・25 m。2 層の食堂の台座に 3〜6F の研究棟（kcd_lib/research2_exterior.py）
 # --------------------------------------------------------------------------- #
 def build_office(mb, b, frame, ctx):
-    loop = geom.ensure_ccw(geom.dedup(b["footprint"]))
-    h = b["height"]
-    lv = b["levels"]
-    fh = h / lv
-    u0, v0, u1, v1 = frame.uv_bbox(loop)
-
-    facade.add_facade(mb, loop, 0.0, fh, 2, lv,
-                      wall="concrete_grey", glass="glass_dark",
-                      seg=2.9, sill=1.10, header=0.45, inset=0.42, mullion=0.34)
-    # 1〜2F の食堂のガラス面。1F は腰壁を高くして扉に見えないようにする（#39）
-    for f, sill in ((0, 0.9), (1, 0.55)):
-        facade.add_facade(mb, loop, 0.0, fh, f, f + 1,
-                          wall="concrete_light", glass="glass_clear",
-                          seg=3.4, sill=sill, header=0.40, inset=0.45, mullion=0.26)
-
-    for t in (0.18, 0.80):
-        uc = u0 + (u1 - u0) * t
-        _brick_core(mb, frame, uc, v1 - 5.5, v1 + 1.2, 0.0, h + 1.8, lv, fh)
-
-    # 西へ張り出す低層部（屋上緑化）
-    wing = _uv_rect(frame, u0 - 19.0, v0 + 10.0, u0 + 1.0, v1 - 1.0)
-    mb.add_slab(wing, 0.0, 7.2, "concrete_light")
-    facade.add_curtain_wall(mb, wing, 0.0, 3.6, 0, 2, seg=3.0, inset=0.25, ground_sill=0.9)
-    mb.add_ngon_flat(geom.offset_polygon(wing, -0.6), 7.35, "grass")
-    facade.add_parapet(mb, wing, 7.2, 0.7, 0.35, "concrete_light")
-
-    mb.add_ngon_flat(loop, h, "roof_grey")
-    facade.add_parapet(mb, loop, h, 1.1, 0.4, "concrete_light")
-    _roof_boxes(mb, frame, (u0, v0, u1, v1), h + 1.1, n=2, du=9.0, dv=10.0, h=3.0)
-    # 入口と看板は kcd_lib.entrances が置く
+    from . import research2_exterior
+    research2_exterior.build(mb, b, frame, ctx)
 
 
 # --------------------------------------------------------------------------- #
