@@ -55,7 +55,7 @@
           "text_en": "Why not?"
         },
         {
-          "text": "1 階のスタバ、ラーニングスクエアと繋がってて、みんなゼミの相談してるの。ひとりで座ってると混ざっちゃう。",
+          "text": "1 階のカフェ、ラーニングスクエアと繋がってて、みんなゼミの相談してるの。ひとりで座ってると混ざっちゃう。",
           "text_en": "The first-floor coffee shop opens onto the learning square, and everyone's in there doing seminar consultations. Sit alone and you get pulled in."
         },
         {
@@ -131,8 +131,8 @@
       "id": "t_idle",
       "lines": [
         {
-          "text": "この建物、白いルーバーが縦に並んでるでしょ。あれ、日射を切るためのものなんだって。",
-          "text_en": "See the white louvres lined up vertically on this building? They're there to cut the sunlight, apparently."
+          "text": "この建物、濃い色のガラスの前に、グレーの縦フィンが並んでるでしょ。あれ、日射を切るためのものなんだって。",
+          "text_en": "See the grey vertical fins lined up in front of the dark glass on this building? They're there to cut the sunlight, apparently."
         },
         {
           "text": "おかげで中は一日じゅう同じ明るさ。時間の感覚がなくなるのが難点。",

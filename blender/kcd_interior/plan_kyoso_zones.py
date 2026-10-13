@@ -1,4 +1,4 @@
-"""共創棟 1F のうち店以外の区画: ラーニングスクエア・ホール・カフェラウンジ・ラウンジ 1/2。"""
+"""共創棟 1F のうち店以外の区画: ラーニングスクエア・ホール・カフェラウンジ・ラウンジ 1/2・中ホール。"""
 
 import math
 
@@ -25,6 +25,9 @@ def learning_square(c, mb):
     x0, y0, x1, y1 = D.LS
     FK.terrazzo(mb, x0, y0, x1, y1, rng)
     FK.deck(mb, -31.0, 7.8, -18.0, 12.0)
+    # 公園側の縁は段が無く 0.6 m 落ちて、その先はバルコニーと階段の下のすき間になるので、
+    # ベンチの背を兼ねた腰壁で縁を通して閉じる（デッキから下りられるのは南と東の段だけ）
+    kit.box(mb, -31.0, 12.0, 0.0, -18.0, 12.1, D.DECK_H + 0.85, BLACK, top=WOOD)
     # 最上段（x -31..-19.8, y 9.0..12.0）の縁にグレーの箱形ベンチ
     FK.box_bench(mb, -29.6, 11.5, -20.4, 12.0, z=D.DECK_H)
     FK.box_bench(mb, -19.9, 9.4, -19.4, 11.5, z=D.DECK_H)
@@ -80,6 +83,9 @@ def cafe_lounge(c, mb):
     for px, py in ((7.0, 8.6), (7.0, y0), (15.0, y0)):
         kit.box_c(mb, px, py, 0.0, 0.14, 0.14, gz, BLACK)
     kit.box(mb, 6.9, 7.5, 2.2, 7.1, 8.6, 2.3, BLACK)
+    # 中ホール側（Y 14.35）も すりガラスの帯
+    shell.partition(mb, (7.0, D.Y_BACKWALL), (15.0, D.Y_BACKWALL), 0.0, gz, "wall_white",
+                    glass_top="kyoso_glass_frosted", glass_z=1.1)
     # 東は 15 のガラス間仕切り (Y 8.8..10.2 が出入口)
     FK.glass_wall(mb, (15.0, y0), (15.0, y1), gz, gaps=((1.3, 2.7),), door_top=2.6)
     F.table(mb, 11.0, 10.2, 0.0, w=4.8, d=1.2, h=0.74, top=WOOD, leg=BLACK)
@@ -116,3 +122,29 @@ def lounges(c, mb):
     for py in (7.4, 8.2, 9.0, 11.4, 12.2, 13.0):
         shell.planter(mb, 23.0, py, r=0.28, h=0.5, leaf_h=0.9)
     kit.box(mb, 30.30, 7.2, 0.0, 30.42, 13.6, 3.6, "kyoso_wall_terracotta")
+    # 中ホール側はガラス間仕切り（X 16.4..18.0 と 24.4..26.0 が出入口）
+    FK.glass_wall(mb, (15.0, D.Y_BACKWALL), (D.LOUNGE1[2], D.Y_BACKWALL), 4.6,
+                  gaps=((1.4, 3.0), (9.4, 11.0)), door_top=2.6)
+
+
+def _table4(mb, x, y):
+    F.table(mb, x, y, 0.0, w=1.6, d=0.8, h=0.72, top=WOOD, leg=BLACK)
+    for dx in (-0.4, 0.4):
+        _chair(mb, x + dx, y - 0.72, 0.0)
+        _chair(mb, x + dx, y + 0.72, math.pi)
+
+
+def middle_hall(c, mb):
+    """エントランスホールの奥からラーニングスクエアへ抜ける広間と、奥の列の東（推定）。"""
+    for tx, ty in ((-7.5, 18.5), (-7.5, 23.5), (12.0, 18.0), (12.0, 25.5),
+                   (19.2, 18.0), (19.2, 25.5)):
+        _table4(mb, tx, ty)
+    for px, py in ((-10.2, 15.2), (-10.2, 28.4), (30.0, 15.2), (30.0, 28.4)):
+        shell.planter(mb, px, py)
+    for sx in (25.0, 28.5):
+        FK.modular_sofa(mb, sx, 31.2, 0.0)
+        FK.seat_mark(mb, sx, 31.2, 0.0, 0.0, hw=1.2, hd=0.42, inner=2.1)
+    rx, ry = 27.0, 36.0
+    FK.round_sofa(mb, rx, ry)
+    for dx, dy in ((0, -1), (0, 1), (-1, 0), (1, 0)):
+        FK.seat_mark(mb, rx + 0.55 * dx, ry + 0.55 * dy, 0.0, _dir_ang(dx, dy))

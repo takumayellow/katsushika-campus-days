@@ -137,8 +137,8 @@ x は完全一致、北方向は 1.4〜1.8 m だけ外側に出るが、これ�
 - **共創棟**: OSM にも PLATEAU にも外形が無いので、`MANUAL_BUILDINGS` にキャンパスマップと
   航空写真から取った 4 点の外形（約 72 × 35.5 m・11F・45 m）を置き、第1研究棟の北西隣に
   メインストリートへ長辺を向けて建てる（#281）。外観は `kcd_lib/kyoso_exterior.py`。
-  建物の中（interior）は外形と合っておらず、扉の西 31 m から東 99 m までの長さ約 130 m・奥行き 10.5 m の帯
-  （`kcd_interior/spec.py` の `KYOSO_BAND_*`）で、入口の位置だけが外形に合っている。
+  建物の中（interior）も同じ外形の内側に作る（4 点の外接矩形で 72.55 × 35.73 m）。間取りと推定の範囲は
+  `docs/ref/interiors/kyoso/spec.md`。
 - 背景建物（`style == "background"`）は押し出し + 各階の窓（暗いガラスの四角。合計
   `BG_WINDOW_BUDGET` 枚以内になるよう間隔を自動調整）。1 メッシュにまとめている。
 - 外構小物: 水面は `site_water`（Unity で反射用に別マテリアル）、看板は `site_props_signs`
