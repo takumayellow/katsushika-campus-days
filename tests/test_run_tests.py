@@ -220,6 +220,44 @@ def test_skipped_only_run_is_not_ok():
     assert not summary.ok
 
 
+KNOWN_SKIP_XML = """<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="3" result="Passed" total="3" passed="2" failed="0" inconclusive="0"
+          skipped="1" duration="3.0">
+  <test-suite type="TestFixture" name="A" fullname="KCD.Tests.A" result="Passed">
+    <test-case name="One" fullname="KCD.Tests.A.One" result="Passed" />
+    <test-case name="Two" fullname="KCD.Tests.A.Two" result="Passed" />
+    <test-case name="Shot" fullname="KCD.Tests.A.Shot" result="Skipped" label="Ignored">
+      <reason><message><![CDATA[KCD_SHOT_DIR が無いので撮らない]]></message></reason>
+    </test-case>
+  </test-suite>
+</test-run>
+"""
+
+
+def test_known_skip_does_not_fail_the_run(tmp_path, monkeypatch):
+    monkeypatch.setattr(run_tests, "KNOWN_SKIPS", {"KCD.Tests.A.Shot": "撮るときだけ走らせる"})
+    summary = run_tests.parse_results(write(tmp_path, "r.xml", KNOWN_SKIP_XML))
+    assert (summary.skipped, summary.known_skips) == (1, 1)
+    assert summary.ok
+
+    out = io.StringIO()
+    run_tests.write_summary("PlayMode", summary, out)
+    text = out.getvalue()
+    assert "[既知のスキップ] KCD.Tests.A.Shot（撮るときだけ走らせる）" in text
+    assert "[Skipped/Ignored]" not in text
+
+
+def test_unlisted_skip_still_fails_the_run(tmp_path, monkeypatch):
+    monkeypatch.setattr(run_tests, "KNOWN_SKIPS", {})
+    summary = run_tests.parse_results(write(tmp_path, "r.xml", KNOWN_SKIP_XML))
+    assert summary.known_skips == 0
+    assert not summary.ok
+
+
+def test_known_skip_list_names_the_capture_test():
+    assert "KCD.Tests.MobCrowdCaptureTests.水盤の前に集めて撮る" in run_tests.KNOWN_SKIPS
+
+
 def test_empty_run_is_not_ok():
     assert not run_tests.RunSummary(0, 0, 0, 0, 0, 0.0, ()).ok
 
