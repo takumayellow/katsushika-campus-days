@@ -59,9 +59,9 @@ def tread(k):
     return xc - RUN * 0.5, xc + RUN * 0.5, RISE * k - SINK
 
 
-def steps_mesh():
+def steps_mesh(bid):
     """段の部品（蹴込み・黄色の段鼻・踏面）。0 段目は床に沈んでいて、動くと床から出てくる。"""
-    mb = MeshBuilder("escsteps_%s_%s" % ("kyoso", FLIGHT))
+    mb = MeshBuilder("escsteps_%s_%s" % (bid, FLIGHT))
     mb.seats = []
     ya, yb = Y0 + CLAD_T, Y1 - CLAD_T
     for k in range(D.ESC_N):
@@ -115,6 +115,6 @@ def build(c):
     """腹板と欄干を c.wall に、段の部品を c.parts に足し、段の線の両端の Empty を置く。"""
     _truss(c.wall)
     _balustrade(c.wall)
-    c.parts.append(steps_mesh())
+    c.parts.append(steps_mesh(c.spec.id))
     c._put("esc_%s_%s_lo" % (c.spec.id, FLIGHT), XA, D.ESC_YC, 0.0)
     c._put("esc_%s_%s_hi" % (c.spec.id, FLIGHT), XB, D.ESC_YC, D.Z2)

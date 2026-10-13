@@ -31,7 +31,7 @@ def _lights(c):
            + [(x, y) for x in (22.0, 34.0) for y in (16.5, 29.5)]
            + [(x, y) for x in (-18.0, -12.0) for y in (33.0, 37.0)]
            + [(13.0, 32.0), (16.5, 32.0)])
-    skip = (D.CORE_E, D.ESC_VOID, D.STAIR_HOLE)
+    skip = (D.CORE_E, D.CORE_W, D.ESC_VOID, D.STAIR_HOLE)
     c.lights_from([p for p in pts if not _inside_any(p[0], p[1], skip)],
                   D.Z_CEIL - 0.1, energy=440.0, radius=1.6)
     c.lights_from([(x, y) for x in (-2.0, 4.0, 10.0, 14.5) for y in (16.4, 21.0, 25.4)],
