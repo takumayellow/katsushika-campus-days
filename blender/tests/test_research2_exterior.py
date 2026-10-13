@@ -146,3 +146,34 @@ def test_door_is_unchanged(loop):
 
 def test_tris_stay_within_the_budget(built):
     assert 0 < _tris(built) < TRIS_MAX
+
+
+def test_nothing_blocks_the_space_in_front_of_the_doors(campus_data, campus_frame, built, loop):
+    """扉の前の通り道（entrances.corridor）の上 4 m までに、壁も張り出しも無い。
+    外形の線から 0.6 m 以内は、扉の風除室（entrances.py）が壁を置き換えるので数えない。"""
+    ctx = {"entrance": [], "sign": [], "footprints": [], "bg_window_spacing": 2.4}
+    doors = [d for d in entrances.plan(campus_data, campus_frame, ctx) if d["id"] in ("research2", "cafeteria")]
+    assert len(doors) == 2
+    tris = []
+    for f in built.faces:
+        vs = [built.verts[i] for i in f]
+        tris.extend((vs[0], vs[k], vs[k + 1]) for k in range(1, len(vs) - 1))
+    for dr in doors:
+        poly = entrances.corridor(dr)
+        xs, ys = [p[0] for p in poly], [p[1] for p in poly]
+        near = [t for t in tris
+                if max(p[0] for p in t) >= min(xs) and min(p[0] for p in t) <= max(xs)
+                and max(p[1] for p in t) >= min(ys) and min(p[1] for p in t) <= max(ys)]
+        hits = []
+        for i in range(21):
+            for j in range(21):
+                a, b = i / 20, j / 20
+                q = geom.add(geom.add(poly[0], geom.mul(geom.sub(poly[1], poly[0]), a)),
+                             geom.mul(geom.sub(poly[3], poly[0]), b))
+                if not geom.point_in_poly(q, poly):
+                    continue
+                if geom.point_in_poly(q, loop) or geom.dist_point_poly_edges(q, loop) < 0.6:
+                    continue
+                if any(_ray_hits_tri((q[0], q[1], 0.0), (0.0, 0.0, 1.0), *t, 4.0) for t in near):
+                    hits.append((round(q[0], 2), round(q[1], 2)))
+        assert hits == [], dr["id"]

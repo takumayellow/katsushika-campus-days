@@ -5,6 +5,7 @@ import pytest
 import stubs
 from kcd_interior import plan_research2 as L
 from kcd_interior import plan_research2_dims as D
+from kcd_interior import plan_research2_upper as U
 from kcd_interior import registry, signs
 from kcd_interior import spec as ispec
 from kcd_interior.ctx import Ctx
@@ -76,16 +77,83 @@ def test_spawn_exit_and_name_signs(built):
     assert all(r["en"].strip() for r in built.signs)
 
 
+def _in_upper(x, y, z):
+    """上の階の廊下か EV ホールの内面の内（ロビーのローカル、z は床の高さの範囲）。"""
+    cx0, cy0, cx1, cy1 = D.UPPER_CORR
+    hx0, hy0, hx1, hy1 = D.UPPER_EV_HALL
+    hx, hy = x + ispec.LOBBY_DOOR_X, y + L.HOST_Y0
+    z_lo = D.UPPER_FLOORS[0][1]
+    in_corr = cx0 < hx < cx1 and cy0 < hy < cy1
+    in_hall = hx0 < hx < hx1 and hy0 <= hy < hy1
+    return z >= z_lo and (in_corr or in_hall)
+
+
 def test_everything_stands_inside_the_walls(built):
     x0, y0, x1, y1 = built.spec.inner()
+
+    def inside(x, y, z):
+        return (x0 < x < x1 and y0 < y < y1 and z < D.UPPER_FLOORS[0][1]) or _in_upper(x, y, z)
+
     for name, (x, y, z) in built.empties:
-        if name.startswith(("spawn_", "poi_", "npc_")):
-            assert x0 < x < x1 and y0 < y < y1, name
+        if name.startswith(("spawn_", "poi_", "npc_", "ev_", "lamp_")):
+            assert inside(x, y, z), name
     for suffix, loc, _t, _l in built.cams:
         if suffix != "top":
-            assert x0 < loc[0] < x1 and y0 < loc[1] < y1, suffix
-    for x, y, *_ in built.lights:
-        assert x0 < x < x1 and y0 < y < y1
+            assert inside(*loc), suffix
+    for x, y, z, *_ in built.lights:
+        assert inside(x, y, z - 1.0)
+
+
+def test_elevator_stops_on_every_floor(built):
+    pos = dict(built.empties)
+    floors = [("1F", 0.0)] + list(D.UPPER_FLOORS)
+    for name, z in floors:
+        p, f = pos["ev_research2_%s" % name], pos["ev_research2_%s_f" % name]
+        assert p[2] == pytest.approx(z) and f[2] == pytest.approx(z), name
+        # 降りた所は EV の扉の前で、正面は +X（扉を背にする）
+        assert f[0] - p[0] == pytest.approx(1.0) and f[1] == pytest.approx(p[1]), name
+        assert p[0] == pytest.approx(L.EV[2] + U.EV_OUT), name
+        assert L.EV_Y[0] < p[1] < L.EV_Y[1], name
+    assert not any(n.startswith("ev_research2_2F") for n in pos)
+
+
+def test_each_upper_floor_has_its_own_lamps_and_parts(built):
+    names = [n for n, _ in built.empties]
+    meshes = [mb.name for mb in built.builders()]
+    for name, z in D.UPPER_FLOORS:
+        lamps = [p for n, p in built.empties if n.startswith("lamp_research2_%s_" % name)]
+        assert len(lamps) == len(D.UPPER_LAMP_X) + 1, name
+        assert all(p[2] == pytest.approx(z + U.LAMP_DZ) for p in lamps), name
+        key = name.lower()
+        for role in ("floor", "wall"):
+            got = [m for m in meshes if m.startswith("%s_research2_%s_" % (role, key))]
+            assert len(got) == len(U.EDGES) - 1, (role, name)
+    assert len(set(names)) == len(names)
+
+
+def test_upper_floor_walls_close_the_corridor(built):
+    """上の階の外周の壁が、廊下と EV ホールの内面を 4 方から囲む（各階・壁の高さぶん）。"""
+    zn = built.closure_zones
+    assert len(zn) == 1
+    z = zn[0]
+    w = D.UPPER_WALL
+    assert z["x0"] == pytest.approx(L.hx(D.UPPER_CORR[0] - w), abs=1e-3)
+    assert z["x1"] == pytest.approx(L.hx(D.UPPER_CORR[2] + w), abs=1e-3)
+    assert z["y_face"] == pytest.approx(L.hy(D.UPPER_CORR[1] - w), abs=1e-3)
+    assert z["y_back"] == pytest.approx(L.hy(D.UPPER_EV_HALL[3] + w), abs=1e-3)
+    nx0, ny0, nx1, ny1 = z["notch"]
+    assert nx0 == pytest.approx(z["x0"]) and ny1 == pytest.approx(z["y_back"])
+    assert ny0 == pytest.approx(L.hy(D.UPPER_CORR[3] + w), abs=1e-3)
+    assert nx1 == pytest.approx(L.hx(D.UPPER_EV_HALL[0] - w), abs=1e-3)
+    assert z["z_min"] < D.UPPER_FLOORS[0][1] and z["z_max"] > D.UPPER_FLOORS[-1][1]
+    # 上の階の床はロビーの天井より上
+    assert D.UPPER_FLOORS[0][1] - D.SLAB > D.C2
+
+
+def test_upper_floor_signs_name_the_use(built):
+    ja = [r["ja"] for r in built.signs]
+    for name, _z in D.UPPER_FLOORS:
+        assert D.UPPER_USE[name][0] in ja, name
 
 
 def test_no_seats_and_small(built):

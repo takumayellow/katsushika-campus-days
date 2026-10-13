@@ -20,6 +20,11 @@ CORE_RECT = (23.3, 37.3, 31.1, 41.65)
 # 西北西の突き出し（0〜2）は裏方の壁。
 GLASS_EDGES = (3, 4, 5, 6, 7, 8, 9, 10, 12)
 FOOTPRINT_POINTS = 15
+# 外形の頂点（局所 X, Y。spec.md §0）。GLASS_EDGES の辺 index がこの順の辺を指すことを build で照合する
+FOOTPRINT_LOCAL = ((-39.68, 41.26), (-40.71, 44.12), (-45.57, 44.33), (-46.38, 32.65), (-49.45, 32.52),
+                   (-46.15, 25.23), (-40.75, 16.90), (-31.5, 8.49), (-20.2, 4.0), (-18.69, 7.69),
+                   (-8.45, 5.54), (8.36, 6.22), (9.13, 19.11), (31.88, 19.18), (31.78, 41.35))
+FOOTPRINT_TOL = 0.1
 # 屋上機器（局所の中心 X, Y、半幅、半奥行）
 TOWER_ROOF_BOXES = ((-24.0, 24.0, 6.0, 4.0), (10.0, 26.0, 7.0, 3.5))
 ROOF_BOX_H = 3.0
@@ -38,6 +43,9 @@ def _rect(x0, y0, x1, y1):
 def build(mb, b, frame, ctx):
     loop = geom.ensure_ccw(geom.dedup(b["footprint"]))
     assert len(loop) == FOOTPRINT_POINTS, "GLASS_EDGES は campus.json の 15 点の順に対応する"
+    for i, q in enumerate(FOOTPRINT_LOCAL):
+        w = _lw(*q)
+        assert math.hypot(loop[i][0] - w[0], loop[i][1] - w[1]) < FOOTPRINT_TOL,             "外形の頂点 %d が spec.md §0 の位置と合わない。GLASS_EDGES の辺 index を見直す" % i
     h = b["height"]
     lv = b["levels"]
     podium_fh = 4.8

@@ -8,7 +8,8 @@ namespace KCD.Editor
     /// 建物の屋内。Assets/Models/Interiors/&lt;id&gt;.fbx をキャンパスの遠く（x = 1200 m 以降）に横一列に並べ、
     /// 当たり判定・照明・出口・到達判定を付けて InteriorLoader に登録する。
     /// FBX の Empty: spawn_&lt;id&gt;（入った直後の立ち位置）, exit_&lt;id&gt;（出口）, poi_&lt;id&gt;_*（クエストの visit 先）,
-    /// seat_&lt;id&gt;_*（座れる家具。SeatFactory.PlaceInterior が読む）。
+    /// seat_&lt;id&gt;_*（座れる家具。SeatFactory.PlaceInterior が読む）,
+    /// ev_&lt;id&gt;_&lt;階&gt;（エレベーターの乗り場）と lamp_&lt;id&gt;_&lt;階&gt;_*（その階の天井の明かり。InteriorElevatorStage が読む）。
     /// </summary>
     public static class InteriorStage
     {
@@ -87,6 +88,7 @@ namespace KCD.Editor
 
                 AddSafetyFloor(interior.transform, bounds);
                 AddLights(interior.transform, id);
+                int stops = InteriorElevatorStage.Build(interior.transform, id);
                 AddExit(interior.transform, id);
                 int zones = AddPoiZones(interior.transform, id);
                 SeatFactory.PlaceInterior(interior.transform, id);
@@ -96,7 +98,7 @@ namespace KCD.Editor
 
                 EditorPaths.Report("屋内 " + id + ": x " + bounds.min.x.ToString("F0") + ".." + bounds.max.x.ToString("F0")
                     + " z " + bounds.min.z.ToString("F0") + ".." + bounds.max.z.ToString("F0")
-                    + " poi " + zones);
+                    + " poi " + zones + (stops > 0 ? " ev " + stops : string.Empty));
             }
 
             AddOutsideGround(group.transform, FirstSlotX - 200f, cursor + 200f);
@@ -212,7 +214,7 @@ namespace KCD.Editor
 
         /// <summary>
         /// 屋内の明かり。太陽は屋内では消すので、spawn・poi・sign の Empty ごとに暖色の点光源を吊る。
-        /// Forward+ なので 1 物体あたりの光源数は気にしなくてよい。
+        /// lamp_&lt;id&gt;_* は天井の明かりの位置そのもので、間引かずに 1 つずつ吊る（階のある屋内の上の階, #275）。
         /// </summary>
         private static void AddLights(Transform interior, string id)
         {
@@ -224,6 +226,13 @@ namespace KCD.Editor
             foreach (Transform child in interior.GetComponentsInChildren<Transform>(true))
             {
                 string name = child.name;
+                if (name.StartsWith("lamp_" + id + "_"))
+                {
+                    AddLamp(lights.transform, child);
+                    count++;
+                    continue;
+                }
+
                 bool anchor = name == "spawn_" + id
                     || name.StartsWith("poi_" + id + "_")
                     || name.StartsWith("sign_" + id + "_");
@@ -259,6 +268,20 @@ namespace KCD.Editor
                 light.color = new Color(1f, 0.97f, 0.9f);
                 light.shadows = LightShadows.None;
             }
+        }
+
+        /// <summary>天井の明かり 1 つ。届く範囲は中廊下の明かりの間隔（12 m）を少し越えるくらい。</summary>
+        private static void AddLamp(Transform lights, Transform anchor)
+        {
+            var go = new GameObject("Light_" + anchor.name);
+            go.transform.SetParent(lights, false);
+            go.transform.position = anchor.position;
+            Light light = go.AddComponent<Light>();
+            light.type = LightType.Point;
+            light.range = 9f;
+            light.intensity = 1.2f;
+            light.color = new Color(1f, 0.97f, 0.92f);
+            light.shadows = LightShadows.None;
         }
 
         private static bool TooClose(List<Vector3> placed, Vector3 position, float distance)

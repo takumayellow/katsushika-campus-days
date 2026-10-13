@@ -5,6 +5,8 @@ Unity で MeshCollider を個別に付けられるよう、家具は床・壁と
 
     floor_<id>            床スラブ（歩行面）
     wall_<id>             外周壁・間仕切り・天井・階段など躯体
+    floor_<id>_<kind>     床・躯体を階や区画ごとに分けたもの（part()。点光源の数の上限が
+    wall_<id>_<kind>      オブジェクトごとに効くので、長い廊下を 1 つにしない）
     furn_<id>_<nn>_<kind> 家具什器のグループ（nn は 2 桁連番）
 
 座れる家具（ソファ・ベンチ・ラウンジチェア）は家具ヘルパが各 MeshBuilder の
@@ -36,12 +38,14 @@ class Ctx:
         self.floor.seats = []
         self.wall.seats = []
         self.furns = []          # [(name, MeshBuilder)]
+        self.parts = []          # 階や区画ごとの床・躯体（part()）
         self.empties = []        # [(name, (x, y, z))]
         self.lights = []         # [(x, y, z, energy, radius)] プレビュー専用
         self.light_color = None  # プレビューの点光源の色。None なら既定の白寄り
         self.cams = []           # [(suffix, loc, target, lens)]
         self.seats = 0           # 数えた座席数（README 用）
         self.notes = []
+        self.closure_zones = []  # 外周とは別に閉じを測る区画（closure.measure。上の階など）
         self.door_gap = None     # 入口の開口の (x0, x1)。common.envelope が入れる
         self.signs = []          # 文字を貼った看板の記録（signs.wall / signs.hanging が積む）
         self._npc = 0
@@ -56,8 +60,17 @@ class Ctx:
         self.furns.append((name, mb))
         return mb
 
+    def part(self, role, kind):
+        """floor_<id>_<kind> か wall_<id>_<kind> の MeshBuilder。role は "floor" か "wall"。"""
+        if role not in ("floor", "wall"):
+            raise ValueError("role は floor か wall: %r" % (role,))
+        mb = MeshBuilder("%s_%s_%s" % (role, self.spec.id, kind))
+        mb.seats = []
+        self.parts.append(mb)
+        return mb
+
     def builders(self):
-        return [self.floor, self.wall] + [mb for _, mb in self.furns]
+        return [self.floor, self.wall] + self.parts + [mb for _, mb in self.furns]
 
     def tris(self):
         n = 0
