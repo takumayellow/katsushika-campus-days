@@ -138,10 +138,10 @@ def _seg_dist(p, a, b):
     return math.dist(p, geom.add(a, geom.mul(ab, t)))
 
 
-def test_door_is_unchanged(loop):
+def test_doors_are_on_the_south_and_east_faces(loop):
     doors = [d for d in entrances.DOORS if d[0] in ("research2", "cafeteria")]
     assert doors == [("cafeteria", (14.5, -22.0), (0.0, 1.0), "loop", +1, 3.4, entrances.STANDARD),
-                     ("research2", (40.9, -22.0), (0.0, 1.0), "loop", -1, 3.4, entrances.STANDARD)]
+                     ("research2", (50.5, 15.1509), (-1.0, 0.0), "loop", -1, 3.4, entrances.STANDARD)]
 
 
 def test_tris_stay_within_the_budget(built):
