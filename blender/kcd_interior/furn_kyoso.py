@@ -81,6 +81,14 @@ def deck(mb, x0, y0, x1, y1, tiers=3, rise=0.2, run=0.6):
                 "kyoso_steel_black", top="kyoso_floor_wood_oak")
 
 
+def deck_all(mb, x0, y0, x1, y1, tiers=3, rise=0.2, run=0.5):
+    """四方へ下りる段床。k 段目は四辺を run * k ずつ内へ寄せる。踏面はオーク、蹴込みは黒。"""
+    for k in range(tiers):
+        d = run * k
+        kit.box(mb, x0 + d, y0 + d, rise * k, x1 - d, y1 - d, rise * (k + 1),
+                "kyoso_steel_black", top="kyoso_floor_wood_oak")
+
+
 def box_bench(mb, x0, y0, x1, y1, z=0.0, h=0.42, mat="kyoso_sofa_grey"):
     kit.box(mb, x0, y0, z, x1, y1, z + h, mat, top=mat)
 
