@@ -69,6 +69,12 @@ namespace KCD.Editor
         /// </summary>
         public const float GroundY = (ExteriorGroundLowest + CampusStage.OuterGroundY) * 0.5f;
 
+        /// <summary>
+        /// 掘り下げた部屋の下に張るドームの受け皿の、部屋の床と壁からの離れ（m）。受け皿は部屋の壁の外と床の下に
+        /// 隠れ、部屋の面と重ならない（重なるとちらつく）。
+        /// </summary>
+        public const float PitBasinGap = 0.05f;
+
         /// <summary>パノラマの下端を決める距離の下限（m）。小さな建物で真下まで撮らないように。</summary>
         public const float MinGroundReach = 6f;
 
@@ -148,8 +154,11 @@ namespace KCD.Editor
         /// 屋内 1 棟に遠景を置く。bounds は屋内のワールドの AABB（スロットへずらしたあと）。
         /// 屋内のローカル座標（= ワールド − 屋内の原点）は Blender の (x, y) で、サイドカー
         /// Assets/Models/Interiors/&lt;id&gt;.json の entrance_world / yaw_deg でキャンパスへ写せる。
+        /// pits は 1F の床より下まで掘り下げた部屋の範囲（世界の xz）、pitFloor はそのいちばん深い床の世界の高さ。
+        /// ドームの地面はそこを抜き、代わりに部屋の下へ受け皿を張って閉じる。
         /// </summary>
-        public static InteriorBackdrop Build(Transform interior, string id, Bounds bounds)
+        public static InteriorBackdrop Build(
+            Transform interior, string id, Bounds bounds, IList<Rect> pits = null, float pitFloor = 0f)
         {
             if (!ReadSidecar(id, out Vector2 entrance, out float yaw))
             {
@@ -173,7 +182,19 @@ namespace KCD.Editor
             };
 
             EditorPaths.EnsureFolder(Folder);
-            DomeShape dome = BuildDome(halfX, halfZ, rig.TanBottom, rig.TanTop);
+            var localPits = new List<Rect>();
+            if (pits != null)
+            {
+                foreach (Rect pit in pits)
+                {
+                    localPits.Add(Rect.MinMaxRect(
+                        pit.xMin - centre.x - PitBasinGap, pit.yMin - centre.z - PitBasinGap,
+                        pit.xMax - centre.x + PitBasinGap, pit.yMax - centre.z + PitBasinGap));
+                }
+            }
+
+            float basinY = pitFloor - centre.y - PitBasinGap;
+            DomeShape dome = BuildDome(halfX, halfZ, rig.TanBottom, rig.TanTop, localPits, basinY);
             Mesh mesh = SaveMesh(dome.Mesh, Folder + "/" + id + "_dome.asset");
             string source;
             Texture2D texture = EnsureTexture(rig, out source);
@@ -344,8 +365,11 @@ namespace KCD.Editor
         /// 閉じたドーム（ローカル原点 = 屋内の中心の床面）。u = 方位 atan2(x, z) / 2π、
         /// v は中心の目（GroundY + EyeHeight）から見た tan(仰角) をパノラマの下端〜上端に割り当てたもの。
         /// 地面の円盤は建物の外周から帯の足もとまで輪で刻み、外周より内側は床の下なので 1 枚の扇でふさぐ。
+        /// 掘り下げた部屋（pits。ドームのローカルの xz）があれば、扇の代わりにその範囲を抜いた長方形のタイルでふさぎ、
+        /// 抜いた所には高さ basinY を底にした受け皿を張る（穴から下へ見た目線もドームに当たる）。
         /// </summary>
-        private static DomeShape BuildDome(float halfX, float halfZ, float tanBottom, float tanTop)
+        private static DomeShape BuildDome(
+            float halfX, float halfZ, float tanBottom, float tanTop, IList<Rect> pits, float basinY)
         {
             float eyeY = GroundY + EyeHeight;
             int ring = Columns + 1;
@@ -406,16 +430,43 @@ namespace KCD.Editor
                 Quad(triangles, footStart + i, topStart + i, topStart + i + 1, footStart + i + 1);
             }
 
+            if (pits.Count > 0)
+            {
+                // 外周より内側は床の下で見えないので、u は 1 つにそろえる。
+                Mesh tiles = GroundTiles.BuildMesh(
+                    GroundTiles.Subtract(Rect.MinMaxRect(-halfX, -halfZ, halfX, halfZ), pits), GroundY, Vector3.zero, "tiles");
+                int start = vertices.Count;
+                vertices.AddRange(tiles.vertices);
+                foreach (Vector3 _ in tiles.vertices)
+                {
+                    uvs.Add(new Vector2(0.5f, 0f));
+                }
+
+                foreach (int t in tiles.triangles)
+                {
+                    triangles.Add(start + t);
+                }
+
+                Object.DestroyImmediate(tiles);
+                foreach (Rect pit in pits)
+                {
+                    AddBasin(vertices, uvs, triangles, pit, basinY);
+                }
+            }
+
             // 外周より内側（床の下）の扇と、上のふた。中心の頂点は u をそろえるため三角形ごとに持つ。
             for (int i = 0; i < Columns; i++)
             {
                 float u = (i + 0.5f) / Columns;
-                int centre = vertices.Count;
-                vertices.Add(new Vector3(0f, GroundY, 0f));
-                uvs.Add(new Vector2(u, 0f));
-                triangles.Add(centre);
-                triangles.Add(i);
-                triangles.Add(i + 1);
+                if (pits.Count == 0)
+                {
+                    int centre = vertices.Count;
+                    vertices.Add(new Vector3(0f, GroundY, 0f));
+                    uvs.Add(new Vector2(u, 0f));
+                    triangles.Add(centre);
+                    triangles.Add(i);
+                    triangles.Add(i + 1);
+                }
 
                 int apex = vertices.Count;
                 vertices.Add(new Vector3(0f, shape.MaxTop, 0f));
@@ -433,6 +484,36 @@ namespace KCD.Editor
             mesh.RecalculateBounds();
             shape.Mesh = mesh;
             return shape;
+        }
+
+        /// <summary>穴 pit の下の受け皿（底と 4 枚の壁）。ドームは両面を描くので向きはそろえるだけ。</summary>
+        private static void AddBasin(List<Vector3> vertices, List<Vector2> uvs, List<int> triangles, Rect pit, float basinY)
+        {
+            var corners = new[]
+            {
+                new Vector2(pit.xMin, pit.yMin), new Vector2(pit.xMin, pit.yMax),
+                new Vector2(pit.xMax, pit.yMax), new Vector2(pit.xMax, pit.yMin),
+            };
+            int bottom = vertices.Count;
+            foreach (Vector2 c in corners)
+            {
+                vertices.Add(new Vector3(c.x, basinY, c.y));
+                uvs.Add(new Vector2(0.5f, 0f));
+            }
+
+            int top = vertices.Count;
+            foreach (Vector2 c in corners)
+            {
+                vertices.Add(new Vector3(c.x, GroundY, c.y));
+                uvs.Add(new Vector2(0.5f, 0f));
+            }
+
+            Quad(triangles, bottom, bottom + 1, bottom + 2, bottom + 3);
+            for (int i = 0; i < 4; i++)
+            {
+                int j = (i + 1) % 4;
+                Quad(triangles, bottom + i, top + i, top + j, bottom + j);
+            }
         }
 
         private static void Quad(List<int> triangles, int a, int b, int c, int d)
