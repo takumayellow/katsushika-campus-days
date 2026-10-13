@@ -140,110 +140,460 @@
    "y": 11.4,
    "z": 33.4
   },
+  "lamp_lecture_4F_1": {
+   "x": -12.0,
+   "y": 15.6,
+   "z": 21.65
+  },
+  "lamp_lecture_4F_2": {
+   "x": -12.0,
+   "y": 15.6,
+   "z": 33.3
+  },
+  "lamp_lecture_4F_3": {
+   "x": 0.0,
+   "y": 15.6,
+   "z": 21.65
+  },
+  "lamp_lecture_4F_4": {
+   "x": 0.0,
+   "y": 15.6,
+   "z": 33.3
+  },
+  "lamp_lecture_4F_5": {
+   "x": 12.0,
+   "y": 15.6,
+   "z": 21.65
+  },
+  "lamp_lecture_4F_6": {
+   "x": 12.0,
+   "y": 15.6,
+   "z": 33.3
+  },
+  "lamp_lecture_4F_7": {
+   "x": 28.0,
+   "y": 15.6,
+   "z": 21.65
+  },
+  "lamp_lecture_4F_8": {
+   "x": 28.0,
+   "y": 15.6,
+   "z": 33.3
+  },
+  "lamp_lecture_4F_9": {
+   "x": -24.8,
+   "y": 15.6,
+   "z": 27.5
+  },
+  "lamp_lecture_5F_1": {
+   "x": -12.0,
+   "y": 19.8,
+   "z": 21.65
+  },
+  "lamp_lecture_5F_2": {
+   "x": -12.0,
+   "y": 19.8,
+   "z": 33.3
+  },
+  "lamp_lecture_5F_3": {
+   "x": 0.0,
+   "y": 19.8,
+   "z": 21.65
+  },
+  "lamp_lecture_5F_4": {
+   "x": 0.0,
+   "y": 19.8,
+   "z": 33.3
+  },
+  "lamp_lecture_5F_5": {
+   "x": 12.0,
+   "y": 19.8,
+   "z": 21.65
+  },
+  "lamp_lecture_5F_6": {
+   "x": 12.0,
+   "y": 19.8,
+   "z": 33.3
+  },
+  "lamp_lecture_5F_7": {
+   "x": 28.0,
+   "y": 19.8,
+   "z": 21.65
+  },
+  "lamp_lecture_5F_8": {
+   "x": 28.0,
+   "y": 19.8,
+   "z": 33.3
+  },
+  "lamp_lecture_5F_9": {
+   "x": -24.8,
+   "y": 19.8,
+   "z": 27.5
+  },
+  "lamp_lecture_6F_1": {
+   "x": -12.0,
+   "y": 24.0,
+   "z": 21.65
+  },
+  "lamp_lecture_6F_2": {
+   "x": -12.0,
+   "y": 24.0,
+   "z": 33.3
+  },
+  "lamp_lecture_6F_3": {
+   "x": 0.0,
+   "y": 24.0,
+   "z": 21.65
+  },
+  "lamp_lecture_6F_4": {
+   "x": 0.0,
+   "y": 24.0,
+   "z": 33.3
+  },
+  "lamp_lecture_6F_5": {
+   "x": 12.0,
+   "y": 24.0,
+   "z": 21.65
+  },
+  "lamp_lecture_6F_6": {
+   "x": 12.0,
+   "y": 24.0,
+   "z": 33.3
+  },
+  "lamp_lecture_6F_7": {
+   "x": 28.0,
+   "y": 24.0,
+   "z": 21.65
+  },
+  "lamp_lecture_6F_8": {
+   "x": 28.0,
+   "y": 24.0,
+   "z": 33.3
+  },
+  "lamp_lecture_6F_9": {
+   "x": -24.8,
+   "y": 24.0,
+   "z": 27.5
+  },
+  "lamp_lecture_7F_1": {
+   "x": -12.0,
+   "y": 28.2,
+   "z": 21.65
+  },
+  "lamp_lecture_7F_2": {
+   "x": -12.0,
+   "y": 28.2,
+   "z": 33.3
+  },
+  "lamp_lecture_7F_3": {
+   "x": 0.0,
+   "y": 28.2,
+   "z": 21.65
+  },
+  "lamp_lecture_7F_4": {
+   "x": 0.0,
+   "y": 28.2,
+   "z": 33.3
+  },
+  "lamp_lecture_7F_5": {
+   "x": 12.0,
+   "y": 28.2,
+   "z": 21.65
+  },
+  "lamp_lecture_7F_6": {
+   "x": 12.0,
+   "y": 28.2,
+   "z": 33.3
+  },
+  "lamp_lecture_7F_7": {
+   "x": 28.0,
+   "y": 28.2,
+   "z": 21.65
+  },
+  "lamp_lecture_7F_8": {
+   "x": 28.0,
+   "y": 28.2,
+   "z": 33.3
+  },
+  "lamp_lecture_7F_9": {
+   "x": -24.8,
+   "y": 28.2,
+   "z": 27.5
+  },
   "lamp_lecture_2F_11": {
-   "x": -23.97,
+   "x": -24.0,
    "y": 7.2,
    "z": 10.3
   },
   "lamp_lecture_2F_12": {
-   "x": -15.31,
+   "x": -12.0,
    "y": 7.2,
    "z": 10.3
   },
   "lamp_lecture_2F_13": {
-   "x": -6.41,
+   "x": 0.0,
    "y": 7.2,
    "z": 10.3
   },
   "lamp_lecture_2F_14": {
-   "x": 2.41,
+   "x": 12.0,
    "y": 7.2,
    "z": 10.3
   },
   "lamp_lecture_2F_15": {
-   "x": 12.31,
-   "y": 7.2,
-   "z": 10.3
-  },
-  "lamp_lecture_2F_16": {
-   "x": 22.97,
+   "x": 24.0,
    "y": 7.2,
    "z": 10.3
   },
   "lamp_lecture_3F_11": {
-   "x": -23.09,
+   "x": -24.0,
    "y": 11.4,
    "z": 10.3
   },
   "lamp_lecture_3F_12": {
-   "x": -14.185,
+   "x": -12.0,
    "y": 11.4,
    "z": 10.3
   },
   "lamp_lecture_3F_13": {
-   "x": -7.115,
+   "x": 0.0,
    "y": 11.4,
    "z": 10.3
   },
   "lamp_lecture_3F_14": {
-   "x": 1.9,
+   "x": 12.0,
    "y": 11.4,
    "z": 10.3
   },
   "lamp_lecture_3F_15": {
-   "x": 10.965,
+   "x": 24.0,
    "y": 11.4,
    "z": 10.3
   },
   "lamp_lecture_3F_16": {
-   "x": 18.135,
+   "x": -24.0,
    "y": 11.4,
-   "z": 10.3
+   "z": 44.6
   },
   "lamp_lecture_3F_17": {
-   "x": 25.09,
+   "x": -12.0,
    "y": 11.4,
-   "z": 10.3
+   "z": 44.6
   },
   "lamp_lecture_3F_18": {
-   "x": -23.09,
+   "x": 0.0,
    "y": 11.4,
    "z": 44.6
   },
   "lamp_lecture_3F_19": {
-   "x": -14.185,
+   "x": 12.0,
    "y": 11.4,
    "z": 44.6
   },
   "lamp_lecture_3F_20": {
-   "x": -7.115,
+   "x": 24.0,
    "y": 11.4,
    "z": 44.6
   },
-  "lamp_lecture_3F_21": {
-   "x": 1.9,
-   "y": 11.4,
-   "z": 44.6
+  "lamp_lecture_4F_10": {
+   "x": 12.0,
+   "y": 15.6,
+   "z": 10.3
   },
-  "lamp_lecture_3F_22": {
-   "x": 10.8,
-   "y": 11.4,
-   "z": 44.6
-  },
-  "lamp_lecture_3F_23": {
+  "lamp_lecture_4F_11": {
    "x": 17.8,
-   "y": 11.4,
+   "y": 15.6,
    "z": 44.6
   },
-  "lamp_lecture_3F_24": {
-   "x": 24.94,
-   "y": 11.4,
+  "lamp_lecture_5F_10": {
+   "x": 12.0,
+   "y": 19.8,
+   "z": 10.3
+  },
+  "lamp_lecture_5F_11": {
+   "x": 12.0,
+   "y": 19.8,
    "z": 44.6
   },
-  "lamp_lecture_3F_25": {
-   "x": 32.06,
-   "y": 11.4,
+  "lamp_lecture_6F_10": {
+   "x": 12.0,
+   "y": 24.0,
+   "z": 10.3
+  },
+  "lamp_lecture_6F_11": {
+   "x": 17.8,
+   "y": 24.0,
    "z": 44.6
+  },
+  "esc_lecture_south_1f_lo": {
+   "x": 22.426,
+   "y": 0.0,
+   "z": 26.5
+  },
+  "esc_lecture_south_1f_hi": {
+   "x": 30.426,
+   "y": 4.6,
+   "z": 26.5
+  },
+  "esc_lecture_south_2f_lo": {
+   "x": 22.41,
+   "y": 4.6,
+   "z": 26.5
+  },
+  "esc_lecture_south_2f_hi": {
+   "x": 30.41,
+   "y": 8.8,
+   "z": 26.5
+  },
+  "esc_lecture_south_3f_lo": {
+   "x": 22.41,
+   "y": 8.8,
+   "z": 26.5
+  },
+  "esc_lecture_south_3f_hi": {
+   "x": 30.41,
+   "y": 13.0,
+   "z": 26.5
+  },
+  "esc_lecture_south_4f_lo": {
+   "x": 22.41,
+   "y": 13.0,
+   "z": 26.5
+  },
+  "esc_lecture_south_4f_hi": {
+   "x": 30.41,
+   "y": 17.2,
+   "z": 26.5
+  },
+  "esc_lecture_south_5f_lo": {
+   "x": 22.41,
+   "y": 17.2,
+   "z": 26.5
+  },
+  "esc_lecture_south_5f_hi": {
+   "x": 30.41,
+   "y": 21.4,
+   "z": 26.5
+  },
+  "esc_lecture_north_1f_lo": {
+   "x": 30.774,
+   "y": 0.0,
+   "z": 28.5
+  },
+  "esc_lecture_north_1f_hi": {
+   "x": 22.774,
+   "y": 4.6,
+   "z": 28.5
+  },
+  "esc_lecture_north_2f_lo": {
+   "x": 30.79,
+   "y": 4.6,
+   "z": 28.5
+  },
+  "esc_lecture_north_2f_hi": {
+   "x": 22.79,
+   "y": 8.8,
+   "z": 28.5
+  },
+  "esc_lecture_north_3f_lo": {
+   "x": 30.79,
+   "y": 8.8,
+   "z": 28.5
+  },
+  "esc_lecture_north_3f_hi": {
+   "x": 22.79,
+   "y": 13.0,
+   "z": 28.5
+  },
+  "esc_lecture_north_4f_lo": {
+   "x": 30.79,
+   "y": 13.0,
+   "z": 28.5
+  },
+  "esc_lecture_north_4f_hi": {
+   "x": 22.79,
+   "y": 17.2,
+   "z": 28.5
+  },
+  "esc_lecture_north_5f_lo": {
+   "x": 30.79,
+   "y": 17.2,
+   "z": 28.5
+  },
+  "esc_lecture_north_5f_hi": {
+   "x": 22.79,
+   "y": 21.4,
+   "z": 28.5
+  },
+  "ev_lecture_1F": {
+   "x": -22.4,
+   "y": 0.0,
+   "z": 27.5
+  },
+  "ev_lecture_1F_f": {
+   "x": -23.4,
+   "y": 0.0,
+   "z": 27.5
+  },
+  "ev_lecture_2F": {
+   "x": -22.4,
+   "y": 4.6,
+   "z": 27.5
+  },
+  "ev_lecture_2F_f": {
+   "x": -23.4,
+   "y": 4.6,
+   "z": 27.5
+  },
+  "ev_lecture_3F": {
+   "x": -22.4,
+   "y": 8.8,
+   "z": 27.5
+  },
+  "ev_lecture_3F_f": {
+   "x": -23.4,
+   "y": 8.8,
+   "z": 27.5
+  },
+  "ev_lecture_4F": {
+   "x": -22.4,
+   "y": 13.0,
+   "z": 27.5
+  },
+  "ev_lecture_4F_f": {
+   "x": -23.4,
+   "y": 13.0,
+   "z": 27.5
+  },
+  "ev_lecture_5F": {
+   "x": -22.4,
+   "y": 17.2,
+   "z": 27.5
+  },
+  "ev_lecture_5F_f": {
+   "x": -23.4,
+   "y": 17.2,
+   "z": 27.5
+  },
+  "ev_lecture_6F": {
+   "x": -22.4,
+   "y": 21.4,
+   "z": 27.5
+  },
+  "ev_lecture_6F_f": {
+   "x": -23.4,
+   "y": 21.4,
+   "z": 27.5
+  },
+  "ev_lecture_7F": {
+   "x": -22.4,
+   "y": 25.6,
+   "z": 27.5
+  },
+  "ev_lecture_7F_f": {
+   "x": -23.4,
+   "y": 25.6,
+   "z": 27.5
   },
   "sign_lecture_1": {
    "x": 9.0,
@@ -261,9 +611,9 @@
    "z": 27.5
   },
   "sign_lecture_4": {
-   "x": -17.6,
+   "x": -21.01,
    "y": 2.4,
-   "z": 23.49
+   "z": 27.5
   },
   "sign_lecture_5": {
    "x": -7.8,
@@ -524,12 +874,162 @@
    "x": 41.5,
    "y": 8.8,
    "z": 31.0
+  },
+  "seat_lecture_01": {
+   "x": 14.805,
+   "y": 8.8,
+   "z": 40.5
+  },
+  "seat_lecture_01_f": {
+   "x": 15.23,
+   "y": 8.8,
+   "z": 40.5
+  },
+  "seat_lecture_01_s": {
+   "x": 14.805,
+   "y": 8.8,
+   "z": 39.5
+  },
+  "seat_lecture_01_a0": {
+   "x": 15.01,
+   "y": 8.8,
+   "z": 40.93
+  },
+  "seat_lecture_01_a1": {
+   "x": 15.01,
+   "y": 8.8,
+   "z": 40.07
+  },
+  "seat_lecture_02": {
+   "x": 14.805,
+   "y": 8.8,
+   "z": 43.5
+  },
+  "seat_lecture_02_f": {
+   "x": 15.23,
+   "y": 8.8,
+   "z": 43.5
+  },
+  "seat_lecture_02_s": {
+   "x": 14.805,
+   "y": 8.8,
+   "z": 42.5
+  },
+  "seat_lecture_02_a0": {
+   "x": 15.01,
+   "y": 8.8,
+   "z": 43.93
+  },
+  "seat_lecture_02_a1": {
+   "x": 15.01,
+   "y": 8.8,
+   "z": 43.07
+  },
+  "seat_lecture_03": {
+   "x": 14.805,
+   "y": 8.8,
+   "z": 46.5
+  },
+  "seat_lecture_03_f": {
+   "x": 15.23,
+   "y": 8.8,
+   "z": 46.5
+  },
+  "seat_lecture_03_s": {
+   "x": 14.805,
+   "y": 8.8,
+   "z": 45.5
+  },
+  "seat_lecture_03_a0": {
+   "x": 15.01,
+   "y": 8.8,
+   "z": 46.93
+  },
+  "seat_lecture_03_a1": {
+   "x": 15.01,
+   "y": 8.8,
+   "z": 46.07
+  },
+  "seat_lecture_04": {
+   "x": 21.805,
+   "y": 8.8,
+   "z": 40.5
+  },
+  "seat_lecture_04_f": {
+   "x": 22.23,
+   "y": 8.8,
+   "z": 40.5
+  },
+  "seat_lecture_04_s": {
+   "x": 21.805,
+   "y": 8.8,
+   "z": 39.5
+  },
+  "seat_lecture_04_a0": {
+   "x": 22.01,
+   "y": 8.8,
+   "z": 40.93
+  },
+  "seat_lecture_04_a1": {
+   "x": 22.01,
+   "y": 8.8,
+   "z": 40.07
+  },
+  "seat_lecture_05": {
+   "x": 21.805,
+   "y": 8.8,
+   "z": 43.5
+  },
+  "seat_lecture_05_f": {
+   "x": 22.23,
+   "y": 8.8,
+   "z": 43.5
+  },
+  "seat_lecture_05_s": {
+   "x": 21.805,
+   "y": 8.8,
+   "z": 42.5
+  },
+  "seat_lecture_05_a0": {
+   "x": 22.01,
+   "y": 8.8,
+   "z": 43.93
+  },
+  "seat_lecture_05_a1": {
+   "x": 22.01,
+   "y": 8.8,
+   "z": 43.07
+  },
+  "seat_lecture_06": {
+   "x": 21.805,
+   "y": 8.8,
+   "z": 46.5
+  },
+  "seat_lecture_06_f": {
+   "x": 22.23,
+   "y": 8.8,
+   "z": 46.5
+  },
+  "seat_lecture_06_s": {
+   "x": 21.805,
+   "y": 8.8,
+   "z": 45.5
+  },
+  "seat_lecture_06_a0": {
+   "x": 22.01,
+   "y": 8.8,
+   "z": 46.93
+  },
+  "seat_lecture_06_a1": {
+   "x": 22.01,
+   "y": 8.8,
+   "z": 46.07
   }
  },
- "triangles": 77755,
+ "triangles": 121172,
  "seats": 270,
  "notes": [
-  "中廊下・黒いコア・入口ロビー・6 層の吹き抜け・101 の 270 席の段床・2F/3F の教室 14 室"
+  "中廊下・黒いコア・入口ロビー・6 層の吹き抜け・101 の 270 席の段床・2F〜7F の廊下と教室 20 室・1F→6F のエスカレータ・1F〜7F の EV"
  ],
  "objects": [
   "floor_lecture",
@@ -576,34 +1076,278 @@
   "wall_lecture_corr3f_c2",
   "wall_lecture_corr3f_c1",
   "wall_lecture_corr3f_c4",
-  "wall_lecture_r203",
+  "floor_lecture_corr4f_0",
+  "floor_lecture_corr4f_s1",
+  "floor_lecture_corr4f_n1",
+  "floor_lecture_corr4f_s2",
+  "floor_lecture_corr4f_n2",
+  "floor_lecture_corr4f_s3",
+  "floor_lecture_corr4f_n3",
+  "wall_lecture_corr4f_0",
+  "wall_lecture_corr4f_s1",
+  "wall_lecture_corr4f_n1",
+  "wall_lecture_corr4f_s2",
+  "wall_lecture_corr4f_n2",
+  "wall_lecture_corr4f_s3",
+  "wall_lecture_corr4f_n3",
+  "wall_lecture_corr4f_s4",
+  "wall_lecture_corr4f_s5",
+  "wall_lecture_corr4f_n4",
+  "wall_lecture_corr4f_n5",
+  "wall_lecture_corr4f_c2",
+  "wall_lecture_corr4f_c1",
+  "wall_lecture_corr4f_c4",
+  "wall_lecture_corr4f_c5",
+  "floor_lecture_seev4f",
+  "wall_lecture_seev4f",
+  "floor_lecture_corr5f_0",
+  "floor_lecture_corr5f_s1",
+  "floor_lecture_corr5f_n1",
+  "floor_lecture_corr5f_s2",
+  "floor_lecture_corr5f_n2",
+  "floor_lecture_corr5f_s3",
+  "floor_lecture_corr5f_n3",
+  "wall_lecture_corr5f_0",
+  "wall_lecture_corr5f_s1",
+  "wall_lecture_corr5f_n1",
+  "wall_lecture_corr5f_s2",
+  "wall_lecture_corr5f_n2",
+  "wall_lecture_corr5f_s3",
+  "wall_lecture_corr5f_n3",
+  "wall_lecture_corr5f_s4",
+  "wall_lecture_corr5f_s5",
+  "wall_lecture_corr5f_n4",
+  "wall_lecture_corr5f_n5",
+  "wall_lecture_corr5f_c2",
+  "wall_lecture_corr5f_c1",
+  "wall_lecture_corr5f_c4",
+  "wall_lecture_corr5f_c5",
+  "floor_lecture_seev5f",
+  "wall_lecture_seev5f",
+  "floor_lecture_corr6f_0",
+  "floor_lecture_corr6f_s1",
+  "floor_lecture_corr6f_n1",
+  "floor_lecture_corr6f_s2",
+  "floor_lecture_corr6f_n2",
+  "floor_lecture_corr6f_s3",
+  "floor_lecture_corr6f_n3",
+  "wall_lecture_corr6f_0",
+  "wall_lecture_corr6f_s1",
+  "wall_lecture_corr6f_n1",
+  "wall_lecture_corr6f_s2",
+  "wall_lecture_corr6f_n2",
+  "wall_lecture_corr6f_s3",
+  "wall_lecture_corr6f_n3",
+  "wall_lecture_corr6f_s4",
+  "wall_lecture_corr6f_s5",
+  "wall_lecture_corr6f_n4",
+  "wall_lecture_corr6f_n5",
+  "wall_lecture_corr6f_c2",
+  "wall_lecture_corr6f_c1",
+  "wall_lecture_corr6f_c4",
+  "wall_lecture_corr6f_c5",
+  "floor_lecture_seev6f",
+  "wall_lecture_seev6f",
+  "floor_lecture_corr7f_0",
+  "floor_lecture_corr7f_s1",
+  "floor_lecture_corr7f_n1",
+  "floor_lecture_corr7f_s2",
+  "floor_lecture_corr7f_n2",
+  "floor_lecture_corr7f_s3",
+  "floor_lecture_corr7f_n3",
+  "floor_lecture_corr7f_c2",
+  "wall_lecture_corr7f_0",
+  "wall_lecture_corr7f_s1",
+  "wall_lecture_corr7f_n1",
+  "wall_lecture_corr7f_s2",
+  "wall_lecture_corr7f_n2",
+  "wall_lecture_corr7f_s3",
+  "wall_lecture_corr7f_n3",
+  "wall_lecture_corr7f_c2",
+  "wall_lecture_corr7f_s4",
+  "wall_lecture_corr7f_s5",
+  "wall_lecture_corr7f_n4",
+  "wall_lecture_corr7f_n5",
+  "wall_lecture_corr7f_c1",
+  "wall_lecture_corr7f_c4",
+  "wall_lecture_corr7f_c5",
+  "floor_lecture_seev7f",
+  "wall_lecture_seev7f",
+  "floor_lecture_corr2f_s4",
+  "floor_lecture_corr2f_s5",
+  "floor_lecture_corr2f_c4",
+  "floor_lecture_corr2f_c5",
+  "floor_lecture_corr2f_n4",
+  "floor_lecture_corr2f_n5",
+  "wall_lecture_corr2f_c5",
+  "floor_lecture_corr3f_s4",
+  "floor_lecture_corr3f_s5",
+  "floor_lecture_corr3f_c4",
+  "floor_lecture_corr3f_c5",
+  "floor_lecture_corr3f_n4",
+  "floor_lecture_corr3f_n5",
+  "wall_lecture_corr3f_c5",
+  "floor_lecture_corr4f_s4",
+  "floor_lecture_corr4f_s5",
+  "floor_lecture_corr4f_c4",
+  "floor_lecture_corr4f_c5",
+  "floor_lecture_corr4f_n4",
+  "floor_lecture_corr4f_n5",
+  "floor_lecture_corr5f_s4",
+  "floor_lecture_corr5f_s5",
+  "floor_lecture_corr5f_c4",
+  "floor_lecture_corr5f_c5",
+  "floor_lecture_corr5f_n4",
+  "floor_lecture_corr5f_n5",
+  "floor_lecture_corr6f_s4",
+  "floor_lecture_corr6f_s5",
+  "floor_lecture_corr6f_c4",
+  "floor_lecture_corr6f_c5",
+  "floor_lecture_corr6f_n4",
+  "floor_lecture_corr6f_n5",
+  "floor_lecture_corr7f_s4",
+  "floor_lecture_corr7f_s5",
+  "floor_lecture_corr7f_c5",
+  "floor_lecture_corr7f_n4",
+  "floor_lecture_corr7f_n5",
   "floor_lecture_r203",
-  "wall_lecture_r202",
+  "floor_lecture_r203_1",
+  "floor_lecture_r203_2",
+  "floor_lecture_r203_3",
+  "wall_lecture_r203",
+  "wall_lecture_r203_1",
+  "wall_lecture_r203_2",
+  "wall_lecture_r203_3",
   "floor_lecture_r202",
-  "wall_lecture_r201",
+  "floor_lecture_r202_3",
+  "floor_lecture_r202_4",
+  "wall_lecture_r202",
+  "wall_lecture_r202_3",
+  "wall_lecture_r202_4",
   "floor_lecture_r201",
-  "wall_lecture_r305",
+  "floor_lecture_r201_4",
+  "floor_lecture_r201_5",
+  "floor_lecture_r201_6",
+  "wall_lecture_r201",
+  "wall_lecture_r201_4",
+  "wall_lecture_r201_5",
+  "wall_lecture_r201_6",
   "floor_lecture_r305",
-  "wall_lecture_r304",
+  "floor_lecture_r305_1",
+  "floor_lecture_r305_2",
+  "wall_lecture_r305",
+  "wall_lecture_r305_1",
+  "wall_lecture_r305_2",
   "floor_lecture_r304",
-  "wall_lecture_r303",
+  "floor_lecture_r304_2",
+  "floor_lecture_r304_3",
+  "wall_lecture_r304",
+  "wall_lecture_r304_2",
+  "wall_lecture_r304_3",
   "floor_lecture_r303",
-  "wall_lecture_r302",
+  "floor_lecture_r303_3",
+  "floor_lecture_r303_4",
+  "wall_lecture_r303",
+  "wall_lecture_r303_3",
+  "wall_lecture_r303_4",
   "floor_lecture_r302",
-  "wall_lecture_r301",
+  "floor_lecture_r302_4",
+  "floor_lecture_r302_5",
+  "wall_lecture_r302",
+  "wall_lecture_r302_4",
+  "wall_lecture_r302_5",
   "floor_lecture_r301",
-  "wall_lecture_r306",
+  "floor_lecture_r301_5",
+  "floor_lecture_r301_6",
+  "wall_lecture_r301",
+  "wall_lecture_r301_5",
+  "wall_lecture_r301_6",
+  "floor_lecture_r306_1",
+  "floor_lecture_r306_2",
   "floor_lecture_r306",
-  "wall_lecture_r307",
+  "wall_lecture_r306_1",
+  "wall_lecture_r306_2",
+  "wall_lecture_r306",
+  "floor_lecture_r307_2",
+  "floor_lecture_r307_3",
   "floor_lecture_r307",
-  "wall_lecture_r308",
+  "wall_lecture_r307_2",
+  "wall_lecture_r307_3",
+  "wall_lecture_r307",
+  "floor_lecture_r308_3",
+  "floor_lecture_r308_4",
   "floor_lecture_r308",
-  "wall_lecture_r309",
+  "wall_lecture_r308_3",
+  "wall_lecture_r308_4",
+  "wall_lecture_r308",
+  "floor_lecture_r309_4",
+  "floor_lecture_r309_5",
   "floor_lecture_r309",
-  "wall_lecture_r310",
+  "wall_lecture_r309_4",
+  "wall_lecture_r309_5",
+  "wall_lecture_r309",
+  "floor_lecture_r310_5",
   "floor_lecture_r310",
-  "wall_lecture_r311",
+  "wall_lecture_r310_5",
+  "wall_lecture_r310",
+  "floor_lecture_r311_5",
+  "floor_lecture_r311_6",
   "floor_lecture_r311",
+  "wall_lecture_r311_5",
+  "wall_lecture_r311_6",
+  "wall_lecture_r311",
+  "floor_lecture_r402",
+  "floor_lecture_r402_4",
+  "floor_lecture_r402_5",
+  "wall_lecture_r402",
+  "wall_lecture_r402_4",
+  "wall_lecture_r402_5",
+  "floor_lecture_r410_5",
+  "floor_lecture_r410",
+  "wall_lecture_r410_5",
+  "wall_lecture_r410",
+  "floor_lecture_r502",
+  "floor_lecture_r502_4",
+  "floor_lecture_r502_5",
+  "wall_lecture_r502",
+  "wall_lecture_r502_4",
+  "wall_lecture_r502_5",
+  "floor_lecture_r509_4",
+  "floor_lecture_r509_5",
+  "floor_lecture_r509",
+  "wall_lecture_r509_4",
+  "wall_lecture_r509_5",
+  "wall_lecture_r509",
+  "floor_lecture_r602",
+  "floor_lecture_r602_4",
+  "floor_lecture_r602_5",
+  "wall_lecture_r602",
+  "wall_lecture_r602_4",
+  "wall_lecture_r602_5",
+  "floor_lecture_r610_5",
+  "floor_lecture_r610",
+  "wall_lecture_r610_5",
+  "wall_lecture_r610",
+  "wall_lecture_esc_south_1f",
+  "escsteps_lecture_south_1f",
+  "wall_lecture_esc_south_2f",
+  "escsteps_lecture_south_2f",
+  "wall_lecture_esc_south_3f",
+  "escsteps_lecture_south_3f",
+  "wall_lecture_esc_south_4f",
+  "escsteps_lecture_south_4f",
+  "wall_lecture_esc_south_5f",
+  "escsteps_lecture_south_5f",
+  "wall_lecture_esc_north_1f",
+  "escsteps_lecture_north_1f",
+  "wall_lecture_esc_north_2f",
+  "escsteps_lecture_north_2f",
+  "wall_lecture_esc_north_3f",
+  "escsteps_lecture_north_3f",
+  "wall_lecture_esc_north_4f",
+  "escsteps_lecture_north_4f",
+  "wall_lecture_esc_north_5f",
+  "escsteps_lecture_north_5f",
   "floor_lecture_pit",
   "furn_lecture_01_hall_seats",
   "furn_lecture_02_hall_desks",
@@ -615,19 +1359,63 @@
   "furn_lecture_08_lounge",
   "furn_lecture_09_north",
   "furn_lecture_10_r203",
-  "furn_lecture_11_r202",
-  "furn_lecture_12_r201",
-  "furn_lecture_13_r305",
-  "furn_lecture_14_r304",
-  "furn_lecture_15_r303",
-  "furn_lecture_16_r302",
-  "furn_lecture_17_r301",
-  "furn_lecture_18_r306",
-  "furn_lecture_19_r307",
-  "furn_lecture_20_r308",
-  "furn_lecture_21_r309",
-  "furn_lecture_22_r310",
-  "furn_lecture_23_r311"
+  "furn_lecture_11_r203_1",
+  "furn_lecture_12_r203_2",
+  "furn_lecture_13_r202",
+  "furn_lecture_14_r202_3",
+  "furn_lecture_15_r202_4",
+  "furn_lecture_16_r201",
+  "furn_lecture_17_r201_4",
+  "furn_lecture_18_r201_5",
+  "furn_lecture_19_r201_6",
+  "furn_lecture_20_r305",
+  "furn_lecture_21_r305_1",
+  "furn_lecture_22_r305_2",
+  "furn_lecture_23_r304",
+  "furn_lecture_24_r304_2",
+  "furn_lecture_25_r304_3",
+  "furn_lecture_26_r303",
+  "furn_lecture_27_r303_3",
+  "furn_lecture_28_r303_4",
+  "furn_lecture_29_r302",
+  "furn_lecture_30_r302_4",
+  "furn_lecture_31_r302_5",
+  "furn_lecture_32_r301",
+  "furn_lecture_33_r301_5",
+  "furn_lecture_34_r301_6",
+  "furn_lecture_35_r306_1",
+  "furn_lecture_36_r306",
+  "furn_lecture_37_r306_2",
+  "furn_lecture_38_r307_2",
+  "furn_lecture_39_r307",
+  "furn_lecture_40_r307_3",
+  "furn_lecture_41_r308_3",
+  "furn_lecture_42_r308",
+  "furn_lecture_43_r308_4",
+  "furn_lecture_44_r309_4",
+  "furn_lecture_45_r309",
+  "furn_lecture_46_r309_5",
+  "furn_lecture_47_r310_5",
+  "furn_lecture_48_r310",
+  "furn_lecture_49_r311_5",
+  "furn_lecture_50_r311",
+  "furn_lecture_51_r311_6",
+  "furn_lecture_52_r402",
+  "furn_lecture_53_r402_4",
+  "furn_lecture_54_r402_5",
+  "furn_lecture_55_r410_5",
+  "furn_lecture_56_r410",
+  "furn_lecture_57_r502",
+  "furn_lecture_58_r502_4",
+  "furn_lecture_59_r502_5",
+  "furn_lecture_60_r509_4",
+  "furn_lecture_61_r509",
+  "furn_lecture_62_r509_5",
+  "furn_lecture_63_r602",
+  "furn_lecture_64_r602_4",
+  "furn_lecture_65_r602_5",
+  "furn_lecture_66_r610_5",
+  "furn_lecture_67_r610"
  ],
  "signs": [
   {
@@ -708,14 +1496,14 @@
    "en": "Elevator",
    "tris": 169,
    "pos": {
-    "x": -17.6,
+    "x": -21.01,
     "y": 2.4,
-    "z": 23.49
+    "z": 27.5
    },
    "facing": {
-    "x": -0.0,
+    "x": -1.0,
     "y": 0.0,
-    "z": -1.0
+    "z": 0.0
    },
    "w": 1.0,
    "h": 0.3,
@@ -1565,14 +2353,14 @@
    "en": "Elevator",
    "tris": 169,
    "pos": {
-    "x": -17.6,
+    "x": -21.01,
     "y": 7.0,
-    "z": 23.49
+    "z": 27.5
    },
    "facing": {
-    "x": -0.0,
+    "x": -1.0,
     "y": 0.0,
-    "z": -1.0
+    "z": 0.0
    },
    "w": 1.0,
    "h": 0.3,
@@ -1680,8 +2468,31 @@
    "en": "Elevator",
    "tris": 169,
    "pos": {
-    "x": -17.6,
+    "x": -21.01,
     "y": 11.2,
+    "z": 27.5
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.0,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "4F",
+   "en": "4th Floor",
+   "tris": 145,
+   "pos": {
+    "x": 9.0,
+    "y": 15.2,
     "z": 23.49
    },
    "facing": {
@@ -1689,10 +2500,516 @@
     "y": 0.0,
     "z": -1.0
    },
+   "w": 0.7,
+   "h": 0.6,
+   "faces": 1,
+   "plate": "lecture_sign_black",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "4F",
+   "en": "4th Floor",
+   "tris": 145,
+   "pos": {
+    "x": 9.0,
+    "y": 15.2,
+    "z": 31.51
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 0.7,
+   "h": 0.6,
+   "faces": 1,
+   "plate": "lecture_sign_black",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "女子トイレ",
+   "en": "Women",
+   "tris": 160,
+   "pos": {
+    "x": -7.8,
+    "y": 15.4,
+    "z": 23.49
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.8,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "男子トイレ",
+   "en": "Men",
+   "tris": 136,
+   "pos": {
+    "x": 14.0,
+    "y": 15.4,
+    "z": 23.49
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.8,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "エレベーター",
+   "en": "Elevator",
+   "tris": 169,
+   "pos": {
+    "x": -21.01,
+    "y": 15.4,
+    "z": 27.5
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
    "w": 1.0,
    "h": 0.3,
    "faces": 1,
    "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "5F",
+   "en": "5th Floor",
+   "tris": 173,
+   "pos": {
+    "x": 9.0,
+    "y": 19.4,
+    "z": 23.49
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.7,
+   "h": 0.6,
+   "faces": 1,
+   "plate": "lecture_sign_black",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "5F",
+   "en": "5th Floor",
+   "tris": 173,
+   "pos": {
+    "x": 9.0,
+    "y": 19.4,
+    "z": 31.51
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 0.7,
+   "h": 0.6,
+   "faces": 1,
+   "plate": "lecture_sign_black",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "女子トイレ",
+   "en": "Women",
+   "tris": 160,
+   "pos": {
+    "x": -7.8,
+    "y": 19.6,
+    "z": 23.49
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.8,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "男子トイレ",
+   "en": "Men",
+   "tris": 136,
+   "pos": {
+    "x": 14.0,
+    "y": 19.6,
+    "z": 23.49
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.8,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "エレベーター",
+   "en": "Elevator",
+   "tris": 169,
+   "pos": {
+    "x": -21.01,
+    "y": 19.6,
+    "z": 27.5
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.0,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "6F",
+   "en": "6th Floor",
+   "tris": 209,
+   "pos": {
+    "x": 9.0,
+    "y": 23.6,
+    "z": 23.49
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.7,
+   "h": 0.6,
+   "faces": 1,
+   "plate": "lecture_sign_black",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "6F",
+   "en": "6th Floor",
+   "tris": 209,
+   "pos": {
+    "x": 9.0,
+    "y": 23.6,
+    "z": 31.51
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 0.7,
+   "h": 0.6,
+   "faces": 1,
+   "plate": "lecture_sign_black",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "女子トイレ",
+   "en": "Women",
+   "tris": 160,
+   "pos": {
+    "x": -7.8,
+    "y": 23.8,
+    "z": 23.49
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.8,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "男子トイレ",
+   "en": "Men",
+   "tris": 136,
+   "pos": {
+    "x": 14.0,
+    "y": 23.8,
+    "z": 23.49
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.8,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "エレベーター",
+   "en": "Elevator",
+   "tris": 169,
+   "pos": {
+    "x": -21.01,
+    "y": 23.8,
+    "z": 27.5
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.0,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "7F",
+   "en": "7th Floor",
+   "tris": 136,
+   "pos": {
+    "x": 9.0,
+    "y": 27.8,
+    "z": 23.49
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.7,
+   "h": 0.6,
+   "faces": 1,
+   "plate": "lecture_sign_black",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "7F",
+   "en": "7th Floor",
+   "tris": 136,
+   "pos": {
+    "x": 9.0,
+    "y": 27.8,
+    "z": 31.51
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 0.7,
+   "h": 0.6,
+   "faces": 1,
+   "plate": "lecture_sign_black",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "女子トイレ",
+   "en": "Women",
+   "tris": 160,
+   "pos": {
+    "x": -7.8,
+    "y": 28.0,
+    "z": 23.49
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.8,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "男子トイレ",
+   "en": "Men",
+   "tris": 136,
+   "pos": {
+    "x": 14.0,
+    "y": 28.0,
+    "z": 23.49
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.8,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "エレベーター",
+   "en": "Elevator",
+   "tris": 169,
+   "pos": {
+    "x": -21.01,
+    "y": 28.0,
+    "z": 27.5
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.0,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "4F",
+   "en": "4th Floor",
+   "tris": 145,
+   "pos": {
+    "x": 18.01,
+    "y": 15.2,
+    "z": 27.5
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 0.7,
+   "h": 0.6,
+   "faces": 1,
+   "plate": "lecture_sign_black",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "5F",
+   "en": "5th Floor",
+   "tris": 173,
+   "pos": {
+    "x": 18.01,
+    "y": 19.4,
+    "z": 27.5
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 0.7,
+   "h": 0.6,
+   "faces": 1,
+   "plate": "lecture_sign_black",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "6F",
+   "en": "6th Floor",
+   "tris": 209,
+   "pos": {
+    "x": 18.01,
+    "y": 23.6,
+    "z": 27.5
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 0.7,
+   "h": 0.6,
+   "faces": 1,
+   "plate": "lecture_sign_black",
    "text": "plastic_white",
    "align": "center"
   },
@@ -1925,15 +3242,774 @@
    "plate": "lecture_sign_white",
    "text": "plastic_black",
    "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "405",
+   "en": "Room 405",
+   "tris": 214,
+   "pos": {
+    "x": -24.6,
+    "y": 14.8,
+    "z": 19.81
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 0.42,
+   "h": 0.9,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "404",
+   "en": "Room 404",
+   "tris": 196,
+   "pos": {
+    "x": -15.5,
+    "y": 14.8,
+    "z": 19.81
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 0.42,
+   "h": 0.9,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "403",
+   "en": "Room 403",
+   "tris": 227,
+   "pos": {
+    "x": -1.2,
+    "y": 14.8,
+    "z": 19.81
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 0.42,
+   "h": 0.9,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "402",
+   "en": "Room 402",
+   "tris": 202,
+   "pos": {
+    "x": 9.6,
+    "y": 14.8,
+    "z": 19.81
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 0.42,
+   "h": 0.9,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "401",
+   "en": "Room 401",
+   "tris": 186,
+   "pos": {
+    "x": 26.0,
+    "y": 14.8,
+    "z": 19.81
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 0.42,
+   "h": 0.9,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "406",
+   "en": "Room 406",
+   "tris": 232,
+   "pos": {
+    "x": -24.6,
+    "y": 14.8,
+    "z": 35.09
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.42,
+   "h": 0.9,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "407",
+   "en": "Room 407",
+   "tris": 185,
+   "pos": {
+    "x": -15.5,
+    "y": 14.8,
+    "z": 35.09
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.42,
+   "h": 0.9,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "408",
+   "en": "Room 408",
+   "tris": 247,
+   "pos": {
+    "x": -1.2,
+    "y": 14.8,
+    "z": 35.09
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.42,
+   "h": 0.9,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "409",
+   "en": "Room 409",
+   "tris": 233,
+   "pos": {
+    "x": 9.6,
+    "y": 14.8,
+    "z": 35.09
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.42,
+   "h": 0.9,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "410",
+   "en": "Room 410",
+   "tris": 186,
+   "pos": {
+    "x": 16.6,
+    "y": 14.8,
+    "z": 35.09
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.42,
+   "h": 0.9,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "411",
+   "en": "Room 411",
+   "tris": 147,
+   "pos": {
+    "x": 23.8,
+    "y": 14.8,
+    "z": 35.09
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.42,
+   "h": 0.9,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "505",
+   "en": "Room 505",
+   "tris": 232,
+   "pos": {
+    "x": -24.6,
+    "y": 19.0,
+    "z": 19.81
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 0.42,
+   "h": 0.9,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "504",
+   "en": "Room 504",
+   "tris": 214,
+   "pos": {
+    "x": -15.5,
+    "y": 19.0,
+    "z": 19.81
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 0.42,
+   "h": 0.9,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "503",
+   "en": "Room 503",
+   "tris": 245,
+   "pos": {
+    "x": -1.2,
+    "y": 19.0,
+    "z": 19.81
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 0.42,
+   "h": 0.9,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "502",
+   "en": "Room 502",
+   "tris": 220,
+   "pos": {
+    "x": 9.6,
+    "y": 19.0,
+    "z": 19.81
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 0.42,
+   "h": 0.9,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "501",
+   "en": "Room 501",
+   "tris": 204,
+   "pos": {
+    "x": 26.0,
+    "y": 19.0,
+    "z": 19.81
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 0.42,
+   "h": 0.9,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "506",
+   "en": "Room 506",
+   "tris": 250,
+   "pos": {
+    "x": -24.6,
+    "y": 19.0,
+    "z": 35.09
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.42,
+   "h": 0.9,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "507",
+   "en": "Room 507",
+   "tris": 203,
+   "pos": {
+    "x": -15.5,
+    "y": 19.0,
+    "z": 35.09
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.42,
+   "h": 0.9,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "508",
+   "en": "Room 508",
+   "tris": 265,
+   "pos": {
+    "x": -1.2,
+    "y": 19.0,
+    "z": 35.09
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.42,
+   "h": 0.9,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "509",
+   "en": "Room 509",
+   "tris": 251,
+   "pos": {
+    "x": 9.6,
+    "y": 19.0,
+    "z": 35.09
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.42,
+   "h": 0.9,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "510",
+   "en": "Room 510",
+   "tris": 204,
+   "pos": {
+    "x": 16.6,
+    "y": 19.0,
+    "z": 35.09
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.42,
+   "h": 0.9,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "511",
+   "en": "Room 511",
+   "tris": 165,
+   "pos": {
+    "x": 23.8,
+    "y": 19.0,
+    "z": 35.09
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.42,
+   "h": 0.9,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "605",
+   "en": "Room 605",
+   "tris": 250,
+   "pos": {
+    "x": -24.6,
+    "y": 23.2,
+    "z": 19.81
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 0.42,
+   "h": 0.9,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "604",
+   "en": "Room 604",
+   "tris": 232,
+   "pos": {
+    "x": -15.5,
+    "y": 23.2,
+    "z": 19.81
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 0.42,
+   "h": 0.9,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "603",
+   "en": "Room 603",
+   "tris": 263,
+   "pos": {
+    "x": -1.2,
+    "y": 23.2,
+    "z": 19.81
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 0.42,
+   "h": 0.9,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "602",
+   "en": "Room 602",
+   "tris": 238,
+   "pos": {
+    "x": 9.6,
+    "y": 23.2,
+    "z": 19.81
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 0.42,
+   "h": 0.9,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "601",
+   "en": "Room 601",
+   "tris": 222,
+   "pos": {
+    "x": 26.0,
+    "y": 23.2,
+    "z": 19.81
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 0.42,
+   "h": 0.9,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "606",
+   "en": "Room 606",
+   "tris": 268,
+   "pos": {
+    "x": -24.6,
+    "y": 23.2,
+    "z": 35.09
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.42,
+   "h": 0.9,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "607",
+   "en": "Room 607",
+   "tris": 221,
+   "pos": {
+    "x": -15.5,
+    "y": 23.2,
+    "z": 35.09
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.42,
+   "h": 0.9,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "608",
+   "en": "Room 608",
+   "tris": 283,
+   "pos": {
+    "x": -1.2,
+    "y": 23.2,
+    "z": 35.09
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.42,
+   "h": 0.9,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "609",
+   "en": "Room 609",
+   "tris": 269,
+   "pos": {
+    "x": 9.6,
+    "y": 23.2,
+    "z": 35.09
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.42,
+   "h": 0.9,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "610",
+   "en": "Room 610",
+   "tris": 222,
+   "pos": {
+    "x": 16.6,
+    "y": 23.2,
+    "z": 35.09
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.42,
+   "h": 0.9,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "611",
+   "en": "Room 611",
+   "tris": 183,
+   "pos": {
+    "x": 23.8,
+    "y": 23.2,
+    "z": 35.09
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.42,
+   "h": 0.9,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
   }
  ],
- "text_triangles": 14744,
+ "text_triangles": 25816,
  "ext": {
   "objects": [
    "ext_lecture",
    "ext_lecture_trees"
   ],
-  "triangles": 34375,
+  "triangles": 34532,
   "radius": 30.0,
   "dz": -0.03
  }

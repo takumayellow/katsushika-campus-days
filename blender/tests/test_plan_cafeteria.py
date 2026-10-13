@@ -22,7 +22,7 @@ from kcd_lib.mesh import MeshBuilder
 from conftest import CAMPUS_JSON
 
 SEED = 1709
-INT_CAP = 65000
+INT_CAP = 62000
 TEXT_CAP = 17500                    # spec の看板の文字の配分
 N_SIGNS = 33
 CAMS = ["", "ticket", "=interior_cafeteria", "upper", "top"]

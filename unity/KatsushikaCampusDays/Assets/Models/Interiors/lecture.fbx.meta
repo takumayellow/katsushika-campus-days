@@ -192,6 +192,11 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: lecture_ceiling_upper
+    second: {fileID: 2100000, guid: dd62b2fba285b574e97d90f17d684e3a, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: lecture_concrete
     second: {fileID: 2100000, guid: 98249a1ec954bbb43b5957da42ec63d4, type: 2}
   - first:

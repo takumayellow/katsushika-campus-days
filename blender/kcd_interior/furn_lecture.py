@@ -92,3 +92,29 @@ def pc_desk(mb, t, w=1.4):
         t.box_nb(mb, sx - 0.19, 0.12, 0.73, sx + 0.19, 0.26, 0.75, "plastic_black")
         chair = kit.T(*t.p(sx, -0.30, 0.0), ang=math.atan2(t.s, t.c))
         F.chair_min(mb, chair, mat="chair_grey", frame="metal_gray")
+
+
+def warmer_case(mb, t, w=1.0, d=0.45, h=0.42):
+    """311 の弁当の保温ケース（長机の上に載せる。約 150 三角形）。ステンレスの枠と 2 段の棚、
+    正面のガラス越しに弁当が並ぶ。t のローカルの +Y が正面（客の側）、原点は底の背の中央。
+    """
+    hw = w * 0.5
+    t.box_nb(mb, -hw, 0.0, 0.0, hw, d, 0.04, "stainless")
+    t.box_nb(mb, -hw, 0.0, h - 0.04, hw, d, h, "stainless")
+    t.box_nb(mb, -hw, 0.0, 0.04, hw, 0.02, h - 0.04, "stainless")
+    for sx in (-1.0, 1.0):
+        t.box_nb(mb, sx * hw - 0.02, 0.0, 0.04, sx * hw + 0.02, d, h - 0.04, "stainless")
+    zm = h * 0.5
+    t.box_nb(mb, -hw + 0.02, 0.02, zm - 0.01, hw - 0.02, d - 0.02, zm + 0.01, "stainless")
+    t.vplate(mb, hw, d, -hw, d, 0.04, h - 0.04, "glass_interior")    # 法線はローカルの +Y
+    for z in (0.04, zm + 0.01):
+        for k in range(3):
+            x0 = -hw + 0.06 + k * (w - 0.12) / 3.0
+            x1 = x0 + (w - 0.12) / 3.0 - 0.04
+            bento(mb, t, x0, x1, 0.08, d - 0.08, z)
+
+
+def bento(mb, t, x0, x1, y0, y1, z):
+    """弁当 1 つ（黒い容器と白い蓋）。t のローカルの (x0..x1, y0..y1)、底が z。"""
+    t.box_nb(mb, x0, y0, z, x1, y1, z + 0.05, "plastic_black")
+    t.box_nb(mb, x0, y0, z + 0.05, x1, y1, z + 0.065, "plastic_white")

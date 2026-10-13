@@ -33,7 +33,7 @@ MARGIN = ishell.WALL      # 外周壁の厚み
 HALL_SEATS, HALL_DESKS = 270, 70                       # spec §4
 SEATS_DESKS_CAP = 12720   # spec §4 の見積もり（座席 270 x 44 + 机）
 REGISTERS = COOP.REGISTERS
-ESC_CAP = 2200           # エスカレータ 4 区間と 3F→4F（spec §7 のコア・エスカレータ・吹き抜けの内）
+ESC_CAP = 4500           # エスカレータ 10 区間（1F→6F）。実測 4,012 に 1 割強の余裕
 UNDER_CLEAR = 1.6        # spec §1-3: 斜路の下でこれより低い所には入れない
 HEAD_CLEAR = 2.1         # 段の上面から上の区間の腹まで
 
@@ -240,17 +240,61 @@ def esc(lspec):
     return c
 
 
-def _all_flights():
-    return ESC.flights() + (ESC.stub(),)
-
-
 def test_escalator_steps_are_climbable():
     assert ESC.RISE <= STEP_OFFSET
-    for f in _all_flights():
+    for f in ESC.flights():
         assert f.n * ESC.RISE == pytest.approx(f.zb - f.za)
-        assert f.tread(1)[2] == pytest.approx(f.za + ESC.RISE)
-        assert f.tread(f.n)[2] == pytest.approx(f.zb)
         assert 0.33 <= abs(f.run) <= 0.40
+
+
+def test_moving_steps_reach_both_floors_after_one_step():
+    """止まっているとき 1 段目は下の床の高さ、1 段ぶん動くと最上段が上の端の床にそろう。"""
+    for f in ESC.flights():
+        x0, x1, z = f.tread(1)
+        assert z == pytest.approx(f.za)
+        assert sorted((x0, x1)) == pytest.approx(sorted((f.xa - f.run, f.xa)))
+        x0, x1, z = f.tread(f.n)
+        assert z + ESC.RISE == pytest.approx(f.zb)
+        assert sorted((x0 + f.dir * abs(f.run), x1 + f.dir * abs(f.run))) == pytest.approx(
+            sorted((f.xb - f.run, f.xb)))
+
+
+def _empty(c, name):
+    found = [p for n, p in c.empties if n == name]
+    assert len(found) == 1, name
+    return found[0]
+
+
+def test_escalator_ends_are_empties_on_the_step_midline(esc):
+    """esc_lecture_<区間>_lo / _hi: 踏面の中央を結ぶ線の両端（下の端は 1 段目の中央）、列の幅の中央。"""
+    names = [n for n, _ in esc.empties if n.startswith("esc_lecture_")]
+    assert len(names) == 2 * len(ESC.flights())
+    for f in ESC.flights():
+        yc = (f.y0 + f.y1) * 0.5
+        lo = _empty(esc, "esc_lecture_%s_lo" % f.name)
+        hi = _empty(esc, "esc_lecture_%s_hi" % f.name)
+        assert lo == pytest.approx((f.xa - f.dir * abs(f.run) * 0.5, yc, f.za))
+        assert hi == pytest.approx((f.xb - f.dir * abs(f.run) * 0.5, yc, f.zb))
+        x0, x1, z = f.tread(1)
+        assert (x0 + x1) * 0.5 == pytest.approx(lo[0]) and z == pytest.approx(lo[2])
+
+
+def test_moving_steps_are_their_own_part_per_flight(esc):
+    """段は区間ごとの escsteps_lecture_<区間>（Unity が当たり判定を付けずに動かす）。止まった部分には段が無い。"""
+    parts = {mb.name: mb for mb in esc.parts}
+    for f in ESC.flights():
+        steps = parts["escsteps_lecture_%s" % f.name]
+        zs = [v[2] for v in steps.verts]
+        assert min(zs) == pytest.approx(f.za - ESC.RISE)          # 1 段目の蹴込みも RISE の高さ
+        assert max(zs) == pytest.approx(f.zb - ESC.RISE + ESC.LIFT)
+        static = parts["wall_lecture_esc_%s" % f.name]
+        assert static.faces
+        assert "lecture_tactile_yellow" not in _materials(static)
+        assert "lecture_tactile_yellow" in _materials(steps)
+
+
+def _materials(mb):
+    return {mb.mat_names[i] for i in mb.face_mat}
 
 
 def test_escalator_ends_meet_floors_and_landings():
@@ -264,7 +308,9 @@ def test_escalator_ends_meet_floors_and_landings():
 
 def test_escalator_rows_stack_with_headroom():
     fl = ESC.flights()
-    for lo, hi in ((fl[0], fl[1]), (fl[2], fl[3]), (fl[3], ESC.stub())):
+    n = ESC.TOP - 1
+    assert len(fl) == 2 * n
+    for lo, hi in [(fl[r + i], fl[r + i + 1]) for r in (0, n) for i in range(n - 1)]:
         assert (lo.y0, lo.y1, lo.xa, lo.xb) == (hi.y0, hi.y1, hi.xa, hi.xb)
         for x in (lo.xa, (lo.xa + lo.xb) * 0.5, lo.xb):
             gap = hi.line(x) - lo.line(x)
@@ -280,16 +326,6 @@ def test_escalator_underside_is_closed_where_low():
         assert min(f.xa, f.xb) < xo < max(f.xa, f.xb)
         assert f.line(xo) - ESC.DROP == pytest.approx(ESC.CLEAR)
         assert ESC.CLEAR >= UNDER_CLEAR
-
-
-def test_escalator_stub_shows_three_steps_then_closes():
-    f = ESC.stub()
-    assert f.za == pytest.approx(D.F3) and f.zb == pytest.approx(D.FL[3])
-    assert ESC.STUB_SHOWN == 3
-    front = ESC.stub_bar_x(f) - f.dir * ESC.SHEET_T * 0.5
-    assert front == pytest.approx(f.xa + ESC.STUB_SHOWN * f.run)
-    assert ESC.CEIL_3F == pytest.approx(UP.Z_TOP)
-    assert f.x_at(ESC.CEIL_3F + ESC.DROP) > min(f.xa, f.xb)   # 腹は区間の途中で天井に入る
 
 
 def test_hole_rails_clear_the_escalator_cladding():

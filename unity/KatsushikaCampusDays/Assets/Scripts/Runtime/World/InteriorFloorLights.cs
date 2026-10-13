@@ -26,6 +26,15 @@ namespace KCD
         /// </summary>
         public void Configure(string buildingId, string[] floors, float[] bottoms, Light[] lights)
         {
+            Configure(buildingId, floors, bottoms, lights, null);
+        }
+
+        /// <summary>
+        /// levels は明かりごとの、階を決める高さ（lights と同じ並び）。看板などの Empty の上に吊った明かりは
+        /// 吊り元の高さで階を決める（明かりそのものの高さだと上の階に入ることがある）。null なら明かりの高さ。
+        /// </summary>
+        public void Configure(string buildingId, string[] floors, float[] bottoms, Light[] lights, float[] levels)
+        {
             _buildingId = buildingId ?? string.Empty;
             _floorNames = floors ?? new string[0];
             _floorBottoms = bottoms ?? new float[0];
@@ -33,7 +42,14 @@ namespace KCD
             _lightFloors = new int[_lights.Length];
             for (int i = 0; i < _lights.Length; i++)
             {
-                _lightFloors[i] = _lights[i] != null ? FloorOf(_floorBottoms, _lights[i].transform.position.y) : 0;
+                if (levels != null && i < levels.Length)
+                {
+                    _lightFloors[i] = FloorOf(_floorBottoms, levels[i]);
+                }
+                else
+                {
+                    _lightFloors[i] = _lights[i] != null ? FloorOf(_floorBottoms, _lights[i].transform.position.y) : 0;
+                }
             }
 
             _active = -1;

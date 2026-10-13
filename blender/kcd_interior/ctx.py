@@ -61,9 +61,10 @@ class Ctx:
         return mb
 
     def part(self, role, kind):
-        """floor_<id>_<kind> か wall_<id>_<kind> の MeshBuilder。role は "floor" か "wall"。"""
-        if role not in ("floor", "wall"):
-            raise ValueError("role は floor か wall: %r" % (role,))
+        """<role>_<id>_<kind> の MeshBuilder。role は "floor"・"wall" か、エスカレーターの動く段の "escsteps"
+        （Unity は当たり判定を付けずに動かす）。"""
+        if role not in ("floor", "wall", "escsteps"):
+            raise ValueError("role は floor・wall・escsteps: %r" % (role,))
         mb = MeshBuilder("%s_%s_%s" % (role, self.spec.id, kind))
         mb.seats = []
         self.parts.append(mb)

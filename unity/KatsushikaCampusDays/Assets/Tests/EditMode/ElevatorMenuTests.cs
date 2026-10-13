@@ -242,6 +242,29 @@ namespace KCD.Tests
             CollectionAssert.AreEqual(new[] { true, true, false, false }, Enabled(lights));
         }
 
+        [Test]
+        public void Apply_UsesTheGivenLevelsForTheFloor()
+        {
+            GameObject group = Make("Lights");
+            var lights = new Light[2];
+            for (int i = 0; i < lights.Length; i++)
+            {
+                GameObject go = Make("Light_sign_lecture_" + i);
+                go.transform.SetParent(group.transform, false);
+                go.transform.position = new Vector3(0f, 4.4f, 0f);
+                lights[i] = go.AddComponent<Light>();
+            }
+
+            InteriorFloorLights floors = group.AddComponent<InteriorFloorLights>();
+            floors.Configure("lecture", new[] { "1F", "2F" }, new[] { -0.5f, 4.1f }, lights, new[] { 1.2f, 4.6f });
+
+            floors.Apply(0);
+            CollectionAssert.AreEqual(new[] { true, false }, Enabled(lights));
+
+            floors.Apply(1);
+            CollectionAssert.AreEqual(new[] { false, true }, Enabled(lights));
+        }
+
         private static bool[] Enabled(Light[] lights)
         {
             var enabled = new bool[lights.Length];
