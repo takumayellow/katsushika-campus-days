@@ -147,6 +147,61 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: lab2_actuator_grey
+    second: {fileID: 2100000, guid: c19e66d5a828ff34fb6983c2955be5ae, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lab2_anchor_hole
+    second: {fileID: 2100000, guid: 579d13c2309698940bf2c02e2fbb298b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lab2_crane_yellow
+    second: {fileID: 2100000, guid: a03cf59ee656ea84892d46901261e9a6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lab2_floor_strong
+    second: {fileID: 2100000, guid: 9f40069e456bf3d47b2d4132ff3c4d96, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lab2_frame_steel
+    second: {fileID: 2100000, guid: 381b5348b4854b647b5e3a9034729bd3, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lab2_rail_red
+    second: {fileID: 2100000, guid: a046348c3fd681e4a926629050e7c5f7, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lab2_reaction_concrete
+    second: {fileID: 2100000, guid: 6651ca9b2bfddf646865e3e19b911b52, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lab2_rebar
+    second: {fileID: 2100000, guid: e9ed237f0721b9a4daced36c8fed8cd5, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lab2_roof_deck
+    second: {fileID: 2100000, guid: d986d7d0f531e9d48938890b7ed43a02, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lab2_specimen_concrete
+    second: {fileID: 2100000, guid: 9660c3544bc2ef046ac659e57042b124, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lab2_table_steel
+    second: {fileID: 2100000, guid: 90b1a983da9e27547bd8828be6ef1d26, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: light_strip
     second: {fileID: 2100000, guid: 114452ef7602fca4d8c2252e38345b88, type: 2}
   - first:
