@@ -5,6 +5,7 @@ import pytest
 import stubs
 from kcd_interior import plan_research2 as L
 from kcd_interior import plan_research2_dims as D
+from kcd_interior import plan_research2_frame as M
 from kcd_interior import plan_research2_upper as U
 from kcd_interior import registry, signs
 from kcd_interior import spec as ispec
@@ -51,7 +52,21 @@ def _empties(c, prefix):
 def test_split_constants_match_the_dims():
     assert ispec.CAFETERIA_X1 == D.CUT_X
     assert ispec.LOBBY_X0 < D.CUT_X < ispec.CAFETERIA_X1 + 0.2
-    assert L.HOST_Y0 == pytest.approx(ispec.LOBBY_Y0 - 4.0)
+    assert ispec.LOBBY_X1 == pytest.approx(D.OUTLINE[13][0], abs=1e-3)
+
+
+def test_lobby_frame_matches_the_spec(specs):
+    """ロビーのローカルへの写し（plan_research2_frame）が InteriorSpec の座標系と一致する。"""
+    s = specs["research2"]
+    assert s.inward == "-u"
+    assert s.x0 == pytest.approx(M.pt(0.0, ispec.LOBBY_Y0)[0], abs=2e-3)
+    assert s.x1 == pytest.approx(M.pt(0.0, ispec.LOBBY_Y1)[0], abs=2e-3)
+    assert s.y_face == pytest.approx(M.pt(ispec.LOBBY_X1, 0.0)[1], abs=2e-3)
+    assert s.y_back == pytest.approx(M.pt(ispec.LOBBY_X0, 0.0)[1], abs=2e-3)
+    assert M.pt(ispec.LOBBY_X1, ispec.LOBBY_DOOR_Y)[0] == pytest.approx(0.0)
+    # 回しただけで鏡像にならない: host の +X は -y、+Y は +x
+    assert M.pt(1.0, 0.0)[1] - M.pt(0.0, 0.0)[1] == pytest.approx(-1.0)
+    assert M.pt(0.0, 1.0)[0] - M.pt(0.0, 0.0)[0] == pytest.approx(1.0)
 
 
 def test_two_specs_share_one_host(specs):
@@ -61,11 +76,21 @@ def test_two_specs_share_one_host(specs):
     assert specs["research2"].levels == 1
 
 
-def test_lobby_door_is_the_second_campus_door():
+def test_lobby_door_is_on_the_east_face(campus_data, campus_frame):
     rows = {r[0]: r for r in entrances.DOORS if r[0] in ("cafeteria", "research2")}
     assert set(rows) == {"cafeteria", "research2"}
     assert rows["cafeteria"][1] == (14.5, -22.0)
-    assert rows["research2"][1] == (14.5 + ispec.LOBBY_DOOR_X, -22.0)
+    ctx = {"entrance": [], "sign": [], "footprints": [], "bg_window_spacing": 2.4}
+    doors = {d["id"]: d for d in entrances.plan(campus_data, campus_frame, ctx)}
+    # 扉は東面の壁（host の X = LOBBY_X1）の上、入口の位置（LOBBY_DOOR_Y）に付く
+    x, y = doors["research2"]["origin"]
+    hx = (x - 6.0634) * 0.9096 - (y + 21.6235) * 0.4156
+    hy = (x - 6.0634) * 0.4156 + (y + 21.6235) * 0.9096
+    assert hx == pytest.approx(ispec.LOBBY_X1, abs=0.1)
+    assert hy == pytest.approx(ispec.LOBBY_DOOR_Y, abs=0.1)
+    # 食堂の扉（南面）と向きが 90 度違う
+    n1, n2 = doors["research2"]["n"], doors["cafeteria"]["n"]
+    assert abs(n1[0] * n2[0] + n1[1] * n2[1]) < 0.1
 
 
 def test_spawn_exit_and_name_signs(built):
@@ -81,7 +106,7 @@ def _in_upper(x, y, z):
     """上の階の廊下か EV ホールの内面の内（ロビーのローカル、z は床の高さの範囲）。"""
     cx0, cy0, cx1, cy1 = D.UPPER_CORR
     hx0, hy0, hx1, hy1 = D.UPPER_EV_HALL
-    hx, hy = x + ispec.LOBBY_DOOR_X, y + L.HOST_Y0
+    hx, hy = ispec.LOBBY_X1 + 4.0 - y, x + ispec.LOBBY_DOOR_Y
     z_lo = D.UPPER_FLOORS[0][1]
     in_corr = cx0 < hx < cx1 and cy0 < hy < cy1
     in_hall = hx0 < hx < hx1 and hy0 <= hy < hy1
@@ -110,10 +135,10 @@ def test_elevator_stops_on_every_floor(built):
     for name, z in floors:
         p, f = pos["ev_research2_%s" % name], pos["ev_research2_%s_f" % name]
         assert p[2] == pytest.approx(z) and f[2] == pytest.approx(z), name
-        # 降りた所は EV の扉の前で、正面は +X（扉を背にする）
-        assert f[0] - p[0] == pytest.approx(1.0) and f[1] == pytest.approx(p[1]), name
-        assert p[0] == pytest.approx(L.EV[2] + U.EV_OUT), name
-        assert L.EV_Y[0] < p[1] < L.EV_Y[1], name
+        # 降りた所は EV の扉の前で、正面は host の +X（扉を背にする）= ロビーのローカルの -y
+        assert f[1] - p[1] == pytest.approx(-1.0) and f[0] == pytest.approx(p[0]), name
+        assert M.pt(L.EV[2] + U.EV_OUT, 0.0)[1] == pytest.approx(p[1]), name
+        assert M.pt(0.0, D.EV_Y[0])[0] < p[0] < M.pt(0.0, D.EV_Y[1])[0], name
     assert not any(n.startswith("ev_research2_2F") for n in pos)
 
 
@@ -137,14 +162,16 @@ def test_upper_floor_walls_close_the_corridor(built):
     assert len(zn) == 1
     z = zn[0]
     w = D.UPPER_WALL
-    assert z["x0"] == pytest.approx(L.hx(D.UPPER_CORR[0] - w), abs=1e-3)
-    assert z["x1"] == pytest.approx(L.hx(D.UPPER_CORR[2] + w), abs=1e-3)
-    assert z["y_face"] == pytest.approx(L.hy(D.UPPER_CORR[1] - w), abs=1e-3)
-    assert z["y_back"] == pytest.approx(L.hy(D.UPPER_EV_HALL[3] + w), abs=1e-3)
+    # host の X 方向（廊下の長さ）はロビーのローカルの y、host の Y 方向は x
+    assert z["y_back"] == pytest.approx(M.pt(D.UPPER_CORR[0] - w, 0.0)[1], abs=1e-3)
+    assert z["y_face"] == pytest.approx(M.pt(D.UPPER_CORR[2] + w, 0.0)[1], abs=1e-3)
+    assert z["x0"] == pytest.approx(M.pt(0.0, D.UPPER_CORR[1] - w)[0], abs=1e-3)
+    assert z["x1"] == pytest.approx(M.pt(0.0, D.UPPER_EV_HALL[3] + w)[0], abs=1e-3)
     nx0, ny0, nx1, ny1 = z["notch"]
-    assert nx0 == pytest.approx(z["x0"]) and ny1 == pytest.approx(z["y_back"])
-    assert ny0 == pytest.approx(L.hy(D.UPPER_CORR[3] + w), abs=1e-3)
-    assert nx1 == pytest.approx(L.hx(D.UPPER_EV_HALL[0] - w), abs=1e-3)
+    # 北西を欠く: host の北西 = ロビーのローカルの x が大きく、y が大きい角
+    assert nx1 == pytest.approx(z["x1"]) and ny1 == pytest.approx(z["y_back"])
+    assert nx0 == pytest.approx(M.pt(0.0, D.UPPER_CORR[3] + w)[0], abs=1e-3)
+    assert ny0 == pytest.approx(M.pt(D.UPPER_EV_HALL[0] - w, 0.0)[1], abs=1e-3)
     assert z["z_min"] < D.UPPER_FLOORS[0][1] and z["z_max"] > D.UPPER_FLOORS[-1][1]
     # 上の階の床はロビーの天井より上
     assert D.UPPER_FLOORS[0][1] - D.SLAB > D.C2
