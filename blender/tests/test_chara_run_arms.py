@@ -1,9 +1,10 @@
 """走りの腕の振り (#232)。
 
 軽い小走り（ジョグ）の腕: 上腕は脇に下ろしたまま肩から前後に片振幅 10〜15 度だけ振り、
-肘は 90 度前後で開閉は小さい（前で 10 度ほど深く、後ろで浅く曲がる）。胸の回旋もごく小さい。
+肘は 40〜60 度だけ軽く曲げて開閉は小さい（前で 10 度ほど深く、後ろで浅く曲がる）。
+前腕はいつも斜め下を向き、前へ振っても水平まで上がらない（前腕が前へ突き出ると、はさみを
+構えたように見える）。胸の回旋もごく小さい。
 手はバストより下、肩関節のほぼ真下を通る（横に開かず、体の中心線も越えない）。
-2 頭身のキャラは胴が短く、同じ肘の角度では手が胸の高さに来るので、肘を開いて手を収める。
 歩きの腕は #43 で見直し中なので変えない。
 
 肘の曲がりと手の位置は胸から見たもの（胴のひねりと前傾は含めない）。ボーンの向きに
@@ -115,13 +116,21 @@ def test_chibi_run_upper_arm_stays_down(name, side):
 @pytest.mark.parametrize("name", params.ALL_IDS)
 def test_run_elbow_opens_and_closes_with_the_swing(name, side):
     bends = [_bend(*_arm(name, f, side)[1:]) for f in PHASES]
-    low = 66.0 if name in CHIBI else 78.0     # 2 頭身は肘を開いて手を胸の下へ下げる
-    assert low < min(bends) < 92.0 and 76.0 < max(bends) < 100.0, (name, side, min(bends), max(bends))
+    assert 36.0 < min(bends) < 50.0 and 48.0 < max(bends) < 62.0, (name, side, min(bends), max(bends))
     # 開閉は小さい（10 度前後）。振りの間ずっと固まってもいない
     assert 6.0 < max(bends) - min(bends) < 16.0, (name, side, bends)
     # 前へ振ったとき（f=-1 は左腕が前）に深く、後ろへ振ったときに浅く曲がる
     front, back = (bends[0], bends[-1]) if side == "Left" else (bends[-1], bends[0])
     assert front - back > 6.0, (name, side, front, back)
+
+
+@pytest.mark.parametrize("side", ["Left", "Right"])
+@pytest.mark.parametrize("name", params.ALL_IDS)
+def test_run_forearm_points_down(name, side):
+    """画面上の前腕は 1 周期を通して水平より 15 度以上下を向き、後ろへ振ると 45 度より下がる。"""
+    rise = [a["fore_rise"] for a in _world(name, side)]
+    assert max(rise) < -15.0, (name, side, max(rise))
+    assert min(rise) < -45.0, (name, side, min(rise))
 
 
 @pytest.mark.parametrize("side", ["Left", "Right"])
@@ -138,7 +147,7 @@ def test_run_hand_stays_below_the_bust(name, side):
 @pytest.mark.parametrize("side", ["Left", "Right"])
 @pytest.mark.parametrize("name", CHIBI)
 def test_chibi_run_hand_stays_below_the_chest(name, side):
-    """2 頭身のキャラは胴が短い。肘を開いて、手首が胸（バスト）の高さを越えないようにする。"""
+    """2 頭身のキャラは胴が短いが、手首は胸（バスト）の高さを越えない。"""
     bust = params.resolve(name)["z"]["bust"]
     for f in PHASES:
         sh, upper, fore = _arm(name, f, side)
