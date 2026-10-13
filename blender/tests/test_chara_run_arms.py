@@ -155,3 +155,11 @@ def test_run_hand_stays_under_the_shoulder(name, side):
         x = (sh + upper + fore)[0] * out
         assert x > 0.03, (name, side, f, x)
         assert x < sh[0] * out + 0.06, (name, side, f, x, sh[0] * out)
+
+
+def test_elbow_override_is_only_for_run():
+    """肘の上書きは Run だけ。Walk に渡すと黙って捨てずに弾く（歩きは #43 まで変えない）。"""
+    arm = gait_fk.mathutils_np.FakeArmature(gait_fk.rest("mirai"))
+    gait_fk.ANIM.Gait(arm, "Run", elbow=(70.0, 10.0))
+    with pytest.raises(KeyError, match="elbow"):
+        gait_fk.ANIM.Gait(arm, "Walk", elbow=(70.0, 10.0))
