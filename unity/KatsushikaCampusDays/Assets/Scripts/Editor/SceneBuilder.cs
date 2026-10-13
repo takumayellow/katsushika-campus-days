@@ -37,7 +37,7 @@ namespace KCD.Editor
             new NpcSpot
             {
                 Id = "sora", Name = "金町 そら", BuildingId = "kyoso",
-                Distance = 7.5f, Fallback = new Vector2(108f, -76f), WanderRadius = 3f
+                Distance = 7.5f, Fallback = new Vector2(-11.1f, -29.3f), WanderRadius = 3f
             },
             new NpcSpot
             {

@@ -4,6 +4,8 @@
 後半は commit 済みの campus.json が extract() の約束（向き・並び・原点）を満たしているかを見る。
 """
 
+import math
+
 import pytest
 
 import osm_common as oc
@@ -57,7 +59,8 @@ def _elements():
              amenity="university", name="東京理科大学 葛飾キャンパス"),
         # 敷地内: 名前で引く建物 / id で引く名無し建物 / どちらでもない建物
         _way(CATALOG_ID, _box(LAT0 + 0.0003, LON0, 0.0001, 0.0002, cw=True), building="university", name="研究棟"),
-        _way(1552199070, _box(LAT0 - 0.0003, LON0, 0.0001, 0.0002), building="yes"),
+        _way(1552199070, _box(LAT0 + 0.0001, LON0, 0.0001, 0.0002), building="yes", height="47"),
+        _way(1552188506, _box(LAT0 - 0.0003, LON0, 0.0001, 0.0002), building="yes"),
         _way(MISC_ID, _box(LAT0, LON0 + 0.0006, 0.00005, 0.00005), building="yes"),
         # 敷地外: 背景の建物（階数あり / 高さあり / どちらも無し）と寮
         _way(BG_LEVELS_ID, _box(south, LON0, 0.00005, 0.00005), building="house", **{"building:levels": "3"}),
@@ -124,11 +127,40 @@ def test_catalog_and_unnamed_buildings(extracted):
     assert r1["id"] == "research1" and r1["style"] == "lab_tower"
     assert r1["osm_name"] == "研究棟" and r1["on_campus"]
     assert r1["height"] == osm_extract.BUILDING_CATALOG["研究棟"]["height"]
-    kyoso = b[1552199070]
-    assert kyoso["id"] == "kyoso" and kyoso["on_campus"] and kyoso["osm_name"] is None
+    gh = b[1552188506]
+    assert gh["id"] == "greenhouse" and gh["on_campus"] and gh["osm_name"] is None
     misc = b[MISC_ID]
     assert misc["id"] == f"misc_{MISC_ID}" and misc["style"] == "misc" and misc["on_campus"]
     assert misc["height"] == 10.0 and misc["levels"] is None
+
+
+def test_building_part_joins_parent(extracted):
+    """第1研究棟の北東の帯 (1552199070) は建物にせず research1 の parts に入れる (#281)。"""
+    b = _by_osm_id(extracted)
+    assert 1552199070 not in b
+    r1 = b[CATALOG_ID]
+    assert [p["osm_id"] for p in r1["parts"]] == [1552199070]
+    part = r1["parts"][0]
+    assert part["height"] == 47.0
+    assert len(part["footprint"]) == 4 and oc.ring_area(part["footprint"]) > 0
+    # 親の footprint（キャンパスのローカル軸の元）はそのまま
+    assert len(r1["footprint"]) == 4
+
+
+def test_manual_kyoso_outline(extracted):
+    """共創棟の外形は OSM に無いので MANUAL_BUILDINGS の頂点から作る (#281)。"""
+    kyoso = [x for x in extracted["buildings"] if x["id"] == "kyoso"]
+    assert len(kyoso) == 1
+    kyoso = kyoso[0]
+    assert kyoso["osm_id"] is None and kyoso["osm_name"] is None
+    assert kyoso["on_campus"]
+    assert kyoso["levels"] == 11 and kyoso["height"] == 45.0
+    assert "outline" not in kyoso
+    fp = kyoso["footprint"]
+    assert len(fp) == 4 and oc.ring_area(fp) > 0
+    project = oc.make_projector(LAT0, LON0)
+    want = {project(lon, lat) for lat, lon in osm_extract.MANUAL_BUILDINGS[0]["outline"]}
+    assert {tuple(p) for p in fp} == want
 
 
 def test_background_building_heights(extracted):
@@ -152,6 +184,7 @@ def test_building_order_and_footprints(extracted):
     keys = [(STYLE_ORDER.index(b["style"]), b["id"]) for b in buildings]
     assert keys == sorted(keys)
     assert [b["style"] for b in buildings][:2] == ["lab_tower", "kyoso"]
+    assert buildings[2]["style"] == "greenhouse"
     for b in buildings:
         fp = b["footprint"]
         assert len(fp) == 4, b["id"]
@@ -215,7 +248,26 @@ def test_committed_campus_json_invariants(campus_json):
     named = {b["id"] for b in buildings}
     catalog = {m["id"] for m in osm_extract.BUILDING_CATALOG.values()}
     unnamed = {m["id"] for m in osm_extract.UNNAMED_BUILDINGS.values()}
-    assert catalog | unnamed <= named
+    manual = {m["id"] for m in osm_extract.MANUAL_BUILDINGS}
+    assert catalog | unnamed | manual <= named
     for b in buildings:
-        if b["id"] in catalog | unnamed:
+        if b["id"] in catalog | unnamed | manual:
             assert b["on_campus"], b["id"]
+
+
+def test_committed_kyoso_and_research1_parts(campus_json):
+    """共創棟は手で与えた約 72 × 35.5 m の長方形、北東の帯は第1研究棟の parts (#281)。"""
+    by_id = {b["id"]: b for b in campus_json["buildings"]}
+    assert all(b["osm_id"] != 1552199070 for b in campus_json["buildings"])
+    assert [p["osm_id"] for p in by_id["research1"]["parts"]] == [1552199070]
+    kyoso = by_id["kyoso"]
+    assert kyoso["levels"] == 11 and kyoso["height"] == 45.0
+    fp = kyoso["footprint"]
+    edges = sorted(math.dist(fp[i], fp[(i + 1) % 4]) for i in range(4))
+    assert edges[0] == pytest.approx(35.6, abs=0.5) and edges[3] == pytest.approx(72.4, abs=0.5)
+    assert oc.ring_area(fp) == pytest.approx(2580.0, rel=0.02)
+    # 共創棟は第1研究棟（と帯）に重ならない
+    r1 = [by_id["research1"]["footprint"]] + [p["footprint"] for p in by_id["research1"]["parts"]]
+    for poly in r1:
+        assert not any(oc.point_in_poly(x, y, poly) for x, y in fp)
+        assert not any(oc.point_in_poly(x, y, fp) for x, y in poly)

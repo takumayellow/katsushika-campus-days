@@ -56,7 +56,7 @@ BUILDING_CATALOG: dict[str, dict] = {
         "levels": 6,
         "height": 25.0,
         "style": "office",
-        "desc": "旧・管理棟。1・2 階は 1,400 席の学生食堂、3 階に事務各課。情報工学科の研究室が入る。",
+        "desc": "旧・管理棟。1・2 階は学生食堂（1 階 730 席、2 階 665 席）、3 階に事務各課。情報工学科の研究室が入る。",
     },
     "体育館": {
         "id": "gym",
@@ -92,16 +92,8 @@ BUILDING_CATALOG: dict[str, dict] = {
     },
 }
 
-# 名無し建物の同定 (OSM id → 正準情報)。高さ 47m の新棟は 2025 年竣工の共創棟。
+# 名無し建物の同定 (OSM id → 正準情報)。
 UNNAMED_BUILDINGS: dict[int, dict] = {
-    1552199070: {
-        "id": "kyoso",
-        "display": "共創棟",
-        "levels": 11,
-        "height": 47.0,
-        "style": "kyoso",
-        "desc": "2025 年竣工。薬学部の拠点。1 階にラーニングスクエア、スターバックス、ファミリーマート。",
-    },
     1552188506: {
         "id": "greenhouse",
         "display": "温室",
@@ -111,6 +103,40 @@ UNNAMED_BUILDINGS: dict[int, dict] = {
         "desc": "ガラス張りの温室。",
     },
 }
+
+# 別の棟の一部になっている OSM の建物 (OSM id → 親の正準 ID)。親の "parts" に
+# {osm_id, height, footprint} で入れる。親の footprint は変えない（第1研究棟の長辺が
+# キャンパスのローカル軸になっていて、全棟の入口と屋内の座標がそれに乗っている）。
+# 1552199070 (PLATEAU 13122-bldg-97407, 高さ 47 m) は第1研究棟の北東面に沿った幅約 6 m・
+# 長さ約 130 m の帯で、研究棟の外形と頂点を 3 つ共有する。航空写真では研究棟の屋根の北東の縁と
+# 一体。以前はこれを共創棟としていた (#281)。
+BUILDING_PARTS: dict[int, str] = {
+    1552199070: "research1",
+}
+
+# OSM にも PLATEAU にも外形が無い建物。頂点を (lat, lon) で手で与える。
+# 共創棟 (2024 年 9 月竣工、地上 11 階・約 45 m): 頂点は 北西 → 北東 → 南東 → 南西 (#281)。
+#   位置は大学のキャンパスマップ（⑥共創棟は①第1研究棟の北西隣）と竣工前後の航空写真
+#   （国土地理院 seamlessphoto/ort、Bing・Esri・Google の z19）で決め、屋根の写るずれを
+#   第1研究棟で補正して約 72 × 35.5 m の長方形に復元した（±3〜5 m）。長手は第1研究棟と同じ向き。
+#   公表の建築面積は約 3,516 m²（TOTO の事例 2612）で、この長方形（約 2,570 m²）との差は
+#   庇・ピロティなどと考えられる（未確認）。
+MANUAL_BUILDINGS: list[dict] = [
+    {
+        "id": "kyoso",
+        "display": "共創棟",
+        "levels": 11,
+        "height": 45.0,
+        "style": "kyoso",
+        "desc": "2024 年竣工。薬学部の拠点。1 階にラーニングスクエア、スターバックス、ファミリーマート。",
+        "outline": [
+            (35.771702, 139.862417),
+            (35.771431, 139.863146),
+            (35.771138, 139.862983),
+            (35.771409, 139.862254),
+        ],
+    },
+]
 
 
 def _load() -> list[dict]:
@@ -136,6 +162,7 @@ def extract() -> dict:
         return roi[0] <= x <= roi[2] and roi[1] <= y <= roi[3]
 
     buildings, paths, areas, points = [], [], [], []
+    parts: list[tuple[str, dict]] = []
 
     for e in elements:
         tags = e.get("tags", {})
@@ -169,7 +196,14 @@ def extract() -> dict:
             continue
         on_campus = _point_in_poly(cx, cy, campus_xy)
 
-        if "building" in tags:
+        if "building" in tags and e["id"] in BUILDING_PARTS:
+            h = tags.get("height")
+            parts.append((BUILDING_PARTS[e["id"]], {
+                "osm_id": e["id"],
+                "height": float(h) if h else None,
+                "footprint": _ccw(xy),
+            }))
+        elif "building" in tags:
             name = tags.get("name")
             meta = BUILDING_CATALOG.get(name or "") or UNNAMED_BUILDINGS.get(e["id"])
             if meta is None:
@@ -230,6 +264,28 @@ def extract() -> dict:
         elif tags.get("leisure") in ("park", "pitch", "playground", "garden") or tags.get("landuse") in ("grass", "recreation_ground") or tags.get("natural") in ("water", "wood", "scrub") or tags.get("amenity") == "parking" or tags.get("amenity") == "university":
             kind = tags.get("leisure") or tags.get("landuse") or tags.get("natural") or tags.get("amenity")
             areas.append({"kind": kind, "name": tags.get("name"), "on_campus": on_campus, "polygon": _ccw(xy)})
+
+    for meta in MANUAL_BUILDINGS:
+        info = {k: v for k, v in meta.items() if k != "outline"}
+        xy = [project(lon, lat) for lat, lon in meta["outline"]]
+        cx, cy = _centroid(xy)
+        buildings.append(
+            {
+                **info,
+                "osm_id": None,
+                "osm_name": None,
+                "on_campus": _point_in_poly(cx, cy, campus_xy),
+                "footprint": _ccw(xy),
+            }
+        )
+
+    by_id = {b["id"]: b for b in buildings}
+    for parent, part in sorted(parts, key=lambda p: p[1]["osm_id"]):
+        if parent not in by_id:
+            raise RuntimeError(f"OSM {part['osm_id']} の親の建物 {parent} が見つからない")
+        if part["height"] is None:
+            part["height"] = by_id[parent]["height"]
+        by_id[parent].setdefault("parts", []).append(part)
 
     # 建物を「キャンパス内 → 寮 → 背景」の順に並べ替えて読みやすく
     order = {"lab_tower": 0, "lecture": 1, "office": 2, "kyoso": 3, "library": 4, "gym": 5, "lab_low": 6, "greenhouse": 7, "dormitory": 8, "misc": 9, "background": 10}

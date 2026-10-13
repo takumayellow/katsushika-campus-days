@@ -36,6 +36,48 @@ def _brick_core(mb, frame, uc, v_lo, v_hi, z0, z1, floors, fh, du=8.0):
 # --------------------------------------------------------------------------- #
 #  第1研究棟 — 11F・49.5 m。水平連続窓 + レンガコア + ピロティ + 屋上機械室
 # --------------------------------------------------------------------------- #
+def _hidden_by(loop, others, push=0.4):
+    """loop の辺のうち、ほかのポリゴン（others）に接して見えない辺の番号。辺上 3 点を push だけ
+    外へ出し、全部が同じポリゴンの内側に入れば隠れているとみなす。"""
+    out = set()
+    n = len(loop)
+    for i in range(n):
+        a, b = loop[i], loop[(i + 1) % n]
+        d = geom.sub(b, a)
+        L = geom.length(d)
+        if L < 1e-6:
+            continue
+        e = geom.mul(d, 1.0 / L)
+        nrm = (e[1], -e[0])
+        pts = [(a[0] + e[0] * L * t + nrm[0] * push, a[1] + e[1] * L * t + nrm[1] * push)
+               for t in (0.25, 0.5, 0.75)]
+        if any(all(geom.point_in_poly(p, o) for p in pts) for o in others):
+            out.add(i)
+    return out
+
+
+def _lab_tower_part(mb, part, main_loop, fh):
+    """第1研究棟の北面に沿う細長い部分（campus.json の parts。OSM 1552199070、高さ 47 m）。
+    本体と同じ窓割りで、本体に接する辺には壁を出さない。床の高さは本体に揃え、端数は壁にする。"""
+    ploop = geom.ensure_ccw(geom.dedup(part["footprint"]))
+    ph = float(part["height"])
+    visible = [i for i in range(len(ploop)) if i not in _hidden_by(ploop, [main_loop])]
+    nf = max(1, int(ph / fh))
+    facade.add_facade(mb, ploop, 0.0, fh, 1, nf,
+                      wall="concrete_grey", glass="glass_dark",
+                      seg=3.0, sill=1.15, header=0.45, inset=0.45, mullion=0.36,
+                      edges=visible)
+    facade.add_facade(mb, ploop, 0.0, fh, 0, 1,
+                      wall="concrete_dark", glass="glass_dark",
+                      seg=3.6, sill=0.9, header=0.55, inset=0.55, mullion=0.30,
+                      edges=visible)
+    if ph - nf * fh > 0.05:
+        facade.add_solid(mb, ploop, nf * fh, ph, "concrete_grey", edges=visible)
+    mb.add_ngon_flat(ploop, ph, "roof_grey")
+    facade.add_parapet(mb, ploop, ph, 1.2, 0.45, "concrete_light", edges=visible)
+    return ploop, ph
+
+
 def build_lab_tower(mb, b, frame, ctx):
     loop = geom.ensure_ccw(geom.dedup(b["footprint"]))
     h = b["height"]
@@ -43,16 +85,29 @@ def build_lab_tower(mb, b, frame, ctx):
     fh = h / lv
     u0, v0, u1, v1 = frame.uv_bbox(loop)
 
+    # 北面に沿う細長い部分（parts）。本体の外形はキャンパスの軸（Frame）を決めるので、
+    # 部分は本体に混ぜずに別に建てる（#281）。部分に接する本体の辺は、部分より高い所だけ壁を出す
+    parts = [_lab_tower_part(mb, part, loop, fh) for part in b.get("parts") or []]
+    hidden = {}
+    for ploop, ph in parts:
+        for i in _hidden_by(loop, [ploop]):
+            hidden[i] = max(hidden.get(i, 0.0), ph)
+    visible = [i for i in range(len(loop)) if i not in hidden]
+
     facade.add_facade(mb, loop, 0.0, fh, 1, lv,
                       wall="concrete_grey", glass="glass_dark",
-                      seg=3.0, sill=1.15, header=0.45, inset=0.45, mullion=0.36)
+                      seg=3.0, sill=1.15, header=0.45, inset=0.45, mullion=0.36,
+                      edges=visible)
     facade.add_facade(mb, loop, 0.0, fh, 0, 1,
                       wall="concrete_dark", glass="glass_dark",
-                      seg=3.6, sill=0.9, header=0.55, inset=0.55, mullion=0.30)
+                      seg=3.6, sill=0.9, header=0.55, inset=0.55, mullion=0.30,
+                      edges=visible)
+    for i, other_h in hidden.items():
+        if other_h < h - 0.05:
+            facade.add_solid(mb, loop, other_h, h, "concrete_grey", edges=[i])
 
-    # レンガ色の階段コア（南面のみ。北面は共創棟が全長で接していて、出っ張ると
-    # 共創棟の躯体に 2.7 m 食い込む）。中央のコアは入口の切り欠き（u 111..127）の口を
-    # 塞がないよう東へずらす（#39）
+    # レンガ色の階段コア（南面のみ。北面は細長い部分が全長で接している）。中央のコアは
+    # 入口の切り欠き（u 111..127）の口を塞がないよう東へずらす（#39）
     for t in (0.10, 0.58, 0.90):
         uc = u0 + (u1 - u0) * t
         _brick_core(mb, frame, uc, v0 - 1.4, v0 + 6.0, 0.0, h + 2.2, lv, fh)
@@ -77,70 +132,176 @@ def build_lab_tower(mb, b, frame, ctx):
 
 
 # --------------------------------------------------------------------------- #
-#  共創棟 — 11F・47 m。白ルーバー + ガラス。1F にスタバ / ファミマ
+#  共創棟 — 11F・45 m（2024 年竣工）。上階はグレーの縦フィンの格子、妻面はレンガタイル、
+#  1F は公園側が列柱の奥のガラス、モール側がガラスとグレーの水平ルーバーの帯
+#  （docs/ref/interiors/kyoso/photo_index.md の外観写真）。店の看板は出さない（#181）
 # --------------------------------------------------------------------------- #
-def _hidden_edges(loop, self_id, ctx, push=0.4):
-    """他棟に接して見えない辺を探す。辺上 3 点を push だけ外へ出し、全部が他棟の
-    フットプリント内なら隠れているとみなす。戻り値 {辺番号: 隠している棟の高さ}。"""
-    out = {}
-    fps = ctx.get("footprints") or []
+KYOSO_GROUND_H = 5.4      # 1F の階高（2F スラブの上面）。屋内の 1F 天井 4.6〜5.0 の上
+KYOSO_FIN_SEG = 1.8       # 縦フィンの間隔（上階の窓割りと同じ）
+KYOSO_FIN_DEPTH = 0.7     # フィンと各階の横桟の出
+KYOSO_ARCADE = 2.4        # 公園側の 1F のガラスを列柱の線から引っ込める奥行き
+
+
+def _kyoso_sides(loop, frame):
+    """辺を外向きの向きで分ける。戻り値 (モール側 +v, 公園側 -v, 妻面 ±u の辺番号のリスト)。"""
+    mall = park = None
+    gables = []
     n = len(loop)
     for i in range(n):
-        a, b = loop[i], loop[(i + 1) % n]
+        nu, nv = frame.uv(geom.outward_normal(loop[i], loop[(i + 1) % n]))
+        if abs(nv) >= abs(nu):
+            if nv > 0:
+                mall = i
+            else:
+                park = i
+        else:
+            gables.append(i)
+    return mall, park, gables
+
+
+def _fin_grid(mb, loop, i, z0, z1, floor_h, mat):
+    """辺 i の前に縦フィンと各階の横桟を立てて格子にする。フィンは上階の窓割りの方立ての位置。
+
+    フィンは正面と両脇の 3 面だけ（天端は軒、足元は最下段の横桟に隠れる）、横桟は正面・天端・
+    下端・両端の 5 面。閉じた箱にしないのは、ほかの建物の屋内の近景（kcd_interior.exterior）に
+    共創棟が写り込み、三角形の予算を食うため（#281）。"""
+    a, b = loop[i], loop[(i + 1) % len(loop)]
+    d = geom.sub(b, a)
+    L = geom.length(d)
+    e = geom.mul(d, 1.0 / L)
+    n = (e[1], -e[0])
+    D = KYOSO_FIN_DEPTH
+    ns = max(1, int(round(L / KYOSO_FIN_SEG)))
+
+    def P(t, z, dd):
+        return facade._P(a, e, n, t, z, dd)
+
+    for k in range(ns + 1):
+        t = L * k / ns
+        t0, t1 = max(0.0, t - 0.12), min(L, t + 0.12)
+        mb.add_quad(P(t0, z0, D), P(t1, z0, D), P(t1, z1, D), P(t0, z1, D), mat)
+        mb.add_quad(P(t0, z0, 0), P(t0, z0, D), P(t0, z1, D), P(t0, z1, 0), mat)
+        mb.add_quad(P(t1, z0, D), P(t1, z0, 0), P(t1, z1, 0), P(t1, z1, D), mat)
+    for f in range(int(round((z1 - z0) / floor_h)) + 1):
+        z = min(z1, z0 + f * floor_h)
+        za, zb = max(z0, z - 0.3), max(z0 + 0.3, z)
+        mb.add_quad(P(0, za, D), P(L, za, D), P(L, zb, D), P(0, zb, D), mat)
+        mb.add_quad(P(0, zb, D), P(L, zb, D), P(L, zb, 0), P(0, zb, 0), mat)
+        mb.add_quad(P(0, za, 0), P(L, za, 0), P(L, za, D), P(0, za, D), mat)
+        mb.add_quad(P(0, za, 0), P(0, za, D), P(0, zb, D), P(0, zb, 0), mat)
+        mb.add_quad(P(L, za, D), P(L, za, 0), P(L, zb, 0), P(L, zb, D), mat)
+
+
+def _kyoso_stair_tower(mb, rect, z0, z1, floor_h, frame, glass):
+    """妻面のガラスの階段塔。各面を 1 枚のガラスにして、その前に全高の方立てと各階の横枠を
+    貼る（facade.add_glass_tower は窓ごとに見込みを作るので、ここでは使わない。#281）。"""
+    rect = geom.ensure_ccw(geom.dedup(rect))
+    floors = max(1, int(round((z1 - z0) / floor_h)))
+    for i in range(len(rect)):
+        a, b = rect[i], rect[(i + 1) % len(rect)]
         d = geom.sub(b, a)
         L = geom.length(d)
-        if L < 1e-6:
-            continue
         e = geom.mul(d, 1.0 / L)
-        nrm = (e[1], -e[0])
-        pts = [(a[0] + e[0] * L * t + nrm[0] * push, a[1] + e[1] * L * t + nrm[1] * push)
-               for t in (0.25, 0.5, 0.75)]
-        for fid, fp, fh in fps:
-            if fid == self_id:
-                continue
-            if all(geom.point_in_poly(p, fp) for p in pts):
-                out[i] = max(out.get(i, 0.0), fh)
-    return out
+        n = (e[1], -e[0])
+
+        def P(t, z, dd):
+            return facade._P(a, e, n, t, z, dd)
+
+        mb.add_quad(P(0, z0, -0.10), P(L, z0, -0.10), P(L, z1, -0.10), P(0, z1, -0.10), glass)
+        # 足元の腰壁（入口以外の地上のガラスを扉に見せない。facade.add_curtain_wall と同じ 0.9 m）
+        mb.add_quad(P(0, z0, 0), P(L, z0, 0), P(L, z0 + 0.9, 0), P(0, z0 + 0.9, 0), frame)
+        ns = max(1, int(round(L / 2.4)))
+        for k in range(ns + 1):
+            t = L * k / ns
+            t0, t1 = max(0.0, t - 0.09), min(L, t + 0.09)
+            mb.add_quad(P(t0, z0, 0.02), P(t1, z0, 0.02), P(t1, z1, 0.02), P(t0, z1, 0.02), frame)
+        for f in range(1, floors):
+            z = z0 + f * floor_h
+            mb.add_quad(P(0, z - 0.22, 0), P(L, z - 0.22, 0), P(L, z, 0), P(0, z, 0), frame)
+    mb.add_slab(geom.offset_polygon(rect, 0.8), z1, z1 + 0.45, frame)
+
+
+def _kyoso_arcade(mb, loop, i, zt):
+    """公園側の 1F: 列柱の線から KYOSO_ARCADE だけ引っ込めたガラスの面と、その上の軒裏・
+    両端の壁・打放しの丸柱。軒下は歩いて入れる。戻り値は、辺 i をガラスの面へ下げたループ。"""
+    n = len(loop)
+    a, b = loop[i], loop[(i + 1) % n]
+    nrm = geom.outward_normal(a, b)
+    back = geom.mul(nrm, -KYOSO_ARCADE)
+    ai, bi = geom.add(a, back), geom.add(b, back)
+    inner = list(loop)
+    inner[i], inner[(i + 1) % n] = ai, bi
+    # 軒裏（下向き）と、軒下の両端の壁（軒下の側へ向く）
+    mb.add_quad((a[0], a[1], zt), (ai[0], ai[1], zt), (bi[0], bi[1], zt), (b[0], b[1], zt),
+                "concrete_light")
+    mb.add_quad((a[0], a[1], 0.0), (ai[0], ai[1], 0.0), (ai[0], ai[1], zt), (a[0], a[1], zt),
+                "concrete_dark")
+    mb.add_quad((bi[0], bi[1], 0.0), (b[0], b[1], 0.0), (b[0], b[1], zt), (bi[0], bi[1], zt),
+                "concrete_dark")
+    # 打放しの丸柱。両端は妻面の壁から 3 m 離す
+    e = geom.normalize(geom.sub(b, a))
+    inset = geom.mul(nrm, -0.6)
+    pa = geom.add(geom.add(a, geom.mul(e, 3.0)), inset)
+    pb = geom.add(geom.add(b, geom.mul(e, -3.0)), inset)
+    facade.add_colonnade(mb, pa, pb, 0.0, zt, spacing=6.0, radius=0.42,
+                         mat="concrete_light", slab=False)
+    return inner
 
 
 def build_kyoso(mb, b, frame, ctx):
-    # OSM 実測のフットプリントをそのまま使う（6 点・722 m²・奥行 5.6〜6.8 m）。
+    # 外形は campus.json の手入力の矩形（約 72 × 35.5 m、tools/osm_extract.py の MANUAL_BUILDINGS）
     loop = geom.ensure_ccw(geom.dedup(b["footprint"]))
     u0, v0, u1, v1 = frame.uv_bbox(loop)
     h = b["height"]
     lv = b["levels"]
-    fh = h / lv
-    n = len(loop)
+    g1 = KYOSO_GROUND_H
+    fu = (h - g1) / (lv - 1)
+    mall, park, gables = _kyoso_sides(loop, frame)
+    longs = [i for i in (mall, park) if i is not None]
 
-    def _edge(i):
-        return geom.sub(loop[(i + 1) % n], loop[i])
+    # 上階: 長手の両面は濃いガラスの前にグレーの縦フィンの格子、妻面はレンガタイルに縦長の窓。
+    # 長手の窓は各階 1 本の連続窓にし、窓割りはフィンに任せる（方立てはフィンの陰に隠れる）
+    facade.add_facade(mb, loop, g1, fu, 0, lv - 1,
+                      wall="concrete_light", glass="glass_dark",
+                      seg=1000.0, sill=0.85, header=0.55, inset=0.25, mullion=0.20,
+                      edges=longs, side_reveals=False)
+    for i in longs:
+        _fin_grid(mb, loop, i, g1, h, fu, "metal_grey")
+    facade.add_facade(mb, loop, g1, fu, 0, lv - 1,
+                      wall="brick_red", glass="glass_dark",
+                      seg=4.4, sill=1.0, header=0.9, inset=0.30, mullion=2.6,
+                      edges=gables, side_reveals=False)
 
-    # 第1研究棟に接する南辺などは壁を出さない（同一平面で z-fight するだけ）
-    hidden = _hidden_edges(loop, b["id"], ctx)
-    visible = [i for i in range(n) if i not in hidden]
-    louver_edges = [i for i in visible if geom.length(_edge(i)) >= 5.0]
+    # 1F: 妻面は濃色の基壇、モール側は全面ガラス（濃色の方立て）の上にグレーの水平ルーバーの帯、
+    # 公園側は列柱の奥のガラス
+    facade.add_facade(mb, loop, 0.0, g1, 0, 1,
+                      wall="concrete_dark", glass="glass_dark",
+                      seg=4.4, sill=0.9, header=1.6, inset=0.40, mullion=1.4,
+                      edges=gables)
+    if mall is not None:
+        facade.add_curtain_wall(mb, loop, 0.0, g1, 0, 1, frame="metal_charcoal",
+                                glass="glass_clear", seg=3.0, inset=0.25, edges=[mall],
+                                ground_sill=0.9)
+        facade.add_louvers(mb, loop, g1 - 1.6, 1.6, 0, 1, mat="metal_grey",
+                           depth=0.6, thick=0.10, edges=[mall], per_floor=3)
+    if park is not None:
+        inner = _kyoso_arcade(mb, loop, park, g1)
+        facade.add_curtain_wall(mb, inner, 0.0, g1, 0, 1, frame="metal_charcoal",
+                                glass="glass_clear", seg=3.0, inset=0.25, edges=[park],
+                                ground_sill=0.9)
 
-    facade.add_facade(mb, loop, 0.0, fh, 1, lv,
-                      wall="louver_white", glass="glass_clear",
-                      seg=2.6, sill=0.85, header=0.30, inset=0.32, mullion=0.22,
-                      edges=visible)
-    facade.add_louvers(mb, loop, 0.0, fh, 1, lv, mat="louver_white",
-                       depth=0.6, thick=0.10, edges=louver_edges, per_floor=2)
-    # 1F: ラーニングスクエア（全面ガラス）
-    facade.add_curtain_wall(mb, loop, 0.0, fh, 0, 1, seg=3.0, inset=0.30, edges=visible,
-                            ground_sill=0.9)
-    # 隠れた辺は、相手の棟より高い部分だけ壁を出す
-    for i, other_h in hidden.items():
-        if other_h < h - 0.5:
-            facade.add_solid(mb, loop, other_h, h, "louver_white", edges=[i])
+    # 妻面（西端）のガラスの階段塔。モール側に寄せ、外へ 3 m 出す（建物の占有の余白の内側）
+    tower = _uv_rect(frame, u0 - 3.0, v1 - 13.0, u0 + 0.2, v1 - 6.0)
+    _kyoso_stair_tower(mb, tower, 0.0, h + 2.0, fu, "metal_charcoal", "glass_clear")
 
-    mb.add_ngon_flat(loop, h, "roof_grey")
-    facade.add_parapet(mb, loop, h, 1.1, 0.4, "louver_white", edges=visible)
-    _roof_boxes(mb, frame, (u0, v0, u1, v1), h + 1.1, n=2, du=10.0, dv=4.0, h=3.2)
+    # 屋上: 深い軒（外へ 1.4 m）とパラペット、機械室
+    eave = geom.offset_polygon(loop, 1.4)
+    mb.add_slab(eave, h, h + 0.6, "concrete_light")
+    facade.add_parapet(mb, eave, h + 0.6, 0.9, 0.3, "metal_grey")
+    _roof_boxes(mb, frame, (u0, v0, u1, v1), h + 0.6, n=3, du=12.0, dv=14.0, h=3.4)
 
-    # 入口と看板は kcd_lib.entrances が置く
+    # 入口と看板は kcd_lib.entrances が置く。モール側の面の v は自販機の置き場所の予備
     ctx["kyoso_mall_v"] = v1
-    ctx["kyoso_rect"] = loop
 
 
 # --------------------------------------------------------------------------- #
