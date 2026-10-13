@@ -54,6 +54,7 @@ namespace KCD
         private float _sitTime;
         private int _stoodUpFrame = KCDInput.NoFrame;
         private int _solidMask;
+        private Vector3 _beforeSit;
         private int _stuckFrames;
         private float _planarSpeed;
         private bool _autopilot;
@@ -203,12 +204,7 @@ namespace KCD
         /// </summary>
         private void RecoverIfStuck()
         {
-            if (_solidMask == 0)
-            {
-                _solidMask = StuckRecovery.SolidMask(gameObject);
-            }
-
-            if (!StuckRecovery.IsPenetrating(_controller, _solidMask))
+            if (!StuckRecovery.IsPenetrating(_controller, SolidMask))
             {
                 _stuckFrames = 0;
                 return;
@@ -222,13 +218,13 @@ namespace KCD
             }
 
             float yaw = transform.eulerAngles.y;
-            if (_stuckFrames < 6 && StuckRecovery.TryDepenetrate(_controller, _solidMask, out Vector3 correction))
+            if (_stuckFrames < 6 && StuckRecovery.TryDepenetrate(_controller, SolidMask, out Vector3 correction))
             {
                 Relocate(transform.position + correction, yaw);
                 return;
             }
 
-            if (StuckRecovery.TryFindFreeSpot(_controller, _solidMask, out Vector3 free))
+            if (StuckRecovery.TryFindFreeSpot(_controller, SolidMask, out Vector3 free))
             {
                 Relocate(free, yaw);
                 _stuckFrames = 0;
@@ -246,6 +242,20 @@ namespace KCD
 
         /// <summary>空き場所も見つからないとき、後ろへ戻すまでのフレーム数。</summary>
         public const int LastResortFrames = 30;
+
+        /// <summary>体がめり込んだかを見るレイヤー（自分と NPC を除く固体）。</summary>
+        private int SolidMask
+        {
+            get
+            {
+                if (_solidMask == 0)
+                {
+                    _solidMask = StuckRecovery.SolidMask(gameObject);
+                }
+
+                return _solidMask;
+            }
+        }
 
         /// <summary>速度を保ったまま位置だけ直す。CharacterController は切らないと座標を戻す。</summary>
         private void Relocate(Vector3 position, float yawDegrees)
@@ -390,6 +400,7 @@ namespace KCD
                 ? Mathf.Atan2(forward.x, forward.z) * Mathf.Rad2Deg
                 : transform.eulerAngles.y;
 
+            _beforeSit = transform.position;
             _controller.enabled = false;
             transform.SetPositionAndRotation(anchor.position, Quaternion.Euler(0f, yaw, 0f));
             _horizontalVelocity = Vector3.zero;
@@ -402,7 +413,7 @@ namespace KCD
             SittingChanged?.Invoke(true);
         }
 
-        /// <summary>立つ。座面の少し前に出て CharacterController を戻す。</summary>
+        /// <summary>立つ。座面の少し前（そこに体が収まらなければ座る前に立っていた所）に出て CharacterController を戻す。</summary>
         public void StandUp()
         {
             if (!_sitting)
@@ -413,7 +424,12 @@ namespace KCD
             Teleport(StandPosition(), transform.eulerAngles.y);
         }
 
-        /// <summary>立つ位置。座面から _standForward だけ前（負なら後ろ）へ出るが、壁や家具の手前で止める。</summary>
+        /// <summary>
+        /// 立つ位置。座面から _standForward だけ前（負なら後ろ）へ出るが、壁や家具の手前で止める。
+        /// そこで体が席や机に重なるなら、座る前に立っていた所へ戻す。歩いて来られた所なので空いているが、
+        /// ワープ直後に座ったときなど席から離れた所や、その後に塞がった所へは戻さない。
+        /// どちらにも収まらなければ前に出し、めり込みは RecoverIfStuck に任せる。
+        /// </summary>
         private Vector3 StandPosition()
         {
             Vector3 direction = transform.forward * Mathf.Sign(_standForward);
@@ -424,7 +440,32 @@ namespace KCD
                 distance = Mathf.Max(0f, hit.distance - _controller.radius);
             }
 
-            return transform.position + direction * distance;
+            Vector3 ahead = transform.position + direction * distance;
+            if (StuckRecovery.HasRoom(_controller, ahead, SolidMask))
+            {
+                return ahead;
+            }
+
+            if (CanReturnTo(transform.position, _beforeSit) && StuckRecovery.HasRoom(_controller, _beforeSit, SolidMask))
+            {
+                return _beforeSit;
+            }
+
+            return ahead;
+        }
+
+        /// <summary>座る前の位置へ戻してよい、座面からの平面の距離 (m)。E で調べる相手を探す範囲（InteractionPrompt の 3 m）。</summary>
+        public const float MaxReturnDistance = 3f;
+
+        /// <summary>座る前の位置へ戻してよい、座面からの高さの差 (m)。客席の数段ぶん。</summary>
+        public const float MaxReturnRise = 1f;
+
+        /// <summary>座面 seat から、座る前に立っていた before へ立ち戻ってよいか。遠すぎる所へは飛ばさない。</summary>
+        public static bool CanReturnTo(Vector3 seat, Vector3 before)
+        {
+            Vector3 flat = before - seat;
+            flat.y = 0f;
+            return flat.magnitude <= MaxReturnDistance && Mathf.Abs(before.y - seat.y) <= MaxReturnRise;
         }
 
         /// <summary>立つ位置を探る高さ (m)。腰より少し上。</summary>

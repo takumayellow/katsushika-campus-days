@@ -166,5 +166,24 @@ namespace KCD.Tests
             // ただし長すぎると本物のジャンプ以外の落下で着地音が出なくなるので 0.3 s 未満にする。
             Assert.Less(PlayerController.MinAirTimeForLanding, 0.3f);
         }
+
+        [Test]
+        public void CanReturnTo_NearbyStandingSpot()
+        {
+            var seat = new Vector3(10f, 2f, -4f);
+            Assert.IsTrue(PlayerController.CanReturnTo(seat, seat + new Vector3(1.2f, 0f, 0.9f)), "席の横の通路");
+            Assert.IsTrue(PlayerController.CanReturnTo(seat, seat + new Vector3(0f, -0.6f, 1.5f)), "客席の数段下の通路");
+            Assert.IsTrue(PlayerController.CanReturnTo(seat, seat + new Vector3(PlayerController.MaxReturnDistance, 0f, 0f)),
+                "調べるが届く端");
+        }
+
+        [Test]
+        public void CanReturnTo_RejectsFarOrOtherFloor()
+        {
+            var seat = new Vector3(10f, 2f, -4f);
+            Assert.IsFalse(PlayerController.CanReturnTo(seat, seat + new Vector3(2.5f, 0f, 2.5f)), "調べるが届かない所");
+            Assert.IsFalse(PlayerController.CanReturnTo(seat, seat + new Vector3(0.5f, 3.2f, 0f)), "上の階");
+            Assert.IsFalse(PlayerController.CanReturnTo(seat, new Vector3(-80f, 0f, 35f)), "ワープ前の屋外");
+        }
     }
 }
