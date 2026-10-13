@@ -115,7 +115,7 @@ def side_table(mb, x, y, z=0.0):
 
 
 def tumbler_shelf(mb, x0, y0, x1, y1, h=1.8, tiers=4, rng=None):
-    """忘れ物の棚（4 段）。段ごとに白いルーバー柄のタンブラーを並べる。"""
+    """忘れ物の棚（4 段）。段ごとに白いタンブラーを並べる。"""
     kit.box(mb, x0, y0, 0.0, x1, y1, 0.04, "plastic_white")
     for side in (y0, y1 - 0.03):
         kit.box(mb, x0, side, 0.0, x1, side + 0.03, h, "plastic_white")
