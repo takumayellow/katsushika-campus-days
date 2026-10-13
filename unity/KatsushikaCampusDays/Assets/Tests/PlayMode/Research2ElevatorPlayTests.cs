@@ -56,7 +56,9 @@ namespace KCD.Tests
             Assert.IsNotNull(menu, "エレベーターの画面が無い");
 
             var bad = new List<string>();
+            // 玄関から 1F の乗り場まで（ロビーの床は平らなので、歩く代わりに移す）。
             int current = 0;
+            player.Teleport(stops[0].Landing.position + Vector3.up * 0.15f, stops[0].Landing.eulerAngles.y);
             yield return StandAtDoor(player, stops[0]);
             CheckFloor(player, prompt, lights, panels, stops, 0, bad);
 
