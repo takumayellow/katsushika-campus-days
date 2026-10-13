@@ -213,7 +213,7 @@ namespace KCD.Editor
                     ? groundLayer
                     : buildingLayer >= 0 ? buildingLayer : go.layer;
                 GameObjectUtility.SetStaticEditorFlags(go, moving
-                    ? StaticEditorFlags.OccludeeStatic
+                    ? 0
                     : StaticEditorFlags.BatchingStatic | StaticEditorFlags.OccluderStatic
                         | StaticEditorFlags.OccludeeStatic);
 

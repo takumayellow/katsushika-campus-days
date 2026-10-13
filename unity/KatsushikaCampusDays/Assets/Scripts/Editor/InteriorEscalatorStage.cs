@@ -6,7 +6,7 @@ namespace KCD.Editor
     /// <summary>
     /// 屋内のエスカレーター。FBX の Empty esc_&lt;id&gt;_&lt;区間&gt;_lo（下の端）と esc_&lt;id&gt;_&lt;区間&gt;_hi（上の端）を
     /// 結ぶ斜めの板を当たり判定にし、乗ったプレイヤーを運ぶ Escalator を付ける。2 点は段鼻の線と段の奥の線の
-    /// 中間の線の両端（blender/kcd_interior/plan_lecture_esc.py）。段の部品 escsteps_&lt;id&gt;_…_&lt;区間&gt; があれば、
+    /// 中間の線の両端（blender/kcd_interior/plan_lecture_esc.py）。段の部品 escsteps_&lt;id&gt;_&lt;区間&gt; があれば、
     /// それを 1 段ぶんずつ動かして流れて見せる。段の部品には当たり判定を付けない（<see cref="IsMovingSteps"/>）。
     /// </summary>
     public static class InteriorEscalatorStage
@@ -99,16 +99,13 @@ namespace KCD.Editor
             return ends;
         }
 
-        /// <summary>区間の段の部品。escsteps_&lt;id&gt; で始まり _&lt;区間&gt; で終わるメッシュ（無ければ null）。</summary>
+        /// <summary>区間の段の部品。名前が escsteps_&lt;id&gt;_&lt;区間&gt; のメッシュ（無ければ null）。</summary>
         private static Transform FindSteps(Transform interior, string id, string flight)
         {
-            string head = StepsPrefix + id;
-            string tail = "_" + flight;
+            string wanted = StepsPrefix + id + "_" + flight;
             foreach (MeshFilter filter in interior.GetComponentsInChildren<MeshFilter>(true))
             {
-                string name = filter.gameObject.name;
-                if (name.StartsWith(head, System.StringComparison.OrdinalIgnoreCase)
-                    && name.EndsWith(tail, System.StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(filter.gameObject.name, wanted, System.StringComparison.OrdinalIgnoreCase))
                 {
                     return filter.transform;
                 }
@@ -125,8 +122,14 @@ namespace KCD.Editor
             go.transform.SetPositionAndRotation(bottom, Quaternion.identity);
             int count = Mathf.Max(1, Mathf.RoundToInt((top.y - bottom.y) / StepRise));
             Escalator escalator = go.AddComponent<Escalator>();
-            escalator.Configure(top - bottom, count, steps);
-            escalator.AddRamp(LayerMask.NameToLayer("Ground"));
+            escalator.Configure(go.transform.InverseTransformVector(top - bottom), count, steps);
+            int ground = LayerMask.NameToLayer("Ground");
+            if (ground < 0)
+            {
+                EditorPaths.Report("Ground レイヤーが無いので、エスカレーター " + flight + " の板に乗っても運ばれません。");
+            }
+
+            escalator.AddRamp(ground);
         }
     }
 }

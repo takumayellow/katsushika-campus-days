@@ -95,6 +95,23 @@ namespace KCD.Tests
             Assert.Greater(farthest, step.magnitude * 0.3f, "段が動かない");
         }
 
+        [UnityTest]
+        public IEnumerator WhereTwoFlightsOverlap_TheOneUnderTheFeetCarries()
+        {
+            // 上の端の先（降り口の平場）に、逆向きに上る次の区間の乗り口が重なる。先に登録された方ではなく、
+            // 段の線の高さが足に近い方（いま降りた区間）が運ぶ。
+            _escalator.enabled = false;
+            var next = new GameObject("EscalatorNext");
+            next.transform.SetParent(_world.transform, false);
+            next.transform.position = new Vector3(Top.x + 0.6f, Top.y, 0f);
+            next.AddComponent<Escalator>().Configure(new Vector3(-8f, 4.6f, 0f), 23, null, Speed);
+            _escalator.enabled = true;
+            yield return null;
+
+            Vector3 v = Escalator.CarryAt(new Vector3(Top.x + 0.3f, Top.y, 0f));
+            Assert.Greater(v.x, 0f, "降り口の先で、次の区間の向き（−x）へ押し戻される");
+        }
+
         private void AddFloor(Vector3 topCenter, float length)
         {
             var floor = new GameObject("Floor");

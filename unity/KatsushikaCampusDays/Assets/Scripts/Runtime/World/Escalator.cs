@@ -35,8 +35,8 @@ namespace KCD
         [SerializeField] private Vector3 _stepsHome;
 
         /// <summary>
-        /// InteriorEscalatorStage から。top は上の端（この Transform のローカル）、steps は段の部品（無ければ null）、
-        /// stepCount は段の数。
+        /// InteriorEscalatorStage から。top は上の端（この Transform のローカル）、stepCount は段の数、
+        /// steps は段の部品（無ければ null）。
         /// </summary>
         public void Configure(Vector3 top, int stepCount, Transform steps, float speed = DefaultSpeed,
             float halfWidth = DefaultHalfWidth)
@@ -135,6 +135,14 @@ namespace KCD
         /// </summary>
         public static Vector3 CarryVelocity(Vector3 bottom, Vector3 top, float halfWidth, float speed, Vector3 feet)
         {
+            return CarryVelocity(bottom, top, halfWidth, speed, feet, out _);
+        }
+
+        /// <summary><see cref="CarryVelocity(Vector3, Vector3, float, float, Vector3)"/> と同じ。gap は足と段の線の高さの差（m）。</summary>
+        private static Vector3 CarryVelocity(Vector3 bottom, Vector3 top, float halfWidth, float speed, Vector3 feet,
+            out float gap)
+        {
+            gap = float.PositiveInfinity;
             Vector3 axis = top - bottom;
             Vector3 flat = new Vector3(axis.x, 0f, axis.z);
             float run = flat.magnitude;
@@ -163,13 +171,19 @@ namespace KCD
                 return Vector3.zero;
             }
 
+            gap = Mathf.Abs(feet.y - lineY);
             // 段の線に沿った速さ speed の水平の成分。高さは斜めの板の上を歩くのと同じく CharacterController が拾う。
             return along * (speed * run / axis.magnitude);
         }
 
-        /// <summary>足の位置 feet を、いま有効なエスカレーターのどれかが運ぶ水平の速度。乗っていなければ zero。</summary>
+        /// <summary>
+        /// 足の位置 feet を、いま有効なエスカレーターが運ぶ水平の速度。乗っていなければ zero。
+        /// 2 区間の範囲が重なるところ（降り口の先と次の区間の乗り口など）では、段の線の高さが足にいちばん近い区間で決める。
+        /// </summary>
         public static Vector3 CarryAt(Vector3 feet)
         {
+            Vector3 best = Vector3.zero;
+            float bestGap = float.PositiveInfinity;
             for (int i = 0; i < Active.Count; i++)
             {
                 Escalator e = Active[i];
@@ -178,14 +192,15 @@ namespace KCD
                     continue;
                 }
 
-                Vector3 v = CarryVelocity(e.Bottom, e.Top, e._halfWidth, e._speed, feet);
-                if (v != Vector3.zero)
+                Vector3 v = CarryVelocity(e.Bottom, e.Top, e._halfWidth, e._speed, feet, out float gap);
+                if (gap < bestGap)
                 {
-                    return v;
+                    best = v;
+                    bestGap = gap;
                 }
             }
 
-            return Vector3.zero;
+            return best;
         }
     }
 }
