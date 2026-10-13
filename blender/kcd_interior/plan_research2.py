@@ -33,8 +33,8 @@ SPINE = 0.16                        # 2 本の段の間の煉瓦の壁の厚み
 LAND_W = 1.3                        # 東の踊り場の奥行き（X）
 TOP_W = 1.1                         # 2F の着き場の奥行き（X）
 STEPS = 14
-FACE_W = M.ang(math.pi * 0.5)       # 正面 host の -X
-FACE_E = M.ang(-math.pi * 0.5)      # 正面 host の +X
+FACE_W = math.pi * 0.5      # 正面 host の -X
+FACE_E = -math.pi * 0.5     # 正面 host の +X
 
 # ロビーの間取り（host の座標）
 EV = (23.8, 30.4, 26.4, 37.1)                       # EV 2 基の箱（扉は +X を向く）
@@ -78,7 +78,7 @@ def _walls(c, mb):
     ex0, ey0, ex1, ey1 = EV
     _box(mb, ex0, ey0, 0.0, ex1, ey1, C1, CONCRETE)
     for y in D.EV_Y:
-        FR.ev_doors(mb, *M.pt(ex1, y), 0.0, FACE_E)
+        FR.ev_doors(mb, *M.pt(ex1, y), 0.0, M.ang(FACE_E))
     gy = HALL_Y1
     _box(mb, HX_IN0, gy - 0.03, 0.1, HX_IN1, gy + 0.03, C2, GLASS)
     _box(mb, HX_IN0, gy - 0.05, 0.0, HX_IN1, gy + 0.05, 0.1, STEEL)
@@ -101,11 +101,11 @@ def _stair(c, mb):
 
 
 def _signs(c, mb):
-    signs.wall(c, mb, *M.pt(HX_IN1, 28.0), 1.6, FACE_W,
+    signs.wall(c, mb, *M.pt(HX_IN1, 28.0), 1.6, M.ang(FACE_W),
                ja="6F 会議室\n4F・5F 研究室\n3F 事務室\n1F・2F 食堂",
                en="6F Meeting / 4-5F Labs\n3F Office / 1-2F Cafeteria",
                w=1.4, h=1.6, plate=BLUE, frame="metal_white", out=0.04)
-    signs.wall(c, mb, *M.pt(HX_IN0 + 0.12, 21.0), 2.3, FACE_E, ja="第2研究棟",
+    signs.wall(c, mb, *M.pt(HX_IN0 + 0.12, 21.0), 2.3, M.ang(FACE_E), ja="第2研究棟",
                en="Research Labs Building No.2", w=1.6, h=0.5, plate=CHARCOAL,
                frame="metal_white", out=0.03)
 

@@ -67,23 +67,29 @@ namespace KCD.Editor
             EditorPaths.Report("入口の立て看板に名前を " + pylons + " 面貼りました。");
         }
 
-        /// <summary>入口の立て看板の白い面に、表と裏のどちらからも読める名前を貼る。貼った面の数を返す。</summary>
+        /// <summary>
+        /// 入口の立て看板の白い面に、表と裏のどちらからも読める名前を貼る。貼った面の数を返す。
+        /// 2 つ目からの扉の看板（sign_lecture_se）にも、その扉の建物の名前を貼る。
+        /// </summary>
         private static int PlacePylonTexts(Transform group, TMP_FontAsset font)
         {
             float offset = PylonHalfThickness + PylonFaceGap;
             int count = 0;
-            foreach (string id in BuildingNames.Keys)
+            var doors = new System.Collections.Generic.List<string>(BuildingNames.Keys);
+            doors.AddRange(BuildingDoors.SecondDoorIds);
+            foreach (string doorId in doors)
             {
-                Transform sign = CampusStage.FindChild("sign_" + id);
-                if (sign == null || !DoorFrame(id, out _, out Vector3 outward))
+                Transform sign = CampusStage.FindChild("sign_" + doorId);
+                if (sign == null || !DoorFrame(doorId, out _, out Vector3 outward))
                 {
                     continue;
                 }
 
                 // 板の正面は扉の外向き（door_ → entrance_）。表は外から、裏は建物の側から読む。
+                string id = BuildingDoors.BuildingOf(doorId);
                 Vector3 white = sign.position + Vector3.down * PylonWhiteDrop;
-                PlaceFaceText(group, "SignText_" + id + "_front", font, id, white + outward * offset, outward, PylonStyle);
-                PlaceFaceText(group, "SignText_" + id + "_back", font, id, white - outward * offset, -outward, PylonStyle);
+                PlaceFaceText(group, "SignText_" + doorId + "_front", font, id, white + outward * offset, outward, PylonStyle);
+                PlaceFaceText(group, "SignText_" + doorId + "_back", font, id, white - outward * offset, -outward, PylonStyle);
                 count += 2;
             }
 

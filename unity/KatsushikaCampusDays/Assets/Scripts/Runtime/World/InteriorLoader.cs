@@ -9,16 +9,49 @@ namespace KCD
     /// 建物の出入り。屋内モデルはキャンパスの遠くに並べてあるので、シーンを切り替えずに
     /// 暗転してワープするだけで済む。入口を踏むと Enter、屋内の exit を踏むと Exit。
     /// 登録（どの建物がどこにあるか）は SceneBuilder がコードで張る。
+    /// 扉が 2 つある建物（講義棟の玄関と南東の玄関, <see cref="BuildingDoors"/>）では、入った扉の内側に立ち、
+    /// 出るときは踏んだ出口の扉の外へ戻る。
     /// </summary>
     public sealed class InteriorLoader : MonoBehaviour
     {
+        /// <summary>
+        /// 建物の扉 1 つ。屋内で入った直後に立つ所と、その扉から出たときに立つ外の所。
+        /// 外の所は扉の外面から <see cref="OutsideStep"/> m 外で、建物に背を向ける。
+        /// </summary>
+        [System.Serializable]
+        public sealed class Door
+        {
+            /// <summary>扉の id（玄関は建物の id と同じ, BuildingDoors）。</summary>
+            public string DoorId;
+
+            /// <summary>この扉から入った直後に立つ所。</summary>
+            public Transform Spawn;
+
+            /// <summary>外の所が分かっているか（キャンパスに Entrance_&lt;扉の id&gt; があったか）。</summary>
+            public bool HasOutside;
+
+            /// <summary>この扉から出たときに立つ外の所。</summary>
+            public Vector3 OutsidePosition;
+
+            /// <summary>外の所で向く向き（建物の外向き）。</summary>
+            public float OutsideYaw;
+        }
+
+        /// <summary>扉から出たときに立つ所の、扉の外面からの距離（m）。入るときに覚える戻り先と同じ 2 m。</summary>
+        public const float OutsideStep = 2f;
+
         /// <summary>1 つの建物の屋内。</summary>
         [System.Serializable]
         public sealed class Entry
         {
             public string Id;
             public string DisplayName;
+
+            /// <summary>玄関から入った直後に立つ所。扉ごとの立ち位置が無いときもここに立つ。</summary>
             public Transform Spawn;
+
+            /// <summary>扉ごとの立ち位置と外の所（玄関を含む）。扉が 1 つの建物では空でもよい。</summary>
+            public List<Door> Doors = new List<Door>();
 
             /// <summary>
             /// キャンパス側の入口の位置。ステージが書き込むが、いまは読む側がない
@@ -104,8 +137,11 @@ namespace KCD
             }
         }
 
-        /// <summary>建物へ入る。プレイヤーの今の位置と向きを覚えておき、出るときに戻す。</summary>
-        public void Enter(string buildingId)
+        /// <summary>
+        /// 建物へ入る。プレイヤーの今の位置と向きを覚えておき、出るときに戻す。
+        /// doorId を渡すとその扉の内側に立つ（省くか登録の無い扉なら玄関の内側）。
+        /// </summary>
+        public void Enter(string buildingId, string doorId = null)
         {
             Entry entry = Find(buildingId);
             if (entry == null || _busy || IsInside)
@@ -113,8 +149,10 @@ namespace KCD
                 return;
             }
 
+            Door door = FindDoor(entry, doorId);
+            Transform spawn = door != null && door.Spawn != null ? door.Spawn : entry.Spawn;
             PlayerController player = FindAnyObjectByType<PlayerController>();
-            if (player == null || entry.Spawn == null)
+            if (player == null || spawn == null)
             {
                 Debug.LogWarning("[KCD] 屋内へ入れません: " + buildingId);
                 return;
@@ -127,21 +165,26 @@ namespace KCD
             _returnPosition = player.transform.position + back * 2f;
             _returnYaw = player.transform.eulerAngles.y + 180f;
 
-            StartCoroutine(Travel(player, entry.Spawn.position, entry.Spawn.eulerAngles.y, () =>
+            StartCoroutine(Travel(player, spawn.position, spawn.eulerAngles.y, () =>
             {
                 MarkInside(entry);
 
                 // 書くのは暗転が明けて封鎖が外れてから（AutoSave）。ここでは頼むだけ (#61)。
                 AutoSave.Request();
                 string name = L.Get("ui.building." + entry.Id, entry.DisplayName);
-                HUD.Instance?.ShowToast(L.Pick(
-                    name + " の中に入った。出口は入ってきた扉。",
-                    "Entered " + name + ". The way out is the door you came in through."));
+                HUD.Instance?.ShowToast(entry.Doors.Count > 1
+                    ? L.Pick(name + " の中に入った。どの玄関からも外へ出られる。",
+                        "Entered " + name + ". You can leave through any of its entrances.")
+                    : L.Pick(name + " の中に入った。出口は入ってきた扉。",
+                        "Entered " + name + ". The way out is the door you came in through."));
             }));
         }
 
-        /// <summary>外へ出る。</summary>
-        public void Exit()
+        /// <summary>
+        /// 外へ出る。doorId は踏んだ出口の扉。入ったときと別の扉から出たら、その扉の外 2 m に建物へ背を向けて立つ。
+        /// 同じ扉から出たとき・扉を省いたときは、入ったときに覚えた戻り先へ戻る。
+        /// </summary>
+        public void Exit(string doorId = null)
         {
             if (!IsInside || _busy)
             {
@@ -154,7 +197,16 @@ namespace KCD
                 return;
             }
 
-            StartCoroutine(Travel(player, _returnPosition, _returnYaw, () =>
+            Vector3 position = _returnPosition;
+            float yaw = _returnYaw;
+            Entry entry = Find(CurrentId);
+            if (entry != null && LeavesByOtherDoor(entry.Doors, doorId, _returnPosition, out Door door))
+            {
+                position = door.OutsidePosition;
+                yaw = door.OutsideYaw;
+            }
+
+            StartCoroutine(Travel(player, position, yaw, () =>
             {
                 MarkOutside();
                 AutoSave.Request();
@@ -273,6 +325,71 @@ namespace KCD
             }
 
             _busy = false;
+        }
+
+        /// <summary>
+        /// 出口の扉 exitDoorId が、入ってきた扉と別の扉か。入ってきた扉は覚えておかず、戻り先（入った扉の外 2 m）に
+        /// いちばん近い扉の外の所で決める。こうすればセーブから建物の中に戻ったときも、セーブの形を変えずに同じ答えになる。
+        /// 別の扉なら true で、door にその扉を返す。扉の登録が 1 つ以下・出口の扉が登録に無い・外の所が分からないときは false。
+        /// </summary>
+        public static bool LeavesByOtherDoor(IReadOnlyList<Door> doors, string exitDoorId, Vector3 returnPosition,
+            out Door door)
+        {
+            door = null;
+            if (doors == null || doors.Count < 2 || string.IsNullOrEmpty(exitDoorId))
+            {
+                return false;
+            }
+
+            Door exit = null;
+            Door nearest = null;
+            float best = float.MaxValue;
+            foreach (Door each in doors)
+            {
+                if (each == null || !each.HasOutside)
+                {
+                    continue;
+                }
+
+                if (each.DoorId == exitDoorId)
+                {
+                    exit = each;
+                }
+
+                Vector3 d = each.OutsidePosition - returnPosition;
+                d.y = 0f;
+                if (d.sqrMagnitude < best)
+                {
+                    best = d.sqrMagnitude;
+                    nearest = each;
+                }
+            }
+
+            if (exit == null || exit == nearest)
+            {
+                return false;
+            }
+
+            door = exit;
+            return true;
+        }
+
+        private static Door FindDoor(Entry entry, string doorId)
+        {
+            if (entry.Doors == null || string.IsNullOrEmpty(doorId))
+            {
+                return null;
+            }
+
+            foreach (Door door in entry.Doors)
+            {
+                if (door != null && door.DoorId == doorId)
+                {
+                    return door;
+                }
+            }
+
+            return null;
         }
 
         private Entry Find(string buildingId)

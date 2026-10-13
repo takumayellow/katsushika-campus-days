@@ -137,9 +137,9 @@ def load(campus_dir, data):
     src.groups = prop_groups(src.polys)
     ctx = {}
     for dr in entrances.plan(data, campus_frame(data), ctx):
-        src.doors.setdefault(dr["id"], []).append(dr)
-    for bid, xy, _z, _yaw in ctx["sign"]:
-        src.signs.setdefault(bid, []).append(xy)
+        src.doors.setdefault(entrances.building_of(dr["id"]), []).append(dr)
+    for did, xy, _z, _yaw in ctx["sign"]:
+        src.signs.setdefault(entrances.building_of(did), []).append(xy)
 
     for o in loaded:
         if o.type != "MESH" or not o.name.startswith(TREE_PREFIX):

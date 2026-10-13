@@ -8,6 +8,7 @@ namespace KCD.Editor
     /// 建物の屋内。Assets/Models/Interiors/&lt;id&gt;.fbx をキャンパスの遠く（x = 1200 m 以降）に横一列に並べ、
     /// 当たり判定・照明・出口・到達判定を付けて InteriorLoader に登録する。
     /// FBX の Empty: spawn_&lt;id&gt;（入った直後の立ち位置）, exit_&lt;id&gt;（出口）, poi_&lt;id&gt;_*（クエストの visit 先）,
+    /// 2 つ目からの扉（BuildingDoors）の spawn_&lt;扉の id&gt; と exit_&lt;扉の id&gt;,
     /// seat_&lt;id&gt;_*（座れる家具。SeatFactory.PlaceInterior が読む）,
     /// ev_&lt;id&gt;_&lt;階&gt;（エレベーターの乗り場）と lamp_&lt;id&gt;_&lt;階&gt;_*（その階の天井の明かり。InteriorElevatorStage が読む）。
     /// </summary>
@@ -32,6 +33,16 @@ namespace KCD.Editor
         /// どれも隠さない (#60)。
         /// </summary>
         public const float OutsideGroundY = -0.06f;
+
+        /// <summary>
+        /// 1F の床より下まで掘り下げた部屋（講義棟の 101 の段床）の床のメッシュ名に入る印。kcd_interior の
+        /// Ctx.part("floor", "pit") が floor_&lt;id&gt;_pit という名前で出す。この範囲の上には屋内の下の地面を張らない。
+        /// </summary>
+        public const string PitMarker = "_pit";
+
+        /// <summary>屋内の並びの下の地面の z の中心と半分の奥行き（m）。</summary>
+        private const float OutsideGroundZ = 30f;
+        private const float OutsideGroundHalfDepth = 300f;
 
         /// <summary>
         /// 窓のすぐ外の近景（舗装・芝・生垣・木）のメッシュ名の頭。kcd_interior が外周の壁の外にだけ置く (#45)。
@@ -63,6 +74,7 @@ namespace KCD.Editor
 
             float cursor = FirstSlotX;
             int placed = 0;
+            var pits = new List<Rect>();
             foreach (string id in Ids)
             {
                 string assetPath = ModelsFolder + "/" + id + ".fbx";
@@ -85,15 +97,21 @@ namespace KCD.Editor
                 bounds.center += new Vector3(shift, 0f, 0f);
                 cursor = bounds.max.x + Gap;
                 Physics.SyncTransforms();
+                List<Rect> holes = PitHoles(interior.transform, out float pitFloor);
+                pits.AddRange(holes);
 
                 AddSafetyFloor(interior.transform, bounds);
                 AddLights(interior.transform, id);
                 int stops = InteriorElevatorStage.Build(interior.transform, id);
-                AddExit(interior.transform, id);
+                foreach (string door in DoorsOf(id))
+                {
+                    AddExit(interior.transform, id, door);
+                }
+
                 int zones = AddPoiZones(interior.transform, id);
                 SeatFactory.PlaceInterior(interior.transform, id);
                 Register(loader, interior.transform, id);
-                InteriorBackdropStage.Build(interior.transform, id, bounds);
+                InteriorBackdropStage.Build(interior.transform, id, bounds, holes, pitFloor);
                 placed++;
 
                 EditorPaths.Report("屋内 " + id + ": x " + bounds.min.x.ToString("F0") + ".." + bounds.max.x.ToString("F0")
@@ -101,25 +119,53 @@ namespace KCD.Editor
                     + " poi " + zones + (stops > 0 ? " ev " + stops : string.Empty));
             }
 
-            AddOutsideGround(group.transform, FirstSlotX - 200f, cursor + 200f);
+            AddOutsideGround(group.transform, FirstSlotX - 200f, cursor + 200f, pits);
+            CampusStage.CutOuterGround(root, pits);
             EditorPaths.Report("屋内を " + placed + " 棟置きました。");
         }
 
         /// <summary>
-        /// 窓の外に見える地面。無いと空の下半分がそのまま見える。遠景のドームがある屋内ではその下に隠れ、
-        /// サイドカーが無くてドームを置けなかった屋内でだけ見える。
+        /// 1F の床より下まで掘り下げた部屋の床（名前に <see cref="PitMarker"/>）を上から見た範囲（Rect の x は世界の x、
+        /// y は世界の z）。地面（OutsideGround・OuterGround・遠景のドーム）はこの範囲を抜いて張る。
+        /// floor はいちばん深い床の世界の高さ（穴が無ければ屋内の原点の高さ）。
         /// </summary>
-        private static void AddOutsideGround(Transform group, float x0, float x1)
+        public static List<Rect> PitHoles(Transform interior, out float floor)
         {
-            GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
-            ground.name = "OutsideGround";
+            var holes = new List<Rect>();
+            floor = interior.position.y;
+            foreach (MeshRenderer renderer in interior.GetComponentsInChildren<MeshRenderer>(true))
+            {
+                if (!renderer.gameObject.name.Contains(PitMarker))
+                {
+                    continue;
+                }
+
+                Bounds b = renderer.bounds;
+                if (b.min.y < interior.position.y + OutsideGroundY)
+                {
+                    holes.Add(Rect.MinMaxRect(b.min.x, b.min.z, b.max.x, b.max.z));
+                    floor = Mathf.Min(floor, b.min.y);
+                }
+            }
+
+            return holes;
+        }
+
+        /// <summary>
+        /// 窓の外に見える地面。無いと空の下半分がそのまま見える。遠景のドームがある屋内ではその下に隠れ、
+        /// サイドカーが無くてドームを置けなかった屋内でだけ見える。掘り下げた部屋の範囲（pits）には張らない。
+        /// </summary>
+        private static void AddOutsideGround(Transform group, float x0, float x1, IList<Rect> pits)
+        {
+            var ground = new GameObject("OutsideGround");
             ground.transform.SetParent(group, false);
-            ground.transform.position = new Vector3((x0 + x1) * 0.5f, OutsideGroundY, 30f);
-            // Plane は 10 m 四方なので 1/10 で割る。
-            ground.transform.localScale = new Vector3((x1 - x0) * 0.1f, 1f, 60f);
-            ground.GetComponent<MeshRenderer>().sharedMaterial = MaterialLibrary.EnsureCampus("grass_dark");
-            CampusSurfaces.UseMetricUv(ground.GetComponent<MeshFilter>(), new Vector2(x1 - x0, 600f));
-            Object.DestroyImmediate(ground.GetComponent<Collider>());
+            ground.transform.position = new Vector3((x0 + x1) * 0.5f, OutsideGroundY, OutsideGroundZ);
+            List<Rect> tiles = GroundTiles.Subtract(
+                Rect.MinMaxRect(x0, OutsideGroundZ - OutsideGroundHalfDepth, x1, OutsideGroundZ + OutsideGroundHalfDepth),
+                pits);
+            ground.AddComponent<MeshFilter>().sharedMesh =
+                GroundTiles.BuildMesh(tiles, 0f, ground.transform.position, "outside_ground");
+            ground.AddComponent<MeshRenderer>().sharedMaterial = MaterialLibrary.EnsureCampus("grass_dark");
             int groundLayer = LayerMask.NameToLayer("Ground");
             if (groundLayer >= 0)
             {
@@ -322,17 +368,25 @@ namespace KCD.Editor
             return bounds;
         }
 
-        /// <summary>exit_&lt;id&gt; を踏んだら外へ。</summary>
-        private static void AddExit(Transform interior, string id)
+        /// <summary>建物の扉の id。玄関（建物の id と同じ）が先で、2 つ目からの扉が続く。</summary>
+        private static List<string> DoorsOf(string buildingId)
         {
-            Transform exit = Find(interior, "exit_" + id);
+            var doors = new List<string> { buildingId };
+            doors.AddRange(BuildingDoors.SecondDoorsOf(buildingId));
+            return doors;
+        }
+
+        /// <summary>exit_&lt;扉の id&gt; を踏んだらその扉の外へ。</summary>
+        private static void AddExit(Transform interior, string id, string doorId)
+        {
+            Transform exit = Find(interior, "exit_" + doorId);
             if (exit == null)
             {
-                EditorPaths.Report("屋内 " + id + " に exit_" + id + " がありません。");
+                EditorPaths.Report("屋内 " + id + " に exit_" + doorId + " がありません。");
                 return;
             }
 
-            Transform spawn = Find(interior, "spawn_" + id);
+            Transform spawn = Find(interior, "spawn_" + doorId);
             Vector3 center = exit.position + Vector3.up * 1.2f;
             float yaw = 0f;
             var size = new Vector3(InteriorExit.BoxWidth, InteriorExit.BoxHeight, InteriorExit.BoxWidth);
@@ -341,14 +395,16 @@ namespace KCD.Editor
                 InteriorExit.BoxFor(exit.position, spawn.position, out center, out yaw, out size);
             }
 
-            var go = new GameObject("Exit_" + id);
+            var go = new GameObject("Exit_" + doorId);
             go.transform.SetParent(interior, false);
             go.transform.position = center;
             go.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
             BoxCollider box = go.AddComponent<BoxCollider>();
             box.isTrigger = true;
             box.size = size;
-            go.AddComponent<InteriorExit>().BuildingId = id;
+            InteriorExit marker = go.AddComponent<InteriorExit>();
+            marker.BuildingId = id;
+            marker.DoorId = doorId;
         }
 
         /// <summary>poi_&lt;id&gt;_* にクエストの visit 判定を置く（半径 2 m 相当）。</summary>
@@ -381,34 +437,86 @@ namespace KCD.Editor
             return count;
         }
 
-        /// <summary>入った直後の立ち位置と、外の入口の位置を InteriorLoader に教える。</summary>
+        /// <summary>
+        /// 入った直後の立ち位置と、外の入口の位置を InteriorLoader に教える。扉が 2 つ以上ある建物では、
+        /// 扉ごとの立ち位置と、その扉から出たときに立つ外の所（Entrance_&lt;扉の id&gt; の外 2 m）も教える。
+        /// </summary>
         private static void Register(InteriorLoader loader, Transform interior, string id)
         {
-            Transform spawn = Find(interior, "spawn_" + id);
-            Transform exit = Find(interior, "exit_" + id);
-            if (spawn == null)
+            Transform main = SpawnPoint(interior, id);
+            if (main == null)
             {
                 EditorPaths.Report("屋内 " + id + " に spawn_" + id + " がありません。");
                 return;
             }
 
+            GameObject entrance = GameObject.Find("Entrance_" + id);
+            var entry = new InteriorLoader.Entry
+            {
+                Id = id,
+                DisplayName = CampusProps.DisplayName(id),
+                Spawn = main,
+                EntranceWorld = entrance != null ? entrance.transform.position : Vector3.zero
+            };
+
+            List<string> doors = DoorsOf(id);
+            if (doors.Count > 1)
+            {
+                foreach (string doorId in doors)
+                {
+                    Transform spawn = doorId == id ? main : SpawnPoint(interior, doorId);
+                    if (spawn == null)
+                    {
+                        EditorPaths.Report("屋内 " + id + " に spawn_" + doorId + " がありません。");
+                        continue;
+                    }
+
+                    entry.Doors.Add(DoorOf(doorId, spawn));
+                }
+            }
+
+            loader.Register(entry);
+        }
+
+        /// <summary>spawn_&lt;扉の id&gt; に、扉から建物の奥を向く立ち位置 Spawn_&lt;扉の id&gt; を置く。</summary>
+        private static Transform SpawnPoint(Transform interior, string doorId)
+        {
+            Transform spawn = Find(interior, "spawn_" + doorId);
+            if (spawn == null)
+            {
+                return null;
+            }
+
             // 立ち位置は扉から建物の奥を向く。
+            Transform exit = Find(interior, "exit_" + doorId);
             Vector3 inward = exit != null ? spawn.position - exit.position : interior.forward;
             inward.y = 0f;
             float yaw = inward.sqrMagnitude > 0.01f ? Mathf.Atan2(inward.x, inward.z) * Mathf.Rad2Deg : 0f;
 
-            var point = new GameObject("Spawn_" + id);
+            var point = new GameObject("Spawn_" + doorId);
             point.transform.SetParent(interior, false);
             point.transform.SetPositionAndRotation(spawn.position + Vector3.up * 0.15f, Quaternion.Euler(0f, yaw, 0f));
+            return point.transform;
+        }
 
-            GameObject entrance = GameObject.Find("Entrance_" + id);
-            loader.Register(new InteriorLoader.Entry
+        /// <summary>扉 1 つ。外の所はキャンパスの Entrance_&lt;扉の id&gt;（正面が建物の外）から 2 m 外。</summary>
+        private static InteriorLoader.Door DoorOf(string doorId, Transform spawn)
+        {
+            var door = new InteriorLoader.Door { DoorId = doorId, Spawn = spawn };
+            GameObject entrance = GameObject.Find("Entrance_" + doorId);
+            if (entrance == null)
             {
-                Id = id,
-                DisplayName = CampusProps.DisplayName(id),
-                Spawn = point.transform,
-                EntranceWorld = entrance != null ? entrance.transform.position : Vector3.zero
-            });
+                EditorPaths.Report("キャンパスに Entrance_" + doorId + " がありません。この扉から出ると入った扉の外へ戻ります。");
+                return door;
+            }
+
+            Vector3 outward = entrance.transform.forward;
+            outward.y = 0f;
+            outward = outward.sqrMagnitude > 1e-4f ? outward.normalized : Vector3.forward;
+            door.HasOutside = true;
+            door.OutsidePosition = entrance.transform.position + outward * InteriorLoader.OutsideStep;
+            door.OutsideYaw = Mathf.Atan2(outward.x, outward.z) * Mathf.Rad2Deg;
+            return door;
         }
 
         private static Transform Find(Transform interior, string name)

@@ -314,8 +314,127 @@ namespace KCD.Tests
             Bounds plane = MeshWorldBounds(ground.GetComponent<MeshFilter>());
             if (OverlapsXZ(plane, dome.WorldBounds))
             {
-                Assert.Greater(dome.WorldBounds.min.y, plane.max.y + clearance, message);
+                Assert.Greater(GroundLowest(dome), plane.max.y + clearance, message);
             }
+        }
+
+        /// <summary>
+        /// ドームの地面のいちばん低い所。掘り下げた部屋の下の受け皿は、建物のいちばん低い所より下にあり、
+        /// 屋内の下の地面もそこは抜いてあるので数えない。
+        /// </summary>
+        private static float GroundLowest(Dome dome)
+        {
+            float lowest = float.MaxValue;
+            foreach (Vector3 v in dome.Vertices)
+            {
+                if (v.y >= dome.Building.min.y)
+                {
+                    lowest = Mathf.Min(lowest, v.y);
+                }
+            }
+
+            return lowest;
+        }
+
+        /// <summary>
+        /// 1F の床より下まで掘り下げた講義棟 101 の段床（floor_lecture_pit）の上に、屋内の下の地面
+        /// （OuterGround・OutsideGround・遠景のドームの地面）が張られていない。張られていると段の上に芝が浮いて見え、
+        /// OuterGround の当たり判定で段を下りられない。
+        /// </summary>
+        [Test]
+        public void 掘り下げた段床の上に地面を張らない()
+        {
+            Transform interior = Interior("lecture");
+            float floor = interior.position.y;
+            var pits = new List<Bounds>();
+            foreach (MeshRenderer renderer in interior.GetComponentsInChildren<MeshRenderer>(true))
+            {
+                if (renderer.gameObject.name.Contains("_pit") && renderer.bounds.min.y < floor - 0.5f)
+                {
+                    pits.Add(renderer.bounds);
+                }
+            }
+
+            Assert.IsNotEmpty(pits, "講義棟に掘り下げた床（*_pit）が無い");
+            Dome dome = BuildDome("lecture");
+            var grounds = new List<Transform> { _outerGround, _outsideGround };
+            foreach (Bounds pit in pits)
+            {
+                for (int i = 0; i < 5; i++)
+                {
+                    for (int j = 0; j < 5; j++)
+                    {
+                        var p = new Vector2(
+                            Mathf.Lerp(pit.min.x + 0.3f, pit.max.x - 0.3f, i / 4f),
+                            Mathf.Lerp(pit.min.z + 0.3f, pit.max.z - 0.3f, j / 4f));
+                        string at = "(" + p.x.ToString("0.0") + ", " + p.y.ToString("0.0") + ")";
+                        Assert.IsFalse(CoversXZ(dome.Vertices, dome.Triangles, p, pit.min.y, floor),
+                            "段床の上 " + at + " にドームの地面がある");
+                        foreach (Transform ground in grounds)
+                        {
+                            if (ground == null)
+                            {
+                                continue;
+                            }
+
+                            MeshFilter filter = ground.GetComponent<MeshFilter>();
+                            Assert.IsFalse(CoversXZ(WorldVertices(filter), filter.sharedMesh.triangles, p, pit.min.y, floor + 1f),
+                                "段床の上 " + at + " に " + ground.name + " が張られている");
+                            foreach (Collider collider in ground.GetComponents<Collider>())
+                            {
+                                Bounds b = collider.bounds;
+                                Assert.IsFalse(p.x > b.min.x && p.x < b.max.x && p.y > b.min.z && p.y < b.max.z,
+                                    "段床の上 " + at + " に " + ground.name + " の当たり判定がある");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private static Vector3[] WorldVertices(MeshFilter filter)
+        {
+            Matrix4x4 toWorld = filter.transform.localToWorldMatrix;
+            Vector3[] vertices = filter.sharedMesh.vertices;
+            for (int i = 0; i < vertices.Length; i++)
+            {
+                vertices[i] = toWorld.MultiplyPoint3x4(vertices[i]);
+            }
+
+            return vertices;
+        }
+
+        /// <summary>
+        /// 上から見て p を覆う三角形のうち、3 頂点とも高さ yMin〜yMax にあるものがあるか。
+        /// 地面の三角形は一辺が数千 m あるので、重心座標に余裕を持たせず double で解く（p は穴の縁から離して選ぶ）。
+        /// </summary>
+        private static bool CoversXZ(Vector3[] vertices, int[] triangles, Vector2 p, float yMin, float yMax)
+        {
+            for (int t = 0; t + 2 < triangles.Length; t += 3)
+            {
+                Vector3 a = vertices[triangles[t]];
+                Vector3 b = vertices[triangles[t + 1]];
+                Vector3 c = vertices[triangles[t + 2]];
+                if (Mathf.Min(a.y, Mathf.Min(b.y, c.y)) < yMin || Mathf.Max(a.y, Mathf.Max(b.y, c.y)) > yMax)
+                {
+                    continue;
+                }
+
+                double d = ((double)b.z - c.z) * ((double)a.x - c.x) + ((double)c.x - b.x) * ((double)a.z - c.z);
+                if (System.Math.Abs(d) < 1e-9)
+                {
+                    continue;
+                }
+
+                double u = (((double)b.z - c.z) * ((double)p.x - c.x) + ((double)c.x - b.x) * ((double)p.y - c.z)) / d;
+                double v = (((double)c.z - a.z) * ((double)p.x - c.x) + ((double)a.x - c.x) * ((double)p.y - c.z)) / d;
+                if (u >= 0.0 && v >= 0.0 && u + v <= 1.0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         [Test]

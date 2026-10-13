@@ -533,6 +533,46 @@ namespace KCD.Editor
         public const float OuterGroundThickness = 0.5f;
 
         /// <summary>
+        /// OuterGround から、1F の床より下まで掘り下げた屋内の部屋の範囲（holes。Rect の x は世界の x、y は世界の z）を抜く。
+        /// 抜かないと、部屋の上に芝が浮いて見え、当たり判定で段を下りられない。見た目は穴の周りのタイルのメッシュに、
+        /// 当たり判定はタイルごとの BoxCollider に差し替える。穴が無ければ何もしない。
+        /// </summary>
+        public static void CutOuterGround(Transform root, IList<Rect> holes)
+        {
+            Transform ground = root.Find("OuterGround");
+            if (ground == null || holes == null || holes.Count == 0)
+            {
+                return;
+            }
+
+            ground.localScale = Vector3.one;
+            Vector3 origin = ground.position;
+            List<Rect> tiles = GroundTiles.Subtract(
+                Rect.MinMaxRect(origin.x - OuterGroundHalfExtent, origin.z - OuterGroundHalfExtent,
+                    origin.x + OuterGroundHalfExtent, origin.z + OuterGroundHalfExtent),
+                holes);
+            MeshFilter filter = ground.GetComponent<MeshFilter>();
+            Mesh old = filter.sharedMesh;
+            filter.sharedMesh = GroundTiles.BuildMesh(tiles, 0f, origin, "outer_ground");
+            if (old != null && !AssetDatabase.Contains(old))
+            {
+                Object.DestroyImmediate(old);
+            }
+
+            foreach (BoxCollider box in ground.GetComponents<BoxCollider>())
+            {
+                Object.DestroyImmediate(box);
+            }
+
+            foreach (Rect tile in tiles)
+            {
+                BoxCollider box = ground.gameObject.AddComponent<BoxCollider>();
+                box.size = new Vector3(tile.width, OuterGroundThickness, tile.height);
+                box.center = new Vector3(tile.center.x - origin.x, -OuterGroundThickness * 0.5f, tile.center.y - origin.z);
+            }
+        }
+
+        /// <summary>
         /// キャンパスの外側まで続く大きな地面。境界の外に落ちないようにし、遠くに地面の端を見せない。
         /// 以前は ±350 m で終わっていて、site_ground と同じ広さしか無かったので、遠景に茶色い縁が出ていた（#40, #30）。
         /// 地面は霧の終わりより先では霧の色一色になり、その先（far clip の外）に見える空の下半分も

@@ -26,12 +26,12 @@
         },
         {
           "speaker": "自分",
-          "text": "このホール全部だと……",
-          "text_en": "And for this whole hall..."
+          "text": "この教室全部だと……",
+          "text_en": "And for this whole room..."
         },
         {
-          "text": "600 席なら 2 の 600 乗通り。宇宙にある原子の数より、ずっと多い。",
-          "text_en": "Six hundred seats, two to the six hundredth. Far more than the number of atoms in the universe."
+          "text": "270 席なら 2 の 270 乗通り。宇宙にある原子の数より多い。",
+          "text_en": "Two hundred and seventy seats, two to the two hundred and seventieth. More than the number of atoms in the universe."
         },
         {
           "text": "計算機がやっているのは、結局それだけだ。数えて、並べて、名前を付ける。",
@@ -70,12 +70,12 @@
       "id": "t_idle",
       "lines": [
         {
-          "text": "この大ホールは 600 席ある。満席になるのは、入学式と期末試験の前の週くらいだ。",
-          "text_en": "This hall seats six hundred. It only fills up for the entrance ceremony and the week before finals."
+          "text": "この教室は 270 席ある。満席になるのは、初回の授業と期末試験の前の週くらいだ。",
+          "text_en": "This room seats two hundred and seventy. It only fills up for the first class and the week before finals."
         },
         {
-          "text": "後ろの席は声が届きにくい。……と言うと、みんな前に来るんだがね。",
-          "text_en": "My voice does not carry to the back rows. ...Or so I say, and then everyone moves to the front."
+          "text": "後ろの席は声が届きにくいのに、みんな後ろに座りたがるんだがね。",
+          "text_en": "My voice does not carry to the back rows, and yet everyone wants to sit there."
         }
       ]
     }

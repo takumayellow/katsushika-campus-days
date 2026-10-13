@@ -10,7 +10,7 @@ from kcd_interior import plan_research2_upper as U
 from kcd_interior import registry, signs
 from kcd_interior import spec as ispec
 from kcd_interior.ctx import Ctx
-from kcd_lib import entrances, signtext
+from kcd_lib import entrances, research2_exterior, signtext
 
 from conftest import CAMPUS_JSON
 
@@ -84,10 +84,9 @@ def test_lobby_door_is_on_the_east_face(campus_data, campus_frame):
     doors = {d["id"]: d for d in entrances.plan(campus_data, campus_frame, ctx)}
     # 扉は東面の壁（host の X = LOBBY_X1）の上、入口の位置（LOBBY_DOOR_Y）に付く
     x, y = doors["research2"]["origin"]
-    hx = (x - 6.0634) * 0.9096 - (y + 21.6235) * 0.4156
-    hy = (x - 6.0634) * 0.4156 + (y + 21.6235) * 0.9096
-    assert hx == pytest.approx(ispec.LOBBY_X1, abs=0.1)
-    assert hy == pytest.approx(ispec.LOBBY_DOOR_Y, abs=0.1)
+    ex, ey = research2_exterior._lw(ispec.LOBBY_X1, ispec.LOBBY_DOOR_Y)
+    assert x == pytest.approx(ex, abs=0.1)
+    assert y == pytest.approx(ey, abs=0.1)
     # 食堂の扉（南面）と向きが 90 度違う
     n1, n2 = doors["research2"]["n"], doors["cafeteria"]["n"]
     assert abs(n1[0] * n2[0] + n1[1] * n2[1]) < 0.1
