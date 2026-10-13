@@ -17,6 +17,9 @@ LAB1_TRIS_BEFORE = 3476
 # 2 階の床（17.0 m / 4 = 4.25 m）の庇と踊り場の下端より低い高さ
 GROUND_Z = 3.9
 TOL = 0.05
+# 外周の壁を確かめる高さと、辺に沿った間隔（当たり判定は人の背丈より上まであればよい）
+WALL_ZS = (0.3, 1.5, 2.7)
+WALL_STEP = 0.5
 
 
 def _building(campus_data, bid):
@@ -96,6 +99,63 @@ def test_lab1_ground_level_stays_on_the_outline(campus_data, built):
     assert low
     outside = [v for v in low if not _inside_or_on((v[0], v[1]), loop)]
     assert outside == []
+
+
+def _ray_hits_tri(o, d, a, b, c, t_max):
+    """o から d 向きの線分（長さ t_max）が三角形 abc に当たるか（Möller–Trumbore）。"""
+    e1 = [b[i] - a[i] for i in range(3)]
+    e2 = [c[i] - a[i] for i in range(3)]
+    pv = [d[1] * e2[2] - d[2] * e2[1], d[2] * e2[0] - d[0] * e2[2], d[0] * e2[1] - d[1] * e2[0]]
+    det = sum(e1[i] * pv[i] for i in range(3))
+    if abs(det) < 1e-9:
+        return False
+    tv = [o[i] - a[i] for i in range(3)]
+    u = sum(tv[i] * pv[i] for i in range(3)) / det
+    if u < -1e-6 or u > 1 + 1e-6:
+        return False
+    qv = [tv[1] * e1[2] - tv[2] * e1[1], tv[2] * e1[0] - tv[0] * e1[2], tv[0] * e1[1] - tv[1] * e1[0]]
+    v = sum(d[i] * qv[i] for i in range(3)) / det
+    if v < -1e-6 or u + v > 1 + 1e-6:
+        return False
+    t = sum(e2[i] * qv[i] for i in range(3)) / det
+    return 0.0 <= t <= t_max
+
+
+def test_lab1_ground_level_walls_close_the_outline(campus_data, built):
+    """外形の各辺は、地面から 2.7 m まで面でふさがっている（当たり判定に穴が無い）。
+
+    外から辺に垂直に、辺の 1 m 外から 1 m 内までの線分を引き、どれかの面に当たるかを見る。
+    外形の辺だけを見るので、本体と別棟が接する壁は対象にならない。"""
+    loop = geom.ensure_ccw(geom.dedup(_building(campus_data, "lab1")["footprint"]))
+    mb = built["lab1"]
+    tris = []
+    for f in mb.faces:
+        vs = [mb.verts[i] for i in f]
+        if min(v[2] for v in vs) < max(WALL_ZS):
+            tris.extend((vs[0], vs[k], vs[k + 1]) for k in range(1, len(vs) - 1))
+    holes = []
+    n = len(loop)
+    for i in range(n):
+        a, b = loop[i], loop[(i + 1) % n]
+        e, nrm, L = buildings._lab1_edge(a, b)
+        steps = max(1, int((L - 0.2) / WALL_STEP))
+        for k in range(steps + 1):
+            q = geom.add(a, geom.mul(e, 0.1 + (L - 0.2) * k / steps))
+            for z in WALL_ZS:
+                o = (q[0] + nrm[0], q[1] + nrm[1], z)
+                d = (-nrm[0], -nrm[1], 0.0)
+                near = [t for t in tris
+                        if min(p[0] for p in t) - 1.1 <= q[0] <= max(p[0] for p in t) + 1.1
+                        and min(p[1] for p in t) - 1.1 <= q[1] <= max(p[1] for p in t) + 1.1]
+                if not any(_ray_hits_tri(o, d, *t, 2.0) for t in near):
+                    holes.append((i, round(L, 2), round(geom.length(geom.sub(q, a)), 2), z))
+    assert holes == []
+
+
+def test_lab1_split_rejects_a_clockwise_outline(campus_data, campus_frame):
+    loop = geom.ensure_ccw(geom.dedup(_building(campus_data, "lab1")["footprint"]))
+    with pytest.raises(ValueError):
+        buildings._lab1_split(list(reversed(loop)), campus_frame)
 
 
 def test_lab1_door_is_unchanged_and_on_the_south_face(campus_data, campus_frame):

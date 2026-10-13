@@ -356,6 +356,9 @@ LAB1_CANOPY_GAP = 3.8    # 入口の庇と重ならないよう、扉の中心�
 def _lab1_split(loop, frame):
     """外形を本体と西の別棟に分ける。戻り値 (本体, 別棟)。どちらも反時計回りで、
     本体の最後の辺と別棟の最後の辺が、両者の接する壁（同じ 2 頂点）になる。"""
+    if geom.poly_area(loop) <= 0:
+        raise ValueError("lab1: 外形が反時計回りでない（本体と別棟が入れ替わる）")
+
     def _find(target):
         best = min(range(len(loop)), key=lambda i: math.dist(frame.uv(loop[i]), target))
         if math.dist(frame.uv(loop[best]), target) > LAB1_JOIN_TOL:
