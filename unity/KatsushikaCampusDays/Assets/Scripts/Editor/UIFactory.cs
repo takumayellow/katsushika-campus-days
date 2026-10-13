@@ -38,6 +38,7 @@ namespace KCD.Editor
 
             hud.QuestLogView = BuildQuestLog(canvas.gameObject, canvasRect);
             hud.PauseMenu = BuildPauseMenu(canvas.gameObject, canvasRect);
+            BuildElevatorMenu(canvas.gameObject, canvasRect);
             BuildDialogue(canvas.gameObject, canvasRect);
             hud.PauseMenu.Settings = BuildSettings(canvas.gameObject, canvasRect);
             BuildPhotoOverlay(canvas.gameObject, canvasRect);
@@ -168,6 +169,22 @@ namespace KCD.Editor
             view.Bind(rect.gameObject, body);
             view.BindTap(AddLinkTapArea(rect, body));
             return view;
+        }
+
+        /// <summary>エレベーターの行き先を選ぶ画面 (#275)。</summary>
+        private static void BuildElevatorMenu(GameObject host, RectTransform parent)
+        {
+            RectTransform rect = Rect(parent, "Elevator", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                Vector2.zero, new Vector2(700f, 540f));
+            Backdrop(rect, new Color(0.04f, 0.05f, 0.09f, 0.94f));
+            KeepInCanvas(rect);
+
+            TMP_Text body = Label(rect, "Body", string.Empty, 30f, TextAlignmentOptions.Center);
+            rect.gameObject.SetActive(false);
+
+            ElevatorMenu view = host.AddComponent<ElevatorMenu>();
+            view.Bind(rect.gameObject, body);
+            view.BindTap(AddLinkTapArea(rect, body));
         }
 
         /// <summary>下部の会話ウィンドウ。</summary>

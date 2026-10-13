@@ -159,6 +159,33 @@ namespace KCD
         }
 
         /// <summary>
+        /// 同じ建物の中で別の階へ移る（エレベーター, #275）。入ったときに覚えた戻り先はそのまま。
+        /// 着いたらミニマップの見出しを「建物名 階」にする。外にいるとき・暗転の途中は何もせず false。
+        /// </summary>
+        public bool MoveWithin(Vector3 position, float yaw, string floor)
+        {
+            Entry entry = Find(CurrentId);
+            if (entry == null || _busy)
+            {
+                return false;
+            }
+
+            PlayerController player = FindAnyObjectByType<PlayerController>();
+            if (player == null)
+            {
+                return false;
+            }
+
+            StartCoroutine(Travel(player, position + Vector3.up * 0.15f, yaw, () =>
+            {
+                string caption = string.IsNullOrEmpty(floor) ? entry.DisplayName : entry.DisplayName + " " + floor;
+                Minimap.Instance?.SetIndoor(caption);
+                AutoSave.Request();
+            }));
+            return true;
+        }
+
+        /// <summary>
         /// セーブを読んで建物の中に戻すとき (#61)。プレイヤーを動かすのは呼び出し側で、ここは
         /// 「どの建物の中にいて、出たらどこへ戻るか」とミニマップ・目的地の表示だけをそろえる。
         /// 暗転の途中なら打ち切る。その建物の屋内がこのシーンに無ければ何もせず false。
