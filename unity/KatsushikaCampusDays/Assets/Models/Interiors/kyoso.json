@@ -2,8 +2,8 @@
  "id": "kyoso",
  "display": "共創棟",
  "entrance_world": {
-  "x": -9.2564,
-  "z": -37.11
+  "x": 69.5998,
+  "z": -64.0005
  },
  "yaw_deg": -155.4486,
  "campus_frame_deg": -24.5514,
@@ -2732,7 +2732,7 @@
    "ext_kyoso",
    "ext_kyoso_trees"
   ],
-  "triangles": 32643,
+  "triangles": 27358,
   "radius": 30.0,
   "dz": -0.03
  }

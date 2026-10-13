@@ -1,7 +1,7 @@
 """第2研究棟の上の階（3F〜6F）: 中廊下、EV ホール、閉じた研究室・事務室・会議室の扉。
 
 ロビーの EV から各階へ行く（Unity の ElevatorPanel）。扉の奥の部屋・WC・階段は作らない。
-寸法は plan_research2_dims の UPPER_*（host の座標）。ロビーのローカルへは hx / hy で写す。
+寸法は plan_research2_dims の UPPER_*（host の座標）。ロビーのローカルへは plan_research2_frame で写す。
 床・躯体は階ごと・X の区画ごとに別の物（Ctx.part）にして、1 つの物に届く点光源を 4 つまでに抑える。
 
 Empty:
@@ -15,6 +15,7 @@ import math
 from . import furn_research2 as FR
 from . import kit, shell, signs
 from . import plan_research2_dims as D
+from . import plan_research2_frame as M
 
 FLOOR = "floor_tile_grey"
 WALL = "wall_white"
@@ -51,22 +52,23 @@ def ev_point():
     return HX0 + EV_OUT, (D.EV_Y[0] + D.EV_Y[1]) * 0.5
 
 
-def zone(hx, hy):
+def zone():
     """閉じの検査（closure）に渡す上の階の外周（ロビーのローカル）。北西を欠いた L 字。"""
     z_lo = D.UPPER_FLOORS[0][1]
     z_hi = D.UPPER_FLOORS[-1][1]
-    x0, x1, y0, y1 = hx(OX0), hx(OX1), hy(OY0), hy(OY1)
+    x0, y0, x1, y1 = M.rect(OX0, OY0, OX1, OY1)
+    notch = M.rect(OX0, CY1 + W, HX0 - W, OY1)
     return {"x0": round(x0, 3), "x1": round(x1, 3), "y_face": round(y0, 3),
             "y_back": round(y1, 3),
-            "notch": [round(x0, 3), round(hy(CY1 + W), 3), round(hx(HX0 - W), 3), round(y1, 3)],
+            "notch": [round(v, 3) for v in notch],
             "z_min": round(z_lo - 0.5, 3), "z_max": round(z_hi + 0.5, 3)}
 
 
 class _Floor:
     """1 つの階の区画ごとの MeshBuilder と、host の座標で描く箱。"""
 
-    def __init__(self, c, name, z, hx, hy):
-        self.c, self.name, self.z, self.hx, self.hy = c, name, z, hx, hy
+    def __init__(self, c, name, z):
+        self.c, self.name, self.z = c, name, z
         key = name.lower()
         self.floors = [c.part("floor", "%s_%d" % (key, k)) for k in range(len(EDGES) - 1)]
         self.walls = [c.part("wall", "%s_%d" % (key, k)) for k in range(len(EDGES) - 1)]
@@ -87,11 +89,15 @@ class _Floor:
         for k in range(k0, k1 + 1):
             a = max(min(x0, x1), EDGES[k]) if k > k0 else min(x0, x1)
             b = min(max(x0, x1), EDGES[k + 1]) if k < k1 else max(x0, x1)
-            fn(self.walls[k], self.hx(a), self.hy(min(y0, y1)), self.z + z0,
-               self.hx(b), self.hy(max(y0, y1)), self.z + z1, mat)
+            lx0, ly0, lx1, ly1 = M.rect(a, min(y0, y1), b, max(y0, y1))
+            fn(self.walls[k], lx0, ly0, self.z + z0, lx1, ly1, self.z + z1, mat)
+
+    def plate(self, mb, x0, y0, x1, y1, dz, mat, **kw):
+        """host の矩形の水平な板（高さは階の床から dz）。"""
+        kit.plate(mb, *M.rect(x0, y0, x1, y1), self.z + dz, mat, **kw)
 
     def t(self, x, y, dz, ang):
-        return kit.T(self.hx(x), self.hy(y), self.z + dz, ang)
+        return kit.T(*M.pt(x, y), self.z + dz, M.ang(ang))
 
 
 def _slab_and_ceiling(f):
@@ -99,26 +105,23 @@ def _slab_and_ceiling(f):
     h = D.UPPER_CEIL_H
     for k in range(len(EDGES) - 1):
         a, b = EDGES[k], EDGES[k + 1]
-        shell.floor(f.floors[k], f.hx(a), f.hy(OY0), f.hx(b), f.hy(CY1 + W), f.z, FLOOR,
+        shell.floor(f.floors[k], *M.rect(a, OY0, b, CY1 + W), f.z, FLOOR,
                     thickness=D.SLAB, side_mat=CEIL)
-        shell.ceiling(f.walls[k], f.hx(max(a, CX0)), f.hy(CY0), f.hx(min(b, CX1)), f.hy(CY1),
-                      f.z + h, CEIL)
+        shell.ceiling(f.walls[k], *M.rect(max(a, CX0), CY0, min(b, CX1), CY1), f.z + h, CEIL)
     # EV ホール（廊下の北。区画は東の端）
     k = len(EDGES) - 2
-    shell.floor(f.floors[k], f.hx(HX0 - W), f.hy(CY1 + W), f.hx(OX1), f.hy(OY1), f.z, FLOOR,
+    shell.floor(f.floors[k], *M.rect(HX0 - W, CY1 + W, OX1, OY1), f.z, FLOOR,
                 thickness=D.SLAB, side_mat=CEIL)
-    shell.ceiling(f.walls[k], f.hx(HX0), f.hy(CY1), f.hx(HX1), f.hy(HY1), f.z + h, CEIL)
+    shell.ceiling(f.walls[k], *M.rect(HX0, CY1, HX1, HY1), f.z + h, CEIL)
     ym = (CY0 + CY1) * 0.5
     x = CX0 + PANEL_STEP * 0.5
     while x < CX1 - PANEL_L * 0.5:
-        kit.plate(f.wall_at(x), f.hx(x - PANEL_L * 0.5), f.hy(ym - PANEL_W * 0.5),
-                  f.hx(x + PANEL_L * 0.5), f.hy(ym + PANEL_W * 0.5), f.z + h - 0.005,
-                  "light_panel", flip=True)
+        f.plate(f.wall_at(x), x - PANEL_L * 0.5, ym - PANEL_W * 0.5,
+                x + PANEL_L * 0.5, ym + PANEL_W * 0.5, h - 0.005, "light_panel", flip=True)
         x += PANEL_STEP
     hx_m, hy_m = (HX0 + HX1) * 0.5, (HY0 + HY1) * 0.5
-    kit.plate(f.wall_at(hx_m), f.hx(hx_m - PANEL_W * 0.5), f.hy(hy_m - PANEL_L * 0.5),
-              f.hx(hx_m + PANEL_W * 0.5), f.hy(hy_m + PANEL_L * 0.5), f.z + h - 0.005,
-              "light_panel", flip=True)
+    f.plate(f.wall_at(hx_m), hx_m - PANEL_W * 0.5, hy_m - PANEL_L * 0.5,
+            hx_m + PANEL_W * 0.5, hy_m + PANEL_L * 0.5, h - 0.005, "light_panel", flip=True)
 
 
 def _shell_walls(f):
@@ -183,44 +186,44 @@ def _equipment(f):
     c = f.c
     mb = f.wall_at(HX1)
     for y in D.EV_Y:
-        FR.ev_doors(mb, f.hx(HX0), f.hy(y), f.z, FACE_E)
+        FR.ev_doors(mb, *M.pt(HX0, y), f.z, M.ang(FACE_E))
     ja, en = D.UPPER_USE[f.name]
     ym = (D.EV_Y[0] + D.EV_Y[1]) * 0.5
-    signs.wall(c, mb, f.hx(HX1), f.hy(ym), f.z + 1.7, FACE_W, ja=ja, en=en, w=1.4, h=0.5,
+    signs.wall(c, mb, *M.pt(HX1, ym), f.z + 1.7, M.ang(FACE_W), ja=ja, en=en, w=1.4, h=0.5,
                plate=BLUE, frame="metal_white", out=0.04, anchor=False)
     wc = f.wall_at(D.UPPER_WC_X)
-    signs.wall(c, wc, f.hx(D.UPPER_WC_X + 0.95), f.hy(CY1), f.z + 1.7, FACE_S, ja="トイレ",
+    signs.wall(c, wc, *M.pt(D.UPPER_WC_X + 0.95, CY1), f.z + 1.7, M.ang(FACE_S), ja="トイレ",
                en="Toilet", w=0.6, h=0.3, plate=BLUE, frame="metal_white", out=0.03,
                anchor=False)
     top = D.UPPER_CEIL_H - 0.26
-    shell.exit_sign(f.wall_at(CX0), f.hx(CX0 + 0.3), f.hy(D.UPPER_WEST_STAIR_Y), f.z + top,
-                    FACE_E)
-    shell.exit_sign(mb, f.hx(D.UPPER_STAIR_DOOR_X), f.hy(HY1 - 0.3), f.z + top, FACE_S)
-    shell.fire_extinguisher(f.wall_at(0.0), f.hx(0.0), f.hy(CY0 + 0.2), f.z, FACE_N)
+    shell.exit_sign(f.wall_at(CX0), *M.pt(CX0 + 0.3, D.UPPER_WEST_STAIR_Y), f.z + top,
+                    M.ang(FACE_E))
+    shell.exit_sign(mb, *M.pt(D.UPPER_STAIR_DOOR_X, HY1 - 0.3), f.z + top, M.ang(FACE_S))
+    shell.fire_extinguisher(f.wall_at(0.0), *M.pt(0.0, CY0 + 0.2), f.z, M.ang(FACE_N))
 
 
 def _empties(f):
     c = f.c
     ex, ey = ev_point()
-    c._put("ev_%s_%s" % (c.spec.id, f.name), f.hx(ex), f.hy(ey), f.z)
-    c._put("ev_%s_%s_f" % (c.spec.id, f.name), f.hx(ex + 1.0), f.hy(ey), f.z)
+    c._put("ev_%s_%s" % (c.spec.id, f.name), *M.pt(ex, ey), f.z)
+    c._put("ev_%s_%s_f" % (c.spec.id, f.name), *M.pt(ex + 1.0, ey), f.z)
     ym = (CY0 + CY1) * 0.5
     pts = [(x, ym) for x in D.UPPER_LAMP_X] + [((HX0 + HX1) * 0.5, (HY0 + HY1) * 0.5)]
     for n, (x, y) in enumerate(pts, 1):
-        c._put("lamp_%s_%s_%d" % (c.spec.id, f.name, n), f.hx(x), f.hy(y), f.z + LAMP_DZ)
-    c.lights_from([(f.hx(x), f.hy(y)) for x, y in pts], f.z + D.UPPER_CEIL_H)
+        c._put("lamp_%s_%s_%d" % (c.spec.id, f.name, n), *M.pt(x, y), f.z + LAMP_DZ)
+    c.lights_from([M.pt(x, y) for x, y in pts], f.z + D.UPPER_CEIL_H)
 
 
-def build(c, hx, hy):
-    """3F〜6F を作る。hx / hy は host の座標からロビーのローカルへの写し。"""
+def build(c):
+    """3F〜6F を作る。寸法は host の座標で、ロビーのローカルへは plan_research2_frame で写す。"""
     for name, z in D.UPPER_FLOORS:
-        f = _Floor(c, name, z, hx, hy)
+        f = _Floor(c, name, z)
         _slab_and_ceiling(f)
         _shell_walls(f)
         _partitions(f)
         _equipment(f)
         _empties(f)
-    c.closure_zones.append(zone(hx, hy))
+    c.closure_zones.append(zone())
     z4 = D.UPPER_FLOORS[1][1]
     ym = (CY0 + CY1) * 0.5
-    c.cam("4f", (hx(HX0 + 1.0), hy(ym), z4 + 1.65), (hx(-10.0), hy(ym), z4 + 1.6), 18.0)
+    c.cam("4f", (*M.pt(HX0 + 1.0, ym), z4 + 1.65), (*M.pt(-10.0, ym), z4 + 1.6), 18.0)

@@ -11,7 +11,7 @@ namespace KCD.Tests
     /// <summary>
     /// 構内の看板の文字 (#181)。
     ///
-    /// 入口の立て看板 9 枚の板の表と裏に建物の名前が貼ってあること、同じ名前の文字が 2 か所に出ないこと、
+    /// 入口の立て看板 10 枚の板の表と裏に建物の名前が貼ってあること、同じ名前の文字が扉の看板の数より多く出ないこと、
     /// 建物の外に店の名前もブランドの色の板も出ないことを確かめる。
     /// CampusProps.SignFaces が焼いた文字（SignFaceText）を、FBX の板の形と突き合わせる。
     /// </summary>
@@ -22,8 +22,8 @@ namespace KCD.Tests
         /// <summary>立て看板の白い面のマテリアル（blender/kcd_lib/props.py の add_pylon_sign）。上の緑の帯は別のマテリアル。</summary>
         private const string PylonMaterial = "sign_plate";
 
-        /// <summary>入口の立て看板の数（研究棟 2・講義棟・共創棟・図書館・体育館・実験棟 2・温室）。</summary>
-        private const int PylonCount = 9;
+        /// <summary>入口の立て看板の数（研究棟 2・講義棟 2（玄関と南東の玄関）・共創棟・図書館・体育館・実験棟 2・温室）。</summary>
+        private const int PylonCount = 10;
 
         /// <summary>文字と板の面のあいだに要る隙間の下限（m）。これより近いと面と文字が交互に描かれてちらつく。</summary>
         private const float MinGap = 0.002f;
@@ -142,7 +142,7 @@ namespace KCD.Tests
 
                 bool front = false;
                 bool back = false;
-                foreach (SignFaceText face in FacesNear("ui.building." + id, pylon.Center, PylonReach))
+                foreach (SignFaceText face in FacesNear("ui.building." + BuildingDoors.BuildingOf(id), pylon.Center, PylonReach))
                 {
                     float along = Vector3.Dot(face.transform.position - pylon.Center, pylon.Normal);
                     if (along > pylon.Front + MinGap && along <= pylon.Front + MaxGap)
@@ -190,7 +190,7 @@ namespace KCD.Tests
                         continue;
                     }
 
-                    foreach (SignFaceText face in FacesNear("ui.building." + id, pylon.Center, PylonReach))
+                    foreach (SignFaceText face in FacesNear("ui.building." + BuildingDoors.BuildingOf(id), pylon.Center, PylonReach))
                     {
                         TextMeshPro text = Refresh(face);
                         if (text.textInfo.characterCount == 0)
@@ -224,7 +224,7 @@ namespace KCD.Tests
                     continue;
                 }
 
-                foreach (SignFaceText face in FacesNear("ui.building." + id, pylon.Center, PylonReach))
+                foreach (SignFaceText face in FacesNear("ui.building." + BuildingDoors.BuildingOf(id), pylon.Center, PylonReach))
                 {
                     float along = Vector3.Dot(face.transform.position - pylon.Center, pylon.Normal);
                     CheckReadableFrom(face, along >= 0f ? pylon.Normal : -pylon.Normal, problems);
@@ -303,7 +303,7 @@ namespace KCD.Tests
                 foreach (KeyValuePair<string, List<TextMeshPro>> pair in byText)
                 {
                     List<TextMeshPro> same = pair.Value;
-                    if (same.Count == 1 || (same.Count == 2 && BackToBack(same[0].transform, same[1].transform)))
+                    if (same.Count == 1 || OnDoorPylons(same))
                     {
                         continue;
                     }
@@ -313,7 +313,7 @@ namespace KCD.Tests
                 }
             });
 
-            Assert.IsEmpty(problems, "同じ名前の文字（1 枚の看板の表と裏だけにする。KCD/シーンを組み直す）:\n" + string.Join("\n", problems));
+            Assert.IsEmpty(problems, "同じ名前の文字（扉ごとに 1 枚の看板の表と裏だけにする。KCD/シーンを組み直す）:\n" + string.Join("\n", problems));
         }
 
         [Test]
@@ -440,6 +440,49 @@ namespace KCD.Tests
         }
 
         /// <summary>2 つの文字が 1 枚の看板の表と裏か。すぐ近くの同じ高さにあり、読める側が逆を向く。</summary>
+        /// <summary>
+        /// 同じ名前の文字がどれも立て看板の表と裏の組で、組の数がその建物の扉の数（玄関と 2 つ目からの扉, BuildingDoors）以下か。
+        /// </summary>
+        private static bool OnDoorPylons(List<TextMeshPro> same)
+        {
+            if (same.Count % 2 != 0)
+            {
+                return false;
+            }
+
+            SignFaceText face = same[0].GetComponent<SignFaceText>();
+            const string prefix = "ui.building.";
+            if (face == null || face.Key == null || !face.Key.StartsWith(prefix))
+            {
+                return same.Count == 2 && BackToBack(same[0].transform, same[1].transform);
+            }
+
+            int doors = 1 + BuildingDoors.SecondDoorsOf(face.Key.Substring(prefix.Length)).Count;
+            if (same.Count / 2 > doors)
+            {
+                return false;
+            }
+
+            foreach (TextMeshPro text in same)
+            {
+                int partners = 0;
+                foreach (TextMeshPro other in same)
+                {
+                    if (other != text && BackToBack(text.transform, other.transform))
+                    {
+                        partners++;
+                    }
+                }
+
+                if (partners != 1)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         private static bool BackToBack(Transform a, Transform b)
         {
             Vector3 offset = a.position - b.position;

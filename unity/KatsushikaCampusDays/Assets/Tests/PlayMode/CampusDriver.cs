@@ -129,23 +129,33 @@ namespace KCD.Tests
         }
 
         /// <summary>
-        /// 外から入口の前に立ち、E で入る。中にいれば先に出る（「建物に入る」のステップは入り直さないと進まない）。
+        /// 外から入口（玄関）の前に立ち、E で入る。中にいれば先に出る（「建物に入る」のステップは入り直さないと進まない）。
         /// 屋内の無い建物は E で入ったことになるだけなので、外に立ったまま戻る。
         /// </summary>
         public IEnumerator Enter(string buildingId)
         {
+            yield return EnterThrough(buildingId);
+        }
+
+        /// <summary>
+        /// 扉 doorId（玄関なら建物の id、2 つ目からの扉はその扉の id, BuildingDoors）の前に立ち、E で入る。
+        /// 中にいれば先に出る。
+        /// </summary>
+        public IEnumerator EnterThrough(string doorId)
+        {
             yield return Leave();
 
-            if (buildingId == DormRoute.Id)
+            if (doorId == DormRoute.Id)
             {
                 yield return EnterDorm();
                 yield break;
             }
 
-            EntranceTrigger entrance = FindEntrance(buildingId);
+            string buildingId = BuildingDoors.BuildingOf(doorId);
+            EntranceTrigger entrance = FindEntrance(doorId);
             if (entrance == null)
             {
-                _problems.Add("入口 Entrance_" + buildingId + " がシーンに無い");
+                _problems.Add("入口 Entrance_" + doorId + " がシーンに無い");
                 yield break;
             }
 
@@ -199,8 +209,16 @@ namespace KCD.Tests
             yield return Settle();
         }
 
-        /// <summary>中にいれば、その建物の出口を踏んで外へ出る。</summary>
+        /// <summary>中にいれば、その建物の玄関の出口を踏んで外へ出る。</summary>
         public IEnumerator Leave()
+        {
+            yield return LeaveThrough(null);
+        }
+
+        /// <summary>
+        /// 中にいれば、扉 doorId の出口（Exit_&lt;扉の id&gt;）を踏んで外へ出る。null なら今いる建物の玄関の出口。
+        /// </summary>
+        public IEnumerator LeaveThrough(string doorId)
         {
             if (_loader == null || !_loader.IsInside)
             {
@@ -208,10 +226,11 @@ namespace KCD.Tests
             }
 
             string buildingId = _loader.CurrentId;
-            InteriorExit exit = FindExit(buildingId);
+            string door = string.IsNullOrEmpty(doorId) ? buildingId : doorId;
+            InteriorExit exit = FindExit(buildingId, door);
             if (exit == null)
             {
-                _problems.Add("屋内 " + buildingId + " に出口 Exit_" + buildingId + " が無い");
+                _problems.Add("屋内 " + buildingId + " に出口 Exit_" + door + " が無い");
                 yield break;
             }
 
@@ -429,11 +448,12 @@ namespace KCD.Tests
             return path;
         }
 
-        private static EntranceTrigger FindEntrance(string buildingId)
+        /// <summary>扉 doorId の入口。玄関なら扉の id は建物の id と同じ。</summary>
+        private static EntranceTrigger FindEntrance(string doorId)
         {
             foreach (EntranceTrigger each in Object.FindObjectsByType<EntranceTrigger>(FindObjectsInactive.Include))
             {
-                if (each.BuildingId == buildingId)
+                if (each.DoorId == doorId)
                 {
                     return each;
                 }
@@ -442,11 +462,12 @@ namespace KCD.Tests
             return null;
         }
 
-        private static InteriorExit FindExit(string buildingId)
+        /// <summary>建物 buildingId の、扉 doorId の出口。</summary>
+        private static InteriorExit FindExit(string buildingId, string doorId)
         {
             foreach (InteriorExit each in Object.FindObjectsByType<InteriorExit>(FindObjectsInactive.Include))
             {
-                if (each.BuildingId == buildingId)
+                if (each.BuildingId == buildingId && each.DoorId == doorId)
                 {
                     return each;
                 }

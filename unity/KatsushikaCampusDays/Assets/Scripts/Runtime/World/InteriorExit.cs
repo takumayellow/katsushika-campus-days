@@ -2,17 +2,31 @@ using UnityEngine;
 
 namespace KCD
 {
-    /// <summary>屋内の出口。FBX の exit_&lt;id&gt; Empty の位置に置かれ、踏むと外へ戻る。</summary>
+    /// <summary>
+    /// 屋内の出口。FBX の exit_&lt;扉の id&gt; Empty の位置に置かれ、踏むとその扉の外へ戻る。
+    /// 扉が 2 つある建物（講義棟）には出口も 2 つある。
+    /// </summary>
     [RequireComponent(typeof(BoxCollider))]
     public sealed class InteriorExit : MonoBehaviour
     {
         [SerializeField] private string _buildingId = string.Empty;
+        [SerializeField] private string _doorId = string.Empty;
 
         /// <summary>この出口が属する建物。</summary>
         public string BuildingId
         {
             get => _buildingId;
             set => _buildingId = value;
+        }
+
+        /// <summary>
+        /// この出口の扉の id（exit_&lt;扉の id&gt;）。玄関では建物の id と同じ。
+        /// 踏むとこの扉の外へ出る（InteriorLoader.Exit）。
+        /// </summary>
+        public string DoorId
+        {
+            get => string.IsNullOrEmpty(_doorId) ? _buildingId : _doorId;
+            set => _doorId = value == _buildingId ? string.Empty : value;
         }
 
         /// <summary>入った所（spawn）から出口の範囲の手前の縁まで空ける水平の距離（m）。プレイヤーの半径 + 余裕。</summary>
@@ -69,7 +83,7 @@ namespace KCD
             InteriorLoader loader = InteriorLoader.Instance;
             if (ShouldExit(loader, _buildingId))
             {
-                loader.Exit();
+                loader.Exit(DoorId);
             }
         }
 

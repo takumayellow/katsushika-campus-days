@@ -88,11 +88,13 @@ class Ctx:
         self.empties.append((name, (float(x), float(y), float(z))))
         return name
 
-    def spawn(self, x, y, z=0.0):
-        return self._put("spawn_%s" % self.spec.id, x, y, z)
+    def spawn(self, x, y, z=0.0, door=None):
+        """入ったときに立つ位置。door はキャンパスの扉の id（2 つ目以降の扉。既定は棟の id）。"""
+        return self._put("spawn_%s" % (door or self.spec.id), x, y, z)
 
-    def exit(self, x, y, z=0.0):
-        return self._put("exit_%s" % self.spec.id, x, y, z)
+    def exit(self, x, y, z=0.0, door=None):
+        """ここを越えると外へ出る位置。door は spawn と同じ。"""
+        return self._put("exit_%s" % (door or self.spec.id), x, y, z)
 
     def poi(self, name, x, y, z=0.0):
         return self._put("poi_%s_%s" % (self.spec.id, name), x, y, z)

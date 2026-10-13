@@ -124,7 +124,8 @@ namespace KCD.Tests
         {
             foreach (InteriorExit exit in Object.FindObjectsByType<InteriorExit>())
             {
-                if (exit.BuildingId == id)
+                // 玄関の出口。講義棟の南東の玄関の出口（Exit_lecture_se）は入った所から遠いので比べない。
+                if (exit.BuildingId == id && exit.DoorId == id)
                 {
                     return exit;
                 }

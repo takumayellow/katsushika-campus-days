@@ -100,7 +100,8 @@ SPLIT_HOST = "research2"
 CAFETERIA_X1 = 23.08
 LOBBY_X0 = 22.92
 LOBBY_Y0, LOBBY_Y1 = 19.16, 41.35
-LOBBY_DOOR_X = 26.4          # ロビーの入口の中心（host_local の X）
+LOBBY_X1 = 31.8771           # ロビーの東の面（host_local の X）。入口はこの面にある
+LOBBY_DOOR_Y = 32.3          # ロビーの入口の中心（host_local の Y）
 
 
 class InteriorSpec:

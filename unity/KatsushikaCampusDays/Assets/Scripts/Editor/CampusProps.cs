@@ -176,6 +176,7 @@ namespace KCD.Editor
         /// 外向きは door_ → entrance_（扉の前の床）。door_ が無い古い FBX では entrance_ を扉とみなし、
         /// 外向きは建物の重心から推す。どちらも無ければ false。
         /// 扉の前には庇があるので Ground()（上からのレイ）は使わない。Empty の高さがそのまま石張りの天端。
+        /// buildingId には 2 つ目からの扉の id（BuildingDoors）も渡せる。
         /// </summary>
         private static bool DoorFrame(string buildingId, out Vector3 door, out Vector3 outward)
         {
@@ -192,7 +193,7 @@ namespace KCD.Editor
             {
                 outward = entrance.position - doorMark.position;
             }
-            else if (entrance != null && Centroids.TryGetValue(buildingId, out Vector2 centroid))
+            else if (entrance != null && Centroids.TryGetValue(BuildingDoors.BuildingOf(buildingId), out Vector2 centroid))
             {
                 outward = new Vector3(entrance.position.x - centroid.x, 0f, entrance.position.z - centroid.y);
             }
@@ -211,20 +212,22 @@ namespace KCD.Editor
         /// <summary>
         /// 入口トリガーを扉の外面（door_&lt;id&gt;）に置き、正面を建物の外へ向ける。Interactable レイヤーに入れるので
         /// 扉の前で「[E] ◯◯に入る」が出る。判定箱は扉の前 1.6 m（幅 4 m、温室は 2.2 m）で、扉へ向かって歩いて来ても入れる (#39)。
+        /// 2 つ目からの扉（講義棟の南東の玄関, BuildingDoors）にも Entrance_&lt;扉の id&gt; を置き、建物の id は玄関と同じにする。
         /// </summary>
         private static void PlaceEntrances(Transform parent)
         {
             int layer = LayerMask.NameToLayer("Interactable");
             int count = 0;
             int legacy = 0;
-            foreach (string id in Centroids.Keys)
+            foreach (string doorId in DoorIds())
             {
-                if (!DoorFrame(id, out Vector3 door, out Vector3 outward))
+                if (!DoorFrame(doorId, out Vector3 door, out Vector3 outward))
                 {
                     continue;
                 }
 
-                var go = new GameObject("Entrance_" + id);
+                string id = BuildingDoors.BuildingOf(doorId);
+                var go = new GameObject("Entrance_" + doorId);
                 go.transform.SetParent(parent, false);
                 go.transform.SetPositionAndRotation(door, Quaternion.LookRotation(outward, Vector3.up));
                 if (layer >= 0)
@@ -236,6 +239,7 @@ namespace KCD.Editor
 
                 EntranceTrigger trigger = go.AddComponent<EntranceTrigger>();
                 trigger.BuildingId = id;
+                trigger.DoorId = doorId;
                 trigger.DisplayName = BuildingNames[id];
                 trigger.InteractionRange = EntranceTrigger.DefaultRange;
                 trigger.WalkInHalfWidth = EntranceTrigger.WalkInHalfWidthFor(id);
@@ -248,7 +252,7 @@ namespace KCD.Editor
                 box.center = EntranceTrigger.BoxCenter;
                 box.size = EntranceTrigger.BoxSizeFor(id);
                 count++;
-                if (CampusStage.FindChild("door_" + id) == null)
+                if (CampusStage.FindChild("door_" + doorId) == null)
                 {
                     legacy++;
                 }
@@ -258,6 +262,20 @@ namespace KCD.Editor
             if (legacy > 0)
             {
                 EditorPaths.Report("door_<id> の無い入口が " + legacy + " 個あります。campus.fbx を作り直してください（blender/build_campus.py）。");
+            }
+        }
+
+        /// <summary>入口を置く扉の id。各棟の玄関（建物の id と同じ）のあとに 2 つ目からの扉が続く。</summary>
+        private static IEnumerable<string> DoorIds()
+        {
+            foreach (string id in Centroids.Keys)
+            {
+                yield return id;
+            }
+
+            foreach (string doorId in BuildingDoors.SecondDoorIds)
+            {
+                yield return doorId;
             }
         }
 

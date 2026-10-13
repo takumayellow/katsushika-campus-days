@@ -68,6 +68,10 @@ namespace KCD
         }
 
         [SerializeField] private string _buildingId = string.Empty;
+
+        [Tooltip("扉の id。玄関は空（建物の id と同じ）。2 つ目からの扉だけ自分の id を持つ（BuildingDoors）。")]
+        [SerializeField] private string _doorId = string.Empty;
+
         [SerializeField] private string _displayName = string.Empty;
         [SerializeField] private float _reentryCooldown = 2f;
 
@@ -87,6 +91,13 @@ namespace KCD
         {
             get => _buildingId;
             set => _buildingId = value;
+        }
+
+        /// <summary>扉の id。玄関では建物の id と同じ。屋内のどこに立つかと、出たときどの扉の外へ戻るかを決める。</summary>
+        public string DoorId
+        {
+            get => string.IsNullOrEmpty(_doorId) ? _buildingId : _doorId;
+            set => _doorId = value == _buildingId ? string.Empty : value;
         }
 
         /// <summary>トーストとプロンプトに出す表示名（辞書に無いときの控え）。</summary>
@@ -275,7 +286,7 @@ namespace KCD
             InteriorLoader loader = InteriorLoader.Instance;
             if (loader != null && loader.HasInterior(_buildingId))
             {
-                loader.Enter(_buildingId);
+                loader.Enter(_buildingId, DoorId);
                 return;
             }
 
