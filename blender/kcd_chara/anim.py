@@ -441,7 +441,8 @@ class Gait(_Legs):
 
     def __init__(self, arm, kind: str = "Walk", **over):
         super().__init__(arm)
-        unknown = set(over) - set(GAIT_TARGET[kind]) - {"elbow"}
+        allowed = set(GAIT_TARGET[kind]) | ({"elbow"} if kind == "Run" else set())
+        unknown = set(over) - allowed
         if unknown:
             raise KeyError("%s の歩容に無い項目: %s" % (kind, ", ".join(sorted(unknown))))
         g = {**GAIT_TARGET[kind], **{k: v for k, v in over.items() if k != "elbow"}}
@@ -476,7 +477,7 @@ class Gait(_Legs):
         sw = GAIT_ARMS[kind]
         self.thx = sw["thx"]
         self.arm = D(sw["arm"])
-        elbow = over.get("elbow", sw["elbow"]) if run else sw["elbow"]      # 胴が短いキャラは肘を開いて手を下げる
+        elbow = over.get("elbow", sw["elbow"])      # 胴が短いキャラは肘を開いて手を下げる
         self.elbow = (D(elbow[0]), D(elbow[1]))
         self.arm_in = D(sw["arm_in"])
         self.arm_abd = D(sw["abd"])
