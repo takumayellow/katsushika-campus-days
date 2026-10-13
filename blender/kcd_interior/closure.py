@@ -11,6 +11,10 @@ zf 〜 zf + JUMP + BODY_H を step 刻みで外へ撃ち、身長ぶん連続し
 その下端がジャンプで届く高さ（zf + JUMP 以下）にあれば、その点は「抜けられる」。
 抜けられる点が外周に沿って続く区間を穴として返す。
 
+外周（meta["envelope"]）のほかに、meta["closure_zones"] の区画も同じように測る。区画は
+envelope と同じ形に床の高さの範囲 z_min..z_max を足したもので、ロビーの上に別の輪郭で載る
+上の階（第2研究棟の 3F〜6F）に使う。外周はいちばん低い区画の z_min より下の床だけを見る。
+
 座標は Blender の建物ローカル（+Y が入口から奥、+Z が上）。FBX を読み戻して測るので、
 Unity に渡る形そのものを見ている。
 """
@@ -192,10 +196,23 @@ def open_at(scene, px, py, out, zf, wall, two_sided, step):
 
 
 def measure(objects, meta, two_sided=False, step=0.05):
-    """外周の穴を返す。[{edge, name, z, s0, s1, width, a, b}]（a, b は内面上の端点）。"""
+    """外周と区画の穴を返す。[{zone, edge, name, z, s0, s1, width, a, b}]（a, b は内面上の端点）。
+
+    zone は外周なら None、区画なら meta["closure_zones"] の番号。
+    """
     scene = Scene(objects)
     wall = float(meta.get("wall_thickness", 0.30))
-    env = meta["envelope"]
+    zones = meta.get("closure_zones") or []
+    z_cap = min((float(zn["z_min"]) for zn in zones), default=math.inf)
+    gaps = _measure_env(scene, meta["envelope"], wall, -math.inf, z_cap, None, two_sided, step)
+    for k, zn in enumerate(zones):
+        gaps += _measure_env(scene, zn, wall, float(zn["z_min"]), float(zn["z_max"]), k,
+                             two_sided, step)
+    return gaps
+
+
+def _measure_env(scene, env, wall, z_lo, z_hi, zone, two_sided, step):
+    """輪郭 env の内面に沿って、床の高さが z_lo 以上 z_hi 未満の所の穴を測る。"""
     gaps = []
     for ei, a, b, out in _edges(env, wall):
         L = math.hypot(b[0] - a[0], b[1] - a[1])
@@ -208,6 +225,8 @@ def measure(objects, meta, two_sided=False, step=0.05):
             py = a[1] + d[1] * s - out[1] * PROBE_IN
             qx, qy = a[0] + d[0] * s, a[1] + d[1] * s
             for zf in scene.levels(px, py):
+                if not z_lo <= zf < z_hi:
+                    continue
                 if open_at(scene, qx, qy, out, zf, wall, two_sided, step):
                     runs.setdefault(round(zf, 1) + 0.0, []).append(s)
             s += step
@@ -219,7 +238,7 @@ def measure(objects, meta, two_sided=False, step=0.05):
                     continue
                 s0, s1 = start - step * 0.5, prev + step * 0.5
                 gaps.append({
-                    "edge": ei, "name": _SIDE_NAMES[(round(out[0]), round(out[1]))],
+                    "zone": zone, "edge": ei, "name": _SIDE_NAMES[(round(out[0]), round(out[1]))],
                     "z": zk,
                     "s0": round(s0, 3), "s1": round(s1, 3),
                     "width": round(s1 - s0, 3),

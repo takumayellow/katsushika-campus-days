@@ -1,6 +1,7 @@
 """第2研究棟（研究棟側のロビー）: ガラスの入口、石の床、パネルの壁、EV 2 基、ガラス越しの階段。
 
-食堂（1〜2F）は plan_cafeteria。ロビーより上の階（会議室・研究室・事務室）は作らない。
+食堂（1〜2F）は plan_cafeteria。3F〜6F（事務室・研究室・会議室の中廊下）は plan_research2_upper が
+同じ屋内に作り、EV の前の ev_research2_<階> から行く（Unity の ElevatorPanel）。
 座標はロビーのローカル（入口の中心が x=0、+Y が奥）。host の座標（食堂の入口を x=0 とした第2研究棟の
 局所座標。plan_research2_dims）からは x を LOBBY_DOOR_X、y を HOST_Y0 だけずらして写す。
 階段は EV ホールとガラスで隔てた見た目だけのもの（上れない）。南の半分を東へ上り、東の端の
@@ -11,6 +12,7 @@ import math
 
 from . import common, furn_research2 as FR, kit, shell, signs
 from . import plan_research2_dims as D
+from . import plan_research2_upper as upper
 from . import spec as ispec
 
 PANEL = "research2_lobby_panel"
@@ -119,5 +121,9 @@ def build(c):
     c.light(0.0, s.y_face + 6.0, 3.0, 220.0, 1.6)
     c.light(hx(29.0), hy(32.0), 3.0, 220.0, 1.6)
     c.cam("", (0.0, s.y_face + 1.4, 1.65), (1.0, hy(32.0), 1.6), 18.0)
+    ex, ey = upper.ev_point()
+    c._put("ev_%s_1F" % s.id, hx(ex), hy(ey), 0.0)
+    c._put("ev_%s_1F_f" % s.id, hx(ex + 1.0), hy(ey), 0.0)
+    upper.build(c, hx, hy)
     c.cam("top", (0.0, (iy0 + iy1) * 0.5, 40.0), (0.0, (iy0 + iy1) * 0.5 + 0.5, 0.0), 24.0)
-    c.note("研究棟側のロビー（石の床・パネルの壁・EV 2 基・ガラス越しの階段）。上の階は作らない")
+    c.note("研究棟側のロビー（石の床・パネルの壁・EV 2 基・ガラス越しの階段）と、EV で行く 3F〜6F の中廊下")

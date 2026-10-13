@@ -239,6 +239,9 @@ def build_one(sp, plan, args, eng, ext_src=None):
         "signs": c.signs,
         "text_triangles": info["text_tris"],
     }
+    if c.closure_zones:
+        # 外周とは別に閉じを測る区画（closure.measure）
+        meta_extra["closure_zones"] = c.closure_zones
     if ext_objects:
         meta_extra["ext"] = {
             "objects": info["ext_objects"],
