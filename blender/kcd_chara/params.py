@@ -246,6 +246,8 @@ CHARACTERS: dict[str, dict] = {
         # head_h で割ったもの）。髪型・履物を変えたら測り直すこと。
         height=1.15, heads=2.83, silhouette_pad=(0.183, 0.257),
         build="chibi_m", chibi=True, levels=BODY_LEVELS_BOTCHAN,
+        # 胴が短く、肘を 80 度で曲げると手が胸の高さに来る。肘を開いて手を胸の下に収める（#232）。
+        gait={"Run": dict(elbow=(66.0, 12.0))},
         skin=_c("#EBBE9C"),
         # 黒髪の地の色は、色味をわずかに残した明度 L* 30 の灰にする（Homura の黒髪は
         # #4E494B で L* 31.6）。暗くすると陰も輪郭線（L* 10）と同じ暗さになり、髪の房も
@@ -342,7 +344,7 @@ CHARACTERS: dict[str, dict] = {
         # 行灯袴にブーツなので小股で歩く。既定の歩幅だと前へ出た腿が袴の前を
         # 押し広げて裂けて見えた（#49）。速さはゲーム側と同じまま、1 歩を
         # 短くして歩数を増やす（見える素肌 Walk 53 → 38 / Run 85 → 59）。
-        gait={"Walk": dict(reach=0.75), "Run": dict(reach=0.85)},
+        gait={"Walk": dict(reach=0.75), "Run": dict(reach=0.85, elbow=(62.0, 12.0))},
         sign_items=("ハート柄の振袖", "頭頂の赤リボン", "編み上げブーツ"),
         outward_faces=True,
     ),
