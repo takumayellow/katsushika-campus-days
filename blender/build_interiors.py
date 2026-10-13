@@ -56,6 +56,8 @@ EXT_PREFIX = exterior.EXT_PREFIX
 
 # 三角数の上限（docs/DESIGN.md §3.4）。超えたら NG で終える
 INT_BUDGET = 450000       # 屋内の合計
+# 1 棟の上限は「今の実測 + 余裕」で決め、合計が INT_BUDGET を超えないように配る。
+# 階を足していく棟（kyoso・lecture）は先の分まで取り、作り終えた棟は実測の 1.2 倍以上を残して絞る（#279）。
 INT_BUDGET_ONE = {        # 屋内 1 棟
     "library": 80000,
     "cafeteria": 65000,
