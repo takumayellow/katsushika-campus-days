@@ -38,12 +38,12 @@
 
 | ファイル | 内容 |
 |----------|------|
-| `unity/.../Campus/campus.fbx` | 建物・外構 19 メッシュ（入口の `bld_entrances` を含む）+ `entrance_<id>` / `door_<id>` / `sign_<id>` / `spawn_player` の Empty 31 個。約 4.87 MB / 260,425 頂点 |
-| `unity/.../Campus/trees.fbx` | 樹木 3 種のメッシュ（幹 `trunk` と葉 `leaf` の 2 マテリアル。葉の明暗は頂点カラー `Col`。Unity の頂点で 1 本 600 以下）と、それを参照する `tree_<n>` Empty 733 個 |
+| `unity/.../Campus/campus.fbx` | 建物・外構 19 メッシュ（入口の `bld_entrances` を含む）+ `entrance_<id>` / `door_<id>` / `sign_<id>` / `spawn_player` の Empty 34 個。約 4.72 MB / 252,546 頂点 |
+| `unity/.../Campus/trees.fbx` | 樹木 3 種のメッシュ（幹 `trunk` と葉 `leaf` の 2 マテリアル。葉の明暗は頂点カラー `Col`。Unity の頂点で 1 本 600 以下）と、それを参照する `tree_<n>` Empty 700 個 |
 | `unity/.../Campus/trees.json` | 樹木インスタンスの (x, y, z, 樹種, スケール, 回転) 一覧。Unity 側で GPU インスタンシングしたい場合の元データ |
 | `docs/previews/campus_{overview,mall,library,lecture}.png` | 1280x720 のプレビュー |
 
-頂点数はキャンパス全体で 260,425（上限 200 万に対して 13.0 %。2026-10-13 の実測）。最も多いのは花壇の `site_props_beds`（138,609）。うち入口 10 か所は 1,240 頂点 / 1,460 三角形。
+頂点数はキャンパス全体で 252,546（上限 200 万に対して 12.6 %。2026-10-13 の実測）。最も多いのは花壇の `site_props_beds`（130,562）。うち入口 11 か所は 1,364 頂点 / 1,606 三角形。
 
 ## 構成
 
