@@ -230,17 +230,17 @@
     },
     {
       "id": "c_lecture_chalk",
-      "name_ja": "大ホールのチョーク",
-      "name_en": "Great Hall Chalk",
-      "hint_ja": "講義棟の大ホール、上の調整ブース。誰も使わなくなったチョークが一本。",
-      "hint_en": "The control booth above the lecture building's great hall. One stick of chalk nobody uses any more.",
+      "name_ja": "大教室のチョーク",
+      "name_en": "Classroom Chalk",
+      "hint_ja": "講義棟の大教室、教卓の脇の機器ラック。誰も使わなくなったチョークが一本。",
+      "hint_en": "The AV rack beside the lectern in the lecture building's big classroom. One stick of chalk nobody uses any more.",
       "building": "lecture",
       "position": "poi_lecture_hall_booth",
       "rarity": "uncommon",
       "source": "hidden",
       "note_no": 6,
-      "note_ja": "大ホールの一番上から見ると、先生が小さく見える。声は、ちゃんと届く。",
-      "note_en": "From the top row of the big hall the lecturer looks tiny. The voice still reaches you."
+      "note_ja": "大教室の一番後ろの段から見ると、先生が小さく見える。黒板の字は、ぎりぎり読める。",
+      "note_en": "From the back row of the big classroom the lecturer looks tiny. You can just about read the board."
     },
     {
       "id": "c_lecture_notebook",

@@ -108,8 +108,11 @@ def _slab(c, rect, mat):
 
 def _floors(c):
     base = "lecture_carpet_corridor"
-    _slab(c, (D.X_W, D.Y_S, D.X_STEP, D.Y_EAST_S), base)
-    _slab(c, (D.X_W, D.Y_EAST_S, D.X_BUMP_W, D.N_WALL[1][1]), base)
+    # 101 の掘り下げた所（段と平場）は 1F の床を抜く
+    for rect in ((D.X_W, D.Y_S, D.X_STEP, D.Y_EAST_S),
+                 (D.X_W, D.Y_EAST_S, D.X_BUMP_W, D.N_WALL[1][1])):
+        for piece in shell._cut(*rect, [D.HALL_PIT]):
+            _slab(c, piece, base)
     _slab(c, (D.X_BUMP_W, D.Y_EAST_S, D.X_E, D.Y_N_BUMP), base)
     # 北の斜めの壁の下まで（台形の上面）
     ya = D.N_WALL[1][1]

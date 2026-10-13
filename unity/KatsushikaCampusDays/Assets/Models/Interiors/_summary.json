@@ -1,6 +1,6 @@
 {
- "total_tris": 307098,
- "total_ext_tris": 188909,
+ "total_tris": 308064,
+ "total_ext_tris": 184947,
  "total_text_tris": 95167,
  "buildings": [
   {
@@ -127,14 +127,19 @@
    "size": 1713484,
    "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/research1.fbx",
    "previews": [
-    "docs/previews/interior_research1.png"
+    "docs/previews/interior_research1.png",
+    "docs/previews/interior_research1_atrium.png",
+    "docs/previews/interior_research1_fjr710.png",
+    "docs/previews/interior_research1_upper.png",
+    "docs/previews/interior_research1_corridor.png",
+    "docs/previews/interior_research1_top.png"
    ],
    "id": "research1",
    "label": "第1研究棟",
-   "sec": 0.9141573905944824
+   "sec": 60.39099454879761
   },
   {
-   "tris": 43763,
+   "tris": 44729,
    "ext_tris": 40792,
    "ext_stats": {
     "tris": {
@@ -173,6 +178,7 @@
    "objects": [
     "floor_lecture",
     "wall_lecture",
+    "floor_lecture_pit",
     "furn_lecture_01_hall_seats",
     "furn_lecture_02_hall_desks",
     "furn_lecture_03_hall_front",
@@ -255,15 +261,25 @@
    ],
    "signs": 36,
    "text_tris": 10663,
-   "size": 1531148,
+   "size": 1539804,
    "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/lecture.fbx",
    "previews": [
+    "docs/previews/interior_lecture.png",
     "docs/previews/interior_lecture_hall.png",
-    "docs/previews/interior_lecture.png"
+    "docs/previews/interior_lecture_corridor.png",
+    "docs/previews/interior_lecture_atrium.png",
+    "docs/previews/interior_lecture_coop.png",
+    "docs/previews/interior_lecture_coopshop.png",
+    "docs/previews/interior_lecture_east.png",
+    "docs/previews/interior_lecture_room104.png",
+    "docs/previews/interior_lecture_arc3f.png",
+    "docs/previews/interior_lecture_lounge3f.png",
+    "docs/previews/interior_lecture_esc2f.png",
+    "docs/previews/interior_lecture_esc3f.png"
    ],
    "id": "lecture",
    "label": "講義棟",
-   "sec": 0.7823736667633057
+   "sec": 157.5035057067871
   },
   {
    "tris": 11310,
@@ -293,7 +309,7 @@
      "coarse": 0
     },
     "own": {
-     "bld": 2631,
+     "bld": 1811,
      "door": 68
     },
     "entrance": {
@@ -388,11 +404,12 @@
    "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/research2.fbx",
    "previews": [
     "docs/previews/interior_research2.png",
-    "docs/previews/interior_cafeteria.png"
+    "docs/previews/interior_research2_4f.png",
+    "docs/previews/interior_research2_top.png"
    ],
    "id": "research2",
    "label": "第2研究棟",
-   "sec": 0.37125086784362793
+   "sec": 3.4902238845825195
   },
   {
    "tris": 51325,
@@ -423,7 +440,7 @@
      "coarse": 0
     },
     "own": {
-     "bld": 4517,
+     "bld": 2548,
      "door": 68
     },
     "entrance": {
@@ -588,10 +605,16 @@
    "text_tris": 14588,
    "size": 1349260,
    "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/cafeteria.fbx",
-   "previews": [],
+   "previews": [
+    "docs/previews/interior_cafeteria.png",
+    "docs/previews/interior_cafeteria_ticket.png",
+    "docs/previews/interior_cafeteria.png",
+    "docs/previews/interior_cafeteria_upper.png",
+    "docs/previews/interior_cafeteria_top.png"
+   ],
    "id": "cafeteria",
    "label": "食堂",
-   "sec": 0.6777567863464355
+   "sec": 290.98327255249023
   },
   {
    "tris": 31335,
@@ -1086,18 +1109,24 @@
    "size": 1404956,
    "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/kyoso.fbx",
    "previews": [
-    "docs/previews/interior_kyoso.png"
+    "docs/previews/interior_kyoso.png",
+    "docs/previews/interior_kyoso__ls.png",
+    "docs/previews/interior_kyoso__sbback.png",
+    "docs/previews/interior_kyoso__2f.png",
+    "docs/previews/interior_kyoso__lounge2f.png",
+    "docs/previews/interior_kyoso__top.png",
+    "docs/previews/interior_kyoso__store.png"
    ],
    "id": "kyoso",
    "label": "共創棟",
-   "sec": 0.7443273067474365
+   "sec": 22.17740750312805
   },
   {
    "tris": 73496,
-   "ext_tris": 14292,
+   "ext_tris": 13248,
    "ext_stats": {
     "tris": {
-     "bld": 1341,
+     "bld": 297,
      "site_furniture": 476,
      "site_ground": 1205,
      "site_props_beds": 547,
@@ -1106,7 +1135,7 @@
      "trees": 10671
     },
     "culled_tris": {
-     "site": 570,
+     "site": 308,
      "trees": 1310
     },
     "plants": {
@@ -1286,29 +1315,33 @@
    ],
    "signs": 33,
    "text_tris": 15916,
-   "size": 1449900,
+   "size": 1427788,
    "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/library.fbx",
    "previews": [
     "docs/previews/interior_library.png",
-    "docs/previews/interior_library_hall.png"
+    "docs/previews/interior_library_gallery.png",
+    "docs/previews/interior_library_upper.png",
+    "docs/previews/interior_library_overview.png",
+    "docs/previews/interior_library_hall.png",
+    "docs/previews/interior_library_foyer.png"
    ],
    "id": "library",
    "label": "図書館",
-   "sec": 0.7038121223449707
+   "sec": 371.07740569114685
   },
   {
    "tris": 17312,
-   "ext_tris": 13302,
+   "ext_tris": 10824,
    "ext_stats": {
     "tris": {
-     "bld": 5904,
+     "bld": 3426,
      "site_ground": 585,
      "site_props_signs": 44,
      "site_water": 2,
      "trees": 6767
     },
     "culled_tris": {
-     "site": 2156,
+     "site": 1448,
      "trees": 1640
     },
     "plants": {
@@ -1437,27 +1470,32 @@
    ],
    "signs": 13,
    "text_tris": 6382,
-   "size": 727724,
+   "size": 672476,
    "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/gym.fbx",
    "previews": [
-    "docs/previews/interior_gym.png"
+    "docs/previews/interior_gym.png",
+    "docs/previews/interior_gym_arena.png",
+    "docs/previews/interior_gym_gallery.png",
+    "docs/previews/interior_gym_training.png",
+    "docs/previews/interior_gym_overview.png",
+    "docs/previews/interior_gym_subarena.png"
    ],
    "id": "gym",
    "label": "体育館",
-   "sec": 0.3748030662536621
+   "sec": 40.086052894592285
   },
   {
    "tris": 20058,
-   "ext_tris": 10144,
+   "ext_tris": 9704,
    "ext_stats": {
     "tris": {
-     "bld": 5052,
+     "bld": 4612,
      "site_ground": 363,
      "site_props_signs": 120,
      "trees": 4609
     },
     "culled_tris": {
-     "site": 3064,
+     "site": 2652,
      "trees": 1804
     },
     "plants": {
@@ -1558,15 +1596,18 @@
    ],
    "signs": 10,
    "text_tris": 6274,
-   "size": 657452,
+   "size": 645196,
    "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/lab1.fbx",
    "previews": [
     "docs/previews/interior_lab1.png",
-    "docs/previews/interior_lab1_room.png"
+    "docs/previews/interior_lab1_shop.png",
+    "docs/previews/interior_lab1_annex.png",
+    "docs/previews/interior_lab1_nmr.png",
+    "docs/previews/interior_lab1_room_b.png"
    ],
    "id": "lab1",
    "label": "実験棟1",
-   "sec": 0.4172968864440918
+   "sec": 21.630887269973755
   },
   {
    "tris": 10411,
@@ -1660,11 +1701,14 @@
    "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/lab2.fbx",
    "previews": [
     "docs/previews/interior_lab2.png",
-    "docs/previews/interior_lab2_room.png"
+    "docs/previews/interior_lab2_hall.png",
+    "docs/previews/interior_lab2_frame.png",
+    "docs/previews/interior_lab2_control.png",
+    "docs/previews/interior_lab2_prep.png"
    ],
    "id": "lab2",
    "label": "実験棟2",
-   "sec": 0.26764702796936035
+   "sec": 11.356380224227905
   },
   {
    "tris": 3991,
@@ -1725,11 +1769,12 @@
    "size": 256556,
    "fbx": "unity/KatsushikaCampusDays/Assets/Models/Interiors/greenhouse.fbx",
    "previews": [
-    "docs/previews/interior_greenhouse.png"
+    "docs/previews/interior_greenhouse.png",
+    "docs/previews/interior_greenhouse_wing.png"
    ],
    "id": "greenhouse",
    "label": "温室",
-   "sec": 0.1738898754119873
+   "sec": 1.2134740352630615
   }
  ]
 }

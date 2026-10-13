@@ -25,6 +25,15 @@ namespace KCD
 
         private const float MinFootHeight = 0.02f;
 
+        /// <summary>標準の体の脚の付け根の左右の開き（右脚側, m）。ボーンが読めないときに使う。</summary>
+        private const float ReferenceLegHalfWidth = 0.06f;
+
+        /// <summary>膝のヒントを脚の付け根より内側へ寄せる割合。膝をそろえ、外へ開かせない。</summary>
+        private const float KneeInset = 0.8f;
+
+        /// <summary>標準の体で、膝の上に置く手の左右の位置の基準 (m)。手はこれより 0.03 m 外、腿の外側に置く。</summary>
+        private const float HandSpread = 0.13f;
+
         /// <summary>標準の体の腕の長さ (m)。ボーンが読めないときに使う。</summary>
         private const float ReferenceArm = 0.55f;
 
@@ -97,21 +106,25 @@ namespace KCD
 
         /// <summary>
         /// 体格から座り方を決める。standingHip / standingKnee は立ったときの Hips と膝の高さ、
-        /// legHalfWidth は脚の付け根の左右の開き（右脚側、m）。標準の体（Hips 0.80 m・膝 0.434 m）では
-        /// 腰を 0.34 m 下げ、足 (0.13, 0.026, 0.38)・膝 (0.13, 0.45, 0.55)・手 (0.16, 0.52, 0.25) に置く。
+        /// legHalfWidth は脚の付け根の左右の開き（右脚側、m。測れなければ 0）。
+        /// 足は脚の付け根の真下の前に置き、膝のヒントはそれより少し内側に置く。腿と脛が前へまっすぐ出て、
+        /// 膝が足より外へ開かない。標準の体（Hips 0.80 m・膝 0.434 m・付け根 0.06 m）では腰を 0.34 m 下げ、
+        /// 足 (0.06, 0.026, 0.38)・膝 (0.048, 0.45, 0.55)・手 (0.16, 0.52, 0.25) に置く。
+        /// 手は膝の上の鞄が腿に重ならないよう、腿の外側に置く。
         /// </summary>
         public static Layout Solve(float standingHip, float standingKnee, float legHalfWidth)
         {
             float scale = Mathf.Clamp(standingHip / ReferenceHip, 0.2f, 1.5f);
             float sitHip = SeatSurface + HipAboveSeat * scale;
-            float legX = Mathf.Max(0.13f * scale, legHalfWidth);
+            float legX = legHalfWidth > 0f ? legHalfWidth : ReferenceLegHalfWidth * scale;
+            float handX = Mathf.Max(HandSpread * scale, legX) + 0.03f * scale;
 
             return new Layout
             {
                 HipShift = sitHip - standingHip,
                 Foot = new Vector3(legX, Mathf.Max(MinFootHeight, sitHip - standingKnee), 0.38f * scale),
-                Knee = new Vector3(legX, sitHip - 0.01f, 0.55f * scale),
-                Hand = new Vector3(legX + 0.03f * scale, sitHip + 0.06f * scale, 0.25f * scale)
+                Knee = new Vector3(legX * KneeInset, sitHip - 0.01f, 0.55f * scale),
+                Hand = new Vector3(handX, sitHip + 0.06f * scale, 0.25f * scale)
             };
         }
 

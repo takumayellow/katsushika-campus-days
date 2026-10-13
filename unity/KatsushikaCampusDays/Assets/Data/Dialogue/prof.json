@@ -72,8 +72,8 @@
       "startsQuest": "q_lecture",
       "lines": [
         {
-          "text": "さて、走ったあとは座る番だ。これから講義棟の大ホールで、新入生向けに短い講義をする。",
-          "text_en": "Now then, after running comes sitting. I'm about to give a short lecture for new students in the main hall of the lecture building."
+          "text": "さて、走ったあとは座る番だ。これから講義棟の大教室で、新入生向けに短い講義をする。",
+          "text_en": "Now then, after running comes sitting. I'm about to give a short lecture for new students in the big classroom of the lecture building."
         },
         {
           "speaker": "自分",
@@ -158,8 +158,8 @@
       "requiresActiveQuest": "q_lecture",
       "lines": [
         {
-          "text": "講義棟の大ホールだ。席に着いたら始める。",
-          "text_en": "The main hall in the lecture building. We start once you are seated."
+          "text": "講義棟の大教室だ。席に着いたら始める。",
+          "text_en": "The big classroom in the lecture building. We start once you are seated."
         }
       ]
     },

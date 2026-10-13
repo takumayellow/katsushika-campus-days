@@ -185,12 +185,15 @@ def test_hall_desks_fill_each_block_from_wall_to_aisle():
             for bx0, bx1 in D.HALL_BLOCKS] == [2, 3, 2]
 
 
-def test_hall_rows_climb_to_the_back_aisle():
+def test_hall_rows_step_down_from_the_back_aisle_to_the_board():
     rs = HL.rows()
-    assert rs[0].y1 == pytest.approx(D.HALL_FLAT_Y[0])
-    assert rs[-1].y0 == pytest.approx(D.HALL_BACK_Y[1]) and rs[-1].z == pytest.approx(1.2)
+    assert rs[0].y0 == pytest.approx(D.HALL_FLAT_Y[1])
+    assert rs[0].z == pytest.approx(D.HALL_RISE - D.HALL_DROP)
+    assert rs[-1].y1 == pytest.approx(D.HALL_BACK_Y[0]) and rs[-1].z == pytest.approx(0.0)
     for a, b in zip(rs, rs[1:]):
-        assert b.y1 == pytest.approx(a.y0) and b.z - a.z == pytest.approx(D.HALL_RISE)
+        assert b.y0 == pytest.approx(a.y1) and b.z - a.z == pytest.approx(D.HALL_RISE)
+    # 黒板は平場の南の壁（扉は後ろの通路の北の壁）
+    assert all(D.HALL_Y[0] <= y <= D.HALL_FLAT_Y[1] for y in (D.HALL_LECTERN[1], D.HALL_RACK[1]))
 
 
 def test_hall_seats_and_desks_stay_on_their_tread(hall):
@@ -213,18 +216,18 @@ def test_hall_seats_and_desks_fit_the_estimate(hall):
 
 def test_hall_tiers_run_wall_to_wall_without_gaps():
     ts = HL.tiers()
-    assert len(ts) == D.HALL_ROWS + 1
+    assert len(ts) == D.HALL_ROWS
     assert all(t[0] < D.R101_X[0] and t[2] > D.R101_X[1] for t in ts)
-    assert ts[0][1] < D.HALL_BACK_Y[0] and ts[-1][3] == pytest.approx(D.HALL_FLAT_Y[0])
+    assert ts[0][1] == pytest.approx(D.HALL_FLAT_Y[1]) and ts[-1][3] == pytest.approx(D.HALL_BACK_Y[0])
     for a, b in zip(ts, ts[1:]):
         assert b[1] == pytest.approx(a[3])
-        assert 0 <= a[4] - b[4] < STEP_OFFSET
-    assert ts[-1][4] < STEP_OFFSET
+        assert 0 <= b[4] - a[4] < STEP_OFFSET
+    assert ts[0][4] + D.HALL_DROP < STEP_OFFSET and ts[-1][4] == pytest.approx(0.0)
 
 
 def test_hall_floor_is_cheap(lspec):
     c = Ctx(lspec)
-    HL.build_floor(c.furn("hall_floor"))
+    HL.build_floor(c)
     assert 0 < c.tris() <= 200
 
 
@@ -341,7 +344,7 @@ SECTIONS = {
     "lounge": (_build_lounge, 4000),
     "north": (_build_north, 4700),
     "core": (_build_core, 3700),
-    "r101": (_build_r101, 1900),
+    "r101": (_build_r101, 2700),      # 前と後ろの壁の両方に木のパネル
 }
 
 
