@@ -54,6 +54,9 @@ def _vestibule(mb, rng):
     kit.box(mb, x0, y1 - 0.1, 2.6, x1, y1, 3.2, WF)
 
 
+GATE_FLAP = 0.14  # フラップの出幅。レーンの有効幅を 0.70 m（プレイヤー直径 0.56 m + 両側 7 cm）以上に保つ
+
+
 def _gates(mb):
     """入館ゲート 3 レーン（グレーの筐体 4 本、中の 2 本に案内の柱）。"""
     g0, g1 = D.GATES_Y
@@ -64,7 +67,7 @@ def _gates(mb):
             kit.box(mb, x - 0.18, g0, 1.0, x + 0.18, g0 + 0.15, 1.45, GREY)
     # 各レーンの両側からガラスのフラップ
     for xa, xb in ((-2.0, -0.65), (-0.65, 0.65), (0.65, 2.0)):
-        for xe, d in ((xa + 0.15, 0.32), (xb - 0.15, -0.32)):
+        for xe, d in ((xa + 0.15, GATE_FLAP), (xb - 0.15, -GATE_FLAP)):
             kit.box_nb(mb, xe, g0 + 0.5, 0.75, xe + d, g0 + 0.52, 1.0, GLASS)
 
 

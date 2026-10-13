@@ -200,3 +200,22 @@ def test_nothing_standable_behind_the_bump(built):
 def test_triangles_fit_the_cap_and_top(built):
     assert built.tris() <= INT_CAP
     assert max(p[2] for f in _faces(built) for p in f) <= TOP + 1e-6
+
+
+def test_each_entrance_gate_lane_leaves_room_for_the_player(built):
+    """入館ゲートの 3 レーンは、ガラスのフラップを含めても有効幅 0.70 m 以上（プレイヤー直径 0.56 m + 両側 7 cm）。"""
+    g0 = D.GATES_Y[0]
+    flaps = []
+    for mb in built.builders():
+        for f, m in zip(mb.faces, mb.face_mat):
+            pts = [mb.verts[i] for i in f]
+            if mb.mat_names[m] == "glass_partition" and all(abs(p[1] - (g0 + 0.5)) < 0.05 and 0.7 < p[2] < 1.05 and abs(p[0]) < 2.3 for p in pts):
+                flaps.append((min(p[0] for p in pts), max(p[0] for p in pts)))
+    pillars = (-2.0, -0.65, 0.65, 2.0)
+    assert flaps
+    for xa, xb in zip(pillars, pillars[1:]):
+        lo, hi = xa + 0.15, xb - 0.15
+        inside = [(a, b) for a, b in flaps if lo - 1e-6 <= a and b <= hi + 1e-6]
+        left = max([b for a, b in inside if a < (lo + hi) / 2] + [lo])
+        right = min([a for a, b in inside if a > (lo + hi) / 2] + [hi])
+        assert right - left >= 0.70, f"レーン {xa}..{xb} の有効幅 {right - left:.2f} m"

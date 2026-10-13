@@ -13,7 +13,7 @@ namespace KCD.Tests
     /// </summary>
     public sealed class LibraryHallWalkPlayTests : SceneTestBase
     {
-        private const float WalkSeconds = 8f;
+        private const float WalkSeconds = 8f; // ゲーム内の秒（負荷で実時間が延びても変わらない）
         private const float Arrive = 0.6f;
         private const float FloorTolerance = 0.45f;
 
@@ -49,11 +49,11 @@ namespace KCD.Tests
             float groundY = local(0f, 0f, 0f).y;
             yield return Settled();
 
-            // 1F の入口から。ゲートの 3 レーンはガラスのフラップで 0.36 m しか空かないので、脇の 0.85 m の通路を通る。
+            // 1F の入口から。ゲートは真ん中のレーン（x=0）を通る。
             // 直階段 S2（1F → M1）、S6（M1 → M2）、S5（M2 → 2F）で 2F へ。
             yield return WalkAll(player, bad, "1F から 2F", new[]
             {
-                local(2.6f, 7.0f, 0f), local(2.6f, 12.0f, 0f), local(2.0f, 20.0f, 0f), local(0.8f, 30.0f, 0f), local(0.8f, 36.0f, 0f), local(0.8f, 39.0f, 1.7f),
+                local(0f, 7.0f, 0f), local(0f, 12.0f, 0f), local(2.0f, 20.0f, 0f), local(0.8f, 30.0f, 0f), local(0.8f, 36.0f, 0f), local(0.8f, 39.0f, 1.7f),
                 local(3.3f, 40.4f, 1.7f), local(3.3f, 42.8f, 3.3f),
                 local(-5.2f, 44.2f, 3.3f), local(-5.2f, 47.0f, 3.3f), local(-5.2f, 49.0f, 5.0f),
             });
@@ -69,19 +69,42 @@ namespace KCD.Tests
             });
             AssertOnFloor(player, groundY + 10.0f, "3F ホワイエ", bad);
 
+            Transform stool = FindByName(interior, "seat_library_17");
+            Assert.IsNotNull(stool, "舞台のピアノ椅子 seat_library_17 が無い");
+            // 椅子は固い当たり判定なので、舞台の手前の地点から椅子へ向かって 0.9 m 手前までを終点にする。
+            Vector3 stageApproach = local(-11.1f, 54.6f, 10.0f);
+            Vector3 stoolAt = stool.position;
+            Vector3 toward = stageApproach - stoolAt;
+            toward.y = 0f;
+            stoolAt += toward.normalized * 0.9f;
+            stoolAt.y = groundY + 10.75f;
+
             // 3F ホワイエを東へ進み、浮き階段で前室の扉へ、扉を抜けて 1 階席の縦通路から舞台へ。
             yield return WalkAll(player, bad, "ホワイエからホール", new[]
             {
                 local(-27.6f, 13.5f, 10.0f), local(-12.0f, 13.5f, 10.0f), local(-11.0f, 17.1f, 10.0f),
                 local(-7.0f, 17.1f, 11.4f), local(-3.0f, 17.6f, 12.8f), local(-1.6f, 19.8f, 12.8f),
                 local(-1.6f, 33.0f, 12.8f), local(2.25f, 35.0f, 12.8f), local(2.25f, 45.3f, 11.3f),
-                local(2.25f, 53.0f, 10.0f), local(2.25f, 54.6f, 10.0f), local(-11.1f, 54.6f, 10.0f),
-                local(-11.1f, 56.8f, 10.75f), local(-12.25f, 56.8f, 10.75f),
+                local(2.25f, 53.0f, 10.0f), local(2.25f, 54.6f, 10.0f), stageApproach,
+                stoolAt,
             });
             AssertOnFloor(player, groundY + 10.75f, "舞台のピアノのそば", bad);
 
             Assert.IsEmpty(bad, string.Join("\n", bad));
             AssertNoErrors("図書館のホール");
+        }
+
+        private static Transform FindByName(Transform root, string name)
+        {
+            foreach (Transform t in root.GetComponentsInChildren<Transform>(true))
+            {
+                if (t.name == name)
+                {
+                    return t;
+                }
+            }
+
+            return null;
         }
 
         private static Transform FindInterior()
@@ -160,10 +183,11 @@ namespace KCD.Tests
             {
                 Vector3 target = points[i];
                 player.SetAutopilot(target, player.RunSpeed);
-                float deadline = Time.realtimeSinceStartup + WalkSeconds;
-                while (player.AutopilotActive && Time.realtimeSinceStartup < deadline)
+                float elapsed = 0f;
+                while (player.AutopilotActive && elapsed < WalkSeconds)
                 {
                     yield return null;
+                    elapsed += Time.deltaTime;
                 }
 
                 player.ClearAutopilot();
