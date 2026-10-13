@@ -202,8 +202,8 @@
   },
   "poi_lecture_hall_booth": {
    "x": 20.3,
-   "y": 0.0,
-   "z": 17.9
+   "y": -1.2,
+   "z": 6.05
   },
   "poi_lecture_seminar": {
    "x": 14.6,
@@ -212,13 +212,13 @@
   },
   "poi_lecture_hall_stage": {
    "x": 17.75,
-   "y": 0.0,
-   "z": 17.3
+   "y": -1.2,
+   "z": 6.65
   },
   "poi_lecture_hall_seats": {
    "x": 14.0,
-   "y": 0.6,
-   "z": 12.4
+   "y": -0.6,
+   "z": 11.55
   },
   "poi_lecture_grand_stair": {
    "x": 48.6,
@@ -262,18 +262,18 @@
   },
   "npc_lecture_1": {
    "x": 17.75,
-   "y": 0.0,
-   "z": 18.9
+   "y": -1.2,
+   "z": 5.05
   },
   "npc_lecture_2": {
    "x": 10.6,
-   "y": 0.36,
-   "z": 14.4
+   "y": -0.84,
+   "z": 9.55
   },
   "npc_lecture_3": {
    "x": 18.0,
-   "y": 0.72,
-   "z": 11.4
+   "y": -0.48,
+   "z": 12.55
   },
   "npc_lecture_4": {
    "x": -2.2,
@@ -311,7 +311,7 @@
    "z": 31.0
   }
  },
- "triangles": 43739,
+ "triangles": 44705,
  "seats": 270,
  "notes": [
   "中廊下・黒いコア・入口ロビー・6 層の吹き抜け・101 の 270 席の段床"
@@ -319,6 +319,7 @@
  "objects": [
   "floor_lecture",
   "wall_lecture",
+  "floor_lecture_pit",
   "furn_lecture_01_hall_seats",
   "furn_lecture_02_hall_desks",
   "furn_lecture_03_hall_front",

@@ -34,11 +34,11 @@ def build(c):
     COOP.build(c, M["coop"])
     LOUNGE.build(c, M["lounge"])
     NORTH.build(c, M["north"])
-    HALL.build_floor(c.floor)
+    HALL.build_floor(c)
     seats = HALL.build_seats(c, M["hall_seats"], M["hall_desks"])
     R101.build(M["hall_front"])
     for x in (11.0, 17.8, 24.6):
-        for y in (8.0, 13.0, 17.5):
+        for y in (6.45, 10.95, 15.95):
             c.light(x, y, D.CEIL_101 - 0.9, energy=90.0, radius=1.6)
     SIGNS.build(c, M["signs"], COOP.REGISTERS)
     for name, x, y, z in D.POIS:

@@ -34,6 +34,12 @@ namespace KCD.Editor
         public const float OutsideGroundY = -0.06f;
 
         /// <summary>
+        /// 1F の床より下まで掘り下げた部屋（講義棟の 101 の段床）の床のメッシュ名に入る印。kcd_interior の
+        /// Ctx.part("floor", "pit") が floor_&lt;id&gt;_pit という名前で出す。この範囲の上には屋内の下の地面を張らない。
+        /// </summary>
+        public const string PitMarker = "_pit";
+
+        /// <summary>
         /// 窓のすぐ外の近景（舗装・芝・生垣・木）のメッシュ名の頭。kcd_interior が外周の壁の外にだけ置く (#45)。
         /// プレイヤーは届かないので当たり判定を付けず、描くだけにする (#60)。
         /// </summary>
@@ -63,6 +69,7 @@ namespace KCD.Editor
 
             float cursor = FirstSlotX;
             int placed = 0;
+            var pits = new List<Rect>();
             foreach (string id in Ids)
             {
                 string assetPath = ModelsFolder + "/" + id + ".fbx";
@@ -85,6 +92,8 @@ namespace KCD.Editor
                 bounds.center += new Vector3(shift, 0f, 0f);
                 cursor = bounds.max.x + Gap;
                 Physics.SyncTransforms();
+                List<Rect> holes = PitHoles(interior.transform, out float pitFloor);
+                pits.AddRange(holes);
 
                 AddSafetyFloor(interior.transform, bounds);
                 AddLights(interior.transform, id);
@@ -93,7 +102,7 @@ namespace KCD.Editor
                 int zones = AddPoiZones(interior.transform, id);
                 SeatFactory.PlaceInterior(interior.transform, id);
                 Register(loader, interior.transform, id);
-                InteriorBackdropStage.Build(interior.transform, id, bounds);
+                InteriorBackdropStage.Build(interior.transform, id, bounds, holes, pitFloor);
                 placed++;
 
                 EditorPaths.Report("屋内 " + id + ": x " + bounds.min.x.ToString("F0") + ".." + bounds.max.x.ToString("F0")
@@ -101,25 +110,57 @@ namespace KCD.Editor
                     + " poi " + zones + (stops > 0 ? " ev " + stops : string.Empty));
             }
 
-            AddOutsideGround(group.transform, FirstSlotX - 200f, cursor + 200f);
+            AddOutsideGround(group.transform, FirstSlotX - 200f, cursor + 200f, pits);
+            CampusStage.CutOuterGround(root, pits);
             EditorPaths.Report("屋内を " + placed + " 棟置きました。");
         }
 
         /// <summary>
-        /// 窓の外に見える地面。無いと空の下半分がそのまま見える。遠景のドームがある屋内ではその下に隠れ、
-        /// サイドカーが無くてドームを置けなかった屋内でだけ見える。
+        /// 1F の床より下まで掘り下げた部屋の床（名前に <see cref="PitMarker"/>）を上から見た範囲（Rect の x は世界の x、
+        /// y は世界の z）。地面（OutsideGround・OuterGround・遠景のドーム）はこの範囲を抜いて張る。
+        /// floor はいちばん深い床の世界の高さ（穴が無ければ屋内の原点の高さ）。
         /// </summary>
-        private static void AddOutsideGround(Transform group, float x0, float x1)
+        public static List<Rect> PitHoles(Transform interior, out float floor)
         {
-            GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
-            ground.name = "OutsideGround";
+            var holes = new List<Rect>();
+            floor = interior.position.y;
+            foreach (MeshRenderer renderer in interior.GetComponentsInChildren<MeshRenderer>(true))
+            {
+                if (!renderer.gameObject.name.Contains(PitMarker))
+                {
+                    continue;
+                }
+
+                Bounds b = renderer.bounds;
+                if (b.min.y < interior.position.y + OutsideGroundY)
+                {
+                    holes.Add(Rect.MinMaxRect(b.min.x, b.min.z, b.max.x, b.max.z));
+                    floor = Mathf.Min(floor, b.min.y);
+                }
+            }
+
+            return holes;
+        }
+
+        /// <summary>
+        /// 窓の外に見える地面。無いと空の下半分がそのまま見える。遠景のドームがある屋内ではその下に隠れ、
+        /// サイドカーが無くてドームを置けなかった屋内でだけ見える。掘り下げた部屋の範囲（pits）には張らない。
+        /// </summary>
+        /// <summary>屋内の並びの下の地面の z の中心と半分の奥行き（m）。</summary>
+        private const float OutsideGroundZ = 30f;
+        private const float OutsideGroundHalfDepth = 300f;
+
+        private static void AddOutsideGround(Transform group, float x0, float x1, IList<Rect> pits)
+        {
+            var ground = new GameObject("OutsideGround");
             ground.transform.SetParent(group, false);
-            ground.transform.position = new Vector3((x0 + x1) * 0.5f, OutsideGroundY, 30f);
-            // Plane は 10 m 四方なので 1/10 で割る。
-            ground.transform.localScale = new Vector3((x1 - x0) * 0.1f, 1f, 60f);
-            ground.GetComponent<MeshRenderer>().sharedMaterial = MaterialLibrary.EnsureCampus("grass_dark");
-            CampusSurfaces.UseMetricUv(ground.GetComponent<MeshFilter>(), new Vector2(x1 - x0, 600f));
-            Object.DestroyImmediate(ground.GetComponent<Collider>());
+            ground.transform.position = new Vector3((x0 + x1) * 0.5f, OutsideGroundY, OutsideGroundZ);
+            List<Rect> tiles = GroundTiles.Subtract(
+                Rect.MinMaxRect(x0, OutsideGroundZ - OutsideGroundHalfDepth, x1, OutsideGroundZ + OutsideGroundHalfDepth),
+                pits);
+            ground.AddComponent<MeshFilter>().sharedMesh =
+                GroundTiles.BuildMesh(tiles, 0f, ground.transform.position, "outside_ground");
+            ground.AddComponent<MeshRenderer>().sharedMaterial = MaterialLibrary.EnsureCampus("grass_dark");
             int groundLayer = LayerMask.NameToLayer("Ground");
             if (groundLayer >= 0)
             {

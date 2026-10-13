@@ -541,6 +541,46 @@ namespace KCD.Editor
         /// そのまま当たり判定にすると 1 枚 400 m の三角形になり、PhysX が「2 頂点の距離が 500 を超える」と
         /// 警告して接地も不安定になる。
         /// </summary>
+        /// <summary>
+        /// OuterGround から、1F の床より下まで掘り下げた屋内の部屋の範囲（holes。Rect の x は世界の x、y は世界の z）を抜く。
+        /// 抜かないと、部屋の上に芝が浮いて見え、当たり判定で段を下りられない。見た目は穴の周りのタイルのメッシュに、
+        /// 当たり判定はタイルごとの BoxCollider に差し替える。穴が無ければ何もしない。
+        /// </summary>
+        public static void CutOuterGround(Transform root, IList<Rect> holes)
+        {
+            Transform ground = root.Find("OuterGround");
+            if (ground == null || holes == null || holes.Count == 0)
+            {
+                return;
+            }
+
+            ground.localScale = Vector3.one;
+            Vector3 origin = ground.position;
+            List<Rect> tiles = GroundTiles.Subtract(
+                Rect.MinMaxRect(origin.x - OuterGroundHalfExtent, origin.z - OuterGroundHalfExtent,
+                    origin.x + OuterGroundHalfExtent, origin.z + OuterGroundHalfExtent),
+                holes);
+            MeshFilter filter = ground.GetComponent<MeshFilter>();
+            Mesh old = filter.sharedMesh;
+            filter.sharedMesh = GroundTiles.BuildMesh(tiles, 0f, origin, "outer_ground");
+            if (old != null && !AssetDatabase.Contains(old))
+            {
+                Object.DestroyImmediate(old);
+            }
+
+            foreach (BoxCollider box in ground.GetComponents<BoxCollider>())
+            {
+                Object.DestroyImmediate(box);
+            }
+
+            foreach (Rect tile in tiles)
+            {
+                BoxCollider box = ground.gameObject.AddComponent<BoxCollider>();
+                box.size = new Vector3(tile.width, OuterGroundThickness, tile.height);
+                box.center = new Vector3(tile.center.x - origin.x, -OuterGroundThickness * 0.5f, tile.center.y - origin.z);
+            }
+        }
+
         private static void BuildGround(Transform root)
         {
             GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
