@@ -1,16 +1,17 @@
-"""講義棟のエスカレータ 2 列 4 区間と 3F→4F の上り口（spec §1-3）。
+"""講義棟のエスカレータ 2 列 10 区間（1F→6F。spec §1-3）。
 
 段の付いた歩ける斜路（蹴上げ 0.2）として作る。南の列（Y 25.6〜27.4）は東へ、北の列
-（Y 27.6〜29.4）は西へ上り、同じ列の 1F→2F と 2F→3F の区間は同じ X に重なる。
+（Y 27.6〜29.4）は西へ上り、同じ列の各階の区間は同じ X に重なる。
 見た目はガラスの欄干、ステンレスのデッキと黒い手すり、白い腹板、段の縁は黄色。
 1F の区間の下で腹が CLEAR より低い所は、白い板で床まで囲ってくぐれないようにする。
-3F→4F の区間は上り口の 3 段の先を白い板で塞ぎ、斜路はその奥で 3F の天井の中へ消える。
 段の面は上と蹴込みの 1 枚ずつ（段の端は腹板、下は腹が隠す）。
+区間ごとに部品 wall_lecture_esc_<列>_<下の階> を分ける（点光源の数の上限。spec §1-13）。
+段（蹴込み・段鼻・踏面）だけは区間ごとの部品 escsteps_lecture_<区間> に分け、Unity が 1 段ぶんずつ動かす
+（当たり判定は付けない。InteriorEscalatorStage）。乗る板の両端は Empty esc_lecture_<区間>_lo / _hi。
 """
 
 from . import kit
 from . import plan_lecture_dims as D
-from . import plan_lecture_upper as UPPER
 
 X_W, X_E = D.ESC_LAND_W[1], D.ESC_LAND_E[0]   # 斜路の西端 22.6・東端 30.6
 RISE = D.ESC_RISE
@@ -25,9 +26,9 @@ GLASS_IN = 0.07       # 列の縁から欄干の中心まで
 GLASS_T = 0.03
 SHEET_T = 0.06        # 腹・端の板・塞ぐ板の厚み
 NOSE = 0.05           # 段の縁の黄色の奥行き
+LIFT = 0.005          # 動く段の踏面を、乗り口・降り口の床から浮かせる高さ
 CLEAR = 1.8           # 1F の区間の下で、腹がこれより低い所は床まで囲う
-STUB_SHOWN = 3        # 3F→4F で歩ける段の数
-CEIL_3F = UPPER.Z_TOP
+TOP = 6               # 最上の区間の上の端の階（6F）
 
 STEEL = "metal_gray"
 NOSING = "lecture_tactile_yellow"
@@ -57,9 +58,10 @@ class Flight:
         return self.xa + (z - self.za) / (self.zb - self.za) * (self.xb - self.xa)
 
     def tread(self, i):
-        """i 段目（1 始まり）の踏面の x の範囲（小さい順）と高さ。"""
-        xs, xe = self.xa + (i - 1) * self.run, self.xa + i * self.run
-        return min(xs, xe), max(xs, xe), self.za + i * RISE
+        """動く段の i 段目（1 始まり）が止まっているときの踏面の x の範囲（小さい順）と高さ（LIFT を除く）。
+        1 段目は下の端の床の高さ、i 段目は xa + (i − 2)·run〜xa + (i − 1)·run。"""
+        xs, xe = self.xa + (i - 2) * self.run, self.xa + (i - 1) * self.run
+        return min(xs, xe), max(xs, xe), self.za + (i - 1) * RISE
 
     def open_x(self):
         """腹の下が開く x。1F の区間はそこまで床から囲う。2F 以上の区間は下の端。"""
@@ -67,42 +69,34 @@ class Flight:
 
 
 def flights():
-    """4 区間: 南の列は東へ、北の列は西へ上る。"""
-    s0, s1 = D.ESC_S_Y
-    n0, n1 = D.ESC_N_Y
-    return (Flight("south_1f", s0, s1, X_W, 0.0, X_E, D.F2),
-            Flight("south_2f", s0, s1, X_W, D.F2, X_E, D.F3),
-            Flight("north_1f", n0, n1, X_E, 0.0, X_W, D.F2),
-            Flight("north_2f", n0, n1, X_E, D.F2, X_W, D.F3))
+    """10 区間: 南の列は東へ、北の列は西へ上る。名前は <列>_<下の階>（"south_1f" など）。"""
+    out = []
+    for name, (y0, y1), xa, xb in (("south", D.ESC_S_Y, X_W, X_E), ("north", D.ESC_N_Y, X_E, X_W)):
+        for i in range(TOP - 1):
+            out.append(Flight("%s_%df" % (name, i + 1), y0, y1, xa, D.FL[i], xb, D.FL[i + 1]))
+    return tuple(out)
 
 
-def stub():
-    """3F→4F（北の列、3F の東端から西へ）。上り口の STUB_SHOWN 段の先は塞ぐ。"""
-    n0, n1 = D.ESC_N_Y
-    return Flight("north_3f", n0, n1, X_E, D.F3, X_W, D.FL[3])
+def ends(f):
+    """乗る板の下の端と上の端 (x, y, z)。段鼻の線と段の奥の線の中間の線の両端（踏面 1 段目の中央が下の端）。"""
+    yc = (f.y0 + f.y1) * 0.5
+    return (f.xa - f.run * 0.5, yc, f.za), (f.xb - f.run * 0.5, yc, f.zb)
 
 
-def stub_bar_x(f):
-    """3F→4F を塞ぐ板の中心の x。板の手前の面が歩ける最後の段の奥の端に揃う。"""
-    return f.xa + STUB_SHOWN * f.run + f.dir * SHEET_T * 0.5
-
-
-def _steps(mb, f, last, skip_riser=()):
-    """1〜last 段目の蹴込み（下の端を向く）・黄色の段鼻・踏面。"""
+def _steps(mb, f, last):
+    """動く段の 1〜last 段目（Flight.tread の位置）: 蹴込み（下の端を向く）・黄色の段鼻・踏面。
+    Unity が 1 段ぶん上へ動かすと、最上段が上の端の床にそろう。蹴込みは 1 段目も含めて RISE の高さ。"""
     ya, yb = f.y0 + CLAD_T, f.y1 - CLAD_T
     for i in range(1, last + 1):
         _x0, _x1, z = f.tread(i)
-        xr = f.xa + (i - 1) * f.run
-        if i not in skip_riser:
-            if f.dir > 0:
-                mb.add_face([(xr, yb, z - RISE), (xr, ya, z - RISE), (xr, ya, z), (xr, yb, z)],
-                            STEEL)
-            else:
-                mb.add_face([(xr, ya, z - RISE), (xr, yb, z - RISE), (xr, yb, z), (xr, ya, z)],
-                            STEEL)
-        xn, xk = xr + f.dir * NOSE, f.xa + i * f.run
-        kit.plate(mb, min(xr, xn), ya, max(xr, xn), yb, z, NOSING)
-        kit.plate(mb, min(xn, xk), ya, max(xn, xk), yb, z, STEEL)
+        xr = f.xa + (i - 2) * f.run
+        if f.dir > 0:
+            mb.add_face([(xr, yb, z - RISE), (xr, ya, z - RISE), (xr, ya, z), (xr, yb, z)], STEEL)
+        else:
+            mb.add_face([(xr, ya, z - RISE), (xr, yb, z - RISE), (xr, yb, z), (xr, ya, z)], STEEL)
+        xn, xk = xr + f.dir * NOSE, xr + f.run
+        kit.plate(mb, min(xr, xn), ya, max(xr, xn), yb, z + LIFT, NOSING)
+        kit.plate(mb, min(xn, xk), ya, max(xn, xk), yb, z + LIFT, STEEL)
 
 
 def _vquad(mb, y, xs, xe, lo_s, lo_e, hi_s, hi_e, t, mat):
@@ -116,7 +110,7 @@ def _xquad(mb, x, y0, y1, z0, z1, t=SHEET_T, mat=WHITE):
 
 
 def _truss(mb, f, x_end):
-    """腹板（両側）・腹・端の板。x_end は上の端（3F→4F は天井に入る所）。"""
+    """腹板（両側）・腹・端の板。x_end は上の端。"""
     xo = f.open_x()
     for y in (f.y0 + CLAD_T * 0.5, f.y1 - CLAD_T * 0.5):
         if xo != f.xa:
@@ -135,14 +129,11 @@ def _truss(mb, f, x_end):
         _xquad(mb, f.xb - f.dir * SHEET_T * 0.5, f.y0, f.y1, f.zb - DROP, f.zb)
 
 
-def _balustrade(mb, f, x_end, top_newel=True):
+def _balustrade(mb, f, x_end):
     """デッキ・ガラスの欄干・黒い手すり。両端は水平に NEWEL だけ延ばす。"""
-    path = [(f.xa - f.dir * NEWEL, f.za), (f.xa, f.za), (x_end, f.line(x_end))]
-    if top_newel:
-        path.append((f.xb + f.dir * NEWEL, f.zb))
-    newels = [(f.xa - f.dir * NEWEL, f.xa, f.za)]
-    if top_newel:
-        newels.append((f.xb, f.xb + f.dir * NEWEL, f.zb))
+    path = [(f.xa - f.dir * NEWEL, f.za), (f.xa, f.za), (x_end, f.line(x_end)),
+            (f.xb + f.dir * NEWEL, f.zb)]
+    newels = [(f.xa - f.dir * NEWEL, f.xa, f.za), (f.xb, f.xb + f.dir * NEWEL, f.zb)]
     for y_edge, inward in ((f.y0, 1.0), (f.y1, -1.0)):
         yg = y_edge + inward * GLASS_IN
         yd = y_edge + inward * CLAD_T
@@ -157,24 +148,16 @@ def _balustrade(mb, f, x_end, top_newel=True):
             kit.box_nb(mb, xs, min(y_edge, yd), z, xe, max(y_edge, yd), z + DECK, DECK_MAT)
 
 
-def build_flight(mb, f):
-    _steps(mb, f, f.n)
+def build_flight(mb, steps, f):
+    """腹板・欄干などの止まった部分を mb に、動く段を steps に作る。"""
+    _steps(steps, f, f.n)
     _truss(mb, f, f.xb)
     _balustrade(mb, f, f.xb)
 
 
-def build_stub(mb, f):
-    """3F→4F: 上り口の段を見せ、その奥を白い板で天井まで塞ぐ。奥の段と腹板は天井の中へ。"""
-    last = int((CEIL_3F - RISE - f.za) / RISE + 1e-9)
-    _steps(mb, f, last, skip_riser=(STUB_SHOWN + 1,))
-    x_end = f.x_at(CEIL_3F + DROP)
-    _truss(mb, f, x_end)
-    _balustrade(mb, f, x_end, top_newel=False)
-    xb = stub_bar_x(f)
-    _xquad(mb, xb, f.y0, f.y1, f.line(xb) - DROP, CEIL_3F)
-
-
 def build(c):
     for f in flights():
-        build_flight(c.wall, f)
-    build_stub(c.wall, stub())
+        build_flight(c.part("wall", "esc_" + f.name), c.part("escsteps", f.name), f)
+        lo, hi = ends(f)
+        c._put("esc_%s_%s_lo" % (c.spec.id, f.name), *lo)
+        c._put("esc_%s_%s_hi" % (c.spec.id, f.name), *hi)

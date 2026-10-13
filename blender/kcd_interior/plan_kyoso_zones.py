@@ -1,4 +1,5 @@
-"""共創棟 1F のうち店以外の区画: ラーニングスクエア・ホール・カフェラウンジ・ラウンジ 1/2・中ホール。"""
+"""共創棟 1F のうち店以外の区画: エントランスホール・スタジオ・ラーニングスクエア1（段床）・
+曲線テーブルのホール・ラーニングスクエア2（吹き抜けの下）。"""
 
 import math
 
@@ -8,143 +9,162 @@ from . import plan_kyoso_dims as D
 WOOD = "kyoso_wood_oak"
 BLACK = "kyoso_steel_black"
 GREY = "kyoso_sofa_grey"
-SEAT_FRONT = {"n": 0.0, "s": math.pi, "w": math.pi * 0.5, "e": -math.pi * 0.5}
+CHARCOAL = "kyoso_sofa_charcoal"
+# 曲線テーブルのまわりの椅子は色を混ぜる
+MIXED = ("chair_orange", "plastic_white", "chair_grey", "fabric_yellow", "chair_blue",
+         "plastic_white", "chair_green")
 
 
-def _chair(mb, x, y, ang, mat="plastic_white", frame="metal_gray"):
-    F.chair_min(mb, kit.T(x, y, 0.0, ang), mat, frame)
-    FK.seat_mark(mb, x, y, 0.0, ang, hw=0.22, hd=0.22, inner=0.44)
+def _chair(mb, x, y, ang, mat="plastic_white", frame="metal_gray", z=0.0):
+    F.chair_min(mb, kit.T(x, y, z, ang), mat, frame)
+    FK.seat_mark(mb, x, y, z, ang, hw=0.22, hd=0.22, inner=0.44)
 
 
 def _dir_ang(dx, dy):
+    """(dx, dy) の向きを正面にする角（kit.T と同じ）。"""
     return math.atan2(-dx, dy)
 
 
+def _table4(mb, x, y, mat="plastic_white"):
+    F.table(mb, x, y, 0.0, w=1.6, d=0.8, h=0.72, top=WOOD, leg=BLACK)
+    for dx in (-0.4, 0.4):
+        _chair(mb, x + dx, y - 0.72, 0.0, mat)
+        _chair(mb, x + dx, y + 0.72, math.pi, mat)
+
+
+def _sofa(mb, x, y, ang, w=2.4, z=0.0, mat=GREY):
+    """箱型ソファを z の床に置き、座面を記録する。座面はソファと一緒に持ち上げる。"""
+    base = len(mb.verts)
+    FK.seat_mark(mb, x, y, 0.0, ang, hw=w * 0.5, hd=0.42, inner=w - 0.3)
+    FK.modular_sofa(mb, x, y, ang, w=w, mat=mat)
+    kit.lift(mb, base, z)
+
+
+def _round_sofa(mb, x, y, z=0.0):
+    FK.round_sofa(mb, x, y, z)
+    for dx, dy in ((0, -1), (0, 1), (-1, 0), (1, 0)):
+        FK.seat_mark(mb, x + 0.55 * dx, y + 0.55 * dy, z, _dir_ang(dx, dy),
+                     hw=0.25, hd=0.25, inner=0.5)
+
+
+# ---- エントランスホール -------------------------------------------------- #
+def lobby(c, mb):
+    """東の風除室（ガラスの箱）・ベンチ・自立の案内板。"""
+    x0, y0, x1, y1 = D.VESTIBULE
+    for a, b in (((x0, y0), (x0, y1)), ((x0, y1), (x1, y1)), ((x1, y1), (x1, y0))):
+        FK.glass_wall(mb, a, b, 3.2)
+    kit.box(mb, x0, y0, 3.2, x1, y1, 3.3, BLACK, top=BLACK)
+    for bx in (-6.0, -10.0):
+        F.bench(mb, bx, 13.6, math.pi, w=1.8, mat=WOOD)
+    # 1F の案内板（自立）
+    kit.box(mb, -3.2, 6.2, 0.05, -2.0, 6.32, 1.9, "kyoso_info_beige")
+    for lx in (-3.1, -2.1):
+        kit.box_c(mb, lx, 6.26, 0.0, 0.05, 0.05, 0.1, BLACK)
+    kit.box(mb, -3.2, 6.2, 1.9, -2.0, 6.32, 1.95, BLACK)
+
+
+# ---- スタジオ ------------------------------------------------------------ #
+def studio(c, mb):
+    """扉の西のガラス張りの部屋。エントランスホール側と奥（ラーニングスクエア1 側）に扉。"""
+    x0, y0, x1, y1 = D.STUDIO
+    kit.plate(mb, x0, y0, x1, y1, 0.012, "kyoso_floor_carpet_grey")
+    FK.glass_wall(mb, (x0, y0), (x0, y1), D.Z_CEIL, gaps=((9.3 - y0, 11.1 - y0),),
+                  door_top=2.6)
+    FK.glass_wall(mb, (x0, y1), (D.CORE_W[0], y1), D.Z_CEIL, gaps=((2.0, 3.6),),
+                  door_top=2.6)
+    for tx in (12.0, 24.0, 34.0):
+        _table4(mb, tx, 9.0)
+    for wx in (25.0, 35.0):
+        F.whiteboard(mb, wx, D.CORE_W[1], 1.5, math.pi, w=2.4, h=1.2)
+
+
+# ---- ラーニングスクエア1（四方へ下りる段床）------------------------------- #
 def learning_square(c, mb):
-    rng = c.rng
-    x0, y0, x1, y1 = D.LS
-    FK.terrazzo(mb, x0, y0, x1, y1, rng)
-    FK.deck(mb, -31.0, 7.8, -18.0, 12.0)
-    # 公園側の縁は段が無く 0.6 m 落ちて、その先はバルコニーと階段の下のすき間になるので、
-    # ベンチの背を兼ねた腰壁で縁を通して閉じる（デッキから下りられるのは南と東の段だけ）
-    kit.box(mb, -31.0, 12.0, 0.0, -18.0, 12.1, D.DECK_H + 0.85, BLACK, top=WOOD)
-    # 最上段（x -31..-19.8, y 9.0..12.0）の縁にグレーの箱形ベンチ
-    FK.box_bench(mb, -29.6, 11.5, -20.4, 12.0, z=D.DECK_H)
-    FK.box_bench(mb, -19.9, 9.4, -19.4, 11.5, z=D.DECK_H)
-    for sx in (-27.6, -23.2):
-        FK.round_sofa(mb, sx, 10.1, D.DECK_H)
-        for dx, dy in ((0, -1), (0, 1), (-1, 0), (1, 0)):
-            FK.seat_mark(mb, sx + 0.55 * dx, 10.1 + 0.55 * dy, D.DECK_H,
-                         _dir_ang(dx, dy), hw=0.25, hd=0.25, inner=0.5)
-    for px, py, mat in ((-25.6, 11.2, "kyoso_sofa_charcoal"), (-25.0, 11.5, GREY),
-                        (-21.0, 10.6, "kyoso_sofa_charcoal"), (-21.8, 11.2, GREY)):
-        FK.pouf(mb, px, py, D.DECK_H, mat=mat)
-    for bx, by in ((-29.4, 9.6), (-29.0, 10.3), (-21.6, 9.4), (-30.0, 10.9)):
-        FK.box_stool(mb, bx, by, D.DECK_H)
-    F.round_table(mb, -25.4, 9.5, r=0.45, h=0.73, top="plastic_white", z=D.DECK_H)
+    """段床の上に箱型ソファの島が並ぶ。西の縁にグレーのベンチ、手前の縁にソファの列。"""
+    z = D.DECK_H
+    FK.deck_all(mb, *D.LS1)
+    for sx in (6.6, 10.6):
+        for ya, yb in ((20.0, 22.4), (23.8, 26.0)):
+            _sofa(mb, sx, ya, D.FACE_PARK, z=z)
+            _sofa(mb, sx, yb, D.FACE_MALL, z=z, mat=CHARCOAL if sx < 8 else GREY)
+            F.round_table(mb, sx, (ya + yb) * 0.5, r=0.32, h=0.45, top=BLACK, leg=BLACK,
+                          z=z)
+    for sx, mat in ((6.4, CHARCOAL), (9.2, GREY), (12.0, CHARCOAL)):
+        _sofa(mb, sx, 16.6, D.FACE_PARK, w=2.0, z=z, mat=mat)
+    for y0, y1 in ((19.2, 22.6), (23.4, 27.0)):
+        FK.box_bench(mb, 13.0, y0, 13.5, y1, z=z)
+        FK.seat_mark(mb, 13.25, (y0 + y1) * 0.5, z, D.FACE_EAST, hw=(y1 - y0) * 0.5,
+                     hd=0.25, inner=y1 - y0)
+    FK.box_stool(mb, 13.25, 23.0, z)
+    for px, py, mat in ((8.6, 24.9, CHARCOAL), (8.6, 18.3, GREY), (11.8, 18.3, CHARCOAL)):
+        FK.pouf(mb, px, py, z, mat=mat)
+        FK.seat_mark(mb, px, py, z, D.FACE_EAST, hw=0.3, hd=0.3, inner=0.5)
+    # 公園側へ延びる小さな段床（丸いソファ）
+    FK.deck_all(mb, *D.LS1_EXT)
+    _round_sofa(mb, 1.75, 30.35, z)
 
-    # テーブル席: 前の通路寄りに 2 台, 階段の足元の手前に 2 台
-    for tx, ty in ((-32.3, 8.5), (-32.3, 11.2), (-16.6, 8.4), (-16.6, 10.8)):
-        F.table(mb, tx, ty, 0.0, w=1.6, d=0.8, h=0.72, top=WOOD, leg=BLACK)
-        for dx in (-0.4, 0.4):
-            _chair(mb, tx + dx, ty - 0.72, 0.0)
-            _chair(mb, tx + dx, ty + 0.72, math.pi)
-    for wx in (-34.8, -27.6, -20.4):
-        F.whiteboard(mb, wx, 7.6, 1.5, 0.0, w=1.4, h=1.0)
 
-    # 西の縁の段状のベンチ（通路側は腰壁）
-    kit.box(mb, -34.3, 9.5, 0.0, -34.0, 13.4, 0.9, "wall_white")
-    kit.box(mb, -34.0, 9.5, 0.0, -33.4, 13.4, 0.42, "kyoso_sage_grey")
-    kit.box(mb, -34.0, 9.5, 0.42, -33.85, 13.4, 0.95, "kyoso_sage_grey")
-    kit.box(mb, -33.7, 12.0, 0.42, -33.4, 12.6, 0.47, "plant_green")
-    for sy in (10.0, 11.0, 12.0, 13.0):
-        FK.seat_mark(mb, -33.7, sy, 0.0, SEAT_FRONT["e"], hw=0.3, hd=0.3, inner=0.6)
+# ---- 曲線テーブルのホール -------------------------------------------------- #
+def _arc_table(mb, cx, cy, r0, r1, a0, a1, n=10, h=0.72):
+    """中心 (cx, cy) の円環の一部の形の白い天板と脚。角度は度で +X から反時計回り。"""
+    for k in range(n):
+        p = math.radians(a0 + (a1 - a0) * k / n)
+        q = math.radians(a0 + (a1 - a0) * (k + 1) / n)
+        pts = [(cx + r0 * math.cos(p), cy + r0 * math.sin(p)),
+               (cx + r1 * math.cos(p), cy + r1 * math.sin(p)),
+               (cx + r1 * math.cos(q), cy + r1 * math.sin(q)),
+               (cx + r0 * math.cos(q), cy + r0 * math.sin(q))]
+        mb.add_prism(pts, h - 0.04, h, "plastic_white", "plastic_white")
+        if k % 2 == 0:
+            rm = (r0 + r1) * 0.5
+            kit.cyl(mb, cx + rm * math.cos(p), cy + rm * math.sin(p), 0.0, h - 0.04, 0.03,
+                    "metal_gray", seg=4)
+    rm = (r0 + r1) * 0.5
+    q = math.radians(a1)
+    kit.cyl(mb, cx + rm * math.cos(q), cy + rm * math.sin(q), 0.0, h - 0.04, 0.03,
+            "metal_gray", seg=4)
+
+
+def _ring_chairs(mb, cx, cy, r, a0, a1, n, inward, k0=0):
+    for k in range(n):
+        a = math.radians(a0 + (a1 - a0) * (k + 0.5) / n)
+        ux, uy = math.cos(a), math.sin(a)
+        ang = _dir_ang(-ux, -uy) if inward else _dir_ang(ux, uy)
+        _chair(mb, cx + r * ux, cy + r * uy, ang, MIXED[(k + k0) % len(MIXED)])
 
 
 def hall(c, mb):
-    F.bench(mb, -3.0, 13.4, 0.0, w=1.8, mat=WOOD)
-    F.bench(mb, 3.0, 13.4, 0.0, w=1.8, mat=WOOD)
-    # 1F の案内板（自立）
-    kit.box(mb, 3.0, 6.2, 0.05, 4.2, 6.32, 1.9, "kyoso_info_beige")
-    for lx in (3.1, 4.1):
-        kit.box_c(mb, lx, 6.26, 0.0, 0.05, 0.05, 0.1, BLACK)
-    kit.box(mb, 3.0, 6.2, 1.9, 4.2, 6.32, 1.95, BLACK)
+    """人造石の床に白い曲線テーブル。外側と内側に色を混ぜた椅子、手前に机 2 台、奥に移動式の白板。"""
+    x0, y0, x1, y1 = D.HALL
+    FK.terrazzo(mb, x0, y0, x1, y1, c.rng)
+    cx, cy = D.CURVE_C
+    r = D.CURVE_R
+    _arc_table(mb, cx, cy, r - 0.4, r + 0.4, 20.0, 160.0)
+    _ring_chairs(mb, cx, cy, r + 0.85, 20.0, 160.0, 13, inward=True)
+    _ring_chairs(mb, cx, cy, r - 0.85, 30.0, 150.0, 7, inward=False, k0=3)
+    for tx in (-3.0, 2.6):
+        _table4(mb, tx, 20.0)
+    for wx in (-3.2, 0.0, 3.2):
+        F.whiteboard(mb, wx, 26.6, 0.9, math.pi, w=1.4, h=1.0)
+        for dx in (-0.66, 0.66):
+            kit.box_c(mb, wx + dx, 26.6, 0.0, 0.04, 0.04, 1.95, "metal_gray")
+        kit.box_c(mb, wx, 26.6, 0.0, 1.4, 0.5, 0.04, "metal_gray")
 
 
-def cafe_lounge(c, mb):
-    x0, y0, x1, y1 = D.CAFE_LOUNGE
-    kit.plate(mb, x0, y0, x1, y1, 0.012, "kyoso_floor_carpet_grey")
-    gz = 4.6
-    # 廊下側の仕切りは すりガラスの帯 + 黒い枠 (X = 7 の扉は Y 7.6..8.6)
-    shell.partition(mb, (7.0, 8.6), (7.0, y1), 0.0, gz, "wall_white",
-                    glass_top="kyoso_glass_frosted", glass_z=1.1)
-    shell.partition(mb, (7.0, y0), (15.0, y0), 0.0, gz, "wall_white",
-                    glass_top="kyoso_glass_frosted", glass_z=1.1)
-    for px, py in ((7.0, 8.6), (7.0, y0), (15.0, y0)):
-        kit.box_c(mb, px, py, 0.0, 0.14, 0.14, gz, BLACK)
-    kit.box(mb, 6.9, 7.5, 2.2, 7.1, 8.6, 2.3, BLACK)
-    # 中ホール側（Y 14.35）も すりガラスの帯
-    shell.partition(mb, (7.0, D.Y_BACKWALL), (15.0, D.Y_BACKWALL), 0.0, gz, "wall_white",
-                    glass_top="kyoso_glass_frosted", glass_z=1.1)
-    # 東は 15 のガラス間仕切り (Y 8.8..10.2 が出入口)
-    FK.glass_wall(mb, (15.0, y0), (15.0, y1), gz, gaps=((1.3, 2.7),), door_top=2.6)
-    F.table(mb, 11.0, 10.2, 0.0, w=4.8, d=1.2, h=0.74, top=WOOD, leg=BLACK)
-    base = len(mb.verts)
-    shell.planter(mb, 11.0, 10.2, r=0.24, h=0.3, leaf_h=0.8)
-    kit.lift(mb, base, 0.74)
-    for x in (9.0, 10.0, 11.0, 12.0, 13.0):
-        _chair(mb, x, 8.95, 0.0, WOOD, BLACK)
-        _chair(mb, x, 11.45, math.pi, WOOD, BLACK)
-    F.counter(mb, 8.2, 13.2, 14.0, 13.8, h=0.95, body=WOOD, top=WOOD, toe=False)
-    for k in range(6):
-        sx = 8.6 + 1.0 * k
-        F.stool(mb, sx, 12.55, 0.0, mat=WOOD, h=0.7)
-        FK.seat_mark(mb, sx, 12.55, 0.0, 0.0, hw=0.2, hd=0.2, inner=0.4)
-    F.bench(mb, 14.5, 11.6, D.FACE_W, w=2.4, mat=GREY)
-
-
-def lounges(c, mb):
-    for rect, wx in ((D.LOUNGE2, 21.5), (D.LOUNGE1, 28.5)):
-        x0, y0, x1, y1 = rect
-        kit.plate(mb, x0, y0, x1, y1, 0.012, "kyoso_floor_wood_oak")
-        for sx in (x0 + 2.5, x0 + 5.9):
-            FK.modular_sofa(mb, sx, 8.4, 0.0)
-            FK.seat_mark(mb, sx, 8.4, 0.0, 0.0, hw=1.2, hd=0.42, inner=2.1)
-        FK.side_table(mb, x0 + 4.2, 8.4)
-        rx, ry = x0 + 3.6, 11.4
-        FK.round_sofa(mb, rx, ry)
-        for dx, dy in ((0, -1), (0, 1), (-1, 0), (1, 0)):
-            FK.seat_mark(mb, rx + 0.55 * dx, ry + 0.55 * dy, 0.0, _dir_ang(dx, dy))
-        F.table(mb, wx, 13.4, 0.0, w=1.2, d=0.6, h=1.0, top="plastic_white", leg=BLACK)
-        for dx in (-0.35, 0.35):
-            _chair(mb, wx + dx, 12.7, 0.0)
-    # X = 23 の低い植栽の列 (Y 9.6..10.8 は通り抜け)
-    for py in (7.4, 8.2, 9.0, 11.4, 12.2, 13.0):
-        shell.planter(mb, 23.0, py, r=0.28, h=0.5, leaf_h=0.9)
-    kit.box(mb, 30.30, 7.2, 0.0, 30.42, 13.6, 3.6, "kyoso_wall_terracotta")
-    # 中ホール側はガラス間仕切り（X 16.4..18.0 と 24.4..26.0 が出入口）
-    FK.glass_wall(mb, (15.0, D.Y_BACKWALL), (D.LOUNGE1[2], D.Y_BACKWALL), 4.6,
-                  gaps=((1.4, 3.0), (9.4, 11.0)), door_top=2.6)
-
-
-def _table4(mb, x, y):
-    F.table(mb, x, y, 0.0, w=1.6, d=0.8, h=0.72, top=WOOD, leg=BLACK)
-    for dx in (-0.4, 0.4):
-        _chair(mb, x + dx, y - 0.72, 0.0)
-        _chair(mb, x + dx, y + 0.72, math.pi)
-
-
-def middle_hall(c, mb):
-    """エントランスホールの奥からラーニングスクエアへ抜ける広間と、奥の列の東（推定）。"""
-    for tx, ty in ((-7.5, 18.5), (-7.5, 23.5), (12.0, 18.0), (12.0, 25.5),
-                   (19.2, 18.0), (19.2, 25.5)):
-        _table4(mb, tx, ty)
-    for px, py in ((-10.2, 15.2), (-10.2, 28.4), (30.0, 15.2), (30.0, 28.4)):
+# ---- ラーニングスクエア2（吹き抜けの下）------------------------------------ #
+def learning_square_2(c, mb):
+    """公園側の窓沿いのカウンター席と、丸机とラウンジチェアの組。"""
+    x0, y0, x1, y1 = D.LS2
+    kit.plate(mb, x0, y0, x1, y1, 0.012, "kyoso_floor_wood_oak")
+    F.counter(mb, -5.6, 38.8, 10.6, 39.4, h=0.95, body=WOOD, top=WOOD, toe=False)
+    for k in range(16):
+        sx = -5.0 + 1.0 * k
+        F.stool(mb, sx, 38.3, D.FACE_PARK, mat=WOOD, h=0.7)
+        FK.seat_mark(mb, sx, 38.3, 0.0, D.FACE_PARK, hw=0.2, hd=0.2, inner=0.4)
+    for tx, ty in ((-3.5, 32.6), (-3.5, 35.6), (6.6, 35.6), (9.2, 33.0)):
+        F.round_table(mb, tx, ty, r=0.4, top=WOOD)
+        for dx in (-0.8, 0.8):
+            F.lounge_chair(mb, tx + dx, ty, D.FACE_WEST if dx < 0 else D.FACE_EAST,
+                           mat="kyoso_sofa_beige")
+    for px, py in ((-5.6, 31.0), (10.6, 31.0)):
         shell.planter(mb, px, py)
-    for sx in (25.0, 28.5):
-        FK.modular_sofa(mb, sx, 31.2, 0.0)
-        FK.seat_mark(mb, sx, 31.2, 0.0, 0.0, hw=1.2, hd=0.42, inner=2.1)
-    rx, ry = 27.0, 36.0
-    FK.round_sofa(mb, rx, ry)
-    for dx, dy in ((0, -1), (0, 1), (-1, 0), (1, 0)):
-        FK.seat_mark(mb, rx + 0.55 * dx, ry + 0.55 * dy, 0.0, _dir_ang(dx, dy))

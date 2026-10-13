@@ -64,6 +64,12 @@ def part(c, a, b, z0, z1, mat=CONCRETE, thick=shell.PART, gaps=(), top=True):
         cap(c.wall, a, b, z1, -thick * 0.5, thick * 0.5)
 
 
+def ev_bank(mb):
+    """EV 2 基の扉（コアの西の面。扉は -X、西ロビーと学生食堂の方を向く。1F〜7F 共通、z = 0 で組む）。"""
+    for y in D.EV_DOORS_Y:
+        shell.elevator_bank(mb, D.CORE_EV[0], y, count=1, ang=-math.pi * 0.5)
+
+
 def _entrance(c):
     """南の入口: 外周壁の開口・ガラスの自動扉・spawn / exit。"""
     d0, d1 = D.DOOR_GAP

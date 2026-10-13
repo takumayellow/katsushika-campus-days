@@ -226,7 +226,7 @@ namespace KCD.Editor
 
             bool foliage = name.StartsWith("leaf") || name == "trunk";
             material = new Material(Shader.Find(foliage ? ToonShader : LitShader));
-            Color color = Parse(CampusColors.TryGetValue(name, out string hex) ? hex : "B0B0AC");
+            Color color = Parse(CampusColors.TryGetValue(name, out string hex) ? hex : FallbackHex);
 
             if (InteriorPalette.TryGetGlass(name, out string glassHex, out float glassAlpha))
             {
@@ -255,15 +255,7 @@ namespace KCD.Editor
             }
             else if (!CampusColors.ContainsKey(name) && InteriorPalette.TryGetSurface(name, out InteriorPalette.Surface surface))
             {
-                material.SetColor("_BaseColor", Parse(surface.Hex));
-                material.SetFloat("_Smoothness", surface.Smoothness);
-                material.SetFloat("_Metallic", surface.Metallic);
-                if (InteriorPalette.TryGetEmission(name, out Color emission))
-                {
-                    material.EnableKeyword("_EMISSION");
-                    material.SetColor("_EmissionColor", emission);
-                    material.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
-                }
+                ApplySurface(material, name, surface);
             }
             else if (name == "water")
             {
@@ -309,7 +301,9 @@ namespace KCD.Editor
         /// 「葉の色を直した」はずの変更がゲームに一度も届いていなかった。
         ///
         /// CampusColors に載っていない名前（屋内のパレット由来など）は、手で調整した値を
-        /// 上書きしてしまわないよう触らない。
+        /// 上書きしてしまわないよう触らない。ただし屋内のパレットの面で、作ったときの仮の灰色
+        /// <see cref="FallbackHex"/> のままの .mat はパレットの色で塗る (#279)。パレットに色を足す前に
+        /// できた .mat は二度と作り直されず、講義棟の 30 面が同じ灰色のまま固まっていた。
         ///
         /// 面のテクスチャ（<see cref="CampusSurfaces"/>）もここで合わせる。画像を貼った面は
         /// 画像の平均色が宣言の色なので、_BaseColor は白にする。直したら true。
@@ -329,7 +323,8 @@ namespace KCD.Editor
 
             if (!CampusColors.TryGetValue(name, out string hex))
             {
-                return false;
+                return InteriorPalette.TryGetSurface(name, out InteriorPalette.Surface surface)
+                    && PaintFallback(material, name, surface);
             }
 
             Color declared = Parse(hex);
@@ -354,6 +349,32 @@ namespace KCD.Editor
             }
 
             return changed;
+        }
+
+        /// <summary>仮の灰色のままの屋内の面を、パレットの色・つや・金属感（光る面は発光も）で塗る。塗ったら true。</summary>
+        private static bool PaintFallback(Material material, string name, InteriorPalette.Surface surface)
+        {
+            if (!material.HasProperty(BaseColorId) || !Same(material.GetColor(BaseColorId), Parse(FallbackHex)))
+            {
+                return false;
+            }
+
+            ApplySurface(material, name, surface);
+            EditorUtility.SetDirty(material);
+            return true;
+        }
+
+        private static void ApplySurface(Material material, string name, InteriorPalette.Surface surface)
+        {
+            material.SetColor("_BaseColor", Parse(surface.Hex));
+            material.SetFloat("_Smoothness", surface.Smoothness);
+            material.SetFloat("_Metallic", surface.Metallic);
+            if (InteriorPalette.TryGetEmission(name, out Color emission))
+            {
+                material.EnableKeyword("_EMISSION");
+                material.SetColor("_EmissionColor", emission);
+                material.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
+            }
         }
 
         /// <summary>
@@ -389,6 +410,9 @@ namespace KCD.Editor
 
             return repainted;
         }
+
+        /// <summary>CampusColors にもパレットにも無い名前の .mat を作るときの仮の灰色。</summary>
+        private const string FallbackHex = "B0B0AC";
 
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int ShadeColorId = Shader.PropertyToID("_ShadeColor");

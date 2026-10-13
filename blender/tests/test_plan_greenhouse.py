@@ -12,7 +12,7 @@ from kcd_lib import signtext
 from conftest import CAMPUS_JSON
 
 SEED = 1709
-INT_CAP = 15000
+INT_CAP = 5000
 HEIGHT = 3.4          # PLATEAU の計測高さ（13122-bldg-97017）
 FLOOR_T = 0.24        # 床スラブの厚み
 ZONE_TOP = 2.7        # 屋内の訪問ゾーンの上端（InteriorStage: 中心 1.2 m + 高さ 3 m の半分）

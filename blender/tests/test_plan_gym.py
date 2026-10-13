@@ -16,7 +16,7 @@ from kcd_lib import signtext
 from conftest import CAMPUS_JSON
 
 SEED = 1709
-INT_CAP = 40000
+INT_CAP = 21000
 N_SIGNS = 13
 STEP_MAX = 0.4         # Unity の stepOffset
 TOP = D.C_HALL + 0.2   # 屋根の板より上に何も出さない

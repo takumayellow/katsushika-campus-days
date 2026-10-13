@@ -38,8 +38,12 @@ def test_every_building_at_its_cap_is_fine():
 def test_one_building_over_its_cap_is_named():
     rows = [_row(r["id"], r["tris"] + 1) if r["id"] in ("library", "greenhouse") else r
             for r in _at_caps()]
+    cap = bi.INT_BUDGET_ONE
 
-    assert _check(rows) == ["library の屋内 80001 > 80000", "greenhouse の屋内 15001 > 15000"]
+    # 合計は上限の内に置き、棟ごとの上限だけを見る（上限の和は合計にちょうど一致し得る）
+    assert bi.over_budget(rows, bi.INT_BUDGET, 0) == [
+        "library の屋内 %d > %d" % (cap["library"] + 1, cap["library"]),
+        "greenhouse の屋内 %d > %d" % (cap["greenhouse"] + 1, cap["greenhouse"])]
 
 
 def test_a_building_under_its_cap_can_still_break_the_total():

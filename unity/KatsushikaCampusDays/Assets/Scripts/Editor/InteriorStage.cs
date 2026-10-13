@@ -10,7 +10,8 @@ namespace KCD.Editor
     /// FBX の Empty: spawn_&lt;id&gt;（入った直後の立ち位置）, exit_&lt;id&gt;（出口）, poi_&lt;id&gt;_*（クエストの visit 先）,
     /// 2 つ目からの扉（BuildingDoors）の spawn_&lt;扉の id&gt; と exit_&lt;扉の id&gt;,
     /// seat_&lt;id&gt;_*（座れる家具。SeatFactory.PlaceInterior が読む）,
-    /// ev_&lt;id&gt;_&lt;階&gt;（エレベーターの乗り場）と lamp_&lt;id&gt;_&lt;階&gt;_*（その階の天井の明かり。InteriorElevatorStage が読む）。
+    /// ev_&lt;id&gt;_&lt;階&gt;（エレベーターの乗り場）と lamp_&lt;id&gt;_&lt;階&gt;_*（その階の天井の明かり。InteriorElevatorStage が読む）,
+    /// esc_&lt;id&gt;_&lt;区間&gt;_lo / _hi（エスカレーターの下の端と上の端。InteriorEscalatorStage が読む）。
     /// </summary>
     public static class InteriorStage
     {
@@ -103,6 +104,7 @@ namespace KCD.Editor
                 AddSafetyFloor(interior.transform, bounds);
                 AddLights(interior.transform, id);
                 int stops = InteriorElevatorStage.Build(interior.transform, id);
+                int escalators = InteriorEscalatorStage.Build(interior.transform, id);
                 foreach (string door in DoorsOf(id))
                 {
                     AddExit(interior.transform, id, door);
@@ -116,7 +118,8 @@ namespace KCD.Editor
 
                 EditorPaths.Report("屋内 " + id + ": x " + bounds.min.x.ToString("F0") + ".." + bounds.max.x.ToString("F0")
                     + " z " + bounds.min.z.ToString("F0") + ".." + bounds.max.z.ToString("F0")
-                    + " poi " + zones + (stops > 0 ? " ev " + stops : string.Empty));
+                    + " poi " + zones + (stops > 0 ? " ev " + stops : string.Empty)
+                    + (escalators > 0 ? " esc " + escalators : string.Empty));
             }
 
             AddOutsideGround(group.transform, FirstSlotX - 200f, cursor + 200f, pits);
@@ -198,7 +201,9 @@ namespace KCD.Editor
                 GameObject go = filter.gameObject;
                 string id = go.name.ToLowerInvariant();
                 // 観葉植物の葉は当たり判定から外す（#30）。窓の外の近景 ext_* は描くだけ（#60）。
-                if (!IsExteriorDressing(go.name))
+                // エスカレーターの段は動かすので、当たり判定（斜めの板が受け持つ）も静的フラグも付けない。
+                bool moving = InteriorEscalatorStage.IsMovingSteps(go.name);
+                if (!IsExteriorDressing(go.name) && !moving)
                 {
                     CampusStage.AttachMeshCollider(go, filter.sharedMesh,
                         CampusStage.ColliderAssetPath(interior.name, go.name));
@@ -207,8 +212,10 @@ namespace KCD.Editor
                 go.layer = id.StartsWith("floor") && groundLayer >= 0
                     ? groundLayer
                     : buildingLayer >= 0 ? buildingLayer : go.layer;
-                GameObjectUtility.SetStaticEditorFlags(go, StaticEditorFlags.BatchingStatic
-                    | StaticEditorFlags.OccluderStatic | StaticEditorFlags.OccludeeStatic);
+                GameObjectUtility.SetStaticEditorFlags(go, moving
+                    ? 0
+                    : StaticEditorFlags.BatchingStatic | StaticEditorFlags.OccluderStatic
+                        | StaticEditorFlags.OccludeeStatic);
 
                 Renderer renderer = go.GetComponent<Renderer>();
                 if (renderer == null || !CountsAsBuilding(renderer))
@@ -258,9 +265,17 @@ namespace KCD.Editor
             box.size = new Vector3(bounds.size.x + 20f, 0.5f, bounds.size.z + 20f);
         }
 
+        /// <summary>spawn・poi・sign の Empty から、その上に吊る明かりまでの高さ（m）。</summary>
+        public const float AnchorLift = 3.2f;
+
+        /// <summary>lamp_ の Empty の床からの高さ（m）。blender/kcd_interior の LAMP_DZ。</summary>
+        public const float LampHeight = 2.6f;
+
         /// <summary>
         /// 屋内の明かり。太陽は屋内では消すので、spawn・poi・sign の Empty ごとに暖色の点光源を吊る。
         /// lamp_&lt;id&gt;_* は天井の明かりの位置そのもので、間引かずに 1 つずつ吊る（階のある屋内の上の階, #275）。
+        /// lamp_ のある階（いちばん低い lamp_ の階の床から上）には、spawn・poi・sign の明かりを足さない。
+        /// 足すと、その階の 1 つの物に届く光源が 4 を越える（#279）。
         /// </summary>
         private static void AddLights(Transform interior, string id)
         {
@@ -268,6 +283,7 @@ namespace KCD.Editor
             lights.transform.SetParent(interior, false);
             int count = 0;
             var placed = new List<Vector3>();
+            float lampFloor = LowestLampFloor(interior, id);
 
             foreach (Transform child in interior.GetComponentsInChildren<Transform>(true))
             {
@@ -282,14 +298,14 @@ namespace KCD.Editor
                 bool anchor = name == "spawn_" + id
                     || name.StartsWith("poi_" + id + "_")
                     || name.StartsWith("sign_" + id + "_");
-                if (!anchor || TooClose(placed, child.position, 5f))
+                if (!anchor || child.position.y >= lampFloor || TooClose(placed, child.position, 5f))
                 {
                     continue;
                 }
 
                 var go = new GameObject("Light_" + name);
                 go.transform.SetParent(lights.transform, false);
-                go.transform.position = child.position + Vector3.up * 3.2f;
+                go.transform.position = child.position + Vector3.up * AnchorLift;
                 Light light = go.AddComponent<Light>();
                 light.type = LightType.Point;
                 light.range = 14f;
@@ -314,6 +330,24 @@ namespace KCD.Editor
                 light.color = new Color(1f, 0.97f, 0.9f);
                 light.shadows = LightShadows.None;
             }
+        }
+
+        /// <summary>
+        /// いちばん低い lamp_ の階の下端（床から <see cref="InteriorElevatorStage.FloorMargin"/> 下）。
+        /// lamp_ が無ければ +∞。
+        /// </summary>
+        private static float LowestLampFloor(Transform interior, string id)
+        {
+            float lowest = float.PositiveInfinity;
+            foreach (Transform child in interior.GetComponentsInChildren<Transform>(true))
+            {
+                if (child.name.StartsWith("lamp_" + id + "_"))
+                {
+                    lowest = Mathf.Min(lowest, child.position.y);
+                }
+            }
+
+            return lowest - LampHeight - InteriorElevatorStage.FloorMargin;
         }
 
         /// <summary>天井の明かり 1 つ。届く範囲は中廊下の明かりの間隔（12 m）を少し越えるくらい。</summary>
