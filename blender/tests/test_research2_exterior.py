@@ -1,7 +1,8 @@
-"""第2研究棟（と食堂）の外観 (#275)。
+"""第2研究棟（と食堂）の外観 (#275, #293)。
 
-外形の外の芝の低い棟を無くし、3〜6F の研究棟を spec.md の床の範囲に建て、2 層の食堂を台座にする。
-全面ガラスは食堂の面だけ。地面の高さの輪郭と入口の位置は変えない。
+3〜6F の研究棟を spec.md の床の範囲に建て、2 層の食堂を台座にする。台座の屋根は屋上緑化。
+全面ガラスは食堂の面だけで、西北西の曲面の 2F は奥に引いたガラスの前の屋外テラス。
+地面の高さで外形の外に出るのは、テラスへ上がる外階段だけ。入口の位置は変えない。
 """
 
 import math
@@ -53,8 +54,23 @@ def test_local_frame_matches_the_footprint(loop):
     assert any(math.dist(R2._lw(31.78, 41.35), p) < 0.05 for p in loop)
 
 
-def test_no_grass_wing_outside_the_outline(built):
-    assert "grass" not in set(built.mat_names)
+def test_grass_only_on_the_podium_roof(loop, built):
+    """芝（grass）は台座の屋根の面だけ。外形の外の芝の低い棟は無い。"""
+    idx = built.mat_names.index("grass")
+    vs = [built.verts[i] for f, m in zip(built.faces, built.face_mat) if m == idx for i in f]
+    assert vs
+    assert [v for v in vs if abs(v[2] - PODIUM_H) > 1e-6 or not _inside_or_on((v[0], v[1]), loop)] == []
+
+
+def _on_stair(loop, p):
+    """外階段の範囲（辺 STAIR_EDGE の外、頂点から踊り場と段の長さの中）に入るか。"""
+    a, b = loop[R2.STAIR_EDGE], loop[(R2.STAIR_EDGE + 1) % len(loop)]
+    e = geom.normalize(geom.sub(b, a))
+    n = geom.outward_normal(a, b)
+    t = geom.dot(geom.sub(p, a), e)
+    d = geom.dot(geom.sub(p, a), n)
+    run = R2.STAIR_LANDING + (R2.STAIR_STEPS - 1) * R2.STAIR_GOING
+    return -0.01 <= t <= run + 0.01 and -0.01 <= d <= R2.STAIR_OFFSET[1] + 0.01
 
 
 def test_nothing_sticks_out_of_the_outline(loop, built):
@@ -67,7 +83,44 @@ def test_nothing_sticks_out_of_the_outline(loop, built):
 def test_ground_level_stays_on_the_outline(loop, built):
     low = [v for v in built.verts if v[2] < PODIUM_H - 0.4]
     assert low
-    assert [v for v in low if not _inside_or_on((v[0], v[1]), loop)] == []
+    assert [v for v in low if not _inside_or_on((v[0], v[1]), loop) and not _on_stair(loop, v)] == []
+
+
+def test_outdoor_stair_climbs_to_the_terrace(loop, built):
+    """外階段は外形の外にあり、頂点の側の踊り場が 2F のテラスの床（4.8 m）に着く。"""
+    out = [v for v in built.verts if not _inside_or_on((v[0], v[1]), loop) and _on_stair(loop, v)]
+    assert out
+    tops = [v[2] for v in out if math.dist((v[0], v[1]), loop[R2.STAIR_EDGE]) < 2.6]
+    assert max(tops) == pytest.approx(PODIUM_H / 2 + 1.0)   # 踊り場の手すりの上端
+    assert min(v[2] for v in out) == pytest.approx(0.0)
+
+
+def test_stair_rail_stays_above_the_landing(loop, built):
+    """踊り場の上の手すりは水平で、踊り場の床（4.8 m）より手すりの高さぶん上にある。"""
+    idx = built.mat_names.index("metal_grey")
+    a, b = loop[R2.STAIR_EDGE], loop[(R2.STAIR_EDGE + 1) % len(loop)]
+    e = geom.normalize(geom.sub(b, a))
+    rail = [built.verts[i] for f, m in zip(built.faces, built.face_mat) if m == idx for i in f]
+    over = [v for v in rail if _on_stair(loop, v) and not _inside_or_on((v[0], v[1]), loop)
+            and geom.dot(geom.sub(v, a), e) <= R2.STAIR_LANDING + 0.01]
+    assert over
+    assert min(v[2] for v in over) == pytest.approx(PODIUM_H / 2 + R2.STAIR_RAIL_H)
+
+
+def test_terrace_glass_is_set_back(loop, built):
+    """テラスの辺では、2F の高さ（腰の手すりより上、天井まで）のガラスは外形の線から 3.5 m より奥。"""
+    n = len(loop)
+    edges = [(loop[i], loop[(i + 1) % n]) for i in R2.TERRACE_EDGES]
+    idx = built.mat_names.index("glass_clear")
+    front = []
+    for f, m in zip(built.faces, built.face_mat):
+        if m != idx:
+            continue
+        for i in f:
+            v = built.verts[i]
+            if 6.0 < v[2] < R2.TERRACE_CEILING and min(_seg_dist((v[0], v[1]), a, b) for a, b in edges) < 3.5:
+                front.append(v)
+    assert front == []
 
 
 def test_ground_level_walls_close_the_outline(loop, built):
@@ -96,19 +149,20 @@ def test_ground_level_walls_close_the_outline(loop, built):
 
 
 def test_tower_stands_on_the_slab_range(built):
-    """3F より上（階段室を除く）は spec.md の床の範囲 X −39.64〜31.86、Y 15.4〜41.3 に収まる。"""
+    """3F より上（レンガの塊 2 つを除く）は spec.md の床の範囲 X −39.64〜31.86、Y 15.4〜41.3 に収まる。"""
     x0, y0, x1, y1 = R2.TOWER_RECT
-    cx0, cy0, cx1, cy1 = R2.CORE_RECT
     up = []
     for v in built.verts:
         if v[2] <= PODIUM_H + 0.8:
             continue
         X, Y = _to_local((v[0], v[1]))
-        if cx0 - 0.1 <= X <= cx1 + 0.1 and cy0 - 0.1 <= Y <= cy1 + 0.1:
+        if any(r[0] - 0.1 <= X <= r[2] + 0.1 and r[1] - 0.1 <= Y <= r[3] + 0.1
+               for r in (R2.CORE_RECT, R2.WEST_CORE_RECT)):
             continue
         up.append((X, Y))
     assert up
-    assert [p for p in up if not (x0 - 0.1 <= p[0] <= x1 + 0.1 and y0 - 0.1 <= p[1] <= y1 + 0.1)] == []
+    m = R2.LEDGE_OUT + 0.1   # 床の線の帯は面より前に出る
+    assert [p for p in up if not (x0 - m <= p[0] <= x1 + m and y0 - m <= p[1] <= y1 + m)] == []
     xs = [p[0] for p in up]
     ys = [p[1] for p in up]
     assert min(xs) < x0 + 0.1 and max(xs) > x1 - 0.1
@@ -116,9 +170,12 @@ def test_tower_stands_on_the_slab_range(built):
 
 
 def test_clear_glass_only_on_the_cafeteria_faces(loop, built):
-    """全面ガラス（glass_clear）は食堂の面の辺の上だけ。研究棟（3F より上）には貼らない。"""
+    """全面ガラス（glass_clear）は食堂の面の辺の上と、テラスの奥に引いたガラスの線の上だけ。
+    研究棟（3F より上）には貼らない。"""
     n = len(loop)
+    inner = geom.offset_polygon(loop, -R2.TERRACE_SETBACK)
     glass_edges = [(loop[i], loop[(i + 1) % n]) for i in R2.GLASS_EDGES]
+    glass_edges += [(inner[i], inner[(i + 1) % n]) for i in R2.TERRACE_EDGES]
     idx = built.mat_names.index("glass_clear")
     bad = []
     for f, m in zip(built.faces, built.face_mat):
@@ -136,6 +193,20 @@ def _seg_dist(p, a, b):
     ab = geom.sub(b, a)
     t = max(0.0, min(1.0, geom.dot(geom.sub(p, a), ab) / geom.dot(ab, ab)))
     return math.dist(p, geom.add(a, geom.mul(ab, t)))
+
+
+def test_brick_blocks_rise_above_the_tower_roof(built, campus_data):
+    """レンガの塊は西の端と北北東の 2 つで、どちらも研究棟の屋根の上まで出る。"""
+    h = _r2(campus_data)["height"]
+    idx = built.mat_names.index("brick_red")
+    pts = [built.verts[i] for f, m in zip(built.faces, built.face_mat) if m == idx for i in f]
+    for r in (R2.CORE_RECT, R2.WEST_CORE_RECT):
+        inside = [v for v in pts
+                  if r[0] - 0.1 <= _to_local((v[0], v[1]))[0] <= r[2] + 0.1
+                  and r[1] - 0.1 <= _to_local((v[0], v[1]))[1] <= r[3] + 0.1]
+        assert inside, r
+        assert max(v[2] for v in inside) == pytest.approx(h + R2.CORE_TOP)
+        assert min(v[2] for v in inside) >= PODIUM_H - 1e-6
 
 
 def test_doors_are_on_the_south_and_east_faces(loop):
