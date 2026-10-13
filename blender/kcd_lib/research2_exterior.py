@@ -46,6 +46,8 @@ STAIR_LANDING = 1.8
 STAIR_STEPS = 16
 STAIR_GOING = 0.3
 STAIR_OFFSET = (0.15, 1.75)
+STAIR_RAIL_H = 0.9     # 段鼻・踊り場の床から手すりの下端まで (m)
+STAIR_RAIL_T = 0.1     # 手すりの板の高さ (m)
 # 研究棟側の東の面（濃い灰色の石張り）
 EAST_EDGE = 13
 FOOTPRINT_POINTS = 15
@@ -145,13 +147,20 @@ def _outdoor_stair(mb, loop, z2f):
     for k in range(STAIR_STEPS - 1):
         t0 = STAIR_LANDING + k * STAIR_GOING
         box(t0, t0 + STAIR_GOING, z2f - (k + 1) * rise)
-    # 外側の手すり（金属）
+    # 外側の手すり（金属）。踊り場の上は水平、段の上は段鼻に沿って下がる
     top = STAIR_LANDING + (STAIR_STEPS - 1) * STAIR_GOING
-    a, b = stair_corner(loop, 0.0, d1), stair_corner(loop, top, d1)
-    mb.add_quad((a[0], a[1], z2f + 0.9), (b[0], b[1], rise + 0.9), (b[0], b[1], rise + 1.0),
-                (a[0], a[1], z2f + 1.0), "metal_grey")
-    mb.add_quad((b[0], b[1], rise + 0.9), (a[0], a[1], z2f + 0.9), (a[0], a[1], z2f + 1.0),
-                (b[0], b[1], rise + 1.0), "metal_grey")
+    a, m, b = (stair_corner(loop, t, d1) for t in (0.0, STAIR_LANDING, top))
+    _rail(mb, (a[0], a[1], z2f), (m[0], m[1], z2f))
+    _rail(mb, (m[0], m[1], z2f), (b[0], b[1], rise))
+
+
+def _rail(mb, p, q):
+    """床の高さ p, q の 2 点の上 STAIR_RAIL_H に、厚み STAIR_RAIL_T の板の手すりを両面で張る。"""
+    lo, hi = STAIR_RAIL_H, STAIR_RAIL_H + STAIR_RAIL_T
+    p0, p1 = (p[0], p[1], p[2] + lo), (p[0], p[1], p[2] + hi)
+    q0, q1 = (q[0], q[1], q[2] + lo), (q[0], q[1], q[2] + hi)
+    mb.add_quad(p0, q0, q1, p1, "metal_grey")
+    mb.add_quad(q0, p0, p1, q1, "metal_grey")
 
 
 def _tower(mb, podium_h, tower_fh, floors, h):

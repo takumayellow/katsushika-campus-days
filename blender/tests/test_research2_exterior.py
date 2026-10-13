@@ -95,6 +95,18 @@ def test_outdoor_stair_climbs_to_the_terrace(loop, built):
     assert min(v[2] for v in out) == pytest.approx(0.0)
 
 
+def test_stair_rail_stays_above_the_landing(loop, built):
+    """踊り場の上の手すりは水平で、踊り場の床（4.8 m）より手すりの高さぶん上にある。"""
+    idx = built.mat_names.index("metal_grey")
+    a, b = loop[R2.STAIR_EDGE], loop[(R2.STAIR_EDGE + 1) % len(loop)]
+    e = geom.normalize(geom.sub(b, a))
+    rail = [built.verts[i] for f, m in zip(built.faces, built.face_mat) if m == idx for i in f]
+    over = [v for v in rail if _on_stair(loop, v) and not _inside_or_on((v[0], v[1]), loop)
+            and geom.dot(geom.sub(v, a), e) <= R2.STAIR_LANDING + 0.01]
+    assert over
+    assert min(v[2] for v in over) == pytest.approx(PODIUM_H / 2 + R2.STAIR_RAIL_H)
+
+
 def test_terrace_glass_is_set_back(loop, built):
     """テラスの辺では、2F の高さ（腰の手すりより上、天井まで）のガラスは外形の線から 3.5 m より奥。"""
     n = len(loop)
