@@ -533,15 +533,6 @@ namespace KCD.Editor
         public const float OuterGroundThickness = 0.5f;
 
         /// <summary>
-        /// キャンパスの外側まで続く大きな地面。境界の外に落ちないようにし、遠くに地面の端を見せない。
-        /// 以前は ±350 m で終わっていて、site_ground と同じ広さしか無かったので、遠景に茶色い縁が出ていた（#40, #30）。
-        /// 地面は霧の終わりより先では霧の色一色になり、その先（far clip の外）に見える空の下半分も
-        /// KCD/Sky が同じ霧の色で塗るので、上空から見ても地面と空のあいだに帯が出ない（SkyFactory, #40）。
-        /// 当たり判定は Plane の MeshCollider ではなく薄い BoxCollider にする。4 km の Plane を
-        /// そのまま当たり判定にすると 1 枚 400 m の三角形になり、PhysX が「2 頂点の距離が 500 を超える」と
-        /// 警告して接地も不安定になる。
-        /// </summary>
-        /// <summary>
         /// OuterGround から、1F の床より下まで掘り下げた屋内の部屋の範囲（holes。Rect の x は世界の x、y は世界の z）を抜く。
         /// 抜かないと、部屋の上に芝が浮いて見え、当たり判定で段を下りられない。見た目は穴の周りのタイルのメッシュに、
         /// 当たり判定はタイルごとの BoxCollider に差し替える。穴が無ければ何もしない。
@@ -581,6 +572,15 @@ namespace KCD.Editor
             }
         }
 
+        /// <summary>
+        /// キャンパスの外側まで続く大きな地面。境界の外に落ちないようにし、遠くに地面の端を見せない。
+        /// 以前は ±350 m で終わっていて、site_ground と同じ広さしか無かったので、遠景に茶色い縁が出ていた（#40, #30）。
+        /// 地面は霧の終わりより先では霧の色一色になり、その先（far clip の外）に見える空の下半分も
+        /// KCD/Sky が同じ霧の色で塗るので、上空から見ても地面と空のあいだに帯が出ない（SkyFactory, #40）。
+        /// 当たり判定は Plane の MeshCollider ではなく薄い BoxCollider にする。4 km の Plane を
+        /// そのまま当たり判定にすると 1 枚 400 m の三角形になり、PhysX が「2 頂点の距離が 500 を超える」と
+        /// 警告して接地も不安定になる。
+        /// </summary>
         private static void BuildGround(Transform root)
         {
             GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Plane);

@@ -39,6 +39,10 @@ namespace KCD.Editor
         /// </summary>
         public const string PitMarker = "_pit";
 
+        /// <summary>屋内の並びの下の地面の z の中心と半分の奥行き（m）。</summary>
+        private const float OutsideGroundZ = 30f;
+        private const float OutsideGroundHalfDepth = 300f;
+
         /// <summary>
         /// 窓のすぐ外の近景（舗装・芝・生垣・木）のメッシュ名の頭。kcd_interior が外周の壁の外にだけ置く (#45)。
         /// プレイヤーは届かないので当たり判定を付けず、描くだけにする (#60)。
@@ -146,10 +150,6 @@ namespace KCD.Editor
         /// 窓の外に見える地面。無いと空の下半分がそのまま見える。遠景のドームがある屋内ではその下に隠れ、
         /// サイドカーが無くてドームを置けなかった屋内でだけ見える。掘り下げた部屋の範囲（pits）には張らない。
         /// </summary>
-        /// <summary>屋内の並びの下の地面の z の中心と半分の奥行き（m）。</summary>
-        private const float OutsideGroundZ = 30f;
-        private const float OutsideGroundHalfDepth = 300f;
-
         private static void AddOutsideGround(Transform group, float x0, float x1, IList<Rect> pits)
         {
             var ground = new GameObject("OutsideGround");
