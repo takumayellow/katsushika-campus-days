@@ -188,6 +188,21 @@ namespace KCD.Editor
             SeatInteractable interactable = trigger.AddComponent<SeatInteractable>();
             interactable.InteractionRange = Mathf.Max(2.2f, halfWidth + 1.2f);
             interactable.Anchors = anchors.ToArray();
+
+            // ピアノの椅子: ..._piano が鍵盤の手前の縁。座る操作を「ピアノを弾く」にし、椅子の後ろからも届くよう判定を椅子の上に広げる。
+            if (empties.TryGetValue(name + "_piano", out Transform keys))
+            {
+                var keyPoint = new GameObject("Keys").transform;
+                keyPoint.SetParent(seat.transform, false);
+                keyPoint.position = keys.position;
+                PianoPerformance performance = trigger.AddComponent<PianoPerformance>();
+                performance.Keys = keyPoint;
+                interactable.Performance = performance;
+                trigger.transform.localPosition = new Vector3(0f, 0.8f, -0.3f);
+                box.size = new Vector3(1.6f, 1.6f, 1.6f);
+                interactable.InteractionRange = 2.2f;
+            }
+
             return true;
         }
 

@@ -32,11 +32,14 @@ STANDARD = dict(
     APRON_D=7.0,  # 足元の石張りの長さ
 )
 
-# 温室は小さな片開き程度の入口にする（棟の高さ 3.4 m・軒 2.0 m）
+# 温室は小さな片開き程度の入口にする（建物の高さ 3.4 m・ガラス壁の上端 3.15 m）
 SMALL = dict(STANDARD, W=0.9, H=2.1, D=1.2, WO=1.5, HT=2.5,
              CAN_S=1.9, CAN_D=2.2, CAN_T=0.20, APRON_S=2.2, APRON_D=4.0)
 
-APRON_Z = 0.12      # 石張りの天端（モール 0.085・歩道 0.055 より上。z-fight 回避）
+# 講義棟の南東: 東端の南面はメインストリートの北縁（v -18）から 8.8 m 奥にあるので、石張りを縁まで延ばす
+STANDARD_DEEP = dict(STANDARD, APRON_D=9.0)
+
+APRON_Z = 0.12      # 石張りの天端（メインストリート 0.085・歩道 0.055 より上。z-fight 回避）
 BURY = 0.25         # 風除室と庇を壁の中へ埋める深さ（斜めの壁でも隙間を出さない）
 KEEP_CLEAR = 8.0    # 扉の前に木・ベンチ・照明柱を置かない長さ（風除室の先から）
 KEEP_HALF = 3.6     # その半幅
@@ -45,18 +48,23 @@ SIGN_S = 2.4        # 立て看板を風除室の側壁の外からどれだけ�
 
 # (建物 id, 探索の起点 (u, v), 建物へ向かう向き (du, dv), 扉を付ける面, 看板の側, 看板の高さ, 寸法)
 #   面: "loop" = footprint の外壁、"inner1" = 図書館の 1F（外周から 2.2 m 引っ込んだガラス面）、
-#       "bbox" = 温室（uv の外接矩形で建てている）
+#       "bbox" = 温室（uv の外接矩形から欠けた角を除いた L 字で建てている）
 #   看板の側: +1 なら +s 側、-1 なら -s 側（木や照明柱とぶつからない側を選んである）
 DOORS = [
     # 第1研究棟: 南面の切り欠き（u 111..127, 奥行 5 m）の奥の壁。ピロティの柱の間から入る
     ("research1", (119.0, -90.0), (0.0, 1.0), "loop", +1, 3.4, STANDARD),
-    # 共創棟: モール側（+v）。スターバックスの色板（u 93..103）の西隣
-    ("kyoso", (89.9, -28.0), (0.0, -1.0), "loop", +1, 3.4, STANDARD),
-    # 講義棟: 南面（モール側）。曲面のガラスホール（u < 110）から離す
+    # 共創棟: メインストリート側（+v、北東の長手面）。面の中央より 6.4 m 東。扉の正面に
+    # メインストリート南側の列植（u = 3 と 11 の木）や照明柱（u = -1 と 19）が来ない位置。
+    ("kyoso", (7.0, -28.0), (0.0, -1.0), "loop", +1, 3.4, STANDARD),
+    # 講義棟: 南面（メインストリート側）。曲面のガラスホール（u < 110）から離す
     ("lecture", (120.6, -22.0), (0.0, 1.0), "loop", -1, 3.4, STANDARD),
-    # 第2研究棟: 南面の直線部（u 6..23）の中央。食堂の前
-    ("research2", (14.5, -22.0), (0.0, 1.0), "loop", +1, 3.4, STANDARD),
-    # 図書館: 東面。モールの軸（v = -24）の突き当たり
+    # 講義棟の南東: 東端の南面（u 149..170）。屋内の東端ホールの風除室（plan_lecture_dims.SE_VESTIBULE）の外
+    ("lecture_se", (165.35, -22.0), (0.0, 1.0), "loop", +1, 3.4, STANDARD_DEEP),
+    # 食堂（第2研究棟の 1〜2F）: 南面の直線部（u 6..23）の中央
+    ("cafeteria", (14.5, -22.0), (0.0, 1.0), "loop", +1, 3.4, STANDARD),
+    # 第2研究棟の研究棟側: 東の塊の東面（食堂の扉と向きが違うので、並んだ扉に見えない）
+    ("research2", (50.5, 15.1509), (-1.0, 0.0), "loop", -1, 3.4, STANDARD),
+    # 図書館: 東面。メインストリートの軸（v = -24）の突き当たり
     ("library", (-50.0, -24.0), (-1.0, 0.0), "inner1", +1, 3.4, STANDARD),
     # 体育館: 南面の中央
     ("gym", (-2.1, 28.0), (0.0, 1.0), "loop", +1, 3.4, STANDARD),
@@ -64,9 +72,22 @@ DOORS = [
     ("lab1", (56.2, 36.0), (0.0, 1.0), "loop", +1, 3.0, STANDARD),
     # 第2実験棟: 東面（南面は第1実験棟と 1.5 m しか離れていない）
     ("lab2", (80.0, 74.0), (-1.0, 0.0), "loop", +1, 3.0, STANDARD),
-    # 温室: 西の妻面（歩道側）
+    # 温室: 西面（歩道側）
     ("greenhouse", (80.0, 66.0), (1.0, 0.0), "bbox", +1, 2.4, SMALL),
 ]
+
+# 同じ建物（屋内）の 2 つ目以降の扉: 扉の id -> 建物の id。屋内も Unity の建物も建物の id のものを使う
+SECOND_DOORS = {"lecture_se": "lecture"}
+
+# 扉の id と、その扉を付ける外壁を持つ建物が違うとき（1 棟に扉が 2 つ）の対応
+# 食堂は research2 の外観に属する。マテリアル（research2_*）も plan_research2_* のモジュールも research2 と共有する。
+# 食堂は屋内も Unity の建物も別なので、SECOND_DOORS には入れない。
+HOSTS = {"cafeteria": "research2", **SECOND_DOORS}
+
+
+def building_of(door_id):
+    """扉の id -> その扉から入る建物（屋内）の id。"""
+    return SECOND_DOORS.get(door_id, door_id)
 
 
 # --------------------------------------------------------------------------- #
@@ -106,8 +127,8 @@ def _wall_loop(kind, loop, frame):
     if kind == "inner1":
         return geom.offset_polygon(loop, -2.2)
     if kind == "bbox":
-        u0, v0, u1, v1 = frame.uv_bbox(loop)
-        return frame.rect(u0, v0, u1, v1)
+        uvs = geom.l_rect_uv(frame.uv_bbox(loop), frame.uv_notch(loop))
+        return [frame.xy(u, v) for u, v in uvs]
     return loop
 
 
@@ -120,7 +141,7 @@ def plan(data, frame, ctx):
 
     doors = []
     for bid, probe_uv, into_uv, kind, sign_side, sign_z, spec in DOORS:
-        loop = loops.get(bid)
+        loop = loops.get(HOSTS.get(bid, bid))
         if loop is None:
             print("[entrance] %s: campus.json に建物が無いので飛ばします" % bid)
             continue
@@ -205,7 +226,9 @@ def build_one(mb, dr):
     _box(mb, dr, -W, W, df - 0.07, df + 0.02, fz1 - 0.12, fz1, "metal_white")
     _box(mb, dr, -W, W, df - 0.07, df + 0.02, fz0, fz0 + 0.20, "metal_white")
 
-    # 庇: 白い板に紺の鼻先。庇裏の手前側に照明の帯
+    # 庇: 白い板に紺の鼻先。庇裏の手前側に照明の帯。CANOPY=False の扉は壁の帯が庇を兼ねる
+    if not dr.get("CANOPY", True):
+        return
     _box(mb, dr, -dr["CAN_S"], dr["CAN_S"], -BURY, dr["CAN_D"], HT, HT + dr["CAN_T"],
          "wall_accent_navy", top="metal_white", bottom="metal_white")
     _ceiling(mb, dr, -(W + 0.4), W + 0.4, D + 0.25, dr["CAN_D"] - 0.35, HT - 0.005,

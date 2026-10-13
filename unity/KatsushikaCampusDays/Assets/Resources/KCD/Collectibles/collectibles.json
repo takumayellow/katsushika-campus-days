@@ -20,35 +20,44 @@
         "z": -92.2
       },
       "rarity": "common",
-      "source": "hidden"
+      "source": "hidden",
+      "note_no": 1,
+      "note_ja": "ようこそ。このキャンパスは、この春できたばかり。わたしたちも、今日はじめてこの門をくぐった。—— 開校の年の学生より",
+      "note_en": "Welcome. This campus opened this spring. We walked through this gate for the first time today, too. — The students of the opening year"
     },
     {
       "id": "c_mall_pin",
       "name_ja": "石畳のピンバッジ",
       "name_en": "Cobblestone Pin Badge",
-      "hint_ja": "モールの石畳が市松になっているあたり。目地に挟まっている。",
-      "hint_en": "Where the mall's paving turns to a checkerboard. Wedged in a joint between stones.",
+      "hint_ja": "メインストリートの石畳が市松になっているあたり。目地に挟まっている。",
+      "hint_en": "Where Main Street's paving turns to a checkerboard. Wedged in a joint between stones.",
       "building": null,
       "position": {
         "x": 96.7,
         "z": -77.2
       },
       "rarity": "common",
-      "source": "hidden"
+      "source": "hidden",
+      "note_no": 2,
+      "note_ja": "メインストリートを端から端まで歩いて、誰ともすれ違わなかった。まだ人が少ない。",
+      "note_en": "We walked Main Street end to end and passed no one. There aren't many of us yet."
     },
     {
       "id": "c_bench_coin",
       "name_ja": "ベンチの下の記念コイン",
       "name_en": "Coin Under the Bench",
-      "hint_ja": "モールでいちばん日当たりのいいベンチ。座らずに、のぞき込む。",
-      "hint_en": "The sunniest bench on the mall. Don't sit, look underneath.",
+      "hint_ja": "並木道でいちばん日当たりのいいベンチ。座らずに、のぞき込む。",
+      "hint_en": "The sunniest bench on Main Street. Don't sit, look underneath.",
       "building": null,
       "position": {
         "x": 48.8,
         "z": -52.0
       },
       "rarity": "uncommon",
-      "source": "hidden"
+      "source": "hidden",
+      "note_no": 3,
+      "note_ja": "昼休みはここに座った。木はまだ細くて、影がほとんど無かった。",
+      "note_en": "We ate lunch on this bench. The trees were still thin and threw almost no shade."
     },
     {
       "id": "c_pond_marble",
@@ -62,7 +71,10 @@
         "z": -35.95
       },
       "rarity": "uncommon",
-      "source": "hidden"
+      "source": "hidden",
+      "note_no": 18,
+      "note_ja": "水盤は浅い。落ちても濡れるだけ。だから、のぞき込んでいい。空が映っている。",
+      "note_en": "The pool is shallow. Fall in and you only get wet. So go ahead and look in. The sky is down there."
     },
     {
       "id": "c_park_acorn",
@@ -76,7 +88,10 @@
         "z": -100.0
       },
       "rarity": "common",
-      "source": "hidden"
+      "source": "hidden",
+      "note_no": 14,
+      "note_ja": "公園の木はまだ若くて、どんぐりは落ちていなかった。だから、これはよそから持ってきた。",
+      "note_en": "The park's trees were too young to drop acorns. So we brought this one from somewhere else."
     },
     {
       "id": "c_park_disc",
@@ -86,11 +101,14 @@
       "hint_en": "Toward the dirt field side of the park. Someone threw it and never came back for it.",
       "building": null,
       "position": {
-        "x": -112.0,
-        "z": -90.0
+        "x": -115.0,
+        "z": -88.0
       },
       "rarity": "uncommon",
-      "source": "hidden"
+      "source": "hidden",
+      "note_no": 15,
+      "note_ja": "グラウンドでディスクを投げた。うまく投げると風に乗って戻ってくる。たいていは、取りに走る。",
+      "note_en": "We threw a disc on the field. Throw it well and the wind brings it back. Mostly you run after it."
     },
     {
       "id": "c_shrine_bell",
@@ -104,7 +122,10 @@
         "z": 64.0
       },
       "rarity": "rare",
-      "source": "hidden"
+      "source": "hidden",
+      "note_no": 16,
+      "note_ja": "（この 1 枚だけ、ほかと字が違う）鈴は、今年の当番が足した。わたしと同じ名前の神社だから。",
+      "note_en": "(The handwriting on this one is different.) This year's keeper added the bell. The shrine shares my name."
     },
     {
       "id": "c_bike_bell",
@@ -118,7 +139,10 @@
         "z": 78.0
       },
       "rarity": "common",
-      "source": "hidden"
+      "source": "hidden",
+      "note_no": 17,
+      "note_ja": "帰り道は、ベルを鳴らさなくていいくらい、ゆっくりでいい。",
+      "note_en": "On the way home, ride slow enough that you never need the bell."
     },
     {
       "id": "c_greenhouse_seed",
@@ -129,7 +153,10 @@
       "building": "greenhouse",
       "position": "poi_greenhouse_plants",
       "rarity": "common",
-      "source": "hidden"
+      "source": "hidden",
+      "note_no": 13,
+      "note_ja": "たね袋に名前が無いのは、何が咲くかを楽しみにするため。まいた人も、もう覚えていない。",
+      "note_en": "The seed packet has no label so you can look forward to whatever comes up. Whoever sowed it has forgotten too."
     },
     {
       "id": "c_gym_whistle",
@@ -140,7 +167,10 @@
       "building": "gym",
       "position": "poi_gym_storage",
       "rarity": "uncommon",
-      "source": "hidden"
+      "source": "hidden",
+      "note_no": 12,
+      "note_ja": "体育館で、はじめて全員の名前を覚えた。ホイッスルが鳴るたびに走った。",
+      "note_en": "The gym is where we finally learned everyone's name. Every whistle meant another sprint."
     },
     {
       "id": "c_library_bookmark",
@@ -151,7 +181,10 @@
       "building": "library",
       "position": "poi_library_stacks",
       "rarity": "uncommon",
-      "source": "hidden"
+      "source": "hidden",
+      "note_no": 19,
+      "note_ja": "図書館の奥は静か。疲れたら、ここで本の背表紙を眺めるといい。",
+      "note_en": "It's quiet at the back of the library. When you're tired, come and read the spines."
     },
     {
       "id": "c_dome_key",
@@ -162,18 +195,24 @@
       "building": "library",
       "position": "poi_library_gallery",
       "rarity": "legendary",
-      "source": "hidden"
+      "source": "hidden",
+      "note_no": 20,
+      "note_ja": "最後のメモ。2 階の回廊の、ドームへ上がる小さな扉。宝はその中にある。",
+      "note_en": "The last note. A small door on the upstairs gallery, the one that leads up to the dome. The treasure is inside."
     },
     {
       "id": "c_kyoso_tumbler",
       "name_ja": "共創棟のタンブラー",
       "name_en": "Kyoso Hall Tumbler",
-      "hint_ja": "共創棟 2 階のラウンジ。忘れ物の棚に、白いルーバー柄のタンブラー。",
-      "hint_en": "The second-floor lounge of Kyoso Hall. On the lost-and-found shelf, a tumbler patterned like the white louvres.",
+      "hint_ja": "共創棟 2 階のラウンジ。忘れ物の棚の白いタンブラーに混じって、緑のタンブラーが 1 つ。",
+      "hint_en": "The second-floor lounge of Kyoso Hall. Among the white tumblers on the lost-and-found shelf, a single green one.",
       "building": "kyoso",
       "position": "poi_kyoso_lounge",
       "rarity": "rare",
-      "source": "hidden"
+      "source": "hidden",
+      "note_no": 11,
+      "note_ja": "ラウンジの忘れ物の棚には、いつも何かある。持ち主は、たいてい見つかる。",
+      "note_en": "There's always something on the lounge's lost-and-found shelf. The owners usually turn up."
     },
     {
       "id": "c_kyoso_sticker",
@@ -184,18 +223,24 @@
       "building": "kyoso",
       "position": "poi_kyoso_store",
       "rarity": "common",
-      "source": "hidden"
+      "source": "hidden",
+      "note_no": 10,
+      "note_ja": "ステッカーはノートパソコンに貼るといい。誰のものか、すぐ分かる。",
+      "note_en": "Stick it on your laptop. Then everyone knows whose it is."
     },
     {
       "id": "c_lecture_chalk",
-      "name_ja": "大ホールのチョーク",
-      "name_en": "Great Hall Chalk",
-      "hint_ja": "講義棟の大ホール、上の調整ブース。誰も使わなくなったチョークが一本。",
-      "hint_en": "The control booth above the lecture building's great hall. One stick of chalk nobody uses any more.",
+      "name_ja": "大教室のチョーク",
+      "name_en": "Classroom Chalk",
+      "hint_ja": "講義棟の大教室、教卓の脇の機器ラック。誰も使わなくなったチョークが一本。",
+      "hint_en": "The AV rack beside the lectern in the lecture building's big classroom. One stick of chalk nobody uses any more.",
       "building": "lecture",
       "position": "poi_lecture_hall_booth",
       "rarity": "uncommon",
-      "source": "hidden"
+      "source": "hidden",
+      "note_no": 6,
+      "note_ja": "大教室の一番後ろの段から見ると、先生が小さく見える。黒板の字は、ぎりぎり読める。",
+      "note_en": "From the back row of the big classroom the lecturer looks tiny. You can just about read the board."
     },
     {
       "id": "c_lecture_notebook",
@@ -206,18 +251,24 @@
       "building": "lecture",
       "position": "poi_lecture_seminar",
       "rarity": "common",
-      "source": "hidden"
+      "source": "hidden",
+      "note_no": 5,
+      "note_ja": "演習は難しかった。分からないところは、隣の席の人に聞けばいい。わたしたちはそうした。",
+      "note_en": "The exercises were hard. Ask the person next to you. That's what we did."
     },
     {
       "id": "c_tray_charm",
       "name_ja": "返却口のトレーチャーム",
       "name_en": "Tray-Return Charm",
-      "hint_ja": "第2研究棟の食堂、返却口。トレーの山のいちばん上に乗っている。",
-      "hint_en": "The tray return in the Research Building 2 cafeteria. Sitting on top of the stack of trays.",
-      "building": "research2",
-      "position": "poi_research2_tray_return",
+      "hint_ja": "食堂の返却口。トレーの山のいちばん上に乗っている。",
+      "hint_en": "The tray return in the cafeteria. Sitting on top of the stack of trays.",
+      "building": "cafeteria",
+      "position": "poi_cafeteria_tray_return",
       "rarity": "common",
-      "source": "hidden"
+      "source": "hidden",
+      "note_no": 9,
+      "note_ja": "食堂で迷ったら、カレー。返却口で「ごちそうさま」と言うと、ちょっといい気分になる。",
+      "note_en": "When in doubt at the cafeteria, get the curry. Say thanks at the tray return. It helps."
     },
     {
       "id": "c_notice_magnet",
@@ -228,7 +279,10 @@
       "building": "research1",
       "position": "poi_research1_notice",
       "rarity": "common",
-      "source": "hidden"
+      "source": "hidden",
+      "note_no": 4,
+      "note_ja": "掲示板は、はじめは真っ白だった。最初に貼られたのは、サークルの勧誘のビラ。",
+      "note_en": "The notice board started out blank. The first thing pinned to it was a club flyer."
     },
     {
       "id": "c_lab_goggles",
@@ -239,7 +293,10 @@
       "building": "lab1",
       "position": "poi_lab1_lab_b",
       "rarity": "uncommon",
-      "source": "hidden"
+      "source": "hidden",
+      "note_no": 7,
+      "note_ja": "実験の日は、ゴーグルの跡が顔に残る。それも一年生のしるし。",
+      "note_en": "On lab days the goggles leave marks on your face. Call it a first-year badge."
     },
     {
       "id": "c_lab_beaker",
@@ -250,7 +307,10 @@
       "building": "lab2",
       "position": "poi_lab2_lab",
       "rarity": "rare",
-      "source": "hidden"
+      "source": "hidden",
+      "note_no": 8,
+      "note_ja": "目盛りが消えるまで、みんなで使おう。",
+      "note_en": "Use it until the markings wear off. All of us, one after another."
     },
     {
       "id": "c_greenhouse_sprout",
@@ -284,13 +344,24 @@
       "position": null,
       "rarity": "rare",
       "source": "quest"
+    },
+    {
+      "id": "c_blank_note",
+      "name_ja": "21 枚目のメモ",
+      "name_en": "The Twenty-First Note",
+      "hint_ja": "図書館 2 階の小さな扉の中にあった白い紙。来年の春、ここに書くのは自分の番。",
+      "hint_en": "The blank sheet from behind the small door upstairs in the library. Next spring, it is your turn to write on it.",
+      "building": null,
+      "position": null,
+      "rarity": "rare",
+      "source": "quest"
     }
   ],
   "photo_spots": [
     {
       "id": "ps_mall_view",
-      "name_ja": "モールの見通し",
-      "name_en": "Down the Mall",
+      "name_ja": "メインストリートの見通し",
+      "name_en": "Down Main Street",
       "building": null,
       "position": {
         "x": 96.7,
@@ -321,24 +392,24 @@
     },
     {
       "id": "ps_kyoso_facade",
-      "name_ja": "共創棟のルーバー",
-      "name_en": "Kyoso Hall Louvres",
+      "name_ja": "共創棟の縦フィン",
+      "name_en": "Kyoso Hall Fins",
       "building": null,
       "position": {
-        "x": 60.0,
-        "z": -58.0
+        "x": -7.6,
+        "z": -88.9
       },
       "look_dir": {
-        "x": 0.81,
-        "z": -0.59
+        "x": -0.81,
+        "z": 0.59
       },
-      "caption_ja": "白い縦ルーバーが並ぶ 2025 年竣工の棟。午後は影が縞になる。",
-      "caption_en": "White vertical louvres on the building finished in 2025. In the afternoon the shadows turn to stripes."
+      "caption_ja": "グレーの縦フィンが並ぶ 2024 年竣工の棟。午後は影が縞になる。",
+      "caption_en": "Grey vertical fins on the building finished in 2024. In the afternoon the shadows turn to stripes."
     },
     {
       "id": "ps_gym_catwalk",
-      "name_ja": "キャットウォークからのアリーナ",
-      "name_en": "Arena from the Catwalk",
+      "name_ja": "観覧席の最上段からのアリーナ",
+      "name_en": "Arena from the Top of the Bleachers",
       "building": "gym",
       "position": "poi_gym_catwalk",
       "look_dir": {
@@ -436,11 +507,11 @@
       "id": "ach_all_buildings",
       "name_ja": "全棟制覇",
       "name_en": "Every Door",
-      "desc_ja": "9 つの建物すべてに入る。",
-      "desc_en": "Enter all nine buildings.",
+      "desc_ja": "10 か所の建物すべてに入る。",
+      "desc_en": "Enter all ten buildings.",
       "condition": {
         "type": "building_count",
-        "value": 9
+        "value": 10
       }
     },
     {
@@ -451,29 +522,36 @@
       "desc_en": "Talk to all four NPCs.",
       "condition": {
         "type": "npc_count",
-        "value": 4
+        "value": 4,
+        "npcs": [
+          "inari",
+          "kaname",
+          "sora",
+          "prof"
+        ]
       }
     },
     {
       "id": "ach_main_story",
       "name_ja": "はじめての一日",
       "name_en": "The First Day",
-      "desc_ja": "メインクエスト 7 本をすべて達成する。",
-      "desc_en": "Complete all seven main quests.",
+      "desc_ja": "メインクエスト 8 本をすべて達成する。",
+      "desc_en": "Complete all eight main quests.",
       "condition": {
         "type": "quest_count",
-        "value": 7
+        "value": 8,
+        "scope": "main"
       }
     },
     {
       "id": "ach_all_quests",
       "name_ja": "頼まれごとの達人",
       "name_en": "Errand Master",
-      "desc_ja": "サブクエストを含む 13 本すべてを達成する。",
-      "desc_en": "Complete all thirteen quests, side quests included.",
+      "desc_ja": "サブクエストを含む 15 本すべてを達成する。",
+      "desc_en": "Complete all fifteen quests, side quests included.",
       "condition": {
         "type": "quest_count",
-        "value": 13
+        "value": 15
       }
     },
     {
@@ -518,6 +596,17 @@
       "condition": {
         "type": "quest_complete",
         "value": "q_sq_night_walk"
+      }
+    },
+    {
+      "id": "ach_next_keeper",
+      "name_ja": "来年の当番",
+      "name_en": "Next Year's Keeper",
+      "desc_ja": "はじまりの春の宝探しを終える。",
+      "desc_en": "Finish the first spring's treasure hunt.",
+      "condition": {
+        "type": "quest_complete",
+        "value": "q_secret_spring_hunt"
       }
     }
   ]

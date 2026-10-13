@@ -18,6 +18,9 @@ namespace KCD.Editor
         /// <summary>WebGL の既定出力先。index.html と Build/ がこの下にできる。</summary>
         private const string DefaultWebOutput = "../../build/WebGL";
 
+        /// <summary>ASTC で圧縮したビルドの出力先は, WebGL の出力先の名前にこれを付けたもの。</summary>
+        public const string AstcOutputSuffix = "-ASTC";
+
         /// <summary>EditorBuildSettings に入っているシーンをまとめて 1 本の exe にする。</summary>
         [MenuItem("KCD/Windows ビルド")]
         public static void BuildWindows()
@@ -70,12 +73,22 @@ namespace KCD.Editor
         /// <summary>
         /// GitHub Pages に置く WebGL ビルド。Pages は .gz に Content-Encoding を付けないので、
         /// Gzip + 復元フォールバック（ローダーが JS で展開する）にする。
+        /// ビルド元のコミットは tools/deploy_pages.py --build が index.html に書き込む (#75)。
+        /// <para>
+        /// テクスチャを DXT で圧縮したものを出力先に、ASTC で圧縮したものを出力先の名前に
+        /// <see cref="AstcOutputSuffix"/> を付けた所に出す (#187)。スマホの GPU の多くは DXT を読めず、
+        /// Unity は読み込むときに RGBA32 に展開する。2 つのビルドで違うのは data だけなので、
+        /// tools/deploy_pages.py --build が ASTC の data を出力先の Build/ に写し、index.html に名前を書き込む。
+        /// </para>
+        /// <para>
+        /// 出力先を分けて 2 本ビルドすると、Unity は後のビルドで前の出力先の Build/ を消す。そこで ASTC を
+        /// 出力先にビルドして写しを取り、同じ出力先に DXT をビルドし直す。
+        /// </para>
         /// </summary>
         [MenuItem("KCD/WebGL ビルド")]
         public static void BuildWebGL()
         {
             string output = ResolveWebOutput();
-            Directory.CreateDirectory(output);
 
             string[] scenes = EnabledScenes();
             if (scenes.Length == 0)
@@ -94,26 +107,49 @@ namespace KCD.Editor
             Prepare();
             PrepareWebGL();
 
+            string astcOutput = output.TrimEnd('/', '\\') + AstcOutputSuffix;
+            if (!BuildWebGLVariant(scenes, output, WebGLTextureSubtarget.ASTC, "build-webgl-astc"))
+            {
+                EditorApplication.Exit(1);
+                return;
+            }
+
+            FileUtil.DeleteFileOrDirectory(astcOutput);
+            FileUtil.CopyFileOrDirectory(output, astcOutput);
+
+            if (!BuildWebGLVariant(scenes, output, WebGLTextureSubtarget.DXT, "build-webgl"))
+            {
+                EditorApplication.Exit(1);
+            }
+        }
+
+        /// <summary>
+        /// テクスチャの圧縮の形式を決めて 1 本ビルドする。成功したら true。
+        /// Unity 6 では EditorUserBuildSettings.webGLBuildSubtarget を変えてもビルドに効かないので、
+        /// BuildPlayerOptions.subtarget で渡す。
+        /// </summary>
+        private static bool BuildWebGLVariant(string[] scenes, string output, WebGLTextureSubtarget textures,
+            string verifyLabel)
+        {
+            Directory.CreateDirectory(output);
+
             var options = new BuildPlayerOptions
             {
                 scenes = scenes,
                 locationPathName = output,
                 target = BuildTarget.WebGL,
                 targetGroup = BuildTargetGroup.WebGL,
+                subtarget = (int)textures,
                 options = BuildOptions.None
             };
 
             BuildReport report = BuildPipeline.BuildPlayer(options);
             BuildSummary summary = report.summary;
 
-            EditorPaths.Report("WebGL ビルド結果: " + summary.result
+            EditorPaths.Report("WebGL ビルド結果 (" + textures + "): " + summary.result
                 + " / " + summary.totalSize + " bytes / " + output);
-            EditorPaths.AppendVerify("build-webgl " + summary.result + " " + output);
-
-            if (summary.result != BuildResult.Succeeded)
-            {
-                EditorApplication.Exit(1);
-            }
+            EditorPaths.AppendVerify(verifyLabel + " " + summary.result + " " + output);
+            return summary.result == BuildResult.Succeeded;
         }
 
         /// <summary>
@@ -164,9 +200,13 @@ namespace KCD.Editor
             PlayerSettings.WebGL.decompressionFallback = true;
             PlayerSettings.WebGL.threadsSupport = false;
             PlayerSettings.WebGL.dataCaching = true;
+            // Build/ のファイル名を内容のハッシュにする (#75)。Pages は max-age=600 を返すので,
+            // 名前が毎回同じだと, 配信直後に新しい index.html と古い wasm / framework が混ざり得る。
+            // zip に入れるのは index.html が参照するものだけ (tools/deploy_pages.py)。
+            PlayerSettings.WebGL.nameFilesAsHashes = true;
             PlayerSettings.WebGL.exceptionSupport = WebGLExceptionSupport.ExplicitlyThrownExceptionsOnly;
             // 自前のテンプレート（Assets/WebGLTemplates/KCD）。大きな全画面ボタンと、
-            // 「Esc でマウスを解放 / F で全画面」の案内をページに常に出す (#48)。
+            // 「Esc でマウスを解放 / Ctrl+F で全画面」の案内をページに常に出す (#48)。
             PlayerSettings.WebGL.template = "PROJECT:KCD";
             PlayerSettings.WebGL.initialMemorySize = 256;
             PlayerSettings.WebGL.maximumMemorySize = 2048;
@@ -215,6 +255,9 @@ namespace KCD.Editor
             PlayerSettings.defaultScreenHeight = 1080;
             PlayerSettings.fullScreenMode = FullScreenMode.FullScreenWindow;
             PlayerSettings.runInBackground = true;
+            // スプラッシュは出さない（m_ShowUnitySplashScreen 0）。それでもロゴを出す設定のままだと,
+            // ロゴの画像（2.7 MB）がビルドに入る (#70)。
+            PlayerSettings.SplashScreen.showUnityLogo = false;
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Standalone, ScriptingImplementation.Mono2x);
         }
     }

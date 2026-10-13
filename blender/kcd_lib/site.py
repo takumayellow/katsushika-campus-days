@@ -1,4 +1,4 @@
-"""外構: 地面・キャンパスモール・道路・水盤・公園・小物（DESIGN.md §3.2）。"""
+"""外構: 地面・メインストリート・道路・水盤・公園・小物（DESIGN.md §3.2）。"""
 
 import math
 import random
@@ -6,7 +6,7 @@ import random
 from . import geom, props
 
 # 高さレイヤ（z ファイティング回避のため 3 mm ずつ段を付ける）
-# 歩ける面どうしの段差は最大でも モール 0.021 − 外周の地面 0.000 = 2.1 cm。
+# 歩ける面どうしの段差は最大でも メインストリート 0.021 − 外周の地面 0.000 = 2.1 cm。
 # 半径 0.28 m のカプセルが 2 cm の段に当たる角度は約 22 度なので、坂と同じに越えられる。
 # 以前は 1.0〜7.5 cm の段と、敷地の縁に 31 cm の落差（外周 -0.30）があり、
 # 歩くだけでジャンプ・着地の判定が出ていた（#30）。
@@ -18,7 +18,7 @@ Z_AREA = 0.009       # グラウンド・広場・駐車場
 Z_ROAD = 0.012       # 車道（帯の厚み 0.06 m は地面の下へ埋まる）
 Z_LINE = 0.015       # 車道の白線（厚みなし。車道から 3 mm）
 Z_FOOT = 0.018       # 歩道・水盤の前の石張り
-Z_MALL = 0.021       # キャンパスモールと正門前の広場
+Z_MALL = 0.021       # メインストリートと正門前の広場
 Z_WATER = 0.060      # 水盤の水面（縁石 0.36 の内側だけ）
 # 水盤の底。水は半透明（mats.py の water: alpha 0.80、Unity 側も 0.58）なので底が透けて見える。
 # 以前は Z_WATER - 0.45 = -0.390 で、敷地の芝（Z_CAMPUS = 0.006）と歩道（Z_FOOT = 0.018）が
@@ -29,36 +29,44 @@ Z_BASIN_FLOOR = 0.030
 Z_BASIN_RIM = 0.36   # 水盤の縁石の天端（意図した段差）
 PATH_THICKNESS = 0.06   # 道路・歩道の帯の厚み（縁の隙間を隠す）
 
-# キャンパスモール（OSM の直線 footway が v = -24 を u = -56..199 で走る）
+# メインストリート（OSM の直線 footway が v = -24 を u = -56..199 で走る）
 MALL_V = -24.0
 MALL_HW = 6.0
 MALL_U0 = -57.0
 MALL_U1 = 197.0
 
-# モール北側の花壇（航空写真では舗装の北に幅 3〜4 m の植栽帯が u -10..170 で続く。#56）
+# メインストリート北側の花壇（航空写真では舗装の北に幅 3〜4 m の植栽帯が u -10..170 で続く。#56）
 BED_V = (MALL_V + MALL_HW - 3.6, MALL_V + MALL_HW)   # v -21.6..-18.0
 BED_LEN = 9.0        # 1 基の長さ
-BED_GAP = 3.0        # 花壇どうしの間（モールから北へ抜けられる）
+BED_GAP = 3.0        # 花壇どうしの間（メインストリートから北へ抜けられる）
 BED_WALL = 0.2       # 縁石の厚み
 BED_TOP = 0.45       # 縁石の天端。stepOffset 0.40 より高いので、歩いては上がれない
 BED_SOIL = 0.38      # 土の面
 BED_KEEP = 1.5       # 通路・入口の脇に空ける幅
-FLOWERS = ("flower_red", "flower_yellow", "flower_white", "flower_pink")
+# 花の色。実物の季節の花壇（パンジー・ビオラ・マリーゴールド）の 6 色を、隣どうしが馴染む順
+# （紫→白→桃→赤→橙→黄→紫）に並べる。株ごとにこの並びの 1 色を主にし、次の色を差し色に混ぜる（#58）。
+FLOWERS = ("flower_purple", "flower_white", "flower_pink", "flower_red", "flower_orange", "flower_yellow")
+# 花の中心の色（パンジー・ビオラの黄色い目、マリーゴールドの芯）。載っていない色は flower_yellow。
+FLOWER_EYES = {"flower_yellow": "flower_orange", "flower_orange": "flower_red"}
 
 # 図書館を囲む堀のような水盤（水面の矩形 (u0, v0, u1, v1) のリスト）。
-# 実物は図書館の東面と南面に沿う幅 約 10 m の帯で、モール（v -30..-18）が橋になって
+# 実物は図書館の東面と南面に沿う幅 約 10 m の帯で、メインストリート（v -30..-18）が橋になって
 # 入口へ渡る。航空写真（国土地理院 z18）に campus.json の外形を重ねて測った (#56)。
 # 以前は図書館の東 60 m の芝生に 60 x 25 m の池を 1 枚置いていたが、実物にそんな池は無い。
-# 縁石（BASIN_RIM）の外がモールの舗装・図書館の北東角・南の歩道に掛からないよう、
+# 縁石（BASIN_RIM）の外がメインストリートの舗装・図書館の北東角・南の歩道に掛からないよう、
 # 矩形の端はそこから縁石の幅だけ引いてある。
 # Unity 側の CampusStage.Basins と同じ数値にすること（BasinKeepoutTests が突き合わせる）。
 BASINS = [
-    (-59.5, -16.4, -50.0, 24.0),    # 東の堀（モールの北）
-    (-59.5, -78.0, -50.0, -31.6),   # 東の堀（モールの南）
+    (-59.5, -16.4, -50.0, 24.0),    # 東の堀（メインストリートの北）
+    (-59.5, -78.0, -50.0, -31.6),   # 東の堀（メインストリートの南）
     (-100.0, -78.0, -59.5, -66.0),  # 南の池（図書館の南面）
 ]
 BASIN_RIM = 1.6     # 縁石の幅（腰かけられる）
-# 図書館の東の芝生広場 (u0, v0, u1, v1)。以前の池の跡。実物も木の無い芝生
+# basin_edges の許容差（m）。辺が同じ直線上にあるとみなす差と、捨てる切れ端の長さ。
+# CampusStage.UncoveredSpans と同じ値にする（blender/tests/fixtures/basin_edges.json で突き合わせる）
+BASIN_EDGE_EPS = 1e-4
+# 図書館の東の芝生広場 (u0, v0, u1, v1)。以前の池の跡。実物も木の無い芝生。東側の大半には
+# 共創棟（u -36..37, v -77..-42, #281）が建っていて、そこは建物の占有でも木が入らない
 LIBRARY_LAWN = (-46.0, -100.0, 8.0, -32.0)
 
 
@@ -190,7 +198,7 @@ def build_paths(mb, data, occ):
 
 
 def build_mall(mb, frame, occ):
-    """石畳（グレー 2 色の市松）の キャンパスモール。"""
+    """石畳（グレー 2 色の市松）の メインストリート。"""
     tile = 2.0
     nu = int((MALL_U1 - MALL_U0) / tile)
     nv = int((MALL_HW * 2) / tile)
@@ -221,7 +229,9 @@ def basin_edges(rects=None, rim=BASIN_RIM):
       out  : 水の外へ向かう側（+1 / -1）
       ext0 / ext1: 端を縁石の幅だけ延ばすか。出隅は延ばして角を埋める。入隅（L 字の内側）の
                    ように、延ばした先が隣の水面に掛かる所は延ばさない。
-    矩形が 1 枚なら 4 辺そのまま。Unity 側の CampusStage.BasinEdges が同じ計算をする。"""
+    矩形が 1 枚なら 4 辺そのまま。Unity 側の CampusStage.BasinEdges が同じ計算をする
+    （ext0 / ext1 を除く）。両者の一致は blender/tests/fixtures/basin_edges.json を介して
+    pytest（test_site.py）と EditMode テスト（BasinEdgeAgreementTests）が確かめる。"""
     rects = list(BASINS if rects is None else rects)
     edges = []
     for i, r in enumerate(rects):
@@ -237,7 +247,7 @@ def basin_edges(rects=None, rim=BASIN_RIM):
                     face, a, b = (o[1] if out > 0 else o[3]), o[0], o[2]
                 else:
                     face, a, b = (o[0] if out > 0 else o[2]), o[1], o[3]
-                if abs(face - c) > 1e-6:
+                if abs(face - c) > BASIN_EDGE_EPS:
                     continue
                 nxt = []
                 for s0, s1 in spans:
@@ -250,7 +260,7 @@ def basin_edges(rects=None, rim=BASIN_RIM):
                         nxt.append((b, s1))
                 spans = nxt
             for s0, s1 in spans:
-                if s1 - s0 < 1e-6:
+                if s1 - s0 <= BASIN_EDGE_EPS:
                     continue
                 ext = []
                 for t, sgn in ((s0, -1), (s1, +1)):
@@ -268,7 +278,7 @@ def _edge_xy(frame, axis, c, t):
 
 
 def _mall_bed_gaps(data, frame, ctx):
-    """花壇を置かない u の区間。モール北縁を横切る歩道と、北側の建物の入口の前。"""
+    """花壇を置かない u の区間。メインストリート北縁を横切る歩道と、北側の建物の入口の前。"""
     vc = sum(BED_V) * 0.5
     gaps = []
     for p in data.get("paths", []):
@@ -283,14 +293,14 @@ def _mall_bed_gaps(data, frame, ctx):
     for dr in (ctx.get("door_frames") or {}).values():
         u, v = frame.uv(dr["origin"])
         if v < BED_V[1] or v > BED_V[1] + 12.0:
-            continue   # モールの北に面した入口だけ
+            continue   # メインストリートの北に面した入口だけ
         half = dr["APRON_S"] + BED_KEEP
         gaps.append((u - half, u + half))
     return gaps
 
 
 def build_mall_beds(mb, frame, occ, data, ctx):
-    """モール北側の立ち上がり花壇（石の縁石 + 土 + 花のかたまり）。
+    """メインストリート北側の立ち上がり花壇（石の縁石 + 土 + 花のかたまり）。
 
     長さ BED_LEN の花壇を BED_GAP おきに並べ、歩道と入口の前は空ける。縁石の天端 BED_TOP は
     stepOffset より高いので、プレイヤーも NPC も花壇の上は歩かない（ジャンプなら乗れる）。
@@ -325,38 +335,74 @@ def build_mall_beds(mb, frame, occ, data, ctx):
 
 
 def _flowers(mb, frame, u0, v0, u1, v1, k):
-    """花壇の植え込み。葉の丸い株を隙間なく 3 列に並べ、株の上と肩に小さな花を散らす。
+    """花壇の植え込み。葉の丸い株を隙間なく 3 列に並べ、株の表面に平たい 5 弁の花を散らす。
 
-    株は隣と少し重なる大きさにして土を隠す。花の色は株ごとに 1 色で、3 株ずつの塊にして
-    列と花壇でずらす（一色の帯にしない）。"""
+    株は隣と少し重なる大きさにして土を隠す。株ごとに FLOWERS の 1 色を主にして、3 株ずつの塊を
+    列と花壇でずらす（一色の帯にしない）。花は株の面に沿わせつつメインストリート（-v）の側へ少し向ける。
+    実物の花壇は南のメインストリートに面していて、花は日の当たる側を向く。"""
     rows = 3
     n = max(1, int(round((u1 - u0) / 0.95)))
     du = (u1 - u0) / n
     dv = (v1 - v0) / rows
-    rad = 0.52 * max(du, dv)
+    rad = 0.56 * max(du, dv)
+    toward = (-frame.v[0], -frame.v[1])
     for r in range(rows):
         v = v0 + dv * (r + 0.5)
         for i in range(n):
             j = i * 7 + r * 13 + k * 5
             x, y = frame.xy(u0 + du * (i + 0.5) + 0.1 * ((j % 3) - 1), v)
             h = 0.20 + 0.05 * (j % 3)
-            _plant(mb, x, y, rad, h, j, FLOWERS[(k + r + i // 3) % len(FLOWERS)])
+            c = (k + r + i // 3) % len(FLOWERS)
+            _plant(mb, x, y, rad, h, j, (FLOWERS[c], FLOWERS[(c + 1) % len(FLOWERS)]), toward)
 
 
 # 株の断面（半径の割合, 高さの割合）。下から順に
 _PLANT_RINGS = ((1.0, 0.0), (0.8, 0.6), (0.4, 1.0))
 
+BLOOMS = 12            # 1 株の花の数（以前は 3 角錐 7 個）
+BLOOM_REACH = 0.84     # 花を置く範囲（株の半径の割合）。肩まで咲かせる
+BLOOM_R = (0.085, 0.105)   # 花冠の半径 [m]。実物のパンジー（3 cm）より大きく、3〜6 m 先で花の形に見える
+ACCENT = 0.28          # 差し色（並びの次の色）になる花の割合
+PETAL_CUP = math.radians(25.0)   # 花びらの付け根から先への反り（浅い杯形。低い視点でも奥の花びらが見える）
+PETAL_W = math.radians(33.0)     # 花びらの肩の開き（花びらの軸から左右へ。5 弁で 72 度おき）
+PETAL_SHOULDER = 0.72            # 肩の位置（花冠の半径の割合）。幅の広い丸みのある花びらにする
+BLOOM_LIFT = 0.015     # 株の面から花の中心までの浮き [m]
+LEAN_SLOPE = 0.6       # 株の面の傾きにどれだけ沿わせるか
+LEAN_TOWARD = 0.22     # メインストリートの側へ向ける強さ（水平成分）
 
-def _plant_z(t):
-    """株の中心から半径の割合 t の所の表面の高さ（高さの割合）。"""
+
+def _plant_profile(t):
+    """株の中心から半径の割合 t の所の表面の高さ（高さの割合）と、その t での傾き d高さ/dt。"""
     for (ta, za), (tb, zb) in zip(_PLANT_RINGS[::-1], _PLANT_RINGS[-2::-1]):
         if t <= tb:
-            return za if t <= ta else za + (zb - za) * (t - ta) / (tb - ta)
-    return 0.0
+            if t <= ta:
+                return za, 0.0
+            slope = (zb - za) / (tb - ta)
+            return za + slope * (t - ta), slope
+    return 0.0, 0.0
 
 
-def _plant(mb, x, y, rad, h, j, col, seg=7, blooms=7):
-    """葉の丸い株（7 角の 2 段）と、その表面に付く小さな 3 角錐の花。"""
+def _plant_surface(px, py, x, y, rad, h, rot, seg):
+    """株 (x, y) の面の上で、点 (px, py) の真上の高さと、面の法線（単位ベクトル）。
+
+    株は seg 角形の輪を積んだもので、扇形 1 つの中の面は平ら（上下の輪の辺が平行な台形）。
+    高さは扇形の二等分線への射影だけで決まるので、多角形の辺の間でも面にぴったり載せられる。"""
+    dx, dy = px - x, py - y
+    step = 2.0 * math.pi / seg
+    mid = rot + (math.floor((math.atan2(dy, dx) - rot) / step) + 0.5) * step
+    bx, by = math.cos(mid), math.sin(mid)
+    edge = rad * math.cos(math.pi / seg)   # 輪 t = 1 の辺までの距離
+    zf, dzf = _plant_profile((dx * bx + dy * by) / edge)
+    g = h * dzf / edge                     # 二等分線の向きの高さの傾き（外へ下がると負）
+    ln = math.sqrt(1.0 + g * g)
+    return BED_SOIL + h * zf, (-g * bx / ln, -g * by / ln, 1.0 / ln)
+
+
+def _plant(mb, x, y, rad, h, j, cols, toward, seg=7, blooms=BLOOMS):
+    """葉の丸い株（7 角の 2 段）と、その表面に咲く平たい 5 弁の花。
+
+    cols は（主の色, 差し色）、toward は花を向ける水平の向き（単位ベクトル）。"""
+    rng = random.Random(9173 + j)
     rot = j * 0.9
     rings = [[(x + rad * t * math.cos(rot + math.pi * 2 * q / seg),
                y + rad * t * math.sin(rot + math.pi * 2 * q / seg),
@@ -368,16 +414,46 @@ def _plant(mb, x, y, rad, h, j, col, seg=7, blooms=7):
     mb.add_face(rings[-1], "flower_leaf")
     for q in range(blooms):
         # 黄金角で散らし、半径は外ほど疎に（肩にも咲く）
-        a = rot + q * 2.39996
-        t = 0.82 * math.sqrt((q + 0.5) / blooms)
+        a = rot + q * 2.39996 + rng.uniform(-0.25, 0.25)
+        t = BLOOM_REACH * math.sqrt((q + 0.5) / blooms)
         fx, fy = x + rad * t * math.cos(a), y + rad * t * math.sin(a)
-        fz = BED_SOIL + h * _plant_z(t) + 0.01
-        br = 0.09
-        base = [(fx + br * math.cos(a + math.pi * 2 * m / 3),
-                 fy + br * math.sin(a + math.pi * 2 * m / 3), fz) for m in range(3)]
-        top = (fx, fy, fz + 0.06)
-        for m in range(3):
-            mb.add_face([base[m], base[(m + 1) % 3], top], col)
+        fz, nrm = _plant_surface(fx, fy, x, y, rad, h, rot, seg)
+        lean = (LEAN_SLOPE * nrm[0] + LEAN_TOWARD * toward[0] + rng.uniform(-0.12, 0.12),
+                LEAN_SLOPE * nrm[1] + LEAN_TOWARD * toward[1] + rng.uniform(-0.12, 0.12),
+                1.0)
+        ln = math.sqrt(sum(c * c for c in lean))
+        n = (lean[0] / ln, lean[1] / ln, lean[2] / ln)
+        col = cols[1] if rng.random() < ACCENT else cols[0]
+        centre = (fx + n[0] * BLOOM_LIFT, fy + n[1] * BLOOM_LIFT, fz + n[2] * BLOOM_LIFT)
+        _bloom(mb, centre, n, rng.uniform(*BLOOM_R), rng.uniform(0.0, 2.0 * math.pi),
+               col, FLOWER_EYES.get(col, "flower_yellow"))
+
+
+def _bloom(mb, c, n, size, spin, col, eye):
+    """平たい 5 弁の花（1 輪 11 三角形）。c は中心、n は花の向き（単位ベクトル）、size は花冠の半径。
+
+    花びらは付け根・左の肩・先・右の肩の 4 点の菱形で、付け根から先へ PETAL_CUP だけ反る。
+    高さを花びらの軸方向の距離だけで決めるので、4 点は同じ平面に載る。中心に目の三角形を 1 枚。"""
+    ref = (1.0, 0.0, 0.0) if abs(n[0]) < 0.9 else (0.0, 1.0, 0.0)
+    d = ref[0] * n[0] + ref[1] * n[1] + ref[2] * n[2]
+    e1 = (ref[0] - d * n[0], ref[1] - d * n[1], ref[2] - d * n[2])
+    l1 = math.sqrt(sum(v * v for v in e1))
+    e1 = (e1[0] / l1, e1[1] / l1, e1[2] / l1)
+    e2 = (n[1] * e1[2] - n[2] * e1[1], n[2] * e1[0] - n[0] * e1[2], n[0] * e1[1] - n[1] * e1[0])
+    cup = math.tan(PETAL_CUP)
+    r0, r1 = 0.10 * size, PETAL_SHOULDER * size
+
+    def at(rho, psi, z):
+        cx, sx = rho * math.cos(psi), rho * math.sin(psi)
+        return tuple(c[i] + cx * e1[i] + sx * e2[i] + z * n[i] for i in range(3))
+
+    for p in range(5):
+        a = spin + p * 2.0 * math.pi / 5.0
+        z1 = (r1 * math.cos(PETAL_W) - r0) * cup
+        mb.add_face([at(r0, a, 0.0), at(r1, a - PETAL_W, z1),
+                     at(size, a, (size - r0) * cup), at(r1, a + PETAL_W, z1)], col)
+    re = 0.30 * size
+    mb.add_face([at(re, spin + math.pi / 5.0 + m * 2.0 * math.pi / 3.0, 0.14 * size) for m in range(3)], eye)
 
 
 def build_basin(mb, frame, occ):
@@ -406,7 +482,7 @@ def build_basin(mb, frame, occ):
     for u0, v0, u1, v1 in BASINS:
         occ.stamp_poly(frame.rect(u0 - BASIN_RIM, v0 - BASIN_RIM, u1 + BASIN_RIM, v1 + BASIN_RIM),
                        margin=2.0)
-    # 図書館の東、モールの南は木の無い芝生広場（航空写真）。散布の木を入れない
+    # 図書館の東、メインストリートの南は木の無い芝生広場（航空写真）。散布の木を入れない
     occ.stamp_poly(frame.rect(*LIBRARY_LAWN))
 
 
@@ -521,7 +597,7 @@ def build_basin_keepout(frame, hard):
 
 
 def build_street_furniture(mb, frame, hard):
-    """ベンチと照明柱。どちらもモール舗装の内側に置く（DESIGN §3.2: 20 m 間隔）。"""
+    """ベンチと照明柱。どちらもメインストリート舗装の内側に置く（DESIGN §3.2: 20 m 間隔）。"""
     ang = math.atan2(frame.u[1], frame.u[0])
     u = MALL_U0 + 6.0
     while u < MALL_U1 - 6.0:
@@ -540,16 +616,18 @@ def build_street_furniture(mb, frame, hard):
         u += 20.0
 
 
-def collect_trees(data, frame, occ, hard, rng, park_density=1.0 / 150.0, max_trees=1200):
+def collect_trees(data, frame, occ, hard, rng, park_density=1.0 / 150.0, max_trees=1200, park_trees=None):
     """(x, y, species_index, scale, rot) のリストを返す。
 
     occ  : 舗装や道路も含む全占有（散布の抑制に使う）
     hard : 建物・水盤だけの占有（列植でも絶対に侵入してはいけない領域）
+    park_trees : 公園の木（kcd_lib.park.park_trees）。渡すと公園へのランダム散布の代わりにこれを植える。
+                 間引きの格子にかけず、全部残す（全体図の木の間隔は 4 m より狭いところがある）
     """
     trees = []
 
-    # 1) モール両脇の列植（8 m 間隔）。舗装の内側 1.4 m に植栽帯を取るので、
-    #    モールの外の建物へ入り込むことはない。
+    # 1) メインストリート両脇の列植（8 m 間隔）。舗装の内側 1.4 m に植栽帯を取るので、
+    #    メインストリートの外の建物へ入り込むことはない。
     u = MALL_U0 + 4.0
     while u < MALL_U1 - 4.0:
         for v, off in ((MALL_V - MALL_HW + 1.4, 0.0), (MALL_V + MALL_HW - 1.4, 4.0)):
@@ -569,21 +647,25 @@ def collect_trees(data, frame, occ, hard, rng, park_density=1.0 / 150.0, max_tre
                 trees.append((p[0], p[1], rng.choice([0, 0, 1, 2]),
                               rng.uniform(0.85, 1.15), rng.uniform(0, 6.28)))
 
-    # 3) 公園・空地へのランダム散布
-    polys = [geom.ensure_ccw(geom.dedup(a["polygon"])) for a in data["areas"]
-             if a["kind"] in ("park",)]
+    # 3) 公園の木（全体図から）と、公園・敷地へのランダム散布
+    fixed = list(park_trees or [])
+    for t in fixed:
+        occ.stamp_disc(t[0], t[1], 2.0)
+    polys = [] if park_trees is not None else [
+        geom.ensure_ccw(geom.dedup(a["polygon"])) for a in data["areas"] if a["kind"] in ("park",)]
     polys.append(bd)
-    pts = props.scatter_positions(polys, park_density, occ.blocked, rng)
-    for p in pts:
-        trees.append((p[0], p[1], rng.choice([0, 1, 1, 2]),
-                      rng.uniform(0.8, 1.25), rng.uniform(0, 6.28)))
+    scattered = []
+    for p in props.scatter_positions(polys, park_density, occ.blocked, rng):
+        scattered.append((p[0], p[1], rng.choice([0, 1, 1, 2]),
+                          rng.uniform(0.8, 1.25), rng.uniform(0, 6.28)))
 
-    # 重なりを間引く（4 m グリッドに 1 本）
+    # 重なりを間引く（4 m グリッドに 1 本）。公園の木は列植の次に入れ、間引かずに格子だけ埋める
     seen = set()
     out = []
-    for t in trees:
+    for t, keep in ([(t, False) for t in trees] + [(t, True) for t in fixed]
+                    + [(t, False) for t in scattered]):
         key = (int(t[0] / 4.0), int(t[1] / 4.0))
-        if key in seen:
+        if key in seen and not keep:
             continue
         seen.add(key)
         out.append(t)

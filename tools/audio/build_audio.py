@@ -18,6 +18,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import analyze
 import ambient
 import music
+import piano_phrase
 import sfx
 import synth as S
 
@@ -92,6 +93,8 @@ def build_se(entries: list) -> None:
         _emit("SE", name, sig, False, entries, peak_dbfs=sfx.PEAK_DB.get(name))
     for name, sig in sfx.build_ui_and_game().items():
         _emit("SE", name, sig, False, entries)
+    # 図書館大ホールのピアノを弾くときのフレーズ (PianoPerformance が AudioManager.PlayPiano で鳴らす)
+    _emit("SE", "piano_library", piano_phrase.build_piano_phrase(), False, entries)
 
 
 def build_ambient(entries: list) -> None:

@@ -1,0 +1,860 @@
+{
+ "source": {
+  "layer": "ort",
+  "tile_url": "https://cyberjapandata.gsi.go.jp/xyz/ort/{z}/{x}/{y}.jpg",
+  "zoom": 18,
+  "ground_m_per_px": 0.4845,
+  "mosaic": "aerial_campus_z18.jpg (see aerial_campus_z18.json for tile range and local-to-pixel mapping)"
+ },
+ "license": "地理院タイル一覧 (https://maps.gsi.go.jp/development/ichiran.html) の「2. 基本測量成果以外で出典の記載のみで利用可能なもの」に載るタイル (ort)。国土地理院コンテンツ利用規約 (https://www.gsi.go.jp/kikakuchousei/kikakuchousei40182.html) に従い、出典と加工したことを記載して申請なしで利用 (2026-09-24 確認)",
+ "citation": "出典：国土地理院 電子国土基本図（オルソ画像）を加工して作成",
+ "frames": "angle 0 = north-up (u = x east, v = z north, local metres from data/osm/campus.json meta.origin); angle -24.55 = campus (u, v) frame of blender/kcd_lib/site.py",
+ "sample_method": "rect = (x0, y0, x1, y1) pixels of the crop file, x1/y1 exclusive; median_hex = per-channel median of raw sRGB; p90_hex = per-channel 90th percentile; lum = Rec.709 luma p10/p90",
+ "derived_colours": {
+  "note": "model estimates, not measurements",
+  "wb_hex": "diagonal gain that makes roof_gym_white neutral (assumes that roof is spectrally neutral)",
+  "dehaze_wb_hex": "(c - [55, 72, 73]) * gain, floor = per-channel p0.1 of the whole mosaic, gain maps roof_gym_white to its own mean level; over-corrects dark and shadowed surfaces"
+ },
+ "crops": {
+  "crop_mall_west.jpg": {
+   "what": "campus mall, library bridge to central plaza (u -110..70, v -52..4; mall at v -30..-18)",
+   "frame_angle_deg_from_east": -24.55,
+   "rect_m": [
+    -110,
+    -52,
+    70,
+    4
+   ],
+   "m_per_px": 0.25,
+   "size": [
+    720,
+    224
+   ],
+   "pixel_to_frame": "u = u0 + (i+0.5)*m_per_px, v = v1 - (j+0.5)*m_per_px; x = u cos(a) - v sin(a), z = u sin(a) + v cos(a)",
+   "resampled_from": "ort z18 mosaic (0.4845 m/px), bicubic",
+   "samples": {
+    "mall_bridge_paving": {
+     "rect": [
+      232,
+      100,
+      292,
+      126
+     ],
+     "median_hex": "#D3D8D2",
+     "p90_hex": "#D7DBDA",
+     "lum_p10_p90": [
+      210,
+      218
+     ],
+     "n_px": 1560,
+     "wb_hex": "#D9D8D2",
+     "dehaze_wb_hex": "#D1CDC5"
+    },
+    "mall_west_paving": {
+     "rect": [
+      300,
+      106,
+      440,
+      114
+     ],
+     "median_hex": "#D0D4D3",
+     "p90_hex": "#D7DBDA",
+     "lum_p10_p90": [
+      195,
+      218
+     ],
+     "n_px": 1120,
+     "wb_hex": "#D5D4D3",
+     "dehaze_wb_hex": "#CDC8C6"
+    },
+    "basin_water_east": {
+     "rect": [
+      213,
+      150,
+      238,
+      215
+     ],
+     "median_hex": "#506674",
+     "p90_hex": "#546876",
+     "lum_p10_p90": [
+      96,
+      100
+     ],
+     "n_px": 1625,
+     "wb_hex": "#526674",
+     "dehaze_wb_hex": "#212B3E"
+    },
+    "lawn_central": {
+     "rect": [
+      300,
+      165,
+      600,
+      215
+     ],
+     "median_hex": "#677E69",
+     "p90_hex": "#6C836E",
+     "lum_p10_p90": [
+      116,
+      124
+     ],
+     "n_px": 15000,
+     "wb_hex": "#6A7E69",
+     "dehaze_wb_hex": "#404D2E"
+    }
+   }
+  },
+  "crop_mall_east.jpg": {
+   "what": "campus mall, central plaza to east gate plaza and Route (u 60..240)",
+   "frame_angle_deg_from_east": -24.55,
+   "rect_m": [
+    60,
+    -52,
+    240,
+    4
+   ],
+   "m_per_px": 0.25,
+   "size": [
+    720,
+    224
+   ],
+   "pixel_to_frame": "u = u0 + (i+0.5)*m_per_px, v = v1 - (j+0.5)*m_per_px; x = u cos(a) - v sin(a), z = u sin(a) + v cos(a)",
+   "resampled_from": "ort z18 mosaic (0.4845 m/px), bicubic",
+   "samples": {
+    "mall_east_paving_shadow": {
+     "rect": [
+      150,
+      108,
+      250,
+      122
+     ],
+     "median_hex": "#7C8A8E",
+     "p90_hex": "#849295",
+     "lum_p10_p90": [
+      127,
+      143
+     ],
+     "n_px": 1400,
+     "wb_hex": "#7F8A8E",
+     "dehaze_wb_hex": "#5C5E63"
+    },
+    "gate_plaza_lit": {
+     "rect": [
+      536,
+      60,
+      560,
+      96
+     ],
+     "median_hex": "#C3C9C9",
+     "p90_hex": "#C8CECE",
+     "lum_p10_p90": [
+      192,
+      204
+     ],
+     "n_px": 864,
+     "wb_hex": "#C8C9C9",
+     "dehaze_wb_hex": "#BBB8B8"
+    },
+    "gate_plaza_shadow": {
+     "rect": [
+      468,
+      118,
+      505,
+      155
+     ],
+     "median_hex": "#808F96",
+     "p90_hex": "#8E9CA3",
+     "lum_p10_p90": [
+      129,
+      153
+     ],
+     "n_px": 1369,
+     "wb_hex": "#838F96",
+     "dehaze_wb_hex": "#62656F"
+    },
+    "arterial_sidewalk_west": {
+     "rect": [
+      571,
+      40,
+      579,
+      110
+     ],
+     "median_hex": "#999D9E",
+     "p90_hex": "#A9A9AA",
+     "lum_p10_p90": [
+      135,
+      169
+     ],
+     "n_px": 560,
+     "wb_hex": "#9D9D9E",
+     "dehaze_wb_hex": "#83797A"
+    },
+    "road_arterial_east": {
+     "rect": [
+      612,
+      150,
+      634,
+      200
+     ],
+     "median_hex": "#61727B",
+     "p90_hex": "#708189",
+     "lum_p10_p90": [
+      107,
+      125
+     ],
+     "n_px": 1100,
+     "wb_hex": "#64727B",
+     "dehaze_wb_hex": "#383C48"
+    },
+    "roof_kyoso_dark": {
+     "rect": [
+      60,
+      170,
+      440,
+      186
+     ],
+     "median_hex": "#5D6F78",
+     "p90_hex": "#61747D",
+     "lum_p10_p90": [
+      104,
+      112
+     ],
+     "n_px": 6080,
+     "wb_hex": "#5F6F78",
+     "dehaze_wb_hex": "#333843"
+    }
+   }
+  },
+  "crop_plaza_central.jpg": {
+   "what": "central plaza west of the lecture building, north-up (x -5..80, z -70..5)",
+   "frame_angle_deg_from_east": 0,
+   "rect_m": [
+    -5,
+    -70,
+    80,
+    5
+   ],
+   "m_per_px": 0.25,
+   "size": [
+    340,
+    300
+   ],
+   "pixel_to_frame": "u = u0 + (i+0.5)*m_per_px, v = v1 - (j+0.5)*m_per_px; x = u cos(a) - v sin(a), z = u sin(a) + v cos(a)",
+   "resampled_from": "ort z18 mosaic (0.4845 m/px), bicubic",
+   "samples": {
+    "plaza_central": {
+     "rect": [
+      180,
+      110,
+      255,
+      150
+     ],
+     "median_hex": "#C5CBCB",
+     "p90_hex": "#CAD0D0",
+     "lum_p10_p90": [
+      195,
+      206
+     ],
+     "n_px": 3000,
+     "wb_hex": "#CACBCB",
+     "dehaze_wb_hex": "#BEBBBB"
+    }
+   }
+  },
+  "crop_lawn_library.jpg": {
+   "what": "library, its water basin and the central lawn east of it, north-up",
+   "frame_angle_deg_from_east": 0,
+   "rect_m": [
+    -110,
+    -125,
+    45,
+    -5
+   ],
+   "m_per_px": 0.25,
+   "size": [
+    620,
+    480
+   ],
+   "pixel_to_frame": "u = u0 + (i+0.5)*m_per_px, v = v1 - (j+0.5)*m_per_px; x = u cos(a) - v sin(a), z = u sin(a) + v cos(a)",
+   "resampled_from": "ort z18 mosaic (0.4845 m/px), bicubic",
+   "samples": {
+    "lawn_central_2": {
+     "rect": [
+      200,
+      100,
+      480,
+      300
+     ],
+     "median_hex": "#667D68",
+     "p90_hex": "#6B826D",
+     "lum_p10_p90": [
+      114,
+      123
+     ],
+     "n_px": 56000,
+     "wb_hex": "#697D68",
+     "dehaze_wb_hex": "#3F4C2D"
+    },
+    "park_lawn_mowed": {
+     "rect": [
+      30,
+      300,
+      130,
+      420
+     ],
+     "median_hex": "#809683",
+     "p90_hex": "#8B9C8A",
+     "lum_p10_p90": [
+      140,
+      151
+     ],
+     "n_px": 12000,
+     "wb_hex": "#839683",
+     "dehaze_wb_hex": "#626F53"
+    },
+    "basin_water_south": {
+     "rect": [
+      75,
+      128,
+      130,
+      160
+     ],
+     "median_hex": "#717E81",
+     "p90_hex": "#758083",
+     "lum_p10_p90": [
+      120,
+      125
+     ],
+     "n_px": 1760,
+     "wb_hex": "#747E81",
+     "dehaze_wb_hex": "#4E4D50"
+    }
+   }
+  },
+  "crop_park_sw.jpg": {
+   "what": "にいじゅくみらい公園 west/south part: meadow, lawn, earth paths, north-up",
+   "frame_angle_deg_from_east": 0,
+   "rect_m": [
+    -235,
+    -235,
+    -20,
+    -40
+   ],
+   "m_per_px": 0.25,
+   "size": [
+    860,
+    780
+   ],
+   "pixel_to_frame": "u = u0 + (i+0.5)*m_per_px, v = v1 - (j+0.5)*m_per_px; x = u cos(a) - v sin(a), z = u sin(a) + v cos(a)",
+   "resampled_from": "ort z18 mosaic (0.4845 m/px), bicubic",
+   "samples": {
+    "park_meadow_trees": {
+     "rect": [
+      200,
+      30,
+      350,
+      200
+     ],
+     "median_hex": "#758E7D",
+     "p90_hex": "#8B9C8C",
+     "lum_p10_p90": [
+      118,
+      151
+     ],
+     "n_px": 25500,
+     "wb_hex": "#788E7D",
+     "dehaze_wb_hex": "#53644B"
+    },
+    "park_lawn_open": {
+     "rect": [
+      530,
+      170,
+      640,
+      280
+     ],
+     "median_hex": "#809683",
+     "p90_hex": "#8E9D8C",
+     "lum_p10_p90": [
+      140,
+      152
+     ],
+     "n_px": 12100,
+     "wb_hex": "#839683",
+     "dehaze_wb_hex": "#626F53"
+    },
+    "park_bare_earth": {
+     "rect": [
+      465,
+      290,
+      495,
+      370
+     ],
+     "median_hex": "#9A9D93",
+     "p90_hex": "#ABA9A0",
+     "lum_p10_p90": [
+      142,
+      168
+     ],
+     "n_px": 2400,
+     "wb_hex": "#9E9D93",
+     "dehaze_wb_hex": "#84796A"
+    },
+    "south_sidewalk": {
+     "rect": [
+      320,
+      541,
+      600,
+      551
+     ],
+     "median_hex": "#CFD7D0",
+     "p90_hex": "#D3DAD5",
+     "lum_p10_p90": [
+      156,
+      216
+     ],
+     "n_px": 2800,
+     "wb_hex": "#D4D7D0",
+     "dehaze_wb_hex": "#CBCCC2"
+    },
+    "south_road": {
+     "rect": [
+      320,
+      568,
+      480,
+      580
+     ],
+     "median_hex": "#96A1A2",
+     "p90_hex": "#A8AFAE",
+     "lum_p10_p90": [
+      154,
+      173
+     ],
+     "n_px": 1920,
+     "wb_hex": "#9AA1A2",
+     "dehaze_wb_hex": "#7F7F80"
+    }
+   }
+  },
+  "crop_park_s.jpg": {
+   "what": "にいじゅくみらい公園 south of 第1研究棟: meadow, paths, south boulevard, north-up",
+   "frame_angle_deg_from_east": 0,
+   "rect_m": [
+    -60,
+    -235,
+    150,
+    -95
+   ],
+   "m_per_px": 0.25,
+   "size": [
+    840,
+    560
+   ],
+   "pixel_to_frame": "u = u0 + (i+0.5)*m_per_px, v = v1 - (j+0.5)*m_per_px; x = u cos(a) - v sin(a), z = u sin(a) + v cos(a)",
+   "resampled_from": "ort z18 mosaic (0.4845 m/px), bicubic",
+   "samples": {
+    "park_meadow_s": {
+     "rect": [
+      300,
+      250,
+      500,
+      320
+     ],
+     "median_hex": "#818E7C",
+     "p90_hex": "#96A18F",
+     "lum_p10_p90": [
+      126,
+      157
+     ],
+     "n_px": 14000,
+     "wb_hex": "#848E7C",
+     "dehaze_wb_hex": "#636449"
+    }
+   }
+  },
+  "crop_parking_north.jpg": {
+   "what": "north parking lot of the campus + curved tertiary road with markings, north-up",
+   "frame_angle_deg_from_east": 0,
+   "rect_m": [
+    -175,
+    40,
+    20,
+    150
+   ],
+   "m_per_px": 0.25,
+   "size": [
+    780,
+    440
+   ],
+   "pixel_to_frame": "u = u0 + (i+0.5)*m_per_px, v = v1 - (j+0.5)*m_per_px; x = u cos(a) - v sin(a), z = u sin(a) + v cos(a)",
+   "resampled_from": "ort z18 mosaic (0.4845 m/px), bicubic",
+   "samples": {
+    "parking_north_aisle": {
+     "rect": [
+      440,
+      272,
+      600,
+      286
+     ],
+     "median_hex": "#BAC1BF",
+     "p90_hex": "#CBD2D0",
+     "lum_p10_p90": [
+      183,
+      207
+     ],
+     "n_px": 2240,
+     "wb_hex": "#BFC1BF",
+     "dehaze_wb_hex": "#AFADA9"
+    },
+    "road_north": {
+     "rect": [
+      520,
+      158,
+      600,
+      172
+     ],
+     "median_hex": "#909B9D",
+     "p90_hex": "#99A4A6",
+     "lum_p10_p90": [
+      149,
+      161
+     ],
+     "n_px": 1120,
+     "wb_hex": "#949B9D",
+     "dehaze_wb_hex": "#777679"
+    },
+    "parking_west_lot": {
+     "rect": [
+      0,
+      208,
+      95,
+      238
+     ],
+     "median_hex": "#98A2A3",
+     "p90_hex": "#A1ABAC",
+     "lum_p10_p90": [
+      156,
+      168
+     ],
+     "n_px": 2850,
+     "wb_hex": "#9CA2A3",
+     "dehaze_wb_hex": "#828081"
+    }
+   }
+  },
+  "crop_parking_east.jpg": {
+   "what": "east parking (between 第1実験棟 and 講義棟) and the east arterial road, north-up",
+   "frame_angle_deg_from_east": 0,
+   "rect_m": [
+    95,
+    -40,
+    245,
+    30
+   ],
+   "m_per_px": 0.25,
+   "size": [
+    600,
+    280
+   ],
+   "pixel_to_frame": "u = u0 + (i+0.5)*m_per_px, v = v1 - (j+0.5)*m_per_px; x = u cos(a) - v sin(a), z = u sin(a) + v cos(a)",
+   "resampled_from": "ort z18 mosaic (0.4845 m/px), bicubic",
+   "samples": {
+    "corner_red_paving": {
+     "rect": [
+      440,
+      184,
+      470,
+      198
+     ],
+     "median_hex": "#A8A6A7",
+     "p90_hex": "#BAB9B9",
+     "lum_p10_p90": [
+      162,
+      185
+     ],
+     "n_px": 420,
+     "wb_hex": "#ACA6A7",
+     "dehaze_wb_hex": "#978687"
+    },
+    "sidewalk_red_sw": {
+     "rect": [
+      384,
+      240,
+      402,
+      272
+     ],
+     "median_hex": "#9E9FA1",
+     "p90_hex": "#A8A9AA",
+     "lum_p10_p90": [
+      156,
+      168
+     ],
+     "n_px": 576,
+     "wb_hex": "#A29FA1",
+     "dehaze_wb_hex": "#8A7C7E"
+    },
+    "crosswalk_zebra": {
+     "rect": [
+      492,
+      183,
+      525,
+      211
+     ],
+     "median_hex": "#CBD2D2",
+     "p90_hex": "#DCE2E2",
+     "lum_p10_p90": [
+      165,
+      224
+     ],
+     "n_px": 924,
+     "wb_hex": "#D0D2D2",
+     "dehaze_wb_hex": "#C6C5C5"
+    }
+   }
+  },
+  "crop_sports_north.jpg": {
+   "what": "park sports ground north of the campus: turf pitch, tennis courts, multi-purpose field",
+   "frame_angle_deg_from_east": 0,
+   "rect_m": [
+    20,
+    20,
+    250,
+    208
+   ],
+   "m_per_px": 0.2556,
+   "size": [
+    900,
+    736
+   ],
+   "pixel_to_frame": "u = u0 + (i+0.5)*m_per_px, v = v1 - (j+0.5)*m_per_px; x = u cos(a) - v sin(a), z = u sin(a) + v cos(a)",
+   "resampled_from": "ort z18 mosaic (0.4845 m/px), bicubic",
+   "samples": {
+    "turf_pitch": {
+     "rect": [
+      300,
+      250,
+      500,
+      350
+     ],
+     "median_hex": "#7B8A81",
+     "p90_hex": "#839188",
+     "lum_p10_p90": [
+      126,
+      141
+     ],
+     "n_px": 20000,
+     "wb_hex": "#7E8A81",
+     "dehaze_wb_hex": "#5B5E50"
+    },
+    "tennis_hard": {
+     "rect": [
+      575,
+      520,
+      625,
+      600
+     ],
+     "median_hex": "#93ACB2",
+     "p90_hex": "#9CB4BB",
+     "lum_p10_p90": [
+      147,
+      175
+     ],
+     "n_px": 4000,
+     "wb_hex": "#97ACB2",
+     "dehaze_wb_hex": "#7B8F97"
+    },
+    "tennis_omni": {
+     "rect": [
+      660,
+      520,
+      760,
+      640
+     ],
+     "median_hex": "#B8C0B7",
+     "p90_hex": "#C8CAC4",
+     "lum_p10_p90": [
+      173,
+      201
+     ],
+     "n_px": 12000,
+     "wb_hex": "#BDC0B7",
+     "dehaze_wb_hex": "#ACAB9E"
+    },
+    "bare_ground_ne": {
+     "rect": [
+      650,
+      150,
+      850,
+      330
+     ],
+     "median_hex": "#C0C4C3",
+     "p90_hex": "#CDD1D1",
+     "lum_p10_p90": [
+      170,
+      208
+     ],
+     "n_px": 36000,
+     "wb_hex": "#C5C4C3",
+     "dehaze_wb_hex": "#B7B1AF"
+    }
+   }
+  },
+  "crop_roofs_north.jpg": {
+   "what": "roofs: gym, 第1/第2実験棟, 第2研究棟 green roof, greenhouse, north-up",
+   "frame_angle_deg_from_east": 0,
+   "rect_m": [
+    -30,
+    -25,
+    125,
+    95
+   ],
+   "m_per_px": 0.25,
+   "size": [
+    620,
+    480
+   ],
+   "pixel_to_frame": "u = u0 + (i+0.5)*m_per_px, v = v1 - (j+0.5)*m_per_px; x = u cos(a) - v sin(a), z = u sin(a) + v cos(a)",
+   "resampled_from": "ort z18 mosaic (0.4845 m/px), bicubic",
+   "samples": {
+    "roof_gym_white": {
+     "rect": [
+      110,
+      105,
+      220,
+      205
+     ],
+     "median_hex": "#E6ECEC",
+     "p90_hex": "#E8EEEE",
+     "lum_p10_p90": [
+      229,
+      236
+     ],
+     "n_px": 11000,
+     "wb_hex": "#ECECEC",
+     "dehaze_wb_hex": "#EAEAEA"
+    },
+    "roof_green_lab2": {
+     "rect": [
+      255,
+      180,
+      295,
+      240
+     ],
+     "median_hex": "#93988A",
+     "p90_hex": "#B7BBAC",
+     "lum_p10_p90": [
+      130,
+      185
+     ],
+     "n_px": 2400,
+     "wb_hex": "#97988A",
+     "dehaze_wb_hex": "#7B725D"
+    },
+    "roof_green_research2": {
+     "rect": [
+      90,
+      345,
+      170,
+      410
+     ],
+     "median_hex": "#9AA49F",
+     "p90_hex": "#BCC7C7",
+     "lum_p10_p90": [
+      129,
+      196
+     ],
+     "n_px": 5200,
+     "wb_hex": "#9EA49F",
+     "dehaze_wb_hex": "#84837B"
+    }
+   }
+  },
+  "crop_roofs_south.jpg": {
+   "what": "roofs: 講義棟, 共創棟, 第1研究棟 (solar panels, green strips), north-up",
+   "frame_angle_deg_from_east": 0,
+   "rect_m": [
+    5,
+    -160,
+    175,
+    -5
+   ],
+   "m_per_px": 0.25,
+   "size": [
+    680,
+    620
+   ],
+   "pixel_to_frame": "u = u0 + (i+0.5)*m_per_px, v = v1 - (j+0.5)*m_per_px; x = u cos(a) - v sin(a), z = u sin(a) + v cos(a)",
+   "resampled_from": "ort z18 mosaic (0.4845 m/px), bicubic",
+   "samples": {
+    "roof_research1_solar": {
+     "rect": [
+      60,
+      330,
+      180,
+      380
+     ],
+     "median_hex": "#9FA9AA",
+     "p90_hex": "#E0E5E5",
+     "lum_p10_p90": [
+      116,
+      227
+     ],
+     "n_px": 6000,
+     "wb_hex": "#A3A9AA",
+     "dehaze_wb_hex": "#8B8A8B"
+    }
+   }
+  },
+  "crop_roof_library.jpg": {
+   "what": "library roof (octagonal metal dome + white flat roof), north-up",
+   "frame_angle_deg_from_east": 0,
+   "rect_m": [
+    -150,
+    -45,
+    -30,
+    75
+   ],
+   "m_per_px": 0.25,
+   "size": [
+    480,
+    480
+   ],
+   "pixel_to_frame": "u = u0 + (i+0.5)*m_per_px, v = v1 - (j+0.5)*m_per_px; x = u cos(a) - v sin(a), z = u sin(a) + v cos(a)",
+   "resampled_from": "ort z18 mosaic (0.4845 m/px), bicubic",
+   "samples": {
+    "roof_library_dome": {
+     "rect": [
+      140,
+      160,
+      250,
+      260
+     ],
+     "median_hex": "#B9C4C4",
+     "p90_hex": "#C8D1D1",
+     "lum_p10_p90": [
+      177,
+      207
+     ],
+     "n_px": 11000,
+     "wb_hex": "#BEC4C4",
+     "dehaze_wb_hex": "#AEB1B1"
+    },
+    "roof_library_white": {
+     "rect": [
+      120,
+      270,
+      240,
+      340
+     ],
+     "median_hex": "#D5DAD8",
+     "p90_hex": "#E1E6E4",
+     "lum_p10_p90": [
+      173,
+      228
+     ],
+     "n_px": 8400,
+     "wb_hex": "#DBDAD8",
+     "dehaze_wb_hex": "#D3D0CD"
+    }
+   }
+  }
+ }
+}

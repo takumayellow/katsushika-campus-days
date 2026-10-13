@@ -14,12 +14,14 @@ namespace KCD
 
         private readonly Collider[] _hits = new Collider[16];
         private Interactable _current;
+        private PlayerController _player;
 
         /// <summary>いま対象になっている Interactable。無ければ null。</summary>
         public Interactable Current => _current;
 
         private void Awake()
         {
+            _player = GetComponentInParent<PlayerController>();
             int interactableLayer = LayerMask.NameToLayer("Interactable");
             int npcLayer = LayerMask.NameToLayer("NPC");
             if (interactableLayer >= 0 && npcLayer >= 0)
@@ -31,18 +33,78 @@ namespace KCD
         private void Update()
         {
             _current = FindBest();
+            bool seatUsesKey = SeatUsesInteractKey(_player);
 
+            // 座っている間の E は立ち上がりに使うので、「[E] 話す」も出さない。
             HUD hud = HUD.Instance;
             if (hud != null)
             {
-                hud.ShowInteractionPrompt(_current);
+                hud.ShowInteractionPrompt(seatUsesKey ? null : _current, CanWave());
             }
 
-            if (_current != null && KCDInput.InteractPressed && !KCDInput.GameplayBlocked
-                && !KCDInput.ModalClosedThisFrame)
+            if (ShouldInteract(_current != null, KCDInput.InteractPressed, KCDInput.GameplayBlocked,
+                    KCDInput.ModalClosedThisFrame, seatUsesKey))
             {
                 _current.Interact(gameObject);
             }
+        }
+
+        /// <summary>
+        /// Q で手を振れるか。Q の受け付け（PlayerAnimatorDriver.CanWaveNow）が通り、正面の近くに相手がいるとき。
+        /// </summary>
+        private bool CanWave()
+        {
+            return PlayerAnimatorDriver.CanWaveNow(_player)
+                && NPCWander.FindWaveTarget(_player.transform.position, _player.transform.forward) != null;
+        }
+
+        /// <summary>
+        /// E で調べてよいか。対象がいて、会話やメニューで操作が封鎖されておらず、
+        /// モーダルを閉じたそのフレームでもないとき（会話の最終行を送った E で同じ相手に話しかけ直さない）。
+        /// 座っている間と立ち上がったフレームの E は立ち上がりの分なので調べない (#97)。
+        /// </summary>
+        public static bool ShouldInteract(bool hasTarget, bool interactPressed, bool gameplayBlocked,
+            bool modalClosedThisFrame, bool seatUsesKey)
+        {
+            return hasTarget && interactPressed && !gameplayBlocked && !modalClosedThisFrame && !seatUsesKey;
+        }
+
+        /// <summary>
+        /// E が座席の立ち上がりに使われるか。座っている（MovementLocked）間と、立ち上がったそのフレーム。
+        /// PlayerController と InteractionPrompt の Update の順は決まっていないので、どちらが先に走っても
+        /// 1 回の E で「立つ」と「話しかける」の両方が起きないように、立ったフレームも含める。
+        /// </summary>
+        public static bool SeatUsesInteractKey(PlayerController player)
+        {
+            return KCDInput.MovementLocked || (player != null && player.StoodUpThisFrame);
+        }
+
+        /// <summary>
+        /// 候補の点数（小さいほど優先: 近くて、より正面）。高さは見ず、平面の距離が range を超えるか、
+        /// 正面度（forward との内積）が facingDot より小さい（背中側・真横）なら候補にしない。
+        /// 足もと（平面で 5 cm 未満）は正面にあるものとして扱う。
+        /// </summary>
+        public static bool TryScore(Vector3 origin, Vector3 forward, Vector3 target, float range, float facingDot,
+            out float score)
+        {
+            score = float.MaxValue;
+            Vector3 delta = target - origin;
+            delta.y = 0f;
+            float distance = delta.magnitude;
+            if (distance > range)
+            {
+                return false;
+            }
+
+            float facing = distance < 0.05f ? 1f : Vector3.Dot(forward, delta / distance);
+            if (facing < facingDot)
+            {
+                return false;
+            }
+
+            // 近くて、より正面にあるものを優先する。
+            score = distance - facing;
+            return true;
         }
 
         private Interactable FindBest()
@@ -68,22 +130,12 @@ namespace KCD
                     continue;
                 }
 
-                Vector3 delta = candidate.transform.position - transform.position;
-                delta.y = 0f;
-                float distance = delta.magnitude;
-                if (distance > candidate.InteractionRange)
+                if (!TryScore(transform.position, forward, candidate.transform.position, candidate.InteractionRange,
+                        _facingDot, out float score))
                 {
                     continue;
                 }
 
-                float facing = distance < 0.05f ? 1f : Vector3.Dot(forward, delta / distance);
-                if (facing < _facingDot)
-                {
-                    continue;
-                }
-
-                // 近くて、より正面にあるものを優先する。
-                float score = distance - facing;
                 if (score < bestScore)
                 {
                     bestScore = score;

@@ -9,15 +9,17 @@ namespace KCD.Editor
     /// <summary>Canvas・矩形・文字といった、画面表示の下ごしらえ。</summary>
     public static partial class UIFactory
     {
-        private static readonly Vector2 Reference = new Vector2(1920f, 1080f);
         private static readonly Color Ink = new Color(0.96f, 0.97f, 1f, 1f);
         private static readonly Color Panel = new Color(0.06f, 0.08f, 0.12f, 0.72f);
         private static readonly Color Accent = new Color(0.31f, 0.82f, 0.85f, 1f);
 
         private static TMP_FontAsset _font;
 
-        /// <summary>Canvas を 1 枚作る。UI はすべてこの下にぶら下げる。</summary>
-        public static Canvas CreateCanvas(Transform root, string name, int sortOrder)
+        /// <summary>
+        /// Canvas を 1 枚作る。UI はすべてこの下にぶら下げる。followTouch のときは、指で遊ぶ間だけ
+        /// 1.5 倍に描く（<see cref="TouchCanvasScale"/>）。
+        /// </summary>
+        public static Canvas CreateCanvas(Transform root, string name, int sortOrder, bool followTouch = true)
         {
             var go = new GameObject(name);
             go.layer = LayerMask.NameToLayer("UI");
@@ -29,12 +31,25 @@ namespace KCD.Editor
 
             CanvasScaler scaler = go.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = Reference;
+            scaler.referenceResolution = TouchCanvasScale.PointerReference;
             scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
             scaler.matchWidthOrHeight = 0.5f;
+            if (followTouch)
+            {
+                go.AddComponent<TouchCanvasScale>();
+            }
 
             go.AddComponent<GraphicRaycaster>();
             return canvas;
+        }
+
+        /// <summary>
+        /// 枠が Canvas に収まらないときは収まるまで縮める（<see cref="FitInCanvas"/>）。
+        /// 指で遊ぶ間は 1.5 倍に描くので、大きな枠は横持ちのスマホやタブレットではみ出す。
+        /// </summary>
+        public static void KeepInCanvas(RectTransform rect)
+        {
+            rect.gameObject.AddComponent<FitInCanvas>();
         }
 
         /// <summary>キーボード入力を受けるために EventSystem を 1 つ置く。</summary>

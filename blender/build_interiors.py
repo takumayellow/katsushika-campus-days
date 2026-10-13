@@ -15,6 +15,9 @@ bake_space_transform=True）なので、Unity 側では (x, y=Blender z, z=Blend
   unity/KatsushikaCampusDays/Assets/Models/Interiors/<id>.fbx
   unity/KatsushikaCampusDays/Assets/Models/Interiors/<id>.json  （配置メタ）
   docs/previews/interior_<id>.png
+
+窓の外の近景（ext_<id> / ext_<id>_trees）は campus.fbx / trees.fbx から切り出して同じ
+FBX に入れる（kcd_interior/exterior.py）。--no-ext で入れない。
 """
 
 import argparse
@@ -28,8 +31,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import bpy  # noqa: E402
 
-from kcd_lib import mats, render  # noqa: E402
-from kcd_interior import closure, imats, registry, spec as ispec  # noqa: E402
+from kcd_lib import entrances, mats, render, uv  # noqa: E402
+from kcd_interior import closure, exterior, imats, registry, signs, spec as ispec  # noqa: E402
 from kcd_interior.ctx import Ctx  # noqa: E402
 
 FBX_OPTS = dict(
@@ -47,6 +50,35 @@ FBX_OPTS = dict(
     path_mode="COPY",
     embed_textures=False,
 )
+
+
+EXT_PREFIX = exterior.EXT_PREFIX
+
+# 三角数の上限（docs/DESIGN.md §3.4）。超えたら NG で終える
+INT_BUDGET = 450000       # 屋内の合計
+INT_BUDGET_ONE = {        # 屋内 1 棟
+    "library": 80000,
+    "cafeteria": 75000,
+    "research2": 20000,
+    "lecture": 55000,
+    "research1": 50000,
+    "kyoso": 45000,
+    "gym": 40000,
+    "lab1": 35000,
+    "lab2": 30000,
+    "greenhouse": 15000,
+}
+EXT_BUDGET = 200000       # 近景の合計
+EXT_BUDGET_ONE = 50000    # 近景 1 棟
+# 近景 1 棟の上限を棟の spec で絞っているもの。ext_<id> と ext_<id>_trees の合計で見る
+EXT_BUDGET_BY_ID = {
+    "library": 14469,     # docs/ref/interiors/library/spec.md §8
+}
+
+# 屋内の入口とキャンパスの扉の照合。屋内の内向きと扉の外向き法線の内積の上限と、
+# 面に沿った位置の許容差 [m]
+DOOR_DOT_MAX = -0.9
+DOOR_LATERAL_TOL = 0.05
 
 
 # --------------------------------------------------------------------------- #
@@ -78,6 +110,15 @@ def parse_args(argv):
     p.add_argument("--seed", type=int, default=20250921)
     p.add_argument("--no-export", action="store_true",
                    help="FBX を書き出さない（形だけ確認したいとき）")
+    p.add_argument("--no-ext", action="store_true",
+                   help="窓の外の近景（ext_<id>）を入れない")
+    p.add_argument("--campus-dir",
+                   default=os.path.join(root, "unity", "KatsushikaCampusDays",
+                                        "Assets", "Models", "Campus"),
+                   help="近景の元にする campus.fbx / trees.fbx の場所")
+    p.add_argument("--report-json", default=None,
+                   help="棟ごとの三角数と Empty の名前・位置を書く JSON のパス"
+                        "（--no-export でも書く。改修の前後を比べるとき用）")
     return p.parse_args(argv)
 
 
@@ -112,21 +153,22 @@ def add_empty(name, loc, size=0.6):
     return o
 
 
-def add_point_light(name, loc, energy, radius):
+def add_point_light(name, loc, energy, radius, color=(1.0, 0.97, 0.92)):
     data = bpy.data.lights.new(name, type="POINT")
     data.energy = energy
     data.shadow_soft_size = radius
-    data.color = (1.0, 0.97, 0.92)
+    data.color = color
     o = bpy.data.objects.new(name, data)
     o.location = loc
     bpy.context.scene.collection.objects.link(o)
     return o
 
 
-def mesh_tris():
+def mesh_tris(ext=False):
+    """シーンの三角形数。ext=False なら屋内だけ、True なら近景（ext_）だけ。"""
     n = 0
     for o in bpy.context.scene.objects:
-        if o.type == "MESH":
+        if o.type == "MESH" and o.name.startswith(EXT_PREFIX) == ext:
             for poly in o.data.polygons:
                 n += max(0, len(poly.vertices) - 2)
     return n
@@ -134,6 +176,7 @@ def mesh_tris():
 
 def export_fbx(path):
     os.makedirs(os.path.dirname(path), exist_ok=True)
+    uv.write_scene(bpy.context.scene)
     bpy.ops.export_scene.fbx(filepath=path, **FBX_OPTS)
     return os.path.getsize(path)
 
@@ -141,13 +184,14 @@ def export_fbx(path):
 # --------------------------------------------------------------------------- #
 #  1 棟ぶん
 # --------------------------------------------------------------------------- #
-def build_one(sp, plan, args, eng):
+def build_one(sp, plan, args, eng, ext_src=None):
     reset_scene()
     mats.build_all()      # 外装パレット（concrete_* / glass_clear など）
     imats.build_all()     # インテリア専用パレット
 
     c = Ctx(sp, seed=args.seed)
     plan.build(c)
+    signs.check(c)        # 文字の無い看板の Empty があれば止める（DESIGN.md §3.4 の看板）
     c.flush_seats()       # 座れる家具 -> seat_ Empty（Unity の SeatFactory が読む）
 
     objects = []
@@ -159,12 +203,25 @@ def build_one(sp, plan, args, eng):
     for name, loc in c.empties:
         add_empty(name, loc)
 
+    ext_objects, ext_stats = [], {}
+    if ext_src is not None:
+        # 屋内で目が届く一番高い点。屋根より上から外を見ることはない
+        top = max((v.co.z for o in objects for v in o.data.vertices), default=0.0)
+        builders, ext_stats = exterior.build(sp, ext_src, top, c.door_gap)
+        ext_objects = [mb.to_object() for mb in builders]
+
     info = {
         "tris": mesh_tris(),
+        "ext_tris": mesh_tris(ext=True),
+        "ext_stats": ext_stats,
         "objects": [o.name for o in objects],
+        "ext_objects": [o.name for o in ext_objects],
         "empties": [n for n, _ in c.empties],
+        "empty_pos": [[n, p[0], p[1], p[2]] for n, p in c.empties],
         "seats": c.seats,
         "notes": c.notes,
+        "signs": len(c.signs),
+        "text_tris": c.text_tris(),   # 看板の文字の三角形（tris に含まれる）
     }
 
     # --- 配置メタ（Unity 用） ---
@@ -178,15 +235,27 @@ def build_one(sp, plan, args, eng):
         "seats": c.seats,
         "notes": c.notes,
         "objects": info["objects"],
+        # 看板ごとの文言・Empty・位置（signs.wall / signs.hanging の記録）と文字の三角形の数
+        "signs": c.signs,
+        "text_triangles": info["text_tris"],
     }
-    sidecar = os.path.join(args.out_dir, "%s.json" % sp.id)
-    ispec.dump_sidecar(sp, meta_extra, sidecar)
+    if c.closure_zones:
+        # 外周とは別に閉じを測る区画（closure.measure）
+        meta_extra["closure_zones"] = c.closure_zones
+    if ext_objects:
+        meta_extra["ext"] = {
+            "objects": info["ext_objects"],
+            "triangles": info["ext_tris"],
+            "radius": exterior.RADIUS,
+            "dz": exterior.DZ,
+        }
 
-    # --- FBX ---
+    # --- FBX（配置メタは FBX と組なので、FBX を書くときだけ書く） ---
     if args.no_export:
         info["fbx"] = None
         info["size"] = 0
     else:
+        ispec.dump_sidecar(sp, meta_extra, os.path.join(args.out_dir, "%s.json" % sp.id))
         path = os.path.join(args.out_dir, "%s.fbx" % sp.id)
         info["size"] = export_fbx(path)
         info["fbx"] = path
@@ -199,7 +268,8 @@ def build_one(sp, plan, args, eng):
         if sun is not None:
             sun.data.energy = 1.4
         for i, (x, y, z, energy, radius) in enumerate(c.lights):
-            add_point_light("KCD_IL_%03d" % i, (x, y, z), energy, radius)
+            add_point_light("KCD_IL_%03d" % i, (x, y, z), energy, radius,
+                            **({"color": c.light_color} if c.light_color else {}))
         for idx, (suffix, loc, target, lens) in enumerate(c.cams):
             if suffix.startswith("="):
                 stem = suffix[1:]
@@ -216,6 +286,21 @@ def build_one(sp, plan, args, eng):
 
 
 POI_RE = re.compile(r"^poi_([a-z0-9]+)_[a-z0-9_]+$")
+
+# --report-json にだけ書く項目（_summary.json には入れない）
+REPORT_ONLY = ("empty_pos",)
+
+
+def write_report(path, report):
+    """棟ごとの三角数と Empty の名前・ローカル座標（丸めない）を JSON に書く。"""
+    rows = {i["id"]: {"tris": i["tris"], "ext_tris": i["ext_tris"],
+                      "empties": i["empty_pos"]}
+            for i in report}
+    folder = os.path.dirname(os.path.abspath(path))
+    os.makedirs(folder, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as fp:
+        json.dump({"buildings": rows}, fp, ensure_ascii=False, indent=1)
+    return path
 
 
 def summary_rows(report, summary_path, rendered, preview_dir):
@@ -237,7 +322,7 @@ def summary_rows(report, summary_path, rendered, preview_dir):
                    for b in json.load(fp).get("buildings", [])}
     rows = []
     for info in report:
-        row = dict(info)
+        row = {k: v for k, v in info.items() if k not in REPORT_ONLY}
         row["fbx"] = rel(info["fbx"]) if info.get("fbx") else None
         if rendered:
             row["previews"] = [rel(p) for p in info["previews"]]
@@ -318,15 +403,83 @@ def verify_fbx(path, expect_empties, meta=None, max_gap=0.25):
         if name in got or any(g.startswith(name) for g in got):
             continue
         missing.append(name)
-    objs = [o for o in bpy.context.scene.objects if o.type == "MESH"]
+    meshes = [o for o in bpy.context.scene.objects if o.type == "MESH"]
+    # 近景は外周の外にしか無いが、壁の判定や階の高さに混ぜない
+    objs = [o for o in meshes if not o.name.startswith(EXT_PREFIX)]
     holes = []
     if meta:
         holes = [g for g in closure.measure(objs, meta) if g["width"] > max_gap]
     return {"empties_found": len(got), "missing": missing,
-            "meshes": len(objs), "holes": holes}
+            "meshes": len(objs), "ext_meshes": len(meshes) - len(objs),
+            "ext_names": sorted(re.sub(r"\.\d{3}$", "", o.name)
+                                for o in meshes if o.name.startswith(EXT_PREFIX)),
+            "holes": holes}
 
 
 # --------------------------------------------------------------------------- #
+def door_mismatch(specs, data):
+    """屋内の入口が、キャンパスの扉（kcd_lib.entrances）と同じ面の同じ位置にあるか。
+
+    屋内の内向き（ローカル +Y）と扉の外向き法線の内積が DOOR_DOT_MAX 未満で、屋内の面に
+    沿った向き（ローカル X）の差が DOOR_LATERAL_TOL 以内、かつ原点が扉より外にあれば合格。
+    面に直交する向きの差は、屋内の外周が footprint の外接矩形なので棟ごとに違い、
+    正であることだけを見る。扉が無い棟は不合格にする（入口の面を推測で置いているため）。
+    扉が同じ棟に複数あれば、spec._door_row と同じく最初の 1 つと照合する。
+    戻り値は [(bid, 内積, 面に沿った差, 奥行きの差, 合否)]。扉が無い棟は数値が None。
+    """
+    doors = {}
+    for dr in entrances.plan(data, ispec.campus_frame(data), {}):
+        doors.setdefault(dr["id"], dr)
+    rows = []
+    for bid, sp in sorted(specs.items()):
+        dr = doors.get(bid)
+        if dr is None:
+            rows.append((bid, None, None, None, False))
+            continue
+        ox, oy = sp.to_world_xy((0.0, 0.0))
+
+        def axis(u, v):
+            wx, wy = sp.to_world_xy((u, v))
+            return wx - ox, wy - oy
+
+        xx, xy = axis(1.0, 0.0)
+        yx, yy = axis(0.0, 1.0)
+        n = dr["n"]
+        dot = yx * n[0] + yy * n[1]
+        dx, dy = dr["origin"][0] - ox, dr["origin"][1] - oy
+        lateral = dx * xx + dy * xy
+        depth = dx * yx + dy * yy
+        good = (dot < DOOR_DOT_MAX and abs(lateral) <= DOOR_LATERAL_TOL
+                and depth > 0.0)
+        rows.append((bid, dot, lateral, depth, good))
+    return rows
+
+
+def over_budget(report, total, total_ext):
+    """三角数が上限を超えたものの説明のリスト。
+
+    屋内は棟ごとの上限（INT_BUDGET_ONE）と合計（INT_BUDGET）の両方で見る。
+    INT_BUDGET_ONE に無い棟は上限が決まっていないので、それも NG にする。
+    近景は棟ごと（EXT_BUDGET_BY_ID、無ければ EXT_BUDGET_ONE）と合計（EXT_BUDGET）で見る。
+    """
+    msgs = []
+    for i in report:
+        cap = INT_BUDGET_ONE.get(i["id"])
+        if cap is None:
+            msgs.append("%s の屋内の上限が INT_BUDGET_ONE に無い" % i["id"])
+        elif i["tris"] > cap:
+            msgs.append("%s の屋内 %d > %d" % (i["id"], i["tris"], cap))
+    for i in report:
+        cap = EXT_BUDGET_BY_ID.get(i["id"], EXT_BUDGET_ONE)
+        if i["ext_tris"] > cap:
+            msgs.append("%s の近景 %d > %d" % (i["id"], i["ext_tris"], cap))
+    if total > INT_BUDGET:
+        msgs.append("屋内の合計 %d > %d" % (total, INT_BUDGET))
+    if total_ext > EXT_BUDGET:
+        msgs.append("近景の合計 %d > %d" % (total_ext, EXT_BUDGET))
+    return msgs
+
+
 def main():
     t_all = time.time()
     args = parse_args(sys.argv)
@@ -344,6 +497,14 @@ def main():
     eng = engine_name(args.engine)
     print("[interiors] engine=%s buildings=%d" % (eng, len(order)))
 
+    ext_src = None
+    if not args.no_ext:
+        t0 = time.time()
+        ext_src = exterior.load(args.campus_dir, data)
+        print("[interiors] 近景の元: 面 %d / 木 %d 本 (%.1f s, %s)"
+              % (len(ext_src.polys), len(ext_src.trees), time.time() - t0,
+                 args.campus_dir))
+
     report = []
     for bid in order:
         plan = registry.get(bid)
@@ -352,15 +513,29 @@ def main():
             continue
         t0 = time.time()
         sp = specs[bid]
-        info = build_one(sp, plan, args, eng)
+        info = build_one(sp, plan, args, eng, ext_src)
         info["id"] = bid
         info["label"] = registry.LABELS.get(bid, bid)
         info["sec"] = time.time() - t0
-        print("[interiors] %-11s %6.1f x %5.1f m  tris=%7d  empties=%3d  "
-              "%5.1f s  %s"
-              % (bid, sp.width, sp.depth, info["tris"], len(info["empties"]),
+        print("[interiors] %-11s %6.1f x %5.1f m  tris=%7d/%5d  text=%5d (%2d 枚)  ext=%6d  "
+              "empties=%3d  %5.1f s  %s"
+              % (bid, sp.width, sp.depth, info["tris"], INT_BUDGET_ONE.get(bid, 0),
+                 info["text_tris"], info["signs"], info["ext_tris"], len(info["empties"]),
                  info["sec"],
                  "%.2f MB" % (info["size"] / 1048576.0) if info["size"] else "-"))
+        es = info["ext_stats"]
+        if es:
+            print("             近景: %s" % ", ".join(
+                "%s=%d" % kv for kv in sorted(es["tris"].items(), key=lambda kv: -kv[1])))
+            print("                   裏向きで除外 %d（うち木 %d）/ 株 %d（遠くの形 %d）/ 木 %d 本"
+                  "（樹冠が外周にかかり除外 %d 本）"
+                  % (sum(es["culled_tris"].values()), es["culled_tris"]["trees"],
+                     sum(es["plants"].values()), es["plants"]["far"],
+                     es["trees"]["placed"], es["trees"]["skipped"]))
+            print("                   自分の棟: 外装 %d 面・扉 %d 面を除外 / 入口の前: 設備 %d 個"
+                  "（%d 面）・木 %d 本を除外"
+                  % (es["own"]["bld"], es["own"]["door"], es["entrance"]["props"],
+                     es["entrance"]["prop_faces"], es["entrance"]["trees"]))
         for n in info["notes"]:
             print("             - %s" % n)
         report.append(info)
@@ -379,12 +554,14 @@ def main():
         res = verify_fbx(info["fbx"], info["empties"], meta)
         lacking = missing_contract(info["id"], info["empties"], required)
         holes = res["holes"]
-        bad = bool(res["missing"] or lacking or holes)
+        ext_lost = res["ext_names"] != sorted(info["ext_objects"])
+        bad = bool(res["missing"] or lacking or holes or ext_lost)
         mark = "OK " if not bad else "NG "
         if bad:
             ok = False
-        print("[verify] %s%-11s meshes=%3d empties=%3d/%3d 必須POI=%d 外周=%s %s%s"
-              % (mark, info["id"], res["meshes"], res["empties_found"],
+        print("[verify] %s%-11s meshes=%3d+%d empties=%3d/%3d 必須POI=%d 外周=%s %s%s%s"
+              % (mark, info["id"], res["meshes"], res["ext_meshes"],
+                 res["empties_found"],
                  len(info["empties"]), len(required.get(info["id"], ())),
                  "閉" if not holes else
                  "穴%d 計%.1fm 最大%.2fm(%s z=%.1f)"
@@ -394,12 +571,39 @@ def main():
                     max(holes, key=lambda g: g["width"])["z"]),
                  "" if not res["missing"] else "欠落: %s " % res["missing"][:5],
                  "" if not lacking else
-                 "契約違反(データが参照するのに無い): %s" % lacking))
+                 "契約違反(データが参照するのに無い): %s" % lacking,
+                 "" if not ext_lost else
+                 " 近景のメッシュが違う %s != %s" % (res["ext_names"],
+                                                    sorted(info["ext_objects"]))))
+
+    for bid, dot, lateral, depth, good in door_mismatch(specs, data):
+        if not good:
+            ok = False
+        if dot is None:
+            print("[verify] NG %-11s 入口とキャンパスの扉: kcd_lib.entrances.DOORS に扉が無い"
+                  % bid)
+            continue
+        print("[verify] %s%-11s 入口とキャンパスの扉: 向きの内積 %.3f 面に沿った差 %.3f m"
+              " 奥行きの差 %.2f m" % ("OK " if good else "NG ", bid, dot, lateral, depth))
 
     total = sum(i["tris"] for i in report)
-    print("\n[interiors] 合計 %d 三角形 / %d 棟 / %.1f s  (%s)"
-          % (total, len(report), time.time() - t_all,
-             "OK" if ok else "Empty 欠落 / POI 契約違反 / 外周の穴あり"))
+    total_ext = sum(i["ext_tris"] for i in report)
+    total_text = sum(i["text_tris"] for i in report)
+    over = over_budget(report, total, total_ext)
+    for msg in over:
+        print("[budget] NG %s" % msg)
+    if over:
+        ok = False
+    print("\n[interiors] 合計 %d / %d 三角形（うち看板の文字 %d）+ 近景 %d / %d / %d 棟 / %.1f s  (%s)"
+          % (total, INT_BUDGET, total_text, total_ext, EXT_BUDGET, len(report),
+             time.time() - t_all,
+             "OK" if ok else
+             "Empty 欠落 / POI 契約違反 / 外周の穴 / 近景のメッシュ違い / 入口と扉の食い違い"
+             " / 予算超過あり"))
+
+    if args.report_json:
+        print("[interiors] 棟ごとの三角数と Empty: %s"
+              % write_report(args.report_json, report))
 
     # 集計を JSON で残す（README 生成の材料）。
     # 一部の棟だけを流したときに上書きすると全棟ぶんの集計が失われるので、
@@ -409,7 +613,8 @@ def main():
         os.makedirs(args.out_dir, exist_ok=True)
         rows = summary_rows(report, summary, args.preview, args.preview_dir)
         with open(summary, "w", encoding="utf-8") as fp:
-            json.dump({"total_tris": total, "buildings": rows}, fp,
+            json.dump({"total_tris": total, "total_ext_tris": total_ext,
+                       "total_text_tris": total_text, "buildings": rows}, fp,
                       ensure_ascii=False, indent=1)
         print("[interiors] 集計: %s" % summary)
     else:
@@ -418,7 +623,8 @@ def main():
 
     if not ok:
         # Empty が欠けた FBX は Unity 側の配置が壊れる。外周に穴があると
-        # プレイヤーが建物の外の何も無い空間へ出られる。どちらも失敗として終了する。
+        # プレイヤーが建物の外の何も無い空間へ出られる。予算超過は棟を増やす前に
+        # RADIUS / PLANT_NEAR などを見直す合図。どれも失敗として終了する。
         sys.exit(1)
 
 

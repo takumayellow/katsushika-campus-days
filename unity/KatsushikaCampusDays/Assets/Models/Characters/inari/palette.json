@@ -34,7 +34,7 @@
     },
     {
       "name": "hair",
-      "hex": "2A2432"
+      "hex": "49454F"
     },
     {
       "name": "lash",
@@ -52,5 +52,6 @@
       "name": "skin",
       "hex": "F3C7B0"
     }
-  ]
+  ],
+  "outward_faces": true
 }

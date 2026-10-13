@@ -2,16 +2,16 @@
  "id": "lab2",
  "display": "第2実験棟",
  "entrance_world": {
-  "x": 80.6586,
-  "z": 34.3313
+  "x": 98.0275,
+  "z": 36.5755
  },
- "yaw_deg": 24.5514,
+ "yaw_deg": -65.4486,
  "campus_frame_deg": -24.5514,
  "envelope": {
-  "x0": -11.866,
-  "x1": 11.866,
+  "x0": -6.258,
+  "x1": 9.564,
   "y_face": 3.0,
-  "y_back": 18.822
+  "y_back": 26.732
  },
  "wall_thickness": 0.3,
  "spawn": {
@@ -31,57 +31,329 @@
    "z": 3.55
   },
   "sign_lab2_1": {
-   "x": -4.833,
+   "x": 2.85,
    "y": 2.05,
-   "z": 7.0
+   "z": 7.5
   },
   "sign_lab2_2": {
-   "x": 6.733,
+   "x": -2.85,
    "y": 2.05,
-   "z": 7.0
+   "z": 7.5
   },
-  "poi_lab2_lab": {
-   "x": -5.783,
-   "y": 0.0,
-   "z": 12.2
+  "sign_lab2_3": {
+   "x": -5.898,
+   "y": 2.0,
+   "z": 4.1
   },
   "npc_lab2_1": {
-   "x": -8.383,
+   "x": 3.8,
    "y": 0.0,
-   "z": 12.2
+   "z": 5.6
   },
-  "npc_lab2_2": {
-   "x": -3.183,
+  "sign_lab2_4": {
+   "x": -1.0,
+   "y": 3.0,
+   "z": 25.192
+  },
+  "sign_lab2_5": {
+   "x": 0.0,
+   "y": 4.56,
+   "z": 12.0
+  },
+  "poi_lab2_lab": {
+   "x": 1.2,
    "y": 0.0,
-   "z": 12.2
+   "z": 19.5
   },
   "poi_lab2_lab_b": {
-   "x": -5.783,
+   "x": 2.0,
    "y": 0.0,
-   "z": 16.3
+   "z": 23.6
+  },
+  "npc_lab2_2": {
+   "x": -3.6,
+   "y": 0.0,
+   "z": 23.0
   },
   "npc_lab2_3": {
-   "x": -7.183,
+   "x": 7.2,
    "y": 0.0,
-   "z": 16.3
+   "z": 18.6
+  },
+  "npc_lab2_4": {
+   "x": -5.0,
+   "y": 0.0,
+   "z": 9.4
+  },
+  "sign_lab2_6": {
+   "x": 7.35,
+   "y": 2.05,
+   "z": 19.9
   },
   "poi_lab2_prep": {
-   "x": 5.783,
+   "x": 6.9,
    "y": 0.0,
-   "z": 8.45
+   "z": 22.4
+  },
+  "npc_lab2_5": {
+   "x": 7.8,
+   "y": 0.0,
+   "z": 21.0
+  },
+  "seat_lab2_01": {
+   "x": 8.814,
+   "y": 0.0,
+   "z": 5.3
+  },
+  "seat_lab2_01_f": {
+   "x": 8.594,
+   "y": 0.0,
+   "z": 5.3
+  },
+  "seat_lab2_01_s": {
+   "x": 8.814,
+   "y": 0.0,
+   "z": 6.2
+  },
+  "seat_lab2_01_a0": {
+   "x": 8.794,
+   "y": 0.0,
+   "z": 4.7
+  },
+  "seat_lab2_01_a1": {
+   "x": 8.794,
+   "y": 0.0,
+   "z": 5.3
+  },
+  "seat_lab2_01_a2": {
+   "x": 8.794,
+   "y": 0.0,
+   "z": 5.9
+  },
+  "seat_lab2_02": {
+   "x": -5.508,
+   "y": 0.0,
+   "z": 5.6
+  },
+  "seat_lab2_02_f": {
+   "x": -5.288,
+   "y": 0.0,
+   "z": 5.6
+  },
+  "seat_lab2_02_s": {
+   "x": -5.508,
+   "y": 0.0,
+   "z": 4.7
+  },
+  "seat_lab2_02_a0": {
+   "x": -5.488,
+   "y": 0.0,
+   "z": 6.2
+  },
+  "seat_lab2_02_a1": {
+   "x": -5.488,
+   "y": 0.0,
+   "z": 5.6
+  },
+  "seat_lab2_02_a2": {
+   "x": -5.488,
+   "y": 0.0,
+   "z": 5.0
+  },
+  "seat_lab2_03": {
+   "x": 8.814,
+   "y": 0.0,
+   "z": 17.0
+  },
+  "seat_lab2_03_f": {
+   "x": 8.594,
+   "y": 0.0,
+   "z": 17.0
+  },
+  "seat_lab2_03_s": {
+   "x": 8.814,
+   "y": 0.0,
+   "z": 17.9
+  },
+  "seat_lab2_03_a0": {
+   "x": 8.794,
+   "y": 0.0,
+   "z": 16.4
+  },
+  "seat_lab2_03_a1": {
+   "x": 8.794,
+   "y": 0.0,
+   "z": 17.0
+  },
+  "seat_lab2_03_a2": {
+   "x": 8.794,
+   "y": 0.0,
+   "z": 17.6
   }
  },
- "triangles": 14300,
- "seats": 20,
+ "triangles": 10411,
+ "seats": 0,
  "notes": [
-  "廊下 + 実験室 2 室（実験台・ドラフト・ボンベ・薬品庫）"
+  "玄関ホール + 吹き抜けの実験ホール（天井クレーン・反力壁・反力フレーム・振動台） + 計測制御室 + 準備室"
  ],
  "objects": [
   "floor_lab2",
   "wall_lab2",
   "furn_lab2_01_entry",
-  "furn_lab2_02_corridor",
-  "furn_lab2_03_lab01",
-  "furn_lab2_04_prep02"
- ]
+  "furn_lab2_02_foyer",
+  "furn_lab2_03_hall",
+  "furn_lab2_04_control",
+  "furn_lab2_05_prep"
+ ],
+ "signs": [
+  {
+   "empty": "sign_lab2_1",
+   "kind": "wall",
+   "ja": "大型実験ホール",
+   "en": "Experiment Hall",
+   "tris": 449,
+   "pos": {
+    "x": 2.85,
+    "y": 2.05,
+    "z": 7.5
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 1.1,
+   "h": 0.34,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_lab2_2",
+   "kind": "wall",
+   "ja": "計測制御室",
+   "en": "Control Room",
+   "tris": 400,
+   "pos": {
+    "x": -2.85,
+    "y": 2.05,
+    "z": 7.5
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.9,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_lab2_3",
+   "kind": "wall",
+   "ja": "ヘルメット着用",
+   "en": "Hard Hats Required",
+   "tris": 434,
+   "pos": {
+    "x": -5.898,
+    "y": 2.0,
+    "z": 4.1
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.2,
+   "h": 0.38,
+   "faces": 1,
+   "plate": "lab2_crane_yellow",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": "sign_lab2_4",
+   "kind": "wall",
+   "ja": "反力壁  載荷試験",
+   "en": "Reaction Wall  Loading Test",
+   "tris": 860,
+   "pos": {
+    "x": -1.0,
+    "y": 3.0,
+    "z": 25.192
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 2.6,
+   "h": 0.46,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_lab2_5",
+   "kind": "hanging",
+   "ja": "載荷試験エリア  立入注意",
+   "en": "Loading Test Area",
+   "tris": 1534,
+   "pos": {
+    "x": 0.0,
+    "y": 4.56,
+    "z": 12.0
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 2.8,
+   "h": 0.48,
+   "faces": 2,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center",
+   "drop": 2.2
+  },
+  {
+   "empty": "sign_lab2_6",
+   "kind": "wall",
+   "ja": "準備室",
+   "en": "Prep Room",
+   "tris": 326,
+   "pos": {
+    "x": 7.35,
+    "y": 2.05,
+    "z": 19.9
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.7,
+   "h": 0.28,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  }
+ ],
+ "text_triangles": 4003,
+ "ext": {
+  "objects": [
+   "ext_lab2",
+   "ext_lab2_trees"
+  ],
+  "triangles": 7702,
+  "radius": 30.0,
+  "dz": -0.03
+ }
 }

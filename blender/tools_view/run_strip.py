@@ -14,8 +14,9 @@ docs/previews の他の PNG と同じ画づくりになる。
 --action Jump のように渡すと Run 以外の Action も描ける（#49 のスカート・袴の確認用）。
 出力名の run はその Action 名の小文字になる（例: <id>_jump_side.png）。
 
---arm / --elbow を渡すと Run の腕の振り幅だけ差し替えて描ける（修正前後の比較用）。
-  --arm 52 --elbow 66,34   # #43 を直す前の値
+--arm / --elbow / --arm-in / --abd / --thx / --fwd を渡すと Run の腕と胸の回旋だけ
+差し替えて描ける（修正前後の比較用。脚は今の値のまま）。
+  --arm 33 --elbow 72,16 --arm-in 0 --abd 4 --thx 0.95 --fwd 0   # #232 を直す前の腕
 """
 
 from __future__ import annotations
@@ -53,21 +54,27 @@ def parse_args(argv):
                     help="Run の肩の片振幅を度で上書きする")
     ap.add_argument("--elbow", default=None,
                     help="Run の肘を 'e0,e1' で上書きする（度）")
+    ap.add_argument("--arm-in", type=float, default=None,
+                    help="Run の前腕の内向きを度で上書きする")
+    ap.add_argument("--abd", type=float, default=None,
+                    help="Run の肩の外転を度で上書きする")
+    ap.add_argument("--thx", type=float, default=None,
+                    help="Run の胸郭の逆回旋の比を上書きする")
+    ap.add_argument("--fwd", type=float, default=None,
+                    help="Run の腕の振りの中心を前へずらす角度を度で上書きする")
     return ap.parse_args(argv)
 
 
-def override_gait(arm_deg, elbow):
-    """Gait の Run だけ腕の値を差し替える（修正前の絵を出すため）。"""
+def override_gait(attrs: dict):
+    """Gait の Run だけ属性を差し替える（修正前の絵を出すため）。"""
     orig = anim.Gait.__init__
 
-    def patched(self, armature, kind="Walk"):
-        orig(self, armature, kind)
+    def patched(self, armature, kind="Walk", **over):
+        orig(self, armature, kind, **over)
         if kind != "Run":
             return
-        if arm_deg is not None:
-            self.arm = math.radians(arm_deg)
-        if elbow is not None:
-            self.elbow = (math.radians(elbow[0]), math.radians(elbow[1]))
+        for k, v in attrs.items():
+            setattr(self, k, v)
 
     anim.Gait.__init__ = patched
 
@@ -99,12 +106,22 @@ def make_strip(paths: list[str], out: str) -> str:
 
 def main():
     args = parse_args(sys.argv)
-    elbow = None
+    attrs = {}
+    if args.arm is not None:
+        attrs["arm"] = math.radians(args.arm)
     if args.elbow:
         a, b = args.elbow.split(",")
-        elbow = (float(a), float(b))
-    if args.arm is not None or elbow is not None:
-        override_gait(args.arm, elbow)
+        attrs["elbow"] = (math.radians(float(a)), math.radians(float(b)))
+    if args.arm_in is not None:
+        attrs["arm_in"] = math.radians(args.arm_in)
+    if args.abd is not None:
+        attrs["arm_abd"] = math.radians(args.abd)
+    if args.thx is not None:
+        attrs["thx"] = args.thx
+    if args.fwd is not None:
+        attrs["arm_fwd"] = math.radians(args.fwd)
+    if attrs:
+        override_gait(attrs)
 
     # Blender は相対パスを blend ファイル基準に直すので、ここで絶対パスにする
     out_dir = os.path.abspath(args.out_dir)

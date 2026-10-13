@@ -16,6 +16,7 @@ namespace KCD
         private static VisitZone[] _zones = new VisitZone[0];
         private static CollectableItem[] _items = new CollectableItem[0];
         private static PropInteractable[] _props = new PropInteractable[0];
+        private static InteriorExit[] _exits = new InteriorExit[0];
 
         /// <summary>ステップの目的地を返す。見つからなければ false。</summary>
         public static bool TryLocate(QuestStep step, Vector3 from, out Vector3 position)
@@ -40,13 +41,13 @@ namespace KCD
             switch (kind)
             {
                 case QuestStepKind.Talk:
-                    return Nearest(_npcs, from, n => n.NpcId == target, out position);
+                    return LocateHereOrEntrance(_npcs, from, n => n.NpcId == target, out position);
                 case QuestStepKind.Enter:
                     return Nearest(_entrances, from, e => e.BuildingId == target, out position);
                 case QuestStepKind.Visit:
                     return LocateVisit(target, from, out position);
                 case QuestStepKind.Collect:
-                    return Nearest(_items, from, i => i.ItemId == target && i.CanInteract, out position);
+                    return LocateCollect(target, from, out position);
                 case QuestStepKind.Flag:
                     return Nearest(_props, from, p => p.FlagId == target, out position);
                 default:
@@ -63,6 +64,19 @@ namespace KCD
             return !string.IsNullOrEmpty(name) && name.StartsWith(InteriorPrefix)
                 ? name.Substring(InteriorPrefix.Length)
                 : null;
+        }
+
+        /// <summary>その建物の屋内の出口のうち、いちばん近いもの。屋内から外の目的地を指すときに使う。</summary>
+        public static bool TryLocateExit(string buildingId, Vector3 from, out Vector3 position)
+        {
+            position = Vector3.zero;
+            if (string.IsNullOrEmpty(buildingId))
+            {
+                return false;
+            }
+
+            Refresh();
+            return Nearest(_exits, from, e => e.BuildingId == buildingId, out position);
         }
 
         /// <summary>
@@ -85,6 +99,61 @@ namespace KCD
             return Nearest(_zones, from, z => z.PlaceId == target, out position);
         }
 
+        /// <summary>
+        /// collect ステップの行き先。いまいる所（屋内ならその建物、外ならキャンパス）の物を先に指す。
+        /// そこに無ければ、屋内の物はその建物の入口を、外の物はその物を指す。
+        /// 第1実験棟のゴーグル（q_sq_lab_notebook）のように屋内に置いた物を、外から指せるようにする (#65)。
+        /// </summary>
+        private static bool LocateCollect(string target, Vector3 from, out Vector3 position)
+        {
+            return LocateHereOrEntrance(_items, from, i => i.ItemId == target && i.CanInteract, out position);
+        }
+
+        /// <summary>
+        /// いまいる所（屋内ならその建物、外ならキャンパス）にある候補を先に指す。そこに無ければ、
+        /// 屋内の候補はその建物の入口を、外の候補はその物を指す。talk と collect が使う。
+        /// 図書館の 2 階にあるドームの扉（#175）のように、屋内に置いた話し相手も外から指せる。
+        /// </summary>
+        private static bool LocateHereOrEntrance<T>(
+            T[] candidates, Vector3 from, System.Func<T, bool> match, out Vector3 position) where T : Component
+        {
+            string current = InteriorLoader.Instance != null ? InteriorLoader.Instance.CurrentId : null;
+            string here = string.IsNullOrEmpty(current) ? null : current;
+            if (Nearest(candidates, from, c => match(c) && InteriorOwnerOf(c.transform) == here, out position))
+            {
+                return true;
+            }
+
+            position = Vector3.zero;
+            float best = float.MaxValue;
+            bool found = false;
+            for (int i = 0; i < candidates.Length; i++)
+            {
+                T candidate = candidates[i];
+                if (candidate == null || !match(candidate))
+                {
+                    continue;
+                }
+
+                string owner = InteriorOwnerOf(candidate.transform);
+                Vector3 goal = candidate.transform.position;
+                if (owner != null && !Nearest(_entrances, from, e => e.BuildingId == owner, out goal))
+                {
+                    continue;
+                }
+
+                float distance = (goal - from).sqrMagnitude;
+                if (distance < best)
+                {
+                    best = distance;
+                    position = goal;
+                    found = true;
+                }
+            }
+
+            return found;
+        }
+
         /// <summary>その地点がどの屋内に属しているか。屋外のゾーンなら null。</summary>
         private static string InteriorOwnerOf(string placeId)
         {
@@ -95,16 +164,22 @@ namespace KCD
                     continue;
                 }
 
-                for (Transform t = _zones[i].transform; t != null; t = t.parent)
-                {
-                    string id = InteriorIdFromName(t.name);
-                    if (id != null)
-                    {
-                        return id;
-                    }
-                }
+                return InteriorOwnerOf(_zones[i].transform);
+            }
 
-                return null;
+            return null;
+        }
+
+        /// <summary>その物がどの屋内に入っているか（親をたどって Interior_ を探す）。外なら null。</summary>
+        public static string InteriorOwnerOf(Transform transform)
+        {
+            for (Transform t = transform; t != null; t = t.parent)
+            {
+                string id = InteriorIdFromName(t.name);
+                if (id != null)
+                {
+                    return id;
+                }
             }
 
             return null;
@@ -124,11 +199,12 @@ namespace KCD
             }
 
             _refreshedAt = Time.unscaledTime;
-            _npcs = Object.FindObjectsByType<NPCTalker>(FindObjectsSortMode.None);
-            _entrances = Object.FindObjectsByType<EntranceTrigger>(FindObjectsSortMode.None);
-            _zones = Object.FindObjectsByType<VisitZone>(FindObjectsSortMode.None);
-            _items = Object.FindObjectsByType<CollectableItem>(FindObjectsSortMode.None);
-            _props = Object.FindObjectsByType<PropInteractable>(FindObjectsSortMode.None);
+            _npcs = Object.FindObjectsByType<NPCTalker>(FindObjectsInactive.Exclude);
+            _entrances = Object.FindObjectsByType<EntranceTrigger>(FindObjectsInactive.Exclude);
+            _zones = Object.FindObjectsByType<VisitZone>(FindObjectsInactive.Exclude);
+            _items = Object.FindObjectsByType<CollectableItem>(FindObjectsInactive.Exclude);
+            _props = Object.FindObjectsByType<PropInteractable>(FindObjectsInactive.Exclude);
+            _exits = Object.FindObjectsByType<InteriorExit>(FindObjectsInactive.Exclude);
         }
 
         private static bool Nearest<T>(

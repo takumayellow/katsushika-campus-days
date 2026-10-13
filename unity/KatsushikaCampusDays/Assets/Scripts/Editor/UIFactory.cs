@@ -11,6 +11,13 @@ namespace KCD.Editor
     /// </summary>
     public static partial class UIFactory
     {
+        /// <summary>「E 話す」の表示の下端と高さ。</summary>
+        private const float PromptBottom = 190f;
+        private const float PromptHeight = 64f;
+
+        /// <summary>指のときの知らせの下端。「話す」のボタンに隠れないよう、案内のすぐ上に出す。</summary>
+        private const float ToastTouchBottom = PromptBottom + PromptHeight + 8f;
+
         /// <summary>Campus シーンの表示一式。HUD を返す。</summary>
         public static HUD BuildCampusUI(Transform root, GameObject player)
         {
@@ -31,6 +38,7 @@ namespace KCD.Editor
 
             hud.QuestLogView = BuildQuestLog(canvas.gameObject, canvasRect);
             hud.PauseMenu = BuildPauseMenu(canvas.gameObject, canvasRect);
+            BuildElevatorMenu(canvas.gameObject, canvasRect);
             BuildDialogue(canvas.gameObject, canvasRect);
             hud.PauseMenu.Settings = BuildSettings(canvas.gameObject, canvasRect);
             BuildPhotoOverlay(canvas.gameObject, canvasRect);
@@ -43,6 +51,7 @@ namespace KCD.Editor
                 evaluator.Screen = result;
             }
 
+            BuildTouchControls(root);
             return hud;
         }
 
@@ -50,7 +59,7 @@ namespace KCD.Editor
         private static InteractionPromptView BuildPrompt(GameObject host, RectTransform parent)
         {
             RectTransform rect = Rect(parent, "Prompt", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
-                new Vector2(0f, 190f), new Vector2(460f, 64f));
+                new Vector2(0f, PromptBottom), new Vector2(460f, PromptHeight));
             Backdrop(rect, Panel);
 
             CanvasGroup group = rect.gameObject.AddComponent<CanvasGroup>();
@@ -68,6 +77,8 @@ namespace KCD.Editor
             RectTransform rect = Rect(parent, "Toast", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
                 new Vector2(0f, 96f), new Vector2(1080f, 60f));
             Backdrop(rect, Panel);
+            KeepInCanvas(rect);
+            rect.gameObject.AddComponent<TouchPosition>().Bind(new Vector2(0f, ToastTouchBottom));
 
             CanvasGroup group = rect.gameObject.AddComponent<CanvasGroup>();
             group.alpha = 0f;
@@ -86,6 +97,7 @@ namespace KCD.Editor
             RectTransform rect = Rect(parent, "QuestTracker", new Vector2(0f, 1f), new Vector2(0f, 1f),
                 new Vector2(40f, -40f), new Vector2(520f, 150f));
             Backdrop(rect, Panel);
+            rect.gameObject.AddComponent<KeepLeftOfCenter>();
 
             RectTransform titleRect = Rect(rect, "TitleRow", new Vector2(0f, 1f), new Vector2(0f, 1f),
                 new Vector2(0f, 0f), new Vector2(520f, 54f));
@@ -111,6 +123,7 @@ namespace KCD.Editor
             RectTransform rect = Rect(parent, "Clock", new Vector2(1f, 1f), new Vector2(1f, 1f),
                 new Vector2(-40f, ClockTop), new Vector2(300f, 108f));
             Backdrop(rect, Panel);
+            rect.gameObject.AddComponent<KeepPointerSize>();
 
             RectTransform timeRect = Rect(rect, "TimeRow", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
                 new Vector2(0f, -4f), new Vector2(300f, 62f));
@@ -130,12 +143,14 @@ namespace KCD.Editor
             RectTransform rect = Rect(parent, "QuestLog", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
                 Vector2.zero, new Vector2(1000f, 700f));
             Backdrop(rect, new Color(0.05f, 0.07f, 0.11f, 0.92f));
+            KeepInCanvas(rect);
 
             TMP_Text body = Label(rect, "Body", string.Empty, 28f, TextAlignmentOptions.TopLeft);
             rect.gameObject.SetActive(false);
 
             QuestLogView view = host.AddComponent<QuestLogView>();
             view.Bind(rect.gameObject, body);
+            view.BindTap(AddScreenTapArea(rect));
             return view;
         }
 
@@ -145,13 +160,31 @@ namespace KCD.Editor
             RectTransform rect = Rect(parent, "Pause", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
                 Vector2.zero, new Vector2(820f, 560f));
             Backdrop(rect, new Color(0.04f, 0.05f, 0.09f, 0.94f));
+            KeepInCanvas(rect);
 
             TMP_Text body = Label(rect, "Body", string.Empty, 30f, TextAlignmentOptions.Center);
             rect.gameObject.SetActive(false);
 
             PauseMenu view = host.AddComponent<PauseMenu>();
             view.Bind(rect.gameObject, body);
+            view.BindTap(AddLinkTapArea(rect, body));
             return view;
+        }
+
+        /// <summary>エレベーターの行き先を選ぶ画面 (#275)。</summary>
+        private static void BuildElevatorMenu(GameObject host, RectTransform parent)
+        {
+            RectTransform rect = Rect(parent, "Elevator", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                Vector2.zero, new Vector2(700f, 540f));
+            Backdrop(rect, new Color(0.04f, 0.05f, 0.09f, 0.94f));
+            KeepInCanvas(rect);
+
+            TMP_Text body = Label(rect, "Body", string.Empty, 30f, TextAlignmentOptions.Center);
+            rect.gameObject.SetActive(false);
+
+            ElevatorMenu view = host.AddComponent<ElevatorMenu>();
+            view.Bind(rect.gameObject, body);
+            view.BindTap(AddLinkTapArea(rect, body));
         }
 
         /// <summary>下部の会話ウィンドウ。</summary>
@@ -160,16 +193,20 @@ namespace KCD.Editor
             RectTransform rect = Rect(parent, "Dialogue", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
                 new Vector2(0f, 48f), new Vector2(1520f, 300f));
             Backdrop(rect, new Color(0.05f, 0.07f, 0.12f, 0.9f));
+            KeepInCanvas(rect);
+            AddDialogueTapArea(rect);
 
+            // 話者名の札は枠の内側（上端から 14 px 下）に置き、本文はその下から始める。
+            // 札を枠の上にはみ出させると、背景から浮いて本文の 1 行目にも重なる。
             RectTransform speakerRect = Rect(rect, "SpeakerRow", new Vector2(0f, 1f), new Vector2(0f, 1f),
-                new Vector2(24f, 10f), new Vector2(520f, 66f));
+                new Vector2(24f, -14f), new Vector2(520f, 58f));
             Backdrop(speakerRect, new Color(0.12f, 0.2f, 0.28f, 0.95f));
             TMP_Text speaker = Label(speakerRect, "Speaker", string.Empty, 32f, TextAlignmentOptions.Left);
             speaker.color = Accent;
 
             RectTransform bodyRect = Stretch(rect, "BodyArea");
             bodyRect.offsetMin = new Vector2(36f, 36f);
-            bodyRect.offsetMax = new Vector2(-36f, -24f);
+            bodyRect.offsetMax = new Vector2(-36f, -80f);
             TMP_Text body = Label(bodyRect, "Body", string.Empty, 32f, TextAlignmentOptions.TopLeft);
 
             RectTransform markRect = Rect(rect, "ContinueMark", new Vector2(1f, 0f), new Vector2(1f, 0f),

@@ -2,14 +2,14 @@
  "id": "gym",
  "display": "体育館",
  "entrance_world": {
-  "x": 11.835,
-  "z": 30.9772
+  "x": 11.8408,
+  "z": 30.9746
  },
  "yaw_deg": 24.5514,
  "campus_frame_deg": -24.5514,
  "envelope": {
-  "x0": -27.83,
-  "x1": 27.83,
+  "x0": -27.837,
+  "x1": 27.824,
   "y_face": 3.5,
   "y_back": 48.194
  },
@@ -17,176 +17,739 @@
  "spawn": {
   "x": 0.0,
   "y": 0.0,
-  "z": 5.3
+  "z": 7.0
  },
  "empties": {
   "spawn_gym": {
    "x": 0.0,
    "y": 0.0,
-   "z": 5.3
+   "z": 7.0
   },
   "exit_gym": {
    "x": 0.0,
    "y": 0.0,
-   "z": 4.05
-  },
-  "sign_gym_1": {
-   "x": 0.0,
-   "y": 2.45,
-   "z": 4.1
+   "z": 5.3
   },
   "poi_gym_court": {
-   "x": 0.0,
+   "x": -15.7,
    "y": 0.0,
-   "z": 22.4
-  },
-  "npc_gym_1": {
-   "x": -4.0,
-   "y": 0.0,
-   "z": 18.8
-  },
-  "npc_gym_2": {
-   "x": 3.5,
-   "y": 0.0,
-   "z": 28.8
-  },
-  "npc_gym_3": {
-   "x": 0.0,
-   "y": 0.0,
-   "z": 13.8
-  },
-  "poi_gym_stage": {
-   "x": 0.0,
-   "y": 0.9,
-   "z": 43.494
-  },
-  "npc_gym_4": {
-   "x": -2.0,
-   "y": 0.9,
-   "z": 43.294
-  },
-  "poi_gym_bleachers": {
-   "x": -20.78,
-   "y": 1.05,
-   "z": 25.847
-  },
-  "npc_gym_5": {
-   "x": -20.78,
-   "y": 1.05,
-   "z": 17.8
-  },
-  "npc_gym_6": {
-   "x": -21.6,
-   "y": 1.4,
-   "z": 23.8
+   "z": 21.85
   },
   "poi_gym_catwalk": {
-   "x": -26.52,
-   "y": 3.5,
-   "z": 13.8
-  },
-  "sign_gym_2": {
-   "x": 19.77,
-   "y": 2.4,
-   "z": 38.294
+   "x": -9.0,
+   "y": 4.8,
+   "z": 5.7
   },
   "poi_gym_storage": {
-   "x": 25.33,
+   "x": -20.0,
+   "y": 1.1,
+   "z": 44.0
+  },
+  "poi_gym_bleachers": {
+   "x": -1.6,
+   "y": 3.96,
+   "z": 22.0
+  },
+  "poi_gym_stage": {
+   "x": 21.55,
    "y": 0.0,
-   "z": 35.494
+   "z": 30.1
+  },
+  "poi_gym_training": {
+   "x": 5.4,
+   "y": 4.8,
+   "z": 20.0
+  },
+  "npc_gym_1": {
+   "x": -12.0,
+   "y": 0.0,
+   "z": 21.0
+  },
+  "npc_gym_2": {
+   "x": -17.5,
+   "y": 0.0,
+   "z": 23.5
+  },
+  "npc_gym_3": {
+   "x": -15.7,
+   "y": 0.0,
+   "z": 12.0
+  },
+  "npc_gym_4": {
+   "x": -26.8,
+   "y": 0.0,
+   "z": 30.0
+  },
+  "npc_gym_5": {
+   "x": -1.6,
+   "y": 3.96,
+   "z": 17.5
+  },
+  "npc_gym_6": {
+   "x": 7.6,
+   "y": 4.8,
+   "z": 16.0
   },
   "npc_gym_7": {
-   "x": -10.0,
+   "x": -2.8,
    "y": 0.0,
-   "z": 12.2
+   "z": 17.5
+  },
+  "npc_gym_8": {
+   "x": 16.6,
+   "y": 0.0,
+   "z": 12.0
+  },
+  "npc_gym_9": {
+   "x": 21.5,
+   "y": 0.0,
+   "z": 33.0
+  },
+  "sign_gym_1": {
+   "x": -3.68,
+   "y": 2.1,
+   "z": 10.0
+  },
+  "sign_gym_2": {
+   "x": -3.68,
+   "y": 2.1,
+   "z": 42.4
+  },
+  "sign_gym_3": {
+   "x": 2.15,
+   "y": 6.2,
+   "z": 18.1
+  },
+  "sign_gym_4": {
+   "x": 2.6,
+   "y": 1.25,
+   "z": 8.4
+  },
+  "sign_gym_5": {
+   "x": -3.68,
+   "y": 2.1,
+   "z": 17.8
+  },
+  "sign_gym_6": {
+   "x": 15.6,
+   "y": 2.7,
+   "z": 12.0
+  },
+  "sign_gym_7": {
+   "x": 15.6,
+   "y": 1.5,
+   "z": 13.6
+  },
+  "sign_gym_8": {
+   "x": 15.6,
+   "y": 2.4,
+   "z": 6.6
+  },
+  "sign_gym_9": {
+   "x": 15.6,
+   "y": 2.4,
+   "z": 16.5
+  },
+  "sign_gym_10": {
+   "x": 15.6,
+   "y": 2.4,
+   "z": 19.7
+  },
+  "sign_gym_11": {
+   "x": 15.6,
+   "y": 2.0,
+   "z": 28.5
+  },
+  "sign_gym_12": {
+   "x": -19.4,
+   "y": 3.0,
+   "z": 38.83
+  },
+  "sign_gym_13": {
+   "x": -3.68,
+   "y": 2.0,
+   "z": 20.5
   },
   "seat_gym_01": {
-   "x": -6.0,
+   "x": -26.96,
    "y": 0.0,
-   "z": 6.4
+   "z": 12.0
   },
   "seat_gym_01_f": {
-   "x": -6.0,
+   "x": -26.73,
    "y": 0.0,
-   "z": 6.62
+   "z": 12.0
   },
   "seat_gym_01_s": {
-   "x": -4.8,
+   "x": -26.96,
    "y": 0.0,
-   "z": 6.4
+   "z": 11.4
   },
   "seat_gym_01_a0": {
-   "x": -6.9,
+   "x": -26.93,
    "y": 0.0,
-   "z": 6.42
+   "z": 12.3
   },
   "seat_gym_01_a1": {
-   "x": -6.3,
+   "x": -26.93,
    "y": 0.0,
-   "z": 6.42
-  },
-  "seat_gym_01_a2": {
-   "x": -5.7,
-   "y": 0.0,
-   "z": 6.42
-  },
-  "seat_gym_01_a3": {
-   "x": -5.1,
-   "y": 0.0,
-   "z": 6.42
+   "z": 11.7
   },
   "seat_gym_02": {
-   "x": 6.0,
+   "x": -26.96,
    "y": 0.0,
-   "z": 6.4
+   "z": 18.0
   },
   "seat_gym_02_f": {
-   "x": 6.0,
+   "x": -26.73,
    "y": 0.0,
-   "z": 6.62
+   "z": 18.0
   },
   "seat_gym_02_s": {
-   "x": 7.2,
+   "x": -26.96,
    "y": 0.0,
-   "z": 6.4
+   "z": 17.4
   },
   "seat_gym_02_a0": {
-   "x": 5.1,
+   "x": -26.93,
    "y": 0.0,
-   "z": 6.42
+   "z": 18.3
   },
   "seat_gym_02_a1": {
-   "x": 5.7,
+   "x": -26.93,
    "y": 0.0,
-   "z": 6.42
+   "z": 17.7
   },
-  "seat_gym_02_a2": {
-   "x": 6.3,
+  "seat_gym_03": {
+   "x": -26.96,
    "y": 0.0,
-   "z": 6.42
+   "z": 24.0
   },
-  "seat_gym_02_a3": {
-   "x": 6.9,
+  "seat_gym_03_f": {
+   "x": -26.73,
    "y": 0.0,
-   "z": 6.42
+   "z": 24.0
+  },
+  "seat_gym_03_s": {
+   "x": -26.96,
+   "y": 0.0,
+   "z": 23.4
+  },
+  "seat_gym_03_a0": {
+   "x": -26.93,
+   "y": 0.0,
+   "z": 24.3
+  },
+  "seat_gym_03_a1": {
+   "x": -26.93,
+   "y": 0.0,
+   "z": 23.7
+  },
+  "seat_gym_04": {
+   "x": -26.96,
+   "y": 0.0,
+   "z": 30.0
+  },
+  "seat_gym_04_f": {
+   "x": -26.73,
+   "y": 0.0,
+   "z": 30.0
+  },
+  "seat_gym_04_s": {
+   "x": -26.96,
+   "y": 0.0,
+   "z": 29.4
+  },
+  "seat_gym_04_a0": {
+   "x": -26.93,
+   "y": 0.0,
+   "z": 30.3
+  },
+  "seat_gym_04_a1": {
+   "x": -26.93,
+   "y": 0.0,
+   "z": 29.7
+  },
+  "seat_gym_05": {
+   "x": 7.91,
+   "y": 0.0,
+   "z": 15.0
+  },
+  "seat_gym_05_f": {
+   "x": 7.68,
+   "y": 0.0,
+   "z": 15.0
+  },
+  "seat_gym_05_s": {
+   "x": 7.91,
+   "y": 0.0,
+   "z": 15.6
+  },
+  "seat_gym_05_a0": {
+   "x": 7.88,
+   "y": 0.0,
+   "z": 14.7
+  },
+  "seat_gym_05_a1": {
+   "x": 7.88,
+   "y": 0.0,
+   "z": 15.3
+  },
+  "seat_gym_06": {
+   "x": 7.91,
+   "y": 0.0,
+   "z": 20.0
+  },
+  "seat_gym_06_f": {
+   "x": 7.68,
+   "y": 0.0,
+   "z": 20.0
+  },
+  "seat_gym_06_s": {
+   "x": 7.91,
+   "y": 0.0,
+   "z": 20.6
+  },
+  "seat_gym_06_a0": {
+   "x": 7.88,
+   "y": 0.0,
+   "z": 19.7
+  },
+  "seat_gym_06_a1": {
+   "x": 7.88,
+   "y": 0.0,
+   "z": 20.3
+  },
+  "seat_gym_07": {
+   "x": 7.91,
+   "y": 0.0,
+   "z": 26.0
+  },
+  "seat_gym_07_f": {
+   "x": 7.68,
+   "y": 0.0,
+   "z": 26.0
+  },
+  "seat_gym_07_s": {
+   "x": 7.91,
+   "y": 0.0,
+   "z": 26.6
+  },
+  "seat_gym_07_a0": {
+   "x": 7.88,
+   "y": 0.0,
+   "z": 25.7
+  },
+  "seat_gym_07_a1": {
+   "x": 7.88,
+   "y": 0.0,
+   "z": 26.3
+  },
+  "seat_gym_08": {
+   "x": -1.59,
+   "y": 3.96,
+   "z": 15.0
+  },
+  "seat_gym_08_f": {
+   "x": -1.82,
+   "y": 3.96,
+   "z": 15.0
+  },
+  "seat_gym_08_s": {
+   "x": -1.59,
+   "y": 3.96,
+   "z": 15.6
+  },
+  "seat_gym_08_a0": {
+   "x": -1.62,
+   "y": 3.96,
+   "z": 14.7
+  },
+  "seat_gym_08_a1": {
+   "x": -1.62,
+   "y": 3.96,
+   "z": 15.3
+  },
+  "seat_gym_09": {
+   "x": -1.59,
+   "y": 3.96,
+   "z": 25.0
+  },
+  "seat_gym_09_f": {
+   "x": -1.82,
+   "y": 3.96,
+   "z": 25.0
+  },
+  "seat_gym_09_s": {
+   "x": -1.59,
+   "y": 3.96,
+   "z": 25.6
+  },
+  "seat_gym_09_a0": {
+   "x": -1.62,
+   "y": 3.96,
+   "z": 24.7
+  },
+  "seat_gym_09_a1": {
+   "x": -1.62,
+   "y": 3.96,
+   "z": 25.3
+  },
+  "seat_gym_10": {
+   "x": -1.59,
+   "y": 3.96,
+   "z": 30.0
+  },
+  "seat_gym_10_f": {
+   "x": -1.82,
+   "y": 3.96,
+   "z": 30.0
+  },
+  "seat_gym_10_s": {
+   "x": -1.59,
+   "y": 3.96,
+   "z": 30.6
+  },
+  "seat_gym_10_a0": {
+   "x": -1.62,
+   "y": 3.96,
+   "z": 29.7
+  },
+  "seat_gym_10_a1": {
+   "x": -1.62,
+   "y": 3.96,
+   "z": 30.3
   }
  },
- "triangles": 20965,
- "seats": 540,
+ "triangles": 17312,
+ "seats": 10,
  "notes": [
-  "観覧席 540 席",
-  "用具庫 + 体操器具（跳び箱・マット・平均台）+ 得点板 + 肋木・キャットウォーク",
-  "アリーナ（28×15 m コート・ゴール 2 基・ステージ・観覧席・屋根トラス）"
+  "アリーナ（コート・吊りゴール・屋根トラス）+ 2F 観覧席・ギャラリー・トレーニングルーム + ホワイエ + 東棟（廊下・体育事務室・サブアリーナ）+ 用具庫"
  ],
  "objects": [
   "floor_gym",
   "wall_gym",
-  "furn_gym_01_entry",
-  "furn_gym_02_entry_hall",
-  "furn_gym_03_court",
-  "furn_gym_04_stage",
-  "furn_gym_05_seats",
-  "furn_gym_06_equipment",
-  "furn_gym_07_extras"
- ]
+  "furn_gym_01_hoops",
+  "furn_gym_02_roof",
+  "furn_gym_03_arena_items",
+  "furn_gym_04_stand",
+  "furn_gym_05_foyer",
+  "furn_gym_06_shelf",
+  "furn_gym_07_corridor",
+  "furn_gym_08_office",
+  "furn_gym_09_sub",
+  "furn_gym_10_train",
+  "furn_gym_11_storage"
+ ],
+ "signs": [
+  {
+   "empty": "sign_gym_1",
+   "kind": "wall",
+   "ja": "メインアリーナ",
+   "en": "MAIN ARENA",
+   "tris": 166,
+   "pos": {
+    "x": -3.68,
+    "y": 2.1,
+    "z": 10.0
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.3,
+   "h": 0.34,
+   "faces": 1,
+   "plate": "gym_accent_orange",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_gym_2",
+   "kind": "wall",
+   "ja": "メインアリーナ",
+   "en": "MAIN ARENA",
+   "tris": 166,
+   "pos": {
+    "x": -3.68,
+    "y": 2.1,
+    "z": 42.4
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.3,
+   "h": 0.34,
+   "faces": 1,
+   "plate": "gym_accent_orange",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_gym_3",
+   "kind": "wall",
+   "ja": "トレーニングルーム",
+   "en": "TRAINING ROOM",
+   "tris": 238,
+   "pos": {
+    "x": 2.15,
+    "y": 6.2,
+    "z": 18.1
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.5,
+   "h": 0.34,
+   "faces": 1,
+   "plate": "gym_accent_orange",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_gym_4",
+   "kind": "wall",
+   "ja": "【体育館施設利用】\n体育館・トレーニングルーム\nシャワー室、更衣室\n7:00〜22:00",
+   "en": "Gym facilities\nGymnasium, Training Room,\nShowers and Locker Rooms\n7:00-22:00",
+   "tris": 2067,
+   "pos": {
+    "x": 2.6,
+    "y": 1.25,
+    "z": 8.4
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 1.6,
+   "h": 1.0,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_gym_5",
+   "kind": "wall",
+   "ja": "土足厳禁",
+   "en": "No Outdoor Shoes",
+   "tris": 423,
+   "pos": {
+    "x": -3.68,
+    "y": 2.1,
+    "z": 17.8
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.0,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_gym_6",
+   "kind": "wall",
+   "ja": "体育事務室",
+   "en": "Gym Office",
+   "tris": 420,
+   "pos": {
+    "x": 15.6,
+    "y": 2.7,
+    "z": 12.0
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.2,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_gym_7",
+   "kind": "wall",
+   "ja": "受付 月〜金\n10:00〜13:00 / 14:00〜17:00",
+   "en": "Office Hours Mon-Fri\n10:00-13:00 / 14:00-17:00",
+   "tris": 1120,
+   "pos": {
+    "x": 15.6,
+    "y": 1.5,
+    "z": 13.6
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.2,
+   "h": 0.6,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_gym_8",
+   "kind": "wall",
+   "ja": "男子更衣室",
+   "en": "Men's Locker Room",
+   "tris": 422,
+   "pos": {
+    "x": 15.6,
+    "y": 2.4,
+    "z": 6.6
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.2,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_gym_9",
+   "kind": "wall",
+   "ja": "女子更衣室",
+   "en": "Women's Locker Room",
+   "tris": 446,
+   "pos": {
+    "x": 15.6,
+    "y": 2.4,
+    "z": 16.5
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.2,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_gym_10",
+   "kind": "wall",
+   "ja": "シャワー室",
+   "en": "Showers",
+   "tris": 204,
+   "pos": {
+    "x": 15.6,
+    "y": 2.4,
+    "z": 19.7
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.0,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_gym_11",
+   "kind": "wall",
+   "ja": "サブアリーナ",
+   "en": "SUB ARENA",
+   "tris": 206,
+   "pos": {
+    "x": 15.6,
+    "y": 2.0,
+    "z": 28.5
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.3,
+   "h": 0.34,
+   "faces": 1,
+   "plate": "gym_accent_orange",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_gym_12",
+   "kind": "wall",
+   "ja": "用具庫",
+   "en": "Equipment Storage",
+   "tris": 429,
+   "pos": {
+    "x": -19.4,
+    "y": 3.0,
+    "z": 38.83
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 1.0,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_gym_13",
+   "kind": "wall",
+   "ja": "AED",
+   "en": "AED",
+   "tris": 75,
+   "pos": {
+    "x": -3.68,
+    "y": 2.0,
+    "z": 20.5
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 0.5,
+   "h": 0.25,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  }
+ ],
+ "text_triangles": 6382,
+ "ext": {
+  "objects": [
+   "ext_gym",
+   "ext_gym_trees"
+  ],
+  "triangles": 9858,
+  "radius": 30.0,
+  "dz": -0.03
+ }
 }

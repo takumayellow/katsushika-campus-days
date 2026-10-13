@@ -1,81 +1,249 @@
 {
   "version": 1,
-  "coordinate_note": "x,z は campus.json 座標 (x=東 m, z=北 m)。{entrance: <building id>} は Models/Interiors/<id>.json の entrance_world、{place: <id>} は CampusProps の VisitZone の位置。",
+  "coordinate_note": "x,z は campus.json 座標 (= Unity のワールド座標, x=東 m, z=北 m)。{entrance: <building id>} は Campus シーンの entrance_<id>（ドア前の床）、{place: <id>} は CampusProps の VisitZone (Zone_<id>) の位置。SceneBuilder（MobStage）がどの点も NavMesh の上に下ろし、下ろせなかった点を通る道は使わない（CampusMobTests が確かめる）。variants は既存のキャラクターの体かモブだけの男子学生の体 student_m（body）を、髪（hair）・上着かブラウスかシャツ（top）・スカートかズボンと胸のリボン（bottom。男子学生はズボンだけ）・靴（shoes）の色だけ変えて使う。variants は並んだ順に枠へ 1 つずつ焼き込まれる。枠と同じ 24 通りあり、どの 2 つも体か色が見て分かるほど違うので、同時に出ている人に同じ見た目はいない（MobScheduleTests が確かめる）。男の体（prof・student_m）は 3〜4 つおきに置いて男女をおよそ 3 対 7 に混ぜているので、並べ替えるときは偏らないようにする（MobScheduleTests が確かめる）。",
   "spawn_stagger_seconds": 2.5,
   "respawn_delay_seconds": 6.0,
   "avoid_player_radius": 1.2,
   "variants": [
     {
       "id": "mob_a",
-      "label": "黒髪ショート・白シャツ",
+      "body": "sora",
+      "label": "そらの体・黒髪・白のブラウス・紺のスカート",
       "hair": "#2b2320",
-      "hair_style": "short",
       "top": "#f4f4f2",
       "bottom": "#33405e",
       "shoes": "#ffffff",
-      "skin": "#f3d4bd",
-      "height": 1.62,
-      "bag": "backpack"
+      "height": 1.62
+    },
+    {
+      "id": "mob_g",
+      "body": "student_m",
+      "label": "男子学生の体・黒髪・オリーブのシャツ・ベージュのズボン",
+      "hair": "#1e1c1e",
+      "top": "#5f6b45",
+      "bottom": "#bdb39a",
+      "shoes": "#f2f2f2",
+      "height": 1.7
     },
     {
       "id": "mob_b",
-      "label": "茶髪ロング・グレーパーカー",
+      "body": "inari",
+      "label": "いなりの体・茶髪・からし色のカーディガン・デニムのスカート・黒縁メガネ",
       "hair": "#6b4a2f",
-      "hair_style": "long",
-      "top": "#8d8f94",
-      "bottom": "#1f2430",
-      "shoes": "#2b2b2b",
-      "skin": "#f6dcc7",
-      "height": 1.58,
-      "bag": "tote"
-    },
-    {
-      "id": "mob_c",
-      "label": "黒髪マッシュ・紺ジャケット",
-      "hair": "#1c1a1a",
-      "hair_style": "mushroom",
-      "top": "#25335a",
-      "bottom": "#c9c5b8",
-      "shoes": "#5a4634",
-      "skin": "#efcdb2",
-      "height": 1.72,
-      "bag": "shoulder"
+      "top": "#c9a24a",
+      "bottom": "#3f5878",
+      "shoes": "#f2f2f2",
+      "height": 1.58
     },
     {
       "id": "mob_d",
-      "label": "明るい茶髪ポニー・理科大グリーンのパーカー",
+      "body": "kaname",
+      "label": "かなめの体・明るい茶髪・理科大グリーンのエプロン・黒のスカート",
       "hair": "#a0703f",
-      "hair_style": "ponytail",
       "top": "#2f7a5a",
       "bottom": "#3a3a3a",
       "shoes": "#ffffff",
-      "skin": "#f6dcc7",
-      "height": 1.6,
-      "bag": "backpack"
+      "height": 1.6
     },
     {
-      "id": "mob_e",
-      "label": "黒髪短髪・白衣",
-      "hair": "#262222",
-      "hair_style": "crop",
-      "top": "#fbfbfb",
-      "bottom": "#4b4f57",
-      "shoes": "#2b2b2b",
-      "skin": "#e9c6ab",
-      "height": 1.75,
-      "bag": "none"
+      "id": "mob_j",
+      "body": "student_m",
+      "label": "男子学生の体・茶髪・白のシャツ・黒のズボン",
+      "hair": "#5a3e2c",
+      "top": "#f4f4f2",
+      "bottom": "#2a2a2e",
+      "shoes": "#3a3a3a",
+      "height": 1.76
     },
     {
       "id": "mob_f",
-      "label": "灰色ボブ・ベージュカーディガン",
-      "hair": "#8a8a8f",
-      "hair_style": "bob",
-      "top": "#d9c7a5",
-      "bottom": "#5b3d2e",
-      "shoes": "#8c6a4f",
-      "skin": "#f3d4bd",
-      "height": 1.55,
-      "bag": "tote"
+      "body": "mirai",
+      "label": "みらいの体・こげ茶の髪・水色のブラウス・カーキのスカート",
+      "hair": "#4a3426",
+      "top": "#a9cbe0",
+      "bottom": "#7a7458",
+      "shoes": "#f2f2f2",
+      "height": 1.58
+    },
+    {
+      "id": "mob_c",
+      "body": "sora",
+      "label": "そらの体・黒髪・紺のブラウス・ベージュのスカート",
+      "hair": "#1c1a1a",
+      "top": "#25335a",
+      "bottom": "#c9c5b8",
+      "shoes": "#5a4634",
+      "height": 1.72
+    },
+    {
+      "id": "mob_h",
+      "body": "inari",
+      "label": "いなりの体・黒髪・薄紫のブラウス・紺のスカート・黒縁メガネ",
+      "hair": "#221e20",
+      "top": "#b9a7d1",
+      "bottom": "#2a3350",
+      "shoes": "#5a4634",
+      "height": 1.62
+    },
+    {
+      "id": "mob_e",
+      "body": "prof",
+      "label": "教授の体・黒髪・グレーの背広・黒のズボン",
+      "hair": "#262222",
+      "top": "#62656c",
+      "bottom": "#2a2b30",
+      "shoes": "#2b2b2b",
+      "height": 1.75
+    },
+    {
+      "id": "mob_i",
+      "body": "mirai",
+      "label": "みらいの体・明るい茶髪・ピンクのブラウス・グレーのスカート",
+      "hair": "#8a5a36",
+      "top": "#e3a0b0",
+      "bottom": "#6a6a70",
+      "shoes": "#ffffff",
+      "height": 1.55
+    },
+    {
+      "id": "mob_k",
+      "body": "kaname",
+      "label": "かなめの体・黒髪・テラコッタのエプロン・紺のスカート",
+      "hair": "#2a2222",
+      "top": "#c8553d",
+      "bottom": "#2b3a55",
+      "shoes": "#ffffff",
+      "height": 1.57
+    },
+    {
+      "id": "mob_l",
+      "body": "student_m",
+      "label": "男子学生の体・こげ茶の髪・杢グレーのシャツ・デニムのズボン",
+      "hair": "#3a2a22",
+      "top": "#9a9ea6",
+      "bottom": "#3b4f6e",
+      "shoes": "#f2f2f2",
+      "height": 1.73
+    },
+    {
+      "id": "mob_m",
+      "body": "sora",
+      "label": "そらの体・茶髪・ベージュのパーカー・黒のスカート",
+      "hair": "#7a5232",
+      "top": "#d8c6a0",
+      "bottom": "#2a2a2e",
+      "shoes": "#f2f2f2",
+      "height": 1.56
+    },
+    {
+      "id": "mob_n",
+      "body": "mirai",
+      "label": "みらいの体・黒髪・生成りのブラウス・深緑のスカート",
+      "hair": "#2a2220",
+      "top": "#f2ead8",
+      "bottom": "#3a4a3a",
+      "shoes": "#5a4634",
+      "height": 1.64
+    },
+    {
+      "id": "mob_o",
+      "body": "inari",
+      "label": "いなりの体・こげ茶の髪・セージのブラウス・キャメルのスカート・黒縁メガネ",
+      "hair": "#5a3a28",
+      "top": "#7b8f6a",
+      "bottom": "#c9b48e",
+      "shoes": "#2b2b2b",
+      "height": 1.6
+    },
+    {
+      "id": "mob_p",
+      "body": "student_m",
+      "label": "男子学生の体・黒髪・黒のシャツ・グレーのズボン",
+      "hair": "#1c1a1a",
+      "top": "#22252b",
+      "bottom": "#6e7178",
+      "shoes": "#f2f2f2",
+      "height": 1.69
+    },
+    {
+      "id": "mob_q",
+      "body": "kaname",
+      "label": "かなめの体・こげ茶の髪・青のエプロン・グレーのスカート",
+      "hair": "#6b4a2f",
+      "top": "#3c5a8a",
+      "bottom": "#8a8c90",
+      "shoes": "#f2f2f2",
+      "height": 1.53
+    },
+    {
+      "id": "mob_r",
+      "body": "sora",
+      "label": "そらの体・こげ茶の髪・えんじのパーカー・グレーのスカート",
+      "hair": "#3a2a24",
+      "top": "#8c2f3a",
+      "bottom": "#808590",
+      "shoes": "#ffffff",
+      "height": 1.66
+    },
+    {
+      "id": "mob_s",
+      "body": "student_m",
+      "label": "男子学生の体・明るい茶髪・青灰のシャツ・チノのズボン",
+      "hair": "#8a5a36",
+      "top": "#3f6a8a",
+      "bottom": "#c2b08a",
+      "shoes": "#3a3a3a",
+      "height": 1.8
+    },
+    {
+      "id": "mob_t",
+      "body": "mirai",
+      "label": "みらいの体・茶髪・アプリコットのブラウス・紺のスカート",
+      "hair": "#5a3e2c",
+      "top": "#d9905a",
+      "bottom": "#33405e",
+      "shoes": "#ffffff",
+      "height": 1.52
+    },
+    {
+      "id": "mob_u",
+      "body": "inari",
+      "label": "いなりの体・黒髪・デニムのブラウス・生成りのスカート・黒縁メガネ",
+      "hair": "#2b2320",
+      "top": "#5f7fa8",
+      "bottom": "#d9d4c7",
+      "shoes": "#5a4634",
+      "height": 1.65
+    },
+    {
+      "id": "mob_v",
+      "body": "sora",
+      "label": "そらの体・明るい茶髪・ミントのパーカー・茶色のスカート",
+      "hair": "#8a5a36",
+      "top": "#9bb89a",
+      "bottom": "#6b5444",
+      "shoes": "#f2f2f2",
+      "height": 1.59
+    },
+    {
+      "id": "mob_w",
+      "body": "student_m",
+      "label": "男子学生の体・黒髪・えんじのシャツ・カーキのズボン",
+      "hair": "#2b2320",
+      "top": "#7a2f2f",
+      "bottom": "#8a7f5e",
+      "shoes": "#f2f2f2",
+      "height": 1.75
+    },
+    {
+      "id": "mob_x",
+      "body": "kaname",
+      "label": "かなめの体・茶髪・アイボリーのエプロン・ベージュのスカート",
+      "hair": "#4a3426",
+      "top": "#e8e2d0",
+      "bottom": "#c9c5b8",
+      "shoes": "#ffffff",
+      "height": 1.61
     }
   ],
   "bands": [
@@ -84,13 +252,13 @@
       "label_ja": "朝",
       "label_en": "Morning",
       "from_hour": 8.0,
-      "to_hour": 11.0,
-      "count": 24,
+      "to_hour": 11.5,
+      "count": 18,
       "walk_speed": 1.4,
       "loop": true,
       "routes": [
         {
-          "weight": 5,
+          "weight": 3,
           "waypoints": [
             {
               "place": "gate_main"
@@ -110,7 +278,7 @@
           "end": "despawn"
         },
         {
-          "weight": 3,
+          "weight": 2,
           "waypoints": [
             {
               "place": "gate_main"
@@ -140,43 +308,7 @@
               "place": "gate_main"
             },
             {
-              "x": 81.0,
-              "z": -63.4
-            },
-            {
-              "x": 53.7,
-              "z": -50.9
-            },
-            {
-              "x": 26.4,
-              "z": -38.4
-            },
-            {
-              "entrance": "research2"
-            }
-          ],
-          "end": "despawn"
-        },
-        {
-          "weight": 2,
-          "waypoints": [
-            {
-              "place": "gate_main"
-            },
-            {
-              "x": 53.7,
-              "z": -50.9
-            },
-            {
-              "x": 26.4,
-              "z": -38.4
-            },
-            {
-              "x": -0.9,
-              "z": -26.0
-            },
-            {
-              "entrance": "library"
+              "entrance": "research1"
             }
           ],
           "end": "despawn"
@@ -188,8 +320,12 @@
               "place": "gate_main"
             },
             {
-              "x": 81.0,
-              "z": -63.4
+              "x": 126.5,
+              "z": -84.1
+            },
+            {
+              "x": 99.2,
+              "z": -71.7
             },
             {
               "x": 72.0,
@@ -205,24 +341,123 @@
           "weight": 1,
           "waypoints": [
             {
+              "place": "gate_main"
+            },
+            {
+              "x": 126.5,
+              "z": -84.1
+            },
+            {
+              "x": 99.2,
+              "z": -71.7
+            },
+            {
+              "x": 72.0,
+              "z": -30.0
+            },
+            {
+              "x": 94.0,
+              "z": 10.0
+            },
+            {
+              "entrance": "lab2"
+            }
+          ],
+          "end": "despawn"
+        },
+        {
+          "weight": 2,
+          "waypoints": [
+            {
               "x": -62.0,
-              "z": 78.0,
-              "wait": 3.0
+              "z": 78.0
             },
             {
               "x": -40.0,
               "z": 60.0
             },
             {
-              "x": -0.9,
+              "x": -46.0,
+              "z": -10.0
+            },
+            {
+              "entrance": "library"
+            }
+          ],
+          "end": "despawn"
+        },
+        {
+          "weight": 2,
+          "waypoints": [
+            {
+              "x": -62.0,
+              "z": 78.0
+            },
+            {
+              "x": -40.0,
+              "z": 60.0
+            },
+            {
+              "entrance": "gym"
+            }
+          ],
+          "end": "despawn"
+        },
+        {
+          "weight": 1,
+          "waypoints": [
+            {
+              "x": -62.0,
+              "z": 78.0
+            },
+            {
+              "x": -40.0,
+              "z": 60.0
+            },
+            {
+              "x": -1.0,
               "z": -26.0
             },
             {
-              "x": 26.4,
-              "z": -38.4
+              "entrance": "cafeteria"
+            }
+          ],
+          "end": "despawn"
+        },
+        {
+          "weight": 1,
+          "waypoints": [
+            {
+              "x": -62.0,
+              "z": 78.0
             },
             {
-              "entrance": "research2"
+              "x": -40.0,
+              "z": 60.0
+            },
+            {
+              "place": "library_pond",
+              "wait": 40.0
+            },
+            {
+              "entrance": "library"
+            }
+          ],
+          "end": "despawn"
+        },
+        {
+          "weight": 1,
+          "waypoints": [
+            {
+              "x": 8.0,
+              "z": -96.0
+            },
+            {
+              "x": 60.0,
+              "z": -121.0
+            },
+            {
+              "entrance": "research1"
             }
           ],
           "end": "despawn"
@@ -235,36 +470,12 @@
       "label_en": "Lunch Break",
       "from_hour": 11.5,
       "to_hour": 13.5,
-      "count": 24,
+      "count": 20,
       "walk_speed": 1.5,
       "loop": true,
       "routes": [
         {
-          "weight": 5,
-          "waypoints": [
-            {
-              "entrance": "lecture"
-            },
-            {
-              "x": 81.0,
-              "z": -63.4
-            },
-            {
-              "x": 53.7,
-              "z": -50.9
-            },
-            {
-              "x": 26.4,
-              "z": -38.4
-            },
-            {
-              "entrance": "research2"
-            }
-          ],
-          "end": "despawn"
-        },
-        {
-          "weight": 4,
+          "weight": 2,
           "waypoints": [
             {
               "entrance": "lecture"
@@ -280,29 +491,121 @@
           "end": "despawn"
         },
         {
-          "weight": 3,
+          "weight": 1,
+          "waypoints": [
+            {
+              "entrance": "cafeteria"
+            },
+            {
+              "x": -1.0,
+              "z": -26.0
+            },
+            {
+              "x": 26.0,
+              "z": -38.0
+            },
+            {
+              "x": 54.0,
+              "z": -51.0
+            },
+            {
+              "place": "mall_bench",
+              "wait": 40.0
+            },
+            {
+              "entrance": "kyoso"
+            }
+          ],
+          "end": "despawn"
+        },
+        {
+          "weight": 1,
           "waypoints": [
             {
               "entrance": "research1"
             },
             {
               "x": 60.0,
-              "z": -110.0
+              "z": -121.0
             },
             {
-              "x": 81.0,
-              "z": -63.4
+              "x": 8.0,
+              "z": -96.0
             },
             {
-              "x": 53.7,
-              "z": -50.9
+              "x": 26.0,
+              "z": -38.0
             },
             {
-              "x": 26.4,
-              "z": -38.4
+              "entrance": "cafeteria"
+            }
+          ],
+          "end": "despawn"
+        },
+        {
+          "weight": 1,
+          "waypoints": [
+            {
+              "entrance": "kyoso"
             },
             {
-              "entrance": "research2"
+              "x": 8.0,
+              "z": -96.0
+            },
+            {
+              "x": 60.0,
+              "z": -121.0
+            },
+            {
+              "entrance": "research1"
+            }
+          ],
+          "end": "despawn"
+        },
+        {
+          "weight": 1,
+          "waypoints": [
+            {
+              "entrance": "lab1"
+            },
+            {
+              "x": 52.0,
+              "z": 12.0
+            },
+            {
+              "entrance": "gym"
+            }
+          ],
+          "end": "despawn"
+        },
+        {
+          "weight": 1,
+          "waypoints": [
+            {
+              "entrance": "gym"
+            },
+            {
+              "x": 52.0,
+              "z": 12.0
+            },
+            {
+              "entrance": "lab1"
+            }
+          ],
+          "end": "despawn"
+        },
+        {
+          "weight": 1,
+          "waypoints": [
+            {
+              "entrance": "lab2"
+            },
+            {
+              "x": 100.0,
+              "z": 20.0
+            },
+            {
+              "entrance": "greenhouse"
             }
           ],
           "end": "despawn"
@@ -311,48 +614,32 @@
           "weight": 2,
           "waypoints": [
             {
-              "entrance": "kyoso"
+              "entrance": "library"
             },
             {
-              "x": 81.0,
-              "z": -63.4
+              "x": -46.0,
+              "z": -10.0
             },
             {
-              "x": 53.7,
-              "z": -50.9
-            },
-            {
-              "x": 51.7,
-              "z": -52.9,
+              "place": "library_pond",
               "wait": 40.0
             },
             {
-              "x": 81.0,
-              "z": -63.4
-            },
-            {
-              "entrance": "kyoso"
+              "entrance": "library"
             }
           ],
           "end": "despawn"
         },
         {
-          "weight": 2,
+          "weight": 1,
           "waypoints": [
             {
-              "entrance": "research2"
+              "entrance": "kyoso"
             },
             {
-              "x": 26.4,
-              "z": -38.4
-            },
-            {
-              "x": 53.7,
-              "z": -50.9
-            },
-            {
-              "x": 81.0,
-              "z": -63.4
+              "x": 96.7,
+              "z": -77.2,
+              "wait": 30.0
             },
             {
               "entrance": "lecture"
@@ -371,15 +658,11 @@
               "z": -30.0
             },
             {
-              "x": 53.7,
-              "z": -50.9
+              "x": 81.0,
+              "z": -63.4
             },
             {
-              "x": 26.4,
-              "z": -38.4
-            },
-            {
-              "entrance": "research2"
+              "entrance": "kyoso"
             }
           ],
           "end": "despawn"
@@ -392,23 +675,23 @@
       "label_en": "Afternoon",
       "from_hour": 13.5,
       "to_hour": 17.0,
-      "count": 16,
+      "count": 14,
       "walk_speed": 1.3,
       "loop": true,
       "routes": [
         {
-          "weight": 3,
+          "weight": 2,
           "waypoints": [
             {
-              "entrance": "research2"
+              "entrance": "cafeteria"
             },
             {
-              "x": 26.4,
-              "z": -38.4
+              "x": 26.0,
+              "z": -38.0
             },
             {
-              "x": 53.7,
-              "z": -50.9
+              "x": 54.0,
+              "z": -51.0
             },
             {
               "x": 81.0,
@@ -421,7 +704,7 @@
           "end": "despawn"
         },
         {
-          "weight": 3,
+          "weight": 2,
           "waypoints": [
             {
               "entrance": "lecture"
@@ -441,26 +724,26 @@
           "end": "despawn"
         },
         {
-          "weight": 2,
+          "weight": 1,
           "waypoints": [
             {
               "entrance": "lecture"
             },
             {
-              "x": 53.7,
-              "z": -50.9
+              "x": 54.0,
+              "z": -51.0
             },
             {
-              "x": 26.4,
-              "z": -38.4
+              "x": 26.0,
+              "z": -38.0
             },
             {
-              "x": -0.9,
+              "x": -1.0,
               "z": -26.0
             },
             {
-              "x": -19.1,
-              "z": -17.6
+              "x": -19.0,
+              "z": -18.0
             },
             {
               "entrance": "library"
@@ -475,8 +758,8 @@
               "entrance": "lab1"
             },
             {
-              "x": 76.0,
-              "z": 30.0
+              "x": 94.0,
+              "z": 10.0
             },
             {
               "entrance": "lab2"
@@ -485,18 +768,18 @@
           "end": "despawn"
         },
         {
-          "weight": 2,
+          "weight": 1,
           "waypoints": [
             {
               "entrance": "kyoso"
             },
             {
-              "x": 81.0,
-              "z": -63.4
+              "x": 8.0,
+              "z": -96.0
             },
             {
               "x": 60.0,
-              "z": -110.0
+              "z": -121.0
             },
             {
               "entrance": "research1"
@@ -508,12 +791,12 @@
           "weight": 2,
           "waypoints": [
             {
-              "x": 26.4,
-              "z": -38.4
+              "x": 26.0,
+              "z": -38.0
             },
             {
-              "x": 14.0,
-              "z": 10.0
+              "x": 52.0,
+              "z": 12.0
             },
             {
               "entrance": "gym"
@@ -529,19 +812,18 @@
             },
             {
               "x": -46.0,
-              "z": -10.0,
+              "z": -10.0
+            },
+            {
+              "place": "library_pond",
               "wait": 30.0
             },
             {
-              "x": -0.9,
+              "x": -1.0,
               "z": -26.0
             },
             {
-              "x": 26.4,
-              "z": -38.4
-            },
-            {
-              "entrance": "research2"
+              "entrance": "cafeteria"
             }
           ],
           "end": "despawn"
@@ -569,13 +851,13 @@
       "label_ja": "夕方",
       "label_en": "Evening",
       "from_hour": 17.0,
-      "to_hour": 20.0,
-      "count": 12,
+      "to_hour": 19.0,
+      "count": 10,
       "walk_speed": 1.45,
       "loop": true,
       "routes": [
         {
-          "weight": 5,
+          "weight": 3,
           "waypoints": [
             {
               "entrance": "lecture"
@@ -595,30 +877,30 @@
           "end": "despawn"
         },
         {
-          "weight": 3,
+          "weight": 2,
           "waypoints": [
             {
-              "entrance": "library"
+              "entrance": "research1"
             },
             {
-              "x": -19.1,
-              "z": -17.6
-            },
+              "place": "gate_main"
+            }
+          ],
+          "end": "despawn"
+        },
+        {
+          "weight": 1,
+          "waypoints": [
             {
-              "x": -0.9,
-              "z": -26.0
-            },
-            {
-              "x": 26.4,
-              "z": -38.4
-            },
-            {
-              "x": 53.7,
-              "z": -50.9
+              "entrance": "kyoso"
             },
             {
               "x": 81.0,
               "z": -63.4
+            },
+            {
+              "x": 99.2,
+              "z": -71.7
             },
             {
               "x": 126.5,
@@ -631,14 +913,14 @@
           "end": "despawn"
         },
         {
-          "weight": 2,
+          "weight": 1,
           "waypoints": [
             {
-              "entrance": "research1"
+              "entrance": "lab1"
             },
             {
-              "x": 60.0,
-              "z": -110.0
+              "x": 72.0,
+              "z": -30.0
             },
             {
               "x": 99.2,
@@ -658,23 +940,107 @@
           "weight": 2,
           "waypoints": [
             {
+              "entrance": "library"
+            },
+            {
+              "x": -46.0,
+              "z": -10.0
+            },
+            {
+              "x": -40.0,
+              "z": 60.0
+            },
+            {
+              "x": -62.0,
+              "z": 78.0
+            }
+          ],
+          "end": "despawn"
+        },
+        {
+          "weight": 1,
+          "waypoints": [
+            {
               "entrance": "gym"
             },
             {
-              "x": 14.0,
-              "z": 10.0
+              "x": -40.0,
+              "z": 60.0
             },
             {
-              "x": 26.4,
-              "z": -38.4
+              "x": -62.0,
+              "z": 78.0
+            }
+          ],
+          "end": "despawn"
+        },
+        {
+          "weight": 1,
+          "waypoints": [
+            {
+              "entrance": "cafeteria"
             },
             {
-              "x": 53.7,
-              "z": -50.9
+              "x": -1.0,
+              "z": -26.0
             },
             {
-              "x": 81.0,
-              "z": -63.4
+              "x": -40.0,
+              "z": 60.0
+            },
+            {
+              "x": -62.0,
+              "z": 78.0
+            }
+          ],
+          "end": "despawn"
+        }
+      ]
+    },
+    {
+      "id": "night",
+      "label_ja": "夜",
+      "label_en": "Night",
+      "from_hour": 19.0,
+      "to_hour": 24.0,
+      "count": 2,
+      "walk_speed": 1.3,
+      "loop": true,
+      "routes": [
+        {
+          "weight": 2,
+          "waypoints": [
+            {
+              "entrance": "library"
+            },
+            {
+              "x": -46.0,
+              "z": -10.0
+            },
+            {
+              "x": -40.0,
+              "z": 60.0
+            },
+            {
+              "x": -62.0,
+              "z": 78.0
+            }
+          ],
+          "end": "despawn"
+        },
+        {
+          "weight": 2,
+          "waypoints": [
+            {
+              "entrance": "lab1"
+            },
+            {
+              "x": 72.0,
+              "z": -30.0
+            },
+            {
+              "x": 99.2,
+              "z": -71.7
             },
             {
               "x": 126.5,
@@ -690,28 +1056,7 @@
           "weight": 1,
           "waypoints": [
             {
-              "entrance": "kyoso"
-            },
-            {
-              "x": 81.0,
-              "z": -63.4
-            },
-            {
-              "x": 53.7,
-              "z": -50.9
-            },
-            {
-              "x": 51.7,
-              "z": -52.9,
-              "wait": 60.0
-            },
-            {
-              "x": 81.0,
-              "z": -63.4
-            },
-            {
-              "x": 126.5,
-              "z": -84.1
+              "entrance": "research1"
             },
             {
               "place": "gate_main"

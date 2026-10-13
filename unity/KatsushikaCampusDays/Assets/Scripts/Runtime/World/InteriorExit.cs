@@ -2,17 +2,64 @@ using UnityEngine;
 
 namespace KCD
 {
-    /// <summary>屋内の出口。FBX の exit_&lt;id&gt; Empty の位置に置かれ、踏むと外へ戻る。</summary>
+    /// <summary>
+    /// 屋内の出口。FBX の exit_&lt;扉の id&gt; Empty の位置に置かれ、踏むとその扉の外へ戻る。
+    /// 扉が 2 つある建物（講義棟）には出口も 2 つある。
+    /// </summary>
     [RequireComponent(typeof(BoxCollider))]
     public sealed class InteriorExit : MonoBehaviour
     {
         [SerializeField] private string _buildingId = string.Empty;
+        [SerializeField] private string _doorId = string.Empty;
 
         /// <summary>この出口が属する建物。</summary>
         public string BuildingId
         {
             get => _buildingId;
             set => _buildingId = value;
+        }
+
+        /// <summary>
+        /// この出口の扉の id（exit_&lt;扉の id&gt;）。玄関では建物の id と同じ。
+        /// 踏むとこの扉の外へ出る（InteriorLoader.Exit）。
+        /// </summary>
+        public string DoorId
+        {
+            get => string.IsNullOrEmpty(_doorId) ? _buildingId : _doorId;
+            set => _doorId = value == _buildingId ? string.Empty : value;
+        }
+
+        /// <summary>入った所（spawn）から出口の範囲の手前の縁まで空ける水平の距離（m）。プレイヤーの半径 + 余裕。</summary>
+        public const float SpawnGap = 0.8f;
+
+        /// <summary>出口の印（exit_&lt;id&gt;）から外側へ、範囲を伸ばす長さ（m）。</summary>
+        public const float OutwardReach = 1.5f;
+
+        /// <summary>出口の印（exit_&lt;id&gt;）から内側へ、範囲を伸ばす長さの上限（m）。入った所が奥にあっても部屋の大半を範囲にしない。</summary>
+        public const float InwardReach = 1.5f;
+
+        /// <summary>出口の範囲の幅と高さ（m）。</summary>
+        public const float BoxWidth = 3f;
+        public const float BoxHeight = 2.6f;
+
+        /// <summary>
+        /// 出口の範囲（向き付きの箱）。入った所から出口の印へ向かう向きに箱を向け、手前の縁を入った所から
+        /// SpawnGap だけ離す。入った所が範囲の中にあると、少し戻るだけで外へ出される（#212）。
+        /// 外側の縁は印から OutwardReach の先、内側は印から InwardReach まで（入った所が近いときは SpawnGap が優先）。center は印の高さ + 1.2 m、yaw は Y 軸まわりの度。
+        /// </summary>
+        public static void BoxFor(Vector3 exit, Vector3 spawn, out Vector3 center, out float yaw, out Vector3 size)
+        {
+            Vector3 toExit = exit - spawn;
+            toExit.y = 0f;
+            float distance = toExit.magnitude;
+            Vector3 direction = distance > 1e-4f ? toExit / distance : Vector3.forward;
+            float near = Mathf.Max(SpawnGap, distance - InwardReach);
+            float far = distance + OutwardReach;
+            float depth = far - near;
+            Vector3 middle = spawn + direction * (near + depth * 0.5f);
+            center = new Vector3(middle.x, exit.y + 1.2f, middle.z);
+            yaw = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg;
+            size = new Vector3(BoxWidth, BoxHeight, depth);
         }
 
         private void Reset()
@@ -34,10 +81,19 @@ namespace KCD
             }
 
             InteriorLoader loader = InteriorLoader.Instance;
-            if (loader != null && loader.CurrentId == _buildingId)
+            if (ShouldExit(loader, _buildingId))
             {
-                loader.Exit();
+                loader.Exit(DoorId);
             }
+        }
+
+        /// <summary>
+        /// この出口を踏んだら外へ出すか。今いる建物の出口のときだけ true。
+        /// 外にいるとき・別の建物の出口のときは何もしない（外にいるときの Exit はもともと何もしない）。
+        /// </summary>
+        public static bool ShouldExit(InteriorLoader loader, string buildingId)
+        {
+            return loader != null && loader.IsInside && loader.CurrentId == buildingId;
         }
     }
 }

@@ -1,0 +1,66 @@
+name: pytest
+
+# Blender (bpy) と Unity を使わない純 Python のテスト (#68)。
+# bpy / bmesh / mathutils は blender/tests/stubs.py の差し替えで読み込む。
+on:
+  push:
+    paths:
+      - "blender/**"
+      - "tools/**"
+      - "tests/**"
+      - "data/osm/**"
+      - "unity/KatsushikaCampusDays/Assets/Audio/SE/se_chime.wav"
+      # 画面の文字のフォントに、ゲームの文字が全部あるか（tools/tests/test_make_ui_font.py、#70）
+      - "unity/KatsushikaCampusDays/Assets/Fonts/**"
+      - "unity/KatsushikaCampusDays/Assets/**/*.json"
+      - "unity/KatsushikaCampusDays/Assets/**/*.cs"
+      - "unity/KatsushikaCampusDays/Assets/**/*.txt"
+      - "unity/KatsushikaCampusDays/Assets/**/*.csv"
+      - "unity/KatsushikaCampusDays/Assets/**/*.unity"
+      - "unity/KatsushikaCampusDays/Assets/**/*.prefab"
+      - "unity/KatsushikaCampusDays/Assets/**/*.asset"
+      - "pytest.ini"
+      - "requirements-test.txt"
+      - ".github/workflows/pytest.yml"
+  pull_request:
+    paths:
+      - "blender/**"
+      - "tools/**"
+      - "tests/**"
+      - "data/osm/**"
+      - "unity/KatsushikaCampusDays/Assets/Audio/SE/se_chime.wav"
+      # 画面の文字のフォントに、ゲームの文字が全部あるか（tools/tests/test_make_ui_font.py、#70）
+      - "unity/KatsushikaCampusDays/Assets/Fonts/**"
+      - "unity/KatsushikaCampusDays/Assets/**/*.json"
+      - "unity/KatsushikaCampusDays/Assets/**/*.cs"
+      - "unity/KatsushikaCampusDays/Assets/**/*.txt"
+      - "unity/KatsushikaCampusDays/Assets/**/*.csv"
+      - "unity/KatsushikaCampusDays/Assets/**/*.unity"
+      - "unity/KatsushikaCampusDays/Assets/**/*.prefab"
+      - "unity/KatsushikaCampusDays/Assets/**/*.asset"
+      - "pytest.ini"
+      - "requirements-test.txt"
+      - ".github/workflows/pytest.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-test.txt
+
+      - name: Install
+        run: python -m pip install -r requirements-test.txt
+
+      - name: Test
+        run: python -m pytest -q

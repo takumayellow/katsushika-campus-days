@@ -7,8 +7,8 @@ namespace KCD
     /// <summary>
     /// キャンパスの木を、格子のマスごとに 1 つのメッシュへまとめて描く (#57, #70)。
     ///
-    /// 木は 553 本あり、1 本がマテリアル 5 つ × 2 パス（トゥーンと輪郭）で描かれる。1 本ずつ描くと WebGL で
-    /// 描画コールが約 4,700 回になり、CPU 側で 35〜45 fps まで落ちた。SRP Batcher は描画コールを減らさず、
+    /// 木は 553 本あり、1 本がマテリアル（幹と葉, #51）× 2 パス（トゥーンと輪郭）で描かれる。葉を 4 マテリアルに
+    /// 分けていたころ、1 本ずつ描くと WebGL で描画コールが約 4,700 回になり、CPU 側で 35〜45 fps まで落ちた。SRP Batcher は描画コールを減らさず、
     /// 静的バッチも効いていなかった。マスごとにまとめると、描画コールは「見えているマスの数 × マテリアルの数 × パスの数」になる。
     ///
     /// シーンには 1 本ずつの MeshRenderer を置いたままにし（エディタのプレビューとテストはそれを見る）、
@@ -45,7 +45,7 @@ namespace KCD
         {
             foreach (Mesh mesh in _meshes)
             {
-                DestroyObject(mesh);
+                DestroyOwned(mesh);
             }
 
             _meshes.Clear();
@@ -163,7 +163,7 @@ namespace KCD
             catch (System.Exception e)
             {
                 // まとめ損ねたマスは元の木を 1 本ずつ描いたままにする。ほかのマスはまとめ続ける。
-                DestroyObject(chunk);
+                DestroyOwned(chunk);
                 Debug.LogWarning(string.Format(
                     "TreeChunkCombiner: {0} をまとめられず、{1} 本を 1 本ずつ描く: {2}", name, members.Count, e.Message), this);
                 return;
@@ -360,7 +360,7 @@ namespace KCD
             }
         }
 
-        private static void DestroyObject(Object target)
+        private static void DestroyOwned(Object target)
         {
             if (target == null)
             {

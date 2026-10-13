@@ -32,11 +32,12 @@
     },
     {
       "name": "hair",
-      "hex": "1A1A22"
+      "hex": "46464F"
     },
     {
       "name": "skin",
       "hex": "EBBE9C"
     }
-  ]
+  ],
+  "outward_faces": true
 }

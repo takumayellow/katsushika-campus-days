@@ -19,7 +19,7 @@ python tools/audio/build_audio.py bgm ambient  # カテゴリを絞る
 | `tools/audio/analyze.py` | 波形統計とループ継ぎ目の計測 |
 | `tools/audio/build_audio.py` | 全体のエントリ。`manifest.json` と本 README を書き出す |
 
-出力は 44.1 kHz / 16 bit の WAV。合計 58 ファイル, 225.6 MiB, 音の長さ 1347.2 秒。生成時間は 4 秒。
+出力は 44.1 kHz / 16 bit の WAV。合計 59 ファイル, 228.9 MiB, 音の長さ 1366.7 秒。生成時間は 11 秒。
 
 ## Unity へ取り込むときの設定
 
@@ -47,7 +47,7 @@ README の表の「ループ継ぎ目」は `seam_step_ratio / seam_hf_ratio` �
 
 **`bgm_title` はこの 2 つが 1 前後になるが, 不連続ではない。** 同じ編曲を 2 周ぶん描画して内部の継ぎ目と比較したところ, 回り込みの段差 0.07121 と 2 周描画の内部の段差 0.07121 が完全に一致し, 2 周目の波形は 1 周ぶんの出力と最大誤差 0.0 で一致した。指標が拾っているのは小節頭のピアノのアタックそのもので, 継ぎ目の欠陥ではない。
 
-クリップしたサンプルは全 58 ファイルで 0 個。
+クリップしたサンプルは全 59 ファイルで 0 個。
 
 ## BGM (10 ファイル)
 
@@ -64,7 +64,7 @@ README の表の「ループ継ぎ目」は `seam_step_ratio / seam_hf_ratio` �
 | `jingle_day_end.wav` | 4.00 s | -1.0 dBFS | -11.7 dBFS | ループしない | 1 日の終わり (リザルト画面). F major の IV-V-I (ピアノ) |
 | `jingle_quest.wav` | 2.00 s | -1.0 dBFS | -13.5 dBFS | ループしない | クエスト達成. F major のアルペジオ (木琴 soft_mallet + ピアノ) |
 
-## SE (効果音) (41 ファイル)
+## SE (効果音) (42 ファイル)
 
 | ファイル | 長さ | ピーク | RMS | 用途 |
 |---|---:|---:|---:|---|
@@ -74,6 +74,7 @@ README の表の「ループ継ぎ目」は `seam_step_ratio / seam_hf_ratio` �
 | `item_get.wav` | 0.75 s | -1.5 dBFS | -13.0 dBFS | アイテム入手 |
 | `jump.wav` | 0.28 s | -1.5 dBFS | -13.8 dBFS | ジャンプ |
 | `land.wav` | 0.30 s | -1.5 dBFS | -21.8 dBFS | 着地 |
+| `piano_library.wav` | 19.53 s | -1.5 dBFS | -16.3 dBFS | 図書館大ホールのピアノを弾く (PianoPerformance). C major の 5 小節を加算合成のピアノで. 鳴る間 BGM は絞られる (0.15 倍) |
 | `quest_start.wav` | 1.15 s | -1.5 dBFS | -14.2 dBFS | クエスト開始 |
 | `quest_update.wav` | 0.55 s | -1.5 dBFS | -12.3 dBFS | クエスト進行 |
 | `se_chime.wav` | 12.84 s | -1.5 dBFS | -14.1 dBFS | 時報チャイム (12:00 昼休み / 17:00 下校). ウェストミンスターの鐘 E major 4 フレーズ 16 音を校内放送のスピーカー風に. 鳴る間 BGM は止まる (#38) |

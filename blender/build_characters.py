@@ -51,6 +51,8 @@ FBX_OPTS = dict(
     bake_space_transform=False,
     object_types={"ARMATURE", "MESH"},
     mesh_smooth_type="FACE",
+    # 輪郭線の向き（頂点カラー outline_normal）を、色空間の変換をせずにそのまま書き出す
+    colors_type="LINEAR",
     use_mesh_modifiers=True,
     add_leaf_bones=False,
     primary_bone_axis="Y",
@@ -176,6 +178,9 @@ def write_palette(p: dict, cdir: str, names, pattern_arrays: dict) -> str:
     pats = kmats.pattern_entries(p, names, pattern_arrays)
     doc = {"materials": [{"name": n, "hex": h, **pats.get(n, {})}
                          for n, h in sorted(pal.items())]}
+    if p.get("outward_faces"):
+        # 顔の面が外向きなら、Unity は顔にも輪郭線を付ける（MaterialLibrary.ApplyFaceLook）
+        doc["outward_faces"] = True
     with open(path, "w", encoding="utf-8", newline="\n") as f:
         json.dump(doc, f, ensure_ascii=False, indent=2)
         f.write("\n")
@@ -231,14 +236,17 @@ def build_character(cid: str, out_root: str, face_size: int, fbx_opts: dict,
 
     obj = mb.to_object(cid, materials)
     body.assign_uvs(obj, uv_box, face_uvs)
+    hair.assign_ring_uvs(obj, hair.ring_uvs(mb, head))
 
     arm, pos = rig.build_armature(p, a, cid)
     method = rig.bind(obj, arm, pos)
+    rig.add_bag_bone(arm, p, a)
     rig.override_weights(obj, mb, p, a)
 
     keys = shapes.build_shape_keys(obj, mb, p)
     face_actions = anim.setup_shape_drivers(obj, arm)
-    actions = anim.build_actions(arm, p.get("arm_drop", anim.ARM_DROP), p.get("gait"))
+    actions = anim.build_actions(arm, body.arm_drop(p), p.get("gait"), body.elbow_open(p),
+                                 body.arm_angles(p)[0])
     lift = lift_to_ground(obj, arm)
 
     out_obj = (outline.build_outline(obj, mb, p, materials)

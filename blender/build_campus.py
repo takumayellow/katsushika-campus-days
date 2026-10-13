@@ -24,7 +24,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import bpy  # noqa: E402
 
-from kcd_lib import buildings, entrances, geom, mats, props, render, site  # noqa: E402
+from kcd_lib import buildings, entrances, geom, mats, props, render, site, uv  # noqa: E402
+from kcd_lib import park as parklib  # noqa: E402
 from kcd_lib.mesh import MeshBuilder  # noqa: E402
 
 FBX_OPTS = dict(
@@ -53,7 +54,7 @@ SITE_MAX_EDGE = 50.0
 CAM_SPECS = [
     ("campus_overview", (-30.0, -300.0, 205.0), (28.0, -8.0, 18.0), 35.0, 0.0),
     ("campus_mall", (176.0, -24.5, 1.60), (-20.0, -23.0, 10.0), 28.0, 8.0),
-    ("campus_library", (26.0, -47.0, 2.80), (-84.0, -24.0, 17.0), 30.0, 26.0),
+    ("campus_library", (40.0, -34.0, 2.80), (-84.0, -24.0, 17.0), 30.0, 14.0),
     ("campus_lecture", (48.0, -26.0, 1.70), (95.0, -6.0, 11.0), 26.0, 19.0),
 ]
 
@@ -134,8 +135,10 @@ def total_verts():
     return n
 
 
-def export_fbx(path):
+def export_fbx(path, axis=(1.0, 0.0)):
+    """axis は水平な面の UV の向き（kcd_lib.uv）。キャンパスは研究棟の長辺に揃える。"""
     os.makedirs(os.path.dirname(path), exist_ok=True)
+    uv.write_scene(bpy.context.scene, axis)
     bpy.ops.export_scene.fbx(filepath=path, **FBX_OPTS)
     return os.path.getsize(path)
 
@@ -168,7 +171,7 @@ def check_site_ground(obj):
 # --------------------------------------------------------------------------- #
 #  キャンパス本体
 # --------------------------------------------------------------------------- #
-def build_campus(data, frame, rng, max_trees):
+def build_campus(data, frame, rng, max_trees, park):
     scene_coll = bpy.context.scene.collection
     occ = site.Occupancy()       # 舗装・道路も含む全占有（散布の抑制）
     hard = site.Occupancy()      # 建物・水盤だけ（列植でも絶対に侵入しない）
@@ -182,6 +185,11 @@ def build_campus(data, frame, rng, max_trees):
     site.build_mall(site_mb, frame, occ)
     site.build_basin(site_mb, frame, occ)
     site.build_basin_keepout(frame, hard)
+    # 公園の池とせせらぎ（#168）。底と橋の床は歩くので site_ground に入れる
+    parklib.build_bed(site_mb, park, occ, hard)
+    park_mb = MeshBuilder("site_props_park")
+    n_bridge = parklib.build_bridges(site_mb, park_mb, data, park, hard)
+    print("[park] bridges over the water: %d" % n_bridge)
     n_cut, n_faces = site_mb.split_by_grid(SITE_GRID)
     print("[site] split %d faces by %.0f m grid -> %d faces" % (n_cut, SITE_GRID, n_faces))
     site_obj = site_mb.to_object(scene_coll)
@@ -189,9 +197,10 @@ def build_campus(data, frame, rng, max_trees):
     objects.append(site_obj)
     water_mb = MeshBuilder("site_water")
     site.build_water(water_mb, frame)
+    parklib.build_water(water_mb, park)
     objects.append(water_mb.to_object(scene_coll))
 
-    # 建物どうしの接触判定（共創棟が第1研究棟に接する辺）と小物配置のために先に集める
+    # 看板・小物の配置のために先に集める
     on_campus = []
     for b in data["buildings"]:
         style = b.get("style") or "background"
@@ -227,8 +236,10 @@ def build_campus(data, frame, rng, max_trees):
             continue
         mb = MeshBuilder("bld_%s" % b["id"])
         builder(mb, b, frame, ctx)
-        occ.stamp_poly(loop, margin=3.0)
-        hard.stamp_poly(loop, margin=2.0)
+        # 本体に付く細長い部分（第1研究棟の北面の parts）も同じ余白で占有にする
+        for fp in [loop] + [geom.ensure_ccw(geom.dedup(pt["footprint"])) for pt in b.get("parts") or []]:
+            occ.stamp_poly(fp, margin=3.0)
+            hard.stamp_poly(fp, margin=2.0)
         obj = mb.to_object(scene_coll)
         obj["kcd_id"] = b["id"]
         objects.append(obj)
@@ -236,10 +247,10 @@ def build_campus(data, frame, rng, max_trees):
     print("[bg] window quads=%d (spacing %.2f m)"
           % (ctx.get("bg_window_quads", 0), ctx["bg_window_spacing"]))
 
-    # 共創棟はフットプリントを広げているので、そのぶんも占有に反映する
-    if "kyoso_rect" in ctx:
-        occ.stamp_poly(ctx["kyoso_rect"], margin=3.0)
-        hard.stamp_poly(ctx["kyoso_rect"], margin=2.0)
+    # --- 公園の地球釜・パーゴラ・遊具（建物の占有を入れた後に置く）---
+    n_play = parklib.build_props(park_mb, park, occ, hard)
+    objects.append(park_mb.to_object(scene_coll))
+    print("[park] play spots: %d / %d" % (n_play, len(park["play"])))
 
     # --- 入口（風除室・ガラス扉・庇・足元の石張り）---
     # 扉の前の通り道は、ベンチ・照明柱・列植・散布の木より先に空けておく（#39）。
@@ -260,13 +271,15 @@ def build_campus(data, frame, rng, max_trees):
     # --- ベンチ・照明柱 ---
     fur_mb = MeshBuilder("site_furniture")
     site.build_street_furniture(fur_mb, frame, hard)
+    n_bench, n_lamp = parklib.build_furniture(fur_mb, data, hard)
+    print("[park] benches %d  lamps %d" % (n_bench, n_lamp))
     objects.append(fur_mb.to_object(scene_coll))
 
     # --- 看板・花壇・自販機・ゴミ箱 ---
     sign_mb = MeshBuilder("site_props_signs")
     site.build_signs(sign_mb, frame, ctx)
     objects.append(sign_mb.to_object(scene_coll))
-    # 入口の駐輪場は実物に無いので置かない（#56）。代わりにモール北側の花壇
+    # 入口の駐輪場は実物に無いので置かない（#56）。代わりにメインストリート北側の花壇
     beds_mb = MeshBuilder("site_props_beds")
     site.build_mall_beds(beds_mb, frame, occ, data, ctx)
     objects.append(beds_mb.to_object(scene_coll))
@@ -299,7 +312,9 @@ def build_campus(data, frame, rng, max_trees):
             occ.stamp_disc(p[0], p[1], r)
             hard.stamp_disc(p[0], p[1], r)
 
-    trees = site.collect_trees(data, frame, occ, hard, rng, max_trees=max_trees)
+    fixed = parklib.park_trees(park, hard, rng)
+    print("[park] trees from the map: %d / %d" % (len(fixed), len(park["trees"])))
+    trees = site.collect_trees(data, frame, occ, hard, rng, max_trees=max_trees, park_trees=fixed)
     return objects, ctx, trees
 
 
@@ -376,14 +391,15 @@ def main():
     t0 = time.time()
     rng = random.Random(args.seed)
 
-    data = load_data(args.json)
+    park = parklib.load()
+    data = parklib.apply_buildings(load_data(args.json), park)
     reset_scene()
     mats.build_all()
     frame = make_frame(data)
     print("[frame] u=(%.4f, %.4f)  angle=%.2f deg"
           % (frame.u[0], frame.u[1], math.degrees(math.atan2(frame.u[1], frame.u[0]))))
 
-    objects, ctx, trees = build_campus(data, frame, rng, args.trees)
+    objects, ctx, trees = build_campus(data, frame, rng, args.trees, park)
     t_build = time.time()
     campus_verts = total_verts()
     print("[build] objects=%d  verts=%d  trees=%d  %.1fs"
@@ -394,7 +410,7 @@ def main():
               % (o.name, len(o.data.vertices), len(o.data.polygons), tris))
 
     campus_fbx = os.path.join(args.out_dir, "campus.fbx")
-    size_campus = export_fbx(campus_fbx)
+    size_campus = export_fbx(campus_fbx, frame.u)
     print("[fbx] %s  %.2f MB" % (campus_fbx, size_campus / 1048576.0))
 
     # --- 樹木（プレビューにはインスタンスを置く）---
@@ -431,7 +447,7 @@ def main():
     # サイドカー（Unity 側が種別を読めるように）
     meta = {"species": [n for n, _ in props.TREE_SPECIES],
             "trees": [{"i": i, "x": round(t[0], 3), "y": round(t[1], 3),
-                       "species": props.TREE_SPECIES[t[2] % 3][0],
+                       "species": props.TREE_SPECIES[t[2] % len(props.TREE_SPECIES)][0],
                        "scale": round(t[3], 3), "rot": round(t[4], 4)}
                       for i, t in enumerate(trees)]}
     with open(os.path.join(args.out_dir, "trees.json"), "w", encoding="utf-8") as fp:

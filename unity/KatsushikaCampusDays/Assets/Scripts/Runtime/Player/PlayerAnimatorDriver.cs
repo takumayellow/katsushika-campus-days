@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace KCD
@@ -33,7 +32,6 @@ namespace KCD
         private bool _jumpTriggered;
         private SitPose _sitPose;
         private QuestSystem _quests;
-        private readonly List<Vector3> _npcPositions = new List<Vector3>();
 
         private void Awake()
         {
@@ -118,33 +116,36 @@ namespace KCD
         {
             // 「〜と話す」クエストは会話の始まりと同じフレームで達成になる。Talk 中に積んだ
             // トリガーは会話が終わった瞬間に遅れて出るので、会話・メニュー中は振らない。
-            if (_player != null && !KCDInput.GameplayBlocked && !_player.IsSitting && _player.IsGrounded)
+            if (CanWaveNow(_player))
             {
                 PlayWave();
             }
         }
 
         /// <summary>
-        /// Q で手を振る。前にいる近くの人（NPCWander）は立ち止まってこちらを向き、振り返してくれる。
-        /// 以前は手を振るだけで、誰も何も反応しなかった。
+        /// Q で手を振る。正面の近くに人（NPCWander）がいるときだけ振り、その人は立ち止まってこちらを向き、
+        /// 振り返してくれる。相手がいなければ何もせず false を返す (#13)。
         /// </summary>
-        public void WaveHello()
+        public bool WaveHello()
         {
-            PlayWave();
-            AudioManager.Instance?.PlaySe("wave");
-            NPCWander[] npcs = FindObjectsByType<NPCWander>(FindObjectsSortMode.None);
-            _npcPositions.Clear();
-            foreach (NPCWander npc in npcs)
+            NPCWander target = NPCWander.FindWaveTarget(transform.position, transform.forward);
+            if (target == null || !target.WaveBack(transform.position))
             {
-                _npcPositions.Add(npc.transform.position);
+                return false;
             }
 
-            int pick = NPCWander.PickWaveTarget(
-                transform.position, transform.forward, _npcPositions, NPCWander.WaveReach);
-            if (pick >= 0)
-            {
-                npcs[pick].WaveBack(transform.position);
-            }
+            PlayWave();
+            AudioManager.Instance?.PlaySe("wave");
+            return true;
+        }
+
+        /// <summary>
+        /// いま手を振ってよい姿勢か。会話やメニューで操作が封鎖されておらず、立っていて地面にいるとき。
+        /// Q の受け付けと「[Q] 手を振る」の案内（InteractionPrompt）が同じ条件を使う。
+        /// </summary>
+        public static bool CanWaveNow(PlayerController player)
+        {
+            return player != null && !KCDInput.GameplayBlocked && !player.IsSitting && player.IsGrounded;
         }
 
         /// <summary>
@@ -212,7 +213,7 @@ namespace KCD
             AttachQuests(GameManager.Instance != null ? GameManager.Instance.Quests : null);
             UpdateAirborne();
 
-            if (KCDInput.WavePressed && !KCDInput.GameplayBlocked && !_player.IsSitting && _player.IsGrounded)
+            if (KCDInput.WavePressed && CanWaveNow(_player))
             {
                 WaveHello();
             }

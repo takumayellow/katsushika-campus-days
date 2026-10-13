@@ -33,6 +33,7 @@ namespace KCD
         private AudioSource _ui;
         private AudioSource _voice;
         private AudioSource _chime;
+        private AudioSource _piano;
 
         private string _currentBgm = string.Empty;
         private string _currentAmbient = string.Empty;
@@ -45,9 +46,16 @@ namespace KCD
         private float _duck = 1f;
         private float _duckUntil;
         private float _duckLevel = JingleDuckLevel;
+        private float _pianoRemaining;
 
         /// <summary>いま鳴っている BGM の id。</summary>
         public string CurrentBgm => _currentBgm;
+
+        /// <summary>BGM に掛かっているダックの倍率（1 = 下げていない）。</summary>
+        public float BgmDuck => _duck;
+
+        /// <summary>ピアノの演奏中か。クリップの長さが尽きる前に StopPiano が呼ばれたら false。</summary>
+        public bool IsPianoPlaying => _pianoRemaining > 0f;
 
         /// <summary>いま鳴っている環境音の id。</summary>
         public string CurrentAmbient => _currentAmbient;
@@ -101,6 +109,7 @@ namespace KCD
             _ui = MakeSource("UI", false);
             _voice = MakeSource("Voice", false);
             _chime = MakeSource("Chime", false);
+            _piano = MakeSource("Piano", false);
             _ui.ignoreListenerPause = true;
             SubscribeScene();
         }
@@ -118,6 +127,10 @@ namespace KCD
         {
             UpdateScene();
             UpdateBgmFade(Time.unscaledDeltaTime);
+            if (_pianoRemaining > 0f && !AudioListener.pause)
+            {
+                _pianoRemaining -= Time.unscaledDeltaTime;
+            }
         }
 
         /// <summary>id のクリップ。無ければ null。</summary>
@@ -263,6 +276,36 @@ namespace KCD
         }
 
         /// <summary>
+        /// ピアノの演奏。止められるよう専用の AudioSource で鳴らし、終わるか StopPiano までは BGM を PianoDuckLevel まで下げる。
+        /// 鳴らせたら true（クリップが無ければ false）。
+        /// </summary>
+        public bool PlayPiano(string id)
+        {
+            AudioClip clip = Find(id);
+            if (clip == null)
+            {
+                return false;
+            }
+
+            _piano.Stop();
+            _piano.clip = clip;
+            _piano.volume = _seVolume;
+            _piano.Play();
+            _pianoRemaining = clip.length;
+            return true;
+        }
+
+        /// <summary>ピアノを止める。BGM は DuckReleaseSeconds でなめらかに戻る。</summary>
+        public void StopPiano()
+        {
+            _piano.Stop();
+            _pianoRemaining = 0f;
+        }
+
+        /// <summary>ピアノの演奏中の BGM 音量の倍率。</summary>
+        public const float PianoDuckLevel = 0.15f;
+
+        /// <summary>
         /// seconds の間 BGM を level 倍に下げる。時間は長い方、レベルは低い方を採る（重ねて呼んでも弱くならない）。
         /// </summary>
         public void Duck(float seconds, float level = JingleDuckLevel)
@@ -340,7 +383,13 @@ namespace KCD
             // 音量そのものを 1.6 秒かけて動かすとダックもその速さに縛られ、最初の鐘の下で BGM が鳴り続けていた（#38）。
             _levelA = Mathf.MoveTowards(_levelA, goalA, speed);
             _levelB = Mathf.MoveTowards(_levelB, goalB, speed);
-            _duck = StepDuck(_duck, Time.unscaledTime < _duckUntil ? _duckLevel : 1f, deltaTime);
+            float duckTarget = Time.unscaledTime < _duckUntil ? _duckLevel : 1f;
+            if (IsPianoPlaying)
+            {
+                duckTarget = Mathf.Min(duckTarget, PianoDuckLevel);
+            }
+
+            _duck = StepDuck(_duck, duckTarget, deltaTime);
 
             _bgmA.volume = _levelA * _bgmVolume * _duck;
             _bgmB.volume = _levelB * _bgmVolume * _duck;

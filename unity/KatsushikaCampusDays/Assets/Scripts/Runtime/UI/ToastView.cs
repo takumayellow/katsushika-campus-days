@@ -38,7 +38,10 @@ namespace KCD
             }
         }
 
-        /// <summary>通知を追加する。</summary>
+        /// <summary>順番待ちの通知の数（いま出ている分は含まない）。</summary>
+        public int PendingCount => _pending.Count;
+
+        /// <summary>通知を追加する。空の文言は捨てる。</summary>
         public void Push(string message)
         {
             if (!string.IsNullOrEmpty(message))
@@ -67,19 +70,30 @@ namespace KCD
             }
 
             _elapsed += Time.unscaledDeltaTime;
-            float total = _fadeSeconds * 2f + _holdSeconds;
 
-            if (_elapsed >= total)
+            if (IsFinished(_elapsed, _fadeSeconds, _holdSeconds))
             {
                 _group.alpha = 0f;
                 _showing = false;
                 return;
             }
 
-            _group.alpha = _elapsed < _fadeSeconds
-                ? _elapsed / _fadeSeconds
-                : _elapsed > _fadeSeconds + _holdSeconds
-                    ? 1f - (_elapsed - _fadeSeconds - _holdSeconds) / _fadeSeconds
+            _group.alpha = AlphaAt(_elapsed, _fadeSeconds, _holdSeconds);
+        }
+
+        /// <summary>出し始めてから elapsed 秒で消し終えたか（フェードイン + 表示 + フェードアウト）。</summary>
+        public static bool IsFinished(float elapsed, float fadeSeconds, float holdSeconds)
+        {
+            return elapsed >= fadeSeconds * 2f + holdSeconds;
+        }
+
+        /// <summary>出し始めてから elapsed 秒の不透明度。fade 秒で現れ、hold 秒そのまま、fade 秒で消える。</summary>
+        public static float AlphaAt(float elapsed, float fadeSeconds, float holdSeconds)
+        {
+            return elapsed < fadeSeconds
+                ? elapsed / fadeSeconds
+                : elapsed > fadeSeconds + holdSeconds
+                    ? 1f - (elapsed - fadeSeconds - holdSeconds) / fadeSeconds
                     : 1f;
         }
     }

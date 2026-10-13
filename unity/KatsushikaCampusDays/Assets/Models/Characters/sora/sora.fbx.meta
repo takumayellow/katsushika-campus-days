@@ -146,8 +146,68 @@ ModelImporter:
       bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000u
       curves: []
       events: []
-      transformMask: []
-      maskType: 3
+      transformMask:
+      - path: 
+        weight: 1
+      - path: Armature
+        weight: 1
+      - path: Armature/Hips
+        weight: 1
+      - path: Armature/Hips/Spine
+        weight: 1
+      - path: Armature/Hips/Spine/Chest
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/Neck
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/Neck/Head
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/Neck/Head/HairFront
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/Neck/Head/HairBack
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/LeftShoulder
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/LeftShoulder/LeftUpperArm
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/LeftShoulder/LeftUpperArm/LeftLowerArm
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/LeftShoulder/LeftUpperArm/LeftLowerArm/LeftHand
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/RightShoulder
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/RightShoulder/RightUpperArm
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/RightShoulder/RightUpperArm/RightLowerArm
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/RightShoulder/RightUpperArm/RightLowerArm/RightHand
+        weight: 1
+      - path: Armature/Hips/LeftUpperLeg
+        weight: 1
+      - path: Armature/Hips/LeftUpperLeg/LeftLowerLeg
+        weight: 1
+      - path: Armature/Hips/LeftUpperLeg/LeftLowerLeg/LeftFoot
+        weight: 1
+      - path: Armature/Hips/LeftUpperLeg/LeftLowerLeg/LeftFoot/LeftToes
+        weight: 1
+      - path: Armature/Hips/RightUpperLeg
+        weight: 1
+      - path: Armature/Hips/RightUpperLeg/RightLowerLeg
+        weight: 1
+      - path: Armature/Hips/RightUpperLeg/RightLowerLeg/RightFoot
+        weight: 1
+      - path: Armature/Hips/RightUpperLeg/RightLowerLeg/RightFoot/RightToes
+        weight: 1
+      - path: Armature/Hips/SkirtFront
+        weight: 1
+      - path: Armature/Hips/SkirtBack
+        weight: 1
+      - path: sora
+        weight: 1
+      - path: sora_outline
+        weight: 1
+      maskType: 0
       maskSource: {instanceID: 0}
       additiveReferencePoseFrame: 0
     - serializedVersion: 16
@@ -175,8 +235,68 @@ ModelImporter:
       bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000u
       curves: []
       events: []
-      transformMask: []
-      maskType: 3
+      transformMask:
+      - path: 
+        weight: 1
+      - path: Armature
+        weight: 1
+      - path: Armature/Hips
+        weight: 1
+      - path: Armature/Hips/Spine
+        weight: 1
+      - path: Armature/Hips/Spine/Chest
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/Neck
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/Neck/Head
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/Neck/Head/HairFront
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/Neck/Head/HairBack
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/LeftShoulder
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/LeftShoulder/LeftUpperArm
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/LeftShoulder/LeftUpperArm/LeftLowerArm
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/LeftShoulder/LeftUpperArm/LeftLowerArm/LeftHand
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/RightShoulder
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/RightShoulder/RightUpperArm
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/RightShoulder/RightUpperArm/RightLowerArm
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/RightShoulder/RightUpperArm/RightLowerArm/RightHand
+        weight: 1
+      - path: Armature/Hips/LeftUpperLeg
+        weight: 1
+      - path: Armature/Hips/LeftUpperLeg/LeftLowerLeg
+        weight: 1
+      - path: Armature/Hips/LeftUpperLeg/LeftLowerLeg/LeftFoot
+        weight: 1
+      - path: Armature/Hips/LeftUpperLeg/LeftLowerLeg/LeftFoot/LeftToes
+        weight: 1
+      - path: Armature/Hips/RightUpperLeg
+        weight: 1
+      - path: Armature/Hips/RightUpperLeg/RightLowerLeg
+        weight: 1
+      - path: Armature/Hips/RightUpperLeg/RightLowerLeg/RightFoot
+        weight: 1
+      - path: Armature/Hips/RightUpperLeg/RightLowerLeg/RightFoot/RightToes
+        weight: 1
+      - path: Armature/Hips/SkirtFront
+        weight: 1
+      - path: Armature/Hips/SkirtBack
+        weight: 1
+      - path: sora
+        weight: 1
+      - path: sora_outline
+        weight: 1
+      maskType: 0
       maskSource: {instanceID: 0}
       additiveReferencePoseFrame: 0
     - serializedVersion: 16
@@ -184,7 +304,7 @@ ModelImporter:
       takeName: Armature|Run
       internalID: -7551964380084998518
       firstFrame: 0
-      lastFrame: 10
+      lastFrame: 8
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -204,8 +324,68 @@ ModelImporter:
       bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000u
       curves: []
       events: []
-      transformMask: []
-      maskType: 3
+      transformMask:
+      - path: 
+        weight: 1
+      - path: Armature
+        weight: 1
+      - path: Armature/Hips
+        weight: 1
+      - path: Armature/Hips/Spine
+        weight: 1
+      - path: Armature/Hips/Spine/Chest
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/Neck
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/Neck/Head
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/Neck/Head/HairFront
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/Neck/Head/HairBack
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/LeftShoulder
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/LeftShoulder/LeftUpperArm
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/LeftShoulder/LeftUpperArm/LeftLowerArm
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/LeftShoulder/LeftUpperArm/LeftLowerArm/LeftHand
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/RightShoulder
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/RightShoulder/RightUpperArm
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/RightShoulder/RightUpperArm/RightLowerArm
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/RightShoulder/RightUpperArm/RightLowerArm/RightHand
+        weight: 1
+      - path: Armature/Hips/LeftUpperLeg
+        weight: 1
+      - path: Armature/Hips/LeftUpperLeg/LeftLowerLeg
+        weight: 1
+      - path: Armature/Hips/LeftUpperLeg/LeftLowerLeg/LeftFoot
+        weight: 1
+      - path: Armature/Hips/LeftUpperLeg/LeftLowerLeg/LeftFoot/LeftToes
+        weight: 1
+      - path: Armature/Hips/RightUpperLeg
+        weight: 1
+      - path: Armature/Hips/RightUpperLeg/RightLowerLeg
+        weight: 1
+      - path: Armature/Hips/RightUpperLeg/RightLowerLeg/RightFoot
+        weight: 1
+      - path: Armature/Hips/RightUpperLeg/RightLowerLeg/RightFoot/RightToes
+        weight: 1
+      - path: Armature/Hips/SkirtFront
+        weight: 1
+      - path: Armature/Hips/SkirtBack
+        weight: 1
+      - path: sora
+        weight: 1
+      - path: sora_outline
+        weight: 1
+      maskType: 0
       maskSource: {instanceID: 0}
       additiveReferencePoseFrame: 0
     - serializedVersion: 16
@@ -233,8 +413,68 @@ ModelImporter:
       bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000u
       curves: []
       events: []
-      transformMask: []
-      maskType: 3
+      transformMask:
+      - path: 
+        weight: 1
+      - path: Armature
+        weight: 1
+      - path: Armature/Hips
+        weight: 1
+      - path: Armature/Hips/Spine
+        weight: 1
+      - path: Armature/Hips/Spine/Chest
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/Neck
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/Neck/Head
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/Neck/Head/HairFront
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/Neck/Head/HairBack
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/LeftShoulder
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/LeftShoulder/LeftUpperArm
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/LeftShoulder/LeftUpperArm/LeftLowerArm
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/LeftShoulder/LeftUpperArm/LeftLowerArm/LeftHand
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/RightShoulder
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/RightShoulder/RightUpperArm
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/RightShoulder/RightUpperArm/RightLowerArm
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/RightShoulder/RightUpperArm/RightLowerArm/RightHand
+        weight: 1
+      - path: Armature/Hips/LeftUpperLeg
+        weight: 1
+      - path: Armature/Hips/LeftUpperLeg/LeftLowerLeg
+        weight: 1
+      - path: Armature/Hips/LeftUpperLeg/LeftLowerLeg/LeftFoot
+        weight: 1
+      - path: Armature/Hips/LeftUpperLeg/LeftLowerLeg/LeftFoot/LeftToes
+        weight: 1
+      - path: Armature/Hips/RightUpperLeg
+        weight: 1
+      - path: Armature/Hips/RightUpperLeg/RightLowerLeg
+        weight: 1
+      - path: Armature/Hips/RightUpperLeg/RightLowerLeg/RightFoot
+        weight: 1
+      - path: Armature/Hips/RightUpperLeg/RightLowerLeg/RightFoot/RightToes
+        weight: 1
+      - path: Armature/Hips/SkirtFront
+        weight: 1
+      - path: Armature/Hips/SkirtBack
+        weight: 1
+      - path: sora
+        weight: 1
+      - path: sora_outline
+        weight: 1
+      maskType: 0
       maskSource: {instanceID: 0}
       additiveReferencePoseFrame: 0
     - serializedVersion: 16
@@ -262,8 +502,68 @@ ModelImporter:
       bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000u
       curves: []
       events: []
-      transformMask: []
-      maskType: 3
+      transformMask:
+      - path: 
+        weight: 1
+      - path: Armature
+        weight: 1
+      - path: Armature/Hips
+        weight: 1
+      - path: Armature/Hips/Spine
+        weight: 1
+      - path: Armature/Hips/Spine/Chest
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/Neck
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/Neck/Head
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/Neck/Head/HairFront
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/Neck/Head/HairBack
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/LeftShoulder
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/LeftShoulder/LeftUpperArm
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/LeftShoulder/LeftUpperArm/LeftLowerArm
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/LeftShoulder/LeftUpperArm/LeftLowerArm/LeftHand
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/RightShoulder
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/RightShoulder/RightUpperArm
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/RightShoulder/RightUpperArm/RightLowerArm
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/RightShoulder/RightUpperArm/RightLowerArm/RightHand
+        weight: 1
+      - path: Armature/Hips/LeftUpperLeg
+        weight: 1
+      - path: Armature/Hips/LeftUpperLeg/LeftLowerLeg
+        weight: 1
+      - path: Armature/Hips/LeftUpperLeg/LeftLowerLeg/LeftFoot
+        weight: 1
+      - path: Armature/Hips/LeftUpperLeg/LeftLowerLeg/LeftFoot/LeftToes
+        weight: 1
+      - path: Armature/Hips/RightUpperLeg
+        weight: 1
+      - path: Armature/Hips/RightUpperLeg/RightLowerLeg
+        weight: 1
+      - path: Armature/Hips/RightUpperLeg/RightLowerLeg/RightFoot
+        weight: 1
+      - path: Armature/Hips/RightUpperLeg/RightLowerLeg/RightFoot/RightToes
+        weight: 1
+      - path: Armature/Hips/SkirtFront
+        weight: 1
+      - path: Armature/Hips/SkirtBack
+        weight: 1
+      - path: sora
+        weight: 1
+      - path: sora_outline
+        weight: 1
+      maskType: 0
       maskSource: {instanceID: 0}
       additiveReferencePoseFrame: 0
     - serializedVersion: 16
@@ -271,7 +571,7 @@ ModelImporter:
       takeName: Armature|Wave
       internalID: 5404347575020875500
       firstFrame: 0
-      lastFrame: 39
+      lastFrame: 27
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -291,8 +591,68 @@ ModelImporter:
       bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000u
       curves: []
       events: []
-      transformMask: []
-      maskType: 3
+      transformMask:
+      - path: 
+        weight: 1
+      - path: Armature
+        weight: 1
+      - path: Armature/Hips
+        weight: 1
+      - path: Armature/Hips/Spine
+        weight: 1
+      - path: Armature/Hips/Spine/Chest
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/Neck
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/Neck/Head
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/Neck/Head/HairFront
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/Neck/Head/HairBack
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/LeftShoulder
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/LeftShoulder/LeftUpperArm
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/LeftShoulder/LeftUpperArm/LeftLowerArm
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/LeftShoulder/LeftUpperArm/LeftLowerArm/LeftHand
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/RightShoulder
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/RightShoulder/RightUpperArm
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/RightShoulder/RightUpperArm/RightLowerArm
+        weight: 1
+      - path: Armature/Hips/Spine/Chest/UpperChest/RightShoulder/RightUpperArm/RightLowerArm/RightHand
+        weight: 1
+      - path: Armature/Hips/LeftUpperLeg
+        weight: 1
+      - path: Armature/Hips/LeftUpperLeg/LeftLowerLeg
+        weight: 1
+      - path: Armature/Hips/LeftUpperLeg/LeftLowerLeg/LeftFoot
+        weight: 1
+      - path: Armature/Hips/LeftUpperLeg/LeftLowerLeg/LeftFoot/LeftToes
+        weight: 1
+      - path: Armature/Hips/RightUpperLeg
+        weight: 1
+      - path: Armature/Hips/RightUpperLeg/RightLowerLeg
+        weight: 1
+      - path: Armature/Hips/RightUpperLeg/RightLowerLeg/RightFoot
+        weight: 1
+      - path: Armature/Hips/RightUpperLeg/RightLowerLeg/RightFoot/RightToes
+        weight: 1
+      - path: Armature/Hips/SkirtFront
+        weight: 1
+      - path: Armature/Hips/SkirtBack
+        weight: 1
+      - path: sora
+        weight: 1
+      - path: sora_outline
+        weight: 1
+      maskType: 0
       maskSource: {instanceID: 0}
       additiveReferencePoseFrame: 0
     isReadable: 0
@@ -342,7 +702,7 @@ ModelImporter:
   tangentSpace:
     normalSmoothAngle: 60
     normalImportMode: 0
-    tangentImportMode: 3
+    tangentImportMode: 2
     normalCalculationMode: 4
     legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 0
     blendShapeNormalImportMode: 1
@@ -547,44 +907,54 @@ ModelImporter:
       scale: {x: 1, y: 1, z: 1}
     - name: LeftUpperLeg
       parentName: Hips
-      position: {x: -0.052183334, y: -0.016920865, z: 0}
-      rotation: {x: 0.999979, y: 0.004583775, z: 0.004583728, w: -0.000021011216}
-      scale: {x: 0.99999994, y: 1, z: 1}
+      position: {x: -0.058445334, y: -0.016920865, z: 0}
+      rotation: {x: 0.99991596, y: 0.009166392, z: 0.0091664, w: -0.000084029874}
+      scale: {x: 1, y: 0.9999997, z: 0.99999994}
     - name: LeftLowerLeg
       parentName: LeftUpperLeg
-      position: {x: -0.0000000027939449, y: 0.341531, z: 4.7910968e-12}
-      rotation: {x: -0.000012684202, y: -0.001698108, z: 0.0016981083, w: 0.99999714}
-      scale: {x: 0.99999994, y: 1, z: 1}
+      position: {x: 0.000000006519076, y: 0.34157407, z: 6.8147106e-11}
+      rotation: {x: -0.00008402983, y: -0.009166403, z: 0.009166389, w: 0.999916}
+      scale: {x: 0.99999994, y: 1, z: 0.99999994}
     - name: LeftFoot
       parentName: LeftLowerLeg
-      position: {x: -0.0000000012514579, y: 0.36167267, z: 8.835254e-12}
-      rotation: {x: -0.51465917, y: -0.003959284, z: 0.0009890336, w: 0.85738516}
-      scale: {x: 0.99999994, y: 1, z: 1}
+      position: {x: -0.0000000037729686, y: 0.36166674, z: 4.4018608e-17}
+      rotation: {x: -0.51465625, y: 0.0000000013983348, z: 8.8945296e-10, w: 0.8573966}
+      scale: {x: 1, y: 1, z: 1}
     - name: LeftToes
       parentName: LeftFoot
-      position: {x: -0.0000000035327445, y: 0.11690041, z: -0.0000000017895296}
-      rotation: {x: 0.0000000029972655, y: 0.9701879, z: -0.242354, w: -0.00000013799848}
-      scale: {x: 1, y: 0.9999996, z: 1}
+      position: {x: -0.0000000037789296, y: 0.1169004, z: -4.8659915e-10}
+      rotation: {x: 0.0000000019738433, y: 0.9701879, z: -0.24235404, w: -0.00000013774283}
+      scale: {x: 1, y: 0.9999995, z: 0.99999994}
     - name: RightUpperLeg
       parentName: Hips
-      position: {x: 0.052183334, y: -0.016920865, z: 0}
-      rotation: {x: 0.999979, y: -0.004583775, z: -0.004583728, w: -0.000021011216}
-      scale: {x: 0.99999994, y: 1, z: 1}
+      position: {x: 0.058445334, y: -0.016920865, z: 0}
+      rotation: {x: 0.99991596, y: -0.009166392, z: -0.0091664, w: -0.000084029874}
+      scale: {x: 1, y: 0.9999997, z: 0.99999994}
     - name: RightLowerLeg
       parentName: RightUpperLeg
-      position: {x: 0.0000000027939449, y: 0.341531, z: 4.7910968e-12}
-      rotation: {x: -0.000012684202, y: 0.001698108, z: -0.0016981083, w: 0.99999714}
-      scale: {x: 0.99999994, y: 1, z: 1}
+      position: {x: -0.000000006519076, y: 0.34157407, z: 6.8147106e-11}
+      rotation: {x: -0.00008402983, y: 0.009166403, z: -0.009166389, w: 0.999916}
+      scale: {x: 0.99999994, y: 1, z: 0.99999994}
     - name: RightFoot
       parentName: RightLowerLeg
-      position: {x: 0.0000000012514579, y: 0.36167267, z: 8.835254e-12}
-      rotation: {x: -0.51465917, y: 0.003959284, z: -0.0009890336, w: 0.85738516}
-      scale: {x: 0.99999994, y: 1, z: 1}
+      position: {x: 0.0000000037729686, y: 0.36166674, z: 4.4018608e-17}
+      rotation: {x: -0.51465625, y: -0.0000000013983348, z: -8.8945296e-10, w: 0.8573966}
+      scale: {x: 1, y: 1, z: 1}
     - name: RightToes
       parentName: RightFoot
-      position: {x: 0.0000000035327445, y: 0.11690041, z: -0.0000000017895296}
-      rotation: {x: -0.0000000029972655, y: 0.9701879, z: -0.242354, w: 0.00000013799848}
-      scale: {x: 1, y: 0.9999996, z: 1}
+      position: {x: 0.0000000037789296, y: 0.1169004, z: -4.8659915e-10}
+      rotation: {x: -0.0000000019738433, y: 0.9701879, z: -0.24235404, w: 0.00000013774283}
+      scale: {x: 1, y: 0.9999995, z: 0.99999994}
+    - name: SkirtBack
+      parentName: Hips
+      position: {x: -0, y: -0.016920865, z: 0}
+      rotation: {x: 1, y: -4.622913e-24, z: 0.0000000754979, w: 6.123234e-17}
+      scale: {x: 1, y: 1, z: 1}
+    - name: SkirtFront
+      parentName: Hips
+      position: {x: -0, y: -0.016920865, z: 0}
+      rotation: {x: 1, y: -4.622913e-24, z: 0.0000000754979, w: 6.123234e-17}
+      scale: {x: 1, y: 1, z: 1}
     - name: Spine
       parentName: Hips
       position: {x: -0, y: 0.14272916, z: 0}
@@ -597,69 +967,69 @@ ModelImporter:
       scale: {x: 1, y: 1, z: 1}
     - name: UpperChest
       parentName: Chest
-      position: {x: -0, y: 0.11061835, z: 0}
+      position: {x: -0, y: 0.094343305, z: 0}
       rotation: {x: 0, y: -0, z: -0, w: 1}
       scale: {x: 1, y: 1, z: 1}
     - name: LeftShoulder
       parentName: UpperChest
-      position: {x: -0.0248, y: 0.024799943, z: 0}
-      rotation: {x: -0.3443003, y: 0.47513956, z: 0.47513953, w: 0.65569973}
-      scale: {x: 1, y: 1.0000001, z: 1}
+      position: {x: -0.0248, y: 0.024800062, z: 0}
+      rotation: {x: -0.44797644, y: 0.497286, z: 0.49728647, w: 0.5520236}
+      scale: {x: 1, y: 1, z: 1}
     - name: LeftUpperArm
       parentName: LeftShoulder
-      position: {x: -0.000000008381903, y: 0.106021486, z: 0}
-      rotation: {x: -0.70057476, y: 0.40219453, z: -0.20237356, w: 0.5536059}
-      scale: {x: 1, y: 1, z: 1}
+      position: {x: 8.7916857e-10, y: 0.10129982, z: -0.000000018547922}
+      rotation: {x: -0.6491236, y: 0.35498396, z: -0.26395953, w: 0.6188298}
+      scale: {x: 1, y: 1, z: 1.0000001}
     - name: LeftLowerArm
       parentName: LeftUpperArm
-      position: {x: 0.0000000013969839, y: 0.2636214, z: -0.000000007916242}
-      rotation: {x: -0.08298053, y: 0.10147099, z: -0.026539119, w: 0.99101645}
-      scale: {x: 0.99999994, y: 0.99999994, z: 0.9999999}
+      position: {x: 0.000000006519258, y: 0.26362136, z: 0.0000000018626451}
+      rotation: {x: 0.010440659, y: 0.086193316, z: 0.119814664, w: 0.9889925}
+      scale: {x: 0.99999994, y: 0.9999999, z: 1}
     - name: LeftHand
       parentName: LeftLowerArm
-      position: {x: 0.0000000055879354, y: 0.23280951, z: 0}
-      rotation: {x: 0.0223267, y: 0.00000007215413, z: -0.012890422, w: 0.99966764}
-      scale: {x: 1, y: 1, z: 0.9999999}
+      position: {x: 0.000000011175871, y: 0.23280948, z: -0.000000016763806}
+      rotation: {x: 0.022326706, y: 0.000000050036025, z: -0.0128903445, w: 0.99966764}
+      scale: {x: 1, y: 0.9999999, z: 1}
     - name: Neck
       parentName: UpperChest
-      position: {x: -0, y: 0.09501505, z: 0}
+      position: {x: -0, y: 0.072540045, z: 0}
       rotation: {x: 0, y: -0, z: -0, w: 1}
-      scale: {x: 1, y: 1, z: 1}
+      scale: {x: 1, y: 0.99999994, z: 1}
     - name: Head
       parentName: Neck
-      position: {x: -0, y: 0.021183252, z: 0}
-      rotation: {x: 0, y: -0, z: -0.013089639, w: 0.99991435}
+      position: {x: -0, y: 0.059933305, z: 0}
+      rotation: {x: 0, y: -0, z: -0.013089642, w: 0.99991435}
       scale: {x: 1, y: 1, z: 1}
     - name: HairBack
       parentName: Head
-      position: {x: -9.313226e-10, y: 0.23146671, z: -0.06417}
-      rotation: {x: 0.9977052, y: 0.015230789, z: -0.001006985, w: -0.065964796}
-      scale: {x: 1, y: 1, z: 1.0000161}
+      position: {x: 9.313226e-10, y: 0.23146671, z: -0.06417}
+      rotation: {x: 0.9977052, y: 0.015230787, z: -0.0010069849, w: -0.065964796}
+      scale: {x: 1, y: 1.0000001, z: 1.0000161}
     - name: HairFront
       parentName: Head
-      position: {x: -9.313226e-10, y: 0.23146671, z: 0.06417}
-      rotation: {x: 0.99443465, y: 0.010120138, z: 0.0010671596, w: 0.10486257}
-      scale: {x: 1, y: 1, z: 1.000002}
+      position: {x: 9.313226e-10, y: 0.23146671, z: 0.06417}
+      rotation: {x: 0.99443465, y: 0.010120139, z: 0.0010671748, w: 0.10486298}
+      scale: {x: 1, y: 0.9999999, z: 0.9999948}
     - name: RightShoulder
       parentName: UpperChest
-      position: {x: 0.0248, y: 0.024799943, z: 0}
-      rotation: {x: -0.3443003, y: -0.47513956, z: -0.47513953, w: 0.65569973}
-      scale: {x: 1, y: 1.0000001, z: 1}
+      position: {x: 0.0248, y: 0.024800062, z: 0}
+      rotation: {x: -0.44797644, y: -0.497286, z: -0.49728647, w: 0.5520236}
+      scale: {x: 1, y: 1, z: 1}
     - name: RightUpperArm
       parentName: RightShoulder
-      position: {x: 0.000000008381903, y: 0.106021486, z: 0}
-      rotation: {x: -0.70057476, y: -0.40219453, z: 0.20237356, w: 0.5536059}
-      scale: {x: 1, y: 1, z: 1}
+      position: {x: -8.7916857e-10, y: 0.10129982, z: -0.000000018547922}
+      rotation: {x: -0.6491236, y: -0.35498396, z: 0.26395953, w: 0.6188298}
+      scale: {x: 1, y: 1, z: 1.0000001}
     - name: RightLowerArm
       parentName: RightUpperArm
-      position: {x: -0.0000000013969839, y: 0.2636214, z: -0.000000007916242}
-      rotation: {x: -0.08298053, y: -0.10147099, z: 0.026539119, w: 0.99101645}
-      scale: {x: 0.99999994, y: 0.99999994, z: 0.9999999}
+      position: {x: -0.000000006519258, y: 0.26362136, z: 0.0000000018626451}
+      rotation: {x: 0.010440659, y: -0.086193316, z: -0.119814664, w: 0.9889925}
+      scale: {x: 0.99999994, y: 0.9999999, z: 1}
     - name: RightHand
       parentName: RightLowerArm
-      position: {x: -0.0000000055879354, y: 0.23280951, z: 0}
-      rotation: {x: 0.0223267, y: -0.00000007215413, z: 0.012890422, w: 0.99966764}
-      scale: {x: 1, y: 1, z: 0.9999999}
+      position: {x: -0.000000011175871, y: 0.23280948, z: -0.000000016763806}
+      rotation: {x: 0.022326706, y: -0.000000050036025, z: 0.0128903445, w: 0.99966764}
+      scale: {x: 1, y: 0.9999999, z: 1}
     - name: sora
       parentName: sora(Clone)
       position: {x: -0, y: 0, z: 0}

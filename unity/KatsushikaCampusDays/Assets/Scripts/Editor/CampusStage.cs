@@ -31,6 +31,10 @@ namespace KCD.Editor
             {
                 DressCampus(_campus);
                 BuildBasinKeepout(root);
+                // 照明柱の夜の明かり (#8)。光だまりを地面へ落とすので、当たり判定を付けたあとに置く。
+                StreetLampStage.Build(root, _campus);
+                // 夜に研究棟・実験棟の窓をぽつぽつ点ける (#166)。
+                WindowLightStage.Build(root, _campus);
             }
 
             GameObject trees = PlaceModel(EditorPaths.TreesFbx, "Trees", root);
@@ -101,6 +105,18 @@ namespace KCD.Editor
                         Object.DestroyImmediate(water);
                     }
 
+                    // 水面は KCD/Water で描く (#58)。FBX の "water" は取り込みで water.mat へ付け替え済みで、
+                    // MaterialLibrary.EnsureCampus の新規作成の道を通らないので、ここで毎回シェーダと値を合わせる。
+                    // 半透明の 1 パスだけで描き、影は落とさない（受けるだけ）。
+                    MeshRenderer surface = go.GetComponent<MeshRenderer>();
+                    if (surface != null)
+                    {
+                        Material waterMaterial = MaterialLibrary.EnsureCampus("water");
+                        WaterMaterial.Apply(waterMaterial);
+                        surface.sharedMaterial = waterMaterial;
+                        surface.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                    }
+
                     Ignore(go);
                 }
                 else if (backdrop)
@@ -126,6 +142,11 @@ namespace KCD.Editor
                     colliders++;
                 }
 
+                if (IsPropMesh(id))
+                {
+                    MarkNotWalkable(go);
+                }
+
                 if (id.Contains("ground") && groundLayer >= 0)
                 {
                     go.layer = groundLayer;
@@ -135,12 +156,57 @@ namespace KCD.Editor
                     go.layer = buildingLayer;
                 }
 
+                // 上のレイヤーの分岐とは分ける。bld_background は名前に "ground" を含み、そちらの分岐に入る。
+                if (id.StartsWith("bld"))
+                {
+                    // 建物は角柱を並べた形で、角で面ごとに法線が分かれている。影を落とすときは頂点を法線の逆へ
+                    // 押す（normal bias）ので、片面だけだと角で壁どうしが離れ、影の中に光の筋が通る。
+                    // 裏の面も影に描いて隙間をふさぐ (#229)。影のパスで描く三角形は建物の分だけ増える。
+                    MeshRenderer building = go.GetComponent<MeshRenderer>();
+                    if (building != null)
+                    {
+                        building.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.TwoSided;
+                    }
+                }
+
                 GameObjectUtility.SetStaticEditorFlags(go, StaticEditorFlags.BatchingStatic
                     | StaticEditorFlags.OccluderStatic | StaticEditorFlags.OccludeeStatic);
             }
 
             EditorPaths.Report("キャンパスに MeshCollider を " + colliders + " 個付けました"
                 + "（うち背景ビル " + backgroundTris + " 三角形、NavMesh からは除外）。");
+        }
+
+        /// <summary>
+        /// ベンチ・照明柱（site_furniture）と、看板・花壇・自販機・ゴミ箱（site_props_*）のメッシュか。
+        /// どれもプレイヤーが歩いては上がれないので、NPC にも上を歩かせない（#164）。
+        /// </summary>
+        public static bool IsPropMesh(string objectName)
+        {
+            if (string.IsNullOrEmpty(objectName))
+            {
+                return false;
+            }
+
+            string id = objectName.ToLowerInvariant();
+            return id == "site_furniture" || id.StartsWith("site_props_", System.StringComparison.Ordinal);
+        }
+
+        /// <summary>
+        /// NavMesh に Not Walkable の面として焼く。Ignore と違って形は残すので、下の地面も小物の足もとで切れ、
+        /// NPC は小物の縁からエージェントの半径ぶん離れて歩く。花壇の天面（3.6 m 幅）は段差を下げても
+        /// 地面とつながらない島として焼けてしまうので、段差だけには頼らない。
+        /// </summary>
+        private static void MarkNotWalkable(GameObject go)
+        {
+            NavMeshModifier modifier = go.GetComponent<NavMeshModifier>();
+            if (modifier == null)
+            {
+                modifier = go.AddComponent<NavMeshModifier>();
+            }
+
+            modifier.overrideArea = true;
+            modifier.area = 1;   // 1 = Not Walkable
         }
 
         /// <summary>
@@ -200,7 +266,7 @@ namespace KCD.Editor
             }
 
             string name = material.name.ToLowerInvariant();
-            return name.StartsWith("plant_green") || name.StartsWith("leaf");
+            return name.StartsWith("plant_green") || name.StartsWith("plant_yellow") || name.StartsWith("leaf");
         }
 
         /// <summary>
@@ -337,8 +403,8 @@ namespace KCD.Editor
         /// <summary>Empty の下に作る、メッシュを描く子の名前。</summary>
         public const string TreeBodyName = "body";
 
-        /// <summary>Empty の下に作る、幹の当たり判定の子の名前。</summary>
-        public const string TreeTrunkName = "trunk";
+        /// <summary>Empty の下に作る、幹の当たり判定の子の名前。カメラはこの名前の当たり判定の手前で寄る（#12）。</summary>
+        public const string TreeTrunkName = CameraObstacleFilter.TreeTrunkName;
 
         /// <summary>幹の当たり判定の半径と高さ（木の scale を掛ける前）。</summary>
         public const float TreeTrunkRadius = 0.3f;
@@ -454,7 +520,10 @@ namespace KCD.Editor
             modifier.AffectsAgentType(0);
         }
 
-        /// <summary>OuterGround の半径（m）。カメラの far clip（900 m）＋ 歩ける範囲（±340 m）より広く取る。</summary>
+        /// <summary>
+        /// OuterGround の半径（m）。歩ける範囲（西の増築区画まで入れて最大 490 m）の端に立っても、霧で見えなくなる
+        /// 距離（FogEndDistance）とカメラの far clip（900 m）の先まで地面が続く広さにする。
+        /// </summary>
         public const float OuterGroundHalfExtent = 2000f;
 
         /// <summary>OuterGround の高さ（m）。site_ground の芝（Blender の Z_GROUND = 0.0）のすぐ下。</summary>
@@ -464,9 +533,50 @@ namespace KCD.Editor
         public const float OuterGroundThickness = 0.5f;
 
         /// <summary>
-        /// キャンパスの外側まで続く大きな地面。境界の外に落ちないようにし、遠くに地面の端（その先の
-        /// 茶色い skybox の地面色）を見せない。以前は ±350 m で終わっていて、site_ground と同じ広さしか
-        /// 無かったので、遠景に茶色い縁が出ていた（#40, #30）。
+        /// OuterGround から、1F の床より下まで掘り下げた屋内の部屋の範囲（holes。Rect の x は世界の x、y は世界の z）を抜く。
+        /// 抜かないと、部屋の上に芝が浮いて見え、当たり判定で段を下りられない。見た目は穴の周りのタイルのメッシュに、
+        /// 当たり判定はタイルごとの BoxCollider に差し替える。穴が無ければ何もしない。
+        /// </summary>
+        public static void CutOuterGround(Transform root, IList<Rect> holes)
+        {
+            Transform ground = root.Find("OuterGround");
+            if (ground == null || holes == null || holes.Count == 0)
+            {
+                return;
+            }
+
+            ground.localScale = Vector3.one;
+            Vector3 origin = ground.position;
+            List<Rect> tiles = GroundTiles.Subtract(
+                Rect.MinMaxRect(origin.x - OuterGroundHalfExtent, origin.z - OuterGroundHalfExtent,
+                    origin.x + OuterGroundHalfExtent, origin.z + OuterGroundHalfExtent),
+                holes);
+            MeshFilter filter = ground.GetComponent<MeshFilter>();
+            Mesh old = filter.sharedMesh;
+            filter.sharedMesh = GroundTiles.BuildMesh(tiles, 0f, origin, "outer_ground");
+            if (old != null && !AssetDatabase.Contains(old))
+            {
+                Object.DestroyImmediate(old);
+            }
+
+            foreach (BoxCollider box in ground.GetComponents<BoxCollider>())
+            {
+                Object.DestroyImmediate(box);
+            }
+
+            foreach (Rect tile in tiles)
+            {
+                BoxCollider box = ground.gameObject.AddComponent<BoxCollider>();
+                box.size = new Vector3(tile.width, OuterGroundThickness, tile.height);
+                box.center = new Vector3(tile.center.x - origin.x, -OuterGroundThickness * 0.5f, tile.center.y - origin.z);
+            }
+        }
+
+        /// <summary>
+        /// キャンパスの外側まで続く大きな地面。境界の外に落ちないようにし、遠くに地面の端を見せない。
+        /// 以前は ±350 m で終わっていて、site_ground と同じ広さしか無かったので、遠景に茶色い縁が出ていた（#40, #30）。
+        /// 地面は霧の終わりより先では霧の色一色になり、その先（far clip の外）に見える空の下半分も
+        /// KCD/Sky が同じ霧の色で塗るので、上空から見ても地面と空のあいだに帯が出ない（SkyFactory, #40）。
         /// 当たり判定は Plane の MeshCollider ではなく薄い BoxCollider にする。4 km の Plane を
         /// そのまま当たり判定にすると 1 枚 400 m の三角形になり、PhysX が「2 頂点の距離が 500 を超える」と
         /// 警告して接地も不安定になる。
@@ -496,6 +606,10 @@ namespace KCD.Editor
 
             var renderer = ground.GetComponent<Renderer>();
             renderer.sharedMaterial = MaterialLibrary.EnsureCampus("grass_dark");
+            // 芝の画像を FBX の芝と同じ実寸で並べる (#59)。
+            CampusSurfaces.UseMetricUv(
+                ground.GetComponent<MeshFilter>(),
+                new Vector2(OuterGroundHalfExtent * 2f, OuterGroundHalfExtent * 2f));
             renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             GameObjectUtility.SetStaticEditorFlags(ground, StaticEditorFlags.BatchingStatic);
         }
@@ -506,7 +620,7 @@ namespace KCD.Editor
 
         /// <summary>
         /// 水面の矩形 (x = u0, y = v0, z = u1, w = v1)。site.py の BASINS。図書館の東と南を L 字に囲む。
-        /// 1 枚目はモールの北、2・3 枚目はモールの南（東の帯と南の帯）。
+        /// 1 枚目はメインストリートの北、2・3 枚目はメインストリートの南（東の帯と南の帯）。
         /// </summary>
         public static readonly Vector4[] Basins =
         {
@@ -640,7 +754,7 @@ namespace KCD.Editor
         ///
         /// 柵で囲うと不自然なので、当たり判定だけの見えない壁（BoxCollider）を水際に立てる。
         /// 隣の水面と接する辺（L 字の継ぎ目）には立てない。壁は Default レイヤーなので、カメラの遮蔽判定
-        /// （Ground|Building しか見ない ThirdPersonCamera / CinemachineDeoccluder）には
+        /// （Ground|Building と Default の幹だけを見る CinemachineCameraGuard / CameraObstacleFilter）には
         /// 引っかからず、見た目も操作感も今までどおり。
         ///
         /// 縁石（天端 0.36 m・幅 1.6 m）は腰かけたまま。壁の中心線を水際に置き、厚み 0.5 m の
@@ -700,17 +814,23 @@ namespace KCD.Editor
             go.AddComponent<BoxCollider>().size = size;
         }
 
-        /// <summary>太陽と時間の流れ。色や強さは DayNightCycle が自前の既定値で埋める。</summary>
+        /// <summary>霧が濃くなりはじめる距離（m）。</summary>
+        public const float FogStartDistance = 220f;
+
+        /// <summary>霧で見えなくなる距離（m）。OuterGround はここより先まで敷く（#40）。</summary>
+        public const float FogEndDistance = 620f;
+
+        /// <summary>
+        /// 太陽・時間の流れ・空・霧・環境光。空は KCD/Sky（SkyFactory）で、霧の色と環境光はその地平線と空の色に
+        /// そろえる。角度・色・強さはゲーム開始の朝の値で置き、実行中は DayNightCycle が SkyPalette から動かす。
+        /// </summary>
         private static void BuildLighting(Transform root)
         {
             var sun = new GameObject("Sun");
             sun.transform.SetParent(root, false);
-            sun.transform.rotation = Quaternion.Euler(52f, 150f, 0f);
 
             Light light = sun.AddComponent<Light>();
             light.type = LightType.Directional;
-            light.color = new Color(1f, 0.96f, 0.88f);
-            light.intensity = 1.15f;
             light.shadows = LightShadows.Soft;
             light.shadowStrength = 0.72f;
 
@@ -719,9 +839,9 @@ namespace KCD.Editor
             RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Trilight;
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.Linear;
-            RenderSettings.fogStartDistance = 220f;
-            RenderSettings.fogEndDistance = 620f;
-            RenderSettings.fogColor = new Color(0.72f, 0.79f, 0.86f);
+            RenderSettings.fogStartDistance = FogStartDistance;
+            RenderSettings.fogEndDistance = FogEndDistance;
+            SkyFactory.Apply(light);
         }
 
         /// <summary>NavMesh を焼いてアセットとして保存する。焼けた面積を返す。</summary>

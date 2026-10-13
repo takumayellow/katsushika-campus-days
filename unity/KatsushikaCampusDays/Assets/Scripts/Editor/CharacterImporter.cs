@@ -18,12 +18,14 @@ namespace KCD.Editor
         /// <summary>取り込み規則を変えたら上げる。既存の FBX が取り込み直される。</summary>
         public override uint GetVersion()
         {
-            return 6;
+            return 9;
         }
 
         /// <summary>
         /// Blender 側の外形ハル（<id>_outline）は本体と同じ巻き方向で出力されていて本体を覆ってしまう。
-        /// 輪郭はシェーダの Outline パスで出すので、ハルの描画は止める。
+        /// 輪郭はシェーダの Outline パスで出すので、ハルの描画は止め、メッシュも空にする。
+        /// シーンにはキャラの階層の写しがあってハルのメッシュを参照しているので、空にしないとメッシュがビルドに入り、
+        /// WebGL の data を 8 体で約 3 MiB 使う (#70)。
         /// </summary>
         private void OnPostprocessModel(GameObject root)
         {
@@ -54,12 +56,78 @@ namespace KCD.Editor
                 if (renderer.name.EndsWith("_outline", System.StringComparison.Ordinal))
                 {
                     renderer.enabled = false;
+                    if (renderer.sharedMesh != null)
+                    {
+                        renderer.sharedMesh.Clear();
+                    }
+
+                    continue;
                 }
-                else if (patterned)
+
+                BakeOutlineNormals(root.transform, renderer);
+                if (patterned)
                 {
                     BakeGeneratedCoordinates(root.transform, renderer);
                 }
             }
+        }
+
+        /// <summary>
+        /// tangent の w に入れる印。KCD/Toon の Outline パスは、w がこれ以上の頂点だけ tangent の向きへ押し出す。
+        /// w は印に（1 − 輪郭線の太さの倍率）を足した 2〜3 で、太さの倍率も運ぶ。
+        /// </summary>
+        public const float OutlineNormalTag = 2f;
+
+        /// <summary>
+        /// Blender が頂点カラー outline_normal（rgb = n * 0.5 + 0.5、alpha = 太さの倍率）に書いた輪郭線の殻の向きと
+        /// 太さを、tangent に移す (#47)。
+        ///
+        /// 輪郭線は、Outline パスが頂点を押し出した殻の裏で描く。陰の法線のまま押すと、スカートのヒダの壁
+        /// （法線が横を向く）で殻が隣のヒダを越えて折れ返り、谷ごとに黒い破線が出る。別々の格子の継ぎ目でも、
+        /// 同じ位置の頂点の法線が分かれて殻が裂ける。なので Blender で殻の向きを別に求めて渡す
+        /// （kcd_chara/mesh.py の MeshBuilder.outline_normals）。鼻のような数ミリの出っ張りは、顔と同じ太さの殻で
+        /// 囲むと出っ張りより太い黒い弧になるので、頂点ごとに細くする（MeshBuilder.outline_widths）。
+        /// tangent は法線と同じくスキニングで回るので、動いても殻が服に付いてくる（頂点カラーは回らない）。
+        /// 法線マップは使わないので tangent は空いている（取り込みで tangent を作らない）。
+        /// 頂点カラーは使い終わったら消す。
+        /// </summary>
+        private static void BakeOutlineNormals(Transform root, SkinnedMeshRenderer renderer)
+        {
+            Mesh mesh = renderer.sharedMesh;
+            if (mesh == null || mesh.vertexCount == 0)
+            {
+                return;
+            }
+
+            Color[] colors = mesh.colors;
+            if (colors.Length != mesh.vertexCount)
+            {
+                Debug.LogWarning("[KCD] " + renderer.name + " に輪郭線の向き（頂点カラー outline_normal）が無い。"
+                    + "輪郭線は陰の法線の向きへ押し出す");
+                return;
+            }
+
+            // Blender のオブジェクト軸 → Unity のモデル軸 → このメッシュの軸（BakeGeneratedCoordinates の逆）
+            Matrix4x4 fromRoot = (root.worldToLocalMatrix * renderer.transform.localToWorldMatrix).inverse;
+            Vector3[] normals = mesh.normals;
+            var tangents = new Vector4[colors.Length];
+            for (int i = 0; i < colors.Length; i++)
+            {
+                Color c = colors[i];
+                var blender = new Vector3(c.r * 2f - 1f, c.g * 2f - 1f, c.b * 2f - 1f);
+                Vector3 n = fromRoot.MultiplyVector(FromBlenderAxes(blender)).normalized;
+                if (n == Vector3.zero && normals.Length == colors.Length)
+                {
+                    n = normals[i];
+                }
+
+                // 向きが決まらない頂点には印を付けず、Outline パスに陰の法線の向きで押させる
+                float w = OutlineNormalTag + (1f - Mathf.Clamp01(c.a));
+                tangents[i] = n == Vector3.zero ? Vector4.zero : new Vector4(n.x, n.y, n.z, w);
+            }
+
+            mesh.tangents = tangents;
+            mesh.colors = System.Array.Empty<Color>();
         }
 
         /// <summary>和柄の座標を焼くチャンネル。KCD/Toon の TEXCOORD2 / TEXCOORD3。</summary>
@@ -124,6 +192,12 @@ namespace KCD.Editor
             return new Vector3(-unity.x, -unity.z, unity.y);
         }
 
+        /// <summary>ToBlenderAxes の逆。Blender のオブジェクト空間 → Unity のモデル空間。</summary>
+        public static Vector3 FromBlenderAxes(Vector3 blender)
+        {
+            return new Vector3(-blender.x, blender.z, -blender.y);
+        }
+
         private void OnPreprocessModel()
         {
             if (assetImporter is not ModelImporter importer)
@@ -145,6 +219,9 @@ namespace KCD.Editor
                 importer.importAnimation = true;
                 importer.importBlendShapes = true;
                 importer.importNormals = ModelImporterNormals.Import;
+                // tangent には輪郭線の殻の向きを入れる（BakeOutlineNormals）。取り込みで作ると、
+                // Shape Key の tangent の差分まで付いて、表情を付けた顔で向きがずれる。
+                importer.importTangents = ModelImporterTangents.None;
                 importer.optimizeGameObjects = false;
                 return;
             }
@@ -157,6 +234,9 @@ namespace KCD.Editor
                 importer.meshCompression = ModelImporterMeshCompression.Off;
                 importer.addCollider = false;
                 importer.importNormals = ModelImporterNormals.Import;
+                // 建物と家具のマテリアルは法線マップを使わないので tangent を作らない。
+                // 作ると頂点 1 つに 16 バイト増え、WebGL の data を約 0.3 MiB 使う (#70)。
+                importer.importTangents = ModelImporterTangents.None;
                 importer.weldVertices = false;
             }
         }
@@ -169,6 +249,11 @@ namespace KCD.Editor
         /// 取り出された骨盤のヨーと左右の重心移動がまるごと消えて、腰から上が置き去りのまま
         /// 脚だけが動いて見えていた（#43 のくねくね）。3 軸とも Bake Into Pose にして、
         /// クリップに入れた重心移動をそのまま姿勢として再生させる。
+        ///
+        /// マスクにはモデルの全部の骨を入れる。Humanoid のクリップは、マスクに無い Humanoid 外の骨
+        /// （髪の HairFront / HairBack、スカートの SkirtFront / SkirtBack）の曲線を捨てる。
+        /// defaultClipAnimations のマスクは空なので、そのままだと Blender で付けた髪の揺れが再生されなかった（#218）。
+        /// 骨の経路は前回の取り込みから取るので、初めての取り込みや骨を足した直後は SyncSkeletons が取り込み直す。
         /// </summary>
         private void OnPreprocessAnimation()
         {
@@ -183,6 +268,7 @@ namespace KCD.Editor
                 return;
             }
 
+            AvatarMask mask = FullTransformMask(importer.transformPaths);
             foreach (ModelImporterClipAnimation clip in clips)
             {
                 string name = clip.name.ToLowerInvariant();
@@ -195,9 +281,25 @@ namespace KCD.Editor
                 clip.heightFromFeet = false;
                 clip.lockRootPositionXZ = true;       // Root Transform Position (XZ): Bake Into Pose
                 clip.keepOriginalPositionXZ = true;
+                clip.ConfigureClipFromMask(mask);
+                clip.maskType = ClipAnimationMaskType.CreateFromThisModel;
             }
 
             importer.clipAnimations = clips;
+            Object.DestroyImmediate(mask);
+        }
+
+        /// <summary>paths の Transform を全部通すマスク。作ったマスクは呼んだ側で DestroyImmediate する。</summary>
+        private static AvatarMask FullTransformMask(string[] paths)
+        {
+            var mask = new AvatarMask { transformCount = paths.Length };
+            for (int i = 0; i < paths.Length; i++)
+            {
+                mask.SetTransformPath(i, paths[i]);
+                mask.SetTransformActive(i, true);
+            }
+
+            return mask;
         }
 
         /// <summary>
@@ -279,6 +381,7 @@ namespace KCD.Editor
 
         /// <summary>
         /// .fbx.meta に残っている Humanoid の骨格（humanDescription.skeleton）を、取り込んだモデルの骨に合わせる。
+        /// クリップのマスクに足りない骨があるときも取り込み直す（OnPreprocessAnimation）。
         /// 直した FBX の数を返す。SceneBuilder.BuildAll から呼ぶ。
         ///
         /// Humanoid はポーズを付けるとき、骨の長さを FBX ではなくこの骨格から取る。骨格は最初に取り込んだときに
@@ -304,7 +407,7 @@ namespace KCD.Editor
 
                 var model = AssetDatabase.LoadAssetAtPath<GameObject>(path);
                 HumanDescription human = importer.humanDescription;
-                if (model == null || SkeletonMatches(human.skeleton, model))
+                if (model == null || (SkeletonMatches(human.skeleton, model) && ClipMasksCover(importer)))
                 {
                     continue;
                 }
@@ -316,6 +419,43 @@ namespace KCD.Editor
             }
 
             return fixedCount;
+        }
+
+        /// <summary>
+        /// どのクリップのマスクにも、モデルの全部の Transform が入っているか（OnPreprocessAnimation が組むマスク）。
+        /// ModelImporterClipAnimation.transformMask は公開されていないので、シリアライズされた値を読む。
+        /// </summary>
+        private static bool ClipMasksCover(ModelImporter importer)
+        {
+            // マスクを組むときと同じ一覧（今のモデルの Transform）と比べる。骨が増えた直後の取り込みは
+            // 前回の一覧でマスクを組むので、ここで足りない骨が見つかって取り込み直しになる。
+            string[] paths = importer.transformPaths;
+            SerializedProperty clips = new SerializedObject(importer).FindProperty("m_ClipAnimations");
+            if (clips == null)
+            {
+                return false;
+            }
+
+            for (int c = 0; c < clips.arraySize; c++)
+            {
+                SerializedProperty mask = clips.GetArrayElementAtIndex(c).FindPropertyRelative("transformMask");
+                var masked = new HashSet<string>();
+                for (int i = 0; i < mask.arraySize; i++)
+                {
+                    SerializedProperty entry = mask.GetArrayElementAtIndex(i);
+                    if (entry.FindPropertyRelative("m_Weight").floatValue > 0f)
+                    {
+                        masked.Add(entry.FindPropertyRelative("m_Path").stringValue);
+                    }
+                }
+
+                if (!masked.IsSupersetOf(paths))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         /// <summary>モデルの骨（根元以外のすべての Transform）が、骨格に同じ名前・同じ位置と向きで載っているか。</summary>
@@ -412,11 +552,12 @@ namespace KCD.Editor
                     continue;
                 }
 
+                bool outline = MaterialLibrary.FacesOutward(characterId);
                 foreach (string name in MaterialLibrary.FaceTexturedNames)
                 {
                     string path = MaterialLibrary.CharacterFolder + "/" + characterId + "_" + name + ".mat";
                     Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
-                    if (material == null || !MaterialLibrary.ApplyFaceLook(material, name, face))
+                    if (material == null || !MaterialLibrary.ApplyFaceLook(material, name, face, outline))
                     {
                         continue;
                     }

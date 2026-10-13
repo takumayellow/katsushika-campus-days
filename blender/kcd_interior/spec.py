@@ -10,52 +10,80 @@ FBX を axis_forward='-Z' / axis_up='Y' で書き出すので、Unity では
   Unity(+X) = Blender(+X)、Unity(+Y) = Blender(+Z)、Unity(+Z) = Blender(+Y)
 となり、契約どおり **Unity の +Z が「入口から内部へ」** になる。
 
-外壁面（ファサード）はローカル Y = spec.y_face にある。spec.y_face は
-外装側が entrance Empty を壁からどれだけ手前に置いたかの距離で、
-buildings.py の各ビルダーと 1 対 1 で対応させている（ここがズレると
-Unity で内外の位置が合わないので、変更時は両方直すこと）。
+入口の向きと、入口の面に沿った位置は、キャンパスの扉（kcd_lib/entrances.py の DOORS）
+から導く。屋内の外周は footprint の外接矩形なので、入口の開口はその矩形の面の上に置き、
+原点は面から _FACE_OFFSET だけ外に取る。外壁面（ファサード）はローカル Y = spec.y_face にある。
 """
 
 import json
 import math
 import os
 
-from kcd_lib import geom
+from kcd_lib import entrances, geom
 
-# 建物 id -> (entrance を決める関数, 内向き方向)
-#   内向き方向 "+v" / "-v" / "-u" は campus frame (u, v) 上の向き。
-#   entrance_uv は buildings.py の ctx["entrance"] と完全に一致させる。
+# 入口の開口（外接矩形の面）から原点までの距離 [m]。屋内の間取りはこの距離を前提に
+# 入口まわりを置いているので、棟ごとの値を変えない。DOORS に無い棟は _FACE_OFFSET_DEFAULT。
+_FACE_OFFSET = {
+    "research1": 6.5,
+    "lecture": 4.0,
+    "research2": 4.0,
+    "cafeteria": 4.0,
+    "kyoso": 4.0,
+    "library": 4.0,
+    "gym": 3.5,
+    "lab1": 3.0,
+    "lab2": 3.0,
+    "greenhouse": 2.5,
+}
+_FACE_OFFSET_DEFAULT = 3.0
+
+# DOORS の「建物へ向かう向き」(du, dv) -> 内向き方向
+_INWARD = {(0, 1): "+v", (0, -1): "-v", (-1, 0): "-u", (1, 0): "+u"}
+
+
+def _door_row(bid):
+    for row in entrances.DOORS:
+        if row[0] == bid:
+            return row
+    return None
 
 
 def _entrance_uv(bid, uvbb):
+    """入口の原点 (u, v) と内向き方向。
+
+    uvbb は屋内の外周（footprint の uv の外接矩形）。内向きは DOORS の「建物へ向かう向き」、
+    面に沿った位置は DOORS の探索の起点と同じにする（扉は起点から軸に沿って壁を探すので、
+    扉の中心も同じ位置にある）。DOORS に無い棟は南面（-v 側）の中央。
+    """
     u0, v0, u1, v1 = uvbb
-    du = u1 - u0
-    if bid == "research1":
-        return ((u0 + u1) * 0.5, v0 - 6.5), "+v"
-    if bid == "lecture":
-        return (u0 + du * 0.40, v0 - 4.0), "+v"
-    if bid == "research2":
-        return ((u0 + u1) * 0.5, v0 - 4.0), "+v"
-    if bid == "kyoso":
-        # build_kyoso は footprint を +v 側へ 10.5 m 広げている
-        return (u0 + du * 0.30 - 8.0, v0 + 10.5 + 4.0), "-v"
-    if bid == "library":
-        return (u1 + 4.0, -24.0), "-u"
-    if bid == "gym":
-        return (u0 + du * 0.5, v0 - 3.5), "+v"
-    if bid in ("lab1", "lab2"):
-        return ((u0 + u1) * 0.5, v0 - 3.0), "+v"
-    if bid == "greenhouse":
-        return ((u0 + u1) * 0.5, v0 - 2.5), "+v"
-    return ((u0 + u1) * 0.5, v0 - 3.0), "+v"
+    off = _FACE_OFFSET.get(bid, _FACE_OFFSET_DEFAULT)
+    row = _door_row(bid)
+    if row is None:
+        return ((u0 + u1) * 0.5, v0 - off), "+v"
+    _bid, probe, into = row[:3]
+    inward = _INWARD.get(tuple(into))
+    if inward is None:
+        raise ValueError("%s: DOORS の向き %s が軸に沿っていない" % (bid, into))
+    if inward == "+v":
+        return (probe[0], v0 - off), inward
+    if inward == "-v":
+        return (probe[0], v1 + off), inward
+    if inward == "-u":
+        return (u1 + off, probe[1]), inward
+    return (u0 - off, probe[1]), inward
 
 
-def _uvbb_for(bid, uvbb):
-    """外装側で footprint を拡張している建物は、その拡張後の bbox を返す。"""
-    u0, v0, u1, v1 = uvbb
-    if bid == "kyoso":
-        return (u0, v0, u1, v0 + 10.5)
-    return uvbb
+# 1 棟の footprint を 2 つの屋内に分ける建物（第2研究棟 = 食堂 + 研究棟のロビー）。
+# 食堂の入口（DOORS の cafeteria）の面に沿った位置を X = 0 とした host の局所座標（host_local）で、
+# 食堂は X が CAFETERIA_X1 まで、ロビーは X が LOBBY_X0 以上・Y が LOBBY_Y0..LOBBY_Y1 の範囲を持つ。
+# 値は plan_research2_dims の CUT_X・PART_X と、ロビーのガラスの面・奥の壁に一致させる
+# （一致は blender/tests/test_plan_cafeteria で確かめる）。
+SPLIT_HOST = "research2"
+CAFETERIA_X1 = 23.08
+LOBBY_X0 = 22.92
+LOBBY_Y0, LOBBY_Y1 = 19.16, 41.35
+LOBBY_X1 = 31.8771           # ロビーの東の面（host_local の X）。入口はこの面にある
+LOBBY_DOOR_Y = 32.3          # ロビーの入口の中心（host_local の Y）
 
 
 class InteriorSpec:
@@ -64,13 +92,16 @@ class InteriorSpec:
     x0..x1 : 躯体外面のローカル X 範囲
     y_face : 入口側ファサード外面のローカル Y（= 原点から壁までの距離）
     y_back : 奥側ファサード外面のローカル Y
+    notch  : 外装を L 字で建てる棟（温室）の欠けた角。躯体外面のローカル矩形
+             (x0, y0, x1, y1)。矩形の棟は None
     """
 
     WALL = 0.30  # 外周壁厚（DESIGN.md §3.4）
 
     def __init__(self, bid, display, levels, height, uvbb, ent_uv, inward,
-                 frame):
+                 frame, host=None):
         self.id = bid
+        self.host = host or bid     # footprint を持つ建物の id（外装 bld_<host>）
         self.display = display
         self.levels = max(1, int(levels or 1))
         self.height = float(height or 4.0)
@@ -85,6 +116,17 @@ class InteriorSpec:
         ys = [p[1] for p in pts]
         self.x0, self.x1 = min(xs), max(xs)
         self.y_face, self.y_back = min(ys), max(ys)
+        self.notch = None
+
+    def set_notch_uv(self, notch_uv):
+        """uv の欠けた角 (u0, v0, u1, v1) をローカル矩形にして notch に入れる。"""
+        if notch_uv is None:
+            self.notch = None
+            return
+        u0, v0, u1, v1 = notch_uv
+        pts = [self.to_local_uv(c) for c in ((u0, v0), (u1, v1))]
+        self.notch = (min(p[0] for p in pts), min(p[1] for p in pts),
+                      max(p[0] for p in pts), max(p[1] for p in pts))
 
     # ---- 座標変換 ----
     def to_local_uv(self, uv):
@@ -170,7 +212,7 @@ def build_specs(data, ids=None):
     out = {}
     for b in data["buildings"]:
         bid = b["id"]
-        if ids is not None and bid not in ids:
+        if ids is not None and bid not in ids and not (bid == SPLIT_HOST and "cafeteria" in ids):
             continue
         if not b.get("on_campus"):
             continue
@@ -180,11 +222,37 @@ def build_specs(data, ids=None):
         loop = geom.ensure_ccw(geom.dedup(b["footprint"]))
         if len(loop) < 3:
             continue
-        uvbb = _uvbb_for(bid, frame.uv_bbox(loop))
-        ent, inward = _entrance_uv(bid, frame.uv_bbox(loop))
-        out[bid] = InteriorSpec(bid, b.get("display", bid), b.get("levels"),
-                                b.get("height"), uvbb, ent, inward, frame)
+        uvbb = frame.uv_bbox(loop)
+        if bid == SPLIT_HOST:
+            for sid, display, sub in _split(bid, uvbb):
+                if ids is not None and sid not in ids:
+                    continue
+                ent, inward = _entrance_uv(sid, sub)
+                out[sid] = InteriorSpec(sid, display, b.get("levels") if sid == "cafeteria" else 1,
+                                        b.get("height") if sid == "cafeteria" else 4.0,
+                                        sub, ent, inward, frame, host=bid)
+            continue
+        ent, inward = _entrance_uv(bid, uvbb)
+        sp = InteriorSpec(bid, b.get("display", bid), b.get("levels"),
+                          b.get("height"), uvbb, ent, inward, frame)
+        if style == "greenhouse":
+            # 外装（kcd_lib.buildings.build_greenhouse）と同じ L 字にする
+            sp.set_notch_uv(frame.uv_notch(loop))
+        out[bid] = sp
     return out
+
+
+def _split(bid, uvbb):
+    """第2研究棟の bbox を食堂とロビーに分ける。(id, 表示名, uvbb) のリスト。"""
+    row = _door_row("cafeteria")
+    ent_u = row[1][0]                       # 食堂の入口の u = host_local の X 0
+    u0, v0, u1, v1 = uvbb
+    vf = v0 - _FACE_OFFSET["cafeteria"]     # host_local の Y 0 の v
+    return [
+        ("cafeteria", "食堂", (u0, v0, ent_u + CAFETERIA_X1, v1)),
+        ("research2", "第2研究棟", (ent_u + LOBBY_X0, vf + LOBBY_Y0,
+                                 u1, vf + LOBBY_Y1)),
+    ]
 
 
 def dump_sidecar(spec, extra, path):
@@ -205,6 +273,8 @@ def dump_sidecar(spec, extra, path):
                      "y_back": round(spec.y_back, 3)},
         "wall_thickness": spec.WALL,
     }
+    if spec.notch:
+        meta["envelope"]["notch"] = [round(v, 3) for v in spec.notch]
     meta.update(extra)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as fp:

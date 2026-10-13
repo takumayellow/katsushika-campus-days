@@ -3,7 +3,7 @@ using UnityEngine;
 namespace KCD
 {
     /// <summary>
-    /// 「ここに来たら進む」場所。キャンパスモール・水盤前・公園などに置く見えない箱。
+    /// 「ここに来たら進む」場所。メインストリート・水盤前・公園などに置く見えない箱。
     /// 入ると QuestSystem に visit を報告する。
     /// </summary>
     [RequireComponent(typeof(BoxCollider))]
@@ -51,6 +51,21 @@ namespace KCD
             return current == Vector3.one;
         }
 
+        /// <summary>
+        /// 入ったときのトースト。写真スポット（ps_*）は「写真スポット: ◯◯」として三脚があることを知らせ、
+        /// それ以外は ui.place.* の名前（無ければ displayName）。
+        /// </summary>
+        public static string PlaceLabel(string placeId, string displayName)
+        {
+            CatalogPhotoSpot spot = CollectibleCatalog.Instance.FindPhotoSpot(placeId);
+            if (spot != null)
+            {
+                return L.Format("ui.hud.photo_spot", spot.DisplayName);
+            }
+
+            return L.Get("ui.place." + placeId, displayName);
+        }
+
         private void Reset()
         {
             var box = GetComponent<BoxCollider>();
@@ -68,13 +83,16 @@ namespace KCD
                 return;
             }
 
-            GameManager.Instance.Quests?.ReportVisit(_placeId);
-
+            // 場所の名前を先に出す。そのあとに「◯時ごろにまた来よう」やクエスト達成が続くと読みやすい。
             if (_announce && !_reportedOnce && !string.IsNullOrEmpty(_displayName))
             {
                 _reportedOnce = true;
-                HUD.Instance?.ShowToast(_displayName);
+                HUD.Instance?.ShowToast(PlaceLabel(_placeId, _displayName));
             }
+
+            // 入った瞬間。時刻の条件より早ければ「◯時ごろにまた来よう」が出る (#66)。
+            // 出て入り直しても同じステップでは繰り返さない（QuestSystem が一日に 1 回に絞る, #54）。
+            GameManager.Instance.Quests?.ReportVisit(_placeId, true);
         }
 
         private void OnTriggerStay(Collider other)
@@ -94,7 +112,8 @@ namespace KCD
             if (!string.IsNullOrEmpty(_placeId) && other.CompareTag("Player"))
             {
                 _nextRepeat = Time.time + RepeatSeconds;
-                GameManager.Instance.Quests?.ReportVisit(_placeId);
+                // 留まっているあいだの報告し直し。早すぎる案内は入った瞬間の 1 回だけにする (#66)。
+                GameManager.Instance.Quests?.ReportVisit(_placeId, false);
             }
         }
     }

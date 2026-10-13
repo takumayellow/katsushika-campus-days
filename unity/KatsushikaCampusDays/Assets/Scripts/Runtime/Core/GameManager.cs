@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
@@ -82,13 +83,28 @@ namespace KCD
         /// <summary>クエスト進行。GameManager と寿命を共にする。</summary>
         public QuestSystem Quests { get; private set; }
 
+        /// <summary>獲得した称号 (#65)。GameManager と寿命を共にし、「はじめから」で空にする。セーブには載せない。</summary>
+        public AchievementBook Achievements { get; } = new AchievementBook();
+
+        /// <summary>クエストが動いたので称号を数え直す。</summary>
+        private bool _achievementsDirty = true;
+
+        /// <summary>最後に称号を数えたときの DayStats.Version。</summary>
+        private int _achievementStatsVersion = -1;
+
+        /// <summary>購読している QuestSystem。付け替えのときに外す。</summary>
+        private QuestSystem _subscribedQuests;
+
+        /// <summary>シーンの非同期の読み込み。<see cref="Loader"/> が初めて使うときに付ける。</summary>
+        private SceneLoader _loader;
+
         /// <summary>ゲーム内時刻（時間単位の実数、0-24）。DayNightCycle が毎フレーム更新する。</summary>
-        public float GameTimeHours { get; set; } = 8.5f;
+        public float GameTimeHours { get; set; } = DayRestart.DayStartHour;
 
         /// <summary>タイトルからキャンパスへ入った回数。初回だけオリエンのクエストを自動開始する。</summary>
         public bool HasEnteredCampus { get; set; }
 
-        /// <summary>何日目か。「もう一日歩く」を選ぶたびに 1 つ進む（#16）。セーブには載せない。</summary>
+        /// <summary>何日目か。「もう一日歩く」を選ぶたびに 1 つ進む（#16）。セーブにも載せる (#61)。</summary>
         public int DayNumber { get; set; } = DayRestart.FirstDay;
 
         private void Awake()
@@ -105,9 +121,46 @@ namespace KCD
 
             if (Quests == null)
             {
-                Quests = new QuestSystem();
+                Quests = CreateQuests();
                 Quests.LoadFromResources();
             }
+
+            SubscribeQuests();
+        }
+
+        /// <summary>クエストの変化で称号を数え直す。同じ QuestSystem に二重には付けない。</summary>
+        private void SubscribeQuests()
+        {
+            if (_subscribedQuests == Quests)
+            {
+                return;
+            }
+
+            if (_subscribedQuests != null)
+            {
+                _subscribedQuests.Changed -= OnQuestsChanged;
+            }
+
+            _subscribedQuests = Quests;
+            if (_subscribedQuests != null)
+            {
+                _subscribedQuests.Changed += OnQuestsChanged;
+            }
+
+            _achievementsDirty = true;
+        }
+
+        private void OnQuestsChanged()
+        {
+            _achievementsDirty = true;
+        }
+
+        /// <summary>クエスト進行を作る。達成したら自動セーブを頼む (#61)。</summary>
+        private static QuestSystem CreateQuests()
+        {
+            var quests = new QuestSystem();
+            AutoSave.Watch(quests);
+            return quests;
         }
 
         /// <summary>
@@ -135,13 +188,22 @@ namespace KCD
             // 探索率のもと。static なのでアプリを起動している間ずっと残る（シーンでは消えない）。
             DayStats.Reset();
 
+            // 「つづきから」を選びかけて読んだセーブが残っていたら、キャンパスで当てないよう捨てる。
+            SaveSystem.DiscardPending();
+            AutoSave.Cancel();
+
             // クエストも GameManager と寿命を共にするので読み直す。タイトルで受注音を鳴らさない口を使う。
             if (Quests == null)
             {
-                Quests = new QuestSystem();
+                Quests = CreateQuests();
             }
 
             Quests.ResetForNewGame();
+            SubscribeQuests();
+
+            // 称号も前の周回のものを持ち越さない。ResetForNewGame は黙って作り直す（Changed を出さない）ので、ここで印を付ける。
+            Achievements.Reset();
+            _achievementsDirty = true;
 
             // 選択キャラクター（SelectedCharacterId / PlayerPrefs）はここでは触らない。
             // 「はじめから」はこのあとキャラ選択で決まるし、次回の既定値として覚えておいてよい。
@@ -150,10 +212,64 @@ namespace KCD
         private void Update()
         {
             Quests?.Tick(Time.deltaTime);
+
+            // クエストの報酬の収集物はここで DayStats に載る。同じフレームの自動セーブに入るよう、先に数える。
+            RefreshAchievements(true);
+
+            // 頼まれていた自動セーブを、封鎖が外れた最初のフレームで書く (#61)。
+            if (AutoSave.Pending)
+            {
+                AutoSave.Tick(HasEnteredCampus && SceneManager.GetActiveScene().name == CampusSceneName);
+            }
+        }
+
+        /// <summary>
+        /// セーブを読んだあとに呼ぶ。読む前に取っていた称号は、トーストを出さずに獲得済みにする
+        /// （ロードのたびに「称号を獲得」が並ばないように）。
+        /// </summary>
+        public void SyncAchievementsQuietly()
+        {
+            _achievementsDirty = true;
+            RefreshAchievements(false);
+        }
+
+        /// <summary>
+        /// クエストか DayStats が動いたフレームだけ称号を数え直し、announce なら新しく取ったものをトーストで知らせる。
+        /// クエストの報酬の収集物もここで記録する（QuestSystem.Restore のあとも追いつくように、達成済みを全部見る）。
+        /// </summary>
+        private void RefreshAchievements(bool announce)
+        {
+            if (!_achievementsDirty && _achievementStatsVersion == DayStats.Version)
+            {
+                return;
+            }
+
+            _achievementsDirty = false;
+            QuestRewards.GrantCompleted(Quests);
+            _achievementStatsVersion = DayStats.Version;
+
+            List<CatalogAchievement> unlocked =
+                Achievements.Refresh(CollectibleCatalog.Instance, AchievementRecord.FromDayStats(Quests));
+            HUD hud = announce ? HUD.Instance : null;
+            if (hud == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < unlocked.Count; i++)
+            {
+                hud.ShowToast(L.Format("ui.hud.achievement_unlocked", unlocked[i].DisplayName));
+            }
         }
 
         private void OnDestroy()
         {
+            if (_subscribedQuests != null)
+            {
+                _subscribedQuests.Changed -= OnQuestsChanged;
+                _subscribedQuests = null;
+            }
+
             if (_instance == this)
             {
                 _instance = null;
@@ -174,28 +290,56 @@ namespace KCD
             return characterId;
         }
 
-        /// <summary>キャンパスへ移動する。</summary>
-        public void EnterCampus()
+        /// <summary>
+        /// シーンの非同期の読み込み (#15)。この GameObject（DontDestroyOnLoad）に初めて使うときに付ける。
+        /// </summary>
+        public SceneLoader Loader
         {
-            // 封鎖を掛けた画面・演出はシーンごと消えるので、残った封鎖をまとめて外す (#40)。
-            KCDInput.ClearAllBlocks();
-            SceneManager.LoadScene(CampusSceneName);
+            get
+            {
+                if (_loader == null)
+                {
+                    _loader = GetComponent<SceneLoader>();
+                    if (_loader == null)
+                    {
+                        _loader = gameObject.AddComponent<SceneLoader>();
+                    }
+                }
+
+                return _loader;
+            }
         }
 
-        /// <summary>タイトルへ戻る。進行はメモリ上に残るのでそのまま再開できる。</summary>
+        /// <summary>
+        /// キャンパスへ移動する。<see cref="SceneLoader"/> が非同期で読み、その間は「読み込み中」の画面を出して操作を止める (#15)。
+        /// 読んでいる最中にもう一度呼ばれても（二度押し）読むのは 1 回だけ。
+        /// 残った封鎖をまとめて外すこと (#40) と、前のキャンパスで頼まれたまま書けなかった自動セーブを
+        /// 次のキャンパスの最初のフレーム（「つづきから」の位置を当てる前）に書かないよう捨てること (#61) は、
+        /// ローダーが読み始めと切り替えの直前に行う。
+        /// </summary>
+        public void EnterCampus()
+        {
+            Loader.Load(CampusSceneName, false);
+        }
+
+        /// <summary>
+        /// タイトルへ戻る。封鎖を外し、読み込みの間は古いキャンパスの時間を止め、タイトルは timeScale 1 で始める (#15)。
+        /// 自動セーブの依頼も捨てる (#61)。読んでいる最中にもう一度呼ばれても読むのは 1 回だけ。
+        /// メモリ上の進行はタイトルでは使わない。「つづきから」はセーブを読み直し、「はじめから」は
+        /// <see cref="BeginNewGame"/> で初期値に戻すので、セーブしていない進行はここで失われる。
+        /// </summary>
         public void ReturnToTitle()
         {
-            KCDInput.ClearAllBlocks();
-            Time.timeScale = 1f;
-            SceneManager.LoadScene(TitleSceneName);
+            Loader.Load(TitleSceneName, true);
         }
 
         /// <summary>シーンにインスタンスが無くても起動時に必ず用意する。</summary>
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Bootstrap()
         {
-            // ドメインの再読み込みを切った再生（Enter Play Mode Options）でも、前回の再生の封鎖を持ち越さない。
+            // ドメインの再読み込みを切った再生（Enter Play Mode Options）でも、前回の再生の封鎖と自動セーブを持ち越さない。
             KCDInput.ClearAllBlocks();
+            AutoSave.Cancel();
             _ = Instance;
             // Web 版は品質レベルの取り違えで描画が崩れたことがあるので、どの設定で起動したかを残す。
             RenderPipelineAsset pipeline = GraphicsSettings.currentRenderPipeline;

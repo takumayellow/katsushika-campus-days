@@ -11,6 +11,8 @@ Shader "KCD/Toon"
         _ShadeSoftness("Shade Softness", Range(0.001, 0.5)) = 0.03
         _ShadeThreshold2("Shade Threshold 2", Range(-1, 1)) = -0.25
         _ShadeColor2("Shade Color 2", Color) = (0.42, 0.40, 0.55, 1)
+        _ShadeCrisp("Shade Crisp", Range(0, 1)) = 0
+        _FlatAmbient("Flat Ambient", Range(0, 1)) = 0
         _RimColor("Rim Color", Color) = (1, 1, 1, 1)
         _RimPower("Rim Power", Range(0.5, 16)) = 4
         _RimIntensity("Rim Intensity", Range(0, 2)) = 0.35
@@ -22,6 +24,7 @@ Shader "KCD/Toon"
         _OutlineNearDistance("Outline Near Distance (m)", Range(0.5, 30)) = 5
         _OutlineFadeStart("Outline Fade Start (m)", Range(0, 200)) = 30
         _OutlineFadeEnd("Outline Fade End (m)", Range(0, 200)) = 60
+        _OutlineScreenFlat("Outline Screen Flat", Range(0, 1)) = 0
         _EmissionColor("Emission Color", Color) = (0,0,0,1)
         _Cutoff("Alpha Cutoff", Range(0,1)) = 0.5
 
@@ -31,6 +34,24 @@ Shader "KCD/Toon"
         [NoScaleOffset] _PatternMap("Pattern Map", 2D) = "white" {}
         _PatternScale("Pattern Scale", Float) = 1
         _PatternBlend("Pattern Box Blend", Range(0, 1)) = 0.25
+
+        // 頂点カラーを基本色に掛ける（木の葉。1 マテリアルのまま面ごとに明暗と色を変える, #51）。
+        // FBX の頂点カラーは sRGB で入ってくるので、リニア空間では頂点段でリニアに直す。
+        [Toggle(_VERTEXCOLOR_ON)] _VertexColor("Vertex Color", Float) = 0
+
+        // 髪の天使の輪（ツヤの帯, #47）。Blender が髪の頂点の高さと向きを UV の 2 枚目に書く
+        // （x = 高さ。髪の頂上が 0、頭の中心の高さが 0.5。y = 正面からの方位角の絶対値 / pi。
+        // kcd_chara/hair.py の ring_coords）。
+        // 帯は x が Top〜Bottom の間。下の縁は毛先へ向く三角の歯にし、後ろほど淡くする。
+        // カメラから見て頭の輪郭に近い所ほど帯を Droop だけ下げ、帯を頭の輪郭に沿った弧にする。
+        [Toggle(_HAIRRING_ON)] _HairRing("Hair Ring", Float) = 0
+        _HairRingColor("Hair Ring Color", Color) = (1, 1, 1, 1)
+        _HairRingTop("Hair Ring Top", Range(0, 1)) = 0.13
+        _HairRingBottom("Hair Ring Bottom", Range(0, 1)) = 0.165
+        _HairRingTeeth("Hair Ring Teeth (per half turn)", Float) = 7
+        _HairRingToothDepth("Hair Ring Tooth Depth", Range(0, 0.2)) = 0.04
+        _HairRingBack("Hair Ring Strength At Back", Range(0, 1)) = 0.4
+        _HairRingDroop("Hair Ring Droop At Silhouette", Range(0, 0.2)) = 0.07
 
         // Surface / blending state（マテリアル側から差し替える）
         [HideInInspector] _Surface("__surface", Float) = 0.0
@@ -55,6 +76,8 @@ Shader "KCD/Toon"
         half   _ShadeThreshold;
         half   _ShadeThreshold2;
         half   _ShadeSoftness;
+        half   _ShadeCrisp;
+        half   _FlatAmbient;
         half   _RimPower;
         half   _RimIntensity;
         half   _SpecularPower;
@@ -63,10 +86,20 @@ Shader "KCD/Toon"
         half   _OutlineNearDistance;
         half   _OutlineFadeStart;
         half   _OutlineFadeEnd;
+        half   _OutlineScreenFlat;
         half   _Cutoff;
         half   _Pattern;
         float  _PatternScale;
         half   _PatternBlend;
+        half   _VertexColor;
+        half4  _HairRingColor;
+        half   _HairRing;
+        half   _HairRingTop;
+        half   _HairRingBottom;
+        half   _HairRingTeeth;
+        half   _HairRingToothDepth;
+        half   _HairRingBack;
+        half   _HairRingDroop;
         half   _Surface;
         half   _SrcBlend;
         half   _DstBlend;
@@ -110,6 +143,7 @@ Shader "KCD/Toon"
             {
                 float4 positionOS : POSITION;
                 float3 normalOS   : NORMAL;
+                float4 tangentOS  : TANGENT;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
@@ -127,7 +161,14 @@ Shader "KCD/Toon"
                 UNITY_TRANSFER_INSTANCE_ID(input, output);
 
                 VertexPositionInputs positionInputs = GetVertexPositionInputs(input.positionOS.xyz);
-                VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS);
+                // キャラは、陰の法線とは別に求めた殻の向きを tangent に持つ（w が 2〜3 なのが印。
+                // CharacterImporter.BakeOutlineNormals）。スカートのヒダの壁のように法線が横を向く所で、
+                // 殻が隣のヒダを越えて折れ返らないようにするため。印の無いメッシュは法線のまま押す。
+                // w = 2 + (1 − 太さの倍率)。鼻のような小さな出っ張りは、殻を細くして黒い弧にしない。
+                bool hasOutlineDir = input.tangentOS.w > 1.5;
+                float3 outlineOS = hasOutlineDir ? input.tangentOS.xyz : input.normalOS;
+                float widthScale = hasOutlineDir ? saturate(3.0 - input.tangentOS.w) : 1.0;
+                VertexNormalInputs normalInputs = GetVertexNormalInputs(outlineOS);
 
                 // _OutlineNearDistance までは距離に比例させて画面上の太さを一定にし、それより遠くでは
                 // ワールド上の太さを固定して、遠くの人ほど細く描く（画面上で一定のままだと、遠くの小さな人物が
@@ -135,7 +176,15 @@ Shader "KCD/Toon"
                 float cameraDistance = length(GetCameraPositionWS() - positionInputs.positionWS);
                 float distanceScale = clamp(cameraDistance, 0.5, _OutlineNearDistance);
                 float fade = 1.0 - smoothstep(_OutlineFadeStart, _OutlineFadeEnd, cameraDistance);
-                float3 offsetWS = normalInputs.normalWS * (_OutlineWidth * distanceScale * fade);
+                // _OutlineScreenFlat = 1 では、法線の視線に沿う成分を、手前向きなら消し、奥向きなら 1/4 に縮めて、
+                // 殻を画面の面に沿って押し出す。服に沿った薄い物（リボンの輪・襟）は、
+                // 法線の向きのまま押すと殻の裏が奥の服の後ろへ回り、輪郭が物から離れた弧や交差した線になる。
+                // 奥へ少し残すのは、片面の布の裏で殻が面と重なってちらつかないようにするため。
+                float3 normalWS = normalInputs.normalWS;
+                float3 viewDirWS = SafeNormalize(positionInputs.positionWS - GetCameraPositionWS());
+                float viewDot = dot(normalWS, viewDirWS);
+                normalWS -= _OutlineScreenFlat * (viewDot - 0.25 * max(viewDot, 0.0)) * viewDirWS;
+                float3 offsetWS = normalWS * (_OutlineWidth * widthScale * distanceScale * fade);
 
                 output.positionCS = TransformWorldToHClip(positionInputs.positionWS + offsetWS);
                 output.fogFactor = ComputeFogFactor(output.positionCS.z);
@@ -171,6 +220,8 @@ Shader "KCD/Toon"
             #pragma multi_compile_fog
             #pragma shader_feature_local_fragment _ALPHATEST_ON
             #pragma shader_feature_local _PATTERN_ON
+            #pragma shader_feature_local _VERTEXCOLOR_ON
+            #pragma shader_feature_local _HAIRRING_ON
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
             #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
@@ -182,6 +233,7 @@ Shader "KCD/Toon"
             #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Color.hlsl"
 
             TEXTURE2D(_BaseMap);
             SAMPLER(sampler_BaseMap);
@@ -193,9 +245,15 @@ Shader "KCD/Toon"
                 float4 positionOS : POSITION;
                 float3 normalOS   : NORMAL;
                 float2 uv         : TEXCOORD0;
+                #if defined(_HAIRRING_ON)
+                    float2 ring       : TEXCOORD1;
+                #endif
                 #if defined(_PATTERN_ON)
                     float3 generated  : TEXCOORD2;
                     float3 bindNormal : TEXCOORD3;
+                #endif
+                #if defined(_VERTEXCOLOR_ON)
+                    half4 color : COLOR;
                 #endif
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
@@ -203,7 +261,7 @@ Shader "KCD/Toon"
             struct Varyings
             {
                 float4 positionCS : SV_POSITION;
-                float2 uv         : TEXCOORD0;
+                float4 uv         : TEXCOORD0;  // xy = _BaseMap, zw = 天使の輪の座標（target 2.0 の補間器は 8 本まで）
                 float3 positionWS : TEXCOORD1;
                 half3  normalWS   : TEXCOORD2;
                 half3  vertexSH   : TEXCOORD3;
@@ -212,8 +270,21 @@ Shader "KCD/Toon"
                     float3 generated  : TEXCOORD5;
                     half3  bindNormal : TEXCOORD6;
                 #endif
+                #if defined(_VERTEXCOLOR_ON)
+                    half3  vertexColor : TEXCOORD7;
+                #endif
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
+
+            // カメラから見て、頭の輪郭にどれだけ近いか (0..1)。頭の縦の軸は物体の原点を通る
+            // （Blender は頭の中心を x = y = 0 に置く）。軸から頂点への水平の向きが画面の横を向くほど 1。
+            float HairRingSilhouette(float3 positionWS)
+            {
+                float2 radial = positionWS.xz - TransformObjectToWorld(float3(0.0, 0.0, 0.0)).xz;
+                float2 right = UNITY_MATRIX_V[0].xz;
+                float side = dot(radial, right) * rsqrt(max(dot(radial, radial) * dot(right, right), 1e-12));
+                return side * side;
+            }
 
             Varyings ToonVertex(Attributes input)
             {
@@ -227,12 +298,23 @@ Shader "KCD/Toon"
                 output.positionCS = positionInputs.positionCS;
                 output.positionWS = positionInputs.positionWS;
                 output.normalWS = normalInputs.normalWS;
-                output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
+                output.uv.xy = TRANSFORM_TEX(input.uv, _BaseMap);
+                #if defined(_HAIRRING_ON)
+                    output.uv.zw = input.ring;
+                    output.uv.z -= _HairRingDroop * HairRingSilhouette(positionInputs.positionWS);
+                #endif
                 output.vertexSH = SampleSHVertex(normalInputs.normalWS);
                 output.fogFactor = ComputeFogFactor(positionInputs.positionCS.z);
                 #if defined(_PATTERN_ON)
                     output.generated = input.generated * _PatternScale;
                     output.bindNormal = input.bindNormal;
+                #endif
+                #if defined(_VERTEXCOLOR_ON)
+                    #if defined(UNITY_COLORSPACE_GAMMA)
+                        output.vertexColor = input.color.rgb;
+                    #else
+                        output.vertexColor = SRGBToLinear(input.color.rgb);
+                    #endif
                 #endif
                 return output;
             }
@@ -282,14 +364,32 @@ Shader "KCD/Toon"
                 return color;
             }
 
+            // 天使の輪の濃さ (0..1)。ring.x = 高さ（髪の頂上 0、頭の中心 0.5）、ring.y = 正面からの方位角の絶対値 / pi。
+            // 縁は fwidth で画面の 1 画素の幅にする（面の大きさやカメラとの距離で縁がぼけない）。
+            half HairRingMask(float2 ring)
+            {
+                // 下の縁は毛先へ向く三角の歯。歯の先で ToothDepth だけ下へ伸びる
+                float tooth = 1.0 - abs(frac(ring.y * _HairRingTeeth) * 2.0 - 1.0);
+                float belowTop = ring.x - _HairRingTop;
+                float aboveBottom = _HairRingBottom + _HairRingToothDepth * tooth - ring.x;
+                float inside = saturate(belowTop / max(fwidth(belowTop), 1e-5) + 0.5)
+                             * saturate(aboveBottom / max(fwidth(aboveBottom), 1e-5) + 0.5);
+                return (half)(inside * lerp(1.0, _HairRingBack, smoothstep(0.4, 1.0, ring.y)));
+            }
+
             // 2 段階のトゥーンランプ。1.0 = 明部, 中間, 0.0 = 最暗部。
             half3 ToonRamp(half ndotl, half shadowAttenuation, half3 albedo)
             {
-                half lambert = ndotl * 0.5h + 0.5h;      // half-lambert にすると顔の陰が硬くなりすぎない
-                lambert *= lerp(0.55h, 1.0h, shadowAttenuation);
+                half halfLambert = ndotl * 0.5h + 0.5h;  // half-lambert にすると顔の陰が硬くなりすぎない
+                half lambert = halfLambert * lerp(0.55h, 1.0h, shadowAttenuation);
 
-                half step1 = smoothstep(_ShadeThreshold - _ShadeSoftness, _ShadeThreshold + _ShadeSoftness, lambert);
-                half step2 = smoothstep(_ShadeThreshold2 - _ShadeSoftness, _ShadeThreshold2 + _ShadeSoftness, lambert);
+                // _ShadeCrisp = 1 では境目の幅を画面の 1 画素にする（アニメの塗り分け）。half-lambert は
+                // 丸い面の上でゆっくり変わるので、幅を ±_ShadeSoftness に固定すると後頭部のような大きな
+                // 丸みで境目が数十画素にぼけ、陰が輪郭の無い斑になる (#47)。画素の幅は影を掛ける前の
+                // 値で測る。影の縁では shadowAttenuation が跳ぶので、掛けた後の値で測るとそこだけ太る。
+                half soft = lerp(_ShadeSoftness, max(fwidth(halfLambert), 1e-3h), _ShadeCrisp);
+                half step1 = smoothstep(_ShadeThreshold - soft, _ShadeThreshold + soft, lambert);
+                half step2 = smoothstep(_ShadeThreshold2 - soft, _ShadeThreshold2 + soft, lambert);
 
                 half3 darkest = albedo * _ShadeColor2.rgb;
                 half3 mid = albedo * _ShadeColor.rgb;
@@ -304,12 +404,18 @@ Shader "KCD/Toon"
             {
                 UNITY_SETUP_INSTANCE_ID(input);
 
-                half4 baseSample = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv) * _BaseColor;
+                half4 baseSample = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv.xy) * _BaseColor;
                 half3 albedo = baseSample.rgb;
                 half alpha = baseSample.a;
 
                 #if defined(_PATTERN_ON)
                     albedo *= SamplePatternBox(input.generated, input.bindNormal, _PatternBlend);
+                #endif
+                #if defined(_VERTEXCOLOR_ON)
+                    albedo *= input.vertexColor;
+                #endif
+                #if defined(_HAIRRING_ON)
+                    albedo = lerp(albedo, _HairRingColor.rgb, HairRingMask(input.uv.zw));
                 #endif
 
                 #if defined(_ALPHATEST_ON)
@@ -328,10 +434,17 @@ Shader "KCD/Toon"
                 half3 color = ToonRamp(ndotl, mainLight.shadowAttenuation, albedo) * mainLight.color;
 
                 // 環境光（SH）は明部にも暗部にも乗せて、影が真っ黒になるのを防ぐ。
-                half3 ambient = SampleSHPixel(input.vertexSH, normalWS) * albedo;
+                // _FlatAmbient = 1（キャラ）では、法線によらない一定の色にする（真上と真下の平均。MToon と同じ）。
+                // 法線ごとの SH のままだと、陰の中に空の向きの淡い明るみが残り、セルの塗りが一色にならない (#47)。
+                // SampleSHPixel と同じく負にならないようにする。
+                half3 ambientFlat = max(half3(0.0h, 0.0h, 0.0h), 0.5h * (EvaluateAmbientProbeSRGB(half3(0.0h, 1.0h, 0.0h))
+                    + EvaluateAmbientProbeSRGB(half3(0.0h, -1.0h, 0.0h))));
+                half3 ambient = lerp(SampleSHPixel(input.vertexSH, normalWS), ambientFlat, _FlatAmbient) * albedo;
                 color += ambient * 0.6h;
 
-                // 追加ライト（街灯など）は素朴な 2 値ランプで加算。
+                // 追加ライト（街灯など）は素朴な 2 値ランプで加算。境目は N・L で測り、上限を 0.1 にする。
+                // キャラは主光の境目を half-lambert の 0.5 に上げてあり (#47)、そのまま使うと室内の灯りが
+                // 光の向きから 60° 以内の面にしか当たらない。
                 #if defined(_ADDITIONAL_LIGHTS)
                     uint additionalLightCount = GetAdditionalLightsCount();
                     for (uint lightIndex = 0u; lightIndex < additionalLightCount; ++lightIndex)
@@ -339,7 +452,8 @@ Shader "KCD/Toon"
                         Light light = GetAdditionalLight(lightIndex, input.positionWS);
                         half attenuation = light.distanceAttenuation * light.shadowAttenuation;
                         half lightNdotL = saturate(dot(normalWS, light.direction));
-                        half toonStep = smoothstep(_ShadeThreshold, _ShadeThreshold + _ShadeSoftness * 4.0h, lightNdotL);
+                        half addThreshold = min(_ShadeThreshold, 0.1h);
+                        half toonStep = smoothstep(addThreshold, addThreshold + _ShadeSoftness * 4.0h, lightNdotL);
                         color += albedo * light.color * toonStep * attenuation;
                     }
                 #endif

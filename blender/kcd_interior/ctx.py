@@ -5,6 +5,8 @@ Unity で MeshCollider を個別に付けられるよう、家具は床・壁と
 
     floor_<id>            床スラブ（歩行面）
     wall_<id>             外周壁・間仕切り・天井・階段など躯体
+    floor_<id>_<kind>     床・躯体を階や区画ごとに分けたもの（part()。点光源の数の上限が
+    wall_<id>_<kind>      オブジェクトごとに効くので、長い廊下を 1 つにしない）
     furn_<id>_<nn>_<kind> 家具什器のグループ（nn は 2 桁連番）
 
 座れる家具（ソファ・ベンチ・ラウンジチェア）は家具ヘルパが各 MeshBuilder の
@@ -36,11 +38,16 @@ class Ctx:
         self.floor.seats = []
         self.wall.seats = []
         self.furns = []          # [(name, MeshBuilder)]
+        self.parts = []          # 階や区画ごとの床・躯体（part()）
         self.empties = []        # [(name, (x, y, z))]
         self.lights = []         # [(x, y, z, energy, radius)] プレビュー専用
+        self.light_color = None  # プレビューの点光源の色。None なら既定の白寄り
         self.cams = []           # [(suffix, loc, target, lens)]
         self.seats = 0           # 数えた座席数（README 用）
         self.notes = []
+        self.closure_zones = []  # 外周とは別に閉じを測る区画（closure.measure。上の階など）
+        self.door_gap = None     # 入口の開口の (x0, x1)。common.envelope が入れる
+        self.signs = []          # 文字を貼った看板の記録（signs.wall / signs.hanging が積む）
         self._npc = 0
         self._sign = 0
         self._seats_flushed = False
@@ -53,8 +60,17 @@ class Ctx:
         self.furns.append((name, mb))
         return mb
 
+    def part(self, role, kind):
+        """floor_<id>_<kind> か wall_<id>_<kind> の MeshBuilder。role は "floor" か "wall"。"""
+        if role not in ("floor", "wall"):
+            raise ValueError("role は floor か wall: %r" % (role,))
+        mb = MeshBuilder("%s_%s_%s" % (role, self.spec.id, kind))
+        mb.seats = []
+        self.parts.append(mb)
+        return mb
+
     def builders(self):
-        return [self.floor, self.wall] + [mb for _, mb in self.furns]
+        return [self.floor, self.wall] + self.parts + [mb for _, mb in self.furns]
 
     def tris(self):
         n = 0
@@ -63,16 +79,22 @@ class Ctx:
                 n += max(0, len(f) - 2)
         return n
 
+    def text_tris(self):
+        """看板の文字の三角形の数（tris() に含まれる）。"""
+        return sum(r["tris"] for r in self.signs)
+
     # ---- Empty ----
     def _put(self, name, x, y, z=0.0):
         self.empties.append((name, (float(x), float(y), float(z))))
         return name
 
-    def spawn(self, x, y, z=0.0):
-        return self._put("spawn_%s" % self.spec.id, x, y, z)
+    def spawn(self, x, y, z=0.0, door=None):
+        """入ったときに立つ位置。door はキャンパスの扉の id（2 つ目以降の扉。既定は棟の id）。"""
+        return self._put("spawn_%s" % (door or self.spec.id), x, y, z)
 
-    def exit(self, x, y, z=0.0):
-        return self._put("exit_%s" % self.spec.id, x, y, z)
+    def exit(self, x, y, z=0.0, door=None):
+        """ここを越えると外へ出る位置。door は spawn と同じ。"""
+        return self._put("exit_%s" % (door or self.spec.id), x, y, z)
 
     def poi(self, name, x, y, z=0.0):
         return self._put("poi_%s_%s" % (self.spec.id, name), x, y, z)
@@ -82,6 +104,7 @@ class Ctx:
         return self._put("npc_%s_%d" % (self.spec.id, self._npc), x, y, z)
 
     def sign(self, x, y, z):
+        """看板の Empty。プランからは直に呼ばず signs.wall / signs.hanging を使う。"""
         self._sign += 1
         return self._put("sign_%s_%d" % (self.spec.id, self._sign), x, y, z)
 
@@ -100,6 +123,7 @@ class Ctx:
             seat_<id>_<nn>_f     正面の辺の中点（中心からの向きが座ったときの正面）
             seat_<id>_<nn>_s     側面の辺の中点（中心からの距離が幅の半分）
             seat_<id>_<nn>_a<k>  座る位置（床の高さ。PlayerController.SitAt のアンカー）
+            seat_<id>_<nn>_<key> 家具ごとの付属の点（seat["extra"]。ピアノの鍵盤は _piano）
 
         Unity の SeatFactory.PlaceInterior がこれを読み、座る操作（SeatInteractable）と
         乗り上げ防止の見えない壁を付ける。戻り値は書き出した座面の数。
@@ -115,6 +139,8 @@ class Ctx:
             self._put(name + "_s", *seat["s"])
             for k, a in enumerate(seat["anchors"]):
                 self._put("%s_a%d" % (name, k), *a)
+            for key, p in (seat.get("extra") or {}).items():
+                self._put("%s_%s" % (name, key), *p)
         return len(seats)
 
     # ---- プレビュー ----

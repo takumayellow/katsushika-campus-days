@@ -35,8 +35,11 @@ from .tex import hex_rgb
 # 身体プロポーション
 # --------------------------------------------------------------------------
 #: 顎下（= 首から下の全長）を 1.0 としたときの各部位の高さ（通常頭身）
+#: shoulder は肩先（胴のいちばん広い段）。6 頭身ではあごから 0.34 H（H は頭の高さ）
+#: 下がり、首の付け根の横は 0.21 H 下がる。0.96 台まで上げると肩先があごの 0.2 H 下に
+#: 来て首が隠れ、肩をすくめて見える（#162）。服・襟・腕の付け根はこの高さから測るので一緒に動く
 BODY_LEVELS = {
-    "shoulder": 0.962,
+    "shoulder": 0.932,
     "bust": 0.860,
     "underbust": 0.810,
     "waist": 0.730,
@@ -101,23 +104,47 @@ BUILDS = {
         crotch_rx=0.455, crotch_ry=0.330,
         neck_r=0.175,
         arm_r=(0.110, 0.094, 0.066), hand=0.115,
-        leg_r=(0.255, 0.175, 0.118), foot=(0.205, 0.640, 0.155),
+        # 脚の幅は顔の幅に対して 腿（スカートの裾の高さ）0.45・膝 0.39・
+        # ふくらはぎ 0.40・足首 0.24。
+        # 膝とふくらはぎが細いと、膝から下が棒に見える。太らせたぶん左右の
+        # 脚の芯を外へ離し、腿と膝の間を空ける（寄せたままだと 2 本が 1 本の
+        # 柱にくっついて見える）。
+        leg_r=(0.262, 0.205, 0.118), foot=(0.205, 0.640, 0.155),
+        leg_x=(0.56, 0.50, 0.50), leg_taper=(0.92, 1.04),
         arm_len=(0.170, 0.150, 0.082),
         head_w=0.800, head_d=0.828,
     ),
-    # 成人男性（教授）: 肩幅 = 頭幅 x 1.56、腕の直径 = 頭幅 x 0.22
+    # 成人男性（教授）: 肩幅 = 頭幅 x 1.40、腕の直径 = 頭幅 x 0.22、首 = 頭幅 x 0.42
+    # （首が女子と同じ細さだと、大人の男の顔を載せても華奢に見える #172）。
+    # 肩幅は背広の肩パッドの分を残して決める。素体の肩を広げると、背広を着せたときに
+    # 頭が肩幅の半分ほどしかなく、男子学生と並べると頭だけ小さく見える。
     "sturdy": dict(
-        shoulder_half=0.780, shoulder_ry=0.345,
+        shoulder_half=0.700, shoulder_ry=0.345,
         bust_rx=0.560, bust_ry=0.400, bust_bulge=0.015,
         underbust_rx=0.510, underbust_ry=0.365,
         waist_rx=0.478, waist_ry=0.345,
         hip_rx=0.520, hip_ry=0.380,
         crotch_rx=0.495, crotch_ry=0.365,
-        neck_r=0.205,
+        neck_r=0.210,
         arm_r=(0.110, 0.095, 0.070), hand=0.130,
         leg_r=(0.300, 0.205, 0.140), foot=(0.245, 0.700, 0.185),
         arm_len=(0.172, 0.152, 0.086),
         head_w=0.828, head_d=0.850,
+    ),
+    # 男子学生（モブ）: 肩幅 = 頭幅 x 1.48。胸のふくらみは無く、腰は女子より細い。
+    # 肩・胴・脚は slim と sturdy の間に置き、教授より細身の若い体にする。
+    "lean_m": dict(
+        shoulder_half=0.740, shoulder_ry=0.320,
+        bust_rx=0.520, bust_ry=0.370, bust_bulge=0.000,
+        underbust_rx=0.470, underbust_ry=0.330,
+        waist_rx=0.420, waist_ry=0.300,
+        hip_rx=0.475, hip_ry=0.345,
+        crotch_rx=0.460, crotch_ry=0.335,
+        neck_r=0.195,
+        arm_r=(0.110, 0.095, 0.068), hand=0.125,
+        leg_r=(0.270, 0.200, 0.130), foot=(0.225, 0.680, 0.170),
+        arm_len=(0.172, 0.152, 0.085),
+        head_w=0.815, head_d=0.840,
     ),
     # ちび（女子・3 頭身）: 肩幅 = 頭幅 x 0.86、手足は短く細く、首はほぼ無い
     "chibi_f": dict(
@@ -201,6 +228,12 @@ CHARACTERS: dict[str, dict] = {
         mat_colors={"hair": "#C9A27E", "eye_l": "#5ED6DE", "eye_r": "#5ED6DE",
                     "metal": "#4FA3E8"},
         accessories=("tote",),
+        # 頭・左手・髪の殻・スカート（袴）・袂の面を外向きに張る。Unity の
+        # 輪郭線は法線の向きへ押し出した殻の裏面なので、面が内向きだと殻が
+        # 体の中へ押し込まれて外形の線が 1 本も出ない。7 体とも True。
+        outward_faces=True,
+        # 横顔の鼻先を頭の奥行きの何割だけ前へ出すか（body._keel）。
+        face_keel=0.090,
     ),
     # --------------------------------------------------------------- botchan
     "botchan": dict(
@@ -214,7 +247,10 @@ CHARACTERS: dict[str, dict] = {
         height=1.15, heads=2.83, silhouette_pad=(0.183, 0.257),
         build="chibi_m", chibi=True, levels=BODY_LEVELS_BOTCHAN,
         skin=_c("#EBBE9C"),
-        hair_color=_c("#1A1A22"),
+        # 黒髪の地の色は、色味をわずかに残した明度 L* 30 の灰にする（Homura の黒髪は
+        # #4E494B で L* 31.6）。暗くすると陰も輪郭線（L* 10）と同じ暗さになり、髪の房も
+        # 輪郭も読めない一塊になる。彩度を残すと紫や紺の髪に見える (#47)。
+        hair_color=_c("#46464F"),
         eye_color=_c("#4A3324"),
         lash_color=_c("#171720"),
         brow_color=_c("#14141C"),
@@ -240,11 +276,12 @@ CHARACTERS: dict[str, dict] = {
         hair="crew", hair_accessory=None,
         outfit="kimono_botchan",
         face_layout=dict(eye_y=0.510, eye_dx=0.130, eye_rx=0.034, eye_ry=0.078),
-        mat_colors={"hair": "#1A1A22", "eye_l": "#1A1A22", "eye_r": "#1A1A22"},
+        mat_colors={"hair": "#46464F", "eye_l": "#1A1A22", "eye_r": "#1A1A22"},
         pattern_scale=16.0,
         accessories=("furoshiki",),
         bag_mount="shoulder",
         sign_items=("十字絣", "高下駄", "赤い風呂敷"),
+        outward_faces=True,
     ),
     # --------------------------------------------------------------- madonna
     "madonna": dict(
@@ -300,13 +337,14 @@ CHARACTERS: dict[str, dict] = {
         accessories=("boots",),
         # 公式は腕を斜め下へ開き、振袖の袂が袴の左右に大きな板として垂れて
         # いる。既定の 26° まで下ろすと袂が袴の後ろへ回り込んで見えなくなり、
-        # ただの着物姿になっていた（上腕は鉛直から 12°）。4° で 34° 開く。
+        # ただの着物姿になっていた（上腕は鉛直から 2°）。4° で 24° 開く。
         arm_drop=4.0,
         # 行灯袴にブーツなので小股で歩く。既定の歩幅だと前へ出た腿が袴の前を
         # 押し広げて裂けて見えた（#49）。速さはゲーム側と同じまま、1 歩を
         # 短くして歩数を増やす（見える素肌 Walk 53 → 38 / Run 85 → 59）。
         gait={"Walk": dict(reach=0.75), "Run": dict(reach=0.85)},
         sign_items=("ハート柄の振袖", "頭頂の赤リボン", "編み上げブーツ"),
+        outward_faces=True,
     ),
     # ----------------------------------------------------------------- inari
     "inari": dict(
@@ -314,7 +352,8 @@ CHARACTERS: dict[str, dict] = {
         jp="花之木 いなり",
         height=1.53, heads=6.0, build="slim",
         skin=_c("#F3C7B0"),
-        hair_color=_c("#2A2432"),
+        # 黒髪の地の色は、坊っちゃんと同じく L* 30 の低彩度の灰にする (#47)。
+        hair_color=_c("#49454F"),
         eye_color=_c("#8E5FC0"),
         lash_color=_c("#201826"),
         brow_color=_c("#2A2432"),
@@ -325,10 +364,11 @@ CHARACTERS: dict[str, dict] = {
         tail_ribbon=True,
         outfit="seifuku",
         face_layout=dict(eye_y=0.418, eye_dx=0.188, eye_rx=0.078, eye_ry=0.100),
-        mat_colors={"hair": "#2A2432", "eye_l": "#8E5FC0", "eye_r": "#8E5FC0",
+        mat_colors={"hair": "#49454F", "eye_l": "#8E5FC0", "eye_r": "#8E5FC0",
                     "cloth_ribbon_green": "#2E6FBF"},
         accessories=(),
         sign_items=("赤縁メガネ", "ツインテール", "結び目の紫リボン"),
+        outward_faces=True,
     ),
     # ---------------------------------------------------------------- kaname
     "kaname": dict(
@@ -350,6 +390,7 @@ CHARACTERS: dict[str, dict] = {
                     "cloth_skirt_navy": "#7A3F46", "cloth_ribbon_green": "#D9A441"},
         accessories=(),
         sign_items=("エプロン", "ポニーテール", "三角巾"),
+        outward_faces=True,
     ),
     # ------------------------------------------------------------------ sora
     "sora": dict(
@@ -371,28 +412,65 @@ CHARACTERS: dict[str, dict] = {
                     "cloth_ribbon_green": "#00843D", "cloth_skirt_navy": "#3A4E6E"},
         accessories=("sneakers",),
         sign_items=("水色ショート", "パーカー", "スニーカー"),
+        outward_faces=True,
     ),
     # ------------------------------------------------------------------ prof
     "prof": dict(
         id="prof",
         jp="教授",
-        height=1.72, heads=6.4, build="sturdy",
+        height=1.72, heads=6.25, build="sturdy",
         skin=_c("#E4BA9E"),
-        hair_color=_c("#DCDCE0"),
-        eye_color=_c("#7E97B8"),
+        hair_color=_c("#47454C"),
+        eye_color=_c("#5C4A3E"),
         lash_color=_c("#3A3A44"),
-        brow_color=_c("#C8C8CE"),
-        blush_color=_c("#D89080"), blush_strength=0.16,
+        brow_color=_c("#2E2C30"),
+        blush_color=_c("#D89080"), blush_strength=0.0,
         mouth_color=_c("#8E4038"), mouth_style="line", mouth_w=0.028,
-        eye_style="sharp", eye_tilt=2.0,
-        brow_width=0.014, brow_arch=0.12,
-        hair="short_old", hair_accessory="glasses_gray",
-        outfit="labcoat",
-        face_layout=dict(eye_y=0.421, eye_dx=0.190, eye_rx=0.076, eye_ry=0.094),
-        mat_colors={"hair": "#DCDCE0", "eye_l": "#7E97B8", "eye_r": "#7E97B8",
-                    "glasses": "#AEB4BE"},
+        # 大人の男の顔 (#172): 目は横長の細い目にし、虹彩は小さな濃い茶の円、光は 1 点だけ。
+        # まぶたは上の線 1 本で、目尻の跳ねと下まつ毛は付けない。眉は目に近い直線寄りの眉。
+        # 鼻筋（face_keel）を通して眼鏡を鼻に乗せる。輪郭は顎を張らせる。
+        eye_style="narrow", eye_tilt=0.0,
+        brow_width=0.0120, brow_arch=0.005, brow_lift=0.080,
+        lash_scale=0.95, lash_lower=False, lash_flick=0.0, crease_lift=0.85,
+        eye_shine=0.55, head_square=0.50, face_keel=0.080,
+        hair="business", hair_accessory="glasses_gray",
+        # 細い金属の縁の眼鏡。レンズは目の横幅に対する倍率と、縦横比で決める。
+        glasses_tube=0.0060, glasses_lens=(1.50, 0.60),
+        outfit="suit",
+        face_layout=dict(eye_y=0.440, eye_dx=0.168, eye_rx=0.066, eye_ry=0.040),
+        # 服と髪は情報工学科の教員の写真の傾向に合わせる（docs/ref/characters/prof.md）
+        mat_colors={"hair": "#47454C", "eye_l": "#5C4A3E", "eye_r": "#5C4A3E",
+                    "glasses": "#9EA4AE", "cloth_blouse": "#EDEFF2",
+                    "cloth_jacket": "#2B3550", "cloth_pants_gray": "#2B3550",
+                    "necktie": "#7A3040"},
         accessories=("necktie",),
-        sign_items=("白衣", "銀縁眼鏡", "ネクタイ"),
+        sign_items=("紺の背広", "銀縁眼鏡", "ネクタイ"),
+        outward_faces=True,
+    ),
+    # ------------------------------------------------------------- student_m
+    # 男子学生のモブ (#165)。話に出る名前は無い。シャツ・ズボン・靴・髪の色は
+    # Unity の MobStage が人ごとに塗り替える。
+    "student_m": dict(
+        id="student_m",
+        jp="男子学生",
+        height=1.70, heads=6.3, build="lean_m",
+        skin=_c("#ECC0A2"),
+        hair_color=_c("#46464F"),
+        eye_color=_c("#5A4434"),
+        lash_color=_c("#24222A"),
+        brow_color=_c("#2E2C34"),
+        blush_color=_c("#E09080"), blush_strength=0.12,
+        mouth_color=_c("#9A4A40"), mouth_style="line", mouth_w=0.030,
+        eye_style="sharp", eye_tilt=0.0,
+        brow_width=0.020, brow_arch=0.06,
+        hair="short_old", hair_accessory=None, nape_end=0.20,
+        outfit="casual_m",
+        face_layout=dict(eye_y=0.421, eye_dx=0.190, eye_rx=0.074, eye_ry=0.090),
+        mat_colors={"hair": "#46464F", "eye_l": "#5A4434", "eye_r": "#5A4434",
+                    "cloth_blouse": "#F2F2F0"},
+        accessories=(),
+        sign_items=("半袖シャツ", "スニーカー", "短い黒髪"),
+        outward_faces=True,
     ),
 }
 

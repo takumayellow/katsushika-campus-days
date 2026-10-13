@@ -61,9 +61,9 @@ namespace KCD.Tests
 
         /// <summary>
         /// MaterialLibrary.CampusColors を読む。Editor のアセンブリは EditMode から参照できないので、
-        /// ソースを字面で読む。
+        /// ソースを字面で読む。木の葉と花壇のテストも同じものを使う。
         /// </summary>
-        private static Dictionary<string, Vector3Int> UnityPalette()
+        internal static Dictionary<string, Vector3Int> UnityPalette()
         {
             string path = Path.Combine(
                 Application.dataPath, "Scripts", "Editor", "MaterialLibrary.cs");

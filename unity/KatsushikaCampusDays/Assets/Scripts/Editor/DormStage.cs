@@ -180,6 +180,7 @@ namespace KCD.Editor
             AddSafetyFloor(interior.transform, bounds);
             AddLights(interior.transform, bounds);
             SeatFactory.PlaceInterior(interior.transform, DormRoute.Id);
+            InteriorBackdropStage.Build(interior.transform, DormRoute.Id, bounds);
 
             Transform spawn = Find(interior.transform, SpawnEmpty);
             Transform exit = Find(interior.transform, ExitEmpty);
@@ -190,7 +191,7 @@ namespace KCD.Editor
                 return interior;
             }
 
-            AddExit(interior.transform, exit);
+            AddExit(interior.transform, exit, spawn);
             PlaceDormHead(interior.transform, spawn);
             Register(loader, interior.transform, spawn, exit, entrance);
 
@@ -221,17 +222,22 @@ namespace KCD.Editor
 
                 GameObject go = filter.gameObject;
                 string id = go.name.ToLowerInvariant();
-                // 観葉植物の葉は当たり判定から外す（#30）。
-                CampusStage.AttachMeshCollider(go, filter.sharedMesh,
-                    CampusStage.ColliderAssetPath(interior.name, go.name));
+                // 観葉植物の葉は当たり判定から外す（#30）。窓の外の近景 ext_* は描くだけ（#60）。
+                if (!InteriorStage.IsExteriorDressing(go.name))
+                {
+                    CampusStage.AttachMeshCollider(go, filter.sharedMesh,
+                        CampusStage.ColliderAssetPath(interior.name, go.name));
+                }
+
                 go.layer = id.StartsWith("floor") && groundLayer >= 0
                     ? groundLayer
                     : buildingLayer >= 0 ? buildingLayer : go.layer;
                 GameObjectUtility.SetStaticEditorFlags(go, StaticEditorFlags.BatchingStatic
                     | StaticEditorFlags.OccluderStatic | StaticEditorFlags.OccludeeStatic);
 
+                // 窓の外の近景 ext_* は AABB に入れない（InteriorStage.Dress と同じ, #60）。
                 Renderer renderer = go.GetComponent<Renderer>();
-                if (renderer == null)
+                if (renderer == null || !InteriorStage.CountsAsBuilding(renderer))
                 {
                     continue;
                 }
@@ -324,15 +330,16 @@ namespace KCD.Editor
         }
 
         /// <summary>exit_dorm を踏んだら外へ。本編の屋内と同じ InteriorExit を使う。</summary>
-        private static void AddExit(Transform interior, Transform exit)
+        private static void AddExit(Transform interior, Transform exit, Transform spawn)
         {
+            InteriorExit.BoxFor(exit.position, spawn.position, out Vector3 center, out float yaw, out Vector3 size);
             var go = new GameObject("Exit_" + DormRoute.Id);
             go.transform.SetParent(interior, false);
-            go.transform.position = exit.position + Vector3.up * 1.2f;
-            go.transform.rotation = Quaternion.identity;
+            go.transform.position = center;
+            go.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
             BoxCollider box = go.AddComponent<BoxCollider>();
             box.isTrigger = true;
-            box.size = new Vector3(3f, 2.6f, 3f);
+            box.size = size;
             go.AddComponent<InteriorExit>().BuildingId = DormRoute.Id;
         }
 

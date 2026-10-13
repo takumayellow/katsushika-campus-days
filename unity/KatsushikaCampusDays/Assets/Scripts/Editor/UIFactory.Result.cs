@@ -13,6 +13,7 @@ namespace KCD.Editor
             RectTransform rect = Rect(parent, "Result", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
                 Vector2.zero, new Vector2(1100f, 700f));
             Backdrop(rect, PanelDark);
+            KeepInCanvas(rect);
 
             RectTransform headingBox = Rect(rect, "Heading", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
                 new Vector2(0f, -28f), new Vector2(1000f, 70f));
@@ -36,6 +37,7 @@ namespace KCD.Editor
             rect.gameObject.SetActive(false);
             ResultScreen view = host.AddComponent<ResultScreen>();
             view.Bind(rect.gameObject, heading, rank, body, choices);
+            view.BindTap(AddLinkTapArea(rect, choices));
             return view;
         }
     }

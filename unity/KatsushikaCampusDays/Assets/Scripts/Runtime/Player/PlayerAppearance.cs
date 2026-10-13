@@ -46,6 +46,9 @@ namespace KCD
         /// <summary>いま出している体の id。まだ何も出していなければ空文字。</summary>
         public string ActiveCharacterId { get; private set; } = string.Empty;
 
+        /// <summary>いま出している体の背丈（m、足もとから天辺まで）。測れていなければ 0。記念写真の構図が使う。</summary>
+        public float BodyHeight { get; private set; }
+
         /// <summary>SceneBuilder から差し込む。ids と bodies は同じ順に並べる。</summary>
         public void Bind(string[] ids, GameObject[] bodies)
         {
@@ -98,7 +101,8 @@ namespace KCD
 
             if (index >= 0)
             {
-                FitCamera(MeasureHeight(_bodies[index], transform.position.y));
+                BodyHeight = MeasureHeight(_bodies[index], transform.position.y);
+                FitCamera(BodyHeight);
             }
         }
 

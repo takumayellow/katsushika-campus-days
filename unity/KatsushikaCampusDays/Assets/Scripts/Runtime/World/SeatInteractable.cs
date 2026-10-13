@@ -17,6 +17,29 @@ namespace KCD
             set => _anchors = value;
         }
 
+        /// <summary>あれば、座ったあとに演奏を始める（ピアノの椅子）。</summary>
+        public PianoPerformance Performance
+        {
+            get
+            {
+                if (_performance == null && !_performanceSearched)
+                {
+                    _performanceSearched = true;
+                    _performance = GetComponent<PianoPerformance>();
+                }
+
+                return _performance;
+            }
+            set
+            {
+                _performance = value;
+                _performanceSearched = true;
+            }
+        }
+
+        private PianoPerformance _performance;
+        private bool _performanceSearched;
+
         public override Vector3 PromptAnchor => transform.position + Vector3.up * 1.1f;
 
         public override bool CanInteract
@@ -33,9 +56,23 @@ namespace KCD
             }
         }
 
-        private void Start()
+        private void OnEnable()
         {
-            PromptLabel = L.Get("ui.interact.sit", "座る");
+            L.LocaleChanged += RefreshPrompt;
+            RefreshPrompt();
+        }
+
+        private void OnDisable()
+        {
+            L.LocaleChanged -= RefreshPrompt;
+        }
+
+        /// <summary>いまの言語で「座る」を出す。言語を切り替えたら出し直す。</summary>
+        private void RefreshPrompt()
+        {
+            PromptLabel = Performance != null
+                ? L.Get("ui.interact.play_piano", "ピアノを弾く")
+                : L.Get("ui.interact.sit", "座る");
         }
 
         public override void Interact(GameObject interactor)
@@ -52,8 +89,9 @@ namespace KCD
                 return;
             }
 
-            player.SitAt(anchor);
+            player.SitAt(anchor, Performance != null ? PianoPerformance.StandForward : PlayerController.DefaultStandForward);
             AudioManager.Instance?.PlaySe("sit");
+            Performance?.Begin(player);
             if (!string.IsNullOrEmpty(_flagId))
             {
                 GameManager.Instance?.Quests?.ReportFlag(_flagId);

@@ -26,12 +26,13 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import bpy  # noqa: E402
 
-from kcd_lib import geom, mats, render                 # noqa: E402
+from kcd_lib import geom, mats, render, uv             # noqa: E402
 from kcd_lib.mesh import MeshBuilder                   # noqa: E402
-from kcd_interior import closure, imats                # noqa: E402
+from kcd_interior import closure, imats, signs         # noqa: E402
 from kcd_interior import spec as ispec                 # noqa: E402
 from kcd_interior.ctx import Ctx                       # noqa: E402
 from kcd_route import dorm as D                        # noqa: E402
+from kcd_route import dorm_interior as DI              # noqa: E402
 
 FBX_OPTS = dict(
     use_selection=False,
@@ -129,6 +130,7 @@ def scene_tris():
 
 def export_fbx(path):
     os.makedirs(os.path.dirname(path), exist_ok=True)
+    uv.write_scene(bpy.context.scene)
     bpy.ops.export_scene.fbx(filepath=path, **FBX_OPTS)
     return os.path.getsize(path)
 
@@ -246,6 +248,7 @@ def build_exterior_scene(dorm, args, eng):
         "floor_h_upper": round(info["up"], 3), "height": info["height"],
         "balcony_edge": info["balcony_edge"],
         "balcony_floors": info["balcony_floors"],
+        "balcony_units": info["balcony_units"],
         "footprint": check_footprint(shell, loop),
         "entrance": check_entrance(dorm, dr),
         "fbx": None, "size": 0, "previews": [],
@@ -304,9 +307,11 @@ def build_interior_scene(dorm, args, eng):
     mats.build_all()
     imats.build_all()
 
-    sp = D.make_spec(dorm)
+    sp = DI.make_spec(dorm)
     c = Ctx(sp, seed=args.seed)
-    D.build(c)
+    DI.build(c)
+    signs.check(c)        # 文字の無い看板の Empty があれば止める（DESIGN.md §3.4 の看板）
+
     c.flush_seats()
 
     objects = [mb.to_object() for mb in c.builders() if mb.faces]
@@ -323,6 +328,9 @@ def build_interior_scene(dorm, args, eng):
         "seats": len(c.seat_list()),
         "notes": c.notes,
         "objects": [o.name for o in objects],
+        # 看板ごとの文言・Empty・位置（signs.wall / signs.hanging の記録）と文字の三角形の数
+        "signs": c.signs,
+        "text_triangles": c.text_tris(),
         # --- 寮だけの追加メタ（Unity 側の実装が読む） ---
         "operator": D.OPERATOR,
         "not_university": D.NOT_UNIVERSITY,
@@ -341,10 +349,13 @@ def build_interior_scene(dorm, args, eng):
             "facing_bearing_deg": float(dorm["entrance"]["facing_bearing"]),
         },
     }
-    sidecar = os.path.join(args.out_dir, "%s.json" % D.ID)
-    ispec.dump_sidecar(sp, meta_extra, sidecar)
+    sidecar = None
+    if not args.no_export:
+        sidecar = os.path.join(args.out_dir, "%s.json" % D.ID)
+        ispec.dump_sidecar(sp, meta_extra, sidecar)
 
     out = {"tris": tris, "objects": [o.name for o in objects],
+           "text_tris": c.text_tris(), "signs": len(c.signs),
            "empties": [n for n, _ in c.empties], "notes": c.notes,
            "sidecar": sidecar, "fbx": None, "size": 0, "previews": [],
            "max_edge": round(max(max_edge(o) for o in objects), 3),
@@ -412,10 +423,10 @@ def main():
         print("[dorm] 外観  tris=%d (躯体 %d + 付属 %d)  最長辺 %.1f/%.1f m"
               % (ext["tris"], ext["shell_tris"], ext["trim_tris"],
                  ext["shell_max_edge"], ext["trim_max_edge"]))
-        print("[dorm] 外観  %d 階 / 階高 %.2f + %.2f x %d / 高さ %.1f m / バルコニー 辺%d x %d 層"
+        print("[dorm] 外観  %d 階 / 階高 %.2f + %.2f x %d / 高さ %.1f m / バルコニー 辺%s x %d 層 x %d 戸"
               % (ext["levels"], ext["floor_h_ground"], ext["floor_h_upper"],
                  ext["levels"] - 1, ext["height"], ext["balcony_edge"],
-                 ext["balcony_floors"]))
+                 ext["balcony_floors"], ext["balcony_units"]))
         print("[dorm] footprint  頂点ずれ最大 %.4f m / 外へのはみ出し最大 %.4f m / 辺の欠け %s  -> %s"
               % (fp_["corner_dist_max"], fp_["outside_max"],
                  "なし" if all(e.get("covered") for e in fp_["edges"]) else "あり",
@@ -437,9 +448,10 @@ def main():
     if args.mode in ("both", "interior"):
         inr = build_interior_scene(dorm, args, eng)
         report["interior"] = inr
-        print("[dorm] 屋内  %.1f x %.1f m  tris=%d / 予算 %d  最長辺 %.1f m  empties=%d  %s"
+        print("[dorm] 屋内  %.1f x %.1f m  tris=%d（うち看板の文字 %d、%d 枚）/ 予算 %d  最長辺 %.1f m  "
+              "empties=%d  %s"
               % (inr["envelope"]["width"], inr["envelope"]["depth"], inr["tris"],
-                 INT_BUDGET, inr["max_edge"], len(inr["empties"]),
+                 inr["text_tris"], inr["signs"], INT_BUDGET, inr["max_edge"], len(inr["empties"]),
                  "%.2f MB" % (inr["size"] / 1048576.0) if inr["size"] else "-"))
         for n in inr["notes"]:
             print("           - %s" % n)

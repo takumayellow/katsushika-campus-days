@@ -162,6 +162,166 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: lecture_board_bluegreen
+    second: {fileID: 2100000, guid: ac17b48309523fd4788b4f69ea5a48a0, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lecture_board_green
+    second: {fileID: 2100000, guid: ee04cbf177c8e174097dd58b4cb14ae0, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lecture_brick
+    second: {fileID: 2100000, guid: 0596be4f4c7dd9b42b8604f3e65e071b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lecture_carpet_corridor
+    second: {fileID: 2100000, guid: 41448d887d0e11141ac5d28cd4953a0b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lecture_carpet_hall
+    second: {fileID: 2100000, guid: 65986129fa8f3d04786d36349d11e7fb, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lecture_ceiling_dark
+    second: {fileID: 2100000, guid: 38c72e22472ecfb41b3fd042ace23af1, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lecture_concrete
+    second: {fileID: 2100000, guid: 98249a1ec954bbb43b5957da42ec63d4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lecture_coop_band
+    second: {fileID: 2100000, guid: 594d0898fec49c84696e60205539f0d4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lecture_coop_counter
+    second: {fileID: 2100000, guid: 2e7da48a67a94174c89380550e5bcab6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lecture_coop_floor
+    second: {fileID: 2100000, guid: edfbcdcfc09c2974e9712dc11eb658a2, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lecture_core_black
+    second: {fileID: 2100000, guid: 7ea32fb0ff4c085458d9d6e60be893ed, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lecture_desk_ivory
+    second: {fileID: 2100000, guid: 84e80b18c83b39e4ebc360c62f70f84b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lecture_door_wood
+    second: {fileID: 2100000, guid: 209767df4913fb246b6adcc3a5e0931c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lecture_glass_curtain
+    second: {fileID: 2100000, guid: 1997cc9e3e14cd0448a179c31fdfbdae, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lecture_glass_rail
+    second: {fileID: 2100000, guid: bf0478a25959a714e8706f27a677b299, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lecture_light_cool
+    second: {fileID: 2100000, guid: d77912b3f08b961429b4ccf8ef39bf4b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lecture_lobby_carpet
+    second: {fileID: 2100000, guid: e6a16112c0b868b428d1a59b3a312067, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lecture_lounge_carpet
+    second: {fileID: 2100000, guid: 769626ca810e02c42a2879ee2c53f441, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lecture_lounge_ceiling
+    second: {fileID: 2100000, guid: 4d0e12b50878afa4eaa4de8a1b873dd2, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lecture_lounge_column
+    second: {fileID: 2100000, guid: c018c09290d298b41b4f18675ea99713, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lecture_panel_dark
+    second: {fileID: 2100000, guid: 6216db913fa447444b43d6f77a19f9a0, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lecture_rail_white
+    second: {fileID: 2100000, guid: 01398867f72916b4598178bc09565a4f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lecture_seat_green
+    second: {fileID: 2100000, guid: 21f88f1b49a807649a6ebde8d616acac, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lecture_seat_navy
+    second: {fileID: 2100000, guid: 944bd480ea5390f429c77efcf8c17bd6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lecture_sign_black
+    second: {fileID: 2100000, guid: 8c4b742f8fe61b9429fbb8c52c863c57, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lecture_sign_white
+    second: {fileID: 2100000, guid: 5b82999867cab0e499aec4c2e0d29380, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lecture_stone_dark
+    second: {fileID: 2100000, guid: 5cd9156258f8b894f8ac7291890eb253, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lecture_stone_light
+    second: {fileID: 2100000, guid: 8075fdbebcc446e45a8006efb6ca54ba, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lecture_table_white
+    second: {fileID: 2100000, guid: 20b9e43cb1ac8d9408758c67e46ac11d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lecture_tactile_yellow
+    second: {fileID: 2100000, guid: 54b9178b51c3fd0478cc4532af34c3fa, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lecture_wood_louver
+    second: {fileID: 2100000, guid: 9c0563ea4a6be1843a8da344119fc426, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lecture_wood_shell
+    second: {fileID: 2100000, guid: cbd9722ea25b5904e8024a75c07533b2, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: light_panel
     second: {fileID: 2100000, guid: 4d37b4f0eef136f4aa5ba6e98b2e0b73, type: 2}
   - first:
@@ -338,7 +498,7 @@ ModelImporter:
   tangentSpace:
     normalSmoothAngle: 60
     normalImportMode: 0
-    tangentImportMode: 3
+    tangentImportMode: 2
     normalCalculationMode: 4
     legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 0
     blendShapeNormalImportMode: 1

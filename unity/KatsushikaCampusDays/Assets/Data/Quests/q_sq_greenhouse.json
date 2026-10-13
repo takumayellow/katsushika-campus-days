@@ -2,8 +2,8 @@
   "id": "q_sq_greenhouse",
   "title": "温室の水やり当番",
   "title_en": "Greenhouse Watering Duty",
-  "summary": "教授が温室の当番を忘れていた。第2実験棟の東にある切妻ガラス屋根の温室で、栽培ベンチの鉢に水をやってくる。",
-  "summary_en": "The professor forgot greenhouse duty. Head to the gabled glass greenhouse east of Experiment Building 2 and water the pots on the growing benches.",
+  "summary": "教授が温室の当番を忘れていた。第1実験棟の東どなりにある、陸屋根のガラスの温室で、栽培ベンチの鉢に水をやってくる。",
+  "summary_en": "The professor forgot greenhouse duty. Head to the flat-roofed glass greenhouse just east of Experiment Building 1 and water the pots on the growing benches.",
   "order": 11,
   "autoStart": false,
   "prerequisites": [

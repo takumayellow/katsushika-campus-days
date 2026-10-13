@@ -1,0 +1,106 @@
+{
+  "id": "dome_door",
+  "speaker": "手紙",
+  "topics": [
+    {
+      "id": "t_open",
+      "requiresCompletedQuest": "q_secret_spring_hunt",
+      "lines": [
+        {
+          "speaker": "自分",
+          "text": "扉の中は空っぽだ。封筒と白い紙は、もう自分が持っている。",
+          "text_en": "The space behind the door is empty. The envelope and the blank sheet are with me now."
+        }
+      ]
+    },
+    {
+      "id": "t_letter",
+      "requiresActiveQuest": "q_secret_spring_hunt",
+      "requiresItem": "c_dome_key",
+      "once": true,
+      "lines": [
+        {
+          "speaker": "自分",
+          "text": "鍵が回った。……中には古い封筒と、白い紙が 1 枚。",
+          "text_en": "The key turns. Inside: an old envelope and a single blank sheet."
+        },
+        {
+          "text": "このキャンパスを最初に歩いた、わたしたちから。",
+          "text_en": "From us, the first to walk this campus.",
+          "written": true
+        },
+        {
+          "text": "毎年、ここまで来た人が次の春に 20 個を隠し直す。それがきまり。",
+          "text_en": "Every year, whoever makes it here hides all twenty again the next spring. That is the rule.",
+          "written": true
+        },
+        {
+          "text": "白い紙は 21 枚目。次の人へ。",
+          "text_en": "The blank sheet is note twenty-one. For whoever comes next.",
+          "written": true
+        },
+        {
+          "speaker": "自分",
+          "text": "21 枚目……。いなり先輩に知らせよう。",
+          "text_en": "Note twenty-one... I should tell Inari."
+        }
+      ]
+    },
+    {
+      "id": "t_read",
+      "requiresActiveQuest": "q_secret_spring_hunt",
+      "requiresItem": "c_dome_key",
+      "lines": [
+        {
+          "speaker": "自分",
+          "text": "手紙はもう読んだ。いなり先輩に知らせよう。",
+          "text_en": "I've read the letter. I should tell Inari."
+        }
+      ]
+    },
+    {
+      "id": "t_locked",
+      "requiresActiveQuest": "q_secret_spring_hunt",
+      "lines": [
+        {
+          "speaker": "自分",
+          "text": "鍵がかかっている。鍵は 20 番のメモと一緒にあるはずだ。",
+          "text_en": "It's locked. The key should be wherever note 20 is."
+        }
+      ]
+    },
+    {
+      "id": "t_key_ask",
+      "requiresItem": "c_dome_key",
+      "requiresHiddenCount": 5,
+      "lines": [
+        {
+          "speaker": "自分",
+          "text": "拾った鍵が合いそうだ。……開ける前に、いなり先輩に聞いてみよう。",
+          "text_en": "The key I found looks like it fits... I should ask Inari before I open it."
+        }
+      ]
+    },
+    {
+      "id": "t_key_only",
+      "requiresItem": "c_dome_key",
+      "lines": [
+        {
+          "speaker": "自分",
+          "text": "拾った鍵が合いそうだ。……でも、メモはまだ少ししか読んでいない。もう少し集めてから来よう。",
+          "text_en": "The key I found looks like it fits... but I've only read a few of the notes. I'll come back after finding more."
+        }
+      ]
+    },
+    {
+      "id": "t_idle",
+      "lines": [
+        {
+          "speaker": "自分",
+          "text": "ドームへ上がる、鍵のかかった小さな扉。",
+          "text_en": "A small locked door. It seems to lead up to the dome."
+        }
+      ]
+    }
+  ]
+}

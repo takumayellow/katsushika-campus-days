@@ -35,6 +35,11 @@
    "y": 2.3,
    "z": 11.95
   },
+  "sign_dorm_2": {
+   "x": 0.0,
+   "y": 2.48,
+   "z": 6.51
+  },
   "npc_dorm_1": {
    "x": 2.6,
    "y": 0.0,
@@ -50,10 +55,10 @@
    "y": 0.0,
    "z": 9.6
   },
-  "sign_dorm_2": {
-   "x": -1.7,
-   "y": 2.35,
-   "z": 14.1
+  "sign_dorm_3": {
+   "x": -1.51,
+   "y": 2.45,
+   "z": 17.6
   },
   "npc_dorm_2": {
    "x": -4.0,
@@ -61,198 +66,558 @@
    "z": 16.4
   },
   "poi_dorm_lounge": {
-   "x": -5.4,
+   "x": -3.4,
    "y": 0.0,
-   "z": 17.5
-  },
-  "sign_dorm_3": {
-   "x": 1.7,
-   "y": 2.35,
-   "z": 14.1
-  },
-  "poi_dorm_shokudo": {
-   "x": 5.0,
-   "y": 0.0,
-   "z": 17.0
+   "z": 17.6
   },
   "sign_dorm_4": {
-   "x": -1.5,
-   "y": 1.95,
-   "z": 38.6
+   "x": 1.51,
+   "y": 2.45,
+   "z": 14.3
+  },
+  "poi_dorm_shokudo": {
+   "x": 4.1,
+   "y": 0.0,
+   "z": 19.1
+  },
+  "sign_dorm_5": {
+   "x": -1.51,
+   "y": 2.45,
+   "z": 24.65
+  },
+  "poi_dorm_daiyokujo": {
+   "x": -3.0,
+   "y": 0.0,
+   "z": 25.4
+  },
+  "sign_dorm_6": {
+   "x": 1.51,
+   "y": 2.45,
+   "z": 31.2
+  },
+  "poi_dorm_kitchen": {
+   "x": 4.2,
+   "y": 0.0,
+   "z": 31.6
+  },
+  "sign_dorm_7": {
+   "x": 0.0,
+   "y": 2.31,
+   "z": 37.9
+  },
+  "sign_dorm_8": {
+   "x": 4.5,
+   "y": 2.35,
+   "z": 35.85
   },
   "poi_dorm_corridor_end": {
    "x": 0.0,
    "y": 0.0,
-   "z": 37.3
+   "z": 37.1
+  },
+  "poi_dorm_yokushitsu": {
+   "x": -3.05,
+   "y": 0.0,
+   "z": 32.0
+  },
+  "sign_dorm_9": {
+   "x": 0.0,
+   "y": 5.63,
+   "z": 8.6
+  },
+  "poi_dorm_lounge2": {
+   "x": 0.0,
+   "y": 3.3,
+   "z": 6.0
+  },
+  "sign_dorm_10": {
+   "x": -1.51,
+   "y": 5.75,
+   "z": 15.6
+  },
+  "sign_dorm_11": {
+   "x": -1.51,
+   "y": 5.4,
+   "z": 13.0
+  },
+  "poi_dorm_room": {
+   "x": -3.6,
+   "y": 3.3,
+   "z": 12.0
+  },
+  "sign_dorm_12": {
+   "x": 1.51,
+   "y": 5.75,
+   "z": 12.0
+  },
+  "poi_dorm_laundry": {
+   "x": 4.6,
+   "y": 3.3,
+   "z": 13.0
+  },
+  "sign_dorm_13": {
+   "x": 1.51,
+   "y": 5.75,
+   "z": 31.2
+  },
+  "poi_dorm_kitchen2": {
+   "x": 4.2,
+   "y": 3.3,
+   "z": 31.6
+  },
+  "sign_dorm_14": {
+   "x": 0.0,
+   "y": 5.61,
+   "z": 37.9
+  },
+  "sign_dorm_15": {
+   "x": -4.37,
+   "y": 5.4,
+   "z": 37.6
+  },
+  "sign_dorm_16": {
+   "x": 5.6,
+   "y": 5.65,
+   "z": 33.98
+  },
+  "poi_dorm_hall2": {
+   "x": 0.0,
+   "y": 3.3,
+   "z": 36.4
+  },
+  "sign_dorm_17": {
+   "x": -2.6,
+   "y": 8.1,
+   "z": 38.0
+  },
+  "poi_dorm_okujo": {
+   "x": 0.0,
+   "y": 6.6,
+   "z": 14.0
   },
   "seat_dorm_01": {
    "x": -6.11,
    "y": 0.0,
-   "z": 7.2
+   "z": 7.4
   },
   "seat_dorm_01_f": {
    "x": -5.88,
    "y": 0.0,
-   "z": 7.2
+   "z": 7.4
   },
   "seat_dorm_01_s": {
    "x": -6.11,
    "y": 0.0,
-   "z": 6.3
+   "z": 6.5
   },
   "seat_dorm_01_a0": {
    "x": -6.08,
    "y": 0.0,
-   "z": 7.8
+   "z": 8.0
   },
   "seat_dorm_01_a1": {
    "x": -6.08,
    "y": 0.0,
-   "z": 7.2
+   "z": 7.4
   },
   "seat_dorm_01_a2": {
    "x": -6.08,
    "y": 0.0,
-   "z": 6.6
+   "z": 6.8
   },
   "seat_dorm_02": {
    "x": -6.11,
    "y": 0.0,
-   "z": 9.4
+   "z": 10.6
   },
   "seat_dorm_02_f": {
    "x": -5.88,
    "y": 0.0,
-   "z": 9.4
+   "z": 10.6
   },
   "seat_dorm_02_s": {
    "x": -6.11,
    "y": 0.0,
-   "z": 8.5
+   "z": 9.7
   },
   "seat_dorm_02_a0": {
    "x": -6.08,
    "y": 0.0,
-   "z": 10.0
+   "z": 11.2
   },
   "seat_dorm_02_a1": {
    "x": -6.08,
    "y": 0.0,
-   "z": 9.4
+   "z": 10.6
   },
   "seat_dorm_02_a2": {
    "x": -6.08,
    "y": 0.0,
-   "z": 8.8
+   "z": 10.0
   },
   "seat_dorm_03": {
-   "x": -5.4,
+   "x": -5.0,
    "y": 0.0,
-   "z": 15.6
+   "z": 14.3
   },
   "seat_dorm_03_f": {
-   "x": -5.4,
+   "x": -5.0,
    "y": 0.0,
-   "z": 16.025
+   "z": 14.725
   },
   "seat_dorm_03_s": {
-   "x": -4.35,
+   "x": -3.95,
    "y": 0.0,
-   "z": 15.6
+   "z": 14.3
   },
   "seat_dorm_03_a0": {
-   "x": -6.007,
+   "x": -5.607,
    "y": 0.0,
-   "z": 15.805
+   "z": 14.505
   },
   "seat_dorm_03_a1": {
-   "x": -5.4,
+   "x": -5.0,
    "y": 0.0,
-   "z": 15.805
+   "z": 14.505
   },
   "seat_dorm_03_a2": {
-   "x": -4.793,
+   "x": -4.393,
    "y": 0.0,
-   "z": 15.805
+   "z": 14.505
   },
   "seat_dorm_04": {
-   "x": -5.4,
+   "x": -5.0,
    "y": 0.0,
-   "z": 19.4
+   "z": 18.1
   },
   "seat_dorm_04_f": {
-   "x": -5.4,
+   "x": -5.0,
    "y": 0.0,
-   "z": 18.975
+   "z": 17.675
   },
   "seat_dorm_04_s": {
-   "x": -6.45,
+   "x": -6.05,
    "y": 0.0,
-   "z": 19.4
+   "z": 18.1
   },
   "seat_dorm_04_a0": {
-   "x": -4.793,
+   "x": -4.393,
    "y": 0.0,
-   "z": 19.195
+   "z": 17.895
   },
   "seat_dorm_04_a1": {
-   "x": -5.4,
+   "x": -5.0,
    "y": 0.0,
-   "z": 19.195
+   "z": 17.895
   },
   "seat_dorm_04_a2": {
-   "x": -6.007,
+   "x": -5.607,
    "y": 0.0,
-   "z": 19.195
+   "z": 17.895
   },
   "seat_dorm_05": {
-   "x": -3.09,
+   "x": -7.01,
    "y": 0.0,
-   "z": 17.5
+   "z": 16.2
   },
   "seat_dorm_05_f": {
-   "x": -3.44,
-   "y": 0.0,
-   "z": 17.5
-  },
-  "seat_dorm_05_s": {
-   "x": -3.09,
-   "y": 0.0,
-   "z": 17.84
-  },
-  "seat_dorm_05_a0": {
-   "x": -3.22,
-   "y": 0.0,
-   "z": 17.5
-  },
-  "seat_dorm_06": {
-   "x": -7.01,
-   "y": 0.0,
-   "z": 17.5
-  },
-  "seat_dorm_06_f": {
    "x": -6.66,
    "y": 0.0,
-   "z": 17.5
+   "z": 16.2
   },
-  "seat_dorm_06_s": {
+  "seat_dorm_05_s": {
    "x": -7.01,
    "y": 0.0,
-   "z": 17.16
+   "z": 15.86
   },
-  "seat_dorm_06_a0": {
+  "seat_dorm_05_a0": {
    "x": -6.88,
    "y": 0.0,
-   "z": 17.5
+   "z": 16.2
+  },
+  "seat_dorm_06": {
+   "x": -4.08,
+   "y": 0.0,
+   "z": 24.6
+  },
+  "seat_dorm_06_f": {
+   "x": -3.86,
+   "y": 0.0,
+   "z": 24.6
+  },
+  "seat_dorm_06_s": {
+   "x": -4.08,
+   "y": 0.0,
+   "z": 23.8
+  },
+  "seat_dorm_06_a0": {
+   "x": -4.06,
+   "y": 0.0,
+   "z": 25.0
+  },
+  "seat_dorm_06_a1": {
+   "x": -4.06,
+   "y": 0.0,
+   "z": 24.2
+  },
+  "seat_dorm_07": {
+   "x": -4.09,
+   "y": 0.0,
+   "z": 37.4
+  },
+  "seat_dorm_07_f": {
+   "x": -3.86,
+   "y": 0.0,
+   "z": 37.4
+  },
+  "seat_dorm_07_s": {
+   "x": -4.09,
+   "y": 0.0,
+   "z": 36.5
+  },
+  "seat_dorm_07_a0": {
+   "x": -4.06,
+   "y": 0.0,
+   "z": 38.0
+  },
+  "seat_dorm_07_a1": {
+   "x": -4.06,
+   "y": 0.0,
+   "z": 37.4
+  },
+  "seat_dorm_07_a2": {
+   "x": -4.06,
+   "y": 0.0,
+   "z": 36.8
+  },
+  "seat_dorm_08": {
+   "x": -5.0,
+   "y": 3.3,
+   "z": 7.7
+  },
+  "seat_dorm_08_f": {
+   "x": -5.0,
+   "y": 3.3,
+   "z": 7.275
+  },
+  "seat_dorm_08_s": {
+   "x": -6.05,
+   "y": 3.3,
+   "z": 7.7
+  },
+  "seat_dorm_08_a0": {
+   "x": -4.393,
+   "y": 3.3,
+   "z": 7.495
+  },
+  "seat_dorm_08_a1": {
+   "x": -5.0,
+   "y": 3.3,
+   "z": 7.495
+  },
+  "seat_dorm_08_a2": {
+   "x": -5.607,
+   "y": 3.3,
+   "z": 7.495
+  },
+  "seat_dorm_09": {
+   "x": -5.0,
+   "y": 3.3,
+   "z": 4.3
+  },
+  "seat_dorm_09_f": {
+   "x": -5.0,
+   "y": 3.3,
+   "z": 4.725
+  },
+  "seat_dorm_09_s": {
+   "x": -3.95,
+   "y": 3.3,
+   "z": 4.3
+  },
+  "seat_dorm_09_a0": {
+   "x": -5.607,
+   "y": 3.3,
+   "z": 4.505
+  },
+  "seat_dorm_09_a1": {
+   "x": -5.0,
+   "y": 3.3,
+   "z": 4.505
+  },
+  "seat_dorm_09_a2": {
+   "x": -4.393,
+   "y": 3.3,
+   "z": 4.505
+  },
+  "seat_dorm_10": {
+   "x": 5.0,
+   "y": 3.3,
+   "z": 7.7
+  },
+  "seat_dorm_10_f": {
+   "x": 5.0,
+   "y": 3.3,
+   "z": 7.275
+  },
+  "seat_dorm_10_s": {
+   "x": 3.95,
+   "y": 3.3,
+   "z": 7.7
+  },
+  "seat_dorm_10_a0": {
+   "x": 5.607,
+   "y": 3.3,
+   "z": 7.495
+  },
+  "seat_dorm_10_a1": {
+   "x": 5.0,
+   "y": 3.3,
+   "z": 7.495
+  },
+  "seat_dorm_10_a2": {
+   "x": 4.393,
+   "y": 3.3,
+   "z": 7.495
+  },
+  "seat_dorm_11": {
+   "x": 5.0,
+   "y": 3.3,
+   "z": 4.3
+  },
+  "seat_dorm_11_f": {
+   "x": 5.0,
+   "y": 3.3,
+   "z": 4.725
+  },
+  "seat_dorm_11_s": {
+   "x": 6.05,
+   "y": 3.3,
+   "z": 4.3
+  },
+  "seat_dorm_11_a0": {
+   "x": 4.393,
+   "y": 3.3,
+   "z": 4.505
+  },
+  "seat_dorm_11_a1": {
+   "x": 5.0,
+   "y": 3.3,
+   "z": 4.505
+  },
+  "seat_dorm_11_a2": {
+   "x": 5.607,
+   "y": 3.3,
+   "z": 4.505
+  },
+  "seat_dorm_12": {
+   "x": -7.01,
+   "y": 3.3,
+   "z": 6.0
+  },
+  "seat_dorm_12_f": {
+   "x": -6.66,
+   "y": 3.3,
+   "z": 6.0
+  },
+  "seat_dorm_12_s": {
+   "x": -7.01,
+   "y": 3.3,
+   "z": 5.66
+  },
+  "seat_dorm_12_a0": {
+   "x": -6.88,
+   "y": 3.3,
+   "z": 6.0
+  },
+  "seat_dorm_13": {
+   "x": 7.01,
+   "y": 3.3,
+   "z": 6.0
+  },
+  "seat_dorm_13_f": {
+   "x": 6.66,
+   "y": 3.3,
+   "z": 6.0
+  },
+  "seat_dorm_13_s": {
+   "x": 7.01,
+   "y": 3.3,
+   "z": 6.34
+  },
+  "seat_dorm_13_a0": {
+   "x": 6.88,
+   "y": 3.3,
+   "z": 6.0
+  },
+  "seat_dorm_14": {
+   "x": 3.2,
+   "y": 3.3,
+   "z": 10.48
+  },
+  "seat_dorm_14_f": {
+   "x": 3.2,
+   "y": 3.3,
+   "z": 10.7
+  },
+  "seat_dorm_14_s": {
+   "x": 4.0,
+   "y": 3.3,
+   "z": 10.48
+  },
+  "seat_dorm_14_a0": {
+   "x": 2.8,
+   "y": 3.3,
+   "z": 10.5
+  },
+  "seat_dorm_14_a1": {
+   "x": 3.6,
+   "y": 3.3,
+   "z": 10.5
+  },
+  "seat_dorm_15": {
+   "x": 2.4,
+   "y": 3.3,
+   "z": 40.11
+  },
+  "seat_dorm_15_f": {
+   "x": 2.4,
+   "y": 3.3,
+   "z": 39.88
+  },
+  "seat_dorm_15_s": {
+   "x": 1.5,
+   "y": 3.3,
+   "z": 40.11
+  },
+  "seat_dorm_15_a0": {
+   "x": 3.0,
+   "y": 3.3,
+   "z": 40.08
+  },
+  "seat_dorm_15_a1": {
+   "x": 2.4,
+   "y": 3.3,
+   "z": 40.08
+  },
+  "seat_dorm_15_a2": {
+   "x": 1.8,
+   "y": 3.3,
+   "z": 40.08
   }
  },
- "triangles": 6452,
- "seats": 6,
+ "triangles": 23816,
+ "seats": 15,
  "notes": [
   "寮長 = npc_dorm_1 / poi_dorm_kanrinin（玄関ホール、管理人カウンターの手前）",
   "運営は 共立メンテナンス（学生会館ドーミー）。大学直営ではない（ゲーム内で『大学の寮』と断定しない）",
   "ミニマップはキャンパス外なので黒のまま（#41 の仕様）",
-  "行き止まりの廊下: 居室の扉は見た目だけで開口を開けていない"
+  "間取りは推定（公開図面なし）。設備の種類は公式の記載、色と什器は館内写真から",
+  "1F に居室は無い。2F（女子 23 室）は共用部と居室のサンプル 1 室だけ作る（居室は計 100 室、3–5F の男子 77 室は作らない）。居室の広さ 11.34 ㎡は公式の記載",
+  "ランドリー・キッチンコーナー・ラウンジは 2F にもある（公式の記載）。3–5F は作らない",
+  "階段は東奥の折り返し 1F-2F と、2F 北西から塔屋へ上がる直階段。屋上はテラス（推定の配置）",
+  "食堂・カフェラウンジ・大浴場は公式に階の記載が無く、1F に置いたのは推定",
+  "入れない所: 管理人室・女湯（扉は閉）・厨房・エレベーター・居室（サンプル以外）・西奥の切り欠き（外形の外）"
  ],
  "objects": [
   "floor_dorm",
@@ -261,8 +626,465 @@
   "furn_dorm_02_hall",
   "furn_dorm_03_lounge",
   "furn_dorm_04_dining",
-  "furn_dorm_05_corridor"
+  "furn_dorm_05_bath",
+  "furn_dorm_06_kitchen",
+  "furn_dorm_07_corridor",
+  "furn_dorm_08_elevator",
+  "furn_dorm_09_bath_men",
+  "furn_dorm_10_roofrail",
+  "furn_dorm_11_lounge2",
+  "furn_dorm_12_corridor2",
+  "furn_dorm_13_room2",
+  "furn_dorm_14_laundry2",
+  "furn_dorm_15_kitchen2",
+  "furn_dorm_16_hall2",
+  "furn_dorm_17_roof"
  ],
+ "signs": [
+  {
+   "empty": "sign_dorm_1",
+   "kind": "wall",
+   "ja": "管理人室",
+   "en": "Manager's Office",
+   "tris": 441,
+   "pos": {
+    "x": 4.1,
+    "y": 2.3,
+    "z": 11.95
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.2,
+   "h": 0.36,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_dorm_2",
+   "kind": "wall",
+   "ja": "居住者専用",
+   "en": "Residents Only",
+   "tris": 415,
+   "pos": {
+    "x": 0.0,
+    "y": 2.48,
+    "z": 6.51
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 1.4,
+   "h": 0.28,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_dorm_3",
+   "kind": "wall",
+   "ja": "ラウンジ",
+   "en": "Lounge",
+   "tris": 170,
+   "pos": {
+    "x": -1.51,
+    "y": 2.45,
+    "z": 17.6
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.0,
+   "h": 0.28,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_dorm_4",
+   "kind": "wall",
+   "ja": "食堂",
+   "en": "Dining Hall",
+   "tris": 237,
+   "pos": {
+    "x": 1.51,
+    "y": 2.45,
+    "z": 14.3
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.2,
+   "h": 0.28,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "男湯",
+   "en": "Men",
+   "tris": 140,
+   "pos": {
+    "x": -3.72,
+    "y": 2.4,
+    "z": 26.91
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.7,
+   "h": 0.24,
+   "faces": 1,
+   "plate": "curtain_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "女湯",
+   "en": "Women",
+   "tris": 163,
+   "pos": {
+    "x": -2.32,
+    "y": 2.4,
+    "z": 26.91
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.7,
+   "h": 0.24,
+   "faces": 1,
+   "plate": "cushion_red",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_dorm_5",
+   "kind": "wall",
+   "ja": "大浴場",
+   "en": "Public Bath",
+   "tris": 266,
+   "pos": {
+    "x": -1.51,
+    "y": 2.45,
+    "z": 24.65
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.2,
+   "h": 0.28,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_dorm_6",
+   "kind": "wall",
+   "ja": "キッチン",
+   "en": "Kitchen",
+   "tris": 155,
+   "pos": {
+    "x": 1.51,
+    "y": 2.45,
+    "z": 31.2
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.2,
+   "h": 0.28,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_dorm_7",
+   "kind": "hanging",
+   "ja": "エレベーター",
+   "en": "Elevators",
+   "tris": 372,
+   "pos": {
+    "x": 0.0,
+    "y": 2.31,
+    "z": 37.9
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 1.8,
+   "h": 0.34,
+   "faces": 2,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center",
+   "drop": 0.22
+  },
+  {
+   "empty": "sign_dorm_8",
+   "kind": "hanging",
+   "ja": "階段",
+   "en": "Stairs",
+   "tris": 212,
+   "pos": {
+    "x": 4.5,
+    "y": 2.35,
+    "z": 35.85
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 0.8,
+   "h": 0.26,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center",
+   "drop": 0.22
+  },
+  {
+   "empty": "sign_dorm_9",
+   "kind": "hanging",
+   "ja": "ラウンジ",
+   "en": "Lounge",
+   "tris": 344,
+   "pos": {
+    "x": 0.0,
+    "y": 5.63,
+    "z": 8.6
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 1.4,
+   "h": 0.3,
+   "faces": 2,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center",
+   "drop": 0.22
+  },
+  {
+   "empty": "sign_dorm_10",
+   "kind": "wall",
+   "ja": "居室",
+   "en": "Rooms",
+   "tris": 187,
+   "pos": {
+    "x": -1.51,
+    "y": 5.75,
+    "z": 15.6
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.0,
+   "h": 0.28,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_dorm_11",
+   "kind": "wall",
+   "ja": "居室",
+   "en": "Room",
+   "tris": 168,
+   "pos": {
+    "x": -1.51,
+    "y": 5.4,
+    "z": 13.0
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 0.6,
+   "h": 0.2,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_dorm_12",
+   "kind": "wall",
+   "ja": "ランドリー",
+   "en": "Laundry",
+   "tris": 135,
+   "pos": {
+    "x": 1.51,
+    "y": 5.75,
+    "z": 12.0
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.2,
+   "h": 0.28,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_dorm_13",
+   "kind": "wall",
+   "ja": "キッチン",
+   "en": "Kitchen",
+   "tris": 155,
+   "pos": {
+    "x": 1.51,
+    "y": 5.75,
+    "z": 31.2
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.2,
+   "h": 0.28,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_dorm_14",
+   "kind": "hanging",
+   "ja": "エレベーター",
+   "en": "Elevators",
+   "tris": 372,
+   "pos": {
+    "x": 0.0,
+    "y": 5.61,
+    "z": 37.9
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 1.8,
+   "h": 0.34,
+   "faces": 2,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center",
+   "drop": 0.22
+  },
+  {
+   "empty": "sign_dorm_15",
+   "kind": "wall",
+   "ja": "屋上",
+   "en": "Roof",
+   "tris": 134,
+   "pos": {
+    "x": -4.37,
+    "y": 5.4,
+    "z": 37.6
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 0.9,
+   "h": 0.26,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_dorm_16",
+   "kind": "hanging",
+   "ja": "階段",
+   "en": "Stairs",
+   "tris": 212,
+   "pos": {
+    "x": 5.6,
+    "y": 5.65,
+    "z": 33.98
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.8,
+   "h": 0.26,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center",
+   "drop": 0.22
+  },
+  {
+   "empty": "sign_dorm_17",
+   "kind": "wall",
+   "ja": "屋上テラス",
+   "en": "Roof Terrace",
+   "tris": 277,
+   "pos": {
+    "x": -2.6,
+    "y": 8.1,
+    "z": 38.0
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.4,
+   "h": 0.34,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  }
+ ],
+ "text_triangles": 4555,
  "operator": "共立メンテナンス（学生会館ドーミー）",
  "not_university": "大学直営ではない（ゲーム内で『大学の寮』と断定しない）",
  "off_campus": true,

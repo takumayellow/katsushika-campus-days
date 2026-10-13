@@ -5,7 +5,7 @@ using UnityEngine.UI;
 namespace KCD
 {
     /// <summary>
-    /// 歩ける範囲の見張り。キャンパスの地面（OuterGround）は ±350 m までしかなく、その外は床が無い。
+    /// 歩ける範囲の見張り。キャンパスの地面（OuterGround）は霧の先の ±2000 m まで続くが、歩けるのはその内側だけ。
     /// 範囲の縁には WorldBoundsStage が見えない壁を立てるので普段はそこで止まる。
     /// それでも外へ出たり、地面の継ぎ目から下へ落ちたりしたら、暗転して最後に立っていた安全な位置へ戻す（#40）。
     /// 建物の中（x ≥ 1200 m に並べた屋内）にいる間は見ない。
@@ -18,7 +18,7 @@ namespace KCD
         /// </summary>
         public const float HalfExtent = 340f;
 
-        /// <summary>これより下に落ちたら戻す（m）。キャンパスの地面は y = -0.3 前後。</summary>
+        /// <summary>これより下に落ちたら戻す（m）。キャンパスの地面は y = 0 前後。</summary>
         public const float DefaultKillY = -15f;
 
         /// <summary>安全な位置として覚えてよい高さの下限（m）。</summary>

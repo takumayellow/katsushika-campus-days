@@ -5,10 +5,11 @@ namespace KCD
     /// <summary>
     /// スモーク用の顔クローズアップ。-kcd-face-cam &lt;距離m&gt; があれば、画面中央に最も近い
     /// Humanoid の頭の正面へメインカメラを置いて固定する（Cinemachine は止める）。
+    /// yaw を与えると、カメラを頭のまわりに上から見て時計回りへその角度だけ回す（90 で横顔）。
     /// </summary>
     public static class SmokeFaceCam
     {
-        public static void Apply(float distance)
+        public static void Apply(float distance, float yaw = 0f)
         {
             if (float.IsNaN(distance) || distance <= 0f)
             {
@@ -25,7 +26,7 @@ namespace KCD
             Animator target = null;
             Transform head = null;
             float bestScore = float.MaxValue;
-            foreach (Animator animator in Object.FindObjectsByType<Animator>(FindObjectsSortMode.None))
+            foreach (Animator animator in Object.FindObjectsByType<Animator>(FindObjectsInactive.Exclude))
             {
                 if (!animator.isHuman || !animator.gameObject.activeInHierarchy)
                 {
@@ -62,14 +63,14 @@ namespace KCD
                 }
             }
 
-            Vector3 forward = target.transform.forward;
+            Vector3 forward = Quaternion.AngleAxis(yaw, Vector3.up) * target.transform.forward;
             Vector3 eyes = head.position + Vector3.up * 0.05f;
             camera.transform.SetPositionAndRotation(
                 eyes + forward * distance,
                 Quaternion.LookRotation(-forward, Vector3.up));
             camera.fieldOfView = 24f;
             camera.nearClipPlane = 0.02f;
-            SmokeProbe.Log("FaceCam: " + target.name + " dist=" + distance);
+            SmokeProbe.Log("FaceCam: " + target.name + " dist=" + distance + " yaw=" + yaw);
         }
     }
 }

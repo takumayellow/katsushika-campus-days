@@ -51,6 +51,19 @@ HAIR_HIERARCHY: list[tuple[str, str]] = [
 ]
 HAIR_BONE_NAMES = [n for n, _ in HAIR_HIERARCHY]
 
+#: スカート・袴の前と後ろの中央を動かす追加ボーン（これも Humanoid の外側）。
+#: 中央は左右どちらの腿にも寄せられない（寄せると x=0 で布が裂ける）。左右の腿の
+#: 平均（50:50）に付けると、走りで前へ出た腿が平均の位置より前にあり布を突き抜ける。
+#: Hips に付けたままの後ろは、後ろへ蹴った腿が突き抜ける。
+#: そこで前は「前へ出ているほうの腿」、後ろは「後ろへ出ているほうの腿」の振り角だけ
+#: 回る骨を置き、中央をこれに付ける。どちらの腿もその向きへ出ていなければ回らない。
+#: 角度は anim.skirt_rotations と Unity の SkirtFollow が同じ式で毎フレーム決める。
+SKIRT_HIERARCHY: list[tuple[str, str]] = [
+    ("SkirtFront", "Hips"),
+    ("SkirtBack", "Hips"),
+]
+SKIRT_BONE_NAMES = [n for n, _ in SKIRT_HIERARCHY]
+
 
 def spine_z(p: dict) -> dict[str, float]:
     """背骨系ボーンの頭の高さ。ウェイト側からも同じ値を使う。"""
@@ -110,6 +123,9 @@ def bone_positions(p: dict, a: B.Anatomy) -> dict[str, tuple[np.ndarray, np.ndar
                         v(0.0, -hd * 0.46, z_top - hh * 0.70))
     out["HairBack"] = (v(0.0, hd * 0.30, z_top),
                        v(0.0, hd * 0.42, z_top - hh * 1.10))
+    # 腿と同じ高さを軸に回るよう、股関節の高さから膝の高さへ真下に向ける。
+    out["SkirtFront"] = (v(0.0, 0.0, a.hip_joint[2]), v(0.0, 0.0, a.knee[2]))
+    out["SkirtBack"] = out["SkirtFront"]
     return out
 
 
@@ -123,7 +139,7 @@ def build_armature(p: dict, a: B.Anatomy, name: str):
     bpy.ops.object.mode_set(mode="EDIT")
     eb = arm_data.edit_bones
     created = {}
-    for bname, parent in HIERARCHY + HAIR_HIERARCHY:
+    for bname, parent in HIERARCHY + HAIR_HIERARCHY + SKIRT_HIERARCHY:
         b = eb.new(bname)
         head, tail = pos[bname]
         b.head = tuple(head)
@@ -137,17 +153,58 @@ def build_armature(p: dict, a: B.Anatomy, name: str):
     return arm, pos
 
 
+#: 手に持つ・担ぐ小物（トート・風呂敷）を丸ごと動かす追加ボーン。Unity は座っている間
+#: この骨の localScale を 0 にして小物を消す（鍵盤の上に鞄が浮くため）。
+BAG_BONE = "Bag"
+
+
+def add_bag_bone(arm, p: dict, a: B.Anatomy) -> bool:
+    """小物を持つキャラにだけ Bag ボーンを足す。足したら True。"""
+    if not {"tote", "furoshiki"} & set(p.get("accessories", ())):
+        return False
+    from . import cloth
+
+    if p.get("bag_mount") == "shoulder":
+        parent, head = "UpperChest", a.shoulder * np.array([-1.0, 1.0, 1.0])
+    else:
+        parent, head = "RightHand", cloth.grip_point(a)
+    tail = head + np.array([0.0, 0.0, -p["height"] * 0.02])
+
+    bpy.context.view_layer.objects.active = arm
+    bpy.ops.object.mode_set(mode="EDIT")
+    b = arm.data.edit_bones.new(BAG_BONE)
+    b.head = tuple(float(x) for x in head)
+    b.tail = tuple(float(x) for x in tail)
+    b.roll = 0.0
+    b.parent = arm.data.edit_bones[parent]
+    b.use_connect = False
+    bpy.ops.object.mode_set(mode="OBJECT")
+    return True
+
+
 # --------------------------------------------------------------------------
 # ウェイト
 # --------------------------------------------------------------------------
 
 
-def _seg_distance(pts: np.ndarray, p0: np.ndarray, p1: np.ndarray) -> np.ndarray:
+#: 付け根より手前（胴の側）の点までの距離を、骨の向きに何倍して数えるか。
+#: 線分までの距離は付け根の点で打ち切るので、そのままだと上腕が首の付け根まで効く
+#: （みらいで付け根から 6.5 cm 胴側の首の横に 35%）。どのアクションも最初に腕を
+#: A ポーズから 36° 下ろす（body.ARM_DROP）ので、首の横の布が 2 cm 動いていた。
+#: 肩の関節より胴の側は肩の骨について動くものなので、上腕を遠く数える。
+BEHIND_HEAD = {"LeftUpperArm": 1.5, "RightUpperArm": 1.5}
+
+
+def _seg_distance(pts: np.ndarray, p0: np.ndarray, p1: np.ndarray,
+                  behind: float = 1.0) -> np.ndarray:
+    """線分 p0→p1 までの距離。p0 より手前の点は、骨の向きの成分を behind 倍して数える。"""
     d = p1 - p0
     ln = float(np.dot(d, d)) + 1e-12
-    t = np.clip(((pts - p0) @ d) / ln, 0.0, 1.0)
+    s = ((pts - p0) @ d) / ln
+    t = np.clip(s, 0.0, 1.0)
     proj = p0[None, :] + t[:, None] * d[None, :]
-    return np.linalg.norm(pts - proj, axis=1)
+    r = pts - proj + (behind - 1.0) * np.minimum(s, 0.0)[:, None] * d[None, :]
+    return np.linalg.norm(r, axis=1)
 
 
 def distance_weights(obj, arm, pos: dict, *, k: int = 3, power: float = 3.0):
@@ -158,8 +215,8 @@ def distance_weights(obj, arm, pos: dict, *, k: int = 3, power: float = 3.0):
     pts = co.reshape(-1, 3)
 
     names = BONE_NAMES
-    dist = np.stack([_seg_distance(pts, pos[n][0], pos[n][1]) for n in names],
-                    axis=1)
+    dist = np.stack([_seg_distance(pts, pos[n][0], pos[n][1], BEHIND_HEAD.get(n, 1.0))
+                     for n in names], axis=1)
     order = np.argsort(dist, axis=1)[:, :k]
     rows = np.arange(len(pts))[:, None]
     d = dist[rows, order]
@@ -194,6 +251,11 @@ def zero_weight_ratio(obj) -> float:
 def bind(obj, arm, pos: dict) -> str:
     """スキニングして、使った手法名を返す。"""
     method = "ARMATURE_AUTO"
+    # 自動ウェイトに SkirtFront / SkirtBack を混ぜない。腰の真ん中にあるので、骨盤まわりの肌が
+    # この骨に付いてしまう。布の前の中央へは override_weights で付ける。
+    skirt = [arm.data.bones[n] for n in SKIRT_BONE_NAMES if n in arm.data.bones]
+    for b in skirt:
+        b.use_deform = False
     try:
         bpy.ops.object.select_all(action="DESELECT")
         obj.select_set(True)
@@ -219,6 +281,8 @@ def bind(obj, arm, pos: dict) -> str:
             mod = obj.modifiers.new("Armature", "ARMATURE")
         mod.object = arm
         distance_weights(obj, arm, pos)
+    for b in skirt:
+        b.use_deform = True
     return method
 
 
@@ -307,14 +371,51 @@ def _keep_leg_side(obj, mb: M.MeshBuilder) -> None:
                 dst.add([i], w, "ADD")
 
 
+#: 脚の肌から外す腕のボーン（_legs_without_arms）。
+ARM_BONES = tuple(side + seg for side in ("Left", "Right")
+                  for seg in ("Shoulder", "UpperArm", "LowerArm", "Hand"))
+
+
+def _legs_without_arms(obj, mb: M.MeshBuilder) -> None:
+    """脚の肌（leg_l / leg_r）から腕のボーンのウェイトを外す。
+
+    立ち姿では手が腿の横に下りているので、距離ウェイトだと腿の付け根の外側に
+    手や前腕が 6 割近く乗る（madonna）。腕を頭の横まで上げる Wave では、その
+    頂点だけ手について行き、袴の色の三角が腰から突き出ていた。外した分は
+    同じ頂点に残る脚・腰のボーンで分け直し、何も残らなければ同じ側の腿に預ける。
+    """
+    names = {g.index: g.name for g in obj.vertex_groups}
+    for part, side in (("leg_l", "Left"), ("leg_r", "Right")):
+        for i in mb.part_indices(part).tolist():
+            ws = {names[g.group]: g.weight for g in obj.data.vertices[i].groups}
+            if not any(n in ARM_BONES for n in ws):
+                continue
+            rest = {n: w for n, w in ws.items() if n not in ARM_BONES and w > 0.0}
+            total = sum(rest.values())
+            if total > 0.0:
+                _write_weights(obj, i, {n: w / total for n, w in rest.items()})
+            else:
+                _set_exclusive(obj, [i], {side + "UpperLeg": 1.0})
+
+
+def _tamoto_on_upper_arm(obj, mb: M.MeshBuilder) -> None:
+    """振り袖の袂（tamoto_l / tamoto_r）を上腕だけに付ける (#13)。
+
+    距離ウェイトだと袂は Hips / Spine に乗り、腕を上げると腰まで伸びて垂れ幕になる。
+    前腕に付けると振るたびに手を覆うので、上腕にする。
+    """
+    for sd, side in (("l", "Left"), ("r", "Right")):
+        _set_exclusive(obj, mb.part_indices(f"tamoto_{sd}"), {side + "UpperArm": 1.0})
+
+
 #: 衣装を Hips ＋ 脚ボーン 1 本だけで包むときの調整値。
 #:   reach      裾で脚に付いて回る割合（1.0 で脚と同じだけ動く）
 #:   hem_pow    腰から裾への立ち上がり（大きいほど裾の近くだけ動く）
 #:   band       前後の中央で脚寄せを 0 に落とす幅（横向き比 0..1、1.0 で真横）
 #:   knee_band  膝で UpperLeg と LowerLeg を切り替える帯の半幅（脚長比）
 #:   knee_keep  その切り替え面に残す脚寄せの割合（0 で完全に Hips へ戻す）
-#:   mix        前の中央で左右の脚を混ぜる割合（0.5 でちょうど等分。0 で無効）
-#:   mix_t      その「左右等分で包む」帯の境目（t。小さいほど腰まで伸びる）
+#:   mix        前と後ろの中央を SkirtFront / SkirtBack に付ける割合（1.0 で全部。0 で無効）
+#:   mix_t      その「SkirtFront / SkirtBack で包む」帯の境目（t。小さいほど腰まで伸びる）
 #:   mix_band   mix_t の境目をならす帯の半幅（t）。0 に近づけるほど硬い折り目になる
 #:   mix_front  前後の境目をならす帯の半幅（胴の奥行き比）
 #: 値は Walk / Run の腿がいちばん開くフレームで、素肌のはみ出し (cm) と横辺の
@@ -325,10 +426,10 @@ def _keep_leg_side(obj, mb: M.MeshBuilder) -> None:
 #: はみ出し 1.01/1.23/1.43/1.61 cm、全辺の伸び 4.52/3.83/3.35/2.93 cm。
 CLOTH_LEG: dict[str, dict[str, float]] = {
     "skirt": dict(reach=1.00, hem_pow=0.85, band=0.45,
-                  mix=0.50, mix_t=0.60, mix_band=0.30, mix_front=0.35),
+                  mix=1.00, mix_t=0.60, mix_band=0.30, mix_front=0.35),
     "apron": dict(reach=1.00, hem_pow=0.85, band=0.45,
-                  mix=0.50, mix_t=0.60, mix_band=0.30, mix_front=0.35),
-    "labcoat": dict(reach=0.72, hem_pow=1.40, band=0.85),
+                  mix=1.00, mix_t=0.60, mix_band=0.30, mix_front=0.35),
+    "jacket": dict(reach=0.72, hem_pow=1.40, band=0.85),
     "pants_seat": dict(reach=0.55, hem_pow=1.00, band=0.45),
     # 袴もスカートと同じ理由で前中央に mix が要る。入れる前は botchan の
     # Idle / Walk で前中央の裾が Hips に貼り付いたままになり、前へ出した膝が
@@ -336,16 +437,17 @@ CLOTH_LEG: dict[str, dict[str, float]] = {
     # 少し上から効かせる（袴のほうが丈が長く、膝が当たるのが上のため）。
     "hakama": dict(reach=1.00, hem_pow=0.40, band=0.40,
                    knee_band=0.10, knee_keep=0.80,
-                   mix=0.50, mix_t=0.55, mix_band=0.30, mix_front=0.35),
+                   mix=1.00, mix_t=0.55, mix_band=0.30, mix_front=0.35),
 }
 
 
 def _cloth_leg_weights(obj, mb: M.MeshBuilder, pts: np.ndarray, a: B.Anatomy,
                        part: str, *, parts=None, z_hi=None, z_lo=None,
                        knee: bool = False, **over) -> None:
-    """スカート・袴・白衣・ズボンの尻を、裾ほど脚へ寄せて包む。
+    """スカート・袴・背広・ズボンの尻を、裾ほど脚へ寄せて包む。
 
-    ウェイトは **Hips ＋ 左右の UpperLeg** の 3 本までに収める。
+    ウェイトは **Hips ＋ その側の UpperLeg ＋ SkirtFront / SkirtBack** に収める
+    （前と後ろの境の真横だけ 4 本、ほかは 3 本まで）。
 
     以前は「2 本まで」だった。WebGL が使う品質レベル (Mobile) の
     skinWeights が 2 で、3 本以上は上位 2 本へ切り詰められて形が化けたため。
@@ -362,13 +464,18 @@ def _cloth_leg_weights(obj, mb: M.MeshBuilder, pts: np.ndarray, a: B.Anatomy,
     逆位相なので、そこで布が裂ける。
 
     * 後ろと腰       … `band` の幅で脚寄せを 0 まで落として Hips 100% にする。
-    * 前の裾 (`mix`) … 左右の脚を 50:50 で混ぜる。Hips を使わない代わりに、
-      中央でも脚について行く。走りで腿が前へ出たとき、前の中央が Hips に
-      貼り付いたままだと腿がそこを突き抜ける（mirai の Run で実測 11.1 cm）。
+    * 前の裾 (`mix`) … SkirtFront に付ける。この骨は前へ出ているほうの腿の
+      振り角だけ回る（anim.skirt_rotations / Unity の SkirtFollow）。
+      前の中央が Hips に貼り付いたままだと、走りで前へ出た腿がそこを突き抜ける
+      （mirai の Run で実測 11.1 cm）。左右の脚の 50:50 でも、平均は前へ出た腿より
+      後ろにあるので、走りの腿がスカートの前を突き抜けていた。
 
-    50:50 は「左右の脚の平均」なので、股関節の軸へ cos(振り角) だけ縮む。
-    それが効きすぎると腰がスカートから外へ出るので、混ぜるのは `mix_t` より
-    下（裾側）の、`mix_front` より前だけ。腰は Hips に任せる。
+    * 後ろの裾 (`mix`) … Hips の分を SkirtBack に付け替える。この骨は後ろへ
+      出ているほうの腿の振り角だけ回り、どちらも後ろへ出ていなければ Hips と
+      同じ姿勢のまま。脚の分は前と違って変えない（立ちと座りの形を変えないため）。
+
+    SkirtFront / SkirtBack に付けるのは `mix_t` より下（裾側）だけ。前後の境は
+    `mix_front` の幅でならす。腰は Hips に任せる。
 
     `knee=True`（裾が脚ごとに割れる馬乗り袴）のときは膝の上下で UpperLeg /
     LowerLeg を切り替え、その面でも同じ理由で脚寄せを `knee_keep` まで落とす。
@@ -398,9 +505,8 @@ def _cloth_leg_weights(obj, mb: M.MeshBuilder, pts: np.ndarray, a: B.Anatomy,
     w = cfg["reach"] * t * s
     mix = cfg.get("mix", 0.0)
     if mix > 0.0:
-        # 前の中央（s→0）だけは、Hips へ戻す代わりに **左右の脚を等分** で
-        # 混ぜる。x=0 の両側で Left と Right が入れ替わっても値が同じなので、
-        # 中央でも脚について行きながら布は左右に裂けない。
+        # 前の中央（s→0）だけは、Hips へ戻す代わりに **SkirtFront** に付ける。
+        # x=0 の両側で値が同じなので、中央でも腿について行きながら布は左右に裂けない。
         k = mix * (1.0 - s)
         # 「前の裾かどうか」は真偽値で切ってはいけない。以前は
         # `(t >= mix_t) & (y < 0)` という段差で、その 1 本の線に布のたわみが
@@ -416,9 +522,13 @@ def _cloth_leg_weights(obj, mb: M.MeshBuilder, pts: np.ndarray, a: B.Anatomy,
         # g=0 では素の w（= reach * t * s）に完全に戻る。ここを s*u で置き換えて
         # いたせいで、「前の裾だけ」のはずが後ろ上部まで 78.5% の頂点で値が動いていた。
         own = cfg["reach"] * (t * s * (1.0 - g) + (1.0 - k) * g)
-        oth = cfg["reach"] * k * g
+        front = cfg["reach"] * k * g
+        # 後ろは脚の分 w をそのまま残し、残りの Hips のうち中央寄り (1 - s) を移す。
+        back = (1.0 - w) * mix * (1.0 - s) * gt * (1.0 - gy)
     else:
-        own, oth = w, np.zeros_like(w)
+        own, front = w, np.zeros_like(w)
+        back = np.zeros_like(w)
+    oth = np.zeros_like(own)
 
     side = np.where(pp[:, 0] >= 0.0, "Left", "Right")
     flip = np.where(pp[:, 0] >= 0.0, "Right", "Left")
@@ -430,14 +540,24 @@ def _cloth_leg_weights(obj, mb: M.MeshBuilder, pts: np.ndarray, a: B.Anatomy,
         keep = cfg["knee_keep"]
         damp = keep + (1.0 - keep) * np.abs(2.0 * su - 1.0)
         own = own * damp
-        oth = oth * damp
+        front = front * damp
         seg = np.where(su >= 0.5, seg, "LowerLeg")
+        # 膝より下は脛について行くので、腿の角度で回る SkirtFront には付けない。
+        # 左右の脛を等分に混ぜる（x=0 で左右が入れ替わっても値が同じで、裂けない）。
+        shin = su < 0.5
+        own = np.where(shin, own + front * 0.5, own)
+        oth = np.where(shin, front * 0.5, 0.0)
+        front = np.where(shin, 0.0, front)
+        # 後ろも膝より下は SkirtBack に付けない。膝の面で 0 になるよう落として段を作らない。
+        back = np.where(shin, 0.0, back * np.abs(2.0 * su - 1.0))
     names = [str(a_) + str(g) for a_, g in zip(side, seg)]
     others = [str(a_) + str(g) for a_, g in zip(flip, seg)]
 
     own = np.clip(own, 0.0, 1.0)
     oth = np.clip(oth, 0.0, 1.0)
-    hips = np.clip(1.0 - own - oth, 0.0, 1.0)
+    front = np.clip(front, 0.0, 1.0)
+    back = np.clip(back, 0.0, 1.0)
+    hips = np.clip(1.0 - own - oth - front - back, 0.0, 1.0)
 
     vg_hips = obj.vertex_groups.get("Hips") or obj.vertex_groups.new(name="Hips")
     for vg in obj.vertex_groups:
@@ -453,7 +573,7 @@ def _cloth_leg_weights(obj, mb: M.MeshBuilder, pts: np.ndarray, a: B.Anatomy,
 
     for n, i in enumerate(idx.tolist()):
         # Hips も own / oth と同じしきい値で切る。無条件に書いていたせいで、
-        # 前中央の「Hips は 0 のはず」の頂点に 1.0 - own - oth の丸め残り
+        # 前中央の「Hips は 0 のはず」の頂点に 1.0 - own - oth - front - back の丸め残り
         # 5.55e-17 が乗り、意味のないウェイトが 1 本増えていた。
         if hips[n] > 1e-4:
             vg_hips.add([i], float(hips[n]), "REPLACE")
@@ -461,20 +581,23 @@ def _cloth_leg_weights(obj, mb: M.MeshBuilder, pts: np.ndarray, a: B.Anatomy,
             _vg(names[n]).add([i], float(own[n]), "REPLACE")
         if oth[n] > 1e-4:
             _vg(others[n]).add([i], float(oth[n]), "REPLACE")
+        if front[n] > 1e-4:
+            _vg("SkirtFront").add([i], float(front[n]), "REPLACE")
+        if back[n] > 1e-4:
+            _vg("SkirtBack").add([i], float(back[n]), "REPLACE")
 
 
 def _prune_influences(obj, mb: M.MeshBuilder, parts, k: int = 2) -> None:
     """指定した部位のウェイトを上位 k ボーンだけにして正規化する。
 
-    靴下・ズボン・ブーツの筒は距離ウェイトのまま 3 ボーン乗ることがある
+    ズボン・ブーツの筒は距離ウェイトのまま 3 ボーン乗ることがある
     （例: madonna のブーツは LowerLeg / Foot / Toes）。3 本目は距離の裾野が
     たまたま届いただけで、形に効くというより PC と WebGL で食い違う種だった
     （madonna のブーツで Run 時 1.54 cm）。ここで落として両方同じにする。
 
-    以前は「WebGL は 1 頂点 2 ボーンだから」が理由だったが、その前提は #49 で
-    なくなった。スカート前中央は Hips ＋ 左右 UpperLeg の 3 本が要る場所で、
-    2 本に切ると左右どちらの脚を残すかが x=0 をまたいで入れ替わり、布が裂ける。
-    そのため QualitySettings の Mobile（＝WebGL）も PC と同じ 4 本にした。
+    ほかの部位は 4 本のまま残す。スカートの前と後ろの中央は Hips ＋ UpperLeg ＋
+    SkirtFront / SkirtBack が要る場所で、2 本に切ると x=0 をまたいで残す骨が入れ替わり、
+    布が裂ける（QualitySettings の Mobile＝WebGL も PC と同じ 4 本）。
     """
     idx = mb.part_indices(*parts)
     if len(idx) == 0:
@@ -487,10 +610,246 @@ def _prune_influences(obj, mb: M.MeshBuilder, parts, k: int = 2) -> None:
             continue
         keep = ws[:k]
         tot = sum(w for w, _ in keep) or 1.0
-        for vg in obj.vertex_groups:
-            vg.remove([i])
-        for w, n in keep:
-            obj.vertex_groups[n].add([i], float(w / tot), "REPLACE")
+        _write_weights(obj, i, {n: w / tot for w, n in keep})
+
+
+def _write_weights(obj, i: int, weights: dict) -> None:
+    """頂点 i のウェイトを weights（ボーン名 → 値）だけにする。"""
+    for vg in obj.vertex_groups:
+        vg.remove([i])
+    for name, val in weights.items():
+        obj.vertex_groups[name].add([i], float(val), "REPLACE")
+
+
+def _follow_skin(obj, mb: M.MeshBuilder, pts, part: str, skin: str) -> None:
+    """part の頂点に、すぐ内側にある skin の面のウェイトを写す。
+
+    靴下は脚の筒と同じ列で張り、脚の面から数 mm しか浮かせていない。距離ウェイトを
+    別に付けると肌と少しずつ違う割合になり、膝や足首を曲げたとき肌が靴下を突き抜ける。
+    """
+    seg = B.LEG_SEG
+    idx = mb.part_indices(part)
+    if len(idx) == 0:
+        return
+    # 脚の筒は リング × seg 列の後ろに両端のふたの中心が 1 点ずつ付く
+    sk = mb.part_indices(skin)
+    rows = (len(sk) - 2) // seg
+    if rows < 2 or len(sk) != rows * seg + 2:
+        raise ValueError(f"{skin} は {seg} 列のリング＋ふた 2 点の並びでない")
+    sk = sk[:rows * seg].reshape(rows, seg)
+    gname = {g.index: g.name for g in obj.vertex_groups}
+    verts = obj.data.vertices
+    W = [[{gname[g.group]: g.weight for g in verts[int(i)].groups if g.weight > 0.0}
+          for i in row] for row in sk]
+    for i, w in zip(idx.tolist(), _skin_blend(pts, idx, sk, W)):
+        if w:
+            _write_weights(obj, i, w)
+
+
+def _skin_blend(pts, idx, grid, W, k: int = 4) -> list[dict]:
+    """idx の各頂点を、grid（リング × 列の頂点番号）の同じ列の辺へ投影し、
+    辺の両端のウェイト W[リング][列]（ボーン名 → 値）を内分して返す。
+
+    idx の n 番目の頂点は grid の n % 列数 の列に並んでいる前提。上位 k ボーンで
+    正規化する（Unity は 1 頂点 4 ボーンまで）。
+    """
+    seg = grid.shape[1]
+    out = []
+    for n, i in enumerate(np.asarray(idx).tolist()):
+        j = n % seg
+        a = pts[grid[:-1, j]]
+        ab = pts[grid[1:, j]] - a
+        t = np.clip(np.einsum("ij,ij->i", pts[i] - a, ab)
+                    / np.einsum("ij,ij->i", ab, ab), 0.0, 1.0)
+        r = int(np.argmin(np.linalg.norm(a + ab * t[:, None] - pts[i], axis=1)))
+        out.append(_mix(((W[r][j], 1.0 - t[r]), (W[r + 1][j], t[r])), k))
+    return out
+
+
+def _mix(pairs, k: int = 4) -> dict:
+    """(ウェイト辞書, 割合) の組を足し合わせ、上位 k ボーンで正規化する。"""
+    mix: dict[str, float] = {}
+    for w, s in pairs:
+        for name, val in w.items():
+            mix[name] = mix.get(name, 0.0) + val * s
+    keep = sorted(mix.items(), key=lambda kv: kv[1], reverse=True)[:k]
+    tot = sum(v for _, v in keep) or 1.0
+    return {name: val / tot for name, val in keep if val > 1e-4}
+
+
+# 胴を直接包む布。布に隠れた胴の素肌は、すぐ外のこの布と同じウェイトにする。
+# 襟・リボン・ネクタイは下に必ずこの布があるので入れない。
+UNDER_CLOTH = ("blouse", "shirt", "shirt_yoke", "hoodie", "kimono", "kimono_yoke",
+               "waistband", "obi", "himo")
+# 脚について動く布。胴から最初に当たるのがこれなら写さない。股の素肌まで脚に
+# 振られ、袴の中から外へ出る（botchan の Walk で実測 29.6 → 45.8 mm）。
+LEG_CLOTH = ("skirt", "jacket", "apron", "hakama", "pants_seat",
+             "pants_l", "pants_r", "bootleg_l", "bootleg_r")
+
+
+def _cover_weights(pts, idx, normals, tris, W, reach: float, k: int = 4) -> list[dict | None]:
+    """idx の各頂点から法線の向きへ光線を撃ち、最初に当たった三角形の 3 頂点の
+    ウェイト W（頂点番号 → {ボーン名: 値}）を当たった点の重心座標で内分する。
+
+    reach までに当たらない頂点と、W に無い頂点の三角形に当たった頂点は None。
+    """
+    idx = np.asarray(idx, dtype=int)
+    hits = M.first_hits(pts[idx], normals[idx], pts, tris, reach)
+    out: list[dict | None] = []
+    for j, u, v, _t in hits:
+        tri = tris[int(j)] if j >= 0 else ()
+        if len(tri) == 0 or not all(int(c) in W for c in tri):
+            out.append(None)
+            continue
+        a, b, c = (int(x) for x in tri)
+        out.append(_mix(((W[a], 1.0 - u - v), (W[b], u), (W[c], v)), k))
+    return out
+
+
+# 襟を載せる身頃。襟は、いちばん近いこの布（か袖）の点と同じウェイトにする。
+# パーカーの襟は背中でフードの上に載る。
+# 着物の衿は着物ごと背骨で動くので入れない（Neck / UpperChest のまま）。
+COLLAR_BASE = ("blouse", "shirt", "shirt_yoke", "hoodie", "hood")
+
+
+def _collar_on_cloth(obj, mb: M.MeshBuilder, pts) -> None:
+    """襟の頂点へ、いちばん近い下の布の点のウェイトを写す。
+
+    襟を Neck / UpperChest だけで動かすと、肩について動く身頃が襟を突き抜ける
+    （セーラー服の 4 人とも、休めの形で襟の 6 mm 下にある身頃が、どのアクション
+    でも最大 12〜13 mm 外へ出て、斜めから見ると首の横に白い塊が見えていた）。
+    襟は肩に載っている布なので、下の布と同じ動きにする。肩先では袖山の上に
+    載るので袖も拾う。白いラインや内縁の折り返しのように布から浮いた頂点も
+    あるので、光線ではなく最近点で拾う。拾えなかった頂点と、拾った布に
+    ウェイトが無かった頂点は Neck / UpperChest のまま。
+    """
+    collar = mb.part_indices("collar")
+    if len(collar) == 0 or len(mb.part_indices(*COLLAR_BASE)) == 0:
+        return
+    base = mb.part_indices(*COLLAR_BASE, "sleeve_l", "sleeve_r")
+    tris = M.triangles(mb.faces, base)
+    W = _weights_of(obj, base)
+    for i, (j, u, v, d) in zip(collar.tolist(), M.closest_points(pts[collar], pts, tris)):
+        if j < 0 or not np.isfinite(d):
+            continue
+        a, b, c = (int(x) for x in tris[int(j)])
+        w = _mix(((W[a], 1.0 - u - v), (W[b], u), (W[c], v)))
+        if w:
+            _write_weights(obj, i, w)
+
+
+def _weights_of(obj, idx) -> dict:
+    """idx の各頂点のウェイト（頂点番号 → {ボーン名: 値}）。"""
+    gname = {g.index: g.name for g in obj.vertex_groups}
+    verts = obj.data.vertices
+    return {i: {gname[g.group]: g.weight for g in verts[i].groups if g.weight > 0.0}
+            for i in np.asarray(idx).tolist()}
+
+
+def _take_cover_weights(obj, mb: M.MeshBuilder, pts, idx, tris, W, reach: float) -> None:
+    """idx の頂点へ、法線の向きで最初に当たる tris のウェイトを写す（_cover_weights）。
+
+    当たらない頂点は元のまま。
+    """
+    normals = M.vertex_normals(pts, M.faces_within(mb.faces, idx))
+    for i, w in zip(idx.tolist(), _cover_weights(pts, idx, normals, tris, W, reach)):
+        if w:
+            _write_weights(obj, i, w)
+
+
+def _hide_under_cloth(obj, mb: M.MeshBuilder, pts, p: dict) -> None:
+    """布に隠れた胴の素肌へ、すぐ外の布のウェイトを写す。
+
+    自動ウェイトは布とその下の肌で割合が揃わない。mirai の脇ではブラウスが
+    RightUpperArm を 0.15〜0.40 持つのに肌は 0.21 までで、腕を下ろす Idle で
+    肌がブラウスの外へ 4.2 mm 出て、横腹に肌色の筋が見えていた。着物は背骨の
+    骨だけで動くので、腕を上げる Wave では脇の肌が 198 mm 外へ出ていた。
+    見える布の形は変えず、隠れている肌を布と同じ動きにする。
+
+    光線の長さは身長の 2%。布と肌の隙間は 12〜17 mm で、それより遠いのは
+    フードのように胴から離れた布だけ。
+    """
+    skin = mb.part_indices("torso")
+    under = mb.part_indices(*UNDER_CLOTH)
+    if len(skin) == 0 or len(under) == 0:
+        return
+    tris = M.triangles(mb.faces, mb.part_indices(*UNDER_CLOTH, *LEG_CLOTH))
+    _take_cover_weights(obj, mb, pts, skin, tris, _weights_of(obj, under),
+                        p["height"] * 0.02)
+
+
+# ブラウスを覆うパーカーの胴と袖。フードとポケットは胴から離れて付くので入れない。
+HOODIE_COVER = ("hoodie", "sleeve_l", "sleeve_r")
+
+
+def _blouse_under_hoodie(obj, mb: M.MeshBuilder, pts, p: dict) -> None:
+    """パーカーに隠れたブラウスへ、すぐ外のパーカー（胴と袖）のウェイトを写す。
+
+    ブラウスとパーカーの胴は別々に自動ウェイトが付き、脇の下ではパーカーの方が
+    上腕に強く付く。腕を下ろす Idle で両者の隙間が 18 mm から 2.6 mm まで詰まり、
+    Unity ではブラウスがパーカーの外へ出て、脇の下に白い布が見えていた（sora, #156）。
+    隠れているブラウスをパーカーと同じ動きにする。V の開きから覗く胸当ては、
+    光線がパーカーに当たらないので元のまま。
+
+    光線の長さは身長の 2%。ブラウスとパーカーの隙間は 18 mm（身長の 1.15%）。
+    _hide_under_cloth より先に呼ぶ（胴の素肌はこのあとブラウスのウェイトを写す）。
+    """
+    blouse = mb.part_indices("blouse")
+    if len(blouse) == 0 or len(mb.part_indices("hoodie")) == 0:
+        return
+    outer = mb.part_indices(*HOODIE_COVER)
+    _take_cover_weights(obj, mb, pts, blouse, M.triangles(mb.faces, outer),
+                        _weights_of(obj, outer), p["height"] * 0.02)
+
+
+# 腕の骨。背広の胸の側では、脇の下より上だけに効かせる。
+ARM_CHAIN = tuple(f"{sd}{seg}" for sd in ("Left", "Right")
+                  for seg in ("UpperArm", "LowerArm", "Hand"))
+# 背広の下に隠れるシャツが拾う外側の布。ズボンも入れて、裾がズボンの中へ
+# 入る所ではズボンのウェイトを拾わせる。
+SUIT_COVER = ("jacket", "jacket_yoke", "sleeve_l", "sleeve_r",
+              "pants_seat", "pants_l", "pants_r")
+
+
+def _suit_yoke_weights(obj, mb: M.MeshBuilder, pts, p: dict) -> None:
+    """背広の胸の側（jacket_yoke）を、脇から下では背骨だけで、腰の継ぎ目では
+    裾の側（jacket、腰は Hips 100%）と同じ Hips で動かす。
+
+    距離のウェイトのままだと、休めの形で腰の横に下りた前腕と手が身頃の脇を
+    引っ張り、腕を下ろす Idle で脇が 30 mm 浮いて、下のシャツとズボンが
+    23 mm 外へ出ていた。腕の骨は脇の下（肩の高さ − 身長の 5%）より上だけ
+    効かせ、身長の 5% かけて 0 へ落とす。腰の継ぎ目から身長の 6% の間は
+    Hips へ寄せて、継ぎ目で裂けないようにする。
+    """
+    idx = mb.part_indices("jacket_yoke")
+    if len(idx) == 0:
+        return
+    h = p["height"]
+    z_sh = p["z"]["shoulder"]
+    seam = p["z"]["waist"]
+    W = _weights_of(obj, idx)
+    for i in idx.tolist():
+        zz = float(pts[i, 2])
+        keep = float(M.smoothstep(z_sh - h * 0.10, z_sh - h * 0.05, zz))
+        w = _mix((({n: v * (keep if n in ARM_CHAIN else 1.0)
+                    for n, v in W[i].items()}, 1.0),))
+        t = float(M.smoothstep(seam, seam + h * 0.06, zz))
+        _write_weights(obj, i, _mix(((w, t), ({"Hips": 1.0}, 1.0 - t))) or {"Hips": 1.0})
+
+
+def _shirt_under_suit(obj, mb: M.MeshBuilder, pts, p: dict) -> None:
+    """背広に隠れたシャツへ、すぐ外の背広（身頃・袖）とズボンのウェイトを写す。
+
+    V の開きから見えるシャツは、光線が背広に当たらないので元のまま。
+    光線の長さは身長の 3%。シャツと背広の隙間は身長の 1.5〜2.3%。
+    _suit_yoke_weights のあと、_hide_under_cloth より先に呼ぶ。
+    """
+    if len(mb.part_indices("jacket_yoke")) == 0:
+        return
+    shirt = mb.part_indices("shirt")
+    outer = mb.part_indices(*SUIT_COVER)
+    _take_cover_weights(obj, mb, pts, shirt, M.triangles(mb.faces, outer),
+                        _weights_of(obj, outer), p["height"] * 0.03)
 
 
 def override_weights(obj, mb: M.MeshBuilder, p: dict, a: B.Anatomy) -> None:
@@ -531,15 +890,17 @@ def override_weights(obj, mb: M.MeshBuilder, p: dict, a: B.Anatomy) -> None:
 
     _set_exclusive(obj, mb.part_indices("collar"),
                    {"Neck": 0.35, "UpperChest": 0.65})
+    _collar_on_cloth(obj, mb, pts)
     _set_exclusive(obj, mb.part_indices("ribbon"), {"UpperChest": 1.0})
+    _tamoto_on_upper_arm(obj, mb)
     _spine_only(obj, mb, pts, p, a, ("kimono", "kimono_yoke"))
     _set_exclusive(obj, mb.part_indices("obi", "himo", "waistband"),
                    {"Hips": 0.7, "Spine": 0.3})
 
-    # スカート・白衣・袴・ズボンの尻は Hips ＋ 脚 1 本で包む（_cloth_leg_weights）
+    # スカート・背広・袴・ズボンの尻は Hips ＋ 脚 1 本で包む（_cloth_leg_weights）
     skirt_z = pts[mb.part_indices("skirt"), 2]
     _cloth_leg_weights(obj, mb, pts, a, "skirt")
-    _cloth_leg_weights(obj, mb, pts, a, "labcoat")
+    _cloth_leg_weights(obj, mb, pts, a, "jacket")
     if len(skirt_z):
         # エプロンは真下のスカートと同じ高さ・同じ割合で脚へ寄せる。
         # 別の割合にすると、歩くたびにヒダの尾根がエプロンを突き抜ける。
@@ -549,6 +910,7 @@ def override_weights(obj, mb: M.MeshBuilder, p: dict, a: B.Anatomy) -> None:
         _cloth_leg_weights(obj, mb, pts, a, "apron")
 
     _keep_leg_side(obj, mb)
+    _legs_without_arms(obj, mb)
     # 膝で UpperLeg / LowerLeg を切り替えるのは、裾が脛まで割れて脚ごとに
     # 分かれる馬乗り袴（高下駄の坊っちゃん）だけ。筒の行灯袴（ブーツのマドンナ
     # ちゃん）に掛けると、走りで膝を曲げたとき膝より上は腿へ、下は脛へ
@@ -557,14 +919,22 @@ def override_weights(obj, mb: M.MeshBuilder, p: dict, a: B.Anatomy) -> None:
                        knee="boots" not in p.get("accessories", ()))
     _cloth_leg_weights(obj, mb, pts, a, "pants_seat")
 
-    # 靴下・ズボン・ブーツの筒も 2 ボーンに揃える（WebGL と PC で同じ形に）
-    _prune_influences(obj, mb, ("socks_l", "socks_r", "pants_l",
-                                "pants_r", "bootleg_l", "bootleg_r"))
+    # ズボン・ブーツの筒は 2 ボーンに揃える（WebGL と PC で同じ形に）
+    _prune_influences(obj, mb, ("pants_l", "pants_r", "bootleg_l", "bootleg_r"))
+    for side in ("l", "r"):
+        _follow_skin(obj, mb, pts, f"socks_{side}", f"leg_{side}")
+    _blouse_under_hoodie(obj, mb, pts, p)
+    _suit_yoke_weights(obj, mb, pts, p)
+    _shirt_under_suit(obj, mb, pts, p)
+    _hide_under_cloth(obj, mb, pts, p)
     for side in ("l", "r"):
         bone = "LeftFoot" if side == "l" else "RightFoot"
         _set_exclusive(obj, mb.part_indices(f"shoes_{side}", f"foot_{side}"),
                        {bone: 1.0})
-    if p.get("bag_mount") == "shoulder":
+    arm = getattr(obj, "parent", None)
+    if arm is not None and BAG_BONE in arm.data.bones:
+        _set_exclusive(obj, mb.part_indices("bag"), {BAG_BONE: 1.0})
+    elif p.get("bag_mount") == "shoulder":
         _set_exclusive(obj, mb.part_indices("bag"), {"UpperChest": 1.0})
     else:
         _set_exclusive(obj, mb.part_indices("bag"), {"RightHand": 1.0})

@@ -8,7 +8,7 @@ namespace KCD
     /// <summary>
     /// Input System のデバイスを直接読む薄いファサード。
     /// .inputactions アセットへの GUID 参照を持たずに済むので、シーンをコードだけで組み立てられる。
-    /// 操作: WASD または矢印キーで移動 / Shift（左右とも）ダッシュ / Space ジャンプ / E 会話 / Tab クエストログ / F 全画面 / Esc メニュー。
+    /// 操作: WASD または矢印キーで移動 / Shift（左右とも）ダッシュ / Space ジャンプ / E 会話 / Tab クエストログ / Ctrl+F 全画面 / Esc メニュー。
     /// </summary>
     public static class KCDInput
     {
@@ -19,7 +19,10 @@ namespace KCD
         /// </summary>
         private static readonly HashSet<object> Blockers = new HashSet<object>(ReferenceComparer.Instance);
 
-        /// <summary>GameplayBlocked への代入で立てる、オーナーを持たない封鎖（ポーズ・クエストログ・写真モードなど旧来の書き方）。</summary>
+        /// <summary>
+        /// GameplayBlocked への代入で立てる、オーナーを持たない封鎖（旧来の書き方）。
+        /// ポーズ・クエストログ・写真モード・リザルトは Block(this) に移した (#62)。
+        /// </summary>
         private static bool _sharedBlock;
 
         /// <summary>
@@ -144,14 +147,17 @@ namespace KCD
             }
         }
 
-        /// <summary>視点入力。マウス移動量とゲームパッド右スティック。</summary>
+        /// <summary>
+        /// 視点入力。マウス移動量とゲームパッド右スティックと、画面のなぞり（<see cref="TouchInput.Look"/>, #187）。
+        /// 指で遊んでいる間はマウスを見ない。ブラウザは指を離したあとに互換のマウスの動きを送ってくるので、視点が跳ねる。
+        /// </summary>
         public static Vector2 Look
         {
             get
             {
-                var look = Vector2.zero;
+                Vector2 look = TouchInput.Look;
                 Mouse mouse = Mouse.current;
-                if (mouse != null)
+                if (mouse != null && !InputMode.IsTouch)
                 {
                     look += mouse.delta.ReadValue() * 0.06f;
                 }
@@ -166,23 +172,31 @@ namespace KCD
             }
         }
 
-        /// <summary>カメラのズーム操作（ホイール）。前方向が正。</summary>
+        /// <summary>カメラのズーム操作（ホイールと 2 本指のつまみ, #187）。前方向・広げる向きが正。</summary>
         public static float Zoom
         {
             get
             {
+                float zoom = TouchInput.Zoom;
                 Mouse mouse = Mouse.current;
-                return mouse == null ? 0f : mouse.scroll.ReadValue().y * 0.01f;
+                if (mouse != null && !InputMode.IsTouch)
+                {
+                    zoom += mouse.scroll.ReadValue().y * 0.01f;
+                }
+
+                return zoom;
             }
         }
 
         /// <summary>
         /// ダッシュ（押しっぱなし）。Shift は左右どちらでも効く。
         /// 操作説明の「Shift / L トリガー」に合わせ、ゲームパッドは L ボタンと L トリガーの両方を受け付ける。
+        /// 画面の「走る」は切り替え（<see cref="TouchInput.Sprint"/>, #187）。
         /// </summary>
         public static bool Sprint =>
             !GameplayBlocked && !MovementLocked &&
-            ((Keyboard.current != null &&
+            (TouchInput.Sprint ||
+             (Keyboard.current != null &&
               (Keyboard.current.leftShiftKey.isPressed || Keyboard.current.rightShiftKey.isPressed)) ||
              (Gamepad.current != null &&
               (Gamepad.current.leftShoulder.isPressed || Gamepad.current.leftTrigger.isPressed)));
@@ -312,11 +326,29 @@ namespace KCD
             (Gamepad.current != null && Gamepad.current.selectButton.wasPressedThisFrame);
 
         /// <summary>
-        /// 全画面の切り替え（F）。メニューやポーズ中でも効かせたいので封鎖を見ない。
+        /// 全画面の切り替え（Ctrl+F）。メニューやポーズ中でも効かせたいので封鎖を見ない。
+        /// F だけだと WASD の隣なので歩いているうちに押し間違える。Ctrl と組にする。
         /// ゲームパッドは割り当てない（ブラウザがゲームパッド入力をユーザー操作と見なさず、全画面要求が通らない, #48）。
         /// </summary>
         public static bool FullscreenPressed =>
-            Keyboard.current != null && Keyboard.current.fKey.wasPressedThisFrame;
+            Keyboard.current != null
+            && IsFullscreenChord(
+                Keyboard.current.ctrlKey.isPressed,
+                Keyboard.current.altKey.isPressed,
+                Keyboard.current.fKey.wasPressedThisFrame);
+
+        /// <summary>
+        /// 全画面の打鍵か。Ctrl を押したまま F を押したときだけ。
+        /// AltGr（Ctrl+Alt として届く）+F は文字入力なので除く。Web 版のページ内検索の抑止（index.html）と同じ条件。
+        /// </summary>
+        public static bool IsFullscreenChord(bool ctrlHeld, bool altHeld, bool fPressedThisFrame)
+        {
+            return ctrlHeld && !altHeld && fPressedThisFrame;
+        }
+
+        /// <summary>開発者用ワープメニューを開閉するキー（F2）。<see cref="DevMode"/> が有効なときだけ DevWarpMenu が見る。</summary>
+        public static bool DevMenuPressed =>
+            Keyboard.current != null && Keyboard.current.f2Key.wasPressedThisFrame;
 
         /// <summary>クイックセーブ（F5）。</summary>
         public static bool QuickSavePressed =>
@@ -325,5 +357,133 @@ namespace KCD
         /// <summary>クイックロード（F9）。</summary>
         public static bool QuickLoadPressed =>
             Keyboard.current != null && Keyboard.current.f9Key.wasPressedThisFrame;
+
+        // ここから下はフォトモードの自由カメラ (#12)。フォトモードの間だけ PhotoSystem / PhotoFreeCamera が読む。
+        // フォトモード自身が封鎖を掛けているので GameplayBlocked は見ない。timeScale 0 の間に読むので、時間は実時間で掛ける。
+        // E / Q・Shift・Space は普段は会話 / 手を振る / ダッシュ / ジャンプだが、どれも封鎖中は効かないので重ならない。
+
+        /// <summary>フォトモードで P / 北ボタンのどちらで入ったか。案内をゲームパッドのボタン名で出すかを決める。</summary>
+        public static bool PhotoPressedOnGamepad =>
+            Gamepad.current != null && Gamepad.current.buttonNorth.wasPressedThisFrame;
+
+        /// <summary>フォトモードの移動（x = 左右、y = 前後）。WASD / 矢印キー / 左スティック。</summary>
+        public static Vector2 PhotoMove
+        {
+            get
+            {
+                var move = Vector2.zero;
+                Keyboard keyboard = Keyboard.current;
+                if (keyboard != null)
+                {
+                    if (keyboard.wKey.isPressed || keyboard.upArrowKey.isPressed) { move.y += 1f; }
+                    if (keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed) { move.y -= 1f; }
+                    if (keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed) { move.x += 1f; }
+                    if (keyboard.aKey.isPressed || keyboard.leftArrowKey.isPressed) { move.x -= 1f; }
+                }
+
+                Gamepad gamepad = Gamepad.current;
+                if (gamepad != null)
+                {
+                    move += gamepad.leftStick.ReadValue();
+                }
+
+                return Vector2.ClampMagnitude(move, 1f);
+            }
+        }
+
+        /// <summary>フォトモードの上下。E / R トリガーで上（+1）、Q / L トリガーで下（-1）。</summary>
+        public static float PhotoVertical
+        {
+            get
+            {
+                float vertical = 0f;
+                Keyboard keyboard = Keyboard.current;
+                if (keyboard != null)
+                {
+                    if (keyboard.eKey.isPressed) { vertical += 1f; }
+                    if (keyboard.qKey.isPressed) { vertical -= 1f; }
+                }
+
+                Gamepad gamepad = Gamepad.current;
+                if (gamepad != null)
+                {
+                    vertical += gamepad.rightTrigger.ReadValue() - gamepad.leftTrigger.ReadValue();
+                }
+
+                return Mathf.Clamp(vertical, -1f, 1f);
+            }
+        }
+
+        /// <summary>フォトモードで速く動かす（Shift / L ボタン）。</summary>
+        public static bool PhotoFast =>
+            (Keyboard.current != null &&
+             (Keyboard.current.leftShiftKey.isPressed || Keyboard.current.rightShiftKey.isPressed)) ||
+            (Gamepad.current != null && Gamepad.current.leftShoulder.isPressed);
+
+        /// <summary>フォトモードの向き。<see cref="Look"/> と同じ大きさで、スティックは実時間で掛ける（timeScale 0 でも回る）。</summary>
+        public static Vector2 PhotoLook
+        {
+            get
+            {
+                var look = Vector2.zero;
+                Mouse mouse = Mouse.current;
+                if (mouse != null)
+                {
+                    look += mouse.delta.ReadValue() * 0.06f;
+                }
+
+                Gamepad gamepad = Gamepad.current;
+                if (gamepad != null)
+                {
+                    look += gamepad.rightStick.ReadValue() * (180f * Time.unscaledDeltaTime);
+                }
+
+                return look;
+            }
+        }
+
+        /// <summary>
+        /// フォトモードのズーム（正で寄る）。ホイール 1 目盛りで 1、十字キーの上下は押している間 1 秒に 10。
+        /// ホイールは Input System の既定で 1 目盛り ±1 に揃っている。1 フレームで大きく回しても ±3 までにする。
+        /// </summary>
+        public static float PhotoZoom
+        {
+            get
+            {
+                float zoom = 0f;
+                Mouse mouse = Mouse.current;
+                if (mouse != null)
+                {
+                    zoom += Mathf.Clamp(mouse.scroll.ReadValue().y, -3f, 3f);
+                }
+
+                Gamepad gamepad = Gamepad.current;
+                if (gamepad != null)
+                {
+                    float dpad = (gamepad.dpad.up.isPressed ? 1f : 0f) - (gamepad.dpad.down.isPressed ? 1f : 0f);
+                    zoom += dpad * 10f * Time.unscaledDeltaTime;
+                }
+
+                return zoom;
+            }
+        }
+
+        /// <summary>フォトモードの撮影（Enter / テンキーの Enter / Space / A / X）。</summary>
+        public static bool PhotoShutterPressed =>
+            (Keyboard.current != null &&
+             (Keyboard.current.enterKey.wasPressedThisFrame || Keyboard.current.numpadEnterKey.wasPressedThisFrame ||
+              Keyboard.current.spaceKey.wasPressedThisFrame)) ||
+            (Gamepad.current != null &&
+             (Gamepad.current.buttonSouth.wasPressedThisFrame || Gamepad.current.buttonWest.wasPressedThisFrame));
+
+        /// <summary>フォトモードの操作案内の出し入れ（H / 左スティック押し込み）。</summary>
+        public static bool PhotoHintTogglePressed =>
+            (Keyboard.current != null && Keyboard.current.hKey.wasPressedThisFrame) ||
+            (Gamepad.current != null && Gamepad.current.leftStickButton.wasPressedThisFrame);
+
+        /// <summary>フォトモードのカメラを入ったときの位置と向きに戻す（R / 右スティック押し込み）。</summary>
+        public static bool PhotoResetPressed =>
+            (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame) ||
+            (Gamepad.current != null && Gamepad.current.rightStickButton.wasPressedThisFrame);
     }
 }

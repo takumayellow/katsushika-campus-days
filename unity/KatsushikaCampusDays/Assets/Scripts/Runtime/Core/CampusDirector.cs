@@ -11,12 +11,22 @@ namespace KCD
 
         private bool _welcomed;
         private float _startedAt;
+        private bool _continued;
+
+        private void OnEnable()
+        {
+            InputMode.Changed += OnInputModeChanged;
+        }
+
+        private void OnDisable()
+        {
+            InputMode.Changed -= OnInputModeChanged;
+        }
 
         private void Start()
         {
             _startedAt = Time.unscaledTime;
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
+            InputMode.CaptureCursor();
 
             // 軌道カメラの初期ヨーはワールド 0 なので、プレイヤーの向きの真後ろへ合わせる
             PlayerController player = FindAnyObjectByType<PlayerController>();
@@ -28,6 +38,14 @@ namespace KCD
 
         private void Update()
         {
+            // タイトルの「つづきから」の位置と屋内。Start ではなく最初の Update で当てるのは、
+            // Minimap.Start が屋内の表示を消すなど、ほかの Start より後でないと上書きされるため (#61)。
+            if (!_continued)
+            {
+                _continued = true;
+                SaveSystem.ApplyPending();
+            }
+
             if (!_welcomed && Time.unscaledTime - _startedAt > _welcomeDelay)
             {
                 _welcomed = true;
@@ -46,6 +64,10 @@ namespace KCD
                 {
                     HUD.Instance?.ShowToast(L.Get("ui.hud.quick_saved", "クイックセーブしました"));
                 }
+                else
+                {
+                    HUD.Instance?.ShowToast(L.Get("ui.hud.save_failed", "セーブできませんでした"));
+                }
             }
             else if (KCDInput.QuickLoadPressed)
             {
@@ -62,14 +84,29 @@ namespace KCD
             }
 
             hud.ShowToast(L.Pick("東京理科大学 葛飾キャンパス", "Tokyo University of Science, Katsushika Campus"));
+            if (InputMode.IsTouch)
+            {
+                // 指で遊ぶ人にはキーの名前を出さない (#187)。
+                hud.ShowToast(L.Pick(
+                    "左側をなぞって移動　右側をなぞって見回す　2 本指で寄る・引く",
+                    "Drag left to move   Drag right to look   Pinch to zoom"));
+                hud.ShowToast(L.Pick(
+                    "人の近くで「話す」　会話は画面を叩いて進める",
+                    "Tap Talk near people   Tap the box to continue"));
+                return;
+            }
+
             hud.ShowToast(L.Pick(
                 "WASD / 矢印キーで移動　Shift でダッシュ　E で話す　Tab でクエスト",
                 "WASD / Arrows Move   Shift Sprint   E Talk   Tab Quests"));
+            hud.ShowToast(L.Pick(
+                "P でフォトモード（時間が止まり、カメラを自由に動かして撮れる）",
+                "P Photo mode (time stops and you can move the camera freely)"));
 
             // Web 版はカーソルがブラウザのポインターロックに取られる。外し方と全画面の出し方を最初に伝える (#48)。
             if (Application.platform == RuntimePlatform.WebGLPlayer)
             {
-                hud.ShowToast(L.Get("ui.hud.web_controls", "Esc でマウスを解放　F で全画面"));
+                hud.ShowToast(L.Get("ui.hud.web_controls", "Esc でマウスを解放　Ctrl+F で全画面"));
             }
         }
 
@@ -80,8 +117,18 @@ namespace KCD
                 return;
             }
 
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
+            InputMode.CaptureCursor();
+        }
+
+        /// <summary>
+        /// 指からマウスに戻ったら、歩いている最中ならカーソルを掴み直す。指に移ったときの解放は InputMode がする。
+        /// </summary>
+        private static void OnInputModeChanged(InputKind kind)
+        {
+            if (kind == InputKind.Pointer && !KCDInput.GameplayBlocked && !ResultScreen.IsAnyOpen)
+            {
+                InputMode.CaptureCursor();
+            }
         }
     }
 }

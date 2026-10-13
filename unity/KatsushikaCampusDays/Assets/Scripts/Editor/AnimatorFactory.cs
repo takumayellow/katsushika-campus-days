@@ -41,6 +41,7 @@ namespace KCD.Editor
             AnimatorController controller = AnimatorController.CreateAnimatorControllerAtPath(path);
             controller.AddParameter("Speed", AnimatorControllerParameterType.Float);
             AddGaitRate(controller);
+            controller.AddParameter(BlinkPhase.ParameterName, AnimatorControllerParameterType.Float);
             AddBool(controller, "Grounded", true);
             controller.AddParameter("Jump", AnimatorControllerParameterType.Trigger);
             AddBool(controller, "Talk", false);
@@ -67,6 +68,7 @@ namespace KCD.Editor
         {
             AnimatorState state = controller.CreateBlendTreeInController("Locomotion", out BlendTree tree, 0);
             ApplyGaitRate(state);
+            ApplyCycleOffset(state);
             tree.blendType = BlendTreeType.Simple1D;
             tree.blendParameter = "Speed";
             tree.useAutomaticThresholds = false;
@@ -188,6 +190,12 @@ namespace KCD.Editor
                 changed = true;
             }
 
+            if (!HasParameter(controller, BlinkPhase.ParameterName))
+            {
+                controller.AddParameter(BlinkPhase.ParameterName, AnimatorControllerParameterType.Float);
+                changed = true;
+            }
+
             if (UpgradeStates(controller))
             {
                 changed = true;
@@ -225,6 +233,12 @@ namespace KCD.Editor
                 if (state.name == "Locomotion" && !state.speedParameterActive)
                 {
                     ApplyGaitRate(state);
+                    changed = true;
+                }
+
+                if (state.name == "Locomotion" && !state.cycleOffsetParameterActive)
+                {
+                    ApplyCycleOffset(state);
                     changed = true;
                 }
 
@@ -296,6 +310,13 @@ namespace KCD.Editor
         {
             state.speedParameter = GaitRateParameter;
             state.speedParameterActive = true;
+        }
+
+        /// <summary>周期の始まりをキャラクターごとにずらし、まばたきが揃わないようにする（#193）。</summary>
+        private static void ApplyCycleOffset(AnimatorState state)
+        {
+            state.cycleOffsetParameter = BlinkPhase.ParameterName;
+            state.cycleOffsetParameterActive = true;
         }
 
         private static bool HasParameter(AnimatorController controller, string name)

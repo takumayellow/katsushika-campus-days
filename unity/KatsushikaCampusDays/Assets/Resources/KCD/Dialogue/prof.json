@@ -35,8 +35,8 @@
           "text_en": "I've asked the key holder to wait one more minute. Sixty seconds, starting from here."
         },
         {
-          "text": "モールを北へ折れれば体育館だ。Shift を押しっぱなしで走りなさい。",
-          "text_en": "Turn north off the mall and you'll reach the gym. Hold Shift and run."
+          "text": "メインストリートを北へ折れれば体育館だ。Shift を押しっぱなしで走りなさい。",
+          "text_en": "Turn north off Main Street and you'll reach the gym. Hold Shift and run."
         }
       ]
     },
@@ -66,29 +66,27 @@
       ]
     },
     {
-      "id": "t_welcome",
+      "id": "t_lecture_start",
+      "requiresCompletedQuest": "q_gym",
       "once": true,
+      "startsQuest": "q_lecture",
       "lines": [
         {
-          "text": "おはよう。情報工学科の子だね。名簿にあった。",
-          "text_en": "Good morning. You're one of the Information Engineering students. You were on the list."
-        },
-        {
-          "text": "このモールは全長 250 m ある。南西の金町駅側から、北東の図書館まで、まっすぐ一本。",
-          "text_en": "This mall is 250 metres long. From the Kanamachi Station end in the southwest to the library in the northeast, one straight line."
-        },
-        {
-          "text": "迷ったら、とにかくこの石畳の上を歩きなさい。だいたいどこかに着く。",
-          "text_en": "If you get lost, just walk on these paving stones. You'll end up somewhere."
+          "text": "さて、走ったあとは座る番だ。これから講義棟の大教室で、新入生向けに短い講義をする。",
+          "text_en": "Now then, after running comes sitting. I'm about to give a short lecture for new students in the big classroom of the lecture building."
         },
         {
           "speaker": "自分",
-          "text": "はい、覚えました。",
-          "text_en": "Yes, I'll remember that."
+          "text": "……今からですか。",
+          "text_en": "...Right now?"
         },
         {
-          "text": "よろしい。では、今日は好きに歩いてみることだ。",
-          "text_en": "Good. Then today, walk wherever you like."
+          "text": "今からだ。席はどこでもいい。終わったら質問に来なさい。",
+          "text_en": "Right now. Sit wherever you like. Come and ask questions when it is over."
+        },
+        {
+          "text": "質問をしない学生は、だいたい損をしている。",
+          "text_en": "Students who never ask questions are usually missing out."
         }
       ]
     },
@@ -103,8 +101,8 @@
           "text_en": "Incidentally, I was on greenhouse watering duty today. It had entirely slipped my mind."
         },
         {
-          "text": "第2実験棟の東に、切妻のガラス屋根が見えるだろう。あれが温室だ。栽培ベンチの鉢に水をやってきてくれんか。",
-          "text_en": "East of Experiment Building 2 you'll see a gabled glass roof. That's the greenhouse. Would you water the pots on the growing benches for me?"
+          "text": "第1実験棟の東どなりに、屋根まで平らなガラスの小さな棟があるだろう。あれが温室だ。栽培ベンチの鉢に水をやってきてくれんか。",
+          "text_en": "Just east of Experiment Building 1 there's a small building with a flat glass roof. That's the greenhouse. Would you water the pots on the growing benches for me?"
         },
         {
           "speaker": "自分",
@@ -122,12 +120,12 @@
       "requiresActiveQuest": "q_sq_greenhouse",
       "lines": [
         {
-          "text": "温室は第2実験棟の東だ。灌水パイプの元栓は入って右。",
-          "text_en": "The greenhouse is east of Experiment Building 2. The tap for the watering pipe is on the right as you go in."
+          "text": "温室は第1実験棟の東どなりだ。灌水パイプの元栓は入って右。",
+          "text_en": "The greenhouse is just east of Experiment Building 1. The tap for the watering pipe is on the right as you go in."
         },
         {
-          "text": "鉢は 2 列。全部にやりなさい。ひとつでも忘れると、私が怒られる。",
-          "text_en": "Two rows of pots. Water every one. Miss a single pot and it's me who gets told off."
+          "text": "栽培ベンチは 4 台。全部の鉢にやりなさい。ひとつでも忘れると、私が怒られる。",
+          "text_en": "There are four growing benches. Water every pot. Miss a single pot and it's me who gets told off."
         }
       ]
     },
@@ -152,6 +150,111 @@
         {
           "text": "それでは実験にならんだろう。",
           "text_en": "That wouldn't be much of an experiment, would it."
+        }
+      ]
+    },
+    {
+      "id": "t_lecture_active",
+      "requiresActiveQuest": "q_lecture",
+      "lines": [
+        {
+          "text": "講義棟の大教室だ。席に着いたら始める。",
+          "text_en": "The big classroom in the lecture building. We start once you are seated."
+        }
+      ]
+    },
+    {
+      "id": "t_lab_tour_done",
+      "requiresCompletedQuest": "q_sq_lab_tour",
+      "once": true,
+      "lines": [
+        {
+          "text": "おかえり。何が見えた。",
+          "text_en": "Welcome back. What did you see?"
+        },
+        {
+          "speaker": "自分",
+          "text": "机が並んでいて、ホワイトボードに式がびっしり書いてありました。",
+          "text_en": "Rows of desks, and a whiteboard packed with equations."
+        },
+        {
+          "speaker": "自分",
+          "text": "みんな画面を見たまま、誰もこっちを見ませんでした。",
+          "text_en": "Everyone kept staring at their screens. No one even looked up."
+        },
+        {
+          "text": "それは集中している証拠だ。邪魔をしなかったなら、上出来だよ。",
+          "text_en": "That means they're focused. If you didn't disturb them, well done."
+        },
+        {
+          "text": "いつか君も、あの机のどれかに座る。そのときは、のぞきに来た一年生に顔を上げてやりなさい。",
+          "text_en": "One day you will sit at one of those desks too. When you do, look up for the first-year who comes to peek."
+        }
+      ]
+    },
+    {
+      "id": "t_lab_tour_start",
+      "requiresCompletedQuest": "q_lecture",
+      "once": true,
+      "startsQuest": "q_sq_lab_tour",
+      "lines": [
+        {
+          "text": "講義はどうだった。……顔を見ればわかる。半分くらいだな。",
+          "text_en": "How was the lecture? ...I can tell from your face. About half."
+        },
+        {
+          "text": "残りの半分は、研究室に転がっている。第1研究棟に研究室が集まっているから、のぞいてきなさい。",
+          "text_en": "The other half is lying around in the research labs. They are gathered in Research Building 1. Go and take a peek."
+        },
+        {
+          "text": "場所は 1 階の掲示板に貼ってある。",
+          "text_en": "Where each lab is, is posted on the noticeboard on the ground floor."
+        },
+        {
+          "speaker": "自分",
+          "text": "勝手に入っていいんですか。",
+          "text_en": "Can I just walk in?"
+        },
+        {
+          "text": "のぞくだけならね。見てきたら、何があったか教えてくれ。",
+          "text_en": "If you are only looking. Come back and tell me what you saw."
+        }
+      ]
+    },
+    {
+      "id": "t_lab_tour_active",
+      "requiresActiveQuest": "q_sq_lab_tour",
+      "lines": [
+        {
+          "text": "第1研究棟だ。1 階の掲示板を見れば、研究室の場所が書いてある。",
+          "text_en": "Research Building 1. The noticeboard on the ground floor shows where the labs are."
+        }
+      ]
+    },
+    {
+      "id": "t_welcome",
+      "once": true,
+      "lines": [
+        {
+          "text": "おはよう。情報工学科の子だね。名簿にあった。",
+          "text_en": "Good morning. You're one of the Information Engineering students. You were on the list."
+        },
+        {
+          "text": "このメインストリートは全長 250 m ある。南西の金町駅側から、北東の図書館まで、まっすぐ一本。",
+          "text_en": "Main Street is 250 metres long. From the Kanamachi Station end in the southwest to the library in the northeast, one straight line."
+        },
+        {
+          "text": "迷ったら、とにかくこの石畳の上を歩きなさい。だいたいどこかに着く。",
+          "text_en": "If you get lost, just walk on these paving stones. You'll end up somewhere."
+        },
+        {
+          "speaker": "自分",
+          "text": "はい、覚えました。",
+          "text_en": "Yes, I'll remember that."
+        },
+        {
+          "text": "よろしい。では、今日は好きに歩いてみることだ。",
+          "text_en": "Good. Then today, walk wherever you like."
         }
       ]
     },

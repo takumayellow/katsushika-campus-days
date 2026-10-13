@@ -34,9 +34,37 @@ namespace KCD.Editor
             public Material[] Materials;
         }
 
-        /// <summary>itemId に合う見た目。葉と牛乳以外は materialName の色の葉にする。</summary>
+        /// <summary>隠しアイテムの宝石の半径（m、赤道）。</summary>
+        public const float GemRadius = 0.14f;
+
+        /// <summary>隠しアイテムの宝石の中心から頂点までの高さ（m）。</summary>
+        public const float GemHalfHeight = 0.22f;
+
+        /// <summary>写真スポットの三脚の、カメラの高さ（m、足元から）。</summary>
+        public const float TripodCameraHeight = 1.3f;
+
+        /// <summary>
+        /// itemId に合う見た目。牛乳は紙パック、隠しアイテム（c_*）は名前どおりの模型（<see cref="HiddenItemModels"/>、
+        /// 模型の無い物だけ materialName の色の宝石）、それ以外は materialName の色の葉（葉は理科大グリーン）。
+        /// </summary>
         public static Model For(string itemId, string materialName)
         {
+            if (itemId != null && itemId.StartsWith("c_"))
+            {
+                if (HiddenItemModels.Has(itemId))
+                {
+                    return HiddenItemModels.For(itemId);
+                }
+
+                // 模型の無い隠しアイテム（collectibles.json に足したばかりの物）は、ひとまず宝石で置く。
+                Debug.LogWarning("[KCD] 隠しアイテム " + itemId + " の模型が無いので宝石で置きます（HiddenItemModels に足す）。");
+                return new Model
+                {
+                    Mesh = Save(BuildGem(), "Gem"),
+                    Materials = new[] { MaterialLibrary.EnsureCampus(materialName) },
+                };
+            }
+
             if (itemId == "milk")
             {
                 return new Model
@@ -118,6 +146,9 @@ namespace KCD.Editor
             return mesh;
         }
 
+        /// <summary>紙パックの胴の高さの半分 [m]。原点が胴の中心なので、台に立てるときはこの分だけ上げる。</summary>
+        public const float MilkCartonHalfHeight = 0.12f;
+
         /// <summary>
         /// 200 ml の紙パック（実物 6.5 x 6.5 x 12 cm）を 2 倍にしたもの。原点は胴の中心。
         /// サブメッシュ 0 = 白い胴と屋根、1 = 青い帯。
@@ -125,7 +156,7 @@ namespace KCD.Editor
         public static Mesh BuildMilkCarton()
         {
             const float side = 0.13f;
-            const float body = 0.24f;
+            const float body = MilkCartonHalfHeight * 2f;
             const float gable = 0.06f;
             float h = side * 0.5f;
             float top = body * 0.5f;
@@ -160,6 +191,123 @@ namespace KCD.Editor
             return mesh;
         }
 
+        /// <summary>写真スポットの三脚の見た目。サブメッシュ 0 = 足元の円盤、1 = 脚、2 = カメラ。</summary>
+        public static Model Tripod()
+        {
+            return new Model
+            {
+                Mesh = Save(BuildTripod(), "Tripod"),
+                Materials = new[]
+                {
+                    MaterialLibrary.EnsureCampus("tus_green"),
+                    MaterialLibrary.EnsureCampus("metal_grey"),
+                    MaterialLibrary.EnsureCampus("bike_frame"),
+                },
+            };
+        }
+
+        /// <summary>
+        /// 模型の無い隠しアイテムの代わりの宝石。上下に尖った正八面体（面ごとに頂点を分けて角を立てる）。原点が中心 (#65, #167)。
+        /// </summary>
+        public static Mesh BuildGem()
+        {
+            var vertices = new List<Vector3>();
+            var triangles = new List<int>();
+            Vector3 top = new Vector3(0f, GemHalfHeight, 0f);
+            Vector3 bottom = new Vector3(0f, -GemHalfHeight, 0f);
+            for (int i = 0; i < 4; i++)
+            {
+                Vector3 e0 = Equator(i);
+                Vector3 e1 = Equator(i + 1);
+                // 角度が増える向きに e0 → e1。外から見て時計回りになるよう並べる。
+                AddTri(vertices, triangles, e1, e0, top);
+                AddTri(vertices, triangles, bottom, e0, e1);
+            }
+
+            var mesh = new Mesh { name = "Gem" };
+            mesh.SetVertices(vertices);
+            mesh.SetTriangles(triangles, 0);
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            return mesh;
+        }
+
+        private static Vector3 Equator(int quarter)
+        {
+            float angle = quarter * 90f * Mathf.Deg2Rad;
+            return new Vector3(Mathf.Cos(angle) * GemRadius, 0f, Mathf.Sin(angle) * GemRadius);
+        }
+
+        /// <summary>
+        /// 写真スポットの三脚。原点が足元の中心で、+Z がカメラの向き（collectibles.json の look_dir）。
+        /// 足元に理科大グリーンの円盤（半径 0.55 m）、3 本の脚、その上に黒いカメラとレンズ。
+        /// </summary>
+        public static Mesh BuildTripod()
+        {
+            var vertices = new List<Vector3>();
+            var plate = new List<int>();
+            var legs = new List<int>();
+            var camera = new List<int>();
+
+            const int sides = 16;
+            const float plateRadius = 0.55f;
+            const float plateHeight = 0.015f;
+            Vector3 center = new Vector3(0f, plateHeight, 0f);
+            for (int i = 0; i < sides; i++)
+            {
+                Vector3 top0 = Rim(i, sides, plateRadius, plateHeight);
+                Vector3 top1 = Rim(i + 1, sides, plateRadius, plateHeight);
+                Vector3 bottom0 = Rim(i, sides, plateRadius, 0f);
+                Vector3 bottom1 = Rim(i + 1, sides, plateRadius, 0f);
+                AddTri(vertices, plate, center, top1, top0);
+                AddQuad(vertices, plate, bottom1, bottom0, top0, top1);
+            }
+
+            Vector3 head = new Vector3(0f, TripodCameraHeight - 0.1f, 0f);
+            const float footRadius = 0.38f;
+            // 1 本を後ろ（-Z）、2 本を前の左右へ開く。レンズの前に脚が来ないようにする。
+            float[] footAngles = { 270f, 30f, 150f };
+            foreach (float degrees in footAngles)
+            {
+                float a = degrees * Mathf.Deg2Rad;
+                Vector3 foot = new Vector3(Mathf.Cos(a) * footRadius, plateHeight, Mathf.Sin(a) * footRadius);
+                AddBeam(vertices, legs, foot, head, 0.03f);
+            }
+
+            AddBox(vertices, legs, new Vector3(0f, TripodCameraHeight - 0.09f, 0f), new Vector3(0.09f, 0.04f, 0.09f));
+            AddBox(vertices, camera, new Vector3(0f, TripodCameraHeight, 0f), new Vector3(0.22f, 0.14f, 0.12f));
+            AddBox(vertices, camera, new Vector3(0f, TripodCameraHeight, 0.1f), new Vector3(0.08f, 0.08f, 0.08f));
+
+            var mesh = new Mesh { name = "Tripod", subMeshCount = 3 };
+            mesh.SetVertices(vertices);
+            mesh.SetTriangles(plate, 0);
+            mesh.SetTriangles(legs, 1);
+            mesh.SetTriangles(camera, 2);
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            return mesh;
+        }
+
+        private static Vector3 Rim(int index, int sides, float radius, float y)
+        {
+            float angle = index * Mathf.PI * 2f / sides;
+            return new Vector3(Mathf.Cos(angle) * radius, y, Mathf.Sin(angle) * radius);
+        }
+
+        /// <summary>from から to へ伸びる角柱（断面 thickness 角）。</summary>
+        private static void AddBeam(List<Vector3> vertices, List<int> triangles, Vector3 from, Vector3 to, float thickness)
+        {
+            Vector3 axis = to - from;
+            Vector3 middle = (from + to) * 0.5f;
+            int first = vertices.Count;
+            AddBox(vertices, triangles, Vector3.zero, new Vector3(thickness, thickness, axis.magnitude));
+            Quaternion rotation = Quaternion.FromToRotation(Vector3.forward, axis.normalized);
+            for (int i = first; i < vertices.Count; i++)
+            {
+                vertices[i] = middle + rotation * vertices[i];
+            }
+        }
+
         /// <summary>面ごとに頂点を分けた箱（角を立てる）。</summary>
         private static void AddBox(List<Vector3> vertices, List<int> triangles, Vector3 center, Vector3 size)
         {
@@ -191,15 +339,16 @@ namespace KCD.Editor
         /// <summary>Assets/Generated/Meshes/&lt;name&gt;.asset に保存する。既にあれば中身だけ入れ替える。</summary>
         private static Mesh Save(Mesh built, string name)
         {
-            string path = MeshFolder + "/" + name + ".asset";
+            return SaveAt(built, MeshFolder + "/" + name + ".asset");
+        }
+
+        /// <summary>path（Assets/ からの .asset）に保存する。既にあれば中身だけ入れ替え、GUID を変えない。</summary>
+        internal static Mesh SaveAt(Mesh built, string path)
+        {
             var existing = AssetDatabase.LoadAssetAtPath<Mesh>(path);
             if (existing == null)
             {
-                if (!AssetDatabase.IsValidFolder(MeshFolder))
-                {
-                    AssetDatabase.CreateFolder(EditorPaths.GeneratedFolder, "Meshes");
-                }
-
+                EditorPaths.EnsureFolder(path.Substring(0, path.LastIndexOf('/')));
                 AssetDatabase.CreateAsset(built, path);
                 return built;
             }

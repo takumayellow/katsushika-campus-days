@@ -114,6 +114,17 @@ namespace KCD
         }
 
         /// <summary>
+        /// position に立たせたとき、体が固体に重ならず収まるか。カプセルは skinWidth だけ細くするので、
+        /// 平らな床に立つ足もとは床に触れず、IsPenetrating（接触帯 ContactBand ぶん細くする）より太い。
+        /// ここで収まる位置なら、立ったあと RecoverIfStuck に押し出されない。
+        /// </summary>
+        public static bool HasRoom(CharacterController controller, Vector3 position, int mask)
+        {
+            CapsuleEnds(controller, position, controller.skinWidth, out Vector3 bottom, out Vector3 top, out float radius);
+            return !Physics.CheckCapsule(bottom, top, radius, mask, QueryTriggerInteraction.Ignore);
+        }
+
+        /// <summary>
         /// 重なっているコライダーから押し出すベクトルを合成する。接触帯以内の重なり（床に立つ・壁に触れる）は押さない。
         /// ComputePenetration は裏向きの三角形を無視するので、厚み 0 の板に裏から入り込んだときなど
         /// 押し出せる相手が無ければ false（呼び出し側が TryFindFreeSpot に回す）。

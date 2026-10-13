@@ -17,8 +17,8 @@
         },
         {
           "speaker": "自分",
-          "text": "1,400 席もあるのに、埋まるんですか。",
-          "text_en": "There are 1,400 seats. Does it really fill up?"
+          "text": "あれだけ席があるのに、埋まるんですか。",
+          "text_en": "With that many seats, does it really fill up?"
         },
         {
           "text": "12 時 20 分から 40 分まではね。あの 20 分だけは戦争。",
@@ -50,8 +50,8 @@
           "text_en": "Hey! You there, are your hands free?"
         },
         {
-          "text": "ここ第2研究棟の食堂、席が 1,400 あるの。で、今その全部にお客が来る時間なの。",
-          "text_en": "This is the Research Building 2 cafeteria, 1,400 seats. And right now is when every one of them fills up."
+          "text": "ここ食堂は、1 階に 730 席、2 階に 665 席あるの。で、今その全部にお客が来る時間なの。",
+          "text_en": "This cafeteria has 730 seats on the first floor and 665 on the second. And right now is when every one of them fills up."
         },
         {
           "text": "なのに牛乳が切れた。共創棟 1 階のファミマで買ってきてくれない？ お金はこっち持ちで。",
@@ -75,12 +75,12 @@
       "startsQuest": "q_sq_lost_card",
       "lines": [
         {
-          "text": "ねえ、もうひとつだけお願い。券売機のところで学生証の落とし物があったの。",
-          "text_en": "Hey, one more favour. Somebody dropped a student ID over by the ticket machines."
+          "text": "ねえ、もうひとつだけお願い。注文端末のところで学生証の落とし物があったの。",
+          "text_en": "Hey, one more favour. Somebody dropped a student ID over by the order terminals."
         },
         {
-          "text": "ピークが終わったばかりで、こっちは片付けで手が離せなくて。券売機から返却口まで、持ち主の手がかりを見てきてくれない？",
-          "text_en": "The peak just ended and I'm stuck clearing up. Could you check from the ticket machines to the tray return for any clue who it belongs to?"
+          "text": "ピークが終わったばかりで、こっちは片付けで手が離せなくて。注文端末から返却口まで、持ち主の手がかりを見てきてくれない？",
+          "text_en": "The peak just ended and I'm stuck clearing up. Could you check from the order terminals to the tray return for any clue who it belongs to?"
         },
         {
           "speaker": "自分",
@@ -98,12 +98,12 @@
       "requiresActiveQuest": "q_sq_lost_card",
       "lines": [
         {
-          "text": "券売機は入って左の壁ぎわ、6 台並んでるところ。返却口は反対側の奥。",
-          "text_en": "The ticket machines are along the left wall as you come in, the row of six. The tray return is at the far end on the opposite side."
+          "text": "注文端末は入って左の壁ぎわ、白い端末が並んでるところ。返却口は反対側の奥。",
+          "text_en": "The order terminals are along the left wall as you come in, the row of white ones. The tray return is at the far end on the opposite side."
         },
         {
-          "text": "配膳カウンターは 38 m もあるから、まっすぐ歩けば着くわ。",
-          "text_en": "The serving counter runs 38 metres, so just walk straight along it and you'll get there."
+          "text": "配膳カウンターは 36 m もあるから、まっすぐ歩けば着くわ。",
+          "text_en": "The serving counter runs 36 metres, so just walk straight along it and you'll get there."
         }
       ]
     },

@@ -152,6 +152,231 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: library_aisle_carpet
+    second: {fileID: 2100000, guid: 8d010d98641ef604a8fde86547173924, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_balcony_front
+    second: {fileID: 2100000, guid: 57e18da68e5b54c4c9c64aa313c3a437, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_carpet_brown
+    second: {fileID: 2100000, guid: d293877a8ed0c034ca25312881df4c77, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_carpet_crimson
+    second: {fileID: 2100000, guid: c8d1366548285124b9f1b6bcdaea2a6a, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_carpet_khaki
+    second: {fileID: 2100000, guid: 46d74fb7f466f544a88d4b353033fd1b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_carpet_olive
+    second: {fileID: 2100000, guid: 3da2acbd1b48d1d4c98788775e754699, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_ceiling_white
+    second: {fileID: 2100000, guid: 97bb6be293d39da4fac97aedaf476ea1, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_ceiling_wood_dark
+    second: {fileID: 2100000, guid: 3fe38b61fa43a3d4ebd3555425753900, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_chair_white
+    second: {fileID: 2100000, guid: 7332480ff97af574cb9d3acc15d534e5, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_chandelier
+    second: {fileID: 2100000, guid: 18e0067ac6577674f91b55b75791fbe1, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_concrete
+    second: {fileID: 2100000, guid: 23bb2264e57006347a8bb044b8420c34, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_counter_black
+    second: {fileID: 2100000, guid: 3aa74732cf95f7c42a252ee6e0ce2b43, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_counter_red
+    second: {fileID: 2100000, guid: d081ac6a053b85a49a730fce7a98cbad, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_desk_top_dark
+    second: {fileID: 2100000, guid: 70cc674c66d07a64193fc644724cc061, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_floor_wood_gloss
+    second: {fileID: 2100000, guid: 90d4e3612db9f0c47af78368ce1a96c6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_glass_dark
+    second: {fileID: 2100000, guid: e617bf1faa98ae545bfe243d65a29d40, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_glass_floor
+    second: {fileID: 2100000, guid: 6830622af8009684895ceba8dbc8e456, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_glass_frit
+    second: {fileID: 2100000, guid: 86212aaf4edf8c0459b27421854fae87, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_hall_ceiling
+    second: {fileID: 2100000, guid: 035a6796111f1ea4b87389a0637eb988, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_hall_louver
+    second: {fileID: 2100000, guid: df0ed0563aaa9584e9dfc53f361a1603, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_info_grey
+    second: {fileID: 2100000, guid: 25b4476c4a843104c93386d355973aee, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_joint_black
+    second: {fileID: 2100000, guid: f4deb81568ec5b246a9753b7828a89a5, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_lounge_magenta
+    second: {fileID: 2100000, guid: 3f7c5a4f97abe614c9c8f5ab6610450d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_louver_black
+    second: {fileID: 2100000, guid: fddfe4b57074d384b8ae645c52417888, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_mokko_board
+    second: {fileID: 2100000, guid: 1d0a478ccdeb4fe4ea2764b7420ab601, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_partition_white
+    second: {fileID: 2100000, guid: b7417f4e91ccbc248b34f0a206b24839, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_perforated_grey
+    second: {fileID: 2100000, guid: b1866c5341edf084b99edea0a4ad982c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_rail_white
+    second: {fileID: 2100000, guid: 70cdde6f60658f748ba7e7b5e649034a, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_seat_fabric
+    second: {fileID: 2100000, guid: 7d388c399227223468c6c0b8adde7e41, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_seat_wood
+    second: {fileID: 2100000, guid: e5e929bf8ecca6a45af36b445bfcaabe, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_shell_alcast
+    second: {fileID: 2100000, guid: 100b6f9b2f8199142934832d025dad84, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_shell_joint
+    second: {fileID: 2100000, guid: 499f1cd287df55f479f3ca679cbba99d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_signage_screen
+    second: {fileID: 2100000, guid: 7ae462494fe352e4caefcd958b6c49a3, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_skylight
+    second: {fileID: 2100000, guid: 7cbd7c7047263c14ab45c576f2c64c79, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_sofa_red
+    second: {fileID: 2100000, guid: 9b4bf4f2516b9c246a156b21a5fa25c8, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_stage_wall
+    second: {fileID: 2100000, guid: acbdd528b09ee0d4d87a0d697ab1aa5b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_steel_underside
+    second: {fileID: 2100000, guid: e308adfd74b26194db40e1c916ba599e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_tabchair_green
+    second: {fileID: 2100000, guid: de876addb13df6b49800291b70824942, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_table_white
+    second: {fileID: 2100000, guid: e0d88709dc4c60847ac077b6c1ed23b2, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_wall_darkgrey
+    second: {fileID: 2100000, guid: ee72222fa28c23b4c858cff331176b54, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_wall_ivory
+    second: {fileID: 2100000, guid: 8bff588f3ca080c4d8a1898fb206f85b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_wall_washer
+    second: {fileID: 2100000, guid: c9f89e785929f6e4c80d3f1a8ae9d24b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_wenge
+    second: {fileID: 2100000, guid: c11e074e142505b40bbd8a58c9e19a7b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_wood_light
+    second: {fileID: 2100000, guid: bfb3eb4a793968547ac997adba5555b1, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: library_wood_slat
+    second: {fileID: 2100000, guid: 4c8f3ff2fa5e24948b18a3d3b42e17bb, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: light_panel
     second: {fileID: 2100000, guid: 4d37b4f0eef136f4aa5ba6e98b2e0b73, type: 2}
   - first:
@@ -313,7 +538,7 @@ ModelImporter:
   tangentSpace:
     normalSmoothAngle: 60
     normalImportMode: 0
-    tangentImportMode: 3
+    tangentImportMode: 2
     normalCalculationMode: 4
     legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 0
     blendShapeNormalImportMode: 1

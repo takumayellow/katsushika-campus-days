@@ -29,7 +29,7 @@ namespace KCD.Editor
     /// 1 キャラにつき 顔（正面・35 度・真横）と全身（正面・35 度）を撮る。
     ///
     /// 描画の有効・無効は取り込んだまま触らない。Blender で焼いた輪郭シェル（&lt;id&gt;_outline）は
-    /// CharacterImporter が無効にしている。有効にすると KCD/Toon の Outline パス（Cull Front）が
+    /// CharacterImporter が無効にし、メッシュも空にしている。有効にすると KCD/Toon の Outline パス（Cull Front）が
     /// シェルの手前側を輪郭色で描き、服や髪の外向きの面が真っ黒に塗りつぶされる。
     ///
     /// キャラは空中（地面から <see cref="Altitude"/> m 上）に置くので、建物や木が写り込まない。
@@ -60,6 +60,8 @@ namespace KCD.Editor
             new Shot { Suffix = "face_f90", Yaw = 90f, Face = true },
             new Shot { Suffix = "body_f0", Yaw = 0f, Face = false },
             new Shot { Suffix = "body_f35", Yaw = 35f, Face = false },
+            new Shot { Suffix = "face_b145", Yaw = 145f, Face = true },
+            new Shot { Suffix = "body_b180", Yaw = 180f, Face = false },
         };
 
         private static readonly Shot[] MotionShots =
@@ -473,6 +475,7 @@ namespace KCD.Editor
             animator.Update(0.02f);
             if (frame.Pose == "idle")
             {
+                FollowSkirt(body);
                 return;
             }
 
@@ -511,6 +514,25 @@ namespace KCD.Editor
                 animator.Update(dt);
                 left -= dt;
             }
+
+            FollowSkirt(body);
+        }
+
+        /// <summary>ゲームでは LateUpdate で回すスカートの骨を、手で進めた Animator の後に回す（#49）。</summary>
+        private static void FollowSkirt(GameObject body)
+        {
+            if (!SkirtFollow.HasSkirtBones(body))
+            {
+                return;
+            }
+
+            SkirtFollow follow = body.GetComponent<SkirtFollow>();
+            if (follow == null)
+            {
+                follow = body.AddComponent<SkirtFollow>();
+            }
+
+            follow.Apply();
         }
 
         private static Bounds BoundsOf(GameObject body)

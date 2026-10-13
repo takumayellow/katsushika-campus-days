@@ -87,8 +87,18 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: flower_orange
+    second: {fileID: 2100000, guid: 7815e5f2a8004c4478d36fb3f9176865, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: flower_pink
     second: {fileID: 2100000, guid: 3cc72ec806df38d45b037aa59a6ee86a, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: flower_purple
+    second: {fileID: 2100000, guid: 18305a5d71dba784e8a22ba4c5bf43bb, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
@@ -152,28 +162,8 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
-      name: sign_familymart_blue
-    second: {fileID: 2100000, guid: 4b91cf62d1ed0b4438e7de31b36b4a65, type: 2}
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: sign_familymart_green
-    second: {fileID: 2100000, guid: ffc3ca00703704a4b9f6c064ff1d8226, type: 2}
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: sign_familymart_white
-    second: {fileID: 2100000, guid: b42211deb706ee54bbba4201a040b7c3, type: 2}
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
       name: sign_plate
     second: {fileID: 2100000, guid: 22af53dfe2487af469e0fa28e5283298, type: 2}
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: sign_starbucks_green
-    second: {fileID: 2100000, guid: a7f6f6360836ce4438e9817ca244401a, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
@@ -283,7 +273,7 @@ ModelImporter:
   tangentSpace:
     normalSmoothAngle: 60
     normalImportMode: 0
-    tangentImportMode: 3
+    tangentImportMode: 2
     normalCalculationMode: 4
     legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 0
     blendShapeNormalImportMode: 1

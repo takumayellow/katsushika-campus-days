@@ -81,7 +81,7 @@ namespace KCD.Tests
         [Test]
         public void SnappedVerticalMotion_GroundSnapCoversEveryGroundLayerStep()
         {
-            // blender/kcd_lib/site.py の高さレイヤ: 外周 0.000 〜 モール 0.021。一番大きい段差は 2.1 cm。
+            // blender/kcd_lib/site.py の高さレイヤ: 外周 0.000 〜 メインストリート 0.021。一番大きい段差は 2.1 cm。
             // 入口の石張り (kcd_lib/entrances.py APRON_Z 0.12) から芝 0.006 への 11.4 cm は吸い付ききらないが、
             // 残りは 1.4 cm で skinWidth (0.028) の内側に入るので接地は外れない。
             const float LargestGroundLayerStep = 0.021f;
@@ -165,6 +165,25 @@ namespace KCD.Tests
             Assert.Greater(PlayerController.MinAirTimeForLanding, 1f / 30f);
             // ただし長すぎると本物のジャンプ以外の落下で着地音が出なくなるので 0.3 s 未満にする。
             Assert.Less(PlayerController.MinAirTimeForLanding, 0.3f);
+        }
+
+        [Test]
+        public void CanReturnTo_NearbyStandingSpot()
+        {
+            var seat = new Vector3(10f, 2f, -4f);
+            Assert.IsTrue(PlayerController.CanReturnTo(seat, seat + new Vector3(1.2f, 0f, 0.9f)), "席の横の通路");
+            Assert.IsTrue(PlayerController.CanReturnTo(seat, seat + new Vector3(0f, -0.6f, 1.5f)), "客席の数段下の通路");
+            Assert.IsTrue(PlayerController.CanReturnTo(seat, seat + new Vector3(PlayerController.MaxReturnDistance, 0f, 0f)),
+                "調べるが届く端");
+        }
+
+        [Test]
+        public void CanReturnTo_RejectsFarOrOtherFloor()
+        {
+            var seat = new Vector3(10f, 2f, -4f);
+            Assert.IsFalse(PlayerController.CanReturnTo(seat, seat + new Vector3(2.5f, 0f, 2.5f)), "調べるが届かない所");
+            Assert.IsFalse(PlayerController.CanReturnTo(seat, seat + new Vector3(0.5f, 3.2f, 0f)), "上の階");
+            Assert.IsFalse(PlayerController.CanReturnTo(seat, new Vector3(-80f, 0f, 35f)), "ワープ前の屋外");
         }
     }
 }

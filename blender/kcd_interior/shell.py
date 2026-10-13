@@ -12,6 +12,8 @@ from .kit import T
 WALL = 0.30          # 外周壁厚
 PART = 0.16          # 間仕切り厚
 GLASS_T = 0.04       # ガラスの厚み（室内側にも面を作って通り抜けを止める。#45）
+# 外周壁の内壁面から窓ガラスの室内側の面までの距離（outer_wall はガラスを外面から 0.4 * WALL に置く）
+GLASS_IN = WALL - WALL * 0.4 - GLASS_T * 0.5
 STRINGER_T = 0.06    # 階段の側桁の厚み（#45）
 DOOR_W = 1.10        # 片開きドアの幅
 DOOR_H = 2.10
@@ -168,7 +170,7 @@ def _runs(length, gaps):
 
 def outer_wall(mb, a, b, z0, z1, wall="wall_white", glass=None, thick=WALL,
                sill=0.95, header=0.45, seg=3.0, gaps=(), mullion=0.10,
-               inner_mat=None, gap_top=None):
+               inner_mat=None, gap_top=None, mullion_mat="metal_white"):
     """a -> b の外面線に沿って壁を立てる（厚みは進行方向の左手＝室内側）。
 
     glass を与えると腰壁 + 連続窓 + 垂れ壁の構成になる。
@@ -217,7 +219,7 @@ def outer_wall(mb, a, b, z0, z1, wall="wall_white", glass=None, thick=WALL,
                 mb.add_prism([pt(k - mullion * 0.5, 0.0), pt(k + mullion * 0.5, 0.0),
                               pt(k + mullion * 0.5, thick * 0.8),
                               pt(k - mullion * 0.5, thick * 0.8)],
-                             ga, gb, "metal_white", "metal_white", "metal_white")
+                             ga, gb, mullion_mat, mullion_mat, mullion_mat)
             k += seg
 
     # 開口の高さ。ここから上はふさぐ（上階の床から開口の上へ出られてしまうのを
@@ -314,20 +316,31 @@ def door(mb, x, y, ang=0.0, w=DOOR_W, h=DOOR_H, leaf="desk_wood",
 
 
 def glass_entrance(mb, x0, x1, z0, z1, y, frame="metal_white",
-                   glass="glass_clear", seg=1.6, door_h=2.4):
-    """自動ドアのガラススクリーン（入口辺に貼る）。"""
-    kit.box(mb, x0, y - 0.05, z0, x1, y + 0.05, z1, glass)
+                   glass="glass_clear", seg=1.6, door_h=2.4, opening=0.0):
+    """自動ドアのガラススクリーン（入口辺に貼る）。
+
+    opening > 0 なら中央の引き戸を左右へ開けた形にし、幅 opening・高さ door_h の開口を
+    歩いて通れるように空ける（ガラスと足元の框と縦框を開口に置かない）。"""
+    cx = (x0 + x1) * 0.5
+    ho = opening * 0.5
+    spans = [(x0, x1)] if opening <= 0.0 else [(x0, cx - ho), (cx + ho, x1)]
+    for s0, s1 in spans:
+        kit.box(mb, s0, y - 0.05, z0, s1, y + 0.05, z1, glass)
+        kit.box(mb, s0, y - 0.09, z0, s1, y + 0.09, z0 + 0.10, frame)
+    if opening > 0.0:
+        kit.box(mb, cx - ho, y - 0.05, door_h, cx + ho, y + 0.05, z1, glass)
     kit.box(mb, x0, y - 0.09, z1 - 0.18, x1, y + 0.09, z1, frame)
-    kit.box(mb, x0, y - 0.09, z0, x1, y + 0.09, z0 + 0.10, frame)
     k = x0
     while k <= x1 + 1e-6:
-        kit.box(mb, k - 0.05, y - 0.09, z0, k + 0.05, y + 0.09, z1, frame)
+        if opening <= 0.0 or not (cx - ho - 0.05 < k < cx + ho + 0.05):
+            kit.box(mb, k - 0.05, y - 0.09, z0, k + 0.05, y + 0.09, z1, frame)
         k += seg
-    # 中央 2 枚の引き戸（框を濃く）
-    cx = (x0 + x1) * 0.5
+    # 中央 2 枚の引き戸（框を濃く）。開けたときは開口の外側へ寄せる（スクリーンの端で止める）
     for sgn in (-1, 1):
-        a = cx + sgn * 0.08
-        b = cx + sgn * 1.30
+        a = cx + sgn * (0.08 if opening <= 0.0 else ho)
+        b = a + sgn * 1.22
+        if opening > 0.0:
+            b = max(x0, min(x1, b))
         lo, hi = min(a, b), max(a, b)
         kit.box(mb, lo, y - 0.11, z0, hi, y + 0.11, z0 + 0.12, "metal_gray")
         kit.box(mb, lo, y - 0.11, door_h - 0.12, hi, y + 0.11, door_h, "metal_gray")
@@ -448,20 +461,27 @@ def exit_sign(mb, x, y, z, ang=0.0, w=0.62, h=0.26):
 
 def wall_sign(mb, x, y, z, ang=0.0, w=1.6, h=0.5, mat="sign_plate_blue",
               frame="metal_white", out=0.06):
-    """案内サイン板（文字は Unity の TMP）。"""
+    """案内サインの板と枠（文字は無い）。板の面は正面へ out。文字つきの看板は signs.wall で置く。"""
     t = T(x, y, z, ang)
     t.box(mb, -w * 0.5 - 0.04, 0.0, -h * 0.5 - 0.04, w * 0.5 + 0.04, out * 0.5,
           h * 0.5 + 0.04, frame)
     t.box(mb, -w * 0.5, out * 0.5, -h * 0.5, w * 0.5, out, h * 0.5, mat)
 
 
+HANG_HALF = 0.04   # 吊り看板の板の厚みの半分（板の面は ±HANG_HALF）
+
+
 def hanging_sign(mb, x, y, z, ang=0.0, w=1.8, h=0.42, mat="sign_plate_blue",
                  drop=0.5):
+    """天井から吊る看板の板と吊り棒（文字は無い）。(x, y, z) は吊り元、板は drop 下がった所から高さ h。
+
+    文字つきの看板は signs.hanging で置く。
+    """
     t = T(x, y, z, ang)
     for sgn in (-1, 1):
-        t.box(mb, sgn * w * 0.35 - 0.02, -0.02, 0.0, sgn * w * 0.35 + 0.02,
-              0.02, drop, "metal_gray")
-    t.box(mb, -w * 0.5, -0.04, -drop - h, w * 0.5, 0.04, -drop, mat)
+        t.box(mb, sgn * w * 0.35 - 0.02, -0.02, -drop, sgn * w * 0.35 + 0.02,
+              0.02, 0.0, "metal_gray")
+    t.box(mb, -w * 0.5, -HANG_HALF, -drop - h, w * 0.5, HANG_HALF, -drop, mat)
 
 
 def notice_board(mb, x, y, z, ang=0.0, w=2.4, h=1.3, sheets=9, rng=None):

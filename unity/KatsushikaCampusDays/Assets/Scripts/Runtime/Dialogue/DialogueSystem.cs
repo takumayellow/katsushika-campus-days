@@ -129,7 +129,9 @@ namespace KCD
             }
         }
 
-        /// <summary>id の NPC に話しかける。条件に合う話題が無ければ false。</summary>
+        /// <summary>
+        /// id の NPC に話しかけ、クエストに talk を報告する。条件に合う話題が無ければ何も報告せず false。
+        /// </summary>
         public bool TalkTo(string dialogueId)
         {
             if (_topic != null || !_data.TryGetValue(dialogueId, out DialogueData data))
@@ -144,12 +146,15 @@ namespace KCD
             }
 
             _topic = chosen;
-            _topicKey = data.Id + "/" + chosen.Id;
             _lineIndex = 0;
             _lineStartedAt = Time.unscaledTime;
 
             // 会話の封鎖は会話のもの。建物の出入りや落下からの復帰の暗転が終わっても外れない (#40)。
             KCDInput.Block(this);
+
+            // talk の報告は封鎖のあと。「〜と話す」で達成したときに PlayerAnimatorDriver が会話中だと分かって手を振らない。
+            _topic = ReportTalkAndSelect(data, GameManager.Instance.Quests, _spentTopics, chosen);
+            _topicKey = data.Id + "/" + _topic.Id;
             LineChanged?.Invoke(CurrentLine);
             return true;
         }
@@ -160,10 +165,20 @@ namespace KCD
         }
 
         /// <summary>
-        /// 条件に合う話題を選ぶ（テストから呼ぶ純関数）。条件つきの話題を上から優先し、無条件のものは最後の受け皿。
+        /// 条件に合う話題を選ぶ。隠しアイテムの数と持ち物は、いま拾っているもの（DayStats）で判定する。
         /// spentTopics は「NPC id/話題 id」の集合で、once の話題を二度出さないために使う。
         /// </summary>
         public static DialogueTopic SelectTopic(DialogueData data, QuestSystem quests, ICollection<string> spentTopics)
+        {
+            return SelectTopic(data, quests, spentTopics, LiveHiddenCount(), DayStats.HasCollected);
+        }
+
+        /// <summary>
+        /// 条件に合う話題を選ぶ（テストから呼ぶ純関数）。条件つきの話題を上から優先し、無条件のものは最後の受け皿。
+        /// hiddenCount は拾った隠しアイテムの種類数、hasItem はそのアイテムを拾っているか (#175)。
+        /// </summary>
+        public static DialogueTopic SelectTopic(DialogueData data, QuestSystem quests, ICollection<string> spentTopics,
+            int hiddenCount, Func<string, bool> hasItem)
         {
             if (data == null)
             {
@@ -190,6 +205,18 @@ namespace KCD
                     continue;
                 }
 
+                // 前提のそろっていない依頼も出さない (#65)。出すと会話の終わりの StartQuest が前提で断られ、
+                // once の話題は使い終えた扱いになるので、その依頼は二度と受けられなくなる
+                // （オリエンテーションの前に空と話すと、コーヒーも実験ノートも達成できなかった）。
+                if (!string.IsNullOrEmpty(topic.StartsQuest) && quests != null)
+                {
+                    QuestData requested = quests.Find(topic.StartsQuest);
+                    if (requested != null && !quests.PrerequisitesMet(requested))
+                    {
+                        continue;
+                    }
+                }
+
                 bool conditional = false;
 
                 if (!string.IsNullOrEmpty(topic.RequiresActiveQuest))
@@ -212,6 +239,16 @@ namespace KCD
                     conditional = true;
                 }
 
+                if (topic.HasItemCondition)
+                {
+                    if (!ItemConditionMet(topic, hiddenCount, hasItem))
+                    {
+                        continue;
+                    }
+
+                    conditional = true;
+                }
+
                 // 条件つきの話題を優先し、無条件のものは最後の受け皿にする。
                 if (conditional)
                 {
@@ -225,6 +262,151 @@ namespace KCD
             }
 
             return fallback;
+        }
+
+        /// <summary>
+        /// talk を報告し、この話しかけで達成したクエストのお礼の話題があればそれを、無ければ chosen を返す（テストから呼ぶ）(#94)。
+        /// chosen は報告の前に <see cref="SelectTopic(DialogueData, QuestSystem, ICollection{string})"/> で選んだもの。
+        ///
+        /// 以前は話題を選んでから報告していたので、牛乳を届けた会話で要が「ファミマは共創棟の 1 階」と
+        /// 受注中のヒント（requiresActiveQuest）を言い、お礼（requiresCompletedQuest）は次に話したときに出ていた。
+        /// 報告のあとに選び直すだけだと、オリエンテーションを終えた会話で教授の最初のあいさつ（無条件の t_welcome）より
+        /// 体育館の依頼（t_gym_start）が先に出てしまうので、差し替えるのはこの報告で達成になったクエストのお礼だけにする。
+        /// 依頼（startsQuest）の話題はお礼として扱わない。
+        /// </summary>
+        public static DialogueTopic ReportTalkAndSelect(
+            DialogueData data, QuestSystem quests, ICollection<string> spentTopics, DialogueTopic chosen)
+        {
+            return ReportTalkAndSelect(data, quests, spentTopics, chosen, LiveHiddenCount(), DayStats.HasCollected);
+        }
+
+        /// <summary>
+        /// <see cref="ReportTalkAndSelect(DialogueData, QuestSystem, ICollection{string}, DialogueTopic)"/> の、
+        /// 隠しアイテムの数と持ち物を渡せる版（テストから呼ぶ）。
+        /// </summary>
+        public static DialogueTopic ReportTalkAndSelect(DialogueData data, QuestSystem quests,
+            ICollection<string> spentTopics, DialogueTopic chosen, int hiddenCount, Func<string, bool> hasItem)
+        {
+            if (data == null || quests == null)
+            {
+                return chosen;
+            }
+
+            var completedBefore = new HashSet<string>(StringComparer.Ordinal);
+            for (int i = 0; i < data.Topics.Count; i++)
+            {
+                string required = data.Topics[i].RequiresCompletedQuest;
+                if (!string.IsNullOrEmpty(required) && quests.IsCompleted(required))
+                {
+                    completedBefore.Add(required);
+                }
+            }
+
+            quests.ReportTalk(data.Id);
+
+            for (int i = 0; i < data.Topics.Count; i++)
+            {
+                DialogueTopic topic = data.Topics[i];
+                string required = topic.RequiresCompletedQuest;
+                if (string.IsNullOrEmpty(required) || completedBefore.Contains(required) || !quests.IsCompleted(required))
+                {
+                    continue;
+                }
+
+                if (!string.IsNullOrEmpty(topic.StartsQuest) || topic.Lines.Count == 0)
+                {
+                    continue;
+                }
+
+                if (topic.Once && spentTopics != null && spentTopics.Contains(data.Id + "/" + topic.Id))
+                {
+                    continue;
+                }
+
+                if (!string.IsNullOrEmpty(topic.RequiresActiveQuest) && !quests.IsActive(topic.RequiresActiveQuest))
+                {
+                    continue;
+                }
+
+                if (topic.HasItemCondition && !ItemConditionMet(topic, hiddenCount, hasItem))
+                {
+                    continue;
+                }
+
+                return topic;
+            }
+
+            return chosen;
+        }
+
+        /// <summary>話題の、隠しアイテムの数と持ち物の条件を満たしているか。条件が無ければ true。</summary>
+        public static bool ItemConditionMet(DialogueTopic topic, int hiddenCount, Func<string, bool> hasItem)
+        {
+            if (topic == null)
+            {
+                return false;
+            }
+
+            if (topic.RequiresHiddenCount > 0 && hiddenCount < topic.RequiresHiddenCount)
+            {
+                return false;
+            }
+
+            return string.IsNullOrEmpty(topic.RequiresItem) || (hasItem != null && hasItem(topic.RequiresItem));
+        }
+
+        private static int LiveHiddenCount()
+        {
+            return DayStats.HiddenCollectedCount(CollectibleCatalog.Instance);
+        }
+
+        /// <summary>会話データ dialogueId の中の話題を id で引く。無ければ null。</summary>
+        public DialogueTopic FindTopic(string dialogueId, string topicId)
+        {
+            if (string.IsNullOrEmpty(dialogueId) || !_data.TryGetValue(dialogueId, out DialogueData data))
+            {
+                return null;
+            }
+
+            return data.Topics.Find(t => t.Id == topicId);
+        }
+
+        /// <summary>
+        /// NPC に話しかけずに会話を出す（拾ったメモの文面など）(#175)。talk の報告はしない。
+        /// once は覚えない（どの NPC の話題か決まらないので）。依頼（startsQuest）とフラグは話しかけたときと同じく終わりに扱う。
+        /// 会話中なら何もせず false。
+        /// </summary>
+        public bool Play(DialogueTopic topic)
+        {
+            if (_topic != null || topic == null || topic.Lines.Count == 0)
+            {
+                return false;
+            }
+
+            _topic = topic;
+            _topicKey = string.Empty;
+            _lineIndex = 0;
+            _lineStartedAt = Time.unscaledTime;
+            KCDInput.Block(this);
+            LineChanged?.Invoke(CurrentLine);
+            return true;
+        }
+
+        /// <summary>
+        /// NPC に話しかけずに、その NPC の話題を出す（夕日のあとのエンディング）(#176)。talk の報告はしない。
+        /// once の話題は話しかけたときと同じく覚えるので、あとで話しかけても同じ話は出ない。
+        /// 話題が無いか会話中なら何もせず false。
+        /// </summary>
+        public bool PlayTopic(string dialogueId, string topicId)
+        {
+            DialogueTopic topic = FindTopic(dialogueId, topicId);
+            if (!Play(topic))
+            {
+                return false;
+            }
+
+            _topicKey = dialogueId + "/" + topic.Id;
+            return true;
         }
 
         /// <summary>次の行へ。最後まで行けば会話を閉じる。</summary>
@@ -260,7 +442,7 @@ namespace KCD
 
             if (finished != null)
             {
-                if (finished.Once)
+                if (finished.Once && !string.IsNullOrEmpty(finishedKey))
                 {
                     _spentTopics.Add(finishedKey);
                 }

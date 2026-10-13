@@ -1,0 +1,16 @@
+{
+  "id": "note",
+  "speaker": "メモ",
+  "topics": [
+    {
+      "id": "t_hint",
+      "lines": [
+        {
+          "speaker": "自分",
+          "text": "メモには番号が付いている。……いなり先輩なら、何か知っているかもしれない。",
+          "text_en": "The notes are numbered... Inari might know something about them."
+        }
+      ]
+    }
+  ]
+}

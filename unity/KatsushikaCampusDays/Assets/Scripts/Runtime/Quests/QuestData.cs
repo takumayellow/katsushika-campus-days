@@ -26,6 +26,10 @@ namespace KCD
     {
         public string Id = string.Empty;
         public string Text = string.Empty;
+
+        /// <summary>英語の目標文（JSON の text_en）。空なら英語表示でも Text を出す。</summary>
+        public string TextEn = string.Empty;
+
         public QuestStepKind Kind = QuestStepKind.Flag;
         public string Target = string.Empty;
 
@@ -60,6 +64,9 @@ namespace KCD
 
         /// <summary>依頼主に話しかけて（もう一度）始めるのを待っているか。時間切れのあと、またはロード直後。</summary>
         public bool AwaitingGiver => IsTimed && !Completed && !Timer.IsRunning && !string.IsNullOrEmpty(Giver);
+
+        /// <summary>画面に出す目標文。いまの言語で選ぶ。</summary>
+        public string DisplayText => L.Pick(Text, TextEn);
     }
 
     /// <summary>クエスト 1 件。JSON 1 ファイルに 1 件対応する。</summary>
@@ -68,12 +75,33 @@ namespace KCD
         /// <summary>rewardType がこれなら、達成時に rewardId の称号を得る。</summary>
         public const string RewardAchievement = "achievement";
 
+        /// <summary>rewardType がこれなら、達成時に rewardId の収集物（collectibles.json の source = quest）をもらう。</summary>
+        public const string RewardCollectible = "collectible";
+
         public string Id = string.Empty;
         public string Title = string.Empty;
         public string Summary = string.Empty;
+
+        /// <summary>英語の題名・あらすじ（JSON の title_en / summary_en）。空なら英語表示でも日本語を出す。</summary>
+        public string TitleEn = string.Empty;
+        public string SummaryEn = string.Empty;
+
         public int Order;
         public bool AutoStart;
+
+        /// <summary>サブクエストか（JSON の side）。称号「本編を歩き切った」(ach_main_story) は本編だけを数える。</summary>
+        public bool Side;
+
+        /// <summary>
+        /// 隠しクエストか（JSON の secret）(#175)。一日の結果の「クエスト」と称号のクエスト数には数えない
+        /// （気づかずに終えた人の点数や称号が届かなくならないように）。
+        /// </summary>
+        public bool Secret;
+
         public string RewardText = string.Empty;
+
+        /// <summary>英語の報酬文（JSON の rewardText_en）。</summary>
+        public string RewardTextEn = string.Empty;
 
         /// <summary>報酬の種類（collectible / achievement）。空なら RewardText だけ。</summary>
         public string RewardType = string.Empty;
@@ -107,6 +135,11 @@ namespace KCD
         /// <summary>全ステップが完了しているか。</summary>
         public bool IsComplete => CurrentStep == null && Steps.Count > 0;
 
+        /// <summary>画面に出す題名・あらすじ・報酬文。いまの言語で選ぶ。</summary>
+        public string DisplayTitle => L.Pick(Title, TitleEn);
+        public string DisplaySummary => L.Pick(Summary, SummaryEn);
+        public string DisplayRewardText => L.Pick(RewardText, RewardTextEn);
+
         /// <summary>JSON ノードからクエストを組み立てる。壊れていれば null。</summary>
         public static QuestData FromJson(Dictionary<string, object> node)
         {
@@ -126,9 +159,14 @@ namespace KCD
                 Id = id,
                 Title = MiniJson.GetString(node, "title", id),
                 Summary = MiniJson.GetString(node, "summary"),
+                TitleEn = MiniJson.GetString(node, "title_en"),
+                SummaryEn = MiniJson.GetString(node, "summary_en"),
                 Order = MiniJson.GetInt(node, "order", 999),
                 AutoStart = MiniJson.GetBool(node, "autoStart"),
+                Side = MiniJson.GetBool(node, "side"),
+                Secret = MiniJson.GetBool(node, "secret"),
                 RewardText = MiniJson.GetString(node, "rewardText"),
+                RewardTextEn = MiniJson.GetString(node, "rewardText_en"),
                 RewardType = MiniJson.GetString(node, "rewardType"),
                 RewardId = MiniJson.GetString(node, "rewardId"),
                 Giver = MiniJson.GetString(node, "giver")
@@ -145,6 +183,7 @@ namespace KCD
                     {
                         Id = MiniJson.GetString(stepNode, "id", "s" + (i + 1)),
                         Text = MiniJson.GetString(stepNode, "text"),
+                        TextEn = MiniJson.GetString(stepNode, "text_en"),
                         Kind = ParseKind(MiniJson.GetString(stepNode, "type", "flag")),
                         Target = MiniJson.GetString(stepNode, "target"),
                         Count = System.Math.Max(1, MiniJson.GetInt(stepNode, "count", 1)),

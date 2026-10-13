@@ -39,17 +39,30 @@ namespace KCD
 
         private void Start()
         {
-            _quests = GameManager.Instance.Quests;
             if (_quests == null)
+            {
+                Watch(GameManager.Instance.Quests);
+            }
+        }
+
+        /// <summary>
+        /// quests を追って表示する。クエストの変化と言語の切り替えで出し直す。
+        /// ふだんは Start が GameManager のものを渡す。テストはシーンの外で作ったものを先に渡す。2 つ目からは無視する。
+        /// </summary>
+        public void Watch(QuestSystem quests)
+        {
+            if (quests == null || _quests != null)
             {
                 return;
             }
 
+            _quests = quests;
             _quests.Changed += Refresh;
             _quests.QuestCompleted += OnQuestCompleted;
             _quests.StepTimedOut += OnStepTimedOut;
             _quests.TimerStarted += OnTimerStarted;
             _quests.ChallengeRetryNeeded += OnChallengeRetryNeeded;
+            _quests.StepTooEarly += OnStepTooEarly;
             L.LocaleChanged += Refresh;
             Refresh();
         }
@@ -64,6 +77,7 @@ namespace KCD
                 _quests.StepTimedOut -= OnStepTimedOut;
                 _quests.TimerStarted -= OnTimerStarted;
                 _quests.ChallengeRetryNeeded -= OnChallengeRetryNeeded;
+                _quests.StepTooEarly -= OnStepTooEarly;
             }
         }
 
@@ -208,13 +222,33 @@ namespace KCD
             HUD.Instance?.ShowToast(L.Format("ui.hud.challenge_retry", GiverName(step)));
         }
 
+        /// <summary>
+        /// 時刻の条件より前に目的地へ着いた (#66)。進まない理由と、いつ来ればよいかを出す。
+        /// QuestSystem は入った瞬間にだけ知らせるので、留まっていても繰り返し出ない。
+        /// </summary>
+        private static void OnStepTooEarly(QuestData quest, QuestStep step)
+        {
+            if (step == null)
+            {
+                return;
+            }
+
+            HUD.Instance?.ShowToast(TooEarlyMessage(step));
+        }
+
+        /// <summary>「◯時ごろにまた来よう」。18.5 時のような半端な時刻も、時の単位で切り捨てて出す。</summary>
+        public static string TooEarlyMessage(QuestStep step)
+        {
+            return L.Format("ui.hud.too_early", Mathf.FloorToInt(step.MinHour));
+        }
+
         private static string GiverName(QuestStep step)
         {
             return L.Get("ui.npc." + step.Giver, step.Giver);
         }
 
-        /// <summary>ステップの表示。制限時間つきなら、状態に応じて 2 行目を足す。</summary>
-        private static string StepLine(QuestData quest)
+        /// <summary>ステップの表示。制限時間つきなら、状態に応じて 2 行目を足す。目標文はいまの言語で出す。</summary>
+        public static string StepLine(QuestData quest)
         {
             QuestStep step = quest?.CurrentStep;
             if (step == null)
@@ -222,7 +256,7 @@ namespace KCD
                 return string.Empty;
             }
 
-            string text = "・" + step.Text;
+            string text = "・" + step.DisplayText;
             if (step.Count > 1)
             {
                 text += "　(" + step.Progress + "/" + step.Count + ")";
@@ -269,7 +303,7 @@ namespace KCD
                 _recentFailure = null;
             }
 
-            hud.ShowToast(L.Format("ui.hud.quest_completed", quest.Title));
+            hud.ShowToast(CompletedMessage(quest));
 
             // 制限時間つきを間に合わせたなら、残り何秒で着いたかを出す。
             for (int i = 0; i < quest.Steps.Count; i++)
@@ -282,16 +316,20 @@ namespace KCD
                 }
             }
 
-            if (!string.IsNullOrEmpty(quest.RewardText))
+            string reward = quest.DisplayRewardText;
+            if (!string.IsNullOrEmpty(reward))
             {
-                hud.ShowToast(quest.RewardText);
+                hud.ShowToast(reward);
             }
 
-            if (quest.RewardType == QuestData.RewardAchievement && !string.IsNullOrEmpty(quest.RewardId))
-            {
-                hud.ShowToast(L.Format("ui.hud.achievement_unlocked",
-                    L.Get("ach." + quest.RewardId + ".name", quest.RewardId)));
-            }
+            // 報酬の称号（rewardType = achievement）のトーストは GameManager が AchievementBook の判定で出す。
+            // ここでも出すと、同じ称号が 2 回流れる。
+        }
+
+        /// <summary>達成のトースト（ui.hud.quest_completed）。題名はいまの言語で出す。</summary>
+        public static string CompletedMessage(QuestData quest)
+        {
+            return L.Format("ui.hud.quest_completed", quest.DisplayTitle);
         }
 
         private void Refresh()
@@ -317,7 +355,7 @@ namespace KCD
 
             if (_titleLabel != null)
             {
-                _titleLabel.text = tracked.Title;
+                _titleLabel.text = tracked.DisplayTitle;
             }
 
             if (_stepLabel != null)

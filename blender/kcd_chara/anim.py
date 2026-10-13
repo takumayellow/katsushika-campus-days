@@ -14,11 +14,13 @@ from mathutils import Matrix, Vector
 
 import bpy
 
+from .body import ARM_DROP
+
 ACTION_NAMES = ("Idle", "Walk", "Run", "Jump", "Wave", "Talk")
 
 #: Action 名 -> {Shape Key 名: [(フレーム比 0..1, 値), ...]}
 SHAPE_TRACKS: dict[str, dict[str, list[tuple[float, float]]]] = {
-    "Wave": {"smile": [(0.0, 0.0), (0.18, 1.0), (0.82, 1.0), (1.0, 0.25)]},
+    "Wave": {"smile": [(0.0, 0.0), (0.22, 1.0), (0.82, 1.0), (1.0, 0.2)]},
     "Talk": {"mouth_a": [(0.0, 0.05), (0.18, 0.85), (0.36, 0.10),
                          (0.54, 0.75), (0.72, 0.10), (1.0, 0.05)],
              "mouth_i": [(0.0, 0.0), (0.27, 0.70), (0.45, 0.05),
@@ -87,6 +89,48 @@ def _apply(arm, spec: dict, prev: dict | None = None) -> list:
     return touched
 
 
+#: SkirtFront / SkirtBack を、腿の振り角の何倍だけ回すか（Unity の SkirtFollow.Follow と同じ値）
+SKIRT_FOLLOW = 1.0
+
+
+def _signed_angle(a: Vector, b: Vector, axis: Vector) -> float:
+    """axis に垂直な面へ落とした a から b への角度（axis まわりの右ねじが正）。"""
+    pa = a - axis * a.dot(axis)
+    pb = b - axis * b.dot(axis)
+    return math.atan2(axis.dot(pa.cross(pb)), pa.dot(pb))
+
+
+def skirt_rotations(arm) -> dict:
+    """今のポーズで SkirtFront / SkirtBack に掛ける回転（アーマチュアの軸。_apply に渡す形）。
+
+    腿の向き（股関節 → 膝）を腰から見た向きに直し、レストからの前への振り角を左右で測る。
+    SkirtFront は前へいちばん出ている腿の分だけ前へ、SkirtBack は後ろへいちばん出ている
+    腿の分だけ後ろへ回す。その向きへ出ている腿が無ければ回さない。
+    Unity の SkirtFollow が同じ計算をする（Humanoid のクリップは追加ボーンを動かさないため）。
+    """
+    pb = arm.pose.bones
+    if "SkirtFront" not in pb or "SkirtBack" not in pb or "Hips" not in pb:
+        return {}
+    bpy.context.view_layer.update()
+    hips = pb["Hips"]
+    # 腰のレストからの回転を外す（腰ごと前に傾いても、腿との相対角だけを見る）
+    undo = (hips.matrix.to_3x3() @ hips.bone.matrix_local.to_3x3().inverted()).inverted()
+    forward = Vector((0.0, -1.0, 0.0))
+    angles = []
+    axes = Vector()
+    for side in ("Left", "Right"):
+        up, lo = pb[side + "UpperLeg"], pb[side + "LowerLeg"]
+        rest = Vector(lo.bone.head_local) - Vector(up.bone.head_local)
+        axis = rest.cross(forward).normalized()
+        angles.append(_signed_angle(rest, undo @ (lo.head - up.head), axis))
+        axes += axis
+    axis = axes.normalized()
+    return {
+        "SkirtFront": Matrix.Rotation(max(0.0, *angles) * SKIRT_FOLLOW, 3, axis),
+        "SkirtBack": Matrix.Rotation(min(0.0, *angles) * SKIRT_FOLLOW, 3, axis),
+    }
+
+
 def make_action(arm, name: str, nframes: int, poser, *, loop: bool = True,
                 keys: int = 9):
     """poser(t) -> spec。t は 0..1。loop=True なら最終フレームで先頭に戻る。"""
@@ -118,6 +162,9 @@ def make_action(arm, name: str, nframes: int, poser, *, loop: bool = True,
         bpy.context.scene.frame_set(f)
         _reset(arm)
         touched = _apply(arm, poser(t % 1.0 if loop else t), prev)
+        skirt = skirt_rotations(arm)
+        if skirt:
+            touched += _apply(arm, skirt, prev)
         for pb, path in touched:
             pb.keyframe_insert(data_path=path, frame=f)
         for prop in props:
@@ -164,20 +211,20 @@ def _fcurves(act):
 D = math.radians
 
 
-#: レストポーズは A ポーズ（上腕が鉛直から 38° 開く）。動作中は腕を体側に下ろした姿勢を
-#: 基準にしたいので、全 Action の上腕にこの分の内転（ワールド Y 軸回り）を先に入れる。
-#: 残り約 12° が「気をつけ」で自然に見える開き。
-ARM_DROP = 26.0
+def _arms_down(spec: dict, drop: float = ARM_DROP, elbow: float = 0.0) -> dict:
+    """上腕の回転リストの先頭に内転を、前腕の回転リストの最後に外への開きを足す。
 
-
-def _arms_down(spec: dict, drop: float = ARM_DROP) -> dict:
-    """上腕の回転リストの先頭に内転を足す（左は +Y、右は -Y が「下ろす」向き）。"""
+    左は +Y、右は -Y が「下ろす」向きで、前腕はその逆向きに elbow だけ開く。開きは
+    モーションの肘の曲げの後に掛けるので、肘を曲げて前腕が前を向くほど効かなくなる。
+    """
     out = dict(spec)
-    for bone, sgn in (("LeftUpperArm", 1.0), ("RightUpperArm", -1.0)):
-        ops = spec.get(bone, [])
-        if isinstance(ops, Matrix):
-            continue
-        out[bone] = [("Y", D(sgn * drop))] + list(ops)
+    for side, sgn in (("Left", 1.0), ("Right", -1.0)):
+        ops = spec.get(side + "UpperArm", [])
+        if not isinstance(ops, Matrix):
+            out[side + "UpperArm"] = [("Y", D(sgn * drop))] + list(ops)
+        ops = spec.get(side + "LowerArm", [])
+        if elbow and not isinstance(ops, Matrix):
+            out[side + "LowerArm"] = list(ops) + [("Y", D(-sgn * elbow))]
     return out
 
 
@@ -224,8 +271,60 @@ FPS = 24.0
 #: duty = 接地している割合、reach = 接地中に足が進む距離 / 脚長、nf = フレーム数の下限と上限。
 GAIT_TARGET = {
     "Walk": dict(v=2.6, duty=0.45, reach=0.95, nf=(10, 22)),
-    "Run": dict(v=5.4, duty=0.32, reach=1.02, nf=(8, 18)),
+    "Run": dict(v=5.4, duty=0.27, reach=0.60, nf=(8, 18), lean=7.0, yaw=4.0, obl=3.0,
+                k_mid=0.95, clear=0.09, p_toe=28.0, land=0.30),
 }
+
+#: 歩き・走りの腕の振りと胸の回旋（角度は度）。
+#:   arm    肩の前後振りの片振幅
+#:   elbow  肘の屈曲 (e0, e1)。屈曲 = e0 + e1 * (0.5 - 0.5f) で、f=+1 が腕を後ろ、
+#:          f=-1 が前に振ったところ。e1 > 0 なら前で深く曲がり後ろで伸びる
+#:   arm_in 前腕を体の中心へ向ける角度
+#:   abd    肩の外転（脇の開き）
+#:   thx    胸郭の逆回旋の比（胸は骨盤と逆向きに骨盤の回旋の thx 倍だけ回る）
+#:   fwd    上腕の振りの中心を前へずらす角度
+#:
+#: 走りは軽い小走り（ジョグ）として作る（#232）。上腕は脇の近くに下ろしたまま肩から小さく
+#: 前後に振り、肘は軽く曲げるだけにして、前腕をいつも斜め下へ向ける。手は体側の近く、
+#: 腰の高さを通る。
+#: 値の根拠（書き出した FBX のボーンの向きからの実測。tools_view/gait_arms.py）:
+#:   - arm 13, fwd 5.5: 上腕の前後は画面でみらいが約 -13〜+13 度（片振幅 13 度）
+#:   - elbow (38, 14): 曲がりはみらいで 43〜55 度。画面上の前腕は水平より 21〜59 度下を
+#:     向く。肘を 90 度近くまで曲げると、前傾した胴の前で前腕が水平より上へ突き出し
+#:     （みらいで最大 +15 度）、はさみを構えたように見える
+#:   - arm_in 18: 手首を肩関節のほぼ真下に保つ。肘を伸ばし気味にすると手が外へ出るので、
+#:     12 度以下では肩から 6 cm より外へ開く
+#:   - abd 0: 走りは脇を締める
+#:   - thx 0.2: 胸の逆回旋はごく小さくする。胸が大きく回ると肩の線ごと手が前後に動き、
+#:     腕の振りが大きく見える
+#:   画面上の手首の前後動（胸の回旋と前傾を含む）はみらいで 22.4 cm。
+#: 脚と体幹は GAIT_TARGET["Run"] で決まる。接地中に足が進む距離 reach は脚長の 0.60 倍、
+#: 腿の前の最大は 32.6 度（以前 48.7 度）、遊脚の足の持ち上げ clear は脚長の 0.09 倍、
+#: 前傾 lean は 7 度。前進速度 v は 5.4 m/s のまま歩幅だけ詰めるので、速さは
+#: ピッチ（nf 8 フレーム = 360 歩/分）で出る。接地した足の速さは変わらず、足は滑らない。
+#: 歩きの値は #43 で見直し中なので変えない。
+GAIT_ARMS = {
+    "Walk": dict(arm=26.0, elbow=(14.0, 24.0), arm_in=0.0, abd=4.0, thx=0.70, fwd=0.0),
+    "Run": dict(arm=13.0, elbow=(38.0, 14.0), arm_in=18.0, abd=0.0, thx=0.20, fwd=5.5),
+}
+
+
+def gait_arm_spec(f: float, arm: float, elbow: tuple[float, float], arm_in: float,
+                  abd: float, fwd: float = 0.0) -> dict:
+    """腕を振る位相 f（左腕で +1 が後ろ、-1 が前）での上腕・前腕の回転（角度はラジアン）。
+
+    右腕は左腕と逆位相で振る。fwd は振りの中心を前へずらす角度。
+    """
+    e0, e1 = elbow
+    spec = {}
+    for side, sgn in (("Left", 1.0), ("Right", -1.0)):
+        fs = f * sgn
+        spec[side + "UpperArm"] = [("Y", -abd * sgn), ("X", arm * fs - fwd)]
+        lower = [("X", -(e0 + e1 * (0.5 - 0.5 * fs)))]
+        if arm_in:
+            lower.append(("Z", -sgn * arm_in))     # 手を体の中心へ向ける
+        spec[side + "LowerArm"] = lower
+    return spec
 
 
 def _ease(u: float) -> float:
@@ -344,10 +443,11 @@ class Gait(_Legs):
 
     def __init__(self, arm, kind: str = "Walk", **over):
         super().__init__(arm)
-        unknown = set(over) - set(GAIT_TARGET[kind])
+        allowed = set(GAIT_TARGET[kind]) | ({"elbow"} if kind == "Run" else set())
+        unknown = set(over) - allowed
         if unknown:
             raise KeyError("%s の歩容に無い項目: %s" % (kind, ", ".join(sorted(unknown))))
-        g = {**GAIT_TARGET[kind], **over}
+        g = {**GAIT_TARGET[kind], **{k: v for k, v in over.items() if k != "elbow"}}
         run = kind == "Run"
         self.kind = kind
 
@@ -367,34 +467,36 @@ class Gait(_Legs):
         # 上下動は振幅を決め打ちせず、接地中の脚が届く高さから逆算する（_fit）。
         # 立脚中期に膝をどれだけ曲げるかだけを与える: 歩きは伸ばし気味、走りは沈める。
         self.k_end = 0.985
-        self.k_mid = 0.870 if run else 0.950
+        self.k_mid = g.get("k_mid", 0.925 if run else 0.950)
         # 膝がいちばん曲がる接地位相と、伸び切る位相（歩きは早めに曲げて蹴り出しで伸ばす）
         u_peak, self.k_span = (0.45, 0.92) if run else (0.28, 0.78)
         self.k_skew = math.log(0.5) / math.log(u_peak / self.k_span)
         self.lat = self.leg * (0.014 if run else 0.024)
-        self.yaw = D(6.5 if run else 4.5)           # 骨盤の水平回旋
-        self.obl = D(5.0 if run else 4.0)           # 骨盤の傾斜
-        self.thx = 0.95 if run else 0.70            # 胸郭の逆回旋の比
-        self.lean = D(11.0 if run else 4.0)         # 前傾
-        # 肩の前後振り（片振幅）。走りの肩関節 ROM は実測で全振幅 50〜65 度なので、
-        # ±33 度（全振幅 66 度）に収める。以前は ±52 度（全振幅 103 度）で、
-        # 短距離走でもやらない大振りになっていた（#43「腕を振りすぎ」）。
-        self.arm = D(33.0 if run else 26.0)
-        # 肘の屈曲 = e0 + e1 * (0.5 - 0.5f)。f=+1 が腕を後ろ、f=-1 が前に振った
-        # ところなので、前で深く曲がり後ろで伸びる（ランニングのセオリーどおり）。
-        # 走りは指定値 72〜88 度（以前は 66〜100 度で肘まで大きく煽っていた）。
-        # ここは上腕からの相対角の「指定値」で、A ポーズの肘の開きと外転のぶん
-        # 浅くなる。書き出した FBX で実測すると曲がりは 60〜72 度（内角 108〜120
-        # 度）で、走りの定説（約 90 度）よりは伸ばし気味。
-        self.elbow = (D(72.0), D(16.0)) if run else (D(14.0), D(24.0))
-        self.clear = self.leg * (0.20 if run else 0.12)
+        self.yaw = D(g.get("yaw", 6.5 if run else 4.5))          # 骨盤の水平回旋
+        self.obl = D(g.get("obl", 5.0 if run else 4.0))          # 骨盤の傾斜
+        self.lean = D(g.get("lean", 11.0 if run else 4.0))        # 前傾
+        # 腕の振りと胸の回旋（GAIT_ARMS）
+        sw = GAIT_ARMS[kind]
+        self.thx = sw["thx"]
+        self.arm = D(sw["arm"])
+        elbow = over.get("elbow", sw["elbow"])      # キャラごとに肘の曲げを上書きできる
+        self.elbow = (D(elbow[0]), D(elbow[1]))
+        self.arm_in = D(sw["arm_in"])
+        self.arm_abd = D(sw["abd"])
+        self.arm_fwd = D(sw["fwd"])
+        self.clear = self.leg * g.get("clear", 0.20 if run else 0.12)
+        # 遊脚: 足を持ち上げる山の位相と、両端で足が後ろへ流れる速さ（接地中の速さとの比）。
+        # 走りは蹴り出した脚をすぐ畳み、前へ振った脚を伸ばし切って突き出さずに降ろす。
+        self.clear_peak = g.get("clear_peak", 0.40 if run else 0.50)
+        self.swing_tan = g.get("swing_tan", 0.40 if run else 1.0)
         self.hair = 9.0 if run else 5.0
         self.p_heel = D(-6.0 if run else -12.0)     # 接地の瞬間（つま先上げ）
-        self.p_toe = D(38.0 if run else 30.0)       # 蹴り出し（かかと上げ）
+        self.p_toe = D(g.get("p_toe", 38.0 if run else 30.0))      # 蹴り出し（かかと上げ）
         self.roll_in = 0.10 if run else 0.18        # 足裏が着くまで
         self.roll_out = 0.50 if run else 0.62       # かかとが離れるまで
         self.foot_x = self.ank_x * (0.35 if run else 0.55)
-        self.y0 = self.heel - 0.42 * self.exc       # 接地時のかかとの前後位置
+        # 接地時のかかとの前後位置。走りは足を体の少し前に降ろす（すねがほぼ鉛直）。
+        self.y0 = self.heel - g.get("land", 0.32 if run else 0.42) * self.exc
 
         self.zz = [0.0] * 48                        # 骨盤の高さ（_fit が埋める）
         self.sink = 0.0
@@ -440,10 +542,11 @@ class Gait(_Legs):
         """遊脚。両端の速度を接地中とそろえて滑らかにつなぐ。"""
         a0, _ = self._stance(1.0)
         a1, _ = self._stance(0.0)
-        m = self.exc * (1.0 - self.duty) / self.duty
+        m = self.exc * (1.0 - self.duty) / self.duty * self.swing_tan
         y = _hermite(a0.y, a1.y, m, m, u)
+        k = math.log(0.5) / math.log(self.clear_peak)
         z = (_hermite(a0.z, a1.z, 0.0, 0.0, u)
-             + self.clear * math.sin(math.pi * u) ** 1.2)
+             + self.clear * math.sin(math.pi * u ** k) ** 1.2)
         p0, p1 = self.p_toe, self.p_heel
         mid = D(-9.0)
         if u < 0.35:
@@ -538,11 +641,8 @@ class Gait(_Legs):
         pitch_t = self.lean * 0.25 + D(1.2) * math.cos(2 * w * (ph - self.hi))
         self.torso(spec, Rp, yaw, roll, self.lean, self.thx, pitch_t)
         # 腕は脚と逆位相（左脚が前に出る接地で左腕は後ろ）
-        e0, e1 = self.elbow
-        for side, sgn in (("Left", 1.0), ("Right", -1.0)):
-            f = math.cos(w * (ph - 0.02)) * sgn
-            spec[side + "UpperArm"] = [("Y", D(-4.0) * sgn), ("X", self.arm * f)]
-            spec[side + "LowerArm"] = [("X", -(e0 + e1 * (0.5 - 0.5 * f)))]
+        spec.update(gait_arm_spec(math.cos(w * (ph - 0.02)), self.arm, self.elbow,
+                                  self.arm_in, self.arm_abd, self.arm_fwd))
         return spec
 
 
@@ -612,23 +712,57 @@ class Jump(_Legs):
         return spec
 
 
-def _wave(t, drop=ARM_DROP):
-    # 振る腕の Y は -(104 + drop)。_posed が先頭に足す +drop と打ち消し合い、
-    # 腕をどれだけ下ろすキャラでも振る手の高さは同じ -104° になる。
-    swing = math.sin(2 * math.pi * 3.0 * t)
-    ramp = min(1.0, t / 0.18) * min(1.0, (1.0 - t) / 0.18 + 0.0 if t > 0.82 else 1.0)
-    ramp = max(0.0, min(1.0, ramp))
+#: 手を振るときの上腕の回転 (X, Z)。Y は A ポーズの角度と腕下ろしから決める（_wave）。
+#: 上腕を水平・やや前へ、前腕を立てて手のひらを正面へ向ける (#13)。
+WAVE_UP_XZ = (-8.8, -18.0)
+#: 手を振るときの前腕の回転 (Y, X, Z)。肘を約 80° 曲げて（振りで 65〜100°）前腕をほぼ鉛直に立てる。
+WAVE_LO = (-94.2, -34.0, -34.3)
+#: 上げ / 振り / 下ろしの割合（足して 1）。
+WAVE_PHASES = (0.22, 0.60, 0.18)
+#: 振りの往復数。28 フレーム（1.17 s）のうち振る 0.70 s で 2 往復 ≈ 2.9 Hz。
+WAVE_SWEEPS = 2.0
+#: 上腕を持ち上げる元の角度の既定。背の高いキャラの A ポーズの上腕（body.arm_angles）。
+WAVE_LIFT = 52.0
+
+assert abs(sum(WAVE_PHASES) - 1.0) < 1e-9
+
+
+def _wave_ramp(t):
+    """腕を上げている度合い 0..1。両端の傾きが 0 なので、前後のモーションとの継ぎ目に角が出ない。"""
+    up, hold, _ = WAVE_PHASES
+    if t < up:
+        return _ease(t / up)
+    if t <= up + hold:
+        return 1.0
+    return _ease((1.0 - t) / (1.0 - up - hold))
+
+
+def _wave(t, drop=ARM_DROP, elbow=0.0, lift=WAVE_LIFT):
+    """左手を顔の横で、肘から先を左右に振る (#13)。
+
+    lift は A ポーズの上腕が水平から下がる角度（body.arm_angles）。振る腕の Y は
+    -(lift + drop) で、_posed が先頭に足す +drop と打ち消し合い、どのキャラでも上腕が水平になる。
+    前腕の最後の +elbow も、_posed が最後に足す -elbow と打ち消し合う。
+    右手はトートを提げることがある（mirai）ので、少し上げるだけで左右には振らない。
+    """
+    ramp = _wave_ramp(t)
+    up, hold, _ = WAVE_PHASES
+    u = min(1.0, max(0.0, (t - up) / hold))
+    swing = math.sin(2 * math.pi * WAVE_SWEEPS * u) * ramp
+    wrist = math.sin(2 * math.pi * WAVE_SWEEPS * u - 0.9) * ramp  # 手首は少し遅れて追う
+    xu, zu = WAVE_UP_XZ
+    yl, xl, zl = WAVE_LO
     return {
-        **_hair(0.7, 3.6 * ramp, t, freq=3.0),
-        "Hips": [("Y", D(1.5) * swing * ramp)],
-        "Spine": [("Z", D(3.0) * ramp)],
-        "Head": [("Z", D(5.0) * ramp), ("Y", D(-4.0) * ramp),
-                 ("X", D(-3.0) * ramp)],
-        "LeftUpperArm": [("Y", D(-(104.0 + drop)) * ramp), ("X", D(-8.0) * ramp)],
-        "LeftLowerArm": [("Y", D(-26.0) * ramp), ("X", D(-24.0) * ramp * (0.5 + 0.5 * swing))],
-        "LeftHand": [("Y", D(-18.0) * swing * ramp)],
-        "RightUpperArm": [("Y", D(3.0)), ("X", D(4.0) * ramp)],
-        "RightLowerArm": [("X", D(-14.0))],
+        **_hair(0.7, 2.0 * ramp, t, freq=WAVE_SWEEPS),
+        "Spine": [("Z", D(-1.5) * ramp)],
+        "UpperChest": [("Z", D(-2.0) * ramp)],
+        "Head": [("Y", D(2.5) * ramp), ("X", D(-2.0) * ramp)],
+        "LeftUpperArm": [("Y", D(-(lift + drop)) * ramp), ("X", D(xu) * ramp), ("Z", D(zu) * ramp)],
+        "LeftLowerArm": [("Y", D(yl) * ramp), ("X", D(xl) * ramp), ("Z", D(zl) * ramp),
+                         ("Y", D(18.0) * swing), ("Y", D(elbow) * ramp)],
+        "LeftHand": [("Y", D(8.0) * wrist)],
+        "RightUpperArm": [("Y", D(3.0) * ramp), ("X", D(4.0) * ramp)],
+        "RightLowerArm": [("X", D(-14.0) * ramp)],
     }
 
 
@@ -654,31 +788,34 @@ def _talk(t):
     }
 
 
-def _posed(fn, drop=ARM_DROP):
+def _posed(fn, drop=ARM_DROP, elbow=0.0):
     """poser に腕下ろしを合成する。"""
-    return lambda t: _arms_down(fn(t), drop)
+    return lambda t: _arms_down(fn(t), drop, elbow)
 
 
-def action_specs(arm, arm_drop=ARM_DROP, gait=None):
+def action_specs(arm, arm_drop=ARM_DROP, gait=None, elbow_open=0.0, arm_lift=WAVE_LIFT):
     """(名前, フレーム数, poser, ループ, キー数) の一覧。
 
     歩き・走りの長さはキャラの脚長から決まる（速度を合わせるため人によって違う）。
-    arm_drop は A ポーズから上腕を下ろす角度（params の "arm_drop"。既定 ARM_DROP）。
+    arm_drop は A ポーズから上腕を下ろす角度、elbow_open は前腕を外へ開く角度
+    （body.arm_drop / body.elbow_open）。arm_lift は A ポーズの上腕が水平から下がる角度
+    （body.arm_angles の 1 つめ）で、手を振る腕を水平に上げるのに使う。
     gait は {"Walk": {...}, "Run": {...}} で GAIT_TARGET をキャラごとに上書きする
     （params の "gait"。v はゲーム側の閾値なので変えないこと）。
     """
-    d = arm_drop
+    d, e = arm_drop, elbow_open
     gait = gait or {}
     walk = Gait(arm, "Walk", **gait.get("Walk", {}))
     run = Gait(arm, "Run", **gait.get("Run", {}))
     jump = Jump(arm)
     return (
-        ("Idle", 60, _posed(_idle, d), True, 9),
-        ("Walk", walk.nframes, _posed(walk.pose, d), True, walk.nframes + 1),
-        ("Run", run.nframes, _posed(run.pose, d), True, run.nframes + 1),
-        ("Jump", jump.nframes, _posed(jump.pose, d), False, jump.nframes),
-        ("Wave", 40, _posed(lambda t: _wave(t, d), d), False, 17),
-        ("Talk", 60, _posed(_talk, d), True, 13),
+        ("Idle", 60, _posed(_idle, d, e), True, 9),
+        ("Walk", walk.nframes, _posed(walk.pose, d, e), True, walk.nframes + 1),
+        ("Run", run.nframes, _posed(run.pose, d, e), True, run.nframes + 1),
+        ("Jump", jump.nframes, _posed(jump.pose, d, e), False, jump.nframes),
+        # 振りのサイン波が丸まらないよう、全フレームにキーを打つ。
+        ("Wave", 28, _posed(lambda t: _wave(t, d, e, arm_lift), d, e), False, 28),
+        ("Talk", 60, _posed(_talk, d, e), True, 13),
     )
 
 
@@ -745,9 +882,9 @@ def setup_shape_drivers(obj, arm) -> list[str]:
     return made
 
 
-def build_actions(arm, arm_drop=ARM_DROP, gait=None) -> list[str]:
+def build_actions(arm, arm_drop=ARM_DROP, gait=None, elbow_open=0.0, arm_lift=WAVE_LIFT) -> list[str]:
     names = []
-    for name, nf, fn, loop, keys in action_specs(arm, arm_drop, gait):
+    for name, nf, fn, loop, keys in action_specs(arm, arm_drop, gait, elbow_open, arm_lift):
         act = make_action(arm, name, nf, fn, loop=loop, keys=keys)
         names.append(act.name)
     return names

@@ -102,5 +102,30 @@ namespace KCD.Tests
             Assert.AreEqual(-1, NPCWander.PickWaveTarget(Vector3.zero, Vector3.forward,
                 new System.Collections.Generic.List<Vector3>(), NPCWander.WaveReach));
         }
+
+        [Test]
+        public void PickWaveTarget_OnlyCountsPeopleWithinSixtyDegreesOfTheFront()
+        {
+            // 斜め 55° は手を振れるが、斜め 65° は横にいるのと同じで振らない。
+            Vector3 at55 = Quaternion.Euler(0f, 55f, 0f) * Vector3.forward * 3f;
+            Vector3 at65 = Quaternion.Euler(0f, 65f, 0f) * Vector3.forward * 3f;
+
+            Assert.AreEqual(0, NPCWander.PickWaveTarget(Vector3.zero, Vector3.forward,
+                new System.Collections.Generic.List<Vector3> { at55 }, NPCWander.WaveReach));
+            Assert.AreEqual(-1, NPCWander.PickWaveTarget(Vector3.zero, Vector3.forward,
+                new System.Collections.Generic.List<Vector3> { at65 }, NPCWander.WaveReach));
+            Assert.AreEqual(0, NPCWander.PickWaveTarget(Vector3.zero, Vector3.forward * 4f,
+                new System.Collections.Generic.List<Vector3> { at55 }, NPCWander.WaveReach),
+                "forward の長さで向きの判定が変わった");
+        }
+
+        [Test]
+        public void WaveReach_IsFartherThanTalkingButStaysAGreetingDistance()
+        {
+            // 話しかける（E）間合い（ActorFactory が NPC に付ける 2.4 m）より遠くからでも手を振れる。
+            // 遠くの誰にでも振ることはしない。
+            Assert.Greater(NPCWander.WaveReach, 2.4f);
+            Assert.LessOrEqual(NPCWander.WaveReach, 5f);
+        }
     }
 }

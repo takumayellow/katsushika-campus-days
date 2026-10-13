@@ -15,11 +15,11 @@ namespace KCD
     /// タイトルへ戻るだけなので進行はメモリに残り、そこから「つづきから」も「はじめから」も選べる
     /// （「はじめから」は <c>GameManager.BeginNewGame</c> が時刻も日付も初期値に戻す, #53）。
     ///
-    /// 時間を止める順番に気をつけること。<c>KCDInput.Block(this)</c> を掛けると
-    /// <c>KCDInput.GameplayBlocked</c> が true になり、<see cref="DayEndEvaluator"/> の Update が
-    /// 先頭で戻るので、裏エンドの最中に一日の終わりのリザルトが割り込むことはない。
-    /// 戻す順番は <see cref="Close"/> のコメントを参照。封鎖と timeScale は <c>ReturnToTitle</c> に任せ、
-    /// 自分では外さない（外すと、シーンが切り替わるまでのフレームの残りが「封鎖なし」で回ってしまう）。
+    /// 一日の終わりのリザルトが割り込まないのは、<see cref="DayEndEvaluator"/> が
+    /// <see cref="IsAnyShowing"/> を見ているから。<c>KCDInput.Block(this)</c> の封鎖は Enter で閉じたときに
+    /// <c>ReturnToTitle</c> の ClearAllBlocks がまとめて外すので、シーンが切り替わるまでのフレームは
+    /// 封鎖だけでは止まらない (#62)。IsAnyShowing はシーンが消えるときの OnDisable まで落とさない。
+    /// 戻す順番は <see cref="Close"/> のコメントを参照。封鎖と timeScale は <c>ReturnToTitle</c> に任せる。
     /// </summary>
     public sealed class DormEnding : MonoBehaviour
     {
@@ -39,8 +39,12 @@ namespace KCD
         [SerializeField] private TMP_Text _heading;
         [SerializeField] private TMP_Text _body;
         [SerializeField] private TMP_Text _choice;
+        [SerializeField] private TmpLinkTap _tap;
 
         private CanvasGroup _fade;
+
+        /// <summary>下段の案内を指のときの文面で書いているか。入力の種類が変わったら書き直す。</summary>
+        private bool _choiceForTouch;
         private bool _played;
         private bool _subscribed;
         private bool _showing;
@@ -56,9 +60,11 @@ namespace KCD
         /// 暗転（<see cref="FadeSeconds"/> 秒）も含む。
         ///
         /// <see cref="ResultScreen.IsAnyOpen"/> と同じ役目。<c>KCDInput.Block</c> が止めるのは
-        /// <c>GameplayBlocked</c> を見ている側だけで、メニュー（Esc）とクエストログ（Tab）は見ていない。
+        /// <c>GameplayBlocked</c> を見ている側だけで、メニュー（Esc）は見ていない。
         /// 見張らないと、暗転の裏でポーズが開き、閉じたときに <c>PauseMenu.SetOpen(false)</c> が
         /// <c>Time.timeScale = 1</c> に戻してしまう（＝裏エンドの最中に時間が動き出す）。
+        /// 封鎖が外れたあとシーンが切り替わるまでの間も立っているので、<see cref="DayEndEvaluator"/> も
+        /// これを見てリザルトを出さない (#62)。
         /// </summary>
         public static bool IsAnyShowing { get; private set; }
 
@@ -113,9 +119,17 @@ namespace KCD
                   + "<size=85%>この一日は数えない。</size>";
         }
 
-        /// <summary>下段の案内。<see cref="ShouldReturnToTitle"/> が示すとおり Enter でタイトルへ戻る。</summary>
-        public static string ChoiceText(bool english)
+        /// <summary>
+        /// 下段の案内。<see cref="ShouldReturnToTitle"/> が示すとおり Enter でタイトルへ戻る。
+        /// 指で遊んでいるときは、どこを叩いても戻る (#187)。
+        /// </summary>
+        public static string ChoiceText(bool english, bool touch = false)
         {
+            if (touch)
+            {
+                return english ? "Tap — back to the title" : "タップでタイトルへ";
+            }
+
             return english ? "Enter — back to the title" : "Enter でタイトルへ";
         }
 
@@ -148,6 +162,12 @@ namespace KCD
             _choice = choice;
         }
 
+        /// <summary>どこを叩いてもタイトルへ戻る受け口。DormEndingFactory から差し込む。</summary>
+        public void BindTap(TmpLinkTap tap)
+        {
+            _tap = tap;
+        }
+
         private void Awake()
         {
             _fade = BuildFadeOverlay();
@@ -156,10 +176,19 @@ namespace KCD
         private void OnEnable()
         {
             TrySubscribe();
+            if (_tap != null)
+            {
+                _tap.Tapped += OnTapped;
+            }
         }
 
         private void OnDisable()
         {
+            if (_tap != null)
+            {
+                _tap.Tapped -= OnTapped;
+            }
+
             if (_subscribed && DialogueSystem.Instance != null)
             {
                 DialogueSystem.Instance.Finished -= OnDialogueFinished;
@@ -173,9 +202,9 @@ namespace KCD
                 _fade.alpha = 0f;
             }
 
-            // ポーズ（Esc）とクエストログ（Tab）を止める掛け金を落とすのはここだけ。
+            // ポーズ（Esc）・クエストログ（Tab）・一日の終わりのリザルトを止める掛け金を落とすのはここだけ。
             // Close では落とさない（落とすと、シーンが切り替わるまでの残りのフレームで
-            // ポーズが開き、timeScale 0 のままタイトルへ持ち越される, #53）。
+            // 暗転の裏にポーズや本編のリザルトが開く, #53 #62）。
             _showing = false;
             if (_active)
             {
@@ -202,8 +231,22 @@ namespace KCD
                 TrySubscribe();
             }
 
+            if (_showing && InputMode.IsTouch != _choiceForTouch)
+            {
+                PaintChoice(L.IsEnglish);
+            }
+
             if (ShouldReturnToTitle(_showing, Time.unscaledTime - _openedAt,
                     KCDInput.SubmitPressed || KCDInput.InteractPressed))
+            {
+                Close();
+            }
+        }
+
+        /// <summary>指で遊んでいるときに叩いたら、Enter と同じ条件でタイトルへ戻る。</summary>
+        private void OnTapped(string linkId)
+        {
+            if (InputMode.IsTouch && ShouldReturnToTitle(_showing, Time.unscaledTime - _openedAt, true))
             {
                 Close();
             }
@@ -250,7 +293,7 @@ namespace KCD
         private IEnumerator Run()
         {
             // 会話の封鎖（DialogueSystem）はもう外れているので、自分の封鎖を掛け直す (#40)。
-            // GameplayBlocked が立つので DayEndEvaluator は動かない。
+            // 暗転と結果表示の間の移動・会話・F5 / F9 を止める。DayEndEvaluator は IsAnyShowing を見て止まる。
             KCDInput.Block(this);
             _active = true;
             IsAnyShowing = true;
@@ -287,13 +330,11 @@ namespace KCD
         /// ・暗転（_fade）は 1 のまま残す。<c>LoadScene</c> が効くのはフレームの終わりなので、
         ///   ここで 0 に戻すと寮の屋内が 1 フレーム映ってから飛ぶ。結果パネル（102）を消せば
         ///   暗転（101）だけが残り、真っ黒のままタイトルに切り替わる。
-        /// ・_active / <see cref="IsAnyShowing"/> は落とさない。落とすと同じフレームの残りで
-        ///   PauseMenu（Esc）とクエストログ（Tab）の門が開いてしまう。PauseMenu は開くと
-        ///   timeScale = 0 と封鎖を掛け、自分で戻す OnDisable を持たないので、
-        ///   タイトルが止まったまま始まる。シーンが消えるときに OnDisable が落とす。
-        /// ・封鎖（KCDInput）も自分では外さない。ReturnToTitle の ClearAllBlocks に任せる。
-        ///   先に外すと、シーンが切り替わるまでの間に DayEndEvaluator が動ける隙ができる
-        ///   （20 時を過ぎていると本編のリザルトが割り込む）。
+        /// ・_active / <see cref="IsAnyShowing"/> は落とさない。落とすと、シーンが切り替わるまでの残りで
+        ///   PauseMenu（Esc）・クエストログ（Tab）・DayEndEvaluator の門が開き、真っ黒な画面の裏で
+        ///   ポーズや本編のリザルト（20 時を過ぎているとき）が開いてしまう。シーンが消えるときに OnDisable が落とす。
+        /// ・封鎖（KCDInput）は自分では外さず、ReturnToTitle の ClearAllBlocks に任せる。
+        ///   そこからシーンが切り替わるまでは封鎖が無いので、上の IsAnyShowing が門になる (#62)。
         /// ・_frozen を落とすのは ReturnToTitle のあと。前に落とすと、LoadScene で例外が出たときに
         ///   OnDisable の保険が効かず timeScale = 0 のまま取り残される。
         /// </summary>
@@ -337,9 +378,15 @@ namespace KCD
                 _body.text = BodyText(hours, english);
             }
 
+            PaintChoice(english);
+        }
+
+        private void PaintChoice(bool english)
+        {
+            _choiceForTouch = InputMode.IsTouch;
             if (_choice != null)
             {
-                _choice.text = ChoiceText(english);
+                _choice.text = ChoiceText(english, _choiceForTouch);
             }
         }
 

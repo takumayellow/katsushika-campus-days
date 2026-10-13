@@ -16,6 +16,7 @@ namespace KCD.Editor
     {
         public const string FontFolder = "Assets/Fonts";
         public const string FontAssetPath = "Assets/Fonts/KCD_JP.asset";
+
         private const string TmpSettingsPath = TmpEssentials.SettingsPath;
 
         /// <summary>OS 側のフォント候補。再配布できる OFL のものを先に置く。</summary>

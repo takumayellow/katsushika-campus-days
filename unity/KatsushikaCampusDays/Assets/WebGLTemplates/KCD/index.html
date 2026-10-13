@@ -7,10 +7,22 @@
     <!-- アイコンは外部ファイルを増やさないよう SVG を埋め込む。 -->
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2312151b'/%3E%3Cpath d='M6 20l10-9 10 9v6H6z' fill='%233f7ad6'/%3E%3C/svg%3E">
     <link rel="stylesheet" href="TemplateData/style.css">
+    <!-- 次の行は tools/deploy_pages.py --build がビルド元のコミットと作業ツリーの状態を書いた
+         <meta name="kcd-build"> に置き換える (#75)。 -->
+    <!-- KCD_BUILD_STAMP -->
   </head>
   <body>
     <div id="unity-container">
       <h1 id="kcd-title">葛飾キャンパスデイズ</h1>
+
+      <!-- 指だけで操作する端末（スマホ・タブレット）では、ゲームを読み込む前にこれを出す (#73 #187)。
+           モバイル回線で知らずに数十 MB を落とさないよう、「読み込む」を押すまで Build/ のファイルは取りに行かない。 -->
+      <section id="kcd-data-notice" hidden>
+        <h2 id="kcd-data-notice-title">読み込む前に</h2>
+        <p>はじめて開くときは数十 MB の通信があります。Wi-Fi につないで読み込むのがおすすめです。2 回目からはブラウザに残った分を使います。</p>
+        <p class="kcd-sub">画面を横向きにして遊んでください。左側で歩き、右側をなぞると見回せます。</p>
+        <button type="button" id="kcd-data-notice-continue">読み込む</button>
+      </section>
 
       <div id="unity-fullscreen-container">
         <canvas id="unity-canvas" width="{{{ WIDTH }}}" height="{{{ HEIGHT }}}" tabindex="-1"></canvas>
@@ -27,18 +39,28 @@
              全画面ボタンは画面の中に置くので、ブラウザの全画面表示（キャンバスだけが
              映る）でも隠れない (#48)。キーボードはクリックしなくても最初から効く。 -->
         <div id="kcd-overlay" class="kcd-hidden">
-          <span id="kcd-overlay-text">クリックでマウス視点　·　Esc でマウスを解放　·　F で全画面</span>
+          <span id="kcd-overlay-text">クリックでマウス視点　·　Esc でマウスを解放　·　Ctrl+F で全画面</span>
           <button type="button" class="kcd-fullscreen">⛶ 全画面</button>
+        </div>
+
+        <!-- スマホ・タブレットを縦に持っている間だけ覆う (#187)。画面は横持ちの前提で組んでいる。
+             全画面でも出るよう、全画面にする箱の中に置く。 -->
+        <div id="kcd-rotate" role="status">
+          <div id="kcd-rotate-icon" aria-hidden="true"></div>
+          <p>横向きにしてください</p>
         </div>
       </div>
 
       <div id="unity-warning"> </div>
 
       <div id="kcd-guide">
-        <p class="kcd-line">クリックでマウス視点　·　<b>Esc</b> でマウスを解放　·　<b>F</b> で全画面</p>
+        <p class="kcd-line">クリックでマウス視点　·　<b>Esc</b> でマウスを解放　·　<b>Ctrl+F</b> で全画面</p>
         <p class="kcd-line kcd-sub"><b>WASD</b> 移動　·　<b>Shift</b> ダッシュ　·　<b>E</b> 話す　·　<b>Tab</b> クエスト</p>
         <button type="button" class="kcd-fullscreen">⛶ 全画面</button>
       </div>
+
+      <!-- どのコミットから作ったビルドか。不具合の報告で版を言えるよう, 隅に小さく出す (#75)。 -->
+      <p id="kcd-build" hidden></p>
     </div>
 
     <script>
@@ -46,6 +68,17 @@
       let fullscreenContainer = document.querySelector("#unity-fullscreen-container");
       const overlay = document.querySelector("#kcd-overlay");
       const guide = document.querySelector("#kcd-guide");
+
+      // deploy_pages.py が書いたビルド元の記録を, ページの隅に短く出す。記録が無ければ出さない。
+      (function showBuildStamp() {
+        const meta = document.querySelector('meta[name="kcd-build"]');
+        const match = meta && /commit=([0-9a-f]{7})[0-9a-f]* tree=(\w+)/.exec(meta.content);
+        if (!match) return;
+        const label = document.querySelector("#kcd-build");
+        label.textContent = "build " + match[1] + (match[2] === "clean" ? "" : " (" + match[2] + ")");
+        label.title = meta.content;
+        label.hidden = false;
+      })();
 
       // 一時的な注意書き、または type=='error' のときはキャンバスの上に残るエラー表示。
       function unityShowBanner(msg, type) {
@@ -65,6 +98,25 @@
           }, 5000);
         }
         updateBannerVisibility();
+      }
+
+      // 読み込みに失敗したら「読み込み中…」の覆いを畳み、再読み込みの案内を赤い帯で出す (#102)。
+      // 覆いが残るとまだ読み込んでいるように見え、英語のエラーの帯だけでは何をすればよいか分からない。
+      // 失敗は次の 3 つの経路で届く。重なって届いても案内は 1 度だけ出す。
+      //   - ローダー（Build/*.loader.js）が取れない（404・通信断）: その <script> の onerror
+      //   - 途中で止まった（data / wasm の取得失敗、メモリ不足）: createUnityInstance の reject
+      //   - framework.js が取れない・壊れている: ローダーは showBanner(msg, 'error') を出すだけで
+      //     reject しないことがある（Unity 6000.6 の UnityLoader.js）
+      const loadingContainer = document.querySelector("#unity-loading-container");
+      let gameStarted = false;
+      let loadFailed = false;
+      function showLoadFailure(detail) {
+        loadingContainer.style.display = "none";
+        if (!loadFailed) {
+          loadFailed = true;
+          unityShowBanner("ゲームの読み込みに失敗しました。ページを再読み込みしてください。", 'error');
+        }
+        if (detail) unityShowBanner(detail, 'error');
       }
 
       var buildUrl = "Build";
@@ -94,13 +146,67 @@
         companyName: {{{ JSON.stringify(COMPANY_NAME) }}},
         productName: {{{ JSON.stringify(PRODUCT_NAME) }}},
         productVersion: {{{ JSON.stringify(PRODUCT_VERSION) }}},
-        showBanner: unityShowBanner,
+        // 起動するまでに届いた 'error' の帯は読み込みの失敗として扱う。
+        showBanner: (msg, type) => {
+          if (type == 'error' && !gameStarted) showLoadFailure(msg);
+          else unityShowBanner(msg, type);
+        },
+
+        // persistentDataPath に書いたら、その場で IndexedDB へ同期させる (#61)。
+        // 指定しないと、エンジンが書き込みのあとに呼ぶ手動同期 JS_FileSystem_Sync が
+        // 「deprecated」の警告をコンソールに出す（BuildTools/lib/FileSystem.js）。
+        autoSyncPersistentDataPath: true,
       };
 
-      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-        // スマホ・タブレットは画面いっぱいに広げる。
-        document.querySelector("#unity-container").className = "unity-mobile";
-        canvas.className = "unity-mobile";
+      // スマホ・タブレットは画面の画素密度が 2〜3 倍あり、そのまま描くと画素の数が PC の数倍になって
+      // 熱と電池を食う。1.5 倍で止め、ブラウザに引き伸ばさせる (#187)。
+      const MOBILE_MAX_DPR = 1.5;
+
+      // テクスチャを ASTC で圧縮した data (#187)。DXT を読めない GPU（スマホの多く）では、Unity は DXT の
+      // テクスチャを RGBA32 に展開してから載せるので、テクスチャのメモリが何倍にもなる。
+      // 名前は tools/deploy_pages.py --build がビルドの後に書き込む。書き込まれていなければ DXT だけを使う。
+      var astcDataUrl = null; // KCD_ASTC_DATA_URL
+
+      const container = document.querySelector("#unity-container");
+
+      // 指だけで操作する端末か (#73)。主な入力が粗いポインタでホバーできず、マウスやペンの
+      // ような細かいポインタが 1 つも無いもの。iPadOS の Safari は UA が Mac を名乗るが、
+      // これなら拾える。マウスをつないだタブレットは細かいポインタがあるので止めない。
+      function isTouchOnly() {
+        if (!window.matchMedia) return false;
+        return matchMedia("(pointer: coarse)").matches
+          && matchMedia("(hover: none)").matches
+          && !matchMedia("(any-pointer: fine)").matches;
+      }
+
+      // 読む data のテクスチャの形式。DXT を読めず ASTC を読める GPU なら "astc"、それ以外は "dxt"。
+      // ?textures=astc / ?textures=dxt で上書きできる（端末で見比べる用）。
+      function textureFormat() {
+        const forced = new URLSearchParams(location.search).get("textures");
+        if (forced === "astc" || forced === "dxt") return forced;
+        const gl = document.createElement("canvas").getContext("webgl2");
+        if (!gl) return "dxt";
+        const dxt = gl.getExtension("WEBGL_compressed_texture_s3tc");
+        const astc = gl.getExtension("WEBGL_compressed_texture_astc");
+        // 調べるためだけに作った描画の文脈は、すぐ手放す（端末ごとに同時に持てる数が限られる）。
+        const lose = gl.getExtension("WEBGL_lose_context");
+        if (lose) lose.loseContext();
+        return !dxt && astc ? "astc" : "dxt";
+      }
+
+      function chooseTextureData() {
+        if (astcDataUrl && config.dataUrl && textureFormat() === "astc") {
+          config.dataUrl = astcDataUrl;
+        }
+      }
+
+      function applyMobileLayout() {
+        if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || isTouchOnly()) {
+          // スマホ・タブレットは画面いっぱいに広げ、描く画素の密度に上限を掛ける。
+          container.classList.add("unity-mobile");
+          canvas.classList.add("unity-mobile");
+          config.devicePixelRatio = Math.min(window.devicePixelRatio || 1, MOBILE_MAX_DPR);
+        }
       }
 
 #if BACKGROUND_FILENAME
@@ -142,35 +248,68 @@
         if (document.activeElement !== canvas) canvas.focus({ preventScroll: true });
       }
 
-      var script = document.createElement("script");
-      script.src = loaderUrl;
-      script.onload = () => {
-        const loadingContainer = document.querySelector("#unity-loading-container");
-        const progressBarFull = document.querySelector("#unity-progress-bar-full");
-
-        createUnityInstance(canvas, config, (progress) => {
-          if (progress < 1) {
-            loadingContainer.style.display = "flex";
-            progressBarFull.style.width = 100 * progress + "%";
-          } else {
-            loadingContainer.style.display = "none";
+      // ローダーを差し込んでゲームを読み込む。ここを呼ぶまで Build/ のファイルは取りに行かない。
+      function startLoading() {
+        applyMobileLayout();
+        chooseTextureData();
+        var script = document.createElement("script");
+        script.src = loaderUrl;
+        // ローダーが取れないと onload が来ず、進み具合もエラーも出ないまま止まる。
+        script.onerror = () => showLoadFailure(loaderUrl + " を取得できませんでした。");
+        script.onload = () => {
+          // 途中の機器が JavaScript の代わりに HTML（ログイン画面など）を返すと、onload は来るのに
+          // createUnityInstance が無い。そのまま呼ぶと ReferenceError で黙って止まる。
+          if (typeof createUnityInstance !== "function") {
+            showLoadFailure(loaderUrl + " を読み込めませんでした。");
+            return;
           }
-        }).then((unityInstance) => {
-          document.querySelectorAll(".kcd-fullscreen").forEach((button) => {
-            button.onclick = () => { unityInstance.SetFullscreen(1); focusCanvas(); };
-          });
-          focusCanvas();
-          document.addEventListener("keydown", (e) => {
-            if (e.target === document.body || e.target === document.documentElement) {
-              focusCanvas();
-            }
-          }, true);
-        }).catch((message) => {
-          unityShowBanner(message, 'error');
-        });
-      };
+          const progressBarFull = document.querySelector("#unity-progress-bar-full");
 
-      document.body.appendChild(script);
+          createUnityInstance(canvas, config, (progress) => {
+            // 失敗を知らせたあとも、ほかのファイルの取得は進み具合を届けてくる。覆いを出し直さない。
+            if (loadFailed) return;
+            if (progress < 1) {
+              loadingContainer.style.display = "flex";
+              progressBarFull.style.width = 100 * progress + "%";
+            } else {
+              loadingContainer.style.display = "none";
+            }
+          }).then((unityInstance) => {
+            gameStarted = true;
+            document.querySelectorAll(".kcd-fullscreen").forEach((button) => {
+              button.onclick = () => { unityInstance.SetFullscreen(1); focusCanvas(); };
+            });
+            focusCanvas();
+            document.addEventListener("keydown", (e) => {
+              // Ctrl+F はゲームの全画面に使うので、ブラウザのページ内検索を開かせない。
+              if (e.ctrlKey && !e.altKey && !e.metaKey && e.code === "KeyF") {
+                e.preventDefault();
+              }
+              if (e.target === document.body || e.target === document.documentElement) {
+                focusCanvas();
+              }
+            }, true);
+          }).catch((message) => {
+            showLoadFailure(message);
+          });
+        };
+
+        document.body.appendChild(script);
+      }
+
+      // 指だけの端末では、通信量の案内を出して「読み込む」を待つ (#73 #187)。
+      if (isTouchOnly()) {
+        const notice = document.querySelector("#kcd-data-notice");
+        container.classList.add("kcd-gated");
+        notice.hidden = false;
+        document.querySelector("#kcd-data-notice-continue").addEventListener("click", () => {
+          notice.hidden = true;
+          container.classList.remove("kcd-gated");
+          startLoading();
+        }, { once: true });
+      } else {
+        startLoading();
+      }
     </script>
   </body>
 </html>

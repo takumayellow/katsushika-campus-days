@@ -31,13 +31,13 @@ namespace KCD.Editor
             },
             new NpcSpot
             {
-                Id = "kaname", Name = "中川 かなめ", BuildingId = "research2",
+                Id = "kaname", Name = "中川 かなめ", BuildingId = "cafeteria",
                 Distance = 3.2f, Fallback = new Vector2(-8.5f, -6.5f), WanderRadius = 4f
             },
             new NpcSpot
             {
                 Id = "sora", Name = "金町 そら", BuildingId = "kyoso",
-                Distance = 7.5f, Fallback = new Vector2(108f, -76f), WanderRadius = 3f
+                Distance = 7.5f, Fallback = new Vector2(-11.1f, -29.3f), WanderRadius = 3f
             },
             new NpcSpot
             {
@@ -56,6 +56,7 @@ namespace KCD.Editor
             FontLibrary.Ensure();
             EditorPaths.Report("データを同期しました: " + DataBundler.SyncAll() + " 件");
             EditorPaths.Report("マテリアルを差し替えました: " + CharacterImporter.ResolveMaterials() + " 件");
+            EditorPaths.Report("キャンパスの色とテクスチャを合わせました: " + MaterialLibrary.RepaintCampus() + " 件");
             EditorPaths.Report("顔テクスチャを貼り直しました: " + CharacterImporter.RefreshFaceTextures() + " 件");
             EditorPaths.Report("Humanoid の骨格を FBX に合わせました: " + CharacterImporter.SyncSkeletons() + " 体");
             EditorPaths.Report("キャラの色を palette.json に合わせました: " + MaterialLibrary.RepaintCharacters() + " 件");
@@ -106,6 +107,10 @@ namespace KCD.Editor
             ActorFactory.CreateCamera(root, player);
 
             PlaceNpcs(root);
+
+            // モブの学生 (#22)。行き先を VisitZone と entrance_ から NavMesh の上に解決するので、
+            // CampusProps.Build と BakeNavMesh のあと。
+            MobStage.Build(root);
             SeatFactory.PlaceCampus(root);
             PlaceSystems(root);
             if (route != null)
@@ -116,6 +121,12 @@ namespace KCD.Editor
             }
 
             InteriorStage.Build(root);
+            // 講義棟の大ホールの教卓に立つ教授（クエスト「はじめての講義」, #176）。屋内の床を使うので屋内のあと。
+            LectureStage.Build(root);
+            // 隠しアイテム 20 個と写真スポット 6 箇所（collectibles.json）。屋内の poi に置く物があるので屋内のあと (#65)。
+            CollectibleStage.Build(root);
+            // 隠しストーリーの「ドームの扉」（図書館 2F の西の壁）(#175)。
+            SecretStoryStage.Build(root);
             if (route != null)
             {
                 // 寮の屋内と玄関。本編の 9 棟とは別枠で、探索率にも「入った建物」にも数えない。
@@ -123,6 +134,8 @@ namespace KCD.Editor
             }
 
             UIFactory.BuildCampusUI(root, player);
+            // 夕日のあとのエンディング (#176)。寮のルートの有無に関わらず置く。
+            FormalEndingFactory.Build(root);
             if (route != null)
             {
                 DormEndingFactory.Build(root);
@@ -162,7 +175,7 @@ namespace KCD.Editor
             EditorPaths.Report("NPC を " + Npcs.Length + " 人置きました。");
         }
 
-        /// <summary>キャンパスモールの中心を向く角度。だいたいプレイヤーが来る方角になる。</summary>
+        /// <summary>メインストリートの中心を向く角度。だいたいプレイヤーが来る方角になる。</summary>
         private static float YawTowardMall(Vector3 position)
         {
             var mall = new Vector3(53.7f, position.y, -50.92f);

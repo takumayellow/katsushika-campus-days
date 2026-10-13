@@ -91,17 +91,17 @@ namespace KCD
             var sb = new StringBuilder();
             sb.Append("--- dump ").Append(tag).Append('\n');
 
-            foreach (Animator animator in UnityEngine.Object.FindObjectsByType<Animator>(FindObjectsSortMode.None))
+            foreach (Animator animator in UnityEngine.Object.FindObjectsByType<Animator>(FindObjectsInactive.Exclude))
             {
                 AppendAnimator(sb, animator);
             }
 
-            foreach (SkinnedMeshRenderer renderer in UnityEngine.Object.FindObjectsByType<SkinnedMeshRenderer>(FindObjectsSortMode.None))
+            foreach (SkinnedMeshRenderer renderer in UnityEngine.Object.FindObjectsByType<SkinnedMeshRenderer>(FindObjectsInactive.Exclude))
             {
                 AppendRenderer(sb, renderer);
             }
 
-            foreach (Light light in UnityEngine.Object.FindObjectsByType<Light>(FindObjectsSortMode.None))
+            foreach (Light light in UnityEngine.Object.FindObjectsByType<Light>(FindObjectsInactive.Exclude))
             {
                 sb.Append("light ").Append(Path(light.transform)).Append(' ').Append(light.type)
                     .Append(" intensity=").Append(light.intensity.ToString("F2"))
@@ -147,7 +147,7 @@ namespace KCD
             sb.Append("minimap=").Append(minimap != null ? Path(minimap.transform) + " active=" + minimap.isActiveAndEnabled : "none")
                 .Append('\n');
 
-            foreach (Canvas canvas in UnityEngine.Object.FindObjectsByType<Canvas>(FindObjectsSortMode.None))
+            foreach (Canvas canvas in UnityEngine.Object.FindObjectsByType<Canvas>(FindObjectsInactive.Exclude))
             {
                 sb.Append("canvas ").Append(Path(canvas.transform)).Append(" enabled=").Append(canvas.enabled).Append(" children=");
                 foreach (Transform child in canvas.transform)
@@ -163,7 +163,7 @@ namespace KCD
         private static void AppendRenderersOnRay(StringBuilder sb, Ray ray)
         {
             var hits = new System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<float, Renderer>>();
-            foreach (Renderer renderer in UnityEngine.Object.FindObjectsByType<Renderer>(FindObjectsSortMode.None))
+            foreach (Renderer renderer in UnityEngine.Object.FindObjectsByType<Renderer>(FindObjectsInactive.Exclude))
             {
                 if (renderer.enabled && renderer.bounds.IntersectRay(ray, out float distance) && distance < 300f)
                 {

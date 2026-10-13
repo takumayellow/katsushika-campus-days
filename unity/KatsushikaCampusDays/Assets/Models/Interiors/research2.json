@@ -2,28 +2,28 @@
  "id": "research2",
  "display": "第2研究棟",
  "entrance_world": {
-  "x": -1.9285,
-  "z": -17.9728
+  "x": 52.1178,
+  "z": -7.1511
  },
- "yaw_deg": 24.5514,
+ "yaw_deg": -65.4486,
  "campus_frame_deg": -24.5514,
  "envelope": {
-  "x0": -40.663,
-  "x1": 40.663,
+  "x0": -13.14,
+  "x1": 9.05,
   "y_face": 4.0,
-  "y_back": 44.327
+  "y_back": 12.957
  },
  "wall_thickness": 0.3,
  "spawn": {
   "x": 0.0,
   "y": 0.0,
-  "z": 5.8
+  "z": 5.9
  },
  "empties": {
   "spawn_research2": {
    "x": 0.0,
    "y": 0.0,
-   "z": 5.8
+   "z": 5.9
   },
   "exit_research2": {
    "x": 0.0,
@@ -31,193 +31,487 @@
    "z": 4.55
   },
   "sign_research2_1": {
-   "x": -30.363,
-   "y": 2.8,
-   "z": 35.527
+   "x": -4.3,
+   "y": 1.6,
+   "z": 4.3
   },
   "sign_research2_2": {
-   "x": -23.363,
-   "y": 2.8,
-   "z": 35.527
+   "x": -11.3,
+   "y": 2.3,
+   "z": 12.537
   },
-  "sign_research2_3": {
-   "x": -16.363,
-   "y": 2.8,
-   "z": 35.527
-  },
-  "sign_research2_4": {
-   "x": -9.363,
-   "y": 2.8,
-   "z": 35.527
-  },
-  "sign_research2_5": {
-   "x": -2.363,
-   "y": 2.8,
-   "z": 35.527
-  },
-  "sign_research2_6": {
-   "x": 4.637,
-   "y": 2.8,
-   "z": 35.527
-  },
-  "poi_research2_counter": {
-   "x": -13.363,
-   "y": 0.0,
-   "z": 35.027
-  },
-  "npc_research2_1": {
-   "x": -28.363,
-   "y": 0.0,
-   "z": 36.127
-  },
-  "npc_research2_2": {
-   "x": -20.363,
-   "y": 0.0,
-   "z": 36.127
-  },
-  "npc_research2_3": {
-   "x": -12.363,
-   "y": 0.0,
-   "z": 36.127
-  },
-  "npc_research2_4": {
-   "x": -4.363,
-   "y": 0.0,
-   "z": 36.127
-  },
-  "npc_research2_5": {
-   "x": 3.637,
-   "y": 0.0,
-   "z": 36.127
-  },
-  "poi_research2_ticket": {
-   "x": -34.363,
-   "y": 0.0,
-   "z": 10.3
-  },
-  "npc_research2_6": {
-   "x": -33.963,
-   "y": 0.0,
-   "z": 10.5
-  },
-  "poi_research2_tray_return": {
-   "x": 32.363,
-   "y": 0.0,
-   "z": 40.627
-  },
-  "poi_research2_hall": {
+  "poi_research2_lobby": {
    "x": 0.0,
    "y": 0.0,
-   "z": 23.664
+   "z": 10.0
   },
-  "npc_research2_7": {
-   "x": -31.963,
+  "npc_research2_1": {
+   "x": -2.3,
    "y": 0.0,
-   "z": 17.37
+   "z": 8.377
   },
-  "npc_research2_8": {
-   "x": -20.963,
+  "ev_research2_1F": {
+   "x": 1.35,
    "y": 0.0,
-   "z": 22.13
+   "z": 8.077
   },
-  "npc_research2_9": {
-   "x": -9.963,
+  "ev_research2_1F_f": {
+   "x": 1.35,
    "y": 0.0,
-   "z": 26.89
+   "z": 7.077
   },
-  "npc_research2_10": {
-   "x": 1.037,
-   "y": 0.0,
-   "z": 17.37
+  "ev_research2_3F": {
+   "x": 1.35,
+   "y": 9.6,
+   "z": 8.077
   },
-  "npc_research2_11": {
-   "x": 12.037,
-   "y": 0.0,
-   "z": 22.13
+  "ev_research2_3F_f": {
+   "x": 1.35,
+   "y": 9.6,
+   "z": 7.077
   },
-  "npc_research2_12": {
-   "x": 23.037,
-   "y": 0.0,
-   "z": 26.89
+  "lamp_research2_3F_1": {
+   "x": -3.9,
+   "y": 12.2,
+   "z": 67.877
   },
-  "seat_research2_01": {
-   "x": -10.0,
-   "y": 0.0,
-   "z": 5.49
+  "lamp_research2_3F_2": {
+   "x": -3.9,
+   "y": 12.2,
+   "z": 55.877
   },
-  "seat_research2_01_f": {
-   "x": -10.0,
-   "y": 0.0,
-   "z": 5.72
+  "lamp_research2_3F_3": {
+   "x": -3.9,
+   "y": 12.2,
+   "z": 43.877
   },
-  "seat_research2_01_s": {
-   "x": -8.9,
-   "y": 0.0,
-   "z": 5.49
+  "lamp_research2_3F_4": {
+   "x": -3.9,
+   "y": 12.2,
+   "z": 31.877
   },
-  "seat_research2_01_a0": {
-   "x": -10.733,
-   "y": 0.0,
-   "z": 5.52
+  "lamp_research2_3F_5": {
+   "x": -3.9,
+   "y": 12.2,
+   "z": 19.877
   },
-  "seat_research2_01_a1": {
-   "x": -10.0,
-   "y": 0.0,
-   "z": 5.52
+  "lamp_research2_3F_6": {
+   "x": 1.25,
+   "y": 12.2,
+   "z": 6.887
   },
-  "seat_research2_01_a2": {
-   "x": -9.267,
-   "y": 0.0,
-   "z": 5.52
+  "ev_research2_4F": {
+   "x": 1.35,
+   "y": 13.6,
+   "z": 8.077
   },
-  "seat_research2_02": {
-   "x": 10.0,
-   "y": 0.0,
-   "z": 5.49
+  "ev_research2_4F_f": {
+   "x": 1.35,
+   "y": 13.6,
+   "z": 7.077
   },
-  "seat_research2_02_f": {
-   "x": 10.0,
-   "y": 0.0,
-   "z": 5.72
+  "lamp_research2_4F_1": {
+   "x": -3.9,
+   "y": 16.2,
+   "z": 67.877
   },
-  "seat_research2_02_s": {
-   "x": 11.1,
-   "y": 0.0,
-   "z": 5.49
+  "lamp_research2_4F_2": {
+   "x": -3.9,
+   "y": 16.2,
+   "z": 55.877
   },
-  "seat_research2_02_a0": {
-   "x": 9.267,
-   "y": 0.0,
-   "z": 5.52
+  "lamp_research2_4F_3": {
+   "x": -3.9,
+   "y": 16.2,
+   "z": 43.877
   },
-  "seat_research2_02_a1": {
-   "x": 10.0,
-   "y": 0.0,
-   "z": 5.52
+  "lamp_research2_4F_4": {
+   "x": -3.9,
+   "y": 16.2,
+   "z": 31.877
   },
-  "seat_research2_02_a2": {
-   "x": 10.733,
-   "y": 0.0,
-   "z": 5.52
+  "lamp_research2_4F_5": {
+   "x": -3.9,
+   "y": 16.2,
+   "z": 19.877
+  },
+  "lamp_research2_4F_6": {
+   "x": 1.25,
+   "y": 16.2,
+   "z": 6.887
+  },
+  "ev_research2_5F": {
+   "x": 1.35,
+   "y": 17.6,
+   "z": 8.077
+  },
+  "ev_research2_5F_f": {
+   "x": 1.35,
+   "y": 17.6,
+   "z": 7.077
+  },
+  "lamp_research2_5F_1": {
+   "x": -3.9,
+   "y": 20.2,
+   "z": 67.877
+  },
+  "lamp_research2_5F_2": {
+   "x": -3.9,
+   "y": 20.2,
+   "z": 55.877
+  },
+  "lamp_research2_5F_3": {
+   "x": -3.9,
+   "y": 20.2,
+   "z": 43.877
+  },
+  "lamp_research2_5F_4": {
+   "x": -3.9,
+   "y": 20.2,
+   "z": 31.877
+  },
+  "lamp_research2_5F_5": {
+   "x": -3.9,
+   "y": 20.2,
+   "z": 19.877
+  },
+  "lamp_research2_5F_6": {
+   "x": 1.25,
+   "y": 20.2,
+   "z": 6.887
+  },
+  "ev_research2_6F": {
+   "x": 1.35,
+   "y": 21.6,
+   "z": 8.077
+  },
+  "ev_research2_6F_f": {
+   "x": 1.35,
+   "y": 21.6,
+   "z": 7.077
+  },
+  "lamp_research2_6F_1": {
+   "x": -3.9,
+   "y": 24.2,
+   "z": 67.877
+  },
+  "lamp_research2_6F_2": {
+   "x": -3.9,
+   "y": 24.2,
+   "z": 55.877
+  },
+  "lamp_research2_6F_3": {
+   "x": -3.9,
+   "y": 24.2,
+   "z": 43.877
+  },
+  "lamp_research2_6F_4": {
+   "x": -3.9,
+   "y": 24.2,
+   "z": 31.877
+  },
+  "lamp_research2_6F_5": {
+   "x": -3.9,
+   "y": 24.2,
+   "z": 19.877
+  },
+  "lamp_research2_6F_6": {
+   "x": 1.25,
+   "y": 24.2,
+   "z": 6.887
   }
  },
- "triangles": 64210,
- "seats": 1400,
+ "triangles": 11298,
+ "seats": 0,
  "notes": [
-  "食堂 1F 1164 席",
-  "2F 回廊 200 席",
-  "食堂 合計 1400 席",
-  "1〜2F 吹き抜けの大食堂。配膳カウンター 38 m・券売機 6 台・返却口・2F 回廊"
+  "研究棟側のロビー（石の床・パネルの壁・EV 2 基・ガラス越しの階段）と、EV で行く 3F〜6F の中廊下"
  ],
  "objects": [
   "floor_research2",
   "wall_research2",
+  "floor_research2_3f_0",
+  "floor_research2_3f_1",
+  "floor_research2_3f_2",
+  "wall_research2_3f_0",
+  "wall_research2_3f_1",
+  "wall_research2_3f_2",
+  "floor_research2_4f_0",
+  "floor_research2_4f_1",
+  "floor_research2_4f_2",
+  "wall_research2_4f_0",
+  "wall_research2_4f_1",
+  "wall_research2_4f_2",
+  "floor_research2_5f_0",
+  "floor_research2_5f_1",
+  "floor_research2_5f_2",
+  "wall_research2_5f_0",
+  "wall_research2_5f_1",
+  "wall_research2_5f_2",
+  "floor_research2_6f_0",
+  "floor_research2_6f_1",
+  "floor_research2_6f_2",
+  "wall_research2_6f_0",
+  "wall_research2_6f_1",
+  "wall_research2_6f_2",
   "furn_research2_01_entry",
-  "furn_research2_02_gallery",
-  "furn_research2_03_serving",
-  "furn_research2_04_ops",
-  "furn_research2_05_tables",
-  "furn_research2_06_chairs",
-  "furn_research2_07_green"
- ]
+  "furn_research2_02_lobby"
+ ],
+ "signs": [
+  {
+   "empty": "sign_research2_1",
+   "kind": "wall",
+   "ja": "6F 会議室\n4F・5F 研究室\n3F 事務室\n1F・2F 食堂",
+   "en": "6F Meeting / 4-5F Labs\n3F Office / 1-2F Cafeteria",
+   "tris": 1433,
+   "pos": {
+    "x": -4.3,
+    "y": 1.6,
+    "z": 4.3
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 1.4,
+   "h": 1.6,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": "sign_research2_2",
+   "kind": "wall",
+   "ja": "第2研究棟",
+   "en": "Research Labs Building No.2",
+   "tris": 717,
+   "pos": {
+    "x": -11.3,
+    "y": 2.3,
+    "z": 12.537
+   },
+   "facing": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 1.6,
+   "h": 0.5,
+   "faces": 1,
+   "plate": "research2_wall_charcoal",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "3F 事務室",
+   "en": "3F Office",
+   "tris": 391,
+   "pos": {
+    "x": 1.35,
+    "y": 11.3,
+    "z": 4.297
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 1.4,
+   "h": 0.5,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "トイレ",
+   "en": "Toilet",
+   "tris": 103,
+   "pos": {
+    "x": -2.5,
+    "y": 11.3,
+    "z": 67.227
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 0.6,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "4F 研究室",
+   "en": "4F Labs",
+   "tris": 282,
+   "pos": {
+    "x": 1.35,
+    "y": 15.3,
+    "z": 4.297
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 1.4,
+   "h": 0.5,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "トイレ",
+   "en": "Toilet",
+   "tris": 103,
+   "pos": {
+    "x": -2.5,
+    "y": 15.3,
+    "z": 67.227
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 0.6,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "5F 研究室",
+   "en": "5F Labs",
+   "tris": 307,
+   "pos": {
+    "x": 1.35,
+    "y": 19.3,
+    "z": 4.297
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 1.4,
+   "h": 0.5,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "トイレ",
+   "en": "Toilet",
+   "tris": 103,
+   "pos": {
+    "x": -2.5,
+    "y": 19.3,
+    "z": 67.227
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 0.6,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "6F 会議室",
+   "en": "6F Meeting Rooms",
+   "tris": 550,
+   "pos": {
+    "x": 1.35,
+    "y": 23.3,
+    "z": 4.297
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 1.4,
+   "h": 0.5,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "トイレ",
+   "en": "Toilet",
+   "tris": 103,
+   "pos": {
+    "x": -2.5,
+    "y": 23.3,
+    "z": 67.227
+   },
+   "facing": {
+    "x": -1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 0.6,
+   "h": 0.3,
+   "faces": 1,
+   "plate": "sign_plate_blue",
+   "text": "plastic_white",
+   "align": "center"
+  }
+ ],
+ "text_triangles": 4092,
+ "closure_zones": [
+  {
+   "x0": -5.6,
+   "x1": 5.3,
+   "y_face": 3.997,
+   "y_back": 73.177,
+   "notch": [
+    -2.2,
+    9.777,
+    5.3,
+    73.177
+   ],
+   "z_min": 9.1,
+   "z_max": 22.1
+  }
+ ],
+ "ext": {
+  "objects": [
+   "ext_research2",
+   "ext_research2_trees"
+  ],
+  "triangles": 8711,
+  "radius": 30.0,
+  "dz": -0.03
+ }
 }
