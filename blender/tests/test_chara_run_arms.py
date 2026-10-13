@@ -1,8 +1,9 @@
 """走りの腕の振り (#232)。
 
-上腕は脇の近くに下ろしたまま肩から前後に振り、肘は振りに合わせて開閉する（前で深く、
-後ろで浅く曲がる）。ランニングの肘の屈曲は 70〜90 度前後で、振りの間ずっと同じではない。
+軽い小走り（ジョグ）の腕: 上腕は脇に下ろしたまま肩から前後に片振幅 10〜15 度だけ振り、
+肘は 90 度前後で開閉は小さい（前で 10 度ほど深く、後ろで浅く曲がる）。胸の回旋もごく小さい。
 手はバストより下、肩関節のほぼ真下を通る（横に開かず、体の中心線も越えない）。
+2 頭身のキャラは胴が短く、同じ肘の角度では手が胸の高さに来るので、肘を開いて手を収める。
 歩きの腕は #43 で見直し中なので変えない。
 
 肘の曲がりと手の位置は胸から見たもの（胴のひねりと前傾は含めない）。ボーンの向きに
@@ -41,10 +42,13 @@ def _compose(ops):
     return R
 
 
-def _swing(kind, f):
+def _swing(kind, f, name=None):
     a = anim.GAIT_ARMS[kind]
     D = math.radians
-    return anim.gait_arm_spec(f, D(a["arm"]), (D(a["elbow"][0]), D(a["elbow"][1])),
+    elbow = a["elbow"]
+    if name is not None:    # キャラごとの上書き（params の gait）
+        elbow = (params.resolve(name).get("gait") or {}).get(kind, {}).get("elbow", elbow)
+    return anim.gait_arm_spec(f, D(a["arm"]), (D(elbow[0]), D(elbow[1])),
                               D(a["arm_in"]), D(a["abd"]), D(a["fwd"]))
 
 
@@ -54,7 +58,7 @@ def _arm(name, f, side):
     a = body.Anatomy(p)
     flip = np.array([1.0 if side == "Left" else -1.0, 1.0, 1.0])
     sh, el, wr = a.shoulder * flip, a.elbow * flip, a.wrist * flip
-    spec = anim._arms_down(_swing("Run", f), body.arm_drop(p), body.elbow_open(p))
+    spec = anim._arms_down(_swing("Run", f, name), body.arm_drop(p), body.elbow_open(p))
     Ru = _compose(spec[side + "UpperArm"])
     Rl = Ru @ _compose(spec[side + "LowerArm"])
     return sh, Ru @ (el - sh), Rl @ (wr - el)
@@ -85,18 +89,18 @@ def test_walk_arms_are_unchanged():
 @pytest.mark.parametrize("side", ["Left", "Right"])
 @pytest.mark.parametrize("name", params.ALL_IDS)
 def test_run_upper_arm_swings_fore_and_aft_evenly(name, side):
-    """画面上の上腕は前後とも 18〜30 度振り、前傾した胴に引かれて後ろへ偏らない。"""
+    """画面上の上腕は前後とも 10〜16 度だけ振り、前傾した胴に引かれて後ろへ偏らない。"""
     sw = [a["swing"] for a in _world(name, side)]
-    assert -30.0 < min(sw) < -18.0 and 18.0 < max(sw) < 30.0, (name, side, min(sw), max(sw))
+    assert -16.0 < min(sw) < -10.0 and 10.0 < max(sw) < 16.0, (name, side, min(sw), max(sw))
     assert abs(max(sw) + min(sw)) < 6.0, (name, side, min(sw), max(sw))
 
 
 @pytest.mark.parametrize("side", ["Left", "Right"])
 @pytest.mark.parametrize("name", TALL)
 def test_run_upper_arm_stays_down(name, side):
-    """上腕は鉛直下向きから 28 度より開かない（肘を持ち上げたまま走らない）。"""
+    """上腕は鉛直下向きから 20 度より開かない（肘を持ち上げたまま走らない）。"""
     lift = max(a["lift"] for a in _world(name, side))
-    assert lift < 28.0, (name, side, lift)
+    assert lift < 20.0, (name, side, lift)
 
 
 @pytest.mark.parametrize("side", ["Left", "Right"])
@@ -111,11 +115,13 @@ def test_chibi_run_upper_arm_stays_down(name, side):
 @pytest.mark.parametrize("name", params.ALL_IDS)
 def test_run_elbow_opens_and_closes_with_the_swing(name, side):
     bends = [_bend(*_arm(name, f, side)[1:]) for f in PHASES]
-    assert 55.0 < min(bends) < 70.0 and 80.0 < max(bends) < 100.0, (name, side, min(bends), max(bends))
-    assert max(bends) - min(bends) > 20.0, (name, side, bends)
+    low = 66.0 if name in CHIBI else 78.0     # 2 頭身は肘を開いて手を胸の下へ下げる
+    assert low < min(bends) < 92.0 and 76.0 < max(bends) < 100.0, (name, side, min(bends), max(bends))
+    # 開閉は小さい（10 度前後）。振りの間ずっと固まってもいない
+    assert 6.0 < max(bends) - min(bends) < 16.0, (name, side, bends)
     # 前へ振ったとき（f=-1 は左腕が前）に深く、後ろへ振ったときに浅く曲がる
     front, back = (bends[0], bends[-1]) if side == "Left" else (bends[-1], bends[0])
-    assert front - back > 20.0, (name, side, front, back)
+    assert front - back > 6.0, (name, side, front, back)
 
 
 @pytest.mark.parametrize("side", ["Left", "Right"])
@@ -131,12 +137,12 @@ def test_run_hand_stays_below_the_bust(name, side):
 
 @pytest.mark.parametrize("side", ["Left", "Right"])
 @pytest.mark.parametrize("name", CHIBI)
-def test_chibi_run_hand_stays_near_the_bust(name, side):
-    """2 頭身のキャラは胴が短く、前で肘を曲げると手首がバストの高さに来る。6 cm までは許す。"""
+def test_chibi_run_hand_stays_below_the_chest(name, side):
+    """2 頭身のキャラは胴が短い。肘を開いて、手首が胸（バスト）の高さを越えないようにする。"""
     bust = params.resolve(name)["z"]["bust"]
     for f in PHASES:
         sh, upper, fore = _arm(name, f, side)
-        assert (sh + upper + fore)[2] < bust + 0.06, (name, side, f)
+        assert (sh + upper + fore)[2] < bust, (name, side, f, (sh + upper + fore)[2] - bust)
 
 
 @pytest.mark.parametrize("side", ["Left", "Right"])
