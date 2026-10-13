@@ -301,6 +301,13 @@ namespace KCD
             var entrances = new List<DevEntranceSource>();
             foreach (EntranceTrigger door in UnityEngine.Object.FindObjectsByType<EntranceTrigger>(FindObjectsInactive.Exclude))
             {
+                // 入口前の項目は 1 棟に 1 件で、玄関の前に立つ。2 つ目からの扉（講義棟の南東の玄関）は入れない。
+                // 入れると同じ建物の id の入口が 2 つになり、どちらが残るかが FindObjectsByType の順で変わる。
+                if (door.DoorId != door.BuildingId)
+                {
+                    continue;
+                }
+
                 entrances.Add(new DevEntranceSource(door.BuildingId, door.DisplayName, door.transform.position, door.Outward));
             }
 

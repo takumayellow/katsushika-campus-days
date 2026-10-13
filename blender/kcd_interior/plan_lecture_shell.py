@@ -71,6 +71,9 @@ def _entrance(c):
     c.door_gap = (d0, d1)
     c.spawn(*D.SPAWN)
     c.exit(*D.EXIT)
+    # 南東の風除室の扉（キャンパスの扉 lecture_se）。南の spawn より後に置く（meta の spawn は南）
+    c.spawn(*D.SE_SPAWN, door=D.SE_DOOR)
+    c.exit(*D.SE_EXIT, door=D.SE_DOOR)
 
 
 def _outer(c):
@@ -92,9 +95,10 @@ def _outer(c):
     wall(c, BUMP_W, 0.0, Z_1F_TOP)
     wall(c, NORTH, 0.0, Z_1F_TOP)
     wall(c, WEST, 0.0, Z_1F_TOP)
-    # 南東の風除室の外の扉（閉じたガラス）
+    # 南東の風除室の外の扉（引き戸を開けた自動扉。キャンパスの扉 lecture_se へ出る）
     shell.glass_entrance(c.wall, D.SE_VESTIBULE[0], D.SE_VESTIBULE[2], 0.0, D.CEIL_CORR,
-                         D.Y_EAST_S + shell.WALL * 0.5, glass=GLASS, door_h=2.4)
+                         D.Y_EAST_S + shell.WALL * 0.5, glass=GLASS, door_h=2.4,
+                         opening=D.SE_OPENING)
 
 
 def _slab(c, rect, mat):
