@@ -9,7 +9,8 @@ namespace KCD.Tests
     /// <summary>
     /// 屋内の席から立つ (#272)。座面の前に席の当たり判定や机がかぶる席（教育棟・研究実験棟 1 号館・
     /// 食堂・図書館）で、席の脇の E の届く所から座って立つと、立った直後に体がめり込まず、
-    /// そのあと押し出されずにその場に立っていられる。
+    /// そのあと押し出されずにその場に立っていられる。前に出た席は座面の一歩前に、
+    /// 座る前に立っていた所へ戻った席はその所に立つ。
     /// 席の脇は座面のまわりから探す。床が座面と同じ高さにあり、体が収まり、座面との間に壁が無く、
     /// そこに置いて落ち着いても動かない所を、近い順に使う。
     /// </summary>
@@ -32,6 +33,9 @@ namespace KCD.Tests
 
         /// <summary>席の脇の床が座面の床からずれてよい高さ (m)。</summary>
         private const float FloorTolerance = 0.3f;
+
+        /// <summary>前に出て立ったとき、座面から離れてよい平面の距離 (m)。立つ一歩に、落ち着くまでの動きを足す。</summary>
+        private const float MaxStandAhead = PlayerController.DefaultStandForward + SeatChecks.MaxDrift;
 
         /// <summary>席の脇と座面の間に壁が無いかを見る高さ (m)。机や背もたれより上。</summary>
         private const float SightHeight = 1.2f;
@@ -115,7 +119,8 @@ namespace KCD.Tests
                 yield break;
             }
 
-            Transform anchor = SeatChecks.NearestAnchor(seat, player.transform.position);
+            Vector3 before = player.transform.position;
+            Transform anchor = SeatChecks.NearestAnchor(seat, before);
             seat.Interact(player.gameObject);
             if (!player.IsSitting)
             {
@@ -124,7 +129,7 @@ namespace KCD.Tests
             }
 
             yield return PlayModeScenes.Advance(5, 0.3f);
-            yield return SeatChecks.StandUp(player, anchor, PlayerController.MaxReturnDistance, name, bad);
+            yield return SeatChecks.StandUp(player, anchor, MaxStandAhead, name, bad, before);
         }
 
         /// <summary>座面のまわりで、体が収まり E の届く床。近い順。</summary>

@@ -62,6 +62,8 @@ namespace KCD.Tests
             _player.StandUp();
             Assert.IsFalse(_player.IsSitting, "立てない");
             AssertAt(before, "前が席の当たり判定で塞がっているのに、座る前の通路へ戻らない");
+            // StandPosition が HasRoom で選んだ位置なので、ここは戻り先の選び方の確かめ。
+            // 重力で落ち着いたあとの押し出しは InteriorSeatsStandUpPlayTests（SeatChecks.StandUp）が見る。
             Assert.IsFalse(StuckRecovery.IsPenetrating(_host.GetComponent<CharacterController>(),
                 StuckRecovery.SolidMask(_host)), "立った体が席にめり込む");
         }
