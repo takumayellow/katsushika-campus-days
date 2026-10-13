@@ -7,7 +7,7 @@ using UnityEngine.TestTools;
 namespace KCD.Tests
 {
     /// <summary>
-    /// 講義棟 2F・3F の教室 14 室 (#279)。廊下からどの扉でも教室に入り、室の中の通路を次の扉まで歩いて、
+    /// 講義棟 2F〜6F の中を作る 20 室 (#279)。廊下からどの扉でも教室に入り、室の中の通路を次の扉まで歩いて、
     /// また廊下へ出られる。屋内には NavMesh を焼いていないので、図書館のテストと同じく、
     /// プレイヤーを目的地へ向けて当たり判定ごと歩かせる（LibraryInterior.WalkAll）。
     /// 地点は Blender の屋内座標（x, y, 床の高さ）で書き、屋内の Empty との対応から Unity の座標へ移す。
@@ -19,6 +19,9 @@ namespace KCD.Tests
         private const float FloorTolerance = 0.45f;
         private const float Floor2 = 4.6f;
         private const float Floor3 = 8.8f;
+        private const float Floor4 = 13.0f;
+        private const float Floor5 = 17.2f;
+        private const float Floor6 = 21.4f;
 
         /// <summary>室番号、床の高さ、南の室か、扉の中心 X（西から順）。</summary>
         private static readonly (string No, float Z, bool South, float[] Doors)[] Rooms =
@@ -37,11 +40,17 @@ namespace KCD.Tests
             ("309", Floor3, false, new[] { 8.3f, 13.3f }),
             ("310", Floor3, false, new[] { 15.3f, 20.3f }),
             ("311", Floor3, false, new[] { 22.5f, 32.7f }),
+            ("402", Floor4, true, new[] { 8.3f, 20.7f }),
+            ("410", Floor4, false, new[] { 15.3f, 20.3f }),
+            ("502", Floor5, true, new[] { 8.3f, 20.7f }),
+            ("509", Floor5, false, new[] { 8.3f, 13.3f }),
+            ("602", Floor6, true, new[] { 8.3f, 20.7f }),
+            ("610", Floor6, false, new[] { 15.3f, 20.3f }),
         };
 
         [UnityTest]
         [Timeout(SceneTestTimeoutMs)]
-        public IEnumerator EveryClassroomOn2FAnd3FCanBeEnteredThroughEachDoor()
+        public IEnumerator EveryBuiltRoomOn2FTo6FCanBeEnteredThroughEachDoor()
         {
             CollectErrorsInsteadOfLogAssert();
             yield return PlayModeScenes.LoadCampusAsNewGame(Capture);
@@ -72,7 +81,7 @@ namespace KCD.Tests
             }
 
             Assert.IsEmpty(bad, string.Join("\n", bad));
-            AssertNoErrors("講義棟 2F・3F の教室");
+            AssertNoErrors("講義棟 2F〜6F の室");
         }
 
         /// <summary>

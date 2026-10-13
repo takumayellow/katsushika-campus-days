@@ -434,16 +434,16 @@
     },
     {
       "id": "ps_lecture_atrium",
-      "name_ja": "大階段ホール",
-      "name_en": "Grand Stair Hall",
+      "name_ja": "吹き抜け",
+      "name_en": "The Atrium",
       "building": "lecture",
       "position": "poi_lecture_atrium",
       "look_dir": {
         "x": 0.99,
         "z": -0.1
       },
-      "caption_ja": "外壁が弧を描く角の内側。3 層吹き抜けの大階段が動線をそのまま形にしている。",
-      "caption_en": "Inside the curved corner. A three-storey grand stair that is the flow of people made solid."
+      "caption_ja": "1 階のコアの真ん中。見上げると、6 階まで白い手すり壁が幾重にも重なっている。",
+      "caption_en": "The middle of the ground-floor core. Look up, and white parapets stack floor upon floor all the way to the sixth."
     }
   ],
   "achievements": [

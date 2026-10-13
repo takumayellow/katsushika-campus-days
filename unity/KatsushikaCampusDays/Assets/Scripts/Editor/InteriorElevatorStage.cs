@@ -23,8 +23,9 @@ namespace KCD.Editor
         public const float FloorMargin = 0.5f;
 
         /// <summary>
-        /// 階ごとの用途。行き先の画面で階の名前の横に出す。3F〜6F は各階の EV ホールの看板
+        /// 階ごとの用途。行き先の画面で階の名前の横に出す。研究棟 2 号館の 3F〜6F は各階の EV ホールの看板
         /// （blender/kcd_interior/plan_research2_dims.py の UPPER_USE）から階の名前を除いたもの。
+        /// 講義棟は spec（docs/ref/interiors/lecture/spec.md §1-12）の表のとおり。7F は研究室の階（推定）。
         /// </summary>
         private static readonly Dictionary<string, string[]> Uses = new Dictionary<string, string[]>
         {
@@ -33,6 +34,13 @@ namespace KCD.Editor
             { "research2_4F", new[] { "研究室", "Labs" } },
             { "research2_5F", new[] { "研究室", "Labs" } },
             { "research2_6F", new[] { "会議室", "Meeting Rooms" } },
+            { "lecture_1F", new[] { "講義室・生協", "Lecture Halls & Co-op" } },
+            { "lecture_2F", new[] { "講義室・ラウンジ", "Classrooms & Lounge" } },
+            { "lecture_3F", new[] { "講義室・PC ルーム・ラウンジ", "Classrooms, PC Room & Lounges" } },
+            { "lecture_4F", new[] { "講義室・会議室", "Classrooms & Meeting Room" } },
+            { "lecture_5F", new[] { "講義室・会議室", "Classrooms & Meeting Room" } },
+            { "lecture_6F", new[] { "講義室・会議室", "Classrooms & Meeting Room" } },
+            { "lecture_7F", new[] { "研究室", "Labs" } },
         };
 
         /// <summary>乗り場を置き、階ごとの明かりを付ける。置いた乗り場の数を返す（無ければ 0）。</summary>
@@ -154,8 +162,25 @@ namespace KCD.Editor
                 bottoms[i] = stops[i].Landing.position.y - FloorMargin;
             }
 
+            Light[] lights = group.GetComponentsInChildren<Light>(true);
+            var levels = new float[lights.Length];
+            for (int i = 0; i < lights.Length; i++)
+            {
+                levels[i] = LevelOf(lights[i], id);
+            }
+
             InteriorFloorLights floors = group.gameObject.AddComponent<InteriorFloorLights>();
-            floors.Configure(id, names, bottoms, group.GetComponentsInChildren<Light>(true));
+            floors.Configure(id, names, bottoms, lights, levels);
+        }
+
+        /// <summary>
+        /// 明かりの階を決める高さ。lamp_ の明かりはその高さ、spawn・poi・sign の上に吊った明かりは吊り元の高さ
+        /// （<see cref="InteriorStage.AnchorLift"/> 下）。1F の看板の上の明かりが 2F に数えられないように。
+        /// </summary>
+        public static float LevelOf(Light light, string id)
+        {
+            float y = light.transform.position.y;
+            return light.name.StartsWith("Light_lamp_" + id + "_") ? y : y - InteriorStage.AnchorLift;
         }
     }
 }

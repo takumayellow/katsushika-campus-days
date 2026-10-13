@@ -265,9 +265,17 @@ namespace KCD.Editor
             box.size = new Vector3(bounds.size.x + 20f, 0.5f, bounds.size.z + 20f);
         }
 
+        /// <summary>spawn・poi・sign の Empty から、その上に吊る明かりまでの高さ（m）。</summary>
+        public const float AnchorLift = 3.2f;
+
+        /// <summary>lamp_ の Empty の床からの高さ（m）。blender/kcd_interior の LAMP_DZ。</summary>
+        public const float LampHeight = 2.6f;
+
         /// <summary>
         /// 屋内の明かり。太陽は屋内では消すので、spawn・poi・sign の Empty ごとに暖色の点光源を吊る。
         /// lamp_&lt;id&gt;_* は天井の明かりの位置そのもので、間引かずに 1 つずつ吊る（階のある屋内の上の階, #275）。
+        /// lamp_ のある階（いちばん低い lamp_ の階の床から上）には、spawn・poi・sign の明かりを足さない。
+        /// 足すと、その階の 1 つの物に届く光源が 4 を越える（#279）。
         /// </summary>
         private static void AddLights(Transform interior, string id)
         {
@@ -275,6 +283,7 @@ namespace KCD.Editor
             lights.transform.SetParent(interior, false);
             int count = 0;
             var placed = new List<Vector3>();
+            float lampFloor = LowestLampFloor(interior, id);
 
             foreach (Transform child in interior.GetComponentsInChildren<Transform>(true))
             {
@@ -289,14 +298,14 @@ namespace KCD.Editor
                 bool anchor = name == "spawn_" + id
                     || name.StartsWith("poi_" + id + "_")
                     || name.StartsWith("sign_" + id + "_");
-                if (!anchor || TooClose(placed, child.position, 5f))
+                if (!anchor || child.position.y >= lampFloor || TooClose(placed, child.position, 5f))
                 {
                     continue;
                 }
 
                 var go = new GameObject("Light_" + name);
                 go.transform.SetParent(lights.transform, false);
-                go.transform.position = child.position + Vector3.up * 3.2f;
+                go.transform.position = child.position + Vector3.up * AnchorLift;
                 Light light = go.AddComponent<Light>();
                 light.type = LightType.Point;
                 light.range = 14f;
@@ -321,6 +330,24 @@ namespace KCD.Editor
                 light.color = new Color(1f, 0.97f, 0.9f);
                 light.shadows = LightShadows.None;
             }
+        }
+
+        /// <summary>
+        /// いちばん低い lamp_ の階の下端（床から <see cref="InteriorElevatorStage.FloorMargin"/> 下）。
+        /// lamp_ が無ければ +∞。
+        /// </summary>
+        private static float LowestLampFloor(Transform interior, string id)
+        {
+            float lowest = float.PositiveInfinity;
+            foreach (Transform child in interior.GetComponentsInChildren<Transform>(true))
+            {
+                if (child.name.StartsWith("lamp_" + id + "_"))
+                {
+                    lowest = Mathf.Min(lowest, child.position.y);
+                }
+            }
+
+            return lowest - LampHeight - InteriorElevatorStage.FloorMargin;
         }
 
         /// <summary>天井の明かり 1 つ。届く範囲は中廊下の明かりの間隔（12 m）を少し越えるくらい。</summary>

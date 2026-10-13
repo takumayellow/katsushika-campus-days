@@ -9,7 +9,7 @@ from kcd_interior import plan_lab2
 from kcd_lib import signtext
 
 ID = "lab2"
-TRI_CAP = 20000
+TRI_CAP = 12500
 SIGNS = 6
 POIS = {"lab": (1.2, 19.5), "lab_b": (2.0, 23.6), "prep": (6.9, 22.4)}
 NPCS = 5

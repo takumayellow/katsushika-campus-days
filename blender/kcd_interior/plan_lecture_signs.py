@@ -1,5 +1,5 @@
-"""講義棟の看板 36 + 20 枚（plan_lecture_dims.SIGNS、続けて plan_lecture_rooms_dims.SIGNS の順。
-Empty の番号は呼んだ順に振られる。2F・3F の 20 枚は Empty を置かない）。
+"""講義棟の看板 36 + 76 枚（plan_lecture_dims.SIGNS、続けて plan_lecture_rooms_dims.SIGNS の順。
+Empty の番号は呼んだ順に振られる。2F〜7F の 76 枚は Empty を置かない）。
 
 文言・位置・板の色は SIGNS の表が持つ。看板の裏に当たる壁・天井は各区画のモジュールが作る
 （吊り看板の吊り元の真上には、天井の面が z = CEIL_CORR に要る）。

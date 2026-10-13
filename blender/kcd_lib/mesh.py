@@ -196,24 +196,27 @@ class MeshBuilder:
                 emit(poly, mi, col)
                 continue
             n_split += 1
-            pieces = [poly] if _is_convex(poly) else _triangulate(poly)
-            for axis, c in lines:
-                nxt = []
-                for pc in pieces:
-                    s = [p[axis] - c for p in pc]
-                    if min(s) < -eps and max(s) > eps:
-                        for side in (-1.0, 1.0):
-                            q = _clip_half(pc, axis, c, side, eps)
-                            if len(q) >= 3 and _area3(q) > 1e-8:
-                                nxt.append(q)
-                    else:
-                        nxt.append(pc)
-                pieces = nxt
+            pieces = clip_poly(poly, lines, eps)
             for pc in pieces:
                 emit(pc, mi, col)
         self.verts, self.faces, self.face_mat = new_verts, new_faces, new_mat
         self.face_col = new_col
         return n_split, len(new_faces)
+
+    def route(self, lines, sink, eps=1e-3):
+        """全ての面を lines（(軸, 座標) の並び）で切り、切った片を sink(重心) が返す
+        MeshBuilder へ移す（マテリアルと面の色は保つ）。self は空にしない。
+
+        点光源の数の上限はオブジェクトごとに効くので、1 部屋を灯りの届く範囲ごとの
+        オブジェクトに分けるのに使う（講義棟の教室。#279）。"""
+        cols = self.face_col
+        for fi, (face, mi) in enumerate(zip(self.faces, self.face_mat)):
+            col = cols.get(fi) if cols is not None else None
+            name = self.mat_names[mi]
+            for pc in clip_poly([self.verts[k] for k in face], lines, eps):
+                n = float(len(pc))
+                cen = tuple(sum(p[k] for p in pc) / n for k in range(3))
+                sink(cen).add_face(pc, name, col)
 
     # ---- 出力 ----
     def stats(self):
@@ -254,6 +257,32 @@ class MeshBuilder:
 
 
 # ---- split_by_grid の下請け ----
+def clip_poly(poly, lines, eps=1e-3):
+    """poly を lines（(軸, 座標) の並び。軸は 0 = x, 1 = y）の直線で切った片の並び。
+
+    どの直線も poly を横切らなければ poly だけを返す。横切るときは、凸でない多角形を
+    先に三角形に割ってから切る。直線から eps 以内の頂点は「線の上」とみなす。"""
+    def crosses(pc, axis, c):
+        s = [p[axis] - c for p in pc]
+        return min(s) < -eps and max(s) > eps
+
+    if not any(crosses(poly, axis, c) for axis, c in lines):
+        return [poly]
+    pieces = [poly] if _is_convex(poly) else _triangulate(poly)
+    for axis, c in lines:
+        nxt = []
+        for pc in pieces:
+            if crosses(pc, axis, c):
+                for side in (-1.0, 1.0):
+                    q = _clip_half(pc, axis, c, side, eps)
+                    if len(q) >= 3 and _area3(q) > 1e-8:
+                        nxt.append(q)
+            else:
+                nxt.append(pc)
+        pieces = nxt
+    return pieces
+
+
 def _grid_range(lo, hi, cell, eps):
     """lo..hi の内側（両端から eps 以上離れて）を通る格子線の番号。"""
     k0 = int(math.floor((lo + eps) / cell)) + 1

@@ -18,6 +18,12 @@ namespace KCD.Tests
         /// <summary>着いた高さの許容（m）。乗り場は床の上に置き、落ちて床に立つまで待つ。</summary>
         private const float FloorTolerance = 0.4f;
 
+        /// <summary>
+        /// 看板などの Empty の上に吊った明かりの、吊り元からの高さ（InteriorStage.AnchorLift。Editor のアセンブリなので
+        /// ここからは参照できない）。lamp_ の明かりは自分の高さ、それ以外はここだけ下げた高さで階を決める。
+        /// </summary>
+        private const float AnchorLift = 3.2f;
+
         [UnityTest]
         [Timeout(SceneTestTimeoutMs)]
         public IEnumerator Research2_ElevatorReachesEveryFloor_AndTheLobbyStillLeadsOut()
@@ -191,7 +197,7 @@ namespace KCD.Tests
                 }
 
                 lit++;
-                int at = InteriorFloorLights.FloorOf(BottomsOf(stops), light.transform.position.y);
+                int at = InteriorFloorLights.FloorOf(BottomsOf(stops), LevelOf(light));
                 if (at != index)
                 {
                     bad.Add(floor + ": " + stops[at].Floor + " の明かり " + light.name + " が点いている");
@@ -202,6 +208,12 @@ namespace KCD.Tests
             {
                 bad.Add(floor + ": 明かりが 1 つも点いていない");
             }
+        }
+
+        private static float LevelOf(Light light)
+        {
+            float y = light.transform.position.y;
+            return light.name.StartsWith("Light_lamp_" + BuildingId + "_") ? y : y - AnchorLift;
         }
 
         private static float[] BottomsOf(ElevatorPanel.Stop[] stops)

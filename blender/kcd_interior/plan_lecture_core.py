@@ -1,8 +1,8 @@
 """講義棟 1F の中廊下・コア・南の入口ロビー・吹き抜け（spec §1・§2）。
 
 南の室（101・102）と北の室のあいだの帯 Y 19.8〜35.1 を作る。中廊下は暗い天井 3.0 m に
-ダウンライト、コア（EV・トイレ）は黒い箱で上端に青白い間接照明、吹き抜けは 1F から 25.1 まで
-各階に白い手すり壁。2F・3F の廊下と床・エスカレータ・東端ホール・室の中は別のモジュールが作る。
+ダウンライト、コア（EV・トイレ）は黒い箱で上端に青白い間接照明、吹き抜けは 1F の天井の穴の
+白い垂れ壁まで。2F〜7F の廊下と床・吹き抜けの縁・エスカレータ・東端ホール・室の中は別のモジュールが作る。
 """
 
 import math
@@ -23,10 +23,6 @@ X_CORR_E = D.X_STEP                   # 中廊下の東端（ここから東端�
 X_GLASS = 17.65                       # 仕切りのガラスの線
 ESC_HALL = (X_GLASS, D.Y_CORE0, X_CORR_E, D.Y_CORE1)   # エスカレータのホール（上は 2F の床）
 Z_SLAB2_UNDER = D.F2 - D.SLAB         # 2F の床スラブの下面（エスカレータのホールの天井）
-ATRIUM_RING = (-5.8, 20.5, 9.6, 34.5)  # 吹き抜けの各階の輪（歩けない。奥の壁の内面まで）
-PARAPET_T, PARAPET_H = 0.15, 1.2
-RING_SLAB = 0.3                       # 4F〜6F の輪の床の厚み
-UPPER_CEIL_H = 3.0                    # 2F・3F の廊下の天井（床から）
 
 CORR = "lecture_concrete"
 DOOR_WOOD = "lecture_door_wood"
@@ -116,7 +112,7 @@ def _core(c, mb):
             sgn = -1.0 if x == x0 else 1.0
             xa, xb = sorted((x, x + sgn * 0.06))
             kit.box(mb, xa, y0, h - 0.10, xb, y1, h - 0.04, COOL)
-    shell.elevator_bank(mb, D.CORE_EV[0] + 1.6, y0, count=2, ang=0.0, pitch=3.6)
+    SH.ev_bank(mb)
     _door(mb, -17.6, y1 + 0.05, 0.0, w=1.2, h=2.1)                 # 多目的トイレ
     for x in (-7.8, 14.0):                                          # 女子・男子トイレの入口
         _door(mb, x, y0 - 0.05, math.pi, w=1.0, h=2.1)
@@ -208,66 +204,16 @@ def _vestibule(c):
     kit.plate(c.floor, x0 + 0.15, y0 + 0.1, x1 - 0.15, y1 + 1.6, 0.008, "floor_carpet_grey")
 
 
-def _atrium(c, mb):
-    """吹き抜け: 1F の天井の穴から 25.1 まで。2F・3F は南北の廊下の手すり壁と天井の穴の垂れ壁
-    （東西はコアの箱の面）、4F〜6F は輪の床・四周の白い手すり壁・奥の壁・扉。"""
-    hx0, hy0, hx1, hy1 = D.ATRIUM
-    z_ceil2, z_ceil3 = D.F2 + UPPER_CEIL_H, D.F3 + UPPER_CEIL_H
-    _hole_headers(mb, D.CEIL_CORR, Z_SLAB2_UNDER, True)
-    _hole_headers(mb, z_ceil2, D.F3 - D.SLAB, False)
-    _hole_headers(mb, z_ceil3, D.FL[3] - RING_SLAB, True)
-    p = PARAPET_T
-    for L in D.FL[1:6]:
-        zt = L + PARAPET_H
-        kit.box(mb, hx0, hy0 - p, L, hx1, hy0, zt, WHITE)
-        kit.box(mb, hx0, hy1, L, hx1, hy1 + p, zt, WHITE)
-    for L in D.FL[3:6]:
-        _ring_floor(c, mb, L)
-    _ring_top(c, mb)
-
-
-def _hole_headers(mb, z0, z1, ends):
-    """吹き抜けの縁の z0〜z1 の白い垂れ壁（南北。ends なら東西も）。"""
+def _atrium(mb):
+    """吹き抜けの 1F の天井の穴の白い垂れ壁（2F の床スラブの下面まで）。2F より上の縁と頂部は
+    plan_lecture_atrium が作る。"""
     hx0, hy0, hx1, hy1 = D.ATRIUM
     t = 0.10
+    z0, z1 = D.CEIL_CORR, Z_SLAB2_UNDER
     kit.box(mb, hx0, hy0 - t, z0, hx1, hy0, z1, WHITE)
     kit.box(mb, hx0, hy1, z0, hx1, hy1 + t, z1, WHITE)
-    if ends:
-        kit.box(mb, hx0 - t, hy0, z0, hx0, hy1, z1, WHITE)
-        kit.box(mb, hx1, hy0, z0, hx1 + t, hy1, z1, WHITE)
-
-
-def _ring_floor(c, mb, L):
-    """4F〜6F の吹き抜けの輪（歩けない）: 床・東西の手すり壁・奥の壁の白い扉（南北に 2 枚ずつ）。"""
-    hx0, hy0, hx1, hy1 = D.ATRIUM
-    rx0, ry0, rx1, ry1 = ATRIUM_RING
-    p = PARAPET_T
-    shell.floor(c.floor, rx0, ry0, rx1, ry1, L, "lecture_carpet_corridor", thickness=RING_SLAB,
-                side_mat=WHITE, holes=(D.ATRIUM,))
-    zt = L + PARAPET_H
-    kit.box(mb, hx0 - p, hy0 - p, L, hx0, hy1 + p, zt, WHITE)
-    kit.box(mb, hx1, hy0 - p, L, hx1 + p, hy1 + p, zt, WHITE)
-    for x in (hx0 + 1.6, hx1 - 1.6):
-        kit.vplate(mb, (x - 0.5, ry0 + 0.01), (x + 0.5, ry0 + 0.01), L, L + 2.1, "plastic_white",
-                   flip=True)
-        kit.vplate(mb, (x + 0.5, ry1 - 0.01), (x - 0.5, ry1 - 0.01), L, L + 2.1, "plastic_white",
-                   flip=True)
-
-
-def _ring_top(c, mb):
-    """輪の外の縁の内向きの打放しの壁（4F の床の下面〜25.1）・頂部の天井と光の帯・吹き抜けの明かり。"""
-    hx0, hy0, hx1, hy1 = D.ATRIUM
-    rx0, ry0, rx1, ry1 = ATRIUM_RING
-    top = D.VOID_TOP
-    ring = [(rx0, ry0), (rx0, ry1), (rx1, ry1), (rx1, ry0)]
-    for i in range(4):
-        kit.vplate(mb, ring[i], ring[(i + 1) % 4], D.FL[3] - RING_SLAB, top, CORR)
-    shell.ceiling(c.wall, rx0, ry0, rx1, ry1, top, "ceiling_white")
-    for y in (25.5, 27.5, 29.5):
-        shell.light_strip(c.wall, hx0 + 0.3, y - 0.1, hx1 - 0.3, y + 0.1, top)
-    cx, cy = (hx0 + hx1) * 0.5, (hy0 + hy1) * 0.5
-    for z, e in ((7.0, 350.0), (15.0, 450.0), (23.5, 550.0)):
-        c.light(cx, cy, z, energy=e, radius=2.0)
+    kit.box(mb, hx0 - t, hy0, z0, hx0, hy1, z1, WHITE)
+    kit.box(mb, hx1, hy0, z0, hx1 + t, hy1, z1, WHITE)
 
 
 def build(c, M, roots):
@@ -280,4 +226,4 @@ def build(c, M, roots):
     _ceilings(c)
     _downlights(c, roots)
     _lobby(c, M["lobby"])
-    _atrium(c, M["corridor"])
+    _atrium(M["corridor"])
