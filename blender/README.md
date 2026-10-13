@@ -38,12 +38,12 @@
 
 | ファイル | 内容 |
 |----------|------|
-| `unity/.../Campus/campus.fbx` | 建物・外構 18 メッシュ（入口の `bld_entrances` を含む）+ `entrance_<id>` / `door_<id>` / `sign_<id>` / `spawn_player` の Empty 28 個。約 1.62 MB / 126,680 頂点 |
-| `unity/.../Campus/trees.fbx` | 樹木 3 種のメッシュ（幹 `trunk` と葉 `leaf` の 2 マテリアル。葉の明暗は頂点カラー `Col`。Unity の頂点で 1 本 600 以下）と、それを参照する `tree_<n>` Empty 553 個 |
+| `unity/.../Campus/campus.fbx` | 建物・外構 19 メッシュ（入口の `bld_entrances` を含む）+ `entrance_<id>` / `door_<id>` / `sign_<id>` / `spawn_player` の Empty 31 個。約 4.87 MB / 260,425 頂点 |
+| `unity/.../Campus/trees.fbx` | 樹木 3 種のメッシュ（幹 `trunk` と葉 `leaf` の 2 マテリアル。葉の明暗は頂点カラー `Col`。Unity の頂点で 1 本 600 以下）と、それを参照する `tree_<n>` Empty 733 個 |
 | `unity/.../Campus/trees.json` | 樹木インスタンスの (x, y, z, 樹種, スケール, 回転) 一覧。Unity 側で GPU インスタンシングしたい場合の元データ |
 | `docs/previews/campus_{overview,mall,library,lecture}.png` | 1280x720 のプレビュー |
 
-頂点数はキャンパス全体で 126,680（上限 200 万に対して 6.3 %）。`site_ground` を 30 m グリッドで割ったぶん（#30）増えている。うち入口 9 か所は 1,116 頂点 / 1,314 三角形。
+頂点数はキャンパス全体で 260,425（上限 200 万に対して 13.0 %。2026-10-13 の実測）。最も多いのは花壇の `site_props_beds`（138,609）。うち入口 10 か所は 1,240 頂点 / 1,460 三角形。
 
 ## 構成
 
@@ -55,6 +55,8 @@
 | `kcd_lib/mats.py` | マテリアル定義。**名前が Unity 側との契約** |
 | `kcd_lib/facade.py` | 階ごとの連続窓・カーテンウォール・ルーバー・パラペット・ピロティ柱列 |
 | `kcd_lib/buildings.py` | 建物ごとの造形（第1研究棟・共創棟・講義棟・第2研究棟・図書館・体育館・実験棟・温室・背景建物） |
+| `kcd_lib/kyoso_exterior.py` | 共創棟の外観（縦フィンの格子・レンガタイルの妻面・ガラスの階段塔・公園側の軒下） |
+| `kcd_lib/research2_exterior.py` | 第2研究棟の外観（2 層の食堂の台座と 3〜6F の研究棟） |
 | `kcd_lib/entrances.py` | 入口（風除室・ガラスの両開き扉・庇・足元の石張り）と、Unity の入口トリガー・看板の位置の計画 |
 | `kcd_lib/site.py` | 地面・メインストリート・道路と白線・水盤・ベンチ/照明柱・樹木配置 |
 | `kcd_lib/trees.py` | 樹木 3 種（ケヤキ・丸木・松）。葉のかたまりの面ごとの明暗を頂点カラーに焼く |
@@ -129,13 +131,14 @@ x は完全一致、北方向は 1.4〜1.8 m だけ外側に出るが、これ�
 
 ## 既知の形状の逸脱
 
-- **共創棟**: OSM の way 1552199070（第1研究棟の北面に接する細長い棟）は共創棟ではなかった
-  ので、`tools/osm_extract.py` の `BUILDING_PARTS` で第1研究棟の一部（`parts`）に回した。
-  共創棟は `MANUAL_BUILDINGS` にキャンパスマップと航空写真から取った 4 点の外形（約 72 × 35.5 m・
-  11F・45 m）を置き、第1研究棟の北西隣にメインストリートへ長辺を向けて建てる（#281）。
+- **第1研究棟の北東面の帯**: OSM の way 1552199070（第1研究棟の北東面に沿った幅約 6 m・長さ約 130 m の帯）は
+  第1研究棟の一部で、`tools/osm_extract.py` の `BUILDING_PARTS` が第1研究棟の `parts` に入れる。
   第1研究棟の本体は parts に隠れる辺（`_hidden_by` で自動判定）に窓を出さない。
-  建物の中（interior）はまだ以前の細長い帯の形のままで、入口の位置だけを新しい外形に
-  合わせている（`kcd_interior/spec.py` の `KYOSO_BAND_*`）。
+- **共創棟**: OSM にも PLATEAU にも外形が無いので、`MANUAL_BUILDINGS` にキャンパスマップと
+  航空写真から取った 4 点の外形（約 72 × 35.5 m・11F・45 m）を置き、第1研究棟の北西隣に
+  メインストリートへ長辺を向けて建てる（#281）。外観は `kcd_lib/kyoso_exterior.py`。
+  建物の中（interior）は外形と合っておらず、扉の西 31 m から東 99 m までの長さ約 130 m・奥行き 10.5 m の帯
+  （`kcd_interior/spec.py` の `KYOSO_BAND_*`）で、入口の位置だけが外形に合っている。
 - 背景建物（`style == "background"`）は押し出し + 各階の窓（暗いガラスの四角。合計
   `BG_WINDOW_BUDGET` 枚以内になるよう間隔を自動調整）。1 メッシュにまとめている。
 - 外構小物: 水面は `site_water`（Unity で反射用に別マテリアル）、看板は `site_props_signs`
