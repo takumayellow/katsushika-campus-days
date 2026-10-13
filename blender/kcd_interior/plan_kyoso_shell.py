@@ -156,14 +156,15 @@ def core(c, mb, x0, x1, side_wall=False):
 def west_block(c):
     """白い天井・コンビニの線状照明・中ホールとの境の壁・誘導灯。"""
     mb = c.wall
-    shell.ceiling(mb, -58.0, D.Y_IN0, -34.0, D.Y_IN1, D.Z_CEIL, "ceiling_white", grid=1.8)
+    x0 = D.CORE_W[0]
+    shell.ceiling(mb, x0, D.Y_IN0, -34.0, D.Y_IN1, D.Z_CEIL, "ceiling_white", grid=1.8)
     # ファミマの線状照明（斜めの線は省き、長手の帯で表す）
     for k in range(4):
         shell.light_strip(mb, -49.4, 7.6 + 1.7 * k, -38.6, 7.6 + 1.7 * k, D.Z_CEIL,
                           w=0.16)
     # コアとコンビニの奥（中ホールとの境）。白い通路（X -38..-34）は中ホールへ抜ける
-    kit.box(mb, -58.0, D.Y_IN1, 0.0, -38.0, D.Y_IN1 + 0.3, D.Z_SLAB, WALL)
-    shell.exit_sign(mb, -58.0 + 0.18, D.Y_IN0 + 1.2, 2.40, ang=-math.pi * 0.5)
+    kit.box(mb, x0, D.Y_IN1, 0.0, -38.0, D.Y_IN1 + 0.3, D.Z_SLAB, WALL)
+    shell.exit_sign(mb, x0 + 0.18, D.Y_IN0 + 1.2, 2.40, ang=-math.pi * 0.5)
 
 
 # ---- 奥のブロック（局所座標）------------------------------------------ #
@@ -182,6 +183,7 @@ def back_ceilings(c):
 
 
 def back_columns(c):
+    """奥のブロックの柱: 中ホール側の打ち放しの柱・前の帯の色柱・スタバの黒板の柱。"""
     mb = c.wall
     for x in (-34.8, -27.6):
         shell.column(mb, x, 13.6, 0.0, D.Z_SLAB, size=D.COLUMN_SIZE, mat=CONCRETE,
@@ -196,6 +198,7 @@ def back_columns(c):
 
 
 def slabs_2f(c):
+    """2F の床と天井・吹き抜けの壁と頂部・ガラス手すり・3F のスラブの縁。"""
     mb = c.wall
     z = D.Z2
     for rect in (D.SLAB_STRIP, D.SLAB_BRIDGE, D.SLAB_LOUNGE,
@@ -238,6 +241,7 @@ def slabs_2f(c):
 
 # ---- 鉄骨階段（局所の西へ上がる）-------------------------------------- #
 def stair(c):
+    """吹き抜けの鉄骨階段（段板とささら桁）。"""
     mb = c.wall
     x0, n = D.STAIR_X0, D.STAIR_N
     ya, yb = D.STAIR_Y
