@@ -118,6 +118,61 @@ def test_piano_stool_is_the_last_seat_and_has_keys(built):
     assert (keys[0] - stool[0], keys[1] - stool[1]) == pytest.approx((0.33, 0.0), abs=1e-6)
 
 
+def _stage_faces(c):
+    for name, mb in c.furns:
+        if name.endswith("_stage"):
+            for f, m in zip(mb.faces, mb.face_mat):
+                yield [mb.verts[i] for i in f], mb.mat_names[m]
+
+
+def test_piano_stands_on_the_audience_left_of_the_stage(built):
+    """ピアノは客席から見て左（下手, -X）。鍵盤は -X 側、尾は舞台の中央（+X）へ向く。袖の扉と演台を避ける。"""
+    empties = dict(built.empties)
+    stool = empties["seat_library_17"]
+    x0, y0, x1, _y1, _z = D.STAGE
+    assert stool[0] < D.HALL_AXIS
+    assert stool[0] == pytest.approx(-12.25, abs=0.01)
+    assert stool[0] - x0 > 1.5            # 袖の扉 (x0, 61.0) の前の通り道が空く
+    lecterns = [(x, y) for x, y, *_ in [(D.HALL_AXIS, 57.0), (7.3, 57.2)]]
+    assert all(abs(x - stool[0]) > 1.5 for x, _y in lecterns)
+
+
+def test_piano_faces_the_audience_with_lid_prop_and_bass_in_place(built):
+    """FBX の座標で、演奏の向きを確かめる（奏者は椅子から鍵盤の側を向く）。"""
+    empties = dict(built.empties)
+    stool = empties["seat_library_17"]
+    keys = empties["seat_library_17_piano"]
+    fx, fy = keys[0] - stool[0], keys[1] - stool[1]
+    # 奏者の右手側 = 正面を時計回りに 90 度（Z 上の右手系で (fy, -fx)）。客席は舞台の前縁 y0 より小さい Y
+    right = (fy, -fx)
+    assert right[1] < 0, "奏者の右手側が客席を向いていない"
+    zf = D.STAGE[4]
+    py = stool[1]
+    # 屋根の支え棒（stainless の細い棒。シャンデリアの棒は z が高いので除く）
+    props = [f for f, m in _stage_faces(built)
+             if m == "stainless" and all(zf + 0.8 < p[2] < zf + 1.6 for p in f) and all(abs(p[0] - (stool[0] + 1.45)) < 0.3 for p in f)]
+    assert props
+    prop_y = sum(p[1] for f in props for p in f) / sum(len(f) for f in props)
+    assert prop_y < py, "屋根の支え棒が客席側にない"
+    # 黒鍵の天面。低音側は黒鍵の間隔が「2 つ → 1 つ」の並びの 2 つ飛びの端
+    tops = []
+    for f, m in _stage_faces(built):
+        if m == "library_counter_black" and len(f) == 4 and all(abs(p[2] - (zf + 0.725)) < 1e-6 for p in f)                 and all(abs(p[0] - stool[0]) < 1.5 for p in f):
+            ys = [p[1] for p in f]
+            if max(ys) - min(ys) < 0.02:
+                tops.append(sum(ys) / 4)
+    tops = sorted(tops)
+    assert len(tops) == 36
+    low_gap, high_gap = tops[1] - tops[0], tops[-1] - tops[-2]
+    unit = 1.44 / 52
+    # 白鍵 2 つぶんの間隔が開いている端が低音（A#0 と C#1）
+    bass_is_high_y = high_gap > low_gap
+    assert max(low_gap, high_gap) == pytest.approx(2 * unit, abs=1e-4)
+    assert min(low_gap, high_gap) == pytest.approx(unit, abs=1e-4)
+    assert bass_is_high_y, "低音側が袖（奥, +Y）の側にない"
+    assert D.STAGE[3] > 0 and tops[-1] > py
+
+
 def test_six_cameras_inside_the_envelope(built):
     s = built.spec
     assert [cam[0] for cam in built.cams] == ["", "gallery", "upper", "overview", "hall", "foyer"]
