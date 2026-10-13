@@ -57,6 +57,12 @@ EXIT_FAILED = 1
 EXIT_ERROR = 2
 EXIT_BUSY = 3
 
+# 環境変数があるときだけ走るテスト。ふだんの実行ではスキップされるのが正しいので、失敗に数えない。
+# ここに無いスキップはこれまでどおり失敗に数える。
+KNOWN_SKIPS = {
+    "KCD.Tests.MobCrowdCaptureTests.水盤の前に集めて撮る": "KCD_MOB_CAPTURE_DIR を渡して撮るときだけ走る",
+}
+
 # Unity -runTests の終了コード
 UNITY_TESTS_PASSED = 0
 UNITY_TESTS_FAILED = 2
@@ -267,10 +273,14 @@ class RunSummary:
     inconclusive: int
     duration: float
     problems: tuple[CaseResult, ...]
+    known_skips: int = 0
 
     @property
     def ok(self) -> bool:
-        return self.total > 0 and self.failed == 0 and self.skipped == 0 and self.inconclusive == 0
+        # 集計の数と一覧の中身の両方で見る。どちらかに既知でないスキップがあれば NG。
+        listed_unknown = sum(1 for case in self.problems if case.result == "Skipped" and not _is_known_skip(case))
+        unknown_skips = max(self.skipped - self.known_skips, listed_unknown)
+        return self.total > 0 and self.failed == 0 and unknown_skips == 0 and self.inconclusive == 0
 
 
 def _int(node: ET.Element, name: str) -> int:
@@ -337,7 +347,12 @@ def parse_results(path: Path) -> RunSummary:
         inconclusive=_int(run, "inconclusive"),
         duration=duration,
         problems=tuple(problems),
+        known_skips=sum(1 for case in problems if _is_known_skip(case)),
     )
+
+
+def _is_known_skip(case: CaseResult) -> bool:
+    return case.result == "Skipped" and case.fullname in KNOWN_SKIPS
 
 
 def _clip(text: str, limit: int) -> list[str]:
@@ -357,6 +372,9 @@ def write_summary(platform: str, summary: RunSummary, out: io.TextIOBase, filter
     elif summary.total == 0:
         out.write("  [NG] テストが 1 本も走っていません（テストのアセンブリが読めていない）\n")
     for case in summary.problems:
+        if _is_known_skip(case):
+            out.write(f"  [既知のスキップ] {case.fullname}（{KNOWN_SKIPS[case.fullname]}）\n")
+            continue
         tag = case.result if not case.label else f"{case.result}/{case.label}"
         out.write(f"  [{tag}] {case.fullname}\n")
         for line in _clip(case.message, MAX_MESSAGE_LINES):
