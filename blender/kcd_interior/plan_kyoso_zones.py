@@ -57,10 +57,10 @@ def lobby(c, mb):
     for bx in (-6.0, -10.0):
         F.bench(mb, bx, 13.6, math.pi, w=1.8, mat=WOOD)
     # 1F の案内板（自立）
-    kit.box(mb, 2.0, 6.2, 0.05, 3.2, 6.32, 1.9, "kyoso_info_beige")
-    for lx in (2.1, 3.1):
+    kit.box(mb, -3.2, 6.2, 0.05, -2.0, 6.32, 1.9, "kyoso_info_beige")
+    for lx in (-3.1, -2.1):
         kit.box_c(mb, lx, 6.26, 0.0, 0.05, 0.05, 0.1, BLACK)
-    kit.box(mb, 2.0, 6.2, 1.9, 3.2, 6.32, 1.95, BLACK)
+    kit.box(mb, -3.2, 6.2, 1.9, -2.0, 6.32, 1.95, BLACK)
 
 
 # ---- スタジオ ------------------------------------------------------------ #
@@ -89,15 +89,16 @@ def learning_square(c, mb):
             _sofa(mb, sx, yb, D.FACE_MALL, z=z, mat=CHARCOAL if sx < 8 else GREY)
             F.round_table(mb, sx, (ya + yb) * 0.5, r=0.32, h=0.45, top=BLACK, leg=BLACK,
                           z=z)
-    for sx in (6.4, 9.2, 12.0):
-        _sofa(mb, sx, 16.6, D.FACE_PARK, w=2.0, z=z)
+    for sx, mat in ((6.4, CHARCOAL), (9.2, GREY), (12.0, CHARCOAL)):
+        _sofa(mb, sx, 16.6, D.FACE_PARK, w=2.0, z=z, mat=mat)
     for y0, y1 in ((19.2, 22.6), (23.4, 27.0)):
         FK.box_bench(mb, 13.0, y0, 13.5, y1, z=z)
         FK.seat_mark(mb, 13.25, (y0 + y1) * 0.5, z, D.FACE_EAST, hw=(y1 - y0) * 0.5,
                      hd=0.25, inner=y1 - y0)
     FK.box_stool(mb, 13.25, 23.0, z)
-    FK.pouf(mb, 8.6, 24.9, z, mat=CHARCOAL)
-    FK.seat_mark(mb, 8.6, 24.9, z, D.FACE_EAST, hw=0.3, hd=0.3, inner=0.5)
+    for px, py, mat in ((8.6, 24.9, CHARCOAL), (8.6, 18.3, GREY), (11.8, 18.3, CHARCOAL)):
+        FK.pouf(mb, px, py, z, mat=mat)
+        FK.seat_mark(mb, px, py, z, D.FACE_EAST, hw=0.3, hd=0.3, inner=0.5)
     # 公園側へ延びる小さな段床（丸いソファ）
     FK.deck_all(mb, *D.LS1_EXT)
     _round_sofa(mb, 1.75, 30.35, z)

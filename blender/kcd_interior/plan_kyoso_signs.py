@@ -50,7 +50,7 @@ def build(c, mb):
     w(c, mb, -21.0, y, 2.6, M, ja="エレベーター", en="Elevators", w=1.0, h=0.3)
     w(c, mb, -13.9, y, 1.5, M, ja="本学関係者以外の\n立ち入りは\nご遠慮ください",
       en="Authorized persons only", w=0.9, h=0.5, plate="plastic_white")
-    w(c, mb, 2.6, 6.2, 1.5, M, ja="1階 フロアガイド", en="1F Floor Guide", w=1.2, h=0.4)
+    w(c, mb, -2.6, 6.2, 1.5, M, ja="1階 フロアガイド", en="1F Floor Guide", w=1.2, h=0.4)
     w(c, mb, -16.5, y, 2.4, M, ja="トイレ", en="Restrooms", w=0.8, h=0.3)
     # カフェの箱の正面の黒板のメニュー
     for x, ja, en in ((13.6, "コーヒー", "COFFEE"),
