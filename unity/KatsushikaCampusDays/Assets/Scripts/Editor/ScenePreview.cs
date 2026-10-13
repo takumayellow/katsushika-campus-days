@@ -420,6 +420,86 @@ namespace KCD.Editor
             },
             new Shot
             {
+                Name = "shot_lib110_entrance",
+                Space = Frame.Interior,
+                Building = "library",
+                Eye = new Vector3(0f, 1.6f, 6.2f),
+                Look = new Vector3(6f, 2.6f, 40f),
+                Fov = 0f,
+                Note = "図書館 1F、入口のゲートを抜けた所から奥（#110 の spec の入口の画）",
+            },
+            new Shot
+            {
+                Name = "shot_lib110_lobby",
+                Space = Frame.Interior,
+                Building = "library",
+                Eye = new Vector3(-1f, 1.6f, 19f),
+                Look = new Vector3(-10f, 1.4f, 26f),
+                Fov = 0f,
+                Note = "図書館 1F、赤いソファのロビーとカウンター",
+            },
+            new Shot
+            {
+                Name = "shot_lib110_gallery",
+                Space = Frame.Interior,
+                Building = "library",
+                Eye = new Vector3(13f, 4.9f, 30f),
+                Look = new Vector3(-10f, 1.5f, 24f),
+                Fov = 0f,
+                Note = "図書館、段状ギャラリーの縁から吹抜けとカウンター",
+            },
+            new Shot
+            {
+                Name = "shot_lib110_2f_stacks",
+                Space = Frame.Interior,
+                Building = "library",
+                Eye = new Vector3(21f, 6.6f, 44.55f),
+                Look = new Vector3(40f, 6.0f, 44.55f),
+                Fov = 0f,
+                Note = "図書館 2F、開架書架の 13・14 本目の間の通路から窓へ",
+            },
+            new Shot
+            {
+                Name = "shot_lib110_foyer",
+                Space = Frame.Interior,
+                Building = "library",
+                Eye = new Vector3(-16f, 11.6f, 7f),
+                Look = new Vector3(14f, 11.0f, 14f),
+                Fov = 0f,
+                Note = "図書館 3F ホワイエ、西から東へ",
+            },
+            new Shot
+            {
+                Name = "shot_lib110_hall_seats",
+                Space = Frame.Interior,
+                Building = "library",
+                Eye = new Vector3(-1.6f, 12.6f, 45.3f),
+                Look = new Vector3(-1.6f, 11.0f, 59.5f),
+                Fov = 0f,
+                Note = "図書館大ホール、1 階席の横通路から舞台",
+            },
+            new Shot
+            {
+                Name = "shot_lib110_hall_balcony",
+                Space = Frame.Interior,
+                Building = "library",
+                Eye = new Vector3(-1.6f, 17.8f, 33.9f),
+                Look = new Vector3(-1.6f, 10.5f, 52f),
+                Fov = 0f,
+                Note = "図書館大ホール、2 階席から舞台を見下ろす",
+            },
+            new Shot
+            {
+                Name = "shot_lib110_hall_piano",
+                Space = Frame.Interior,
+                Building = "library",
+                Eye = new Vector3(1.5f, 12.6f, 53.0f),
+                Look = new Vector3(7.0f, 11.4f, 58.0f),
+                Fov = 0f,
+                Note = "図書館大ホールの舞台のピアノ",
+            },
+            new Shot
+            {
                 Name = "shot_kyoso_entrance",
                 Space = Frame.Interior,
                 Building = "kyoso",
