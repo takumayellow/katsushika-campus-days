@@ -58,15 +58,15 @@ EXT_PREFIX = exterior.EXT_PREFIX
 INT_BUDGET = 450000       # 屋内の合計
 INT_BUDGET_ONE = {        # 屋内 1 棟
     "library": 80000,
-    "cafeteria": 75000,
+    "cafeteria": 65000,
     "research2": 20000,
-    "lecture": 55000,
+    "lecture": 110000,
     "research1": 50000,
     "kyoso": 45000,
-    "gym": 40000,
-    "lab1": 35000,
-    "lab2": 30000,
-    "greenhouse": 15000,
+    "gym": 25000,
+    "lab1": 27000,
+    "lab2": 20000,
+    "greenhouse": 8000,
 }
 EXT_BUDGET = 200000       # 近景の合計
 EXT_BUDGET_ONE = 50000    # 近景 1 棟

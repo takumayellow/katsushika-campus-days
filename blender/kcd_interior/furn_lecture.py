@@ -1,5 +1,10 @@
 """講義棟の固有の家具（spec §3・§4）。"""
 
+import math
+
+from . import furniture as F
+from . import kit
+
 SHELL = "lecture_wood_shell"
 NAVY = "lecture_seat_navy"
 FRAME = "metal_dark"
@@ -44,3 +49,46 @@ def cafe_chair(mb, t, mat="lecture_seat_green", frame="metal_dark"):
     for lx in (-0.18, 0.14):
         for ly in (-0.18, 0.14):
             t.box_nb(mb, lx, ly, 0.0, lx + 0.04, ly + 0.04, 0.42, frame)
+
+
+IVORY = "lecture_desk_ivory"
+PANEL = "lecture_panel_dark"
+WOOD = SHELL
+
+
+def desk_bench(mb, t, w=1.8):
+    """2F・3F の教室の 3 人掛けの固定机と、その後ろの背付きの長椅子（箱 4 つ・40 三角形）。
+
+    t のローカルの +Y が正面（黒板の側）。原点は天板の後ろの縁の中央で、天板は y 0〜0.45、
+    長椅子の背の後ろの面が y -0.52（列の間隔 1.0 m に収まる）。前板と長椅子の背が床まで届いて脚を兼ねる。
+    """
+    hw = w * 0.5
+    t.box_nb(mb, -hw, 0.0, 0.70, hw, 0.45, 0.73, IVORY)
+    t.box_nb(mb, -hw, 0.41, 0.0, hw, 0.45, 0.70, PANEL)
+    t.box_nb(mb, -hw, -0.48, 0.42, hw, -0.18, 0.46, "chair_grey")
+    t.box_nb(mb, -hw, -0.52, 0.0, hw, -0.48, 0.84, PANEL)
+
+
+def green_board(mb, t, w=7.2, z0=0.9, z1=2.1, board="lecture_board_green"):
+    """壁掛けの緑の黒板と木の枠・受け。t は壁の面の上で、ローカルの +Y が室の側。"""
+    hw = w * 0.5
+    f = 0.06
+    t.box_nb(mb, -hw - f, 0.0, z0 - f, hw + f, 0.03, z1 + f, WOOD)
+    t.vplate(mb, hw, 0.031, -hw, 0.031, z0, z1, board)    # 法線はローカルの +Y
+    t.box_nb(mb, -hw, 0.03, z0 - f, hw, 0.12, z0 - f + 0.04, WOOD)
+
+
+def pc_desk(mb, t, w=1.4):
+    """306 の 2 人掛けの PC の机: 天板と前板、黒いモニター 2 台・キーボード 2 枚・灰色の椅子 2 脚。
+
+    t のローカルの +Y が正面（白板の側）。原点は天板の後ろの縁の中央、天板は y 0〜0.6。
+    """
+    hw = w * 0.5
+    t.box_nb(mb, -hw, 0.0, 0.70, hw, 0.60, 0.73, "desk_white")
+    t.box_nb(mb, -hw, 0.56, 0.0, hw, 0.60, 0.70, PANEL)
+    for sx in (-0.35, 0.35):
+        t.box_nb(mb, sx - 0.26, 0.42, 0.85, sx + 0.26, 0.45, 1.16, "plastic_black")
+        t.box_nb(mb, sx - 0.04, 0.45, 0.73, sx + 0.04, 0.50, 0.85, "plastic_black")
+        t.box_nb(mb, sx - 0.19, 0.12, 0.73, sx + 0.19, 0.26, 0.75, "plastic_black")
+        chair = kit.T(*t.p(sx, -0.30, 0.0), ang=math.atan2(t.s, t.c))
+        F.chair_min(mb, chair, mat="chair_grey", frame="metal_gray")

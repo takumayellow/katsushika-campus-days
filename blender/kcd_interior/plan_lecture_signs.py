@@ -1,4 +1,5 @@
-"""講義棟の看板 36 枚（plan_lecture_dims.SIGNS の順。Empty の番号は呼んだ順に振られる）。
+"""講義棟の看板 36 + 20 枚（plan_lecture_dims.SIGNS、続けて plan_lecture_rooms_dims.SIGNS の順。
+Empty の番号は呼んだ順に振られる。2F・3F の 20 枚は Empty を置かない）。
 
 文言・位置・板の色は SIGNS の表が持つ。看板の裏に当たる壁・天井は各区画のモジュールが作る
 （吊り看板の吊り元の真上には、天井の面が z = CEIL_CORR に要る）。
@@ -7,6 +8,7 @@
 
 from . import signs
 from . import plan_lecture_dims as D
+from . import plan_lecture_rooms_dims as RD
 
 REGISTERS = 4
 
@@ -28,6 +30,8 @@ def build(c, mb, registers):
     for row in D.SIGNS:
         opts = row[10]
         _place(c, mb, row, regs[opts["register"]] if "register" in opts else None)
+    for row in RD.SIGNS:
+        _place(c, mb, row)
 
 
 def hang_roots():

@@ -2,7 +2,7 @@
 
 南の室（101・102）と北の室のあいだの帯 Y 19.8〜35.1 を作る。中廊下は暗い天井 3.0 m に
 ダウンライト、コア（EV・トイレ）は黒い箱で上端に青白い間接照明、吹き抜けは 1F から 25.1 まで
-各階に白い手すり壁。2F 以上の床・エスカレータ・東端ホール・北の室の中は別のモジュールが作る。
+各階に白い手すり壁。2F・3F の廊下と床・エスカレータ・東端ホール・室の中は別のモジュールが作る。
 """
 
 import math
@@ -25,6 +25,8 @@ ESC_HALL = (X_GLASS, D.Y_CORE0, X_CORR_E, D.Y_CORE1)   # エスカレータの�
 Z_SLAB2_UNDER = D.F2 - D.SLAB         # 2F の床スラブの下面（エスカレータのホールの天井）
 ATRIUM_RING = (-5.8, 20.5, 9.6, 34.5)  # 吹き抜けの各階の輪（歩けない。奥の壁の内面まで）
 PARAPET_T, PARAPET_H = 0.15, 1.2
+RING_SLAB = 0.3                       # 4F〜6F の輪の床の厚み
+UPPER_CEIL_H = 3.0                    # 2F・3F の廊下の天井（床から）
 
 CORR = "lecture_concrete"
 DOOR_WOOD = "lecture_door_wood"
@@ -55,18 +57,18 @@ def _gaps(x_start, centers, half):
 def _south_wall(c):
     """南の室の壁 Y 19.72: 102 の閉じた扉 4 枚、101 の開いた扉 4 枚、101 の東の壁。"""
     x_w1 = X_LOBBY_W
-    SH.part(c, (X_IN_W - 0.1, Y_CS), (x_w1, Y_CS), 0.0, D.F2, mat=CORR, top=False)
+    SH.part(c, (X_IN_W - 0.1, Y_CS), (x_w1, Y_CS), 0.0, Z_SLAB2_UNDER, mat=CORR, top=False)
     for x in D.R102_DOORS:
         _door(c.wall, x, Y_CS + T * 0.5, 0.0)
     hw = D.DOOR2_W * 0.5
     x_e0 = X_LOBBY_E
-    SH.part(c, (x_e0, Y_CS), (X_CORR_E, Y_CS), 0.0, D.F2, mat=CORR,
+    SH.part(c, (x_e0, Y_CS), (X_CORR_E, Y_CS), 0.0, Z_SLAB2_UNDER, mat=CORR,
             gaps=_gaps(x_e0, D.R101_DOORS, hw), top=False)
     for x in D.R101_DOORS:
-        _header(c.wall, x - hw, x + hw, Y_CS, D.DOOR2_H, D.F2)
+        _header(c.wall, x - hw, x + hw, Y_CS, D.DOOR2_H, Z_SLAB2_UNDER)
         # 東の端の扉は西へ開ける（戸が壁の端の外へ出ないように）
         _door(c.wall, x, Y_CS, math.pi if x > D.R101_X[1] - 2.0 else 0.0, open_=0.86)
-    SH.part(c, (X_101_E, D.Y_EAST_S), (X_101_E, D.Y_ROOM_S1), 0.0, D.F2, mat=CORR,
+    SH.part(c, (X_101_E, D.Y_EAST_S), (X_101_E, D.Y_ROOM_S1), 0.0, Z_SLAB2_UNDER, mat=CORR,
             thick=T_101_E, top=False)
 
 
@@ -77,14 +79,14 @@ def _north_wall(c):
     nx0, nx1 = D.N_EXIT_X
     k0, k1 = D.COOP_KIOSK_X[0] + 1.0, D.COOP_KIOSK_X[1] - 0.8
     gaps = _gaps(x0, D.R104_DOORS, hw) + [(nx0 - x0, nx1 - x0), (k0 - x0, k1 - x0)]
-    SH.part(c, (x0, Y_CN), (x1, Y_CN), 0.0, D.F2, mat=CORR, gaps=gaps, top=False)
+    SH.part(c, (x0, Y_CN), (x1, Y_CN), 0.0, Z_SLAB2_UNDER, mat=CORR, gaps=gaps, top=False)
     for x in D.R104_DOORS:
-        _header(c.wall, x - hw, x + hw, Y_CN, D.DOOR2_H, D.F2)
+        _header(c.wall, x - hw, x + hw, Y_CN, D.DOOR2_H, Z_SLAB2_UNDER)
         _door(c.wall, x, Y_CN, math.pi, open_=0.86)
-    _header(c.wall, nx0, nx1, Y_CN, D.CEIL_CORR, D.F2)
+    _header(c.wall, nx0, nx1, Y_CN, D.CEIL_CORR, Z_SLAB2_UNDER)
     # キオスクの窓: 下はカウンターの腰、上は垂れ壁
     _header(c.wall, k0, k1, Y_CN, 0.0, 1.0, thick=0.5, mat="lecture_coop_counter")
-    _header(c.wall, k0, k1, Y_CN, 2.2, D.F2)
+    _header(c.wall, k0, k1, Y_CN, 2.2, Z_SLAB2_UNDER)
     y_face = D.Y_ROOM_N0
     for x, w in ((-25.2, 1.0), (D.HEALTH_DOOR_X, 1.0), (-12.4, 1.6), (-4.8, 1.6),
                  (23.3, 1.0)):
@@ -174,8 +176,9 @@ def _downlights(c, roots):
 def _lobby(c, mb):
     """南の入口ロビー: レンガの両側の壁、掲示ケース 4 台、風除室、玄関マット。"""
     for x in (X_LOBBY_W, X_LOBBY_E):
-        # 見張り線 Y 4.6 をまたぐので天面に蓋（2F の床が無い所）
-        SH.part(c, (x, D.Y_S + 0.15), (x, D.Y_ROOM_S1), 0.0, D.F2, mat="lecture_brick")
+        # 上は 202・201 の床スラブの下面まで
+        SH.part(c, (x, D.Y_S + 0.15), (x, D.Y_ROOM_S1), 0.0, Z_SLAB2_UNDER, mat="lecture_brick",
+                top=False)
     w, h = 2.4, 1.3
     for x, ang in ((D.LOBBY_X[0], -math.pi * 0.5), (D.LOBBY_X[1], math.pi * 0.5)):
         for y in (11.0, 15.5):
@@ -206,35 +209,59 @@ def _vestibule(c):
 
 
 def _atrium(c, mb):
-    """吹き抜け: 1F の天井の穴から 25.1 まで。各階の輪の床・白い手すり壁・奥の壁・扉。"""
+    """吹き抜け: 1F の天井の穴から 25.1 まで。2F・3F は南北の廊下の手すり壁と天井の穴の垂れ壁
+    （東西はコアの箱の面）、4F〜6F は輪の床・四周の白い手すり壁・奥の壁・扉。"""
     hx0, hy0, hx1, hy1 = D.ATRIUM
-    rx0, ry0, rx1, ry1 = ATRIUM_RING
-    z0 = D.CEIL_CORR
-    t = 0.10
-    kit.box(mb, hx0 - t, hy0, z0, hx0, hy1, D.FL[1] - 0.3, WHITE)
-    kit.box(mb, hx1, hy0, z0, hx1 + t, hy1, D.FL[1] - 0.3, WHITE)
-    kit.box(mb, hx0, hy0 - t, z0, hx1, hy0, D.FL[1] - 0.3, WHITE)
-    kit.box(mb, hx0, hy1, z0, hx1, hy1 + t, D.FL[1] - 0.3, WHITE)
+    z_ceil2, z_ceil3 = D.F2 + UPPER_CEIL_H, D.F3 + UPPER_CEIL_H
+    _hole_headers(mb, D.CEIL_CORR, Z_SLAB2_UNDER, True)
+    _hole_headers(mb, z_ceil2, D.F3 - D.SLAB, False)
+    _hole_headers(mb, z_ceil3, D.FL[3] - RING_SLAB, True)
     p = PARAPET_T
     for L in D.FL[1:6]:
-        shell.floor(c.floor, rx0, ry0, rx1, ry1, L, "lecture_carpet_corridor", thickness=0.3,
-                    side_mat=WHITE, holes=(D.ATRIUM,))
         zt = L + PARAPET_H
-        kit.box(mb, hx0 - p, hy0 - p, L, hx0, hy1 + p, zt, WHITE)
-        kit.box(mb, hx1, hy0 - p, L, hx1 + p, hy1 + p, zt, WHITE)
         kit.box(mb, hx0, hy0 - p, L, hx1, hy0, zt, WHITE)
         kit.box(mb, hx0, hy1, L, hx1, hy1 + p, zt, WHITE)
-        # 奥の壁の白い扉（南北に 2 枚ずつ）
-        for x in (hx0 + 1.6, hx1 - 1.6):
-            kit.vplate(mb, (x - 0.5, ry0 + 0.01), (x + 0.5, ry0 + 0.01), L, L + 2.1, "plastic_white",
-                       flip=True)
-            kit.vplate(mb, (x + 0.5, ry1 - 0.01), (x - 0.5, ry1 - 0.01), L, L + 2.1, "plastic_white",
-                       flip=True)
-    # 輪の外の縁: 内向きの打放しの壁（4.3〜25.1）
+    for L in D.FL[3:6]:
+        _ring_floor(c, mb, L)
+    _ring_top(c, mb)
+
+
+def _hole_headers(mb, z0, z1, ends):
+    """吹き抜けの縁の z0〜z1 の白い垂れ壁（南北。ends なら東西も）。"""
+    hx0, hy0, hx1, hy1 = D.ATRIUM
+    t = 0.10
+    kit.box(mb, hx0, hy0 - t, z0, hx1, hy0, z1, WHITE)
+    kit.box(mb, hx0, hy1, z0, hx1, hy1 + t, z1, WHITE)
+    if ends:
+        kit.box(mb, hx0 - t, hy0, z0, hx0, hy1, z1, WHITE)
+        kit.box(mb, hx1, hy0, z0, hx1 + t, hy1, z1, WHITE)
+
+
+def _ring_floor(c, mb, L):
+    """4F〜6F の吹き抜けの輪（歩けない）: 床・東西の手すり壁・奥の壁の白い扉（南北に 2 枚ずつ）。"""
+    hx0, hy0, hx1, hy1 = D.ATRIUM
+    rx0, ry0, rx1, ry1 = ATRIUM_RING
+    p = PARAPET_T
+    shell.floor(c.floor, rx0, ry0, rx1, ry1, L, "lecture_carpet_corridor", thickness=RING_SLAB,
+                side_mat=WHITE, holes=(D.ATRIUM,))
+    zt = L + PARAPET_H
+    kit.box(mb, hx0 - p, hy0 - p, L, hx0, hy1 + p, zt, WHITE)
+    kit.box(mb, hx1, hy0 - p, L, hx1 + p, hy1 + p, zt, WHITE)
+    for x in (hx0 + 1.6, hx1 - 1.6):
+        kit.vplate(mb, (x - 0.5, ry0 + 0.01), (x + 0.5, ry0 + 0.01), L, L + 2.1, "plastic_white",
+                   flip=True)
+        kit.vplate(mb, (x + 0.5, ry1 - 0.01), (x - 0.5, ry1 - 0.01), L, L + 2.1, "plastic_white",
+                   flip=True)
+
+
+def _ring_top(c, mb):
+    """輪の外の縁の内向きの打放しの壁（4F の床の下面〜25.1）・頂部の天井と光の帯・吹き抜けの明かり。"""
+    hx0, hy0, hx1, hy1 = D.ATRIUM
+    rx0, ry0, rx1, ry1 = ATRIUM_RING
     top = D.VOID_TOP
     ring = [(rx0, ry0), (rx0, ry1), (rx1, ry1), (rx1, ry0)]
     for i in range(4):
-        kit.vplate(mb, ring[i], ring[(i + 1) % 4], D.FL[1] - 0.3, top, CORR)
+        kit.vplate(mb, ring[i], ring[(i + 1) % 4], D.FL[3] - RING_SLAB, top, CORR)
     shell.ceiling(c.wall, rx0, ry0, rx1, ry1, top, "ceiling_white")
     for y in (25.5, 27.5, 29.5):
         shell.light_strip(c.wall, hx0 + 0.3, y - 0.1, hx1 - 0.3, y + 0.1, top)

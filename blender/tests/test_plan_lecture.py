@@ -12,6 +12,7 @@ from kcd_interior import plan_lecture_hall as HL
 from kcd_interior import plan_lecture_lounge as LOUNGE
 from kcd_interior import plan_lecture_north as NORTH
 from kcd_interior import plan_lecture_101 as R101
+from kcd_interior import plan_lecture_rooms_dims as RD
 from kcd_interior import plan_lecture_shell as SH
 from kcd_interior import plan_lecture_signs as SG
 from kcd_interior import plan_lecture_upper as UP
@@ -146,9 +147,10 @@ def test_shell_places_the_entrance(shell):
 
 
 def test_signs_are_all_placed_with_text(signed):
-    assert [r["ja"] for r in signed.signs] == [row[1] for row in D.SIGNS]
+    rows = D.SIGNS + RD.SIGNS
+    assert [r["ja"] for r in signed.signs] == [row[1] for row in rows]
     assert all(r["tris"] > 0 for r in signed.signs)
-    anchored = [row for row in D.SIGNS if row[10].get("anchor", True)]
+    anchored = [row for row in rows if row[10].get("anchor", True)]
     assert len([r for r in signed.signs if r["empty"]]) == len(anchored)
 
 
