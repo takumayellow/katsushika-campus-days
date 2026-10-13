@@ -283,28 +283,11 @@ def build_library(mb, b, frame, ctx):
 
 
 # --------------------------------------------------------------------------- #
-#  体育館 — 無窓の大壁 + 上部ハイサイドライト + 北側の部室棟
+#  体育館 — アリーナの大壁と部室の棟を 1 棟にした 6 階建て（kcd_lib/gym_exterior.py）
 # --------------------------------------------------------------------------- #
 def build_gym(mb, b, frame, ctx):
-    loop = geom.ensure_ccw(geom.dedup(b["footprint"]))
-    h = b["height"]
-    u0, v0, u1, v1 = frame.uv_bbox(loop)
-
-    facade.add_solid(mb, loop, 0.0, h - 5.4, "concrete_light")
-    facade.add_facade(mb, loop, h - 5.4, 2.6, 0, 2,
-                      wall="concrete_light", glass="glass_dark",
-                      seg=3.2, sill=0.45, header=0.35, inset=0.35, mullion=0.24)
-    # 北側の部室棟（小窓が並ぶ低層ウィング）
-    wing = _uv_rect(frame, u0 + 4.0, v1 - 1.0, u0 + 30.0, v1 + 9.0)
-    mb.add_slab(wing, 0.0, 16.5, "concrete_grey")
-    facade.add_facade(mb, wing, 0.0, 3.3, 0, 5,
-                      wall="concrete_grey", glass="glass_dark",
-                      seg=2.0, sill=1.25, header=0.55, inset=0.30, mullion=0.5)
-    facade.add_parapet(mb, wing, 16.5, 0.8, 0.3, "concrete_light")
-
-    mb.add_ngon_flat(loop, h, "roof_grey")
-    facade.add_parapet(mb, loop, h, 0.9, 0.4, "concrete_light")
-    # 入口と看板は kcd_lib.entrances が置く
+    from . import gym_exterior
+    gym_exterior.build(mb, b, frame, ctx)
 
 
 # --------------------------------------------------------------------------- #
@@ -466,11 +449,11 @@ def _lab1_stair_slot(mb, a, b, fh, lv):
             mb.add_prism(rect(r0, r1, d0, d1), z, z + 1.1, "concrete_light", "concrete_light")
 
 
-def _lab1_door_t(a, b, frame):
-    """入口（kcd_lib.entrances.DOORS）の探索線が辺 a→b に当たる位置（辺に沿う距離）。"""
+def _lab1_door_t(a, b, frame, bid="lab1"):
+    """入口（kcd_lib.entrances.DOORS の bid）の探索線が辺 a→b に当たる位置（辺に沿う距離）。"""
     from . import entrances
-    for bid, (pu, pv), (du, dv), *_rest in entrances.DOORS:
-        if bid != "lab1":
+    for door, (pu, pv), (du, dv), *_rest in entrances.DOORS:
+        if door != bid:
             continue
         o = frame.xy(pu, pv)
         d = frame.xy(du, dv)
