@@ -248,7 +248,7 @@ def _wings(mb):
     FL.door(mb, x1, 61.0, z, math.pi * 0.5, open_=0.0)
 
 
-PIANO = (7.0, 58.0, D.STAGE[4], -math.pi * 0.5)   # グランドピアノの置き場（x, y, 床の高さ, ang）
+PIANO = (-11.8, 58.0, D.STAGE[4], -math.pi * 0.5)   # グランドピアノの置き場（x, y, 床の高さ, ang）
 STOOL_Y = -0.45            # ピアノ椅子の中心（ピアノのローカル。奥行き 0.30 m、座面の高さ 0.44 m）。鍵盤の手前の縁から 0.10 m 空ける
 KEYS_Y, KEYS_Z = -0.12, 0.70   # 鍵盤の手前から奥への中ほどと、その高さ（座面から 0.26 m 上。頭身の低い体でも腕が届く）
 
@@ -263,7 +263,7 @@ def _black_keys(mb, t):
 
 
 def _piano(mb):
-    """上手のグランドピアノ。鍵盤は -X を向き、屋根は客席（-Y）の側へ開く。"""
+    """下手（客席から見て左）のグランドピアノ。鍵盤は -X 側、尾は舞台の中央（+X）へ向き、屋根は客席（-Y）の側へ開く。"""
     t = kit.T(*PIANO)
     black = "library_counter_black"
     body = [(-0.75, 0.0), (0.75, 0.0), (0.75, 1.0), (0.55, 1.6), (0.15, 2.0),
@@ -291,7 +291,7 @@ def piano_seat(sink):
 
 def _props(mb):
     z = D.STAGE[4]
-    for x, y in ((D.HALL_AXIS, 57.0), (-10.5, 57.2)):
+    for x, y in ((D.HALL_AXIS, 57.0), (7.3, 57.2)):
         kit.T(x, y, z, math.pi).box(mb, -0.35, -0.25, 0.0, 0.35, 0.25, 1.05, WOOD)
     for y in (57.0, 59.0, 61.0):
         kit.box(mb, -13.0, y - 0.04, 19.5, 10.0, y + 0.04, 19.62, "library_louver_black")
