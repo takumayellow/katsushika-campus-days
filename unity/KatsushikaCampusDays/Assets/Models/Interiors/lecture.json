@@ -30,6 +30,16 @@
    "y": 0.0,
    "z": 4.8
   },
+  "spawn_lecture_se": {
+   "x": 44.75,
+   "y": 0.0,
+   "z": 10.6
+  },
+  "exit_lecture_se": {
+   "x": 44.75,
+   "y": 0.0,
+   "z": 8.8
+  },
   "sign_lecture_1": {
    "x": 9.0,
    "y": 2.2,
@@ -311,7 +321,7 @@
    "z": 31.0
   }
  },
- "triangles": 43739,
+ "triangles": 43763,
  "seats": 270,
  "notes": [
   "中廊下・黒いコア・入口ロビー・6 層の吹き抜け・101 の 270 席の段床"
@@ -1173,7 +1183,7 @@
    "ext_lecture",
    "ext_lecture_trees"
   ],
-  "triangles": 41532,
+  "triangles": 40792,
   "radius": 30.0,
   "dz": -0.03
  }

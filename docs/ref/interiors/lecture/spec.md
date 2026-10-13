@@ -115,7 +115,7 @@ Y=54.9                                                            +------------+
 | 東端ホール（2 層吹き抜けは X 39.8〜47.7 の Y 20.7〜30.4 と、X 37.8〜49.5 の Y 8.2〜20.7。ほかは 2F の床の下） | 28.6〜49.5 | 8.0〜35.1 | 確定 | JSPE、COOP 05 |
 | 東端ホール: 南東 EV | 28.6〜32.2 | 10.5〜15.2 | 確定 | JSPE、ISIJ |
 | 東端ホール: 折り返し階段のコア（扉を閉じる） | 32.2〜37.8 | 8.0〜16.5 | 確定 | JSPE、ISIJ |
-| 東端ホール: 南東の風除室（南面） | 42.9〜46.6 | 8.0〜11.6 | 確定 | JSPE |
+| 東端ホール: 南東の風除室（南面。外の扉は幅 2.4 m の開口で、キャンパスの扉 `lecture_se` から出入りできる） | 42.9〜46.6 | 8.0〜11.6 | 位置: 確定、開口の幅: 推定 | JSPE |
 | 東端ホール: 2F への直通階段（東の外壁沿い、+Y へ上る。片持ち・木の段板・ガラス手すり） | 47.7〜49.5 | 上り口 20.6 → 2F の床 30.4 | 位置: 確定、寸法: 推定 | JSPE「2Fへ」「1Fから」、ISIJ「2階へ」、COOP 05 |
 
 - 南の入口ロビーは 1F の南の並びの中の通り抜けで、南廊下へそのまま抜ける（JSPE の矢印「エントランス」）。プレイヤーは (0, 7.6) に出て、奥（+Y）へ歩くと南廊下と吹き抜けの下の通り抜けが正面に見える。
@@ -266,7 +266,7 @@ Y=54.9                                                            +------------+
 - 101 の南の窓（ロールスクリーンを下ろす）、生協の北の窓（外光が入ることは COOP の本文で確定、北面にあることは外形からの推定）は、外の景色を作らず明るい面だけにする。
 - 南の風除室のガラスの外: 白い角柱のピロティ（YT 00:30、確定）。外観 `ext_lecture` が写るので屋内側には足さない。
 - 3F 自習室の湾曲したガラスの外: 屋上テラスの植栽帯、灰色の縦格子の手すり、弧を描く庇（YT 00:49〜00:51、確定）。遠景の住棟は作らない。
-- 東端ホールの南東の風除室: ガラス越しに外の列柱のキャノピー（TL 鳥瞰図、WC、確定）。屋内からは柱 2 本だけ見せる。
+- 東端ホールの南東の風除室: ガラス越しに外の列柱のキャノピー（TL 鳥瞰図、WC、確定）。屋内からは柱 2 本だけ見せる。外の扉は開けてあり、そこから外へ出られる。
 
 ## 6. POI・NPC・看板
 
@@ -290,6 +290,7 @@ Y=54.9                                                            +------------+
 
 - 席がある棟なので、Unity のベンチの自動配置（席の無い棟だけ）は効かない。
 - `spawn_lecture` は (0, 7.6, 0)、+Y 向き。`exit_lecture` は (0, 4.8, 0)。
+- 南東の玄関（キャンパスの扉 `lecture_se`、外の入口は南面の東寄り）: `spawn_lecture_se` は南東の風除室の中 (44.75, 10.6, 0)、+Y 向き。`exit_lecture_se` は外の扉の手前 (44.75, 8.8, 0)。南の玄関から入っても南東の出口から出られ、出た先は出口の扉の外になる（Unity の `InteriorLoader`）。
 - 文言の提案（PR 本文に書く。ローカライズは Unity 側の担当で、この作業では触らない）:
   - `item.c_lecture_chalk.name`: 「大教室のチョーク」/ "Big Lecture Hall Chalk"
   - `item.c_lecture_chalk.hint`: 「講義棟 101 の大教室、教卓の横の機器ラック。誰も使わなくなったチョークが一本。」/ "Room 101, the big lecture hall: the AV rack beside the lectern. One stick of chalk nobody uses any more."
@@ -426,7 +427,7 @@ Y=54.9                                                            +------------+
 
 ## 11. 受け入れのチェックリスト
 
-- [ ] `REQUIRED_EMPTIES_OK`: `spawn_lecture` / `exit_lecture` と、`poi_lecture_atrium` / `poi_lecture_hall_booth` / `poi_lecture_seminar` が書き出しにある。
+- [ ] `REQUIRED_EMPTIES_OK`: `spawn_lecture` / `exit_lecture`、南東の玄関の `spawn_lecture_se` / `exit_lecture_se` と、`poi_lecture_atrium` / `poi_lecture_hall_booth` / `poi_lecture_seminar` が書き出しにある。
 - [ ] 今の 9 個の POI（hall_stage / hall_booth / hall_seats / grand_stair / atrium / lecture_room / foyer_counter / foyer / seminar）が名前を変えずに全部ある。
 - [ ] `door_mismatch` が出ない（入口は南面 (0, 4.21)、STANDARD の幅 3.2 m・高さ 2.6 m）。
 - [ ] 屋内の tris が 55,000 以下。看板の文字の tris がログと `_summary.json` に棟ごとに出る。`ext_lecture` は 45,351 以下。

@@ -19,7 +19,7 @@ from kcd_interior import shell as ishell
 from kcd_interior import signs
 from kcd_interior import spec as ispec
 from kcd_interior.ctx import Ctx
-from kcd_lib import signtext
+from kcd_lib import entrances, signtext
 
 from conftest import CAMPUS_JSON
 
@@ -137,7 +137,11 @@ def test_shell_stays_on_the_footprint(shell, lspec):
 
 
 def test_shell_places_the_entrance(shell):
-    assert dict(shell.empties) == {"spawn_lecture": D.SPAWN, "exit_lecture": D.EXIT}
+    assert dict(shell.empties) == {"spawn_lecture": D.SPAWN, "exit_lecture": D.EXIT,
+                                   "spawn_lecture_se": D.SE_SPAWN,
+                                   "exit_lecture_se": D.SE_EXIT}
+    # meta の spawn（最初の spawn_*）は南の入口のまま
+    assert shell.empties[0][0] == "spawn_lecture"
     assert tuple(shell.door_gap) == D.DOOR_GAP
 
 
@@ -367,3 +371,47 @@ def test_lounge_has_no_zero_length_wall():
     walls = LOUNGE.chord_walls()
     assert len(walls) == 1
     assert all(abs(b[1] - a[1]) > 0.1 for a, b in walls)
+
+
+def _faces_in(c, box):
+    """box = (x0, x1, y0, y1, z0, z1) に外接矩形が食い込む面の数。"""
+    x0, x1, y0, y1, z0, z1 = box
+    n = 0
+    for mb in c.builders():
+        for f in mb.faces:
+            pts = [mb.verts[i] for i in f]
+            if (max(p[0] for p in pts) > x0 and min(p[0] for p in pts) < x1
+                    and max(p[1] for p in pts) > y0 and min(p[1] for p in pts) < y1
+                    and max(p[2] for p in pts) > z0 and min(p[2] for p in pts) < z1):
+                n += 1
+    return n
+
+
+def test_se_door_walks_from_the_hall_through_the_vestibule_to_outside(lspec):
+    """南東の扉: 風除室の中に立ち、外の扉の開口と内の扉を歩いて通れる。"""
+    x0, y0, x1, y1 = D.SE_VESTIBULE
+    sx, sy, _ = D.SE_SPAWN
+    ex, ey, _ = D.SE_EXIT
+    assert x0 < sx < x1 and y0 < ey < sy < y1
+    assert sx == ex and _inside(sx, sy) and _inside(ex, ey)
+    c = Ctx(lspec)
+    SH.build(c)
+    for build, _cap in SECTIONS.values():
+        build(c)
+    hw = 0.45
+    path = (sx - hw, sx + hw, D.Y_EAST_S - 0.3, y1 + 1.0, 0.2, 2.0)
+    assert _faces_in(c, path) == 0
+
+
+def test_se_door_is_the_second_campus_door_of_the_lecture_building(lspec):
+    """キャンパスの扉 lecture_se は講義棟の外壁に付き、屋内の南東の風除室の前に来る。"""
+    assert entrances.building_of(D.SE_DOOR) == "lecture"
+    assert entrances.building_of("lecture") == "lecture"
+    assert entrances.building_of("cafeteria") == "cafeteria"
+    assert entrances.HOSTS[D.SE_DOOR] == "lecture"
+    data = ispec.load_campus(CAMPUS_JSON)
+    frame = ispec.campus_frame(data)
+    doors = {dr["id"]: dr for dr in entrances.plan(data, frame, {})}
+    u, v = frame.uv(doors[D.SE_DOOR]["origin"])
+    wu, wv = lspec.to_world_uv((D.SE_SPAWN[0], D.Y_EAST_S))
+    assert abs(u - wu) < 0.05 and abs(v - wv) < 0.6

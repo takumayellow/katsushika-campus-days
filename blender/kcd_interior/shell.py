@@ -316,20 +316,31 @@ def door(mb, x, y, ang=0.0, w=DOOR_W, h=DOOR_H, leaf="desk_wood",
 
 
 def glass_entrance(mb, x0, x1, z0, z1, y, frame="metal_white",
-                   glass="glass_clear", seg=1.6, door_h=2.4):
-    """自動ドアのガラススクリーン（入口辺に貼る）。"""
-    kit.box(mb, x0, y - 0.05, z0, x1, y + 0.05, z1, glass)
+                   glass="glass_clear", seg=1.6, door_h=2.4, opening=0.0):
+    """自動ドアのガラススクリーン（入口辺に貼る）。
+
+    opening > 0 なら中央の引き戸を左右へ開けた形にし、幅 opening・高さ door_h の開口を
+    歩いて通れるように空ける（ガラスと足元の框と縦框を開口に置かない）。"""
+    cx = (x0 + x1) * 0.5
+    ho = opening * 0.5
+    spans = [(x0, x1)] if opening <= 0.0 else [(x0, cx - ho), (cx + ho, x1)]
+    for s0, s1 in spans:
+        kit.box(mb, s0, y - 0.05, z0, s1, y + 0.05, z1, glass)
+        kit.box(mb, s0, y - 0.09, z0, s1, y + 0.09, z0 + 0.10, frame)
+    if opening > 0.0:
+        kit.box(mb, cx - ho, y - 0.05, door_h, cx + ho, y + 0.05, z1, glass)
     kit.box(mb, x0, y - 0.09, z1 - 0.18, x1, y + 0.09, z1, frame)
-    kit.box(mb, x0, y - 0.09, z0, x1, y + 0.09, z0 + 0.10, frame)
     k = x0
     while k <= x1 + 1e-6:
-        kit.box(mb, k - 0.05, y - 0.09, z0, k + 0.05, y + 0.09, z1, frame)
+        if opening <= 0.0 or not (cx - ho - 0.05 < k < cx + ho + 0.05):
+            kit.box(mb, k - 0.05, y - 0.09, z0, k + 0.05, y + 0.09, z1, frame)
         k += seg
-    # 中央 2 枚の引き戸（框を濃く）
-    cx = (x0 + x1) * 0.5
+    # 中央 2 枚の引き戸（框を濃く）。開けたときは開口の外側へ寄せる（スクリーンの端で止める）
     for sgn in (-1, 1):
-        a = cx + sgn * 0.08
-        b = cx + sgn * 1.30
+        a = cx + sgn * (0.08 if opening <= 0.0 else ho)
+        b = a + sgn * 1.22
+        if opening > 0.0:
+            b = max(x0, min(x1, b))
         lo, hi = min(a, b), max(a, b)
         kit.box(mb, lo, y - 0.11, z0, hi, y + 0.11, z0 + 0.12, "metal_gray")
         kit.box(mb, lo, y - 0.11, door_h - 0.12, hi, y + 0.11, door_h, "metal_gray")
