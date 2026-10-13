@@ -170,7 +170,7 @@ def _runs(length, gaps):
 
 def outer_wall(mb, a, b, z0, z1, wall="wall_white", glass=None, thick=WALL,
                sill=0.95, header=0.45, seg=3.0, gaps=(), mullion=0.10,
-               inner_mat=None, gap_top=None):
+               inner_mat=None, gap_top=None, mullion_mat="metal_white"):
     """a -> b の外面線に沿って壁を立てる（厚みは進行方向の左手＝室内側）。
 
     glass を与えると腰壁 + 連続窓 + 垂れ壁の構成になる。
@@ -219,7 +219,7 @@ def outer_wall(mb, a, b, z0, z1, wall="wall_white", glass=None, thick=WALL,
                 mb.add_prism([pt(k - mullion * 0.5, 0.0), pt(k + mullion * 0.5, 0.0),
                               pt(k + mullion * 0.5, thick * 0.8),
                               pt(k - mullion * 0.5, thick * 0.8)],
-                             ga, gb, "metal_white", "metal_white", "metal_white")
+                             ga, gb, mullion_mat, mullion_mat, mullion_mat)
             k += seg
 
     # 開口の高さ。ここから上はふさぐ（上階の床から開口の上へ出られてしまうのを

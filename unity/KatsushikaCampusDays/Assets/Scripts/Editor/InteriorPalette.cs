@@ -309,7 +309,50 @@ namespace KCD.Editor
             { "library_tabchair_green", new Surface("A8B83A", 0.50f, 0.00f) },
             { "library_lounge_magenta", new Surface("8E2A6E", 0.20f, 0.00f) },
             { "library_ceiling_white", new Surface("F2F0EA", 0.10f, 0.00f) },
-            { "library_glass_dark", new Surface("2A2A2C", 0.85f, 0.30f) }
+            { "library_glass_dark", new Surface("2A2A2C", 0.85f, 0.30f) },
+            { "gym_floor_wood", new Surface("C9A063", 0.70f, 0.00f) },
+            { "gym_line_white", new Surface("F2F2EE", 0.60f, 0.00f) },
+            { "gym_line_red", new Surface("C8352B", 0.60f, 0.00f) },
+            { "gym_line_yellow", new Surface("E8C21E", 0.60f, 0.00f) },
+            { "gym_line_blue", new Surface("3A6FB5", 0.60f, 0.00f) },
+            { "gym_line_green", new Surface("2F8A4A", 0.60f, 0.00f) },
+            { "gym_line_black", new Surface("1E1E1E", 0.60f, 0.00f) },
+            { "gym_wall_wood_upper", new Surface("D9B577", 0.40f, 0.00f) },
+            { "gym_wall_wood_lower", new Surface("CFA86A", 0.45f, 0.00f) },
+            { "gym_joint_metal", new Surface("9A9A96", 0.60f, 0.80f) },
+            { "gym_concrete_panel", new Surface("B9B8B2", 0.15f, 0.00f) },
+            { "gym_concrete_nose", new Surface("A9A8A3", 0.15f, 0.00f) },
+            { "gym_vent_dark", new Surface("2A2A2A", 0.40f, 0.30f) },
+            { "gym_wall_grey", new Surface("A7A7A3", 0.20f, 0.00f) },
+            { "gym_rail_metal", new Surface("5C5F62", 0.55f, 0.80f) },
+            { "gym_ceiling_dark", new Surface("2B2D30", 0.10f, 0.00f) },
+            { "gym_truss_steel", new Surface("4A4D52", 0.40f, 0.60f) },
+            { "gym_louver_wood", new Surface("C69A5E", 0.40f, 0.00f) },
+            { "gym_mullion_black", new Surface("1D1D1E", 0.60f, 0.70f) },
+            { "gym_bench_wood", new Surface("B8874E", 0.45f, 0.00f) },
+            { "gym_stand_concrete", new Surface("C9C7C0", 0.20f, 0.00f) },
+            { "gym_floor_apron", new Surface("CBC7B2", 0.55f, 0.00f) },
+            { "gym_floor_grey", new Surface("8E8E8B", 0.55f, 0.00f) },
+            { "gym_accent_orange", new Surface("DA651D", 0.40f, 0.00f) },
+            { "gym_door_dark", new Surface("2F2E2C", 0.50f, 0.20f) },
+            { "gym_floor_resin_yellow", new Surface("D7A93A", 0.65f, 0.00f) },
+            { "gym_wall_darkgrey", new Surface("4E5054", 0.20f, 0.00f) },
+            { "gym_ceiling_offwhite", new Surface("E7E4DC", 0.10f, 0.00f) },
+            { "gym_column_concrete", new Surface("9E9E9A", 0.20f, 0.00f) },
+            { "gym_seat_teal", new Surface("2E7F7C", 0.50f, 0.00f) },
+            { "gym_machine_silver", new Surface("C4C7CA", 0.65f, 0.85f) },
+            { "gym_rubber_black", new Surface("191919", 0.10f, 0.00f) },
+            { "gym_wall_wood_horizontal", new Surface("D8B98A", 0.40f, 0.00f) },
+            { "gym_door_navy", new Surface("1F2D4D", 0.50f, 0.20f) },
+            { "gym_beam_beige", new Surface("D9CDB5", 0.15f, 0.00f) },
+            { "gym_locker_white", new Surface("EDEDEA", 0.50f, 0.10f) },
+            { "gym_shoe_rack_wood", new Surface("B78E5A", 0.40f, 0.00f) },
+            { "gym_mat_dark", new Surface("3B3F46", 0.05f, 0.00f) },
+            { "gym_box_green", new Surface("3E7A4A", 0.40f, 0.00f) },
+            { "gym_cart_blue", new Surface("2F5FA8", 0.50f, 0.20f) },
+            { "gym_vault_top", new Surface("EDE6D6", 0.30f, 0.00f) },
+            { "gym_light_arena", new Surface("FFF4E0", 0.50f, 0.00f) },
+            { "gym_light_linear", new Surface("F4F7FF", 0.50f, 0.00f) }
         };
 
         /// <summary>透ける材質: 色とアルファ。</summary>
@@ -323,7 +366,9 @@ namespace KCD.Editor
             { "research2_glass", new KeyValuePair<string, float>("DCE6EA", 0.22f) },
             { "kyoso_glass_frosted", new KeyValuePair<string, float>("E9EDED", 0.55f) },
             { "library_glass_floor", new KeyValuePair<string, float>("DCE3E6", 0.35f) },
-            { "library_glass_frit", new KeyValuePair<string, float>("3C3F42", 0.60f) }
+            { "library_glass_frit", new KeyValuePair<string, float>("3C3F42", 0.60f) },
+            { "gym_rail_mesh", new KeyValuePair<string, float>("8C8F91", 0.55f) },
+            { "gym_net", new KeyValuePair<string, float>("3A3A3A", 0.35f) }
         };
 
         /// <summary>発光する材質: 発光色と強さ（Blender の strength をそのまま。使う側で落とす）。</summary>
@@ -345,7 +390,9 @@ namespace KCD.Editor
             { "library_shell_joint", new KeyValuePair<Color, float>(new Color(1.000f, 0.815f, 0.552f), 3.00f) },
             { "library_skylight", new KeyValuePair<Color, float>(new Color(1.000f, 1.000f, 1.000f), 5.00f) },
             { "library_wall_washer", new KeyValuePair<Color, float>(new Color(1.000f, 0.880f, 0.672f), 3.00f) },
-            { "library_chandelier", new KeyValuePair<Color, float>(new Color(1.000f, 0.905f, 0.745f), 4.00f) }
+            { "library_chandelier", new KeyValuePair<Color, float>(new Color(1.000f, 0.905f, 0.745f), 4.00f) },
+            { "gym_light_arena", new KeyValuePair<Color, float>(new Color(1.000f, 0.905f, 0.745f), 6.00f) },
+            { "gym_light_linear", new KeyValuePair<Color, float>(new Color(0.905f, 0.930f, 1.000f), 4.00f) }
         };
 
         public static bool TryGetSurface(string name, out Surface surface)
