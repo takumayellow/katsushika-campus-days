@@ -3,6 +3,8 @@
 寸法と出典は docs/ref/interiors/gym/spec.md、座標の表は plan_gym_dims。q_gym の舞台。
 """
 
+import math
+
 from . import furniture as F
 from . import plan_gym_arena as arena
 from . import plan_gym_dims as D
@@ -19,12 +21,16 @@ from .kit import T
 BACKFACE_CULLED = ("gym_ceiling_dark", "gym_ceiling_offwhite")
 
 
+# 席の向き（ang +π/2 は正面が -X、-π/2 は +X）。窓際は +X のコートへ、ホワイエと観覧席は -X へ向く
+SEAT_ANG = {"window": -math.pi / 2, "foyer": math.pi / 2, "stand": math.pi / 2}
+
+
 def _seats(c):
     """座面の Empty を D.SEATS の順に並べる（家具ヘルパの記録は使わない）。"""
     for mb in c.builders():
         mb.seats = []
-    for _kind, x, y, z in D.SEATS:
-        F._seat(c.floor, T(x, y, z, 0.0), 0, 0.6, -0.24, 0.22, 1.2, 0.20)
+    for kind, x, y, z in D.SEATS:
+        F._seat(c.floor, T(x, y, z, SEAT_ANG[kind]), 0, 0.6, -0.24, 0.22, 1.2, 0.20)
     c.seats += len(D.SEATS)
 
 

@@ -1,8 +1,5 @@
 """東棟: 廊下・体育事務室・更衣室とシャワー室の扉・サブアリーナ。"""
 
-import math
-
-from . import furniture as F
 from . import kit, shell
 from . import plan_gym_dims as D
 from . import plan_gym_shell as S

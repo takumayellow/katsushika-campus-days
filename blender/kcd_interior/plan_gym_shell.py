@@ -20,6 +20,7 @@ CEIL = "gym_ceiling_offwhite"
 CAP_UP = 0.01
 HALF_PART = shell.PART * 0.5
 Z_BASE = -0.22
+C_CONN_TOP = D.C_EAST     # 連絡通路の開口の上端
 
 
 def _normal(a, b):
@@ -165,9 +166,6 @@ def _east_side(c):
     # 辺 5（北）・辺 6（廊下の西壁の北）
     wall(c, (F[5], F[6]), 0.0, D.C_EAST, WHITE)
     wall(c, (F[6], F[7]), 0.0, D.C_EAST, WHITE)
-
-
-C_CONN_TOP = D.C_EAST     # 連絡通路の開口の上端
 
 
 def _outer(c):

@@ -1,10 +1,7 @@
 """2F のトレーニングルーム（マシン・トレッドミル・パワーラック・柱・空調）。"""
 
-import math
-
 from . import kit, shell
 from . import plan_gym_dims as D
-from . import plan_gym_shell as S
 
 Z0 = D.Z2
 
