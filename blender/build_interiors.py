@@ -70,6 +70,10 @@ INT_BUDGET_ONE = {        # 屋内 1 棟
 }
 EXT_BUDGET = 200000       # 近景の合計
 EXT_BUDGET_ONE = 50000    # 近景 1 棟
+# 近景 1 棟の上限を棟の spec で絞っているもの。ext_<id> と ext_<id>_trees の合計で見る
+EXT_BUDGET_BY_ID = {
+    "library": 14469,     # docs/ref/interiors/library/spec.md §8
+}
 
 # 屋内の入口とキャンパスの扉の照合。屋内の内向きと扉の外向き法線の内積の上限と、
 # 面に沿った位置の許容差 [m]
@@ -453,6 +457,7 @@ def over_budget(report, total, total_ext):
 
     屋内は棟ごとの上限（INT_BUDGET_ONE）と合計（INT_BUDGET）の両方で見る。
     INT_BUDGET_ONE に無い棟は上限が決まっていないので、それも NG にする。
+    近景は棟ごと（EXT_BUDGET_BY_ID、無ければ EXT_BUDGET_ONE）と合計（EXT_BUDGET）で見る。
     """
     msgs = []
     for i in report:
@@ -461,8 +466,10 @@ def over_budget(report, total, total_ext):
             msgs.append("%s の屋内の上限が INT_BUDGET_ONE に無い" % i["id"])
         elif i["tris"] > cap:
             msgs.append("%s の屋内 %d > %d" % (i["id"], i["tris"], cap))
-    msgs += ["%s の近景 %d > %d" % (i["id"], i["ext_tris"], EXT_BUDGET_ONE)
-             for i in report if i["ext_tris"] > EXT_BUDGET_ONE]
+    for i in report:
+        cap = EXT_BUDGET_BY_ID.get(i["id"], EXT_BUDGET_ONE)
+        if i["ext_tris"] > cap:
+            msgs.append("%s の近景 %d > %d" % (i["id"], i["ext_tris"], cap))
     if total > INT_BUDGET:
         msgs.append("屋内の合計 %d > %d" % (total, INT_BUDGET))
     if total_ext > EXT_BUDGET:
