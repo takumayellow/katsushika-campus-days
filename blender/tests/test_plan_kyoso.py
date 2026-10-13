@@ -24,24 +24,20 @@ STEP_MAX = 0.20               # 蹴上げの上限
 HEAD_CLEAR = 2.0              # 段の上面から上の構造までの空き
 
 
-def _at_b(x0, y0, x1, y1, z0, z1):
-    return D.at_b(x0, y0) + D.at_b(x1, y1) + (z0, z1)
-
-
-# 座れない所: 柱（前の列と中ホールのコンクリート、奥のブロックの 2 本・3 本の板の柱・スタバの黒板の柱）と
-# 鉄骨階段。(x0, y0, x1, y1, z0, z1)
+# 座れない所: 柱（1F と 2F）・鉄骨階段・エスカレーター・自販機・カフェの箱。(x0, y0, x1, y1, z0, z1)
+_H = D.COLUMN_SIZE * 0.5
 SOLIDS = (
-    [(x - 0.35, y - 0.35, x + 0.35, y + 0.35, 0.0, D.Z_SLAB)
-     for x, y in D.COLUMNS_FRONT + D.COLUMNS_HALL]
-    + [_at_b(x - 0.35, 13.25, x + 0.35, 13.95, 0.0, D.Z_SLAB) for x in (-34.8, -27.6)]
-    + [_at_b(x - 0.9, 6.6, x + 0.9, 7.6, 0.0, D.Z_CEIL) for x in (-34.8, -27.6, -20.4)]
-    + [_at_b(-4.1, 6.9, -3.3, 8.9, 0.0, D.Z_SLAB),
-       _at_b(D.STAIR_END_X, D.STAIR_Y[0], D.STAIR_X0, D.STAIR_Y[1], 0.0, D.Z2 - 0.4)]
+    [(x - _H, y - _H, x + _H, y + _H, 0.0, D.Z_CEIL2) for x, y in D.COLUMNS]
+    + [(D.STAIR_X[0], D.STAIR_Y0, D.STAIR_X[1], D.STAIR_END_Y, 0.0, D.Z2 - 0.4),
+       (D.ESC_X_LO - 0.8, D.ESC_Y[0], D.ESC_X_HI + 0.8, D.ESC_Y[1], 0.0, D.Z2 + 1.2),
+       (D.VENDING_X - 0.4, D.VENDING_Y[0] - 0.55, D.VENDING_X + 0.4, D.VENDING_Y[-1] + 0.55,
+        0.0, 2.0),
+       (12.2, 36.6, 18.55, 39.1, 0.0, D.SB_TOP)]
 )
 # 区画ごとの三角形の上限（現在の値に 1 割強の余裕）。wall は看板の文字を含む。
 SECTION_CAPS = {
-    "floor": 20, "wall": 14200, "entry": 180, "lobby": 130, "cafe": 1400, "store": 10600,
-    "lounge": 1750, "ls": 1450, "cafelounge": 1200, "lounges": 1600, "core": 440, "hall": 1750,
+    "floor": 100, "wall": 15000, "entry": 200, "lobby": 500, "cafe": 900, "store": 10700,
+    "lounge": 2400, "ls": 1100, "studio": 1100, "ls2": 2000, "core": 900, "hall": 1600,
 }
 
 
@@ -174,9 +170,6 @@ def test_plan_lines_follow_the_footprint(built):
     assert D.X_IN1 == pytest.approx(s.x1 - MARGIN)
     assert D.Y_IN0 == pytest.approx(s.y_face + MARGIN)
     assert D.Y_PARK == pytest.approx(s.y_back - MARGIN)
-    # 西のブロックの西の面・奥のブロックの公園側の面が外形に重なる
-    assert D.at_w(-58.0, 0.0)[0] == pytest.approx(D.X_IN0)
-    assert D.at_b(0.0, 14.5)[1] == pytest.approx(s.y_back)
 
 
 def test_pois_npcs_and_cameras_are_inside_the_walls(built):
@@ -194,19 +187,27 @@ def test_stair_steps_are_climbable():
     assert 0.0 < D.STAIR_RISE <= STEP_MAX
     assert D.STAIR_RUN >= 0.25
     assert D.STAIR_RISE * D.STAIR_N == pytest.approx(D.Z2)
-    assert D.STAIR_END_X == pytest.approx(D.STAIR_X0 - D.STAIR_RUN * (D.STAIR_N - 1))
+    assert D.STAIR_END_Y == pytest.approx(D.STAIR_Y0 + D.STAIR_RUN * (D.STAIR_N - 1))
 
 
 def test_stair_has_headroom_under_the_slab():
-    x0, y0, x1, y1 = D.SLAB_LOUNGE
     hx0, hy0, hx1, hy1 = D.STAIR_HOLE
-    assert hy0 <= D.STAIR_Y[0] and D.STAIR_Y[1] <= hy1
-    ya, yb = D.STAIR_Y
+    assert hx0 <= D.STAIR_X[0] and D.STAIR_X[1] <= hx1
     for i in range(1, D.STAIR_N):
         top = D.STAIR_RISE * i
-        xm = D.STAIR_X0 - D.STAIR_RUN * (i - 0.5)
-        under_slab = x0 < xm < x1 and y0 < (ya + yb) / 2 < y1
-        if under_slab:
+        ym = D.STAIR_Y0 + D.STAIR_RUN * (i - 0.5)
+        if not hy0 <= ym <= hy1:
             assert D.Z_SLAB - top >= HEAD_CLEAR, i
     # 最後の段は 2F の床へつながる
-    assert hx0 - 0.1 <= D.STAIR_END_X <= hx0 + 0.1
+    assert hy1 == pytest.approx(D.STAIR_END_Y)
+
+
+def test_escalator_contract(built):
+    names = dict(built.empties)
+    lo, hi = names["esc_kyoso_1f_lo"], names["esc_kyoso_1f_hi"]
+    assert lo == pytest.approx((D.ESC_X_LO, D.ESC_YC, 0.0))
+    assert hi == pytest.approx((D.ESC_X_HI, D.ESC_YC, D.Z2))
+    assert [p.name for p in built.parts] == ["escsteps_kyoso_1f"]
+    assert D.ESC_N == round(D.Z2 / D.ESC_RISE) == 27
+    # 2F の降り口の床がスラブ A の縁になっている
+    assert D.SLAB_A[0] == pytest.approx(D.ESC_LAND_X)
