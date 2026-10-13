@@ -277,7 +277,9 @@ class RunSummary:
 
     @property
     def ok(self) -> bool:
-        unknown_skips = self.skipped - self.known_skips
+        # 集計の数と一覧の中身の両方で見る。どちらかに既知でないスキップがあれば NG。
+        listed_unknown = sum(1 for case in self.problems if case.result == "Skipped" and not _is_known_skip(case))
+        unknown_skips = max(self.skipped - self.known_skips, listed_unknown)
         return self.total > 0 and self.failed == 0 and unknown_skips == 0 and self.inconclusive == 0
 
 

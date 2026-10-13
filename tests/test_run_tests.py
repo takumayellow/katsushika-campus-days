@@ -254,6 +254,15 @@ def test_unlisted_skip_still_fails_the_run(tmp_path, monkeypatch):
     assert not summary.ok
 
 
+def test_unknown_skip_in_the_list_fails_even_if_the_count_matches(monkeypatch):
+    """集計の skipped が既知の分しか無くても、一覧に既知でないスキップがあれば NG。"""
+    monkeypatch.setattr(run_tests, "KNOWN_SKIPS", {"KCD.Tests.A.Shot": "撮るときだけ"})
+    known = run_tests.CaseResult("KCD.Tests.A.Shot", "Skipped", "Ignored", "", "")
+    other = run_tests.CaseResult("KCD.Tests.A.Other", "Skipped", "Ignored", "", "")
+    summary = run_tests.RunSummary(3, 2, 0, 1, 0, 0.0, (known, other), known_skips=1)
+    assert not summary.ok
+
+
 def test_known_skip_list_names_the_capture_test():
     assert "KCD.Tests.MobCrowdCaptureTests.水盤の前に集めて撮る" in run_tests.KNOWN_SKIPS
 
