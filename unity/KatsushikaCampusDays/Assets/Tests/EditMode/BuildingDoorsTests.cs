@@ -7,7 +7,7 @@ using UnityEngine;
 namespace KCD.Tests
 {
     /// <summary>
-    /// 1 棟に扉が 2 つ以上ある建物（講義棟の南東の玄関）。扉と建物の対応（BuildingDoors）が
+    /// 1 棟に扉が 2 つ以上ある建物（講義棟の南東の玄関・西の学生食堂側の扉）。扉と建物の対応（BuildingDoors）が
     /// blender/kcd_lib/entrances.py の SECOND_DOORS と一致し、入口・出口の扉の id が建物の id へ戻ること、
     /// 入った扉と別の扉から出たときだけその扉の外へ出すこと（InteriorLoader.LeavesByOtherDoor）。
     /// </summary>
@@ -34,11 +34,16 @@ namespace KCD.Tests
         // ---- 扉と建物の対応 ----
 
         [Test]
-        public void LectureSeDoor_BelongsToTheLectureBuilding()
+        public void LectureSecondDoors_BelongToTheLectureBuilding()
         {
-            Assert.AreEqual("lecture", BuildingDoors.BuildingOf("lecture_se"));
-            Assert.IsFalse(BuildingDoors.IsMainDoor("lecture_se"), "lecture_se が講義棟の玄関扱いになっている");
-            CollectionAssert.AreEqual(new[] { "lecture_se" }, BuildingDoors.SecondDoorsOf("lecture"));
+            string[] doors = { "lecture_se", "lecture_ws", "lecture_wn" };
+            foreach (string door in doors)
+            {
+                Assert.AreEqual("lecture", BuildingDoors.BuildingOf(door), door + " が講義棟に結ばれていない");
+                Assert.IsFalse(BuildingDoors.IsMainDoor(door), door + " が講義棟の玄関扱いになっている");
+            }
+
+            CollectionAssert.AreEqual(doors, BuildingDoors.SecondDoorsOf("lecture"));
         }
 
         [Test]

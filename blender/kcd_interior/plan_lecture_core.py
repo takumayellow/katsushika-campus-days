@@ -94,9 +94,14 @@ def _north_wall(c):
 
 
 def _west(c):
-    """西ロビーの学生食堂への閉じた扉 2 枚（西の外周壁の内面）。"""
-    for y in D.CAFE_DOORS_Y:
-        _door(c.wall, X_IN_W + 0.05, y, -math.pi * 0.5, w=1.8)
+    """西ロビーの学生食堂側のガラスの引き戸 2 枚（西の外周壁の開口の内面）。
+
+    外へ出られる扉なので、ガラスの板を西ロビーの中ほど（北の扉は南、南の扉は北）へ開けておく。"""
+    y_mid = (D.Y_CORE0 + D.Y_CORE1) * 0.5
+    for _door_id, y, w in D.WEST_DOORS:
+        ang = math.pi * 0.5 if y < y_mid else -math.pi * 0.5
+        shell.door(c.wall, X_IN_W + 0.05, y, ang, w=w, h=D.WEST_DOOR_H, frame=FRAME,
+                   glass=SH.GLASS, open_=0.9)
 
 
 def _core(c, mb):
