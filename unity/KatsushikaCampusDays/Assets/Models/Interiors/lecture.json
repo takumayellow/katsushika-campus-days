@@ -40,6 +40,26 @@
    "y": 0.0,
    "z": 8.8
   },
+  "spawn_lecture_ws": {
+   "x": -26.9,
+   "y": 0.0,
+   "z": 21.6
+  },
+  "exit_lecture_ws": {
+   "x": -28.1,
+   "y": 0.0,
+   "z": 21.6
+  },
+  "spawn_lecture_wn": {
+   "x": -26.9,
+   "y": 0.0,
+   "z": 34.4
+  },
+  "exit_lecture_wn": {
+   "x": -28.1,
+   "y": 0.0,
+   "z": 34.4
+  },
   "lamp_lecture_2F_1": {
    "x": -12.0,
    "y": 7.2,
@@ -1026,7 +1046,7 @@
    "z": 46.07
   }
  },
- "triangles": 121172,
+ "triangles": 121244,
  "seats": 270,
  "notes": [
   "中廊下・黒いコア・入口ロビー・6 層の吹き抜け・101 の 270 席の段床・2F〜7F の廊下と教室 20 室・1F→6F のエスカレータ・1F〜7F の EV"
@@ -4009,7 +4029,7 @@
    "ext_lecture",
    "ext_lecture_trees"
   ],
-  "triangles": 34532,
+  "triangles": 34363,
   "radius": 30.0,
   "dz": -0.03
  }
