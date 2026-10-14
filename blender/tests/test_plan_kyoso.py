@@ -36,7 +36,7 @@ SOLIDS = (
 )
 # 区画ごとの三角形の上限（現在の値に 1 割強の余裕）。wall は看板の文字を含む。
 SECTION_CAPS = {
-    "floor": 100, "wall": 15000, "entry": 200, "lobby": 500, "cafe": 900, "store": 10700,
+    "floor": 100, "wall": 15600, "entry": 200, "lobby": 500, "cafe": 900, "store": 10700,
     "lounge": 2400, "ls": 1100, "studio": 1100, "ls2": 2000, "core": 900, "hall": 1600,
 }
 
@@ -211,3 +211,32 @@ def test_escalator_contract(built):
     assert D.ESC_N == round(D.Z2 / D.ESC_RISE) == 27
     # 2F の降り口の床がスラブ A の縁になっている
     assert D.SLAB_A[0] == pytest.approx(D.ESC_LAND_X)
+
+
+def _louver_bottoms(c, z):
+    """wall の木ルーバーの下向きの水平面のうち、高さ z のものの中心。"""
+    mb = c.wall
+    out = []
+    for f, m in zip(mb.faces, mb.face_mat):
+        if mb.mat_names[m] != "kyoso_louver_wood":
+            continue
+        ps = [mb.verts[i] for i in f]
+        if all(abs(p[2] - z) < 1e-6 for p in ps):
+            out.append((sum(p[0] for p in ps) / len(ps), sum(p[1] for p in ps) / len(ps)))
+    return out
+
+
+def test_deck_ceiling_is_a_raised_fan(built):
+    """段床の最上段の上は 1 段高いルーバーに替わり、桟が LS1_FAN から放射状に振れる。"""
+    x0, y0, x1, y1 = D.LS1_CEIL
+    e = 0.1   # 縁の木の見切りを除く
+    low = [p for p in _louver_bottoms(built, D.Z_CEIL)
+           if x0 + e < p[0] < x1 - e and y0 + e < p[1] < y1 - e]
+    assert low == []
+    high = _louver_bottoms(built, D.Z_CEIL_HI)
+    assert len(high) >= 30
+    assert all(x0 - 1e-6 <= x <= x1 + 1e-6 and y0 - 1e-6 <= y <= y1 + 1e-6 for x, y in high)
+    angs = {round(math.degrees(math.atan2(y - D.LS1_FAN[1], x - D.LS1_FAN[0])), 1)
+            for x, y in high}
+    assert len(angs) == len(high)
+    assert D.Z_CEIL_HI < D.Z_VOID_HI < D.Z_SLAB

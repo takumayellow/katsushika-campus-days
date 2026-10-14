@@ -55,6 +55,49 @@ def louvers(mb, x0, y0, x1, y1, z, pitch=0.25, holes=(), w=0.08, h=0.12):
                        "kyoso_louver_wood")
 
 
+def _clip(fx, fy, dx, dy, rect):
+    """F + t (dx, dy) が rect の中にある t の区間（Liang-Barsky）。入らなければ None。"""
+    t0, t1 = 0.0, 1e9
+    for p, q in ((-dx, fx - rect[0]), (dx, rect[2] - fx), (-dy, fy - rect[1]), (dy, rect[3] - fy)):
+        if abs(p) < 1e-9:
+            if q < 0:
+                return None
+            continue
+        t = q / p
+        if p < 0:
+            t0 = max(t0, t)
+        else:
+            t1 = min(t1, t)
+    return (t0, t1) if t1 - t0 > 0.2 else None
+
+
+def fan_louvers(mb, rect, focus, z, step=1.2, w=0.08, h=0.12):
+    """focus から放射状に振れる木の桟の天井。rect で切る。下端 z、角度の刻みは step 度。
+
+    桟は louvers と同じく下面と両側面の 3 枚。focus は rect の外の -X 側に置く
+    （四隅の角度が ±180° をまたがないので、その最小と最大の間で rect を覆える）。
+    """
+    fx, fy = focus
+    corners = [(x, y) for x in (rect[0], rect[2]) for y in (rect[1], rect[3])]
+    angs = [math.degrees(math.atan2(y - fy, x - fx)) for x, y in corners]
+    a = min(angs) + step * 0.5
+    while a < max(angs):
+        dx, dy = math.cos(math.radians(a)), math.sin(math.radians(a))
+        a += step
+        span = _clip(fx, fy, dx, dy, rect)
+        if span is None:
+            continue
+        nx, ny = -dy * w * 0.5, dx * w * 0.5
+        p = (fx + dx * span[0], fy + dy * span[0])
+        q = (fx + dx * span[1], fy + dy * span[1])
+        pr, qr = (p[0] - nx, p[1] - ny), (q[0] - nx, q[1] - ny)
+        pl, ql = (p[0] + nx, p[1] + ny), (q[0] + nx, q[1] + ny)
+        mb.add_face([(pl[0], pl[1], z), (ql[0], ql[1], z), (qr[0], qr[1], z),
+                     (pr[0], pr[1], z)], "kyoso_louver_wood")
+        kit.vplate(mb, pr, qr, z, z + h, "kyoso_louver_wood")
+        kit.vplate(mb, ql, pl, z, z + h, "kyoso_louver_wood")
+
+
 def rounded_rect(x0, y0, x1, y1, r, seg=3):
     """角を丸めた長方形の 2D 輪郭（反時計回り）。"""
     pts = []

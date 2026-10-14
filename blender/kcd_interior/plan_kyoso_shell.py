@@ -97,6 +97,17 @@ def _louvers(mb, rect, holes=()):
     FK.louvers(mb, rect[0], rect[1], rect[2], rect[3], D.Z_CEIL, holes=holes)
 
 
+def _ls1_ceiling(mb):
+    """ラーニングスクエア1 の段床の上は 1 段高く、桟がホールの側から放射状に振れる。縁は木の見切り。"""
+    x0, y0, x1, y1 = D.LS1_CEIL
+    shell.ceiling(mb, x0, y0, x1, y1, D.Z_VOID_HI, "kyoso_ceiling_void")
+    FK.fan_louvers(mb, D.LS1_CEIL, D.LS1_FAN, D.Z_CEIL_HI)
+    t = 0.06
+    for bx0, by0, bx1, by1 in ((x0, y0, x1, y0 + t), (x0, y1 - t, x1, y1),
+                               (x0, y0, x0 + t, y1), (x1 - t, y0, x1, y1)):
+        kit.box(mb, bx0, by0, D.Z_CEIL, bx1, by1, D.Z_VOID_HI, "kyoso_louver_wood")
+
+
 def _white(mb, rect, strips=()):
     shell.ceiling(mb, rect[0], rect[1], rect[2], rect[3], D.Z_CEIL, "ceiling_white",
                   grid=1.8)
@@ -109,7 +120,8 @@ def ceilings_1f(c):
     """エントランスホール・中央の帯・スタバは木ルーバー、スタジオ・西のコアの前・コンビニは白い天井。"""
     mb = c.wall
     _louvers(mb, D.LOBBY, holes=(D.ESC_VOID,))
-    _louvers(mb, (D.X_IN0, D.Y_MALL, D.CORE_W[0], D.Y_PARK0), holes=HOLES_1F)
+    _louvers(mb, (D.X_IN0, D.Y_MALL, D.CORE_W[0], D.Y_PARK0), holes=HOLES_1F + (D.LS1_CEIL,))
+    _ls1_ceiling(mb)
     _louvers(mb, D.SB)
     _white(mb, D.STUDIO, strips=(7.0, 11.6))
     _white(mb, (D.CORE_W[0], D.Y_MALL, D.X_IN1, D.Y_PARK0), strips=(29.5,))

@@ -25,7 +25,7 @@ def build(c, mb):
     h(c, mb, -18.5, 35.0, D.Z_CEIL, M, ja="日用品", en="Daily Goods", w=0.6, h=0.9,
       drop=1.55, both=False)
     # 区画の名前
-    h(c, mb, 9.4, 17.5, D.Z_VOID, M, ja="ラーニングスクエア1", en="Learning Square 1",
+    h(c, mb, 9.4, 15.4, D.Z_VOID, M, ja="ラーニングスクエア1", en="Learning Square 1",
       w=2.4, h=0.5, drop=0.75)
     h(c, mb, 0.0, 7.6, D.Z_VOID, M, ja="エントランスホール", en="Entrance Hall", w=2.0,
       h=0.45, drop=1.15)
