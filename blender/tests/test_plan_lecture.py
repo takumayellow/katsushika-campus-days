@@ -20,7 +20,7 @@ from kcd_interior import shell as ishell
 from kcd_interior import signs
 from kcd_interior import spec as ispec
 from kcd_interior.ctx import Ctx
-from kcd_lib import entrances, signtext
+from kcd_lib import entrances, geom, signtext
 
 from conftest import CAMPUS_JSON
 
@@ -138,9 +138,14 @@ def test_shell_stays_on_the_footprint(shell, lspec):
 
 
 def test_shell_places_the_entrance(shell):
+    west = {}
+    for door, y, _w in D.WEST_DOORS:
+        west["spawn_" + door] = (D.WEST_SPAWN_X, y, 0.0)
+        west["exit_" + door] = (D.WEST_EXIT_X, y, 0.0)
     assert dict(shell.empties) == {"spawn_lecture": D.SPAWN, "exit_lecture": D.EXIT,
                                    "spawn_lecture_se": D.SE_SPAWN,
-                                   "exit_lecture_se": D.SE_EXIT}
+                                   "exit_lecture_se": D.SE_EXIT, **west}
+    assert len(shell.empties) == 4 + len(west)
     # meta の spawn（最初の spawn_*）は南の入口のまま
     assert shell.empties[0][0] == "spawn_lecture"
     assert tuple(shell.door_gap) == D.DOOR_GAP
@@ -456,3 +461,59 @@ def test_se_door_is_the_second_campus_door_of_the_lecture_building(lspec):
     u, v = frame.uv(doors[D.SE_DOOR]["origin"])
     wu, wv = lspec.to_world_uv((D.SE_SPAWN[0], D.Y_EAST_S))
     assert abs(u - wu) < 0.05 and abs(v - wv) < 0.6
+
+
+def _campus_doors():
+    data = ispec.load_campus(CAMPUS_JSON)
+    frame = ispec.campus_frame(data)
+    doors = {dr["id"]: dr for dr in entrances.plan(data, frame, {})}
+    loop = next(b["footprint"] for b in data["buildings"] if b["id"] == "lecture")
+    return frame, doors, geom.ensure_ccw(geom.dedup(loop))
+
+
+@pytest.mark.parametrize("door,y,w", D.WEST_DOORS)
+def test_west_door_walks_from_the_lobby_through_the_glass_door_to_outside(lspec, door, y, w):
+    """西の学生食堂側の扉: 西ロビーに立ち、開けたガラスの引き戸と外周壁の開口を歩いて通れる。"""
+    assert _inside(D.WEST_SPAWN_X, y) and _inside(D.WEST_EXIT_X, y)
+    assert D.WEST_EXIT_X < D.WEST_SPAWN_X < CORE.X_IN_W + 2.0
+    c = Ctx(lspec)
+    SH.build(c)
+    for build, _cap in SECTIONS.values():
+        build(c)
+    hw = min(0.35, w * 0.5 - 0.1)
+    path = (D.X_W - 0.5, D.WEST_SPAWN_X, y - hw, y + hw, 0.2, 2.0)
+    assert _faces_in(c, path) == 0, door
+
+
+@pytest.mark.parametrize("door,y,w", D.WEST_DOORS)
+def test_west_door_opens_on_the_lobby_clear_of_the_west_stair(door, y, w):
+    """開口（枠を含む）は西ロビーの南北の室の間にあり、1F で閉じている西の階段の張り出しにかからない。"""
+    y0, y1 = y - w * 0.5 - 0.07, y + w * 0.5 + 0.07
+    assert D.Y_ROOM_S1 < y0 and y1 < D.Y_ROOM_N0, door
+    assert y1 < D.WEST_STAIR[1] or y0 > D.WEST_STAIR[3], door
+
+
+@pytest.mark.parametrize("door,y,w", D.WEST_DOORS)
+def test_west_door_is_a_campus_door_of_the_lecture_building(lspec, door, y, w):
+    """キャンパスの扉 lecture_ws・lecture_wn は講義棟の西の外壁に付き、屋内の扉の外に来る。幅も同じ。"""
+    assert entrances.building_of(door) == "lecture"
+    assert entrances.HOSTS[door] == "lecture"
+    frame, doors, _loop = _campus_doors()
+    dr = doors[door]
+    u, v = frame.uv(dr["origin"])
+    wu, wv = lspec.to_world_uv((D.X_W, y))
+    assert abs(v - wv) < 0.05 and abs(u - wu) < 0.6, door
+    assert abs(dr["W"] * 2.0 - w) < 1e-6 and dr["H"] == D.WEST_DOOR_H, door
+
+
+@pytest.mark.parametrize("door,y,w", D.WEST_DOORS)
+def test_west_campus_door_stays_off_the_building(door, y, w):
+    """扉の風除室・庇・足元の石張りが講義棟の外形（西の階段の張り出し）に食い込まない。"""
+    _frame, doors, loop = _campus_doors()
+    dr = doors[door]
+    half = max(dr["WO"], dr["APRON_S"], dr["CAN_S"] if dr.get("CANOPY", True) else 0.0)
+    far = max(dr["D"], dr["APRON_D"], dr["CAN_D"] if dr.get("CANOPY", True) else 0.0)
+    for s in (-half, half):
+        for k in range(1, 11):
+            p = entrances.local(dr, s, far * k / 10.0)
+            assert not geom.point_in_poly(p, loop), (door, s, far * k / 10.0)

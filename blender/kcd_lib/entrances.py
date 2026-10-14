@@ -39,6 +39,13 @@ SMALL = dict(STANDARD, W=0.9, H=2.1, D=1.2, WO=1.5, HT=2.5,
 # 講義棟の南東: 東端の南面はメインストリートの北縁（v -18）から 8.8 m 奥にあるので、石張りを縁まで延ばす
 STANDARD_DEEP = dict(STANDARD, APRON_D=9.0)
 
+# 講義棟の西（学生食堂側）: 屋内の西ロビーのガラスの引き戸（高さ 2.4 m）の外。南は幅 1.8 m の片引き程度
+WEST_SIDE = dict(SMALL, H=2.4, HT=2.8)
+# 北は西の階段の張り出し（v 11.1..16.0）の北の面と 0.8 m しか離れていないので、側壁を薄くした狭い風除室・庇なしにして
+# 張り出しに当てない（開口は幅 1.2 m）
+WEST_SIDE_NARROW = dict(WEST_SIDE, W=0.6, WO=0.7, WALL_T=0.06, CANOPY=False, APRON_S=0.7,
+                        APRON_D=3.0)
+
 APRON_Z = 0.12      # 石張りの天端（メインストリート 0.085・歩道 0.055 より上。z-fight 回避）
 BURY = 0.25         # 風除室と庇を壁の中へ埋める深さ（斜めの壁でも隙間を出さない）
 KEEP_CLEAR = 8.0    # 扉の前に木・ベンチ・照明柱を置かない長さ（風除室の先から）
@@ -60,6 +67,9 @@ DOORS = [
     ("lecture", (120.6, -22.0), (0.0, 1.0), "loop", -1, 3.4, STANDARD),
     # 講義棟の南東: 東端の南面（u 149..170）。屋内の東端ホールの風除室（plan_lecture_dims.SE_VESTIBULE）の外
     ("lecture_se", (165.35, -22.0), (0.0, 1.0), "loop", +1, 3.4, STANDARD_DEEP),
+    # 講義棟の西: 西ロビーの学生食堂側のガラスの扉（plan_lecture_dims.WEST_DOORS）の外。西の外壁（u 91.7..92.0）
+    ("lecture_ws", (80.0, 3.99), (1.0, 0.0), "loop", +1, 3.0, WEST_SIDE),
+    ("lecture_wn", (80.0, 16.79), (1.0, 0.0), "loop", -1, 3.0, WEST_SIDE_NARROW),
     # 食堂（第2研究棟の 1〜2F）: 南面の直線部（u 6..23）の中央
     ("cafeteria", (14.5, -22.0), (0.0, 1.0), "loop", +1, 3.4, STANDARD),
     # 第2研究棟の研究棟側: 東の塊の東面（食堂の扉と向きが違うので、並んだ扉に見えない）
@@ -77,7 +87,7 @@ DOORS = [
 ]
 
 # 同じ建物（屋内）の 2 つ目以降の扉: 扉の id -> 建物の id。屋内も Unity の建物も建物の id のものを使う
-SECOND_DOORS = {"lecture_se": "lecture"}
+SECOND_DOORS = {"lecture_se": "lecture", "lecture_ws": "lecture", "lecture_wn": "lecture"}
 
 # 扉の id と、その扉を付ける外壁を持つ建物が違うとき（1 棟に扉が 2 つ）の対応
 # 食堂は research2 の外観に属する。マテリアル（research2_*）も plan_research2_* のモジュールも research2 と共有する。
@@ -197,7 +207,7 @@ def _ceiling(mb, dr, s0, s1, d0, d1, z, mat):
 def build_one(mb, dr):
     W, H, D, WO, HT = dr["W"], dr["H"], dr["D"], dr["WO"], dr["HT"]
     Z = APRON_Z
-    wi = WO - 0.30          # 風除室の側壁の内面
+    wi = WO - dr.get("WALL_T", 0.30)   # 風除室の側壁の内面
     df = D - 0.25           # 扉の面（枠の見込み 0.25 m だけ引っ込める）
 
     # 足元: 石張り（明るい石・縁は濃い石）+ 扉の前の黒いマット

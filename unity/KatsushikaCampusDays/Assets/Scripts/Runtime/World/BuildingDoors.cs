@@ -9,10 +9,12 @@ namespace KCD
     /// </summary>
     public static class BuildingDoors
     {
-        /// <summary>2 つ目からの扉（扉の id, 建物の id）。講義棟の南東の玄関。</summary>
+        /// <summary>2 つ目からの扉（扉の id, 建物の id）。講義棟の南東の玄関と、西の学生食堂側の扉 2 つ（南・北）。</summary>
         private static readonly (string Door, string Building)[] SecondDoors =
         {
-            ("lecture_se", "lecture")
+            ("lecture_se", "lecture"),
+            ("lecture_ws", "lecture"),
+            ("lecture_wn", "lecture")
         };
 
         /// <summary>2 つ目からの扉の id の一覧。</summary>
