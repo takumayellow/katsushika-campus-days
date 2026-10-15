@@ -11,6 +11,9 @@ namespace KCD.Editor
     {
         private static readonly Color PanelDark = new Color(0.04f, 0.05f, 0.09f, 0.94f);
 
+        /// <summary>縦長の画面でのフォトモードの操作説明の高さ。幅 800 では 2 行が 3 行に折り返す。</summary>
+        private const float PhotoHintPortraitHeight = 140f;
+
         /// <summary>設定パネル。閉じた状態で置く。</summary>
         public static SettingsView BuildSettings(GameObject host, RectTransform parent)
         {
@@ -71,6 +74,7 @@ namespace KCD.Editor
             RectTransform hintRect = Rect(parent, "PhotoHint", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
                 new Vector2(0f, 56f), new Vector2(1180f, 96f));
             Backdrop(hintRect, Panel);
+            ReflowInCanvas(hintRect, PhotoHintPortraitHeight);
             TMP_Text hint = Label(hintRect, "Label", string.Empty, 26f, TextAlignmentOptions.Center);
             hint.enableAutoSizing = true;
             hint.fontSizeMin = 18f;

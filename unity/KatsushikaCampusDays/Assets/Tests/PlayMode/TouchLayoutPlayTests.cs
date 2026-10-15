@@ -2,6 +2,7 @@ using System.Collections;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
+using UnityEngine.UI;
 
 namespace KCD.Tests
 {
@@ -18,12 +19,15 @@ namespace KCD.Tests
         {
             _canvas = new GameObject("TouchLayoutPlayTests", typeof(Canvas));
             _canvas.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
+            // Game ビューの縦横に左右されないよう、向きを決めておく。
+            ScreenShape.Force(false);
         }
 
         [TearDown]
         public void Release()
         {
             InputMode.Force(null);
+            ScreenShape.Force(null);
             KCDInput.Unblock(this);
             Object.Destroy(_canvas);
         }
@@ -103,6 +107,90 @@ namespace KCD.Tests
             InputMode.Force(InputKind.Pointer);
             yield return null;
             Assert.AreEqual(new Vector2(0f, 96f), rect.anchoredPosition);
+        }
+
+        [UnityTest]
+        public IEnumerator TouchPosition_UsesThePortraitPlaceOnAPortraitScreen()
+        {
+            InputMode.Force(InputKind.Touch);
+            RectTransform rect = Corner(new Vector2(0.5f, 0f), new Vector2(0f, 96f), new Vector2(1080f, 60f));
+            rect.gameObject.AddComponent<TouchPosition>().Bind(new Vector2(0f, 262f), new Vector2(0f, 452f));
+            yield return null;
+            Assert.AreEqual(new Vector2(0f, 262f), rect.anchoredPosition);
+
+            ScreenShape.Force(true);
+            yield return null;
+            Assert.AreEqual(new Vector2(0f, 452f), rect.anchoredPosition);
+
+            ScreenShape.Force(false);
+            yield return null;
+            Assert.AreEqual(new Vector2(0f, 262f), rect.anchoredPosition, "横に戻しても縦の場所のまま");
+        }
+
+        [UnityTest]
+        public IEnumerator PortraitPosition_MovesOnlyOnAPortraitScreen()
+        {
+            RectTransform rect = Corner(new Vector2(0.5f, 1f), new Vector2(0f, -64f), new Vector2(96f, 96f));
+            rect.gameObject.AddComponent<PortraitPosition>().Bind(new Vector2(0f, 1f), new Vector2(84f, -236f));
+            yield return null;
+            Assert.AreEqual(new Vector2(0.5f, 1f), rect.anchorMin);
+            Assert.AreEqual(new Vector2(0f, -64f), rect.anchoredPosition);
+
+            ScreenShape.Force(true);
+            yield return null;
+            Assert.AreEqual(new Vector2(0f, 1f), rect.anchorMin);
+            Assert.AreEqual(new Vector2(0f, 1f), rect.anchorMax);
+            Assert.AreEqual(new Vector2(84f, -236f), rect.anchoredPosition);
+
+            ScreenShape.Force(false);
+            yield return null;
+            Assert.AreEqual(new Vector2(0.5f, 1f), rect.anchorMin, "横に戻しても縦のアンカーのまま");
+            Assert.AreEqual(new Vector2(0.5f, 1f), rect.anchorMax);
+            Assert.AreEqual(new Vector2(0f, -64f), rect.anchoredPosition);
+        }
+
+        [UnityTest]
+        public IEnumerator FitInCanvas_ReflowNarrowsInsteadOfShrinking()
+        {
+            float width = ((RectTransform)_canvas.transform).rect.width;
+            Assert.Greater(width, FitInCanvas.Margin * 2f);
+            RectTransform rect = Corner(new Vector2(0.5f, 0f), new Vector2(0f, 40f), new Vector2(width * 2f, 100f));
+            rect.gameObject.AddComponent<FitInCanvas>().BindReflow(300f);
+            yield return null;
+            Assert.AreEqual(Vector3.one, rect.localScale, "折り返す枠を縮めている");
+            Assert.AreEqual(new Vector2(width - FitInCanvas.Margin * 2f, 100f), rect.sizeDelta);
+
+            ScreenShape.Force(true);
+            yield return null;
+            Assert.AreEqual(300f, rect.sizeDelta.y, 1e-3f, "縦長の画面で高さを足していない");
+
+            ScreenShape.Force(false);
+            yield return null;
+            Assert.AreEqual(100f, rect.sizeDelta.y, 1e-3f, "横に戻しても縦の高さのまま");
+        }
+
+        [UnityTest]
+        public IEnumerator TouchCanvasScale_FollowsTheWidthOnAPortraitScreen()
+        {
+            InputMode.Force(InputKind.Pointer);
+            CanvasScaler scaler = _canvas.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.referenceResolution = TouchCanvasScale.PointerReference;
+            scaler.matchWidthOrHeight = 0.5f;
+            _canvas.AddComponent<TouchCanvasScale>();
+            yield return null;
+            Assert.AreEqual(TouchCanvasScale.PointerReference, scaler.referenceResolution);
+
+            ScreenShape.Force(true);
+            yield return null;
+            Assert.AreEqual(TouchCanvasScale.PortraitReference(TouchCanvasScale.PortraitWidth), scaler.referenceResolution);
+            Assert.AreEqual(0f, scaler.matchWidthOrHeight);
+
+            ScreenShape.Force(false);
+            yield return null;
+            Assert.AreEqual(TouchCanvasScale.PointerReference, scaler.referenceResolution);
+            Assert.AreEqual(0.5f, scaler.matchWidthOrHeight, "横に戻しても幅に合わせたまま");
         }
     }
 }

@@ -32,6 +32,7 @@ namespace KCD.Editor
 
             Camera camera = go.AddComponent<Camera>();
             camera.fieldOfView = 42f;
+            go.AddComponent<PortraitFieldOfView>();
             camera.nearClipPlane = 0.1f;
             camera.farClipPlane = 60f;
             camera.clearFlags = CameraClearFlags.SolidColor;
@@ -135,16 +136,19 @@ namespace KCD.Editor
             TMP_Text title = UIFactory.Label(
                 titleBox, "Label", "葛飾キャンパスデイズ", 96f, TextAlignmentOptions.Center);
             title.fontStyle = FontStyles.Bold;
+            UIFactory.ReflowLabel(titleBox, title, 48f);
 
             RectTransform subtitleBox = UIFactory.Rect(titleRoot, "Subtitle", new Vector2(0.5f, 1f),
                 new Vector2(0.5f, 1f), new Vector2(0f, -280f), new Vector2(1400f, 60f));
             TMP_Text subtitle = UIFactory.Label(
                 subtitleBox, "Label", "東京理科大学 葛飾キャンパス 探索記", 34f, TextAlignmentOptions.Center);
+            UIFactory.ReflowLabel(subtitleBox, subtitle, 24f);
 
             RectTransform promptBox = UIFactory.Rect(titleRoot, "Prompt", new Vector2(0.5f, 0f),
                 new Vector2(0.5f, 0f), new Vector2(0f, 150f), new Vector2(1200f, 64f));
             TMP_Text prompt = UIFactory.Label(
                 promptBox, "Label", "Enter ではじめる", 36f, TextAlignmentOptions.Center);
+            UIFactory.ReflowLabel(promptBox, prompt, 24f);
 
             RectTransform selectRoot = UIFactory.Stretch(canvasRect, "SelectRoot");
             RectTransform nameBox = UIFactory.Rect(selectRoot, "Name", new Vector2(0.5f, 0f),
@@ -152,16 +156,19 @@ namespace KCD.Editor
             TMP_Text nameLabel = UIFactory.Label(
                 nameBox, "Label", string.Empty, 56f, TextAlignmentOptions.Center);
             nameLabel.fontStyle = FontStyles.Bold;
+            UIFactory.ReflowLabel(nameBox, nameLabel, 36f);
 
             RectTransform taglineBox = UIFactory.Rect(selectRoot, "Tagline", new Vector2(0.5f, 0f),
                 new Vector2(0.5f, 0f), new Vector2(0f, 168f), new Vector2(1200f, 60f));
             TMP_Text tagline = UIFactory.Label(
                 taglineBox, "Label", string.Empty, 32f, TextAlignmentOptions.Center);
+            UIFactory.ReflowLabel(taglineBox, tagline, 20f);
 
             RectTransform hintBox = UIFactory.Rect(selectRoot, "Hint", new Vector2(0.5f, 0f),
                 new Vector2(0.5f, 0f), new Vector2(0f, 92f), new Vector2(1200f, 56f));
             TMP_Text hint = UIFactory.Label(
                 hintBox, "Label", string.Empty, 30f, TextAlignmentOptions.Center);
+            UIFactory.ReflowLabel(hintBox, hint, 20f);
 
             CharacterSelect select = host.AddComponent<CharacterSelect>();
             select.Bind(stands, nameLabel, tagline, hint);
@@ -192,6 +199,7 @@ namespace KCD.Editor
                 box, "Label", MapAttribution.DefaultJa, 22f, TextAlignmentOptions.BottomRight);
             Color ink = label.color;
             label.color = new Color(ink.r, ink.g, ink.b, 0.8f);
+            UIFactory.ReflowLabel(box, label, 16f);
             box.gameObject.AddComponent<MapAttributionLabel>().Bind(label);
         }
     }

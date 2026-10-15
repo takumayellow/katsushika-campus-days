@@ -184,42 +184,6 @@ body {
   border-radius: 0;
 }
 
-/* 縦持ちの間の覆い。横持ちの画面を縦に縮めると文字が読めないので、持ち替えてもらう。 */
-#kcd-rotate { display: none; }
-@media (orientation: portrait) {
-  #unity-container.unity-mobile #kcd-rotate {
-    position: absolute;
-    inset: 0;
-    z-index: 5;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 18px;
-    background: var(--kcd-bg);
-    color: var(--kcd-ink);
-    font-size: 18px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-  }
-}
-#kcd-rotate p { margin: 0; }
-/* 縦長の端末を横に倒す絵。 */
-#kcd-rotate-icon {
-  width: 34px;
-  height: 58px;
-  border: 3px solid var(--kcd-muted);
-  border-radius: 7px;
-  animation: kcd-rotate 2.4s ease-in-out infinite;
-}
-@keyframes kcd-rotate {
-  0%, 25% { transform: rotate(0deg); }
-  55%, 100% { transform: rotate(-90deg); }
-}
-@media (prefers-reduced-motion: reduce) {
-  #kcd-rotate-icon { animation: none; transform: rotate(-90deg); }
-}
-
 /* 指だけの端末に読み込み前に出す通信量の案内 (#73 #187)。出している間はキャンバスと操作の案内を隠す。 */
 #kcd-data-notice {
   box-sizing: border-box;

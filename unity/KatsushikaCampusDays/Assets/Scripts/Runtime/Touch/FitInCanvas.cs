@@ -6,6 +6,8 @@ namespace KCD
     /// 枠が Canvas に収まらないときだけ、収まるまで縮める (#187)。指で遊ぶ間は UI を 1.5 倍に描くので
     /// （<see cref="TouchCanvasScale"/>）、1920×1080 基準で組んだ大きな枠は、横持ちのスマホでは高さが、
     /// 4:3 のタブレットでは幅が足りなくなる。縮めるだけで大きくはしないので、PC の 16:9 では倍率は 1 のまま。
+    /// 文字だけの枠は、縮める代わりに幅を Canvas に合わせて狭め、文字を折り返す（<see cref="BindReflow"/>）。
+    /// 縦持ちのスマホでは Canvas の幅が 800 しかなく、幅 1520 の会話の枠を縮めると文字が 8 px まで小さくなる。
     /// </summary>
     [RequireComponent(typeof(RectTransform))]
     public sealed class FitInCanvas : MonoBehaviour
@@ -13,8 +15,32 @@ namespace KCD
         /// <summary>Canvas の端から空ける幅（基準の単位）。</summary>
         public const float Margin = 16f;
 
+        [SerializeField] private bool _reflow;
+        [SerializeField] private float _portraitHeight;
+
         private RectTransform _rect;
         private RectTransform _canvasRect;
+        private Vector2 _size;
+
+        /// <summary>
+        /// 幅が足りないときは縮めずに幅を狭める。portraitHeight が正なら、縦長の画面ではその高さにする
+        /// （折り返して増えた行を入れる）。SceneBuilder から差し込む。
+        /// </summary>
+        public void BindReflow(float portraitHeight)
+        {
+            _reflow = true;
+            _portraitHeight = portraitHeight;
+        }
+
+        /// <summary>
+        /// 幅 width の枠を、canvasWidth に左右 margin を空けて収める幅。収まっていれば元の幅。
+        /// Canvas の幅が決まっていない（0 以下）ときも元の幅を返す。
+        /// </summary>
+        public static float WidthToFit(float width, float canvasWidth, float margin)
+        {
+            float room = canvasWidth - margin * 2f;
+            return room <= 0f ? width : Mathf.Min(width, room);
+        }
 
         /// <summary>
         /// size の枠を canvas に、上下左右 margin を空けて収める倍率。収まっていれば 1。
@@ -31,9 +57,14 @@ namespace KCD
             return Mathf.Min(1f, room.x / size.x, room.y / size.y);
         }
 
-        private void OnEnable()
+        private void Awake()
         {
             _rect = (RectTransform)transform;
+            _size = _rect.sizeDelta;
+        }
+
+        private void OnEnable()
+        {
             Canvas canvas = GetComponentInParent<Canvas>(true);
             _canvasRect = canvas != null ? (RectTransform)canvas.rootCanvas.transform : null;
             Fit();
@@ -51,10 +82,26 @@ namespace KCD
                 return;
             }
 
+            if (_reflow)
+            {
+                Reflow();
+            }
+
             float scale = ScaleToFit(_rect.rect.size, _canvasRect.rect.size, Margin);
             if (!Mathf.Approximately(_rect.localScale.x, scale))
             {
                 _rect.localScale = new Vector3(scale, scale, 1f);
+            }
+        }
+
+        /// <summary>枠の幅を Canvas に合わせ、縦長の画面では高さを足す。アンカーは 1 点に置いた枠だけを扱う。</summary>
+        private void Reflow()
+        {
+            float height = _portraitHeight > 0f && ScreenShape.IsPortrait ? _portraitHeight : _size.y;
+            var size = new Vector2(WidthToFit(_size.x, _canvasRect.rect.width, Margin), height);
+            if (_rect.sizeDelta != size)
+            {
+                _rect.sizeDelta = size;
             }
         }
     }
