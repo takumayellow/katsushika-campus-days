@@ -1,5 +1,5 @@
 {
-  "generator": "tools/audio/build_audio.py (pure numpy synthesis, no sampled material)",
+  "generator": "tools/audio/build_audio.py (numpy synthesis; entries with a source field are installed by other scripts)",
   "samplerate": 44100,
   "bit_depth": 16,
   "generated_sec": 10.7,
@@ -10,8 +10,8 @@
   },
   "summary": {
     "file_count": 59,
-    "total_bytes": 240014136,
-    "total_duration_sec": 1366.71,
+    "total_bytes": 241560576,
+    "total_duration_sec": 1375.47,
     "clipped_samples_total": 0,
     "min_loop_spec_corr": 0.3574,
     "max_seam_step_ratio": 0.9986,
@@ -560,22 +560,35 @@
       "file": "piano_library.wav",
       "samplerate": 44100,
       "channels": 2,
-      "duration_sec": 19.533,
-      "bytes": 3445724,
+      "duration_sec": 28.3,
+      "bytes": 4992164,
       "peak_dbfs": -1.5,
-      "rms_dbfs": -16.27,
+      "rms_dbfs": -17.66,
       "clipped_samples": 0,
-      "dc_offset": -0.0,
-      "centroid_hz_mean": 1201.2,
-      "centroid_hz_min": 341.4,
-      "centroid_hz_max": 5453.6,
-      "rms_env_min_dbfs": -60.62,
-      "rms_env_max_dbfs": -12.29,
+      "dc_offset": 0.0,
+      "centroid_hz_mean": 860.5,
+      "centroid_hz_min": 472.2,
+      "centroid_hz_max": 4352.5,
+      "rms_env_min_dbfs": -80.94,
+      "rms_env_max_dbfs": -11.26,
       "loop": false,
       "name": "piano_library",
       "category": "SE",
       "path": "unity/KatsushikaCampusDays/Assets/Audio/SE/piano_library.wav",
-      "suggested_volume": 0.8
+      "suggested_volume": 0.8,
+      "source": "Chopin: Nocturne Op. 9 No. 2 (opening phrase), performed by Peter Johnston (Musopen http://musopen.org/music/352/) via tools/audio/piano_nocturne.py",
+      "license": "CC0 1.0",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/0/04/Chopin_Nocturne_No._2_in_E_Flat_Major%2C_Op._9.ogg",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Chopin_Nocturne_No._2_in_E_Flat_Major,_Op._9.ogg",
+      "source_sha256": "93e15e61baacdf129f21eacf8404ae5c2bd0f41e0256319597de54c40aa1cb22",
+      "source_range_sec": [
+        3.4,
+        31.7
+      ],
+      "fade_sec": [
+        0.03,
+        2.5
+      ]
     },
     {
       "file": "quest_start.wav",

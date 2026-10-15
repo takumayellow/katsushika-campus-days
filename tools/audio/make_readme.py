@@ -20,6 +20,7 @@ NOTES = {
     "bgm_anthem_original": "オリジナルの校歌風行進曲 (未使用). 108 BPM / Bb major / A-B 形式",
     "jingle_quest": "クエスト達成. F major のアルペジオ (木琴 soft_mallet + ピアノ)",
     "jingle_day_end": "1 日の終わり (リザルト画面). F major の IV-V-I (ピアノ)",
+    "piano_library": "図書館大ホールのピアノを弾く (PianoPerformance). ショパンの夜想曲 作品 9-2 の冒頭の一節 (演奏 Peter Johnston, Musopen, CC0). 鳴る間 BGM は絞られる (0.15 倍)",
     "se_chime": "時報チャイム (12:00 昼休み / 17:00 下校). ウェストミンスターの鐘 E major 4 フレーズ 16 音を校内放送のスピーカー風に. 鳴る間 BGM は止まる (#38)",
     "ui_move": "カーソル移動", "ui_confirm": "決定", "ui_cancel": "キャンセル",
     "ui_open": "ウィンドウを開く", "ui_close": "ウィンドウを閉じる",
@@ -81,8 +82,9 @@ def main() -> int:
     A = L.append
     A("# Audio")
     A("")
-    A("ゲーム内の音はすべて **Python と numpy だけで合成**している。")
-    A("サンプリング素材・外部ライブラリの音源・録音物は一切使っていない。")
+    A("ゲーム内の音は **Python と numpy で合成**している。")
+    A("例外は校歌の BGM (下の「校歌について」) と, 図書館のピアノの曲 `piano_library.wav` (CC0 の録音から切り出したもの。"
+      "下の「図書館のピアノの曲について」)。")
     A("")
     A("## 生成方法")
     A("")
@@ -99,6 +101,7 @@ def main() -> int:
     A("| `tools/audio/ambient.py` | 環境音 7 種 |")
     A("| `tools/audio/analyze.py` | 波形統計とループ継ぎ目の計測 |")
     A("| `tools/audio/build_audio.py` | 全体のエントリ。`manifest.json` と本 README を書き出す |")
+    A("| `tools/audio/piano_nocturne.py` | 図書館のピアノの曲を録音から切り出す (`build_audio.py` は作らない) |")
     A("")
     A(f"出力は {man['samplerate'] // 1000}.1 kHz / {man['bit_depth']} bit の WAV。"
       f"合計 {s['file_count']} ファイル, {s['total_bytes'] / 1048576:.1f} MiB, "
@@ -170,6 +173,13 @@ def main() -> int:
       "校内放送のホーンスピーカー越しに聞こえるよう 240 Hz〜3.8 kHz に絞ってから校舎の残響を付けている。"
       "鳴らすのは 12:00 (昼休み) と 17:00 (下校) だけで, ゲーム側 (`AudioManager.PlayChime`) は鳴っている間 BGM を止め "
       "(校歌の BGM は F major なので重ねると濁る), 音量も SE の 0.45 倍で鳴らす。同時に HUD へ時刻のトーストを出す (#38)。")
+    A("")
+    A("## 図書館のピアノの曲について")
+    A("")
+    A("図書館大ホールのピアノの椅子に座ると鳴る `piano_library.wav` は, ショパンの夜想曲 変ホ長調 作品 9-2 の冒頭の一節。"
+      "Musopen が公開した Peter Johnston の演奏の録音 (CC0, Wikimedia Commons) から, 弱起の B♭ から 4 小節目で E♭ に落ち着くまでを切り出し, "
+      "主題を繰り返す次の弱起の手前で終わるよう末尾 2.5 秒をフェードアウトしている。"
+      "取得 URL・SHA256・切り出す区間は `tools/audio/piano_nocturne.py` にあり, `manifest.json` のこの曲のエントリにも書き出す。")
     A("")
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, "w", encoding="utf-8") as fh:
