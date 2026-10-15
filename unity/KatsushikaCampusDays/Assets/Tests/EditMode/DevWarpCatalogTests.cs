@@ -97,7 +97,8 @@ namespace KCD.Tests
             Assert.AreEqual(new[] { "botchan", "inari" }, Ids(tab));
 
             DevWarpTarget inari = tab[1];
-            Assert.AreEqual(new Vector3(3f, 0f, 3f - DevWarpCatalog.NpcStandOff), inari.Position);
+            Assert.AreEqual(new Vector3(3f, 0f, 3f + DevWarpCatalog.NpcStandOff), inari.Position, "顔の側に立つ");
+            Assert.AreEqual(180f, Mathf.Abs(inari.Yaw), 0.01f, "向き合う");
 
             Assert.IsFalse(float.IsNaN(tab[0].Position.x) || float.IsNaN(tab[0].Yaw));
         }
@@ -127,7 +128,7 @@ namespace KCD.Tests
             Assert.IsTrue(head.IsIndoor);
             Assert.AreEqual("dorm", head.InteriorId);
             Assert.IsFalse(head.HasPosition, "寮の入口は Entrances に無いので、今いる場所から入る");
-            Assert.AreEqual(new Vector3(4010f, 0f, 5f - DevWarpCatalog.NpcStandOff), head.InsidePosition);
+            Assert.AreEqual(new Vector3(4010f, 0f, 5f + DevWarpCatalog.NpcStandOff), head.InsidePosition);
 
             DevWarpTarget librarian = tab[2];
             Assert.AreEqual("lib", librarian.InteriorId);
