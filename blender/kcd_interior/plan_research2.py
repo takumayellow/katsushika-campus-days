@@ -5,8 +5,9 @@
 座標はロビーのローカル（入口の中心が x=0、+Y が奥）。入口は東面にある。host の座標（食堂の入口を
 x=0 とした第2研究棟の局所座標。plan_research2_dims）からは plan_research2_frame で写す
 （x = host の Y - 入口の Y、y = 東の面の X + 4.0 - host の X）。以下の寸法は host の座標で書く。
-階段は EV ホールとガラスで隔てた見た目だけのもの（上れない）。南の半分を東へ上り、東の端の
-踊り場で折り返して、北の半分を西へ上る（host の向き）。
+階段は EV ホールとガラスで隔てた見た目だけのもの（歩いては上れない）。南の半分を東へ上り、東の端の
+踊り場で折り返して、北の半分を西へ上る（host の向き）。ガラスの扉（上の階の EV ホールの北の扉と同じ X）の
+前で E を押すと、上の階の同じ階段室の扉へ移る（Unity の InteriorStairStage）。
 """
 
 import math
@@ -83,6 +84,16 @@ def _walls(c, mb):
     _box(mb, HX_IN0, gy - 0.03, 0.1, HX_IN1, gy + 0.03, C2, GLASS)
     _box(mb, HX_IN0, gy - 0.05, 0.0, HX_IN1, gy + 0.05, 0.1, STEEL)
     _box(mb, HX_IN0, gy - 0.05, C1 - 0.12, HX_IN1, gy + 0.05, C1, STEEL)
+    _glass_door(mb, D.UPPER_STAIR_DOOR_X, gy)
+
+
+def _glass_door(mb, x, y):
+    """EV ホールと階段室を隔てるガラスの扉の枠と取っ手（host の (x, y) が扉の中心）。"""
+    hw, h, t = upper.DOOR_W * 0.5, upper.DOOR_H, 0.06
+    for sx in (x - hw - t, x + hw):
+        _box(mb, sx, y - t, 0.0, sx + t, y + t, h, STEEL)
+    _box(mb, x - hw - t, y - t, h, x + hw + t, y + t, h + t, STEEL)
+    _box(mb, x + hw - 0.20, y - t - 0.05, 0.95, x + hw - 0.14, y - t, 1.25, STEEL)
 
 
 def _stair(c, mb):
@@ -127,6 +138,7 @@ def build(c):
     ex, ey = upper.ev_point()
     c._put("ev_%s_1F" % s.id, *M.pt(ex, ey), 0.0)
     c._put("ev_%s_1F_f" % s.id, *M.pt(ex + 1.0, ey), 0.0)
+    upper.put_stair(c, "east", "1F", 0.0)
     upper.build(c)
     cx, cy = (ix0 + ix1) * 0.5, (iy0 + iy1) * 0.5
     c.cam("top", (cx, cy, 40.0), (cx, cy + 0.5, 0.0), 24.0)

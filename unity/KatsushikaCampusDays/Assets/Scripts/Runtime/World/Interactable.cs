@@ -28,6 +28,12 @@ namespace KCD
         /// <summary>プロンプトを出す位置。既定では自分の少し上。</summary>
         public virtual Vector3 PromptAnchor => transform.position + Vector3.up * 1.6f;
 
+        /// <summary>
+        /// 「調べる」の候補を選ぶとき、from（プレイヤーの位置）から距離と向きを測る点。既定では自分の位置。
+        /// 幅のあるもの（エレベーターの扉など）は、from に最も近い面の上の点を返す。
+        /// </summary>
+        public virtual Vector3 AimPoint(Vector3 from) => transform.position;
+
         /// <summary>いま調べられる状態か。会話中や条件未達なら false を返す。</summary>
         public virtual bool CanInteract => isActiveAndEnabled;
 

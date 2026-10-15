@@ -261,18 +261,21 @@ namespace KCD
             }
 
             _drawnForTouch = InputMode.IsTouch;
-            _body.text = Compose(_panel.Stops, _panel.CurrentIndex, _index, _drawnForTouch);
+            _body.text = Compose(_panel.Stops, _panel.CurrentIndex, _index, _drawnForTouch, _panel.Stairs);
         }
 
         /// <summary>
         /// 見出しと階の一覧と「やめる」。今の階には「いまの階」を添え、selected の行にだけ ▶ と色を付ける。
         /// links なら各行を <c>&lt;link="choice:N"&gt;</c> で囲み、叩けるようにする（N は stops の番号、「やめる」は階の数）。
-        /// キーの案内は指で遊んでいないときだけ出す。
+        /// キーの案内は指で遊んでいないときだけ出す。stairs なら見出しを「階段」にする。
         /// </summary>
-        public static string Compose(ElevatorPanel.Stop[] stops, int current, int selected, bool links)
+        public static string Compose(ElevatorPanel.Stop[] stops, int current, int selected, bool links,
+            bool stairs = false)
         {
             var builder = new StringBuilder(256);
-            builder.Append("<size=110%>").Append(L.Pick("エレベーター", "Elevator")).Append("</size>\n\n");
+            builder.Append("<size=110%>")
+                .Append(stairs ? L.Pick("階段", "Stairs") : L.Pick("エレベーター", "Elevator"))
+                .Append("</size>\n\n");
             for (int i = stops.Length - 1; i >= 0; i--)
             {
                 string label = stops[i].Floor;
