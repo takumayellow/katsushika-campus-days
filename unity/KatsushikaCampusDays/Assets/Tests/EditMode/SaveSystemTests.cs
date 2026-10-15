@@ -155,6 +155,27 @@ namespace KCD.Tests
         }
 
         [Test]
+        public void LoadMissText_SaysNoSaveWhenThereIsNone()
+        {
+            using (new PlayerPrefsKeyScope(L.PrefKey))
+            {
+                string before = L.Locale;
+                try
+                {
+                    L.SetLocale("ja");
+                    Assert.AreEqual("まだセーブがありません", SaveSystem.LoadMissText(false));
+                    Assert.AreEqual("セーブを読み込めませんでした", SaveSystem.LoadMissText(true));
+                    L.SetLocale("en");
+                    Assert.AreEqual("No save yet", SaveSystem.LoadMissText(false));
+                }
+                finally
+                {
+                    L.SetLocale(before);
+                }
+            }
+        }
+
+        [Test]
         public void DiscardPending_ThenApplyPending_DoesNothing()
         {
             SaveSystem.DiscardPending();
