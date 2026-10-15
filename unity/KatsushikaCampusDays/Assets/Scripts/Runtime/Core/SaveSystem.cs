@@ -150,7 +150,7 @@ namespace KCD
             SaveData data = Read();
             if (data == null)
             {
-                HUD.Instance?.ShowToast(L.Get("ui.hud.load_failed", "セーブを読み込めませんでした"));
+                HUD.Instance?.ShowToast(LoadMissText(HasSave));
                 return false;
             }
 
@@ -192,6 +192,17 @@ namespace KCD
             {
                 ApplyToScene(data);
             }
+        }
+
+        /// <summary>
+        /// ロードできなかったときの知らせ。まだ一度もセーブしていない人には「読み込めない」と出すと壊れたように読めるので、
+        /// セーブが無いことだけを伝える。
+        /// </summary>
+        public static string LoadMissText(bool hasSave)
+        {
+            return hasSave
+                ? L.Get("ui.hud.load_failed", "セーブを読み込めませんでした")
+                : L.Get("ui.hud.no_save", "まだセーブがありません");
         }
 
         /// <summary>「はじめから」で、読みかけの「つづきから」を捨てる。</summary>
