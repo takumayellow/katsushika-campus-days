@@ -115,12 +115,22 @@ def _end_glass(c, a, b, s0, s1):
         t.box(mb, u0, yg - 0.03, z0, u1, inner, z1, BLACK)
 
 
+def _north_entrance(c, a, b):
+    """北の外壁（a -> b は -X 向き）と、キャンパスモール側の入口のガラスの自動扉。"""
+    x0, x1 = D.N_GAP
+    wall(c, (a, b), D.Z1, D.Z_WALL, gaps=[(a[0] - x1, a[0] - x0)], gap_top=3.2)
+    shell.glass_entrance(c.wall, x0, x1, D.Z1, 3.2, a[1] - shell.WALL * 0.5, frame=BLACK,
+                         glass=GLASS, seg=1.6, door_h=2.4)
+
+
 def _outer(c):
     n = len(D.FOOT)
     for i in range(n):
         a, b = D.FOOT[i], D.FOOT[(i + 1) % n]
         if i == D.ATRIUM_EDGE:
             _curtain(c, a, b)
+        elif i == D.N_EDGE:
+            _north_entrance(c, a, b)
         elif i in END_GLASS:
             _end_glass(c, a, b, *END_GLASS[i])
         elif i in D.WINDOW_EDGES:
@@ -195,7 +205,11 @@ def _corridors(c):
     # 北の廊下（南側は打放し、北側は白い壁）
     part(c, (D.X_WEND, nc0), (-D.X_A, nc0), mat=CONC)
     part(c, (D.X_A, nc0), (D.X_NE_IN, nc0), mat=CONC)
-    part(c, (D.X_NW_IN, nc1), (-D.X_A, nc1))
+    pw = D.N_PASS[1] - D.N_PASS[0] - shell.PART
+    part(c, (D.X_NW_IN, nc1), (-D.X_A, nc1), gaps=[_gap(D.X_NW_IN, D.N_DOOR_X, pw)])
+    # 北の入口への通路（北の室列を抜ける）
+    for x in D.N_PASS:
+        part(c, (x, nc1), (x, D.Y_N))
     part(c, (D.X_A, nc1), (D.X_NE_IN, nc1))
     # 端の EV・階段の区画との境
     part(c, (D.X_WEND, sc1), (D.X_WEND, 31.24), mat=CONC)
@@ -278,6 +292,7 @@ CORRIDOR_CEILS = (
     (D.X_NW_IN, D.Y_NC0, -D.X_A, D.Y_NC1), (D.X_A, D.Y_NC0, D.X_NE_IN, D.Y_NC1),
     (D.LOUNGE[0], D.Y_SW, -15.0, D.Y_SC0), (-15.0, 11.6, -8.23, D.Y_SC0),
     (8.16, 11.62, D.REST[1], D.Y_SC0),
+    (D.N_PASS[0], D.Y_NC1, D.N_PASS[1], D.Y_N),
 )
 
 
@@ -310,6 +325,9 @@ def _lights(c):
         pts = shell.ceiling_lights(w, x0, y0, x1, y1, z, sx=3.0, sy=2.6, w=1.25, l=0.16,
                                    mat=lamp, drop=0.05 if z < 4.0 else 0.6)
         c.lights_from(pts, z - 0.1, energy=120.0, step=3)
+    xm = D.N_DOOR_X
+    shell.light_strip(w, xm, D.Y_NC1 + 0.4, xm, D.Y_N - 0.4, D.C_COR, mat=lamp, w=0.12, drop=0.03)
+    c.lights_from([(xm, (D.Y_NC1 + D.Y_N) * 0.5)], D.C_COR, energy=90.0)
     lounge = shell.ceiling_lights(w, D.LOUNGE[0], D.Y_SW, -15.0, D.Y_SC0, D.C_COR, sx=3.6,
                                   sy=3.0, w=0.3, l=0.3, mat=lamp, drop=0.02)
     c.lights_from(lounge, D.C_COR, energy=110.0, step=2)

@@ -55,11 +55,15 @@ SIGN_S = 2.4        # 立て看板を風除室の側壁の外からどれだけ�
 
 # (建物 id, 探索の起点 (u, v), 建物へ向かう向き (du, dv), 扉を付ける面, 看板の側, 看板の高さ, 寸法)
 #   面: "loop" = footprint の外壁、"inner1" = 図書館の 1F（外周から 2.2 m 引っ込んだガラス面）、
-#       "bbox" = 温室（uv の外接矩形から欠けた角を除いた L 字で建てている）
+#       "bbox" = 温室（uv の外接矩形から欠けた角を除いた L 字で建てている）、
+#       "part" = campus.json の parts の最初の外形（第1研究棟の北面に沿う細長い部分）
 #   看板の側: +1 なら +s 側、-1 なら -s 側（木や照明柱とぶつからない側を選んである）
 DOORS = [
     # 第1研究棟: 南面の切り欠き（u 111..127, 奥行 5 m）の奥の壁。ピロティの柱の間から入る
     ("research1", (119.0, -90.0), (0.0, 1.0), "loop", +1, 3.4, STANDARD),
+    # 第1研究棟の北: キャンパスモール側。北面に沿う細長い部分の北の面。屋内の北の入口
+    # （plan_research1_dims.N_DOOR_X、扉の中心から 20 m 西）の外
+    ("research1_n", (99.0, -20.0), (0.0, -1.0), "part", +1, 3.4, STANDARD),
     # 共創棟: メインストリート側（+v、北東の長手面）。面の中央より 6.4 m 東。扉の正面に
     # メインストリート南側の列植（u = 3 と 11 の木）や照明柱（u = -1 と 19）が来ない位置。
     ("kyoso", (7.0, -28.0), (0.0, -1.0), "loop", +1, 3.4, STANDARD),
@@ -87,7 +91,8 @@ DOORS = [
 ]
 
 # 同じ建物（屋内）の 2 つ目以降の扉: 扉の id -> 建物の id。屋内も Unity の建物も建物の id のものを使う
-SECOND_DOORS = {"lecture_se": "lecture", "lecture_ws": "lecture", "lecture_wn": "lecture"}
+SECOND_DOORS = {"lecture_se": "lecture", "lecture_ws": "lecture", "lecture_wn": "lecture",
+                "research1_n": "research1"}
 
 # 扉の id と、その扉を付ける外壁を持つ建物が違うとき（1 棟に扉が 2 つ）の対応
 # 食堂は research2 の外観に属する。マテリアル（research2_*）も plan_research2_* のモジュールも research2 と共有する。
@@ -133,7 +138,9 @@ def local(dr, s, d):
     return (o[0] + t[0] * s + n[0] * d, o[1] + t[1] * s + n[1] * d)
 
 
-def _wall_loop(kind, loop, frame):
+def _wall_loop(kind, loop, frame, parts=()):
+    if kind == "part":
+        return parts[0]
     if kind == "inner1":
         return geom.offset_polygon(loop, -2.2)
     if kind == "bbox":
@@ -145,17 +152,23 @@ def _wall_loop(kind, loop, frame):
 def plan(data, frame, ctx):
     """扉の位置と向きを決め、ctx に入口・看板・扉を書き込む。戻り値は扉の辞書のリスト。"""
     loops = {}
+    parts = {}
     for b in data["buildings"]:
         if b.get("on_campus"):
             loops[b["id"]] = geom.ensure_ccw(geom.dedup(b["footprint"]))
+            parts[b["id"]] = [geom.ensure_ccw(geom.dedup(p["footprint"]))
+                              for p in b.get("parts") or []]
 
     doors = []
     for bid, probe_uv, into_uv, kind, sign_side, sign_z, spec in DOORS:
-        loop = loops.get(HOSTS.get(bid, bid))
+        host = HOSTS.get(bid, bid)
+        loop = loops.get(host)
         if loop is None:
             print("[entrance] %s: campus.json に建物が無いので飛ばします" % bid)
             continue
-        wall = _wall_loop(kind, loop, frame)
+        if kind == "part" and not parts[host]:
+            raise RuntimeError("[entrance] %s: campus.json の %s に parts がありません" % (bid, host))
+        wall = _wall_loop(kind, loop, frame, parts[host])
         origin = frame.xy(*probe_uv)
         direction = geom.normalize(frame.xy(*into_uv))
         hit = _ray_hit(origin, direction, wall)

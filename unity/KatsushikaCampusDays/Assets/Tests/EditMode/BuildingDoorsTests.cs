@@ -47,6 +47,15 @@ namespace KCD.Tests
         }
 
         [Test]
+        public void Research1NorthDoor_BelongsToResearch1()
+        {
+            Assert.AreEqual("research1", BuildingDoors.BuildingOf("research1_n"), "research1_n が第1研究棟に結ばれていない");
+            Assert.IsFalse(BuildingDoors.IsMainDoor("research1_n"), "research1_n が第1研究棟の玄関扱いになっている");
+            Assert.IsTrue(BuildingDoors.IsMainDoor("research1"), "第1研究棟の南の扉が玄関でない");
+            CollectionAssert.AreEqual(new[] { "research1_n" }, BuildingDoors.SecondDoorsOf("research1"));
+        }
+
+        [Test]
         public void MainDoors_AreTheirOwnBuilding()
         {
             foreach (string id in new[] { "lecture", "library", "gym", "research2", "dorm" })
