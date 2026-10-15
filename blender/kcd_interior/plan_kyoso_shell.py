@@ -250,11 +250,14 @@ def slabs_2f(c, mb):
 
 # ---- 吹き抜け ------------------------------------------------------------ #
 def atrium(c, mb):
-    """ラーニングスクエア2 の上の吹き抜け: 両脇の壁・頂部・2F と 3F の縁の立ち上がりとガラス。"""
+    """ラーニングスクエア2 の上の吹き抜け: 両脇の壁・頂部・2F と 3F の縁の立ち上がりとガラス。
+
+    3F の縁の上は天井まで、教室のガラスの面（plan_kyoso_3f）にする。
+    """
     x0, y0, x1, y1 = D.ATRIUM
     kit.box(mb, x0 - 0.3, y0, D.Z_CEIL, x0, y1, D.Z_TOP, WALL)
     kit.box(mb, x1, y0, D.Z_CEIL, x1 + 0.3, y1, D.Z_TOP, WALL)
-    kit.box(mb, x0, y0, D.Z_CEIL2, x1, y0 + 0.3, D.Z_TOP, WALL)
+    kit.box(mb, x0, y0, D.Z_CEIL3, x1, y0 + 0.3, D.Z_TOP, WALL)
     shell.ceiling(mb, x0, y0, x1, y1, D.Z_ATRIUM, "ceiling_white")
     for k in range(4):
         y = y0 + 2.0 + 2.2 * k
@@ -263,9 +266,9 @@ def atrium(c, mb):
     kit.box(mb, x0, y0, D.Z_CEIL, x1, y0 + 0.25, D.Z2, WALL)
     kit.box(mb, x0, y0, D.Z2, x1, y0 + 0.25, D.Z2 + 1.1, GREY)
     kit.box(mb, x0, y0 + 0.1, D.Z2 + 1.1, x1, y0 + 0.13, D.Z2 + 1.6, GLASS)
-    # 3F の縁（歩けない）: 吹き抜けの奥の壁の面に同じ構成の帯
-    kit.box(mb, x0, y0 + 0.3, D.Z_SLAB3, x1, y0 + 0.55, D.Z_SLAB3 + 1.5, GREY)
-    kit.box(mb, x0, y0 + 0.4, D.Z_SLAB3 + 1.5, x1, y0 + 0.43, D.Z_SLAB3 + 2.0, GLASS)
+    # 3F の縁（歩けない）: 白い小口 + グレーの立ち上がり。上のガラスは教室の面
+    kit.box(mb, x0, y0, D.Z_CEIL2, x1, y0 + 0.25, D.Z3, WALL)
+    kit.box(mb, x0, y0, D.Z3, x1, y0 + 0.25, D.RIM3_TOP, GREY)
 
 
 # ---- 鉄骨階段（東のコアの西の面に沿って +Y へ上がる）------------------- #

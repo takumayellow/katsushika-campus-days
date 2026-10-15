@@ -2,8 +2,10 @@
 
 import math
 
+import numpy as np
 import pytest
 
+import raycast
 import stubs
 from kcd_interior import plan_kyoso_dims as D
 from kcd_interior import registry, signs
@@ -240,3 +242,25 @@ def test_deck_ceiling_is_a_raised_fan(built):
             for x, y in high}
     assert len(angs) == len(high)
     assert D.Z_CEIL_HI < D.Z_VOID_HI < D.Z_SLAB
+
+
+def _tris(mb, skip=()):
+    out = []
+    for f, m in zip(mb.faces, mb.face_mat):
+        if mb.mat_names[m] in skip:
+            continue
+        out += [(mb.verts[f[0]], mb.verts[f[k]], mb.verts[f[k + 1]]) for k in range(1, len(f) - 1)]
+    return np.array(out, dtype=float)
+
+
+@pytest.mark.parametrize("eye,tx", [((2.0, 37.5, 1.65), -3.0), ((2.0, 37.5, 1.65), 0.0),
+                                    ((8.0, 38.6, 1.65), 5.0)], ids=["east", "east2", "west"])
+def test_3f_classrooms_show_above_the_atrium_rim(built, eye, tx):
+    """ラーニングスクエア2 から見上げると、3F の縁の上にガラス越しに教室の天井が見える。"""
+    eye = np.array(eye)
+    target = np.array((tx, D.ROOMS3[3] - 1.5, D.Z_CEIL3 - 0.01))
+    d = target - eye
+    n = d / np.linalg.norm(d)
+    t = raycast.first_hit(eye, n, _tris(built.wall, skip=("glass_clear",)))
+    assert np.linalg.norm(d) - 0.05 < t < np.linalg.norm(d) + 0.5     # 最初に当たるのが教室の天井
+    assert raycast.first_hit(eye, n, _tris(built.wall)) < np.linalg.norm(d) - 1.0   # 手前でガラスを通る

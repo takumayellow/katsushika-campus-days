@@ -1,12 +1,13 @@
 """共創棟 1F: エントランスホール・スタジオ・エスカレーター・ラーニングスクエア1/2・曲線テーブルのホール・
-スターバックス・ファミリーマート、2F: ラウンジ。
+スターバックス・ファミリーマート、2F: ラウンジ、3F: 吹き抜けから見えるガラスの教室。
 
 寸法は plan_kyoso_dims、躯体は plan_kyoso_shell、エスカレーターは plan_kyoso_esc、
-区画は plan_kyoso_zones / _shops / _2f、看板は plan_kyoso_signs に分ける。座標はすべて建物のローカル。
+区画は plan_kyoso_zones / _shops / _2f / _3f、看板は plan_kyoso_signs に分ける。座標はすべて建物のローカル。
 """
 
 from . import common
 from . import plan_kyoso_2f as P2
+from . import plan_kyoso_3f as P3
 from . import plan_kyoso_dims as D
 from . import plan_kyoso_esc as ESC
 from . import plan_kyoso_shell as SH
@@ -23,7 +24,7 @@ def _inside_any(x, y, rects):
 
 
 def _lights(c):
-    """プレビュー用の照明（暖色）。1F は天井の下、2F は 2F の天井の下、吹き抜けは頂部の下。"""
+    """プレビュー用の照明（暖色）。1F は天井の下、2F・3F はその階の天井の下、吹き抜けは頂部の下。"""
     c.light_color = (1.0, 0.80, 0.56)
     pts = ([(x, y) for x in range(-26, 4, 6) for y in (8.0, 11.6)]
            + [(x, y) for x in range(8, 42, 6) for y in (7.0, 11.6)]
@@ -38,6 +39,8 @@ def _lights(c):
                   D.Z_CEIL2, energy=170.0, radius=1.4)
     c.lights_from([(x, y) for x in (-2.0, 2.5, 7.0) for y in (32.0, 36.5)],
                   D.Z_ATRIUM - 0.1, energy=900.0, radius=2.0)
+    c.lights_from([(x, y) for x in (-2.0, 7.0) for y in (23.5, 27.8)],
+                  D.Z_CEIL3 - 0.1, energy=170.0, radius=1.4)
 
 
 def build(c):
@@ -51,6 +54,7 @@ def build(c):
     SH.park_band(c, c.wall)
     SH.slabs_2f(c, c.wall)
     SH.atrium(c, c.wall)
+    P3.shell_3f(c, c.wall)
     SH.stair(c, c.wall)
     ESC.build(c)
 
@@ -72,5 +76,5 @@ def build(c):
     for suffix, loc, target, lens in D.CAMS:
         c.cam(suffix, loc, target, lens=lens)
     c.note("1F=エントランスホール・スタジオ・ラーニングスクエア1/2・ホール・スターバックス・"
-           "ファミリーマート、2F=ラウンジ。q_coffee の舞台")
+           "ファミリーマート、2F=ラウンジ、3F=ガラスの教室（見るだけ）。q_coffee の舞台")
     c.seats = sum(len(s["anchors"]) for s in c.seat_list())

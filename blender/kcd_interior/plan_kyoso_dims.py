@@ -91,6 +91,14 @@ STAIR_HOLE = (-7.1, STAIR_Y0, -5.3, STAIR_END_Y)
 ATRIUM = (-6.2, 28.8, 11.2, Y_PARK)
 LOUNGE2 = (-4.6, 18.6, 16.7, 28.8)
 
+# 3F（歩けない）: 吹き抜けに面したガラス張りの教室 2 室
+Z3 = 9.6                # 3F の床
+Z_CEIL3 = 12.6          # 3F の天井
+RIM3_TOP = Z3 + 1.1     # 吹き抜けに面した縁の立ち上がりの天端（その上が教室のガラス）
+ROOMS3 = (ATRIUM[0], 21.6, ATRIUM[2], ATRIUM[1])     # 教室の奥の壁から吹き抜けの縁まで
+ROOMS3_SPLIT = 2.5      # 2 室の境の X
+COLUMNS3 = tuple((x, 28.4) for x in (10.8, 7.8, 4.6, -4.8))   # 1F・2F の柱の続き
+
 # 入れない区画（建物の X, Y）: 風除室・東のコア・西のコア・公園側の部屋と階段
 CLOSED = (
     VESTIBULE,
