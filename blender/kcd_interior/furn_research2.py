@@ -55,6 +55,28 @@ def table_set(mb, x, y, z, mats, w=1.6):
     return k
 
 
+def table_run(mb, x, y0, n, z, mats, w=1.6, d=0.8, h=0.72):
+    """長机 n 卓を長手を Y にしてつないだ列（南の卓の中心が y0）と、両側の椅子（1 卓に 4 脚）。
+    天板は 1 枚につなぎ、T 字の脚は両端と継ぎ目に置く。椅子は机の方（±X）を向く。
+    置いた椅子の数を返す。"""
+    t = T(x, y0 + w * (n - 1) * 0.5, z, math.pi * 0.5)
+    hl, hd = w * n * 0.5, d * 0.5
+    t.box(mb, -hl, -hd, h - 0.045, hl, hd, h, TABLE)
+    for j in range(n + 1):
+        cx = -hl + 0.24 + (2.0 * hl - 0.48) * j / n
+        t.box_nb(mb, cx - 0.04, -0.05, 0.03, cx + 0.04, 0.05, h - 0.045, CHROME)
+        t.box_nb(mb, cx - 0.06, -hd + 0.10, 0.0, cx + 0.06, hd - 0.10, 0.06, CHROME)
+    k = 0
+    for j in range(n):
+        y = y0 + w * j
+        for dx in (-hd - 0.35, hd + 0.35):
+            for dy in (-w * 0.25, w * 0.25):
+                chair(mb, x + dx, y + dy, z, kit.face_ang(x + dx, y + dy, x, y + dy),
+                      mats[(k + j) % len(mats)])
+                k += 1
+    return k
+
+
 def round_set(mb, x, y, z, n, mats, a0=0.0, r_chair=0.75, top=TABLE, leg=CHROME):
     """丸テーブル（1 本脚）と、まわりの椅子 n 脚（角度 a0 から等分）。置いた椅子の数を返す。"""
     F.round_table(mb, x, y, r=0.42, h=0.72, top=top, leg=leg, z=z)
