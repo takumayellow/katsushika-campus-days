@@ -167,6 +167,7 @@ namespace KCD.Tests
                     Assert.AreEqual("セーブを読み込めませんでした", SaveSystem.LoadMissText(true));
                     L.SetLocale("en");
                     Assert.AreEqual("No save yet", SaveSystem.LoadMissText(false));
+                    Assert.AreEqual("Could not load the save", SaveSystem.LoadMissText(true));
                 }
                 finally
                 {
