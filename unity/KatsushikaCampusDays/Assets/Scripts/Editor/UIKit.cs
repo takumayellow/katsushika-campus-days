@@ -34,9 +34,10 @@ namespace KCD.Editor
             scaler.referenceResolution = TouchCanvasScale.PointerReference;
             scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
             scaler.matchWidthOrHeight = 0.5f;
-            if (followTouch)
+            TouchCanvasScale scale = go.AddComponent<TouchCanvasScale>();
+            if (!followTouch)
             {
-                go.AddComponent<TouchCanvasScale>();
+                scale.BindFixed(TouchCanvasScale.TouchPortraitWidth);
             }
 
             go.AddComponent<GraphicRaycaster>();
@@ -50,6 +51,26 @@ namespace KCD.Editor
         public static void KeepInCanvas(RectTransform rect)
         {
             rect.gameObject.AddComponent<FitInCanvas>();
+        }
+
+        /// <summary>
+        /// 文字だけの枠は、Canvas の幅が足りなければ縮めずに幅を狭めて折り返す（<see cref="FitInCanvas.BindReflow"/>）。
+        /// portraitHeight が正なら、縦長の画面ではその高さにして増えた行を入れる。
+        /// </summary>
+        public static void ReflowInCanvas(RectTransform rect, float portraitHeight = 0f)
+        {
+            rect.gameObject.AddComponent<FitInCanvas>().BindReflow(portraitHeight);
+        }
+
+        /// <summary>
+        /// 1 行で見せたい見出しや案内。幅を狭めたときに折り返して枠からはみ出さないよう、minSize まで文字を小さくする。
+        /// </summary>
+        public static void ReflowLabel(RectTransform rect, TMP_Text label, float minSize)
+        {
+            ReflowInCanvas(rect);
+            label.enableAutoSizing = true;
+            label.fontSizeMax = label.fontSize;
+            label.fontSizeMin = minSize;
         }
 
         /// <summary>キーボード入力を受けるために EventSystem を 1 つ置く。</summary>

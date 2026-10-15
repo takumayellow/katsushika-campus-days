@@ -32,13 +32,10 @@ EditMode テスト `CreditsTextTests` が、両方に同じ素材の名前が出
 | 校歌の旋律・歌詞の転写元（ゲームには入らない） | 旋律: なかじま音楽工房の管弦楽版スコア（©2020 M.Nakajima）。歌詞: 大学の式次第 PDF。テンポ: 大学公式サイトの MP3 | `tools/audio/README_school_song.md` の 2 節 | README には「原編曲は写していない」とある | 資料はリポジトリに入っていない |
 | 効果音 41、環境音 7、ジングル 2（`jingle_quest`、`jingle_day_end`） | 本作のオリジナル。Python と numpy で合成 | `tools/audio/build_audio.py`、`synth.py`、`sfx.py`、`ambient.py`、`music.py`、`manifest.json` | なし | 確認済み |
 | 時報のチャイム `se_chime.wav` | ウェストミンスターの鐘の旋律（1793 年の伝承曲）を numpy で合成 | `tools/audio/README_school_song.md` の 5 節、`sfx.py` の `CHIME_PHRASES` | 旋律はパブリックドメイン | 確認済み |
-| 図書館大ホールのピアノ曲 `piano_library.wav`（19.53 秒） | 本作のオリジナル。C major の 5 小節（Cmaj7 - Am7 - Fmaj7 - G - C）を、Python と numpy の加算合成のピアノで鳴らしたもの。既存の曲の旋律は使っていない | `tools/audio/piano_phrase.py`、`build_audio.py` | なし | 確認済み |
+| 図書館大ホールのピアノ曲 `piano_library.wav`（28.30 秒） | Chopin: Nocturne Op. 9 No. 2（夜想曲 変ホ長調 作品 9-2）の冒頭の一節。演奏 Peter Johnston、Musopen が公開した録音を Wikimedia Commons（https://commons.wikimedia.org/wiki/File:Chopin_Nocturne_No._2_in_E_Flat_Major,_Op._9.ogg）から取得し、元の 3.40〜31.70 秒を切り出して末尾 2.5 秒をフェードアウトしたもの | `tools/audio/piano_nocturne.py`（取得 URL・SHA256・区間）、`manifest.json` のこの曲のエントリ（`license`: CC0 1.0）、Commons のファイルページの CC0 表示と Musopen のページ（http://musopen.org/music/352/） | CC0 1.0（表記の義務なし。クレジット画面には曲名・演奏者・Musopen を出す）。作曲は 1830〜32 年でパブリックドメイン | 確認済み |
 | BGM `bgm_anthem_original`（71.11 秒）、`bgm_result`（30.0 秒）、`bgm_title`（40.0 秒） | 本作のオリジナル。numpy で合成 | `music.py`。コードからは鳴らしていないが、`AudioFactory` が `Assets/Audio` の全クリップを AudioManager に入れるのでビルドには入る | なし | 確認済み |
 
-`Assets/Audio/README.md` の冒頭にある「ゲーム内の音はすべて Python と numpy だけで合成」「サンプリング素材・外部ライブラリの音源・録音物は一切使っていない」は、
-校歌の 5 曲（上の 2 行）が入る前の記述で、今の中身とは合わない。
-
-ゲーム内の表示: 「音楽: 東京理科大学校歌（作詞 佐治巌 / 作曲 大和憲史）」、歌唱とピアノ伴奏の出所、効果音・環境音・ジングルが numpy のオリジナルであること。
+ゲーム内の表示: 「音楽: 東京理科大学校歌（作詞 佐治巌 / 作曲 大和憲史）」、歌唱とピアノ伴奏の出所、図書館のピアノの曲（ショパンの夜想曲 作品 9-2、演奏 Peter Johnston、Musopen、CC0）、効果音・環境音・ジングルが numpy のオリジナルであること。
 
 ## フォント
 

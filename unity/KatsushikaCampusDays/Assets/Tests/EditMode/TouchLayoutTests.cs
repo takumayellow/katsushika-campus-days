@@ -18,8 +18,12 @@ namespace KCD.Tests
         private const string TitleScenePath = "Assets/Scenes/Title.unity";
         private const string CampusScenePath = "Assets/Scenes/Campus.unity";
 
-        /// <summary>指のときの専用 Canvas。最初から 1280×720 基準で作っているので切り替えない。</summary>
+        /// <summary>指のときの専用 Canvas。最初から 1280×720 基準で作っているので、横長の画面では入力で切り替えない。</summary>
         private const string TouchCanvasName = "TouchCanvas";
+
+        /// <summary>縦持ちのスマホ（CSS px）。</summary>
+        private const float PhoneWidth = 390f;
+        private const float PhoneHeight = 844f;
 
         private static readonly string[] TitlePanels = { "Settings", "Credits" };
 
@@ -35,6 +39,39 @@ namespace KCD.Tests
             Assert.AreEqual(new Vector2(1280f, 720f), TouchCanvasScale.ReferenceFor(true));
             Assert.AreEqual(1.5f, TouchCanvasScale.PointerReference.x / TouchCanvasScale.TouchReference.x, 1e-6f);
             Assert.AreEqual(1.5f, TouchCanvasScale.PointerReference.y / TouchCanvasScale.TouchReference.y, 1e-6f);
+        }
+
+        [Test]
+        public void PortraitReference_FollowsTheWidth()
+        {
+            Assert.AreEqual(new Vector2(800f, 1600f), TouchCanvasScale.PortraitReference(TouchCanvasScale.PortraitWidth));
+            Assert.AreEqual(new Vector2(720f, 1440f), TouchCanvasScale.PortraitReference(TouchCanvasScale.TouchPortraitWidth));
+        }
+
+        [Test]
+        public void PortraitWidth_KeepsTheDialogueTextReadable()
+        {
+            // 縦持ちのスマホで、会話の 32 の文字が 15 px 以上になる。
+            Assert.GreaterOrEqual(32f * PhoneWidth / TouchCanvasScale.PortraitWidth, 15f);
+        }
+
+        [Test]
+        public void TouchPortraitWidth_KeepsTheButtonsAsLargeAsInLandscape()
+        {
+            // 横持ちは短い辺 390 を TouchReference.y で、縦持ちは同じ 390 を TouchPortraitWidth で描く。
+            Assert.AreEqual(TouchCanvasScale.TouchReference.y, TouchCanvasScale.TouchPortraitWidth,
+                "縦と横でスマホの短い辺を描く幅が違うと、ボタンの大きさが変わる");
+        }
+
+        // ---- ScreenShape ----
+
+        [TestCase(390, 844, true)]
+        [TestCase(844, 390, false)]
+        [TestCase(1920, 1080, false)]
+        [TestCase(800, 800, false)]
+        public void IsPortraitSize_IsTrueOnlyWhenTaller(int width, int height, bool expected)
+        {
+            Assert.AreEqual(expected, ScreenShape.IsPortraitSize(width, height));
         }
 
         // ---- FitInCanvas ----
@@ -77,6 +114,26 @@ namespace KCD.Tests
             Assert.AreEqual(1f, FitInCanvas.ScaleToFit(new Vector2(w, h), new Vector2(cw, ch), 16f));
         }
 
+        [Test]
+        public void WidthToFit_NarrowsAPanelToTheCanvas()
+        {
+            // 縦持ちのスマホでの会話の枠。幅 1520 を 800 - 32 にする。
+            Assert.AreEqual(768f, FitInCanvas.WidthToFit(1520f, 800f, 16f), 1e-5f);
+        }
+
+        [Test]
+        public void WidthToFit_LeavesANarrowPanelAlone()
+        {
+            Assert.AreEqual(600f, FitInCanvas.WidthToFit(600f, 1412f, 16f), 1e-5f);
+        }
+
+        [TestCase(0f)]
+        [TestCase(20f)]
+        public void WidthToFit_LeavesTheWidthAloneWhenTheCanvasIsNotReady(float canvasWidth)
+        {
+            Assert.AreEqual(1520f, FitInCanvas.WidthToFit(1520f, canvasWidth, 16f), 1e-5f);
+        }
+
         // ---- KeepPointerSize ----
 
         [Test]
@@ -84,6 +141,14 @@ namespace KCD.Tests
         {
             Assert.AreEqual(1f, KeepPointerSize.Factor(false));
             Assert.AreEqual(1f, KeepPointerSize.Factor(true) * 1.5f, 1e-6f);
+        }
+
+        [Test]
+        public void KeepPointerSize_Factor_ShrinksOnAPortraitScreen()
+        {
+            Assert.AreEqual(1f, KeepPointerSize.Factor(false, false));
+            Assert.AreEqual(KeepPointerSize.Factor(true), KeepPointerSize.Factor(false, true));
+            Assert.AreEqual(KeepPointerSize.Factor(true), KeepPointerSize.Factor(true, true));
         }
 
         // ---- KeepLeftOfCenter ----
@@ -122,6 +187,45 @@ namespace KCD.Tests
             Assert.AreEqual(touch, TouchPosition.PositionFor(true, pointer, touch));
         }
 
+        [Test]
+        public void TouchPosition_PositionFor_UsesThePortraitPlaceOnlyAboveTheButtons()
+        {
+            var pointer = new Vector2(0f, 96f);
+            var touch = new Vector2(0f, 262f);
+            var portrait = new Vector2(0f, 452f);
+            Assert.AreEqual(pointer, TouchPosition.PositionFor(false, true, pointer, touch, portrait));
+            Assert.AreEqual(touch, TouchPosition.PositionFor(true, false, pointer, touch, portrait));
+            Assert.AreEqual(portrait, TouchPosition.PositionFor(true, true, pointer, touch, portrait));
+        }
+
+        // ---- PortraitFieldOfView ----
+
+        [Test]
+        public void VerticalFor_LeavesALandscapeScreenAlone()
+        {
+            Assert.AreEqual(55f, PortraitFieldOfView.VerticalFor(55f, 16f / 9f, 50f, 80f));
+            Assert.AreEqual(55f, PortraitFieldOfView.VerticalFor(55f, 1f, 50f, 80f));
+        }
+
+        [Test]
+        public void VerticalFor_WidensATallScreenUpToTheLimit()
+        {
+            float aspect = PhoneWidth / PhoneHeight;
+            float vertical = PortraitFieldOfView.VerticalFor(55f, aspect, 50f, 80f);
+            Assert.AreEqual(80f, vertical, 1e-4f, "縦持ちのスマホでは上限まで広げる");
+
+            // 上限の手前なら、横の画角がちょうど minHorizontal になる。
+            float wide = PortraitFieldOfView.VerticalFor(42f, 0.9f, 50f, 80f);
+            float horizontal = 2f * Mathf.Atan(Mathf.Tan(wide * 0.5f * Mathf.Deg2Rad) * 0.9f) * Mathf.Rad2Deg;
+            Assert.AreEqual(50f, horizontal, 1e-3f);
+        }
+
+        [Test]
+        public void VerticalFor_NeverNarrowsTheBaseView()
+        {
+            Assert.AreEqual(70f, PortraitFieldOfView.VerticalFor(70f, 0.95f, 50f, 80f));
+        }
+
         // ---- シーン ----
 
         [Test]
@@ -156,6 +260,49 @@ namespace KCD.Tests
                 float touchBottom = new SerializedObject(toast).FindProperty("_touchPosition").vector2Value.y;
                 Assert.GreaterOrEqual(touchBottom, prompt.anchoredPosition.y + prompt.sizeDelta.y,
                     "指のときの知らせが「話す」の案内に重なる（場所が入っていない）");
+
+                TouchPosition promptTouch = prompt.GetComponent<TouchPosition>();
+                Assert.IsNotNull(promptTouch, "Prompt に TouchPosition が無い（KCD/シーンを組み直す）");
+                float portraitPrompt = new SerializedObject(promptTouch).FindProperty("_portraitTouchPosition").vector2Value.y;
+                float portraitToast = new SerializedObject(toast).FindProperty("_portraitTouchPosition").vector2Value.y;
+                Assert.Greater(portraitPrompt, prompt.anchoredPosition.y, "縦長の画面で「話す」の案内がボタンの上へ逃げない");
+                Assert.GreaterOrEqual(portraitToast, portraitPrompt + prompt.sizeDelta.y,
+                    "縦長の画面で知らせが「話す」の案内に重なる");
+            }
+            finally
+            {
+                EditorSceneManager.CloseScene(scene, true);
+            }
+        }
+
+        [Test]
+        public void CampusScene_IsReadyForAPortraitScreen()
+        {
+            Scene scene = EditorSceneManager.OpenScene(CampusScenePath, OpenSceneMode.Additive);
+            try
+            {
+                List<GameObject> roots = scene.GetRootGameObjects().ToList();
+                List<RectTransform> rects = roots.SelectMany(r => r.GetComponentsInChildren<RectTransform>(true)).ToList();
+
+                foreach (string button in new[] { "PauseButton", "QuestLogButton" })
+                {
+                    RectTransform rect = rects.FirstOrDefault(r => r.name == button);
+                    Assert.IsNotNull(rect, button + " が無い");
+                    Assert.IsNotNull(rect.GetComponent<PortraitPosition>(),
+                        button + " に PortraitPosition が無い（縦長の画面でクエストの枠に重なる）");
+                }
+
+                foreach (string panel in new[] { "Dialogue", "Toast" })
+                {
+                    FitInCanvas fit = rects.FirstOrDefault(r => r.name == panel && r.Find("Backdrop") != null)
+                        ?.GetComponent<FitInCanvas>();
+                    Assert.IsNotNull(fit, panel + " に FitInCanvas が無い");
+                    Assert.IsTrue(new SerializedObject(fit).FindProperty("_reflow").boolValue,
+                        panel + " が縦長の画面で折り返さない（縮めると文字が読めない）");
+                }
+
+                Assert.IsNotEmpty(roots.SelectMany(r => r.GetComponentsInChildren<PortraitFieldOfView>(true)),
+                    "カメラに PortraitFieldOfView が無い（縦長の画面で左右が見えない）");
             }
             finally
             {
@@ -174,15 +321,11 @@ namespace KCD.Tests
 
                 foreach (CanvasScaler scaler in scalers)
                 {
-                    bool follows = scaler.GetComponent<TouchCanvasScale>() != null;
-                    if (scaler.name == TouchCanvasName)
-                    {
-                        Assert.IsFalse(follows, path + ": " + scaler.name + " は最初から指の基準で作る");
-                    }
-                    else
-                    {
-                        Assert.IsTrue(follows, path + ": " + scaler.name + " に TouchCanvasScale が無い（KCD/シーンを組み直す）");
-                    }
+                    TouchCanvasScale scale = scaler.GetComponent<TouchCanvasScale>();
+                    Assert.IsNotNull(scale, path + ": " + scaler.name + " に TouchCanvasScale が無い（KCD/シーンを組み直す）");
+                    bool follows = new SerializedObject(scale).FindProperty("_followTouch").boolValue;
+                    Assert.AreEqual(scaler.name != TouchCanvasName, follows,
+                        path + ": " + scaler.name + (follows ? " は最初から指の基準で作る" : " が指の操作に合わせて大きくならない"));
                 }
 
                 List<RectTransform> rects = roots.SelectMany(r => r.GetComponentsInChildren<RectTransform>(true)).ToList();

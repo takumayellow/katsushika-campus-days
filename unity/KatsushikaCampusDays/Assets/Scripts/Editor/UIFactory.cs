@@ -18,6 +18,21 @@ namespace KCD.Editor
         /// <summary>指のときの知らせの下端。「話す」のボタンに隠れないよう、案内のすぐ上に出す。</summary>
         private const float ToastTouchBottom = PromptBottom + PromptHeight + 8f;
 
+        /// <summary>
+        /// 縦長の画面で指のときの「話す」の案内の下端。画面の幅の大半を右下のボタンが占めるので、
+        /// 「走る」のボタン（上端は下から CSS で約 178 px、幅 800 の Canvas で 365）より上に出す。
+        /// </summary>
+        private const float PortraitPromptBottom = 380f;
+
+        /// <summary>縦長の画面で指のときの知らせの下端。案内のすぐ上。</summary>
+        private const float PortraitToastTouchBottom = PortraitPromptBottom + PromptHeight + 8f;
+
+        /// <summary>縦長の画面での知らせの高さ。幅 800 では 2 行に折り返すことがある。</summary>
+        private const float PortraitToastHeight = 100f;
+
+        /// <summary>縦長の画面での会話の枠の高さ。幅 800 では 1 行が 20 字ほどになるので、6 行入れる。</summary>
+        private const float PortraitDialogueHeight = 440f;
+
         /// <summary>Campus シーンの表示一式。HUD を返す。</summary>
         public static HUD BuildCampusUI(Transform root, GameObject player)
         {
@@ -61,6 +76,8 @@ namespace KCD.Editor
             RectTransform rect = Rect(parent, "Prompt", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
                 new Vector2(0f, PromptBottom), new Vector2(460f, PromptHeight));
             Backdrop(rect, Panel);
+            rect.gameObject.AddComponent<TouchPosition>().Bind(
+                new Vector2(0f, PromptBottom), new Vector2(0f, PortraitPromptBottom));
 
             CanvasGroup group = rect.gameObject.AddComponent<CanvasGroup>();
             group.alpha = 0f;
@@ -77,8 +94,9 @@ namespace KCD.Editor
             RectTransform rect = Rect(parent, "Toast", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
                 new Vector2(0f, 96f), new Vector2(1080f, 60f));
             Backdrop(rect, Panel);
-            KeepInCanvas(rect);
-            rect.gameObject.AddComponent<TouchPosition>().Bind(new Vector2(0f, ToastTouchBottom));
+            ReflowInCanvas(rect, PortraitToastHeight);
+            rect.gameObject.AddComponent<TouchPosition>().Bind(
+                new Vector2(0f, ToastTouchBottom), new Vector2(0f, PortraitToastTouchBottom));
 
             CanvasGroup group = rect.gameObject.AddComponent<CanvasGroup>();
             group.alpha = 0f;
@@ -193,7 +211,7 @@ namespace KCD.Editor
             RectTransform rect = Rect(parent, "Dialogue", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
                 new Vector2(0f, 48f), new Vector2(1520f, 300f));
             Backdrop(rect, new Color(0.05f, 0.07f, 0.12f, 0.9f));
-            KeepInCanvas(rect);
+            ReflowInCanvas(rect, PortraitDialogueHeight);
             AddDialogueTapArea(rect);
 
             // 話者名の札は枠の内側（上端から 14 px 下）に置き、本文はその下から始める。

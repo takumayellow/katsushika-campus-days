@@ -8,7 +8,7 @@
 
 - エンジン: Unity 6 (6000.6.2f1, URP)
 - アセット生成: Blender 4.5 LTS を headless Python で駆動（手作業ゼロで再生成できる）
-- 音声: BGM 8 / ジングル 2 / SE 41 / 環境音 7。タイトルとキャンパスの BGM 5 曲は東京理科大学校歌（タイトルは東北きりたんの歌唱 + ピアノ伴奏、キャンパスはピアノ伴奏）。ほかは numpy で合成したオリジナル
+- 音声: BGM 8 / ジングル 2 / SE 41 / 環境音 7。タイトルとキャンパスの BGM 5 曲は東京理科大学校歌（タイトルは東北きりたんの歌唱 + ピアノ伴奏、キャンパスはピアノ伴奏）。図書館のピアノの曲はショパンの夜想曲 作品 9-2 の冒頭（CC0 の録音）。ほかは numpy で合成したオリジナル
 - 設計書: [docs/DESIGN.md](docs/DESIGN.md)、データ仕様: [docs/CONTENT_SPEC.md](docs/CONTENT_SPEC.md)
 - 遊び方: [docs/HOW_TO_PLAY.md](docs/HOW_TO_PLAY.md)
 - 複数のエージェントで分担するときの決まり: [docs/AGENT_COORDINATION.md](docs/AGENT_COORDINATION.md)
@@ -173,6 +173,7 @@ Overpass の生データ 2 つは大きいので gitignore。寮への道の分�
 - 地図データ © OpenStreetMap contributors (ODbL)。https://www.openstreetmap.org/copyright
 - 地面・舗装・芝・外壁のテクスチャ: [ambientCG](https://ambientcg.com/) (CC0 1.0) の素材から作ったもの。使った素材は [docs/CREDITS.md](docs/CREDITS.md)
 - 音楽: 東京理科大学校歌（作詞 佐治巌 / 作曲 大和憲史）。歌唱は東北きりたん（NEUTRINO）、ピアノ伴奏はヤマハの自動採譜（Piano Sheet Converter）を手直ししたもの。校歌の権利は未確認で、配布前に確かめる項目を CREDITS.md に並べている
+- 図書館のピアノの曲: ショパン「夜想曲 作品 9-2」の冒頭の一節。演奏 Peter Johnston（Musopen、CC0。Wikimedia Commons から取得）
 - 効果音・環境音・ジングルは numpy で合成したオリジナル
 - 「坊っちゃん」「マドンナちゃん」は東京理科大学の公式キャラクター。本作は非公式・非営利のファンメイドで、3D モデルは独自に制作している
 - フォント: Noto Sans JP（© Adobe）、Liberation Sans（© Google, Red Hat）。どちらも SIL Open Font License 1.1 で、本文は `Assets/StreamingAssets/Licenses` に同梱

@@ -10,6 +10,7 @@ on:
       - "tests/**"
       - "data/osm/**"
       - "unity/KatsushikaCampusDays/Assets/Audio/SE/se_chime.wav"
+      - "unity/KatsushikaCampusDays/Assets/Audio/SE/piano_library.wav"
       # 画面の文字のフォントに、ゲームの文字が全部あるか（tools/tests/test_make_ui_font.py、#70）
       - "unity/KatsushikaCampusDays/Assets/Fonts/**"
       - "unity/KatsushikaCampusDays/Assets/**/*.json"
@@ -29,6 +30,7 @@ on:
       - "tests/**"
       - "data/osm/**"
       - "unity/KatsushikaCampusDays/Assets/Audio/SE/se_chime.wav"
+      - "unity/KatsushikaCampusDays/Assets/Audio/SE/piano_library.wav"
       # 画面の文字のフォントに、ゲームの文字が全部あるか（tools/tests/test_make_ui_font.py、#70）
       - "unity/KatsushikaCampusDays/Assets/Fonts/**"
       - "unity/KatsushikaCampusDays/Assets/**/*.json"
