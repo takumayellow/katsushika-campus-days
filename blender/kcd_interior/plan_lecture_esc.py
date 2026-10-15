@@ -1,13 +1,14 @@
 """講義棟のエスカレータ 2 列 10 区間（1F→6F。spec §1-3）。
 
-段の付いた歩ける斜路（蹴上げ 0.2）として作る。南の列（Y 25.6〜27.4）は東へ、北の列
-（Y 27.6〜29.4）は西へ上り、同じ列の各階の区間は同じ X に重なる。
+段の付いた歩ける斜路（蹴上げ 0.2）として作る。南の列（Y 25.6〜27.4）は東が、北の列
+（Y 27.6〜29.4）は西が高く、同じ列の各階の区間は同じ X に重なる。上りの区間は階ごとに北と南の列で
+入れ替わり、もう一方の列が下り（1F→2F は北が上り。JSPE の「〜へ」「〜から」の表記。spec §1-3）。
 見た目はガラスの欄干、ステンレスのデッキと黒い手すり、白い腹板、段の縁は黄色。
 1F の区間の下で腹が CLEAR より低い所は、白い板で床まで囲ってくぐれないようにする。
 段の面は上と蹴込みの 1 枚ずつ（段の端は腹板、下は腹が隠す）。
 区間ごとに部品 wall_lecture_esc_<列>_<下の階> を分ける（点光源の数の上限。spec §1-13）。
 段（蹴込み・段鼻・踏面）だけは区間ごとの部品 escsteps_lecture_<区間> に分け、Unity が 1 段ぶんずつ動かす
-（当たり判定は付けない。InteriorEscalatorStage）。乗る板の両端は Empty esc_lecture_<区間>_lo / _hi。
+（当たり判定は付けない。InteriorEscalatorStage）。乗る板の両端は Empty esc_lecture_<区間>_lo / _hi。下りの区間には Empty esc_lecture_<区間>_down も置く。
 """
 
 from . import kit
@@ -41,8 +42,9 @@ BELT = "plastic_black"
 class Flight:
     """1 区間。(xa, za) が下の端、(xb, zb) が上の端、y0〜y1 が列の幅。"""
 
-    def __init__(self, name, y0, y1, xa, za, xb, zb):
+    def __init__(self, name, y0, y1, xa, za, xb, zb, down=False):
         self.name = name
+        self.down = down
         self.y0, self.y1 = y0, y1
         self.xa, self.za, self.xb, self.zb = xa, za, xb, zb
         self.n = int(round((zb - za) / RISE))
@@ -68,12 +70,18 @@ class Flight:
         return self.x_at(CLEAR + DROP) if self.za == 0.0 else self.xa
 
 
+def is_down(column, lower):
+    """column の列の、lower 階から 1 つ上の階への区間が下りか。北の列は奇数階から、南の列は偶数階から上る。"""
+    return (lower % 2 == 1) != (column == "north")
+
+
 def flights():
-    """10 区間: 南の列は東へ、北の列は西へ上る。名前は <列>_<下の階>（"south_1f" など）。"""
+    """10 区間: 南の列は東が、北の列は西が高い。名前は <列>_<下の階>（"south_1f" など）。"""
     out = []
     for name, (y0, y1), xa, xb in (("south", D.ESC_S_Y, X_W, X_E), ("north", D.ESC_N_Y, X_E, X_W)):
         for i in range(TOP - 1):
-            out.append(Flight("%s_%df" % (name, i + 1), y0, y1, xa, D.FL[i], xb, D.FL[i + 1]))
+            out.append(Flight("%s_%df" % (name, i + 1), y0, y1, xa, D.FL[i], xb, D.FL[i + 1],
+                              down=is_down(name, i + 1)))
     return tuple(out)
 
 
@@ -161,3 +169,5 @@ def build(c):
         lo, hi = ends(f)
         c._put("esc_%s_%s_lo" % (c.spec.id, f.name), *lo)
         c._put("esc_%s_%s_hi" % (c.spec.id, f.name), *hi)
+        if f.down:
+            c._put("esc_%s_%s_down" % (c.spec.id, f.name), *hi)
