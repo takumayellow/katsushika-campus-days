@@ -82,7 +82,10 @@ namespace KCD.Tests
             Assert.AreEqual(0, CountLinks(plain), "キーで遊ぶ人の文面に link が入った");
             Assert.AreEqual(PauseMenu.EntryCount, CountLinks(linked), "行ごとに link が無い");
             StringAssert.Contains("<link=\"choice:2\"><color=#FFD98A>▶ ", linked);
-            Assert.AreEqual(plain, Regex.Replace(linked, "</?link[^>]*>", string.Empty), "link を外すとキーのときの文面と同じ");
+            StringAssert.StartsWith(TmpLinkTap.TapRowLineHeight, linked, "指のときは行の間隔を広げる");
+            StringAssert.DoesNotContain("line-height", plain, "キーで遊ぶ人の行の間隔が変わった");
+            Assert.AreEqual(plain, Regex.Replace(linked, "</?link[^>]*>|<line-height=[^>]*>", string.Empty),
+                "link と行の高さを外すとキーのときの文面と同じ");
         }
 
         [Test]
@@ -91,7 +94,7 @@ namespace KCD.Tests
             string linked = InJapanese(() => PauseMenu.Compose(true, 1, true));
 
             Assert.AreEqual(2, CountLinks(linked));
-            StringAssert.Contains("<link=\"choice:0\">   はい</link>", linked);
+            StringAssert.Contains("\n\n" + TmpLinkTap.TapRowLineHeight + "<link=\"choice:0\">   はい</link>", linked);
             StringAssert.Contains("<link=\"choice:1\"><color=#FFD98A>▶ いいえ</color></link>", linked);
         }
 
