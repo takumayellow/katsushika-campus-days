@@ -103,6 +103,51 @@ namespace KCD.Tests
         }
 
         [Test]
+        public void Npcs_InAnInteriorEnterTheNearestBuildingFirst()
+        {
+            // 寮長のように屋内の置き場（x ≥ InteriorMinX）にいる人へ外から飛ぶと、歩ける範囲の外として戻される。
+            var interiors = new[]
+            {
+                new DevInteriorSource("lib", "図書館", new Vector3(1200f, 0f, 0f)),
+                new DevInteriorSource("dorm", "寮", new Vector3(4000f, 0f, 0f)),
+                new DevInteriorSource("lab", "実験棟")
+            };
+            var npcs = new[]
+            {
+                new DevNpcSource("dorm_head", "寮長", new Vector3(4010f, 0f, 5f), new Vector3(0f, 0f, 1f)),
+                new DevNpcSource("librarian", "司書", new Vector3(1230f, 3f, 0f), new Vector3(0f, 0f, 1f)),
+                new DevNpcSource("inari", "稲荷先輩", new Vector3(3f, 0f, 3f), new Vector3(0f, 0f, 1f))
+            };
+
+            IReadOnlyList<DevWarpTarget> tab =
+                DevWarpCatalog.Build(Zones, Entrances, interiors, npcs).Tab((int)DevWarpKind.Npc);
+            Assert.AreEqual(new[] { "dorm_head", "inari", "librarian" }, Ids(tab));
+
+            DevWarpTarget head = tab[0];
+            Assert.IsTrue(head.IsIndoor);
+            Assert.AreEqual("dorm", head.InteriorId);
+            Assert.IsFalse(head.HasPosition, "寮の入口は Entrances に無いので、今いる場所から入る");
+            Assert.AreEqual(new Vector3(4010f, 0f, 5f - DevWarpCatalog.NpcStandOff), head.InsidePosition);
+
+            DevWarpTarget librarian = tab[2];
+            Assert.AreEqual("lib", librarian.InteriorId);
+            Assert.IsTrue(librarian.HasPosition, "図書館の入口の前に立ってから入る");
+            Assert.AreEqual(new Vector3(0f, 0f, DevWarpCatalog.EntranceStandOff), librarian.Position);
+
+            Assert.IsFalse(tab[1].IsIndoor, "外にいる人は今までどおり座標へ飛ぶ");
+            Assert.AreEqual(string.Empty, tab[1].InteriorId);
+        }
+
+        [Test]
+        public void Npcs_InAnInteriorWithoutAnyKnownBuildingAreLeftOut()
+        {
+            var npcs = new[] { new DevNpcSource("dorm_head", "寮長", new Vector3(4010f, 0f, 5f), Vector3.forward) };
+
+            Assert.AreEqual(0, DevWarpCatalog.Build(null, null, Interiors, npcs).Tab((int)DevWarpKind.Npc).Count,
+                "入った直後の位置が分からない屋内しか無いと、どの建物か決められない");
+        }
+
+        [Test]
         public void Times_HaveMorningNoonEveningNight()
         {
             IReadOnlyList<DevWarpTarget> tab = Build().Tab((int)DevWarpKind.Time);
