@@ -17,6 +17,13 @@ namespace KCD
         /// <summary>リンクの四角を広げる幅（画面の高さに対する割合）。</summary>
         public const float MarginPerScreenHeight = 0.06f;
 
+        /// <summary>
+        /// 指で叩く行の一覧の頭に置く行の高さ。叩いた点は一番近い行になるので、叩ける高さは行の間隔そのもの。
+        /// 文字の大きさ 30 で 90 になり、縦持ち（幅 800 の Canvas を 390 px）で約 44 px、
+        /// 横持ち（高さ 720 の Canvas を 390 px）で約 49 px。
+        /// </summary>
+        public const string TapRowLineHeight = "<line-height=3em>";
+
         private const string ChoicePrefix = "choice:";
 
         [SerializeField] private TMP_Text _text;

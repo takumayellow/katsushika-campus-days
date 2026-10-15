@@ -415,11 +415,13 @@ namespace KCD
                 builder.Append("<size=85%>");
                 builder.Append(L.Get("ui.pause.confirm_title", "セーブしていない進行は失われます。タイトルへ戻りますか？"));
                 builder.Append("</size>\n\n");
+                AppendRowHeight(builder, links);
                 AppendEntry(builder, ConfirmYes, L.Get("ui.common.yes", "はい"), selected == ConfirmYes, links);
                 AppendEntry(builder, ConfirmNo, L.Get("ui.common.no", "いいえ"), selected == ConfirmNo, links);
             }
             else
             {
+                AppendRowHeight(builder, links);
                 for (int i = 0; i < EntryKeys.Length; i++)
                 {
                     AppendEntry(builder, i, L.Get(EntryKeys[i], EntryFallbacks[i]), i == selected, links);
@@ -427,6 +429,15 @@ namespace KCD
             }
 
             return builder.ToString();
+        }
+
+        /// <summary>指で遊んでいるときだけ、行の間隔を指の幅まで広げる。5 行で 450 なので枠の高さ 560 に収まる。</summary>
+        private static void AppendRowHeight(System.Text.StringBuilder builder, bool links)
+        {
+            if (links)
+            {
+                builder.Append(TmpLinkTap.TapRowLineHeight);
+            }
         }
 
         private static void AppendEntry(System.Text.StringBuilder builder, int index, string label, bool selected,
