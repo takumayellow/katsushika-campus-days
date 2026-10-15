@@ -1,10 +1,11 @@
 """第2研究棟（と 1〜2F の食堂）の外観。仕様は docs/ref/interiors/research2/spec.md の §0・§1・§6 と #293。
 
 2 層の食堂が台座で、その上の 3〜6F の研究棟は台座の外形のうち矩形の範囲だけに建つ。
-研究棟の面は明るい暖灰色の深い格子（床の線の帯が縦の桟より前に出て、窓は奥に引っ込む）。
+研究棟の面は暖灰色の深い格子（床の線の帯が縦の桟より前に出て、窓は奥に引っ込む）。
 西の端にレンガの塊（南西の面にガラスの階段の帯）、屋上に濃い灰色の目隠し、台座の屋根は屋上緑化。
 全面ガラスは食堂の面（南南西から西北西の曲面とロビーの面）だけ。曲面の 2F は屋外のテラスで、
-ガラスの壁を奥に引き、縁に低い立ち上がりと金属の柵を回す。曲面に沿って 2F のテラスへ上がる外階段がある。"""
+ガラスの壁を奥に引き、縁に低い立ち上がりと金属の柵を回す。曲面に沿って 2F のテラスへ上がる外階段がある。
+食堂の壁と帯は研究棟と同じ暖灰色、ガラスの枠は濃い灰色、屋根の鼻先とテラスの天井だけが白い（#305）。"""
 import math
 
 from . import facade, geom
@@ -96,13 +97,15 @@ def _podium(mb, loop, podium_fh, podium_h):
     solid = [i for i in range(n) if i not in glass and i != EAST_EDGE]
     facade.add_solid(mb, loop, 0.0, podium_h, "concrete_grey", edges=solid)
     facade.add_solid(mb, loop, 0.0, podium_h, "concrete_dark", edges=[EAST_EDGE])
-    # 1F：床に近い所から天井までのガラス、白い縦の桟 1.4 m おき。上の 1.0 m は 2F との間の明るい帯
-    facade.add_facade(mb, loop, 0.0, podium_fh, 0, 1, wall="concrete_light", glass="glass_clear",
-                      seg=1.4, sill=0.3, header=1.0, inset=0.25, mullion=0.14, edges=glass)
+    # 1F：床に近い所から天井までのガラス、濃い灰色の縦の桟 1.4 m おき。上の 1.0 m は 2F との間の灰色の帯
+    facade.add_facade(mb, loop, 0.0, podium_fh, 0, 1, wall="concrete_grey", glass="glass_clear",
+                      seg=1.4, sill=0.3, header=1.0, inset=0.25, mullion=0.14, edges=glass,
+                      frame="metal_charcoal")
     # 2F（テラスでない面）：外形の線のガラス。上の 0.9 m は屋根の縁の帯
     front = [i for i in glass if i not in TERRACE_EDGES]
-    facade.add_facade(mb, loop, 0.0, podium_fh, 1, 2, wall="concrete_light", glass="glass_clear",
-                      seg=1.5, sill=0.8, header=0.9, inset=0.3, mullion=0.14, edges=front)
+    facade.add_facade(mb, loop, 0.0, podium_fh, 1, 2, wall="concrete_grey", glass="glass_clear",
+                      seg=1.5, sill=0.8, header=0.9, inset=0.3, mullion=0.14, edges=front,
+                      frame="metal_charcoal")
     _terrace(mb, loop, podium_fh, podium_h)
     # 屋根は屋上緑化。縁は白い立ち上がり
     mb.add_ngon_flat(loop, podium_h, "grass")
@@ -116,11 +119,11 @@ def _terrace(mb, loop, z2f, podium_h):
     rail = z2f + 0.5
     for i in TERRACE_EDGES:
         j = (i + 1) % n
-        mb.add_ngon_flat([loop[i], loop[j], inner[j], inner[i]], z2f, "concrete_light")
+        mb.add_ngon_flat([loop[i], loop[j], inner[j], inner[i]], z2f, "concrete_grey")
         mb.add_ngon_flat([loop[i], loop[j], inner[j], inner[i]], TERRACE_CEILING, "concrete_light", flip=True)
         # 縁の立ち上がりと金属の柵の笠木（柵の網は描かない）。外階段の踊り場が着く所はあける
         a = stair_corner(loop, STAIR_LANDING, 0.0) if i == STAIR_EDGE else loop[i]
-        _wall(mb, a, loop[j], z2f, rail, "concrete_light")
+        _wall(mb, a, loop[j], z2f, rail, "concrete_grey")
         _wall(mb, a, loop[j], z2f + 1.0, z2f + 1.08, "metal_grey")
     # 屋根の縁の厚い帯（テラスの天井から屋根まで）
     facade.add_solid(mb, loop, TERRACE_CEILING, podium_h, "concrete_light", edges=list(TERRACE_EDGES))
@@ -129,7 +132,7 @@ def _terrace(mb, loop, z2f, podium_h):
                       seg=1.5, sill=0.1, header=0.2, inset=0.12, mullion=0.12,
                       edges=list(TERRACE_EDGES), side_reveals=False)
     for k in (TERRACE_EDGES[0], TERRACE_EDGES[-1] + 1):
-        _wall(mb, loop[k % n], inner[k % n], z2f, TERRACE_CEILING, "concrete_light")
+        _wall(mb, loop[k % n], inner[k % n], z2f, TERRACE_CEILING, "concrete_grey")
     _outdoor_stair(mb, loop, z2f)
 
 
@@ -141,7 +144,7 @@ def _outdoor_stair(mb, loop, z2f):
     def box(t0, t1, z):
         pts = [stair_corner(loop, t0, d0), stair_corner(loop, t1, d0),
                stair_corner(loop, t1, d1), stair_corner(loop, t0, d1)]
-        mb.add_prism(pts, 0.0, z, "concrete_light", "concrete_light")
+        mb.add_prism(pts, 0.0, z, "concrete_grey", "concrete_grey")
 
     box(0.0, STAIR_LANDING, z2f)
     for k in range(STAIR_STEPS - 1):
@@ -167,13 +170,13 @@ def _tower(mb, podium_h, tower_fh, floors, h):
     """3〜6F の研究棟。深い格子の面、床の線の帯、張り出しの裏、屋上の目隠し。"""
     tower = _rect(*TOWER_RECT)
     facade.add_facade(mb, tower, podium_h, tower_fh, 0, floors,
-                      wall="concrete_light", glass="glass_dark",
+                      wall="concrete_grey", glass="glass_dark",
                       seg=GRID_SEG, sill=0.55, header=0.75, inset=GRID_INSET, mullion=0.6)
     ledge = geom.offset_polygon(tower, LEDGE_OUT)
     for k in range(floors + 1):
         z = podium_h + k * tower_fh
         z0, z1 = (z - 0.3, z + 0.3) if k == 0 else ((z - 0.3, z + 0.5) if k == floors else (z - 0.15, z + 0.15))
-        mb.add_prism(ledge, z0, z1, "concrete_light", "concrete_light", "concrete_light")
+        mb.add_prism(ledge, z0, z1, "concrete_grey", "concrete_grey", "concrete_grey")
     mb.add_ngon_flat(tower, podium_h, "metal_charcoal", flip=True)   # 南へ張り出す所の裏
     mb.add_ngon_flat(tower, h, "roof_grey")
     screen = _rect(*ROOF_SCREEN_RECT)
