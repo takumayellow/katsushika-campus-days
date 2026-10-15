@@ -130,7 +130,7 @@ namespace KCD
                     continue;
                 }
 
-                if (!TryScore(transform.position, forward, candidate.transform.position, candidate.InteractionRange,
+                if (!TryScore(transform.position, forward, candidate.AimPoint(transform.position), candidate.InteractionRange,
                         _facingDot, out float score))
                 {
                     continue;

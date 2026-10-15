@@ -13,7 +13,13 @@ namespace KCD.Editor
         /// <summary>乗り場の判定を扉の側へ寄せる距離（m）。扉の前に立って E を押せる位置。</summary>
         public const float PanelSetback = 0.7f;
 
-        /// <summary>E に反応する距離（m）。</summary>
+        /// <summary>乗り場の判定の幅の半分（m）。EV 2 基の扉の前を覆う。</summary>
+        public const float PanelHalfWidth = 1.2f;
+
+        /// <summary>判定の中心から扉の面までの距離（m）。乗り場は扉から 1.4 m 前、判定はそこから PanelSetback 扉の側。</summary>
+        public const float DoorOffset = 1.4f - PanelSetback;
+
+        /// <summary>E に反応する距離（m）。扉の面の上の最も近い点から測る。</summary>
         public const float PanelRange = 2.4f;
 
         /// <summary>
@@ -46,7 +52,7 @@ namespace KCD.Editor
         /// <summary>乗り場を置き、階ごとの明かりを付ける。置いた乗り場の数を返す（無ければ 0）。</summary>
         public static int Build(Transform interior, string id)
         {
-            List<ElevatorPanel.Stop> stops = CollectStops(interior, id);
+            List<ElevatorPanel.Stop> stops = CollectStops(interior, "ev_" + id + "_", id, "Landing_");
             if (stops.Count == 0)
             {
                 return 0;
@@ -71,10 +77,13 @@ namespace KCD.Editor
             return all.Length;
         }
 
-        /// <summary>ev_&lt;id&gt;_&lt;階&gt; を下の階から順に集め、着いたときの立ち位置を作る。</summary>
-        private static List<ElevatorPanel.Stop> CollectStops(Transform interior, string id)
+        /// <summary>
+        /// prefix&lt;階&gt; の Empty を下の階から順に集め、prefix&lt;階&gt;_f の向きで着いたときの立ち位置
+        /// （landingName&lt;階&gt;）を作る。階段室の扉（InteriorStairStage）もこれで集め、行き先の階の用途（<see cref="Uses"/>）は階段の画面にも出す。
+        /// </summary>
+        internal static List<ElevatorPanel.Stop> CollectStops(Transform interior, string prefix, string id,
+            string landingName)
         {
-            string prefix = "ev_" + id + "_";
             var points = new Dictionary<string, Transform>();
             var fronts = new Dictionary<string, Transform>();
             foreach (Transform child in interior.GetComponentsInChildren<Transform>(true))
@@ -104,7 +113,7 @@ namespace KCD.Editor
                 ahead.y = 0f;
                 float yaw = ahead.sqrMagnitude > 1e-4f ? Mathf.Atan2(ahead.x, ahead.z) * Mathf.Rad2Deg : 0f;
 
-                var landing = new GameObject("Landing_" + pair.Key);
+                var landing = new GameObject(landingName + pair.Key);
                 landing.transform.SetPositionAndRotation(pair.Value.position, Quaternion.Euler(0f, yaw, 0f));
                 Uses.TryGetValue(id + "_" + pair.Key, out string[] use);
                 stops.Add(new ElevatorPanel.Stop
@@ -136,13 +145,14 @@ namespace KCD.Editor
 
             BoxCollider box = go.AddComponent<BoxCollider>();
             box.isTrigger = true;
-            box.size = new Vector3(2.4f, 2f, 1.2f);
+            box.size = new Vector3(PanelHalfWidth * 2f, 2f, 1.2f);
 
             ElevatorPanel panel = go.AddComponent<ElevatorPanel>();
             panel.BuildingId = id;
             panel.Floor = stop.Floor;
             panel.Stops = all;
             panel.InteractionRange = PanelRange;
+            panel.SetDoor(DoorOffset, PanelHalfWidth);
         }
 
         /// <summary>屋内の Lights の下の明かりを、乗り場の高さで階に分けて InteriorFloorLights に渡す。</summary>

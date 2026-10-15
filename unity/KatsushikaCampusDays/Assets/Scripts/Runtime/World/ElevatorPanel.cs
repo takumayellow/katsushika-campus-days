@@ -5,6 +5,7 @@ namespace KCD
     /// <summary>
     /// 屋内のエレベーターの乗り場。EV の扉の前で E を押すと <see cref="ElevatorMenu"/> を開き、選んだ階の乗り場へ移る (#275)。
     /// 乗り場は FBX の ev_&lt;id&gt;_&lt;階&gt; Empty（扉から 1.4 m 前の床）で、InteriorStage が階ごとに 1 つずつ置く。
+    /// 階段室の扉も同じ仕組みで階を移る (#303)。<see cref="Stairs"/> のときは文言だけ「階段」にする。
     /// </summary>
     public sealed class ElevatorPanel : Interactable
     {
@@ -28,6 +29,9 @@ namespace KCD
         [SerializeField] private string _buildingId = string.Empty;
         [SerializeField] private string _floor = string.Empty;
         [SerializeField] private Stop[] _stops = new Stop[0];
+        [SerializeField] private float _doorOffset;
+        [SerializeField] private float _doorHalfWidth;
+        [SerializeField] private bool _stairs;
 
         /// <summary>この乗り場がある建物の id。</summary>
         public string BuildingId
@@ -36,11 +40,41 @@ namespace KCD
             set => _buildingId = value;
         }
 
+        /// <summary>階段室の扉か（false ならエレベーター）。</summary>
+        public bool Stairs
+        {
+            get => _stairs;
+            set
+            {
+                _stairs = value;
+                RefreshLabel();
+            }
+        }
+
         /// <summary>この乗り場の階。</summary>
         public string Floor
         {
             get => _floor;
             set => _floor = value;
+        }
+
+        /// <summary>
+        /// 扉の面の位置。判定の中心から扉の側（-forward）へ offset（m）、横に ±halfWidth（m）の線分。
+        /// 「調べる」の候補は、この線分の上でプレイヤーに最も近い点で距離と向きを測る（#303）。
+        /// 判定の中心で測ると、中心より扉に寄ったときに中心が背中側になって乗れなかった。
+        /// </summary>
+        public void SetDoor(float offset, float halfWidth)
+        {
+            _doorOffset = Mathf.Max(0f, offset);
+            _doorHalfWidth = Mathf.Max(0f, halfWidth);
+        }
+
+        /// <summary>扉の面の上で from に最も近い点。</summary>
+        public override Vector3 AimPoint(Vector3 from)
+        {
+            Vector3 local = transform.InverseTransformPoint(from);
+            float x = Mathf.Clamp(local.x, -_doorHalfWidth, _doorHalfWidth);
+            return transform.TransformPoint(new Vector3(x, 0f, -_doorOffset));
         }
 
         /// <summary>止まる階。下の階から順に並べる。</summary>
@@ -106,7 +140,9 @@ namespace KCD
 
         private void RefreshLabel()
         {
-            PromptLabel = L.Pick("エレベーターに乗る", "Take the elevator");
+            PromptLabel = _stairs
+                ? L.Pick("階段で別の階へ", "Take the stairs")
+                : L.Pick("エレベーターに乗る", "Take the elevator");
         }
 
         /// <summary>E が押された。行き先を選ぶ画面を開く。</summary>

@@ -119,7 +119,7 @@ def test_everything_stands_inside_the_walls(built):
         return (x0 < x < x1 and y0 < y < y1 and z < D.UPPER_FLOORS[0][1]) or _in_upper(x, y, z)
 
     for name, (x, y, z) in built.empties:
-        if name.startswith(("spawn_", "poi_", "npc_", "ev_", "lamp_")):
+        if name.startswith(("spawn_", "poi_", "npc_", "ev_", "st_", "lamp_")):
             assert inside(x, y, z), name
     for suffix, loc, _t, _l in built.cams:
         if suffix != "top":
@@ -139,6 +139,27 @@ def test_elevator_stops_on_every_floor(built):
         assert M.pt(L.EV[2] + U.EV_OUT, 0.0)[1] == pytest.approx(p[1]), name
         assert M.pt(0.0, D.EV_Y[0])[0] < p[0] < M.pt(0.0, D.EV_Y[1])[0], name
     assert not any(n.startswith("ev_research2_2F") for n in pos)
+
+
+def test_stairs_stop_at_their_doors_on_every_floor(built):
+    """階段室の扉の前 (#303)。east は 1F（ロビーのガラスの扉）と 3F〜6F、west は 3F〜6F。扉を背にして立つ。"""
+    pos = dict(built.empties)
+    upper = [name for name, _z in D.UPPER_FLOORS]
+    expect = {"east": ["1F"] + upper, "west": upper}
+    for stair, floors in expect.items():
+        (x, y), (dx, dy) = U.stair_points()[stair]
+        found = sorted(n[len("st_research2_%s_" % stair):] for n in pos
+                       if n.startswith("st_research2_%s_" % stair) and not n.endswith("_f"))
+        assert found == sorted(floors), stair
+        for name in floors:
+            z = 0.0 if name == "1F" else dict(D.UPPER_FLOORS)[name]
+            p, f = pos["st_research2_%s_%s" % (stair, name)], pos["st_research2_%s_%s_f" % (stair, name)]
+            assert p[:2] == pytest.approx(M.pt(x, y)) and p[2] == pytest.approx(z), (stair, name)
+            assert f[:2] == pytest.approx(M.pt(x + dx, y + dy)) and f[2] == pytest.approx(z), (stair, name)
+    # east は EV ホールの北の扉から、west は廊下の西の端の扉から STAIR_OUT 前
+    assert U.stair_points()["east"][0] == pytest.approx((D.UPPER_STAIR_DOOR_X, U.HY1 - U.STAIR_OUT))
+    assert U.stair_points()["west"][0] == pytest.approx((U.CX0 + U.STAIR_OUT, D.UPPER_WEST_STAIR_Y))
+    assert U.HY1 == pytest.approx(L.HALL_Y1)
 
 
 def test_each_upper_floor_has_its_own_lamps_and_parts(built):
