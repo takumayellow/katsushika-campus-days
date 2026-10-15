@@ -176,6 +176,7 @@ namespace KCD.Editor
 #else
             ThirdPersonCamera follow = go.AddComponent<ThirdPersonCamera>();
             follow.Target = player.transform;
+            go.AddComponent<PortraitFieldOfView>();
 #endif
             return camera;
         }
@@ -200,6 +201,7 @@ namespace KCD.Editor
             vcam.Target.TrackingTarget = aim;
             vcam.Lens.FieldOfView = 55f;
             vcam.Priority = 10;
+            go.AddComponent<PortraitFieldOfView>();
 
             CinemachineOrbitalFollow orbital = go.AddComponent<CinemachineOrbitalFollow>();
             orbital.OrbitStyle = CinemachineOrbitalFollow.OrbitStyles.Sphere;

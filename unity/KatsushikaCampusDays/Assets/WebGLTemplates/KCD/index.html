@@ -20,7 +20,7 @@
       <section id="kcd-data-notice" hidden>
         <h2 id="kcd-data-notice-title">読み込む前に</h2>
         <p>はじめて開くときは数十 MB の通信があります。Wi-Fi につないで読み込むのがおすすめです。2 回目からはブラウザに残った分を使います。</p>
-        <p class="kcd-sub">画面を横向きにして遊んでください。左側で歩き、右側をなぞると見回せます。</p>
+        <p class="kcd-sub">縦に持っても横に持っても遊べます。左側で歩き、右側をなぞると見回せます。</p>
         <button type="button" id="kcd-data-notice-continue">読み込む</button>
       </section>
 
@@ -41,13 +41,6 @@
         <div id="kcd-overlay" class="kcd-hidden">
           <span id="kcd-overlay-text">クリックでマウス視点　·　Esc でマウスを解放　·　Ctrl+F で全画面</span>
           <button type="button" class="kcd-fullscreen">⛶ 全画面</button>
-        </div>
-
-        <!-- スマホ・タブレットを縦に持っている間だけ覆う (#187)。画面は横持ちの前提で組んでいる。
-             全画面でも出るよう、全画面にする箱の中に置く。 -->
-        <div id="kcd-rotate" role="status">
-          <div id="kcd-rotate-icon" aria-hidden="true"></div>
-          <p>横向きにしてください</p>
         </div>
       </div>
 

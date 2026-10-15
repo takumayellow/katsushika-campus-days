@@ -231,6 +231,7 @@ namespace KCD
             Pause(cameraObject.GetComponent<CinemachineBrain>());
 #endif
             Pause(cameraObject.GetComponent<ThirdPersonCamera>());
+            Pause(cameraObject.GetComponent<PortraitFieldOfView>());
         }
 
         private void Pause(Behaviour behaviour)

@@ -21,6 +21,13 @@ namespace KCD.Editor
         /// <summary>HUD より上に描き、HUD より先に指を受ける。</summary>
         private const int TouchSortOrder = 5;
 
+        /// <summary>
+        /// 縦長の画面での上端のボタンの位置（左上から、幅 720 の Canvas の単位）。左上のクエストの枠
+        /// （下端は上から CSS で約 93 px、この Canvas で 172）のすぐ下に、ポーズ・クエストログの順で横に並べる。
+        /// </summary>
+        private static readonly Vector2 PortraitPausePosition = new Vector2(84f, -236f);
+        private static readonly Vector2 PortraitQuestLogPosition = new Vector2(204f, -236f);
+
         private static readonly Color TouchFace = new Color(0.06f, 0.08f, 0.12f, 0.55f);
         private static readonly Color StickBase = new Color(1f, 1f, 1f, 0.18f);
         private static readonly Color StickKnob = new Color(1f, 1f, 1f, 0.55f);
@@ -50,6 +57,7 @@ namespace KCD.Editor
             // クエストログはポーズのボタンの右隣。ログを開くと操作を止めるので、閉じるのはログ自体を叩く。
             TMP_Text questLabel = BuildPadButton(play, "QuestLogButton", new Vector2(130f, -64f), 104f,
                 "<Gamepad>/select", 20f, new Vector2(0.5f, 1f));
+            PlaceInPortrait(questLabel, PortraitQuestLogPosition);
 
             TMP_Text jumpLabel = BuildPadButton(play, "Jump", new Vector2(-120f, 130f), 140f,
                 "<Gamepad>/buttonSouth", 30f);
@@ -68,6 +76,7 @@ namespace KCD.Editor
             TMP_Text pauseLabel = BuildPadButton(pause, "PauseButton", new Vector2(0f, -64f), 96f,
                 "<Gamepad>/start", 34f, new Vector2(0.5f, 1f));
             pauseLabel.text = "II";
+            PlaceInPortrait(pauseLabel, PortraitPausePosition);
 
             TouchHud hud = canvas.gameObject.AddComponent<TouchHud>();
             hud.Bind(controls.gameObject, playGroup, pauseGroup);
@@ -158,6 +167,13 @@ namespace KCD.Editor
             label.textWrappingMode = TextWrappingModes.NoWrap;
             rect.gameObject.AddComponent<OnScreenButton>().controlPath = controlPath;
             return label;
+        }
+
+        /// <summary>ボタンを、縦長の画面では左上を基準に position へ移す。</summary>
+        private static void PlaceInPortrait(TMP_Text buttonLabel, Vector2 position)
+        {
+            buttonLabel.transform.parent.gameObject.AddComponent<PortraitPosition>()
+                .Bind(new Vector2(0f, 1f), position);
         }
 
         /// <summary>丸い面。ボタンの当たりもこの丸の四角になる。</summary>
