@@ -316,9 +316,10 @@ namespace KCD
                     continue;
                 }
 
-                Vector3 toPlayer = -npc.Forward;
+                // 人の正面（transform.forward。話しかけると NPCTalker がこれをプレイヤーへ向ける）の側に立つ。
+                Vector3 toPlayer = npc.Forward;
                 toPlayer.y = 0f;
-                toPlayer = toPlayer.sqrMagnitude < 0.01f ? Vector3.back : toPlayer.normalized;
+                toPlayer = toPlayer.sqrMagnitude < 0.01f ? Vector3.forward : toPlayer.normalized;
                 string label = string.IsNullOrEmpty(npc.Name) ? npc.Id : npc.Name;
                 Vector3 stand = npc.Position + toPlayer * NpcStandOff;
                 float yaw = FacingYaw(-toPlayer);
