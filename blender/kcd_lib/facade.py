@@ -19,8 +19,11 @@ def _P(p, e, n, t, z, d):
 def add_facade(mb, loop, z0, floor_h, f0, f1, *,
                wall="concrete_grey", glass="glass_dark",
                seg=3.0, sill=1.10, header=0.40, inset=0.40, mullion=0.35,
-               edges=None, side_reveals=True):
-    """loop（反時計回り）の外周に、階 f0..f1-1 の水平連続窓を貼る。"""
+               edges=None, side_reveals=True, frame=None):
+    """loop（反時計回り）の外周に、階 f0..f1-1 の水平連続窓を貼る。
+
+    frame: 方立と窓の見込みの材（腰壁・垂れ壁と色を分けるサッシ）。省くと wall。"""
+    frame = frame or wall
     loop = geom.ensure_ccw(geom.dedup(loop))
     n_edges = len(loop)
     targets = range(n_edges) if edges is None else [i for i in edges if 0 <= i < n_edges]
@@ -58,7 +61,7 @@ def add_facade(mb, loop, z0, floor_h, f0, f1, *,
                 if t1 - t0 < 1e-3:
                     continue
                 mb.add_quad(_P(p, e, nrm, t0, zw0, 0), _P(p, e, nrm, t1, zw0, 0),
-                            _P(p, e, nrm, t1, zw1, 0), _P(p, e, nrm, t0, zw1, 0), wall)
+                            _P(p, e, nrm, t1, zw1, 0), _P(p, e, nrm, t0, zw1, 0), frame)
             # 開口（ガラス + 見込み）
             for k in range(ns):
                 t0 = k * w + mw * 0.5
@@ -68,14 +71,14 @@ def add_facade(mb, loop, z0, floor_h, f0, f1, *,
                 mb.add_quad(_P(p, e, nrm, t0, zw0, -inset), _P(p, e, nrm, t1, zw0, -inset),
                             _P(p, e, nrm, t1, zw1, -inset), _P(p, e, nrm, t0, zw1, -inset), glass)
                 mb.add_quad(_P(p, e, nrm, t0, zw0, 0), _P(p, e, nrm, t1, zw0, 0),
-                            _P(p, e, nrm, t1, zw0, -inset), _P(p, e, nrm, t0, zw0, -inset), wall)
+                            _P(p, e, nrm, t1, zw0, -inset), _P(p, e, nrm, t0, zw0, -inset), frame)
                 mb.add_quad(_P(p, e, nrm, t0, zw1, -inset), _P(p, e, nrm, t1, zw1, -inset),
-                            _P(p, e, nrm, t1, zw1, 0), _P(p, e, nrm, t0, zw1, 0), wall)
+                            _P(p, e, nrm, t1, zw1, 0), _P(p, e, nrm, t0, zw1, 0), frame)
                 if side_reveals:
                     mb.add_quad(_P(p, e, nrm, t0, zw0, 0), _P(p, e, nrm, t0, zw0, -inset),
-                                _P(p, e, nrm, t0, zw1, -inset), _P(p, e, nrm, t0, zw1, 0), wall)
+                                _P(p, e, nrm, t0, zw1, -inset), _P(p, e, nrm, t0, zw1, 0), frame)
                     mb.add_quad(_P(p, e, nrm, t1, zw0, -inset), _P(p, e, nrm, t1, zw0, 0),
-                                _P(p, e, nrm, t1, zw1, 0), _P(p, e, nrm, t1, zw1, -inset), wall)
+                                _P(p, e, nrm, t1, zw1, 0), _P(p, e, nrm, t1, zw1, -inset), frame)
 
 
 def add_curtain_wall(mb, loop, z0, floor_h, f0, f1, *,

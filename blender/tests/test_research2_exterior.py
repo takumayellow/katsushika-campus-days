@@ -248,3 +248,24 @@ def test_nothing_blocks_the_space_in_front_of_the_doors(campus_data, campus_fram
                 if any(_ray_hits_tri((q[0], q[1], 0.0), (0.0, 0.0, 1.0), *t, 4.0) for t in near):
                     hits.append((round(q[0], 2), round(q[1], 2)))
         assert hits == [], dr["id"]
+
+
+def test_white_only_on_the_podium_roof_edge(built):
+    """白い concrete_light は台座の屋根の鼻先・立ち上がりとテラスの天井だけ。壁・帯・格子・外階段は暖灰色 (#305)。"""
+    idx = built.mat_names.index("concrete_light")
+    low = [min(built.verts[i][2] for i in f) for f, m in zip(built.faces, built.face_mat) if m == idx]
+    assert low
+    assert min(low) >= R2.TERRACE_CEILING - 1e-6
+
+
+def test_cafeteria_glass_has_dark_frames(loop, built):
+    """食堂のガラスの面の縦の桟は濃い灰色（metal_charcoal）。1F の高さ（地面から 1F の天井まで）で数える (#305)。"""
+    n = len(loop)
+    edges = [(loop[i], loop[(i + 1) % n]) for i in R2.GLASS_EDGES]
+    idx = built.mat_names.index("metal_charcoal")
+    # 見込みの面は 1F の inset（0.25 m）だけ奥に出るので、それに少し余裕を足した距離までを桟とみなす。
+    near = 0.25 + 0.05
+    frames = [f for f, m in zip(built.faces, built.face_mat) if m == idx
+              and all(0.0 < built.verts[i][2] < PODIUM_H / 2 for i in f)
+              and all(min(_seg_dist(built.verts[i][:2], a, b) for a, b in edges) < near for i in f)]
+    assert len(frames) > 50
