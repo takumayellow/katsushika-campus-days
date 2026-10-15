@@ -20,11 +20,20 @@ namespace KCD
         Time
     }
 
-    /// <summary>ワープ先 1 件。位置は屋外のワールド座標。屋内と時刻は種類ごとに必要なものだけを持つ。</summary>
+    /// <summary>
+    /// ワープ先 1 件。位置は屋外のワールド座標。屋内と時刻は種類ごとに必要なものだけを持つ。
+    /// 建物の中にいる人は、<see cref="InteriorId"/> の建物に入ってから <see cref="InsidePosition"/> へ移る。
+    /// </summary>
     public readonly struct DevWarpTarget
     {
         public DevWarpTarget(DevWarpKind kind, string id, string label, Vector3 position, float yaw,
             bool hasPosition, float hours = 0f)
+            : this(kind, id, label, position, yaw, hasPosition, hours, string.Empty, Vector3.zero, 0f)
+        {
+        }
+
+        private DevWarpTarget(DevWarpKind kind, string id, string label, Vector3 position, float yaw,
+            bool hasPosition, float hours, string interiorId, Vector3 insidePosition, float insideYaw)
         {
             Kind = kind;
             Id = id;
@@ -33,6 +42,20 @@ namespace KCD
             Yaw = yaw;
             HasPosition = hasPosition;
             Hours = hours;
+            InteriorId = interiorId ?? string.Empty;
+            InsidePosition = insidePosition;
+            InsideYaw = insideYaw;
+        }
+
+        /// <summary>
+        /// 建物の中にいる人の前。position は入口の前（hasPosition が false なら今いる場所から入る）、
+        /// insidePosition はその建物の中で立つ所。
+        /// </summary>
+        public static DevWarpTarget IndoorNpc(string id, string label, string interiorId, Vector3 position,
+            float yaw, bool hasPosition, Vector3 insidePosition, float insideYaw)
+        {
+            return new DevWarpTarget(DevWarpKind.Npc, id, label, position, yaw, hasPosition, 0f, interiorId,
+                insidePosition, insideYaw);
         }
 
         public DevWarpKind Kind { get; }
@@ -54,6 +77,17 @@ namespace KCD
 
         /// <summary>時刻の項目で合わせる時刻（時）。</summary>
         public float Hours { get; }
+
+        /// <summary>建物の中にいる人のときの建物の id。外にいる人やほかの種類では空。</summary>
+        public string InteriorId { get; }
+
+        /// <summary>建物の中にいる人のとき、中で立つ所。</summary>
+        public Vector3 InsidePosition { get; }
+
+        public float InsideYaw { get; }
+
+        /// <summary>建物に入ってから中で移る行き先か。</summary>
+        public bool IsIndoor => !string.IsNullOrEmpty(InteriorId);
     }
 
     /// <summary>シーンから拾った訪問ゾーン。Stand は箱の中心の真下（箱の下端）。</summary>
@@ -93,18 +127,29 @@ namespace KCD
         public Vector3 Outward { get; }
     }
 
-    /// <summary>InteriorLoader に登録されている屋内。</summary>
+    /// <summary>InteriorLoader に登録されている屋内。Spawn は入った直後に立つ所で、分からなければ HasSpawn が false。</summary>
     public readonly struct DevInteriorSource
     {
         public DevInteriorSource(string id, string name)
+            : this(id, name, Vector3.zero, false)
+        {
+        }
+
+        public DevInteriorSource(string id, string name, Vector3 spawn, bool hasSpawn = true)
         {
             Id = id;
             Name = name;
+            Spawn = spawn;
+            HasSpawn = hasSpawn;
         }
 
         public string Id { get; }
 
         public string Name { get; }
+
+        public Vector3 Spawn { get; }
+
+        public bool HasSpawn { get; }
     }
 
     /// <summary>シーンにいる NPC。Forward はその NPC の正面。</summary>
@@ -138,6 +183,12 @@ namespace KCD
 
         /// <summary>NPC の前に立つ距離（m）。NPCTalker に話しかけるときと同じ。</summary>
         public const float NpcStandOff = 1.8f;
+
+        /// <summary>
+        /// これより東（x がこれ以上）は屋内の置き場。屋内のモデルは x = 1200 m から並び、寮は x = 4000 m にある。
+        /// キャンパスの歩ける範囲は、西の増築区画（x ≈ -490 m）を入れても ±500 m に収まる。
+        /// </summary>
+        public const float InteriorMinX = 900f;
 
         /// <summary>屋内の見どころの訪問ゾーンの id の接頭辞。</summary>
         public const string InteriorPlacePrefix = "poi_";
@@ -248,6 +299,15 @@ namespace KCD
                     : new DevWarpTarget(DevWarpKind.Interior, interior.Id, label, Vector3.zero, 0f, false));
             }
 
+            var spawns = new List<DevInteriorSource>();
+            foreach (DevInteriorSource interior in Sorted(interiors, i => i.Id))
+            {
+                if (!string.IsNullOrEmpty(interior.Id) && interior.HasSpawn)
+                {
+                    spawns.Add(interior);
+                }
+            }
+
             var npcSeen = new HashSet<string>(StringComparer.Ordinal);
             foreach (DevNpcSource npc in Sorted(npcs, n => n.Id))
             {
@@ -259,9 +319,26 @@ namespace KCD
                 Vector3 toPlayer = -npc.Forward;
                 toPlayer.y = 0f;
                 toPlayer = toPlayer.sqrMagnitude < 0.01f ? Vector3.back : toPlayer.normalized;
-                npcList.Add(new DevWarpTarget(DevWarpKind.Npc, npc.Id,
-                    string.IsNullOrEmpty(npc.Name) ? npc.Id : npc.Name,
-                    npc.Position + toPlayer * NpcStandOff, FacingYaw(-toPlayer), true));
+                string label = string.IsNullOrEmpty(npc.Name) ? npc.Id : npc.Name;
+                Vector3 stand = npc.Position + toPlayer * NpcStandOff;
+                float yaw = FacingYaw(-toPlayer);
+                if (npc.Position.x < InteriorMinX)
+                {
+                    npcList.Add(new DevWarpTarget(DevWarpKind.Npc, npc.Id, label, stand, yaw, true));
+                    continue;
+                }
+
+                // 屋内の置き場にいる人へ外から座標だけで飛ぶと、歩ける範囲の外として WorldBounds に戻される。
+                // いちばん近い屋内に入ってから、その中で前に立つ。どの屋内か分からない人は出さない。
+                string interiorId = NearestInterior(npc.Position, spawns);
+                if (interiorId == null)
+                {
+                    continue;
+                }
+
+                npcList.Add(fronts.TryGetValue(interiorId, out DevWarpTarget door)
+                    ? DevWarpTarget.IndoorNpc(npc.Id, label, interiorId, door.Position, door.Yaw, true, stand, yaw)
+                    : DevWarpTarget.IndoorNpc(npc.Id, label, interiorId, Vector3.zero, 0f, false, stand, yaw));
             }
 
             foreach ((string key, string fallback, float hours) in Times)
@@ -271,6 +348,24 @@ namespace KCD
             }
 
             return new DevWarpCatalog(new[] { places, interiorList, npcList, timeList });
+        }
+
+        /// <summary>入った直後に立つ所が position にいちばん近い屋内の id。候補が無ければ null。</summary>
+        public static string NearestInterior(Vector3 position, IReadOnlyList<DevInteriorSource> interiors)
+        {
+            string best = null;
+            float bestDistance = float.PositiveInfinity;
+            foreach (DevInteriorSource interior in interiors)
+            {
+                float distance = (interior.Spawn - position).sqrMagnitude;
+                if (distance < bestDistance)
+                {
+                    best = interior.Id;
+                    bestDistance = distance;
+                }
+            }
+
+            return best;
         }
 
         /// <summary>ワールドの向き direction（水平）を向くときのヨー（度）。0 が +z、90 が +x。</summary>
@@ -317,7 +412,9 @@ namespace KCD
             {
                 foreach (InteriorLoader.Entry entry in loader.Entries)
                 {
-                    interiors.Add(new DevInteriorSource(entry.Id, entry.DisplayName));
+                    interiors.Add(entry.Spawn != null
+                        ? new DevInteriorSource(entry.Id, entry.DisplayName, entry.Spawn.position)
+                        : new DevInteriorSource(entry.Id, entry.DisplayName));
                 }
             }
 

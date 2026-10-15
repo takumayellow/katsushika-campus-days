@@ -288,9 +288,18 @@ namespace KCD
                 yield break;
             }
 
-            // 同じ建物の中を選んだときは、そのまま。ほかの行き先は外へ出てから。
-            if (target.Kind == DevWarpKind.Interior && loader != null && loader.CurrentId == target.Id)
+            // 建物の中にいる人は、その建物に入ってから中で前へ移る。
+            string interiorId = target.Kind == DevWarpKind.Interior ? target.Id : target.InteriorId;
+            bool entering = !string.IsNullOrEmpty(interiorId);
+
+            // 同じ建物の中を選んだときは、外へ出ない。ほかの行き先は外へ出てから。
+            if (entering && loader != null && loader.CurrentId == interiorId)
             {
+                if (target.IsIndoor)
+                {
+                    yield return MoveInside(loader, target);
+                }
+
                 yield break;
             }
 
@@ -313,18 +322,38 @@ namespace KCD
                 CameraRig.SnapBehind(player.transform);
             }
 
-            if (target.Kind == DevWarpKind.Interior)
+            if (entering)
             {
-                if (loader == null || !loader.HasInterior(target.Id))
+                if (loader == null || !loader.HasInterior(interiorId))
                 {
-                    Debug.LogWarning("[KCD] ワープ: 屋内に入れません: " + target.Id);
+                    Debug.LogWarning("[KCD] ワープ: 屋内に入れません: " + interiorId);
                     yield break;
                 }
 
                 // 物理の後始末を 1 フレーム待ってから入る（入口を踏んだ判定と競合しない）。
                 yield return null;
-                loader.Enter(target.Id);
-                yield return WaitForInside(loader, target.Id);
+                loader.Enter(interiorId);
+                yield return WaitForInside(loader, interiorId);
+                if (target.IsIndoor && loader.CurrentId == interiorId)
+                {
+                    yield return MoveInside(loader, target);
+                }
+            }
+        }
+
+        /// <summary>入っている建物の中で、人の前へ移る。入ったときに覚えた戻り先はそのまま。</summary>
+        private static IEnumerator MoveInside(InteriorLoader loader, DevWarpTarget target)
+        {
+            if (!loader.MoveWithin(SnapToGround(target.InsidePosition), target.InsideYaw))
+            {
+                Debug.LogWarning("[KCD] ワープ: 建物の中で移れません: " + target.Id);
+                yield break;
+            }
+
+            float until = Time.realtimeSinceStartup + TravelTimeoutSeconds;
+            while (loader.IsBusy && Time.realtimeSinceStartup < until)
+            {
+                yield return null;
             }
         }
 
@@ -445,6 +474,9 @@ namespace KCD
                 new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(860f, 600f));
             AddBackground(panel, new Color(0.07f, 0.08f, 0.11f, 0.92f));
             _panel = panel.gameObject;
+
+            // 縦持ちのスマホでは Canvas の幅が 860 に足りず、左右が切れる。行は折り返さないので、縮めて収める。
+            _panel.AddComponent<FitInCanvas>();
 
             _body = NewLabel(panel, "Body", 26f, TextAlignmentOptions.TopLeft);
             _body.color = Color.white;
