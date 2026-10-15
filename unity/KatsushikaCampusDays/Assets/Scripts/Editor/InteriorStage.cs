@@ -105,6 +105,7 @@ namespace KCD.Editor
                 AddLights(interior.transform, id);
                 int stops = InteriorElevatorStage.Build(interior.transform, id);
                 int escalators = InteriorEscalatorStage.Build(interior.transform, id);
+                int stairs = InteriorStairStage.Build(interior.transform, id);
                 foreach (string door in DoorsOf(id))
                 {
                     AddExit(interior.transform, id, door);
@@ -119,7 +120,8 @@ namespace KCD.Editor
                 EditorPaths.Report("屋内 " + id + ": x " + bounds.min.x.ToString("F0") + ".." + bounds.max.x.ToString("F0")
                     + " z " + bounds.min.z.ToString("F0") + ".." + bounds.max.z.ToString("F0")
                     + " poi " + zones + (stops > 0 ? " ev " + stops : string.Empty)
-                    + (escalators > 0 ? " esc " + escalators : string.Empty));
+                    + (escalators > 0 ? " esc " + escalators : string.Empty)
+                    + (stairs > 0 ? " stairs " + stairs : string.Empty));
             }
 
             AddOutsideGround(group.transform, FirstSlotX - 200f, cursor + 200f, pits);

@@ -1,12 +1,17 @@
 """第2研究棟の上の階（3F〜6F）: 中廊下、EV ホール、閉じた研究室・事務室・会議室の扉。
 
 ロビーの EV から各階へ行く（Unity の ElevatorPanel）。扉の奥の部屋・WC・階段は作らない。
+階段室の扉 2 か所（EV ホールの北と廊下の西の端）は、扉の前で E を押して別の階へ移る（Unity の
+InteriorStairStage。EV ホールの北の階段はロビーの階段室とつながる）。
 寸法は plan_research2_dims の UPPER_*（host の座標）。ロビーのローカルへは plan_research2_frame で写す。
 床・躯体は階ごと・X の区画ごとに別の物（Ctx.part）にして、1 つの物に届く点光源を 4 つまでに抑える。
 
 Empty:
     ev_research2_<階>      EV を降りた所（床の高さ）。<階> は 3F〜6F（1F はロビーが置く）
     ev_research2_<階>_f    降りた所から 1 m 正面（降りたときに向く向き）
+    st_research2_<階段>_<階>   階段室の扉から STAIR_OUT 前の床。<階段> は east（EV ホールの北）と
+                           west（廊下の西の端）。east の 1F はロビーが置く
+    st_research2_<階段>_<階>_f そこから 1 m 正面（扉を背にする）
     lamp_research2_<階>_<n> 廊下の天井の点光源（Unity は今いる階の分だけ点ける）
 """
 
@@ -34,6 +39,7 @@ LAMP_DZ = 2.6            # 床から点光源まで
 PANEL_STEP = 3.0         # 天井の照明パネルの間隔（廊下の X）
 PANEL_W, PANEL_L = 0.6, 1.2
 EV_OUT = 1.4             # EV の扉の面から降りた所まで
+STAIR_OUT = 1.0          # 階段室の扉の面から出た所まで（Unity の InteriorStairStage.StairOut）
 FACE_N = 0.0             # 正面 +Y
 FACE_S = math.pi         # 正面 -Y
 FACE_W = math.pi * 0.5   # 正面 -X
@@ -50,6 +56,22 @@ EDGES = (OX0,) + D.UPPER_SPLIT_X + (OX1,)
 def ev_point():
     """EV を降りた所 (x, y)（host の座標）。"""
     return HX0 + EV_OUT, (D.EV_Y[0] + D.EV_Y[1]) * 0.5
+
+
+def stair_points():
+    """階段室の扉の前 {階段: ((x, y), (dx, dy))}（host の座標）。(dx, dy) は扉を背にした正面。"""
+    return {
+        "east": ((D.UPPER_STAIR_DOOR_X, HY1 - STAIR_OUT), (0.0, -1.0)),
+        "west": ((CX0 + STAIR_OUT, D.UPPER_WEST_STAIR_Y), (1.0, 0.0)),
+    }
+
+
+def put_stair(c, stair, floor, z):
+    """階段室の扉の前の Empty（st_<id>_<階段>_<階> と、1 m 正面の _f）。"""
+    (x, y), (dx, dy) = stair_points()[stair]
+    name = "st_%s_%s_%s" % (c.spec.id, stair, floor)
+    c._put(name, *M.pt(x, y), z)
+    c._put(name + "_f", *M.pt(x + dx, y + dy), z)
 
 
 def zone():
@@ -207,6 +229,8 @@ def _empties(f):
     ex, ey = ev_point()
     c._put("ev_%s_%s" % (c.spec.id, f.name), *M.pt(ex, ey), f.z)
     c._put("ev_%s_%s_f" % (c.spec.id, f.name), *M.pt(ex + 1.0, ey), f.z)
+    for stair in stair_points():
+        put_stair(c, stair, f.name, f.z)
     ym = (CY0 + CY1) * 0.5
     pts = [(x, ym) for x in D.UPPER_LAMP_X] + [((HX0 + HX1) * 0.5, (HY0 + HY1) * 0.5)]
     for n, (x, y) in enumerate(pts, 1):
