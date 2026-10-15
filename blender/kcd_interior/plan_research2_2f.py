@@ -22,11 +22,10 @@ TOP_H = 0.95
 BAND = (2.3, 2.9)        # 上の帯（床からの高さ）
 BENCH_SEATS = 3          # 幅 1.8 m のベンチ 1 台に座れる人数（1 人 0.6 m）
 
-# 長机 2 卓つなぎの組（左の卓の中心 x, 列の y）
-GROUPS2 = tuple((x, 12.6) for x in (-20.0, -11.8, -6.0)) + tuple(
-    (x, 16.6) for x in (-27.6, -21.0, -15.0, -9.0, -3.0, 5.8)) + tuple(
-    (x, 24.75) for x in (-27.6, -21.0, -15.0, -9.0, -3.0, 3.0)) + tuple(
-    (x, y) for y in (22.4, 26.9) for x in (10.0, 16.0, 20.0))
+# 長机の列（列の x, 南の卓の中心 y, 卓の数）。北の区間はカウンターの前の列の手前、
+# 南の区間はガラスぎわの丸テーブルと手前の階段の間
+RUNS2 = tuple((x, D.RUN_Y[1], 3) for x in D.run_x(-34.0, 19.0)) + tuple(
+    (x, D.RUN_Y[0], 3) for x in D.run_x(-25.0, 0.5))
 # ガラスの線（GLASS2）に沿った丸テーブル（線上の比率）。ガラスの内面から ROUND_IN
 ROUNDS2 = (0.05, 0.19, 0.28, 0.37, 0.46, 0.56, 0.66, 0.76, 0.94)
 ROUND_IN = 1.45
@@ -155,12 +154,10 @@ def round_centers():
 
 
 def _seating(mb):
-    """長机の組とガラスぎわの丸テーブル。置いた椅子の数を返す。"""
+    """長机の列とガラスぎわの丸テーブル。置いた椅子の数を返す。"""
     n = 0
-    for k, (x, y) in enumerate(GROUPS2):
-        mats = _shells(k)
-        n += FR.table_set(mb, x, y, D.Z2, mats)
-        n += FR.table_set(mb, x + 1.6, y, D.Z2, mats[1:] + mats[:1])
+    for k, (x, y, count) in enumerate(RUNS2):
+        n += FR.table_run(mb, x, y, count, D.Z2, _shells(k), w=D.RUN_PITCH)
     for k, (x, y) in enumerate(round_centers()):
         n += FR.round_set(mb, x, y, D.Z2, 4, _shells(k + 3), a0=math.pi * 0.25)
     return n

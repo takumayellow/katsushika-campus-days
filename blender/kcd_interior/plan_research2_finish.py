@@ -152,11 +152,11 @@ def _boards_2f(c):
 
 
 def outlet_points():
-    """2F の床のコンセントの蓋（長机の組の手前の通路）。"""
+    """2F の床のコンセントの蓋（長机の列の南の端の先）。"""
     holes = D.HOLES
     out = []
-    for x, y in P2.GROUPS2:
-        p = (x + 0.8, y - 1.6)
+    for x, y, _n in P2.RUNS2:
+        p = (x, y - 1.3)
         if P.inside(p, D.FLOOR2) and P.inside(p, D.INNER) and not S._in_any(p, holes, 0.3):
             out.append(p)
     return out

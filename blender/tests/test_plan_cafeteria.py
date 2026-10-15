@@ -144,10 +144,10 @@ def test_every_new_material_is_used(built):
 
 
 def test_seat_count_matches_the_tables(built):
-    seats1 = len(P1.GROUPS1) * 8 + len(P1.ROUNDS1) * 3 + len(D.STOOLS_1F)
-    seats2 = (len(P2.GROUPS2) * 8 + len(P2.ROUNDS2) * 4 + len(D.BENCHES2) * P2.BENCH_SEATS
+    seats1 = sum(n for *_, n in P1.RUNS1) * 4 + len(P1.ROUNDS1) * 3 + len(D.STOOLS_1F)
+    seats2 = (sum(n for *_, n in P2.RUNS2) * 4 + len(P2.ROUNDS2) * 4 + len(D.BENCHES2) * P2.BENCH_SEATS
               + len(D.HIGH_CHAIRS))
-    assert (seats1, seats2) == (260, 214)
+    assert (seats1, seats2) == (392, 370)
     assert built.seats == seats1 + seats2
 
 
