@@ -50,6 +50,9 @@ def build(c):
     shell_r1.build(c)
     c.spawn(*D.SPAWN)
     c.exit(*D.EXIT)
+    # 北の入口（キャンパスの扉 research1_n）。南の spawn より後に置く（meta の spawn は南）
+    c.spawn(*D.N_SPAWN, door=D.N_DOOR)
+    c.exit(*D.N_EXIT, door=D.N_DOOR)
     atrium.build(c)
     core.build(c)
     rooms.build(c)
