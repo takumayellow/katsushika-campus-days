@@ -1,4 +1,7 @@
-"""全ゲーム音声を numpy だけで合成し, Unity の Assets/Audio/ へ書き出す.
+"""ゲーム音声を numpy で合成し, Unity の Assets/Audio/ へ書き出す.
+
+校歌の BGM は school_song/install_game_bgm.py, 図書館のピアノの曲 piano_library は
+piano_nocturne.py が書くので, ここでは作らない.
 
     python tools/audio/build_audio.py            # 全部生成
     python tools/audio/build_audio.py bgm se     # カテゴリを絞る
@@ -18,7 +21,6 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import analyze
 import ambient
 import music
-import piano_phrase
 import sfx
 import synth as S
 
@@ -93,8 +95,8 @@ def build_se(entries: list) -> None:
         _emit("SE", name, sig, False, entries, peak_dbfs=sfx.PEAK_DB.get(name))
     for name, sig in sfx.build_ui_and_game().items():
         _emit("SE", name, sig, False, entries)
-    # 図書館大ホールのピアノを弾くときのフレーズ (PianoPerformance が AudioManager.PlayPiano で鳴らす)
-    _emit("SE", "piano_library", piano_phrase.build_piano_phrase(), False, entries)
+    # 図書館大ホールのピアノの曲 piano_library は録音から切り出すので, ここでは作らない
+    print("  SE/piano_library.wav  skip (piano_nocturne.py)")
 
 
 def build_ambient(entries: list) -> None:
@@ -125,7 +127,7 @@ def write_manifest(entries: list, elapsed: float) -> None:
     clipped = sum(e["clipped_samples"] for e in files)
     loops = [e for e in files if e.get("loop")]
     manifest = {
-        "generator": "tools/audio/build_audio.py (pure numpy synthesis, no sampled material)",
+        "generator": "tools/audio/build_audio.py (numpy synthesis; entries with a source field are installed by other scripts)",
         "samplerate": S.SR,
         "bit_depth": 16,
         "generated_sec": round(elapsed, 1),

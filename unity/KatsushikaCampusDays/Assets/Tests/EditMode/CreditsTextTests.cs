@@ -28,6 +28,8 @@ namespace KCD.Tests
             "大和憲史",
             "NEUTRINO",
             "Piano Sheet Converter",
+            "Peter Johnston",
+            "Musopen",
             "numpy",
             "Noto Sans JP",
             "Liberation Sans",

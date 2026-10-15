@@ -1,7 +1,7 @@
 # Audio
 
-ゲーム内の音はすべて **Python と numpy だけで合成**している。
-サンプリング素材・外部ライブラリの音源・録音物は一切使っていない。
+ゲーム内の音は **Python と numpy で合成**している。
+例外は校歌の BGM (下の「校歌について」) と, 図書館のピアノの曲 `piano_library.wav` (CC0 の録音から切り出したもの。下の「図書館のピアノの曲について」)。
 
 ## 生成方法
 
@@ -18,8 +18,9 @@ python tools/audio/build_audio.py bgm ambient  # カテゴリを絞る
 | `tools/audio/ambient.py` | 環境音 7 種 |
 | `tools/audio/analyze.py` | 波形統計とループ継ぎ目の計測 |
 | `tools/audio/build_audio.py` | 全体のエントリ。`manifest.json` と本 README を書き出す |
+| `tools/audio/piano_nocturne.py` | 図書館のピアノの曲を録音から切り出す (`build_audio.py` は作らない) |
 
-出力は 44.1 kHz / 16 bit の WAV。合計 59 ファイル, 228.9 MiB, 音の長さ 1366.7 秒。生成時間は 11 秒。
+出力は 44.1 kHz / 16 bit の WAV。合計 59 ファイル, 230.4 MiB, 音の長さ 1375.5 秒。生成時間は 11 秒。
 
 ## Unity へ取り込むときの設定
 
@@ -74,7 +75,7 @@ README の表の「ループ継ぎ目」は `seam_step_ratio / seam_hf_ratio` �
 | `item_get.wav` | 0.75 s | -1.5 dBFS | -13.0 dBFS | アイテム入手 |
 | `jump.wav` | 0.28 s | -1.5 dBFS | -13.8 dBFS | ジャンプ |
 | `land.wav` | 0.30 s | -1.5 dBFS | -21.8 dBFS | 着地 |
-| `piano_library.wav` | 19.53 s | -1.5 dBFS | -16.3 dBFS | 図書館大ホールのピアノを弾く (PianoPerformance). C major の 5 小節を加算合成のピアノで. 鳴る間 BGM は絞られる (0.15 倍) |
+| `piano_library.wav` | 28.30 s | -1.5 dBFS | -17.7 dBFS | 図書館大ホールのピアノを弾く (PianoPerformance). ショパンの夜想曲 作品 9-2 の冒頭の一節 (演奏 Peter Johnston, Musopen, CC0). 鳴る間 BGM は絞られる (0.15 倍) |
 | `quest_start.wav` | 1.15 s | -1.5 dBFS | -14.2 dBFS | クエスト開始 |
 | `quest_update.wav` | 0.55 s | -1.5 dBFS | -12.3 dBFS | クエスト進行 |
 | `se_chime.wav` | 12.84 s | -1.5 dBFS | -14.1 dBFS | 時報チャイム (12:00 昼休み / 17:00 下校). ウェストミンスターの鐘 E major 4 フレーズ 16 音を校内放送のスピーカー風に. 鳴る間 BGM は止まる (#38) |
@@ -132,3 +133,7 @@ README の表の「ループ継ぎ目」は `seam_step_ratio / seam_hf_ratio` �
 東京理科大学校歌 (作曲 大和憲史) を 3 つの BGM で使っている。タイトル画面の `bgm_school_song.wav` は東北きりたん (NEUTRINO) の歌唱 1〜3 番にピアノ伴奏を重ねたもの, 昼の `bgm_day.wav` と夕方の `bgm_evening.wav` は歌なしのピアノ伴奏 (ヤマハの自動採譜を修正したもの)。吹奏楽風アレンジ (`build_school_song.py`) は旋律・和音が公式譜とずれているので, 直すまでゲームに入れない (#28)。3 つとも `tools/audio/school_song/install_game_bgm.py` が書き込むので, `build_audio.py` はこの 2 曲 (`bgm_day`, `bgm_evening`, `bgm_night`, `bgm_indoor`) を生成しない。`music.py` の元の曲は `SCHOOL_SONG_BGM` から外すと戻る。夜の `bgm_night.wav` と屋内の `bgm_indoor.wav` も同じピアノ伴奏をテンポとフィルタで変えたもの (`school_song/make_variants.py`)。作曲者の没年が確認できず保護期間の満了は立証できていないので, 公開配布の前に権利確認が要る。経緯と出典は `tools/audio/README_school_song.md`, ファイルの一覧は `tools/audio/school_song/README.md` を参照。`bgm_anthem_original.wav` は権利確認が取れなかった場合の差し替え用に残してある。
 
 時報チャイム `se_chime.wav` のウェストミンスターの鐘は 1793 年の伝承曲で, パブリックドメインであることを確認したうえで音高から合成している。音型は日本の学校のチャイムと同じ E major の 4 フレーズ 16 音 (ドミレソ / ソレミド / ミドレソ / ソレミド, ド = E) で, 移調も省略もしていない。校内放送のホーンスピーカー越しに聞こえるよう 240 Hz〜3.8 kHz に絞ってから校舎の残響を付けている。鳴らすのは 12:00 (昼休み) と 17:00 (下校) だけで, ゲーム側 (`AudioManager.PlayChime`) は鳴っている間 BGM を止め (校歌の BGM は F major なので重ねると濁る), 音量も SE の 0.45 倍で鳴らす。同時に HUD へ時刻のトーストを出す (#38)。
+
+## 図書館のピアノの曲について
+
+図書館大ホールのピアノの椅子に座ると鳴る `piano_library.wav` は, ショパンの夜想曲 変ホ長調 作品 9-2 の冒頭の一節。Musopen が公開した Peter Johnston の演奏の録音 (CC0, Wikimedia Commons) から, 弱起の B♭ から 4 小節目で E♭ に落ち着くまでを切り出し, 主題を繰り返す次の弱起の手前で終わるよう末尾 2.5 秒をフェードアウトしている。取得 URL・SHA256・切り出す区間は `tools/audio/piano_nocturne.py` にあり, `manifest.json` のこの曲のエントリにも書き出す。

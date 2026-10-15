@@ -103,7 +103,7 @@ namespace KCD
         /// <summary>
         /// 表示する本文。テストや他の画面からも同じ文面を使えるように公開する。
         /// 中身は docs/CREDITS.md の権利表と合わせる (#74)。本文の枠は 1084x536 px で、26 px の行は 31.2 px、
-        /// 80% の行は 25 px の高さを取る。見出しの行だけ 26 px にして補足は 80% で書き、今の 17 行で約 490 px。
+        /// 80% の行は 25 px の高さを取る。見出しの行だけ 26 px にして補足は 80% で書き、今の 18 行で約 515 px。
         /// 行を足すときは、1 行 52 字（80% の全角）を超えて折り返さないかも見る。
         /// </summary>
         public static string BuildText(bool touch = false)
@@ -127,8 +127,10 @@ namespace KCD
                 "Music: Tokyo University of Science school song (lyrics 佐治巌 / music 大和憲史)"));
             AppendNote(builder, L.Pick(
                 "歌唱: 東北きりたん（NEUTRINO）。ピアノ伴奏: ヤマハの自動採譜（Piano Sheet Converter）を手直し。\n"
+                + "図書館のピアノ: ショパン「夜想曲 作品9-2」冒頭（演奏 Peter Johnston / Musopen、CC0）\n"
                 + "効果音・環境音・ジングルは numpy で合成したオリジナルです。",
                 "Vocals: Tohoku Kiritan (NEUTRINO). Piano: Yamaha auto-transcription (Piano Sheet Converter), edited.\n"
+                + "Library piano: Chopin, Nocturne Op. 9 No. 2 (opening), by Peter Johnston / Musopen (CC0).\n"
                 + "Sound effects, ambience and jingles are original, synthesized with numpy."));
             builder.Append("\n\n");
 
