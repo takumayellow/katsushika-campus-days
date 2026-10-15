@@ -16,12 +16,10 @@ CONCRETE = "research2_wall_concrete"
 WOOD_CHAIRS = ("research2_chair_wood_light", "research2_chair_walnut", "research2_chair_wood_orange",
                "research2_chair_wood_light")
 
-# 長机 2 卓つなぎの組（左の卓の中心 x, 列の y）
-GROUPS1 = tuple((x, 15.0) for x in (-21.0, -15.0, -9.0)) + tuple(
-    (x, 19.0) for x in (-21.0, -15.0, -9.0, -1.5)) + tuple(
-    (x, y) for y in (23.0, 26.6) for x in (-21.0, -15.0, -9.0, -3.0, 3.0, 11.0, 17.0)) + (
-    (-37.0, 19.0), (-37.0, 23.0), (-37.0, 26.6),
-    (-30.0, 15.0), (-30.0, 19.0), (-30.0, 23.0), (-30.0, 26.6))
+# 長机の列（列の x, 南の卓の中心 y, 卓の数）。北の区間は西の窓から研究棟への扉の手前まで、
+# 南の区間は窓ぎわの丸テーブルと入口ホールの通り口の間。入口ホールの北に 2 卓の列を 1 本
+RUNS1 = tuple((x, D.RUN_Y[1], 3) for x in D.run_x(-40.0, 19.0)) + tuple(
+    (x, D.RUN_Y[0], 3) for x in D.run_x(-31.0, -6.0)) + ((0.0, D.RUN_Y[0] + D.RUN_PITCH, 2),)
 # 窓ぎわの丸テーブル（辺, 辺の上の x）。外面から 1.5 m
 ROUNDS1 = ((4, -47.9), (5, -45.2), (6, -39.0), (6, -35.6), (6, -32.4),
            (7, -28.0), (7, -24.6), (7, -22.0))
@@ -123,12 +121,10 @@ def _tray_return(mb):
 
 # ---- 客席 ----
 def _seating(mb):
-    """長机の組と窓ぎわの丸テーブル。置いた椅子の数を返す。"""
+    """長机の列と窓ぎわの丸テーブル。置いた椅子の数を返す。"""
     n = 0
-    for k, (x, y) in enumerate(GROUPS1):
-        mats = _chair_mats(k)
-        n += FR.table_set(mb, x, y, D.Z1, mats)
-        n += FR.table_set(mb, x + 1.6, y, D.Z1, mats[2:] + mats[:2])
+    for k, (x, y, count) in enumerate(RUNS1):
+        n += FR.table_run(mb, x, y, count, D.Z1, _chair_mats(k), w=D.RUN_PITCH)
     for k, (i, x) in enumerate(ROUNDS1):
         cx, cy = D.edge_pt(i, x, ROUND_OFF)
         a_in = D.edge_ang(i) + math.pi * 0.5 + math.pi    # 室内を向く法線の角度（数学の角）
