@@ -6,7 +6,7 @@ using UnityEngine.TestTools;
 namespace KCD.Tests
 {
     /// <summary>
-    /// エスカレーターに立つと、何も押さなくても上の階まで運ばれ、降り口の平場に送り出される。
+    /// エスカレーターに立つと、何も押さなくても上の階まで（下りの区間は下の階まで）運ばれ、降り口の平場に送り出される。
     /// 講義棟の 1F→2F の区間と同じ寸法（水平 8.0 m、高さ 4.6 m）の斜めの板と、上下の床の箱で見る。
     /// 段の部品は斜めの板に沿って 1 段ぶんずつ動き、元の位置から 1 段より遠くへ行かない。
     /// </summary>
@@ -73,6 +73,24 @@ namespace KCD.Tests
             Vector3 at = _host.transform.position;
             Assert.Greater(at.x, Top.x + 0.2f, "上の端まで運ばれない（今 " + at.ToString("F2") + "）");
             Assert.AreEqual(Top.y, at.y, 0.15f, "上の階の床に立っていない（今 " + at.ToString("F2") + "）");
+            Assert.AreEqual(0f, at.z, 0.05f, "横へずれた");
+        }
+
+        [UnityTest]
+        public IEnumerator StandingOnTheTopStepOfADownFlight_RidesDownToTheFloorBelow()
+        {
+            _escalator.Configure(Top, 23, _steps, Speed, Escalator.DefaultHalfWidth, down: true);
+            _host.GetComponent<PlayerController>().Teleport(new Vector3(Top.x - 0.3f, Top.y, 0f), -90f);
+            Physics.SyncTransforms();
+            float until = Time.time + 10f;
+            while (Time.time < until && _host.transform.position.x > -0.2f)
+            {
+                yield return null;
+            }
+
+            Vector3 at = _host.transform.position;
+            Assert.Less(at.x, -0.2f, "下の端まで運ばれない（今 " + at.ToString("F2") + "）");
+            Assert.AreEqual(0f, at.y, 0.15f, "下の階の床に立っていない（今 " + at.ToString("F2") + "）");
             Assert.AreEqual(0f, at.z, 0.05f, "横へずれた");
         }
 

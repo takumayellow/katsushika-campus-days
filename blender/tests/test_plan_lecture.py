@@ -272,7 +272,8 @@ def _empty(c, name):
 
 def test_escalator_ends_are_empties_on_the_step_midline(esc):
     """esc_lecture_<区間>_lo / _hi: 踏面の中央を結ぶ線の両端（下の端は 1 段目の中央）、列の幅の中央。"""
-    names = [n for n, _ in esc.empties if n.startswith("esc_lecture_")]
+    names = [n for n, _ in esc.empties
+             if n.startswith("esc_lecture_") and not n.endswith("_down")]
     assert len(names) == 2 * len(ESC.flights())
     for f in ESC.flights():
         yc = (f.y0 + f.y1) * 0.5
@@ -282,6 +283,41 @@ def test_escalator_ends_are_empties_on_the_step_midline(esc):
         assert hi == pytest.approx((f.xb - f.dir * abs(f.run) * 0.5, yc, f.zb))
         x0, x1, z = f.tread(1)
         assert (x0 + x1) * 0.5 == pytest.approx(lo[0]) and z == pytest.approx(lo[2])
+
+
+# JSPE p3・p4 の乗り口・降り口の表記（spec §1-3）: (階, 列, 端の X, "へ" か "から", 行き先・来た階)
+JSPE_LABELS = (
+    (1, "north", ESC.X_E, "へ", 2), (1, "south", ESC.X_W, "から", 2),
+    (3, "north", ESC.X_W, "へ", 2), (3, "north", ESC.X_E, "へ", 4),
+    (3, "south", ESC.X_E, "から", 2), (3, "south", ESC.X_W, "から", 4),
+)
+
+
+def test_escalator_directions_follow_the_jspe_labels():
+    """「N Fへ」は乗り口、「N Fから」は降り口。乗る向きが区間の上り・下りと合う。"""
+    by_name = {f.name: f for f in ESC.flights()}
+    for floor, column, x, way, other in JSPE_LABELS:
+        f = by_name["%s_%df" % (column, min(floor, other))]
+        at_lower = floor < other
+        assert (f.xa if at_lower else f.xb) == pytest.approx(x), (floor, column, x)
+        boards = way == "へ"
+        # 下の端から乗る（下の端が乗り口）のは上り、上の端から乗るのは下り
+        assert f.down == (boards != at_lower), (floor, column, x, way, other)
+
+
+def test_each_pair_of_floors_has_one_up_and_one_down():
+    for lower in range(1, ESC.TOP):
+        pair = [f for f in ESC.flights() if f.name.endswith("_%df" % lower)]
+        assert sorted(f.down for f in pair) == [False, True], (lower, [(f.name, f.down) for f in pair])
+
+
+def test_down_flights_carry_a_down_marker(esc):
+    """下りの区間だけに Empty esc_lecture_<区間>_down（上の端）。Unity はこれで運ぶ向きを逆にする。"""
+    downs = {n for n, _ in esc.empties if n.startswith("esc_lecture_") and n.endswith("_down")}
+    assert downs == {"esc_lecture_%s_down" % f.name for f in ESC.flights() if f.down}
+    for f in ESC.flights():
+        if f.down:
+            assert _empty(esc, "esc_lecture_%s_down" % f.name) == _empty(esc, "esc_lecture_%s_hi" % f.name)
 
 
 def test_moving_steps_are_their_own_part_per_flight(esc):
