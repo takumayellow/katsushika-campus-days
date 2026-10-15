@@ -455,6 +455,11 @@
    "y": 4.6,
    "z": 26.5
   },
+  "esc_lecture_south_1f_down": {
+   "x": 30.426,
+   "y": 4.6,
+   "z": 26.5
+  },
   "esc_lecture_south_2f_lo": {
    "x": 22.41,
    "y": 4.6,
@@ -471,6 +476,11 @@
    "z": 26.5
   },
   "esc_lecture_south_3f_hi": {
+   "x": 30.41,
+   "y": 13.0,
+   "z": 26.5
+  },
+  "esc_lecture_south_3f_down": {
    "x": 30.41,
    "y": 13.0,
    "z": 26.5
@@ -495,6 +505,11 @@
    "y": 21.4,
    "z": 26.5
   },
+  "esc_lecture_south_5f_down": {
+   "x": 30.41,
+   "y": 21.4,
+   "z": 26.5
+  },
   "esc_lecture_north_1f_lo": {
    "x": 30.774,
    "y": 0.0,
@@ -515,6 +530,11 @@
    "y": 8.8,
    "z": 28.5
   },
+  "esc_lecture_north_2f_down": {
+   "x": 22.79,
+   "y": 8.8,
+   "z": 28.5
+  },
   "esc_lecture_north_3f_lo": {
    "x": 30.79,
    "y": 8.8,
@@ -531,6 +551,11 @@
    "z": 28.5
   },
   "esc_lecture_north_4f_hi": {
+   "x": 22.79,
+   "y": 17.2,
+   "z": 28.5
+  },
+  "esc_lecture_north_4f_down": {
    "x": 22.79,
    "y": 17.2,
    "z": 28.5
@@ -4029,7 +4054,7 @@
    "ext_lecture",
    "ext_lecture_trees"
   ],
-  "triangles": 34363,
+  "triangles": 34059,
   "radius": 30.0,
   "dz": -0.03
  }

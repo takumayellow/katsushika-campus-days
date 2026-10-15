@@ -5,7 +5,8 @@ namespace KCD.Editor
 {
     /// <summary>
     /// 屋内のエスカレーター。FBX の Empty esc_&lt;id&gt;_&lt;区間&gt;_lo（下の端）と esc_&lt;id&gt;_&lt;区間&gt;_hi（上の端）を
-    /// 結ぶ斜めの板を当たり判定にし、乗ったプレイヤーを運ぶ Escalator を付ける。2 点は段鼻の線と段の奥の線の
+    /// 結ぶ斜めの板を当たり判定にし、乗ったプレイヤーを運ぶ Escalator を付ける。Empty esc_&lt;id&gt;_&lt;区間&gt;_down の
+    /// ある区間は下り（上の端から下の端へ運ぶ）。2 点は段鼻の線と段の奥の線の
     /// 中間の線の両端（blender/kcd_interior/plan_lecture_esc.py）。段の部品 escsteps_&lt;id&gt;_&lt;区間&gt; があれば、
     /// それを 1 段ぶんずつ動かして流れて見せる。段の部品には当たり判定を付けない（<see cref="IsMovingSteps"/>）。
     /// </summary>
@@ -13,6 +14,9 @@ namespace KCD.Editor
     {
         /// <summary>段の部品のメッシュ名の頭。</summary>
         public const string StepsPrefix = "escsteps_";
+
+        /// <summary>下りの区間に付く Empty の名前の末尾。</summary>
+        public const string DownSuffix = "_down";
 
         /// <summary>段の高さ（m）。plan_lecture_dims.ESC_RISE と同じ。段の数は上下の端の高さの差をこれで割って決める。</summary>
         public const float StepRise = 0.2f;
@@ -27,7 +31,8 @@ namespace KCD.Editor
         /// <summary>エスカレーターを置く。置いた区間の数を返す（無ければ 0）。</summary>
         public static int Build(Transform interior, string id)
         {
-            Dictionary<string, Transform[]> ends = CollectEnds(interior, id);
+            var downs = new HashSet<string>();
+            Dictionary<string, Transform[]> ends = CollectEnds(interior, id, downs);
             if (ends.Count == 0)
             {
                 return 0;
@@ -54,15 +59,18 @@ namespace KCD.Editor
                 }
 
                 AddFlight(group.transform, flight, pair[0].position, pair[1].position,
-                    FindSteps(interior, id, flight));
+                    FindSteps(interior, id, flight), downs.Contains(flight));
                 built++;
             }
 
             return built;
         }
 
-        /// <summary>esc_&lt;id&gt;_&lt;区間&gt;_lo / _hi を区間ごとに集める（[0] が下の端、[1] が上の端）。</summary>
-        private static Dictionary<string, Transform[]> CollectEnds(Transform interior, string id)
+        /// <summary>
+        /// esc_&lt;id&gt;_&lt;区間&gt;_lo / _hi を区間ごとに集める（[0] が下の端、[1] が上の端）。
+        /// esc_&lt;id&gt;_&lt;区間&gt;_down のある区間は downs に入れる。
+        /// </summary>
+        private static Dictionary<string, Transform[]> CollectEnds(Transform interior, string id, HashSet<string> downs)
         {
             string prefix = "esc_" + id + "_";
             var ends = new Dictionary<string, Transform[]>();
@@ -71,6 +79,13 @@ namespace KCD.Editor
                 string name = child.name;
                 if (!name.StartsWith(prefix, System.StringComparison.Ordinal))
                 {
+                    continue;
+                }
+
+                if (name.EndsWith(DownSuffix, System.StringComparison.Ordinal)
+                    && name.Length > prefix.Length + DownSuffix.Length)
+                {
+                    downs.Add(name.Substring(prefix.Length, name.Length - prefix.Length - DownSuffix.Length));
                     continue;
                 }
 
@@ -114,15 +129,16 @@ namespace KCD.Editor
             return null;
         }
 
-        /// <summary>1 区間の Escalator と、2 点を結ぶ斜めの板の当たり判定。</summary>
-        private static void AddFlight(Transform group, string flight, Vector3 bottom, Vector3 top, Transform steps)
+        /// <summary>1 区間の Escalator と、2 点を結ぶ斜めの板の当たり判定。down は下りの区間か。</summary>
+        private static void AddFlight(Transform group, string flight, Vector3 bottom, Vector3 top, Transform steps,
+            bool down)
         {
             var go = new GameObject("Escalator_" + flight);
             go.transform.SetParent(group, false);
             go.transform.SetPositionAndRotation(bottom, Quaternion.identity);
             int count = Mathf.Max(1, Mathf.RoundToInt((top.y - bottom.y) / StepRise));
             Escalator escalator = go.AddComponent<Escalator>();
-            escalator.Configure(go.transform.InverseTransformVector(top - bottom), count, steps);
+            escalator.Configure(go.transform.InverseTransformVector(top - bottom), count, steps, down: down);
             int ground = LayerMask.NameToLayer("Ground");
             if (ground < 0)
             {

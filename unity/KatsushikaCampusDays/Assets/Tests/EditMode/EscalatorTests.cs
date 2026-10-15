@@ -62,6 +62,26 @@ namespace KCD.Tests
         }
 
         [Test]
+        public void DownFlight_CarriesDownhillAtTheSameSpeed()
+        {
+            Vector3 up = Escalator.CarryVelocity(Bottom, Top, Half, Speed, OnLine(4f));
+            Vector3 down = Escalator.CarryVelocity(Bottom, Top, Half, Speed, OnLine(4f), down: true);
+            Assert.Less(down.x, 0f, "下りの区間が下る向き（−x）へ運ばない");
+            Assert.AreEqual(-up.x, down.x, 1e-4f, "下りの速さが上りと違う");
+        }
+
+        [Test]
+        public void DownFlight_PushesOntoTheLowerLandingAndNotPastTheTop()
+        {
+            Vector3 pastBottom = new Vector3(-Escalator.RunOff * 0.5f, 0f, 0f);
+            Assert.Less(Escalator.CarryVelocity(Bottom, Top, Half, Speed, pastBottom, down: true).x, 0f,
+                "下りの降り口（下の端）で止まり、段に押し戻される");
+            Vector3 pastTop = new Vector3(Top.x + Escalator.RunOff * 0.5f, Top.y, 0f);
+            Assert.AreEqual(Vector3.zero, Escalator.CarryVelocity(Bottom, Top, Half, Speed, pastTop, down: true),
+                "下りの乗り口の手前（上の階の平場）で段へ引き込む");
+        }
+
+        [Test]
         public void StepPhase_RepeatsEveryStep()
         {
             float stepLength = Top.magnitude / 23f;
