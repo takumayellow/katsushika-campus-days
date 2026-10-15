@@ -30,6 +30,16 @@
    "y": 0.0,
    "z": 17.0
   },
+  "spawn_research1_n": {
+   "x": -20.0,
+   "y": 0.0,
+   "z": 41.0
+  },
+  "exit_research1_n": {
+   "x": -20.0,
+   "y": 0.0,
+   "z": 42.6
+  },
   "poi_research1_notice": {
    "x": -4.9,
    "y": 0.0,
@@ -316,7 +326,7 @@
    "z": 9.62
   }
  },
- "triangles": 44097,
+ "triangles": 44367,
  "seats": 2,
  "notes": [
   "1F 吹き抜け（トップライト・FJR710・窓口）+ 南北 2 本の廊下 + 西と東の EV ホール（2F まで） + 実験室・研究室・産学試作開発室・西側ラウンジ"
@@ -916,7 +926,7 @@
    "ext_research1",
    "ext_research1_trees"
   ],
-  "triangles": 37110,
+  "triangles": 36851,
   "radius": 30.0,
   "dz": -0.03
  }

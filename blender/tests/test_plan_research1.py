@@ -10,7 +10,7 @@ from kcd_interior import plan_research1_dims as D
 from kcd_interior import registry, signs
 from kcd_interior import spec as ispec
 from kcd_interior.ctx import Ctx
-from kcd_lib import signtext
+from kcd_lib import entrances, geom, signtext
 
 from conftest import CAMPUS_JSON
 
@@ -23,6 +23,7 @@ CAPSULE_R = 0.31       # プレイヤーのカプセルの半径
 TABLE_R = 0.45         # 丸テーブルの天板の半径
 TOP = D.Z_SKY + 0.05   # トップライトより上に何も出さない
 STEP_MAX = 0.4         # Unity の stepOffset
+EXIT_GAP = 0.8         # Unity の InteriorExit.SpawnGap
 
 
 def _ear_candidates(contours):
@@ -61,6 +62,80 @@ def _faces(c):
 def test_spawn_and_exit_are_inside_the_vestibule(built):
     assert D.DOOR[0] < D.SPAWN[0] < D.DOOR[1]
     assert D.Y_DOOR < D.EXIT[1] < D.SPAWN[1]
+
+
+def _faces_in(c, box):
+    """box = (x0, x1, y0, y1, z0, z1) に外接矩形が食い込む面の数。"""
+    x0, x1, y0, y1, z0, z1 = box
+    n = 0
+    for pts in _faces(c):
+        if (max(p[0] for p in pts) > x0 and min(p[0] for p in pts) < x1
+                and max(p[1] for p in pts) > y0 and min(p[1] for p in pts) < y1
+                and max(p[2] for p in pts) > z0 and min(p[2] for p in pts) < z1):
+            n += 1
+    return n
+
+
+def test_north_door_walks_from_the_corridor_through_the_passage_to_outside(built):
+    """北の入口: 北の廊下から北の室列を抜ける通路を、北の外壁のガラスの扉の内側まで歩いて通れる。
+    出口の範囲（Unity の InteriorExit.BoxFor。spawn から 0.8 m 先から）にガラスの手前で届く。"""
+    sx, sy, _ = D.N_SPAWN
+    ex, ey, _ = D.N_EXIT
+    assert sx == ex == D.N_DOOR_X
+    assert D.N_PASS[0] < D.N_GAP[0] < sx < D.N_GAP[1] < D.N_PASS[1]
+    assert D.Y_NC1 < sy < ey < D.Y_N
+    assert sy + EXIT_GAP + CAPSULE_R < D.Y_N
+    hw = 0.45
+    path = (sx - hw, sx + hw, D.Y_NC0 + 0.3, D.Y_N, 0.2, 2.0)
+    assert _faces_in(built, path) == 0
+
+
+def test_north_door_has_its_own_spawn_and_exit(built):
+    """北の入口の spawn・出口は扉の id で付き、玄関（meta の spawn）は南のまま。"""
+    names = [n for n, _p in built.empties]
+    assert "spawn_research1_n" in names and "exit_research1_n" in names
+    assert names.index("spawn_research1") < names.index("spawn_research1_n")
+
+
+def _campus_door():
+    data = ispec.load_campus(CAMPUS_JSON)
+    frame = ispec.campus_frame(data)
+    doors = {dr["id"]: dr for dr in entrances.plan(data, frame, {})}
+    b = next(b for b in data["buildings"] if b["id"] == "research1")
+    part = geom.ensure_ccw(geom.dedup(b["parts"][0]["footprint"]))
+    others = [geom.ensure_ccw(geom.dedup(o["footprint"])) for o in data["buildings"]
+              if o.get("on_campus") and o["id"] != "research1"]
+    return frame, doors[D.N_DOOR], part, others
+
+
+def test_north_campus_door_is_on_the_mall_side_of_research1(built):
+    """キャンパスの扉 research1_n は第1研究棟に結ばれ、北面に沿う細長い部分の北の面の、屋内の北の入口の真北に付く。"""
+    assert entrances.building_of(D.N_DOOR) == "research1"
+    assert entrances.HOSTS[D.N_DOOR] == "research1"
+    frame, dr, part, _others = _campus_door()
+    u, _v = frame.uv(dr["origin"])
+    wu, _wv = built.spec.to_world_uv((D.N_DOOR_X, D.FOOT[D.N_EDGE][1]))
+    assert abs(u - wu) < 0.05
+    assert geom.point_in_poly(entrances.local(dr, 0.0, -0.1), part)
+    assert not geom.point_in_poly(entrances.local(dr, 0.0, 0.1), part)
+
+
+def test_north_campus_door_fits_on_the_part_face():
+    """風除室の幅いっぱいの裏が細長い部分の中にある（扉が細長い部分の端からはみ出さない）。"""
+    _frame, dr, part, _others = _campus_door()
+    for s in (-dr["WO"], dr["WO"]):
+        assert geom.point_in_poly(entrances.local(dr, s, -0.1), part), s
+
+
+def test_north_campus_door_stays_off_other_buildings():
+    """扉の風除室・庇・足元の石張りがほかの建物の外形に食い込まない。"""
+    _frame, dr, _part, others = _campus_door()
+    half = max(dr["WO"], dr["APRON_S"], dr["CAN_S"] if dr.get("CANOPY", True) else 0.0)
+    far = max(dr["D"], dr["APRON_D"], dr["CAN_D"] if dr.get("CANOPY", True) else 0.0)
+    for s in (-half, 0.0, half):
+        for k in range(1, 11):
+            p = entrances.local(dr, s, far * k / 10.0)
+            assert not any(geom.point_in_poly(p, o) for o in others), (s, far * k / 10.0)
 
 
 def test_pois_are_in_table_order(built):
