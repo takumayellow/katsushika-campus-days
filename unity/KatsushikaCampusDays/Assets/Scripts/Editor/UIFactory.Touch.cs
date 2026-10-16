@@ -23,10 +23,11 @@ namespace KCD.Editor
 
         /// <summary>
         /// 縦長の画面での上端のボタンの位置（左上から、幅 720 の Canvas の単位）。左上のクエストの枠
-        /// （下端は上から CSS で約 93 px、この Canvas で 172）のすぐ下に、ポーズ・クエストログの順で横に並べる。
+        /// （下端は上から CSS で約 93 px、この Canvas で 172）のすぐ下に、ポーズ・クエストログ・写真の順で横に並べる。
         /// </summary>
         private static readonly Vector2 PortraitPausePosition = new Vector2(84f, -236f);
         private static readonly Vector2 PortraitQuestLogPosition = new Vector2(204f, -236f);
+        private static readonly Vector2 PortraitPhotoPosition = new Vector2(324f, -236f);
 
         private static readonly Color TouchFace = new Color(0.06f, 0.08f, 0.12f, 0.55f);
         private static readonly Color StickBase = new Color(1f, 1f, 1f, 0.18f);
@@ -54,18 +55,27 @@ namespace KCD.Editor
 
             TouchStick stick = BuildStick(play);
 
+            // 写真モードの間に隠すボタン。スティック・なぞる面・ジャンプ（撮影）・写真（戻る）は play に残す。
+            RectTransform extras = Stretch(play, "Extras");
+            CanvasGroup extrasGroup = extras.gameObject.AddComponent<CanvasGroup>();
+
             // クエストログはポーズのボタンの右隣。ログを開くと操作を止めるので、閉じるのはログ自体を叩く。
-            TMP_Text questLabel = BuildPadButton(play, "QuestLogButton", new Vector2(130f, -64f), 104f,
+            TMP_Text questLabel = BuildPadButton(extras, "QuestLogButton", new Vector2(130f, -64f), 104f,
                 "<Gamepad>/select", 20f, new Vector2(0.5f, 1f));
             PlaceInPortrait(questLabel, PortraitQuestLogPosition);
 
+            // 写真モードの出入り。クエストログの右隣。写真モードの間はジャンプのボタンで撮る。
+            TMP_Text photoLabel = BuildPadButton(play, "PhotoButton", new Vector2(250f, -64f), 104f,
+                "<Gamepad>/buttonNorth", 24f, new Vector2(0.5f, 1f));
+            PlaceInPortrait(photoLabel, PortraitPhotoPosition);
+
             TMP_Text jumpLabel = BuildPadButton(play, "Jump", new Vector2(-120f, 130f), 140f,
                 "<Gamepad>/buttonSouth", 30f);
-            TMP_Text interactLabel = BuildPadButton(play, "Interact", new Vector2(-290f, 105f), 124f,
+            TMP_Text interactLabel = BuildPadButton(extras, "Interact", new Vector2(-290f, 105f), 124f,
                 "<Gamepad>/buttonWest", 26f);
 
             // ジャンプと右上の時計の間。横持ちのスマホで、上下どちらとも 10 px ほど空く。
-            RectTransform sprintRect = Rect(play, "Sprint", new Vector2(1f, 0f), new Vector2(0.5f, 0.5f),
+            RectTransform sprintRect = Rect(extras, "Sprint", new Vector2(1f, 0f), new Vector2(0.5f, 0.5f),
                 new Vector2(-120f, 277f), new Vector2(104f, 104f));
             Image sprintFace = Disc(sprintRect, TouchFace);
             TMP_Text sprintLabel = Label(sprintRect, "Label", string.Empty, 26f, TextAlignmentOptions.Center);
@@ -79,8 +89,8 @@ namespace KCD.Editor
             PlaceInPortrait(pauseLabel, PortraitPausePosition);
 
             TouchHud hud = canvas.gameObject.AddComponent<TouchHud>();
-            hud.Bind(controls.gameObject, playGroup, pauseGroup);
-            hud.BindLabels(jumpLabel, interactLabel, sprintLabel, questLabel);
+            hud.Bind(controls.gameObject, playGroup, extrasGroup, pauseGroup);
+            hud.BindLabels(jumpLabel, interactLabel, sprintLabel, questLabel, photoLabel);
             return hud;
         }
 

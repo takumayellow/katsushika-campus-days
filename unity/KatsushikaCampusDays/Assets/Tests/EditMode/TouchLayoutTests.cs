@@ -276,6 +276,43 @@ namespace KCD.Tests
         }
 
         [Test]
+        public void CampusScene_PhotoModeKeepsOnlyTheCameraButtons()
+        {
+            Scene scene = EditorSceneManager.OpenScene(CampusScenePath, OpenSceneMode.Additive);
+            try
+            {
+                List<RectTransform> rects = scene.GetRootGameObjects()
+                    .SelectMany(r => r.GetComponentsInChildren<RectTransform>(true)).ToList();
+                RectTransform extras = rects.FirstOrDefault(r => r.name == "Extras" && r.parent != null && r.parent.name == "Play");
+                Assert.IsNotNull(extras, "Play/Extras が無い（KCD/シーンを組み直す）");
+                Assert.IsNotNull(extras.GetComponent<CanvasGroup>());
+
+                // 写真モードで隠すボタン。
+                foreach (string button in new[] { "QuestLogButton", "Interact", "Sprint" })
+                {
+                    RectTransform rect = rects.FirstOrDefault(r => r.name == button);
+                    Assert.IsNotNull(rect, button + " が無い");
+                    Assert.IsTrue(rect.IsChildOf(extras), button + " が写真モードでも出る");
+                }
+
+                // 写真モードで使うボタン。ジャンプが撮影、写真が戻る。
+                foreach (string button in new[] { "Jump", "PhotoButton", "StickArea", "LookArea" })
+                {
+                    RectTransform rect = rects.FirstOrDefault(r => r.name == button && r.IsChildOf(extras.parent));
+                    Assert.IsNotNull(rect, button + " が Play に無い");
+                    Assert.IsFalse(rect.IsChildOf(extras), button + " が写真モードで隠れる");
+                }
+
+                TouchPosition hint = rects.FirstOrDefault(r => r.name == "PhotoHint")?.GetComponent<TouchPosition>();
+                Assert.IsNotNull(hint, "PhotoHint に TouchPosition が無い（指のとき撮影のボタンに重なる）");
+            }
+            finally
+            {
+                EditorSceneManager.CloseScene(scene, true);
+            }
+        }
+
+        [Test]
         public void CampusScene_IsReadyForAPortraitScreen()
         {
             Scene scene = EditorSceneManager.OpenScene(CampusScenePath, OpenSceneMode.Additive);
@@ -284,7 +321,7 @@ namespace KCD.Tests
                 List<GameObject> roots = scene.GetRootGameObjects().ToList();
                 List<RectTransform> rects = roots.SelectMany(r => r.GetComponentsInChildren<RectTransform>(true)).ToList();
 
-                foreach (string button in new[] { "PauseButton", "QuestLogButton" })
+                foreach (string button in new[] { "PauseButton", "QuestLogButton", "PhotoButton" })
                 {
                     RectTransform rect = rects.FirstOrDefault(r => r.name == button);
                     Assert.IsNotNull(rect, button + " が無い");

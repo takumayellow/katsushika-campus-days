@@ -14,6 +14,12 @@ namespace KCD.Editor
         /// <summary>縦長の画面でのフォトモードの操作説明の高さ。幅 800 では 2 行が 3 行に折り返す。</summary>
         private const float PhotoHintPortraitHeight = 140f;
 
+        /// <summary>
+        /// 指のときのフォトモードの操作説明の下端。右下の撮影のボタン（上端は下から 200）に重ならないよう、その上に出す。
+        /// 縦長の画面では「話す」の案内と同じ高さ（ボタンの並びの上）。
+        /// </summary>
+        private const float PhotoHintTouchBottom = 210f;
+
         /// <summary>設定パネル。閉じた状態で置く。</summary>
         public static SettingsView BuildSettings(GameObject host, RectTransform parent)
         {
@@ -75,6 +81,8 @@ namespace KCD.Editor
                 new Vector2(0f, 56f), new Vector2(1180f, 96f));
             Backdrop(hintRect, Panel);
             ReflowInCanvas(hintRect, PhotoHintPortraitHeight);
+            hintRect.gameObject.AddComponent<TouchPosition>().Bind(
+                new Vector2(0f, PhotoHintTouchBottom), new Vector2(0f, PortraitPromptBottom));
             TMP_Text hint = Label(hintRect, "Label", string.Empty, 26f, TextAlignmentOptions.Center);
             hint.enableAutoSizing = true;
             hint.fontSizeMin = 18f;

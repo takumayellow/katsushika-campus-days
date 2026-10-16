@@ -420,14 +420,17 @@ namespace KCD
              (Keyboard.current.leftShiftKey.isPressed || Keyboard.current.rightShiftKey.isPressed)) ||
             (Gamepad.current != null && Gamepad.current.leftShoulder.isPressed);
 
-        /// <summary>フォトモードの向き。<see cref="Look"/> と同じ大きさで、スティックは実時間で掛ける（timeScale 0 でも回る）。</summary>
+        /// <summary>
+        /// フォトモードの向き。<see cref="Look"/> と同じ大きさで、スティックは実時間で掛ける（timeScale 0 でも回る）。
+        /// 画面のなぞりも入れ、指で遊んでいる間はマウスを見ない（<see cref="Look"/> と同じ）。
+        /// </summary>
         public static Vector2 PhotoLook
         {
             get
             {
-                var look = Vector2.zero;
+                Vector2 look = TouchInput.Look;
                 Mouse mouse = Mouse.current;
-                if (mouse != null)
+                if (mouse != null && !InputMode.IsTouch)
                 {
                     look += mouse.delta.ReadValue() * 0.06f;
                 }
@@ -443,14 +446,21 @@ namespace KCD
         }
 
         /// <summary>
+        /// <see cref="TouchInput.Zoom"/> から <see cref="PhotoZoom"/> への換算。2 本指の間隔を e 倍に広げると
+        /// 約 11.4（ホイール 11 目盛り）、画角で約 34 度寄る。広角の端から望遠の端まで、指を 6 倍ほど広げる。
+        /// </summary>
+        public const float PhotoZoomPerPinch = 40f;
+
+        /// <summary>
         /// フォトモードのズーム（正で寄る）。ホイール 1 目盛りで 1、十字キーの上下は押している間 1 秒に 10。
         /// ホイールは Input System の既定で 1 目盛り ±1 に揃っている。1 フレームで大きく回しても ±3 までにする。
+        /// 2 本指は <see cref="PhotoZoomPerPinch"/> を掛けて足す。
         /// </summary>
         public static float PhotoZoom
         {
             get
             {
-                float zoom = 0f;
+                float zoom = TouchInput.Zoom * PhotoZoomPerPinch;
                 Mouse mouse = Mouse.current;
                 if (mouse != null)
                 {
