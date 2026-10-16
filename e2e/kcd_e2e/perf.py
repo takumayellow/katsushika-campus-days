@@ -42,7 +42,8 @@ CANVAS_JS = "() => { const c = document.querySelector('#unity-canvas'); return [
 # 読み込みの時刻（ページを開いてからの ms）。ローダーを取りに行った時刻は resource timing から取る。
 LOAD_JS = """() => {
   const s = window.__kcdE2E;
-  const loader = performance.getEntriesByType('resource').find((e) => e.name.endsWith('.loader.js'));
+  const loader = performance.getEntriesByType('resource')
+    .find((e) => new URL(e.name).pathname.endsWith('.loader.js'));
   return {
     loader_requested: loader ? loader.startTime : null,
     loader_loaded: s ? s.loaderLoadedAt : null,
@@ -61,6 +62,8 @@ QUALITY_ROW = 4
 UNCAPPED_ARGS = ("--disable-gpu-vsync", "--disable-frame-rate-limit")
 CAMPUS_LOADED = "[KCD] scene_load scene=Campus"
 KEY_GAP_MS = 250
+# タイトルをはじめてから, キャラクターの選択を受け付けるまで待つ。
+SELECT_WAIT_MS = 2000
 
 # スマホ（Application.isMobilePlatform）では, 保存が無いときの段が Low になる（QualityTier.DefaultFor）。
 PHONE_DEFAULT_TIER = "low"
@@ -269,8 +272,11 @@ def run_perf(options: PerfOptions) -> PerfResult:
 
 
 @contextmanager
-def _session(browser: Browser, options: PerfOptions) -> Iterator[tuple[Page, list[str], CDPSession]]:
-    """新しいプロファイルで開き, タイトルが描かれるまで待つ（保存が無いので段は start_tier）。"""
+def _session(browser: Browser, options: PerfOptions) -> Iterator[tuple[Page, list[str], CDPSession | None]]:
+    """新しいプロファイルで開き, タイトルが描かれるまで待つ（保存が無いので段は start_tier）。
+
+    CDP はタッチか CPU の遅さに使うときだけつなぐ（PC で遅さを掛けないなら None）。
+    """
     context = browser.new_context(**context_options(options.phone, options.viewport))
     try:
         context.add_init_script(path=str(INSTRUMENT_JS))
@@ -278,13 +284,15 @@ def _session(browser: Browser, options: PerfOptions) -> Iterator[tuple[Page, lis
         page = context.new_page()
         console: list[str] = []
         page.on("console", lambda msg: console.append(msg.text))
-        cdp = context.new_cdp_session(page)
         throttle = cpu_throttle_command(options.cpu_throttle)
+        cdp = context.new_cdp_session(page) if options.phone is not None or throttle is not None else None
         # 開く前に掛けた遅さは, 開いたあとのページにも掛かったままになる。
         if throttle is not None and options.throttle_load:
             cdp.send(*throttle)
         page.goto(options.url, wait_until="domcontentloaded", timeout=options.load_timeout_s * 1000)
         if options.phone is not None:
+            # 案内は HTML のボタンなので, 出るのを待って Playwright で叩く。キャンバスの中は指を置いたままにしたり
+            # 動かしたりするので CDP で送る（_tap・_slide）。
             page.locator(DATA_NOTICE_BUTTON).tap(timeout=options.scene_timeout_s * 1000)
         page.wait_for_function(READY_JS, timeout=options.load_timeout_s * 1000, polling=250)
         _wait_drawn(page, options.scene_timeout_s)
@@ -297,20 +305,21 @@ def _session(browser: Browser, options: PerfOptions) -> Iterator[tuple[Page, lis
         context.close()
 
 
-def _enter_campus(page: Page, console: list[str], cdp: CDPSession, options: PerfOptions) -> None:
+def _enter_campus(page: Page, console: list[str], cdp: CDPSession | None, options: PerfOptions) -> None:
     if options.phone is None:
         page.keyboard.press("Enter")
-        page.wait_for_timeout(2000)
+        page.wait_for_timeout(SELECT_WAIT_MS)
         page.keyboard.press("Enter")
     else:
         _tap(page, cdp, options.phone.title_tap)
-        page.wait_for_timeout(2000)
+        page.wait_for_timeout(SELECT_WAIT_MS)
         _tap(page, cdp, options.phone.select_tap)
     _wait_console(page, console, CAMPUS_LOADED, options.scene_timeout_s)
     page.wait_for_timeout(options.settle_s * 1000)
 
 
-def _measure_tier(page: Page, console: list[str], cdp: CDPSession, tier: str, options: PerfOptions) -> TierResult:
+def _measure_tier(page: Page, console: list[str], cdp: CDPSession | None, tier: str,
+                  options: PerfOptions) -> TierResult:
     result = TierResult(tier)
     result.startup_log = next((line for line in console if "[KCD] graphics tier=" in line), None)
     result.load = load_times(page.evaluate(LOAD_JS))
@@ -328,23 +337,13 @@ def _measure_tier(page: Page, console: list[str], cdp: CDPSession, tier: str, op
 
     result.scenes["stand"] = _record(page, options.measure_s)
     _save_canvas(page, options.out_dir / f"{tier}-stand.png")
-    if options.phone is None:
-        page.keyboard.down("w")
-        try:
-            result.scenes["walk"] = _record(page, options.measure_s)
-        finally:
-            page.keyboard.up("w")
-    else:
-        _slide(page, cdp, options.phone.stick_from, options.phone.stick_to)
-        try:
-            result.scenes["walk"] = _record(page, options.measure_s)
-        finally:
-            _touch(cdp, "touchEnd")
+    with _walking(page, cdp, options.phone):
+        result.scenes["walk"] = _record(page, options.measure_s)
     _save_canvas(page, options.out_dir / f"{tier}-walk.png")
     return result
 
 
-def _measure_frozen(page: Page, console: list[str], cdp: CDPSession,
+def _measure_frozen(page: Page, console: list[str], cdp: CDPSession | None,
                     options: PerfOptions) -> list[tuple[int, str, dict]]:
     """キャンパスでポーズし（時間が止まり, NPC も時計も動かない）, 設定画面の「画質」の行で段を順に変えて測る。
 
@@ -365,6 +364,22 @@ def _measure_frozen(page: Page, console: list[str], cdp: CDPSession,
             if round_index == 1:
                 _save_canvas(page, options.out_dir / f"frozen-{tier}.png")
     return records
+
+
+@contextmanager
+def _walking(page: Page, cdp: CDPSession | None, phone: Phone | None) -> Iterator[None]:
+    """抜けるまで前へ歩かせる。PC は w を押したまま, スマホはスティックを倒した指を置いたままにする。"""
+    if phone is None:
+        page.keyboard.down("w")
+    else:
+        _slide(page, cdp, phone.stick_from, phone.stick_to)
+    try:
+        yield
+    finally:
+        if phone is None:
+            page.keyboard.up("w")
+        else:
+            _touch(cdp, "touchEnd")
 
 
 def _press(page: Page, keys: list[str]) -> None:

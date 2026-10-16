@@ -3,6 +3,7 @@
 集計は数値だけで確かめる。perf_probe.js は SwiftShader のブラウザで小さな WebGL 2 のページを動かし,
 requestAnimationFrame の 1 回ごとに描画コールと三角形を数えられるかを確かめる（Unity のビルドは要らない）。
 スマホの画面では, テンプレートを偽のローダーで開き, 案内を叩いてからの読み込みの時刻を数えられるかを確かめる。
+run_webgl_perf.py の引数の組み合わせも確かめる。
 """
 
 from __future__ import annotations
@@ -12,6 +13,7 @@ from pathlib import Path
 import pytest
 
 from kcd_e2e import perf
+from run_webgl_perf import parse_args
 
 
 def frames_at(times, work=1.0, draws=10, triangles=300):
@@ -153,8 +155,13 @@ def test_phone_touches_are_on_screen_and_start_the_stick(phone):
 
 def test_slide_points_go_straight_to_the_end():
     assert perf.slide_points((90, 650), (90, 530), 4) == [(90, 620), (90, 590), (90, 560), (90, 530)]
+    assert perf.slide_points((0, 0), (80, 40), 4) == [(20, 10), (40, 20), (60, 30), (80, 40)]
+
+
+@pytest.mark.parametrize("steps", [0, -1])
+def test_slide_points_need_at_least_one_step(steps):
     with pytest.raises(ValueError):
-        perf.slide_points((0, 0), (1, 1), 0)
+        perf.slide_points((0, 0), (1, 1), steps)
 
 
 def test_load_times_count_from_the_loader_request():
@@ -169,6 +176,83 @@ def test_load_times_without_a_start_or_an_end_have_no_duration():
                              "download_done": None, "unity_ready": 15000.7})
     assert times["loader_requested"] is None and times["ready_after_request"] is None
     assert perf.load_times({"loader_requested": 10.0, "unity_ready": None})["ready_after_request"] is None
+
+
+# ---- 指とキーの送り方（ブラウザの代わりに, 送った順に記録する） ----
+
+class Recorder:
+    """Page と CDPSession の代わり。キー・待ち・タッチを送った順に記録する。"""
+
+    def __init__(self):
+        self.sent = []
+        self.keyboard = self
+
+    def down(self, key):
+        self.sent.append(("down", key))
+
+    def up(self, key):
+        self.sent.append(("up", key))
+
+    def wait_for_timeout(self, ms):
+        self.sent.append(("wait", ms))
+
+    def send(self, method, params):
+        assert method == "Input.dispatchTouchEvent"
+        self.sent.append((params["type"], [(p["x"], p["y"]) for p in params["touchPoints"]]))
+
+
+def test_tap_lifts_the_finger_after_holding():
+    recorder = Recorder()
+    perf._tap(recorder, recorder, (195, 422))
+    assert recorder.sent == [("touchStart", [(195, 422)]), ("wait", perf.TAP_HOLD_MS), ("touchEnd", [])]
+
+
+def test_walking_on_pc_holds_w_until_the_end():
+    page = Recorder()
+    with pytest.raises(RuntimeError):
+        with perf._walking(page, None, None):
+            assert page.sent == [("down", "w")]
+            raise RuntimeError
+    assert page.sent == [("down", "w"), ("up", "w")]
+
+
+def test_walking_on_a_phone_keeps_the_finger_on_the_stick_until_the_end():
+    phone = perf.PHONES["portrait"]
+    recorder = Recorder()
+    slide = [("touchStart", [phone.stick_from])]
+    for point in perf.slide_points(phone.stick_from, phone.stick_to, perf.SLIDE_STEPS):
+        slide += [("wait", perf.SLIDE_GAP_MS), ("touchMove", [point])]
+    with pytest.raises(RuntimeError):
+        with perf._walking(recorder, recorder, phone):
+            assert recorder.sent == slide
+            raise RuntimeError
+    assert recorder.sent == slide + [("touchEnd", [])]
+
+
+# ---- run_webgl_perf.py の引数 ----
+
+def test_cli_phone_and_throttle_load_are_off_by_default():
+    args = parse_args(["--serve", "build/WebGL"])
+    assert args.phone is None and args.throttle_load is False and args.cpu_throttle == 1.0
+
+
+def test_cli_takes_a_phone_and_a_throttle_from_the_load():
+    args = parse_args(["--serve", "build/WebGL", "--phone", "landscape", "--cpu-throttle", "4",
+                       "--throttle-load"])
+    assert args.phone == "landscape" and args.throttle_load is True and args.cpu_throttle == 4.0
+
+
+@pytest.mark.parametrize("extra", [
+    ["--throttle-load"],  # 遅くする倍率が無い
+    ["--throttle-load", "--cpu-throttle", "1"],  # 1 倍は掛けないのと同じ
+    ["--cpu-throttle", "0.5"],
+    ["--phone", "tablet"],
+    ["--tiers", "low,ultra"],
+])
+def test_cli_rejects_bad_arguments(extra):
+    with pytest.raises(SystemExit) as error:
+        parse_args(["--serve", "build/WebGL", *extra])
+    assert error.value.code == 2
 
 
 # ---- perf_probe.js をブラウザで動かす ----
