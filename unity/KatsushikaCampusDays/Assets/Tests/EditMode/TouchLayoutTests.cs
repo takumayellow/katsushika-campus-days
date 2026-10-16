@@ -1,9 +1,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
+using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.InputSystem.OnScreen;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -305,8 +307,33 @@ namespace KCD.Tests
                     Assert.IsFalse(rect.IsChildOf(extras), button + " が写真モードで隠れる");
                 }
 
-                TouchPosition hint = rects.FirstOrDefault(r => r.name == "PhotoHint")?.GetComponent<TouchPosition>();
-                Assert.IsNotNull(hint, "PhotoHint に TouchPosition が無い（指のとき撮影のボタンに重なる）");
+                // 写真モードの間だけ出すボタン。操作の案内を出し入れする（L3 と同じ口）。
+                RectTransform photoExtras = rects.FirstOrDefault(r => r.name == "PhotoExtras" && r.parent == extras.parent);
+                Assert.IsNotNull(photoExtras, "Play/PhotoExtras が無い（KCD/シーンを組み直す）");
+                Assert.IsTrue(photoExtras.TryGetComponent(out CanvasGroup photoExtrasGroup), "PhotoExtras に CanvasGroup が無い");
+                RectTransform hintButton = rects.FirstOrDefault(r => r.name == "PhotoHintButton");
+                Assert.IsNotNull(hintButton, "PhotoHintButton が無い");
+                Assert.IsTrue(hintButton.IsChildOf(photoExtras), "PhotoHintButton が写真モードの外でも出る");
+                Assert.IsTrue(hintButton.TryGetComponent(out OnScreenButton hintPress), "PhotoHintButton を押しても何も入らない");
+                Assert.AreEqual("<Gamepad>/leftStickPress", hintPress.controlPath, "PhotoHintButton が案内の出し入れにつながっていない");
+                Transform hintText = hintButton.Find("Label");
+                Assert.IsNotNull(hintText, "PhotoHintButton に文字が無い");
+                Assert.IsTrue(hintText.TryGetComponent(out TMP_Text hintLabel), "PhotoHintButton に文字が無い");
+
+                TouchHud hud = scene.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<TouchHud>(true)).FirstOrDefault();
+                Assert.IsNotNull(hud, "TouchHud が無い");
+                var bound = new SerializedObject(hud);
+                Assert.AreEqual(photoExtrasGroup, bound.FindProperty("_photoExtras").objectReferenceValue,
+                    "TouchHud が写真モードの間だけのボタンを出し入れしない（KCD/シーンを組み直す）");
+                Assert.AreEqual(hintLabel, bound.FindProperty("_hintLabel").objectReferenceValue,
+                    "TouchHud が案内のボタンに文字を入れない（KCD/シーンを組み直す）");
+
+                // 案内の枠の置き場所は PhotoHintLayout だけが決める。TouchPosition も付いていると置き場所を取り合う。
+                RectTransform hint = rects.FirstOrDefault(r => r.name == "PhotoHint");
+                Assert.IsNotNull(hint, "PhotoHint が無い");
+                Assert.IsTrue(hint.TryGetComponent(out PhotoHintLayout _),
+                    "PhotoHint に PhotoHintLayout が無い（指のとき撮影のボタンや人物に重なる）");
+                Assert.IsFalse(hint.TryGetComponent(out TouchPosition _), "PhotoHint の置き場所を TouchPosition と取り合う");
             }
             finally
             {
@@ -323,11 +350,11 @@ namespace KCD.Tests
                 List<GameObject> roots = scene.GetRootGameObjects().ToList();
                 List<RectTransform> rects = roots.SelectMany(r => r.GetComponentsInChildren<RectTransform>(true)).ToList();
 
-                foreach (string button in new[] { "PauseButton", "QuestLogButton", "PhotoButton" })
+                foreach (string button in new[] { "PauseButton", "QuestLogButton", "PhotoButton", "PhotoHintButton" })
                 {
                     RectTransform rect = rects.FirstOrDefault(r => r.name == button);
                     Assert.IsNotNull(rect, button + " が無い");
-                    Assert.IsNotNull(rect.GetComponent<PortraitPosition>(),
+                    Assert.IsTrue(rect.TryGetComponent(out PortraitPosition _),
                         button + " に PortraitPosition が無い（縦長の画面でクエストの枠に重なる）");
                 }
 
@@ -352,7 +379,8 @@ namespace KCD.Tests
         [Test]
         public void CampusScene_TopButtonsLeaveAGapBetweenThem()
         {
-            // 上端に並ぶポーズ・クエストログ・写真の丸の間が狭いと、隣を押し間違える（縦横とも CSS 14 px 以上）。
+            // 上端に並ぶポーズ・クエストログ・写真の丸と、写真モードの間だけ出る案内の丸の間が狭いと、隣を押し間違える
+            // （縦横とも CSS 14 px 以上）。
             const float minGap = 26f;
             Scene scene = EditorSceneManager.OpenScene(CampusScenePath, OpenSceneMode.Additive);
             try
@@ -371,9 +399,23 @@ namespace KCD.Tests
                     float landscape = right.anchoredPosition.x - left.anchoredPosition.x - edges;
                     Assert.GreaterOrEqual(landscape, minGap, left.name + " と " + right.name + " が横長の画面で近すぎる");
 
-                    float portrait = PortraitX(right) - PortraitX(left) - edges;
+                    float portrait = PortraitPlace(right).x - PortraitPlace(left).x - edges;
                     Assert.GreaterOrEqual(portrait, minGap, left.name + " と " + right.name + " が縦長の画面で近すぎる");
                 }
+
+                // 案内の丸は、横長の画面では写真の真下、縦長の画面では写真の右隣。
+                RectTransform photo = buttons[buttons.Length - 1];
+                RectTransform hint = rects.First(r => r.name == "PhotoHintButton");
+                Assert.AreEqual(photo.anchorMin, hint.anchorMin, "案内の丸が写真の丸と別の所を基準に置かれている");
+                Assert.AreEqual(photo.anchoredPosition.x, hint.anchoredPosition.x, 0.01f, "横長の画面で案内の丸が写真の真下にない");
+                Assert.GreaterOrEqual(photo.anchoredPosition.y - hint.anchoredPosition.y - (photo.sizeDelta.y + hint.sizeDelta.y) * 0.5f,
+                    minGap, "写真と案内の丸が横長の画面で近すぎる");
+
+                Vector2 photoPortrait = PortraitPlace(photo);
+                Vector2 hintPortrait = PortraitPlace(hint);
+                Assert.AreEqual(photoPortrait.y, hintPortrait.y, 0.01f, "縦長の画面で案内の丸が写真の右隣にない");
+                Assert.GreaterOrEqual(hintPortrait.x - photoPortrait.x - (photo.sizeDelta.x + hint.sizeDelta.x) * 0.5f,
+                    minGap, "写真と案内の丸が縦長の画面で近すぎる");
             }
             finally
             {
@@ -381,10 +423,10 @@ namespace KCD.Tests
             }
         }
 
-        private static float PortraitX(RectTransform button)
+        private static Vector2 PortraitPlace(RectTransform button)
         {
             return new SerializedObject(button.GetComponent<PortraitPosition>())
-                .FindProperty("_portraitPosition").vector2Value.x;
+                .FindProperty("_portraitPosition").vector2Value;
         }
 
         private static void CheckScene(string path, IEnumerable<string> panels)

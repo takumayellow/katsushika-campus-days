@@ -69,18 +69,19 @@ namespace KCD.Tests
         public void TouchText_NamesTheButtonsOnTheScreen()
         {
             // 指で遊ぶ間は仮想のゲームパッドから入るので、gamepad が立っていてもタッチの文にする。
+            // 画面には案内を出し入れするボタンがあるので、その行を足して 3 行。
             foreach (bool gamepad in new[] { false, true })
             {
                 string ja = PhotoModeHints.Text(false, gamepad, true);
                 string en = PhotoModeHints.Text(true, gamepad, true);
-                Assert.AreEqual(2, ja.Split('\n').Length);
-                Assert.AreEqual(2, en.Split('\n').Length);
-                foreach (string word in new[] { "「撮影」", "「戻る」", "なぞる", "つまむ" })
+                Assert.AreEqual(3, ja.Split('\n').Length);
+                Assert.AreEqual(3, en.Split('\n').Length);
+                foreach (string word in new[] { "「撮影」", "「戻る」", "「案内」", "なぞる", "つまむ" })
                 {
                     StringAssert.Contains(word, ja);
                 }
 
-                foreach (string word in new[] { "Shoot button", "Back button", "Drag", "Pinch" })
+                foreach (string word in new[] { "Shoot button", "Back button", "Help button", "Drag", "Pinch" })
                 {
                     StringAssert.Contains(word, en);
                 }
