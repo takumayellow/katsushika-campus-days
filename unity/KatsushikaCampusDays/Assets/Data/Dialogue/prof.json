@@ -116,6 +116,52 @@
       ]
     },
     {
+      "id": "t_choice",
+      "requiresCompletedQuest": "q_gym",
+      "once": true,
+      "lines": [
+        {
+          "text": "ところで、このキャンパスで一番気に入った場所はどこかね。",
+          "text_en": "By the way, which place on campus do you like best?"
+        }
+      ],
+      "choices": [
+        {
+          "text": "メインストリートです。まっすぐで迷いません。",
+          "text_en": "The main street. It's straight, so I never get lost.",
+          "affinity": 2,
+          "lines": [
+            {
+              "text": "うむ。最初に教えた甲斐があった。",
+              "text_en": "Good. Then it was worth telling you on the first day."
+            }
+          ]
+        },
+        {
+          "text": "図書館です。水盤に映るのがきれいで。",
+          "text_en": "The library. Its reflection in the pool is beautiful.",
+          "affinity": 1,
+          "lines": [
+            {
+              "text": "あそこは風のない朝がいい。早起きする理由になる。",
+              "text_en": "It's best on a windless morning. A good reason to get up early."
+            }
+          ]
+        },
+        {
+          "text": "まだ決められません。",
+          "text_en": "I can't decide yet.",
+          "affinity": 0,
+          "lines": [
+            {
+              "text": "それでいい。四年あれば、いやでも見つかる。",
+              "text_en": "That's fine. In four years, you'll find one whether you like it or not."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "t_sq_greenhouse_active",
       "requiresActiveQuest": "q_sq_greenhouse",
       "lines": [
@@ -255,6 +301,21 @@
         {
           "text": "よろしい。では、今日は好きに歩いてみることだ。",
           "text_en": "Good. Then today, walk wherever you like."
+        }
+      ]
+    },
+    {
+      "id": "t_friend",
+      "requiresAffinity": 2,
+      "once": true,
+      "lines": [
+        {
+          "text": "やあ。講義のあとに質問に来る学生は少なくてね。君は歓迎だ。",
+          "text_en": "Hello. Few students come to ask questions after lectures. You're always welcome."
+        },
+        {
+          "text": "分からないことを分からないと言える人が、一番伸びる。",
+          "text_en": "The ones who can say what they don't understand are the ones who grow the most."
         }
       ]
     },

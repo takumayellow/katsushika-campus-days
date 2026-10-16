@@ -87,8 +87,9 @@ namespace KCD.Editor
         /// <summary>
         /// 会話の枠に、指で叩いて進める受け口を足す。画面のどこを叩いても進むよう、枠からはみ出して画面を覆う。
         /// 押すと仮想のゲームパッドの西ボタン（キーの E と同じ）が入る。
+        /// 選択肢を出している間は、同じ板で叩いた選択肢を受ける (#9)。
         /// </summary>
-        private static void AddDialogueTapArea(RectTransform dialogue)
+        private static TmpLinkTap AddDialogueTapArea(RectTransform dialogue)
         {
             RectTransform tap = Stretch(dialogue, "TapArea");
             tap.SetAsFirstSibling();
@@ -98,6 +99,7 @@ namespace KCD.Editor
             HitArea(tap);
             tap.gameObject.AddComponent<OnScreenButton>().controlPath = "<Gamepad>/buttonWest";
             dialogue.gameObject.AddComponent<TouchOnly>().Bind(tap.gameObject);
+            return tap.gameObject.AddComponent<TmpLinkTap>();
         }
 
         /// <summary>

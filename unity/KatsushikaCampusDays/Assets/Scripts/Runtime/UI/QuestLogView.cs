@@ -178,6 +178,7 @@ namespace KCD
             }
 
             _builder.Length = 0;
+            AppendProgress(_builder);
             Compose(_builder, _quests);
             _drawnForTouch = InputMode.IsTouch;
             if (_drawnForTouch)
@@ -187,6 +188,68 @@ namespace KCD
             }
 
             _bodyLabel.text = _builder.ToString();
+        }
+
+        /// <summary>この周回で集めた数を、一覧の先頭に足す (#10)。</summary>
+        private static void AppendProgress(StringBuilder into)
+        {
+            CollectibleCatalog catalog = CollectibleCatalog.Instance;
+            if (catalog == null)
+            {
+                return;
+            }
+
+            AchievementBook book = GameManager.Instance != null ? GameManager.Instance.Achievements : null;
+            ComposeProgress(into,
+                DayStats.HiddenCollectedCount(catalog), catalog.HiddenCount,
+                DayStats.CatalogPhotoCount(catalog), catalog.PhotoSpotCount,
+                book != null ? book.Unlocked.Count : 0, catalog.Achievements.Count);
+        }
+
+        /// <summary>
+        /// 隠しアイテム・写真スポット・称号の「集めた数 / 全部の数」を 1 行で足す。
+        /// 全部の数が 0 の項目は出さず、集めた数は全部の数で頭打ちにする。
+        /// </summary>
+        public static void ComposeProgress(StringBuilder into, int hidden, int hiddenTotal, int photos, int photoTotal,
+            int titles, int titleTotal)
+        {
+            string separator = L.Pick("　", "   ");
+            int start = into.Length;
+            if (hiddenTotal > 0)
+            {
+                AppendPart(into, L.Format("ui.result.collectibles", Mathf.Clamp(hidden, 0, hiddenTotal), hiddenTotal),
+                    separator, start);
+            }
+
+            if (photoTotal > 0)
+            {
+                AppendPart(into, L.Format("ui.result.photos", Mathf.Clamp(photos, 0, photoTotal), photoTotal),
+                    separator, start);
+            }
+
+            if (titleTotal > 0)
+            {
+                AppendPart(into, L.Format("ui.collection.achievements", Mathf.Clamp(titles, 0, titleTotal), titleTotal),
+                    separator, start);
+            }
+
+            if (into.Length == start)
+            {
+                return;
+            }
+
+            into.Insert(start, "<size=85%><color=#A8D8FF>");
+            into.Append("</color></size>\n\n");
+        }
+
+        private static void AppendPart(StringBuilder into, string part, string separator, int start)
+        {
+            if (into.Length > start)
+            {
+                into.Append(separator);
+            }
+
+            into.Append(part);
         }
 
         /// <summary>受注中・完了済みのクエストを一覧の文面にして足す。題名・あらすじ・目標はいまの言語で出す。</summary>
