@@ -56,10 +56,11 @@ namespace KCD.Editor
         /// <summary>
         /// 文字だけの枠は、Canvas の幅が足りなければ縮めずに幅を狭めて折り返す（<see cref="FitInCanvas.BindReflow"/>）。
         /// portraitHeight が正なら、縦長の画面ではその高さにして増えた行を入れる。
+        /// portraitOnly なら、横長の画面では幅を狭めずに枠ごと縮める。
         /// </summary>
-        public static void ReflowInCanvas(RectTransform rect, float portraitHeight = 0f)
+        public static void ReflowInCanvas(RectTransform rect, float portraitHeight = 0f, bool portraitOnly = false)
         {
-            rect.gameObject.AddComponent<FitInCanvas>().BindReflow(portraitHeight);
+            rect.gameObject.AddComponent<FitInCanvas>().BindReflow(portraitHeight, portraitOnly);
         }
 
         /// <summary>
