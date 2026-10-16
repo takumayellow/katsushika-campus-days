@@ -125,8 +125,9 @@ namespace KCD
                 SmokeProbe.Log("look " + look.ToString("F1") + " t=" + Time.unscaledTime.ToString("F2"));
             }
 
-            _yaw += look.x * _sensitivity;
-            _pitch = Mathf.Clamp(_pitch - look.y * _sensitivity, _minPitch, _maxPitch);
+            float sensitivity = _sensitivity * CameraPrefs.SensitivityScale;
+            _yaw += look.x * sensitivity;
+            _pitch = Mathf.Clamp(_pitch - look.y * sensitivity * CameraPrefs.VerticalSign, _minPitch, _maxPitch);
 
             float zoom = KCDInput.Zoom;
             if (Mathf.Abs(zoom) > 0.0001f)

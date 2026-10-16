@@ -166,8 +166,9 @@ namespace KCD
             Vector2 look = KCDInput.PhotoLook;
             if (look.sqrMagnitude <= LookSpikeLimit * LookSpikeLimit)
             {
-                _yaw = Mathf.Repeat(_yaw + look.x * LookSensitivity, 360f);
-                _pitch = Mathf.Clamp(_pitch - look.y * LookSensitivity, -MaxPitch, MaxPitch);
+                float sensitivity = LookSensitivity * CameraPrefs.SensitivityScale;
+                _yaw = Mathf.Repeat(_yaw + look.x * sensitivity, 360f);
+                _pitch = Mathf.Clamp(_pitch - look.y * sensitivity * CameraPrefs.VerticalSign, -MaxPitch, MaxPitch);
             }
 
             Vector3 position = cameraTransform.position;
