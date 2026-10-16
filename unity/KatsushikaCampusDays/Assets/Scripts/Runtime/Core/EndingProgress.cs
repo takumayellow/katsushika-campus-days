@@ -22,7 +22,7 @@ namespace KCD
         public const string FileName = "kcd_endings.json";
 
         /// <summary>ファイルの形の版。読めるのはこの版だけ。</summary>
-        public const int FormatVersion = 1;
+        private const int FormatVersion = 1;
 
         /// <summary>ファイルの形。JsonUtility が読み書きする。</summary>
         [Serializable]
@@ -42,8 +42,8 @@ namespace KCD
         private static int _version;
 
         /// <summary>
-        /// 記録が変わるたびに 1 つ進む数。称号の判定（GameManager）は、これが変わったフレームだけ数え直す。
-        /// <see cref="DayStats.Version"/> と同じ役目。
+        /// 記録が変わるたび（エンドを見たとき、ファイルを読み込んだとき）に 1 つ進む数。
+        /// 称号の判定（GameManager）は、これが変わったフレームだけ数え直す。<see cref="DayStats.Version"/> と同じ役目。
         /// </summary>
         public static int Version
         {

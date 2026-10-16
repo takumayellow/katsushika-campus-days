@@ -32,10 +32,18 @@ namespace KCD.Tests
         public void TearDown()
         {
             SaveSystem.DirectoryOverride = null;
-            if (Directory.Exists(_folder))
+            if (!Directory.Exists(_folder))
             {
-                Directory.Delete(_folder, true);
+                return;
             }
+
+            // 読み取り専用にしたファイルは、そのままだと消せない。
+            foreach (string file in Directory.GetFiles(_folder))
+            {
+                File.SetAttributes(file, FileAttributes.Normal);
+            }
+
+            Directory.Delete(_folder, true);
         }
 
         [Test]
@@ -157,6 +165,22 @@ namespace KCD.Tests
             Assert.IsTrue(added);
             Assert.IsTrue(EndingProgress.Has(DormRoute.EndingId), "書けなかったとき、このプレイの記録まで失った");
             Assert.IsFalse(File.Exists(Path.Combine(_folder, "missing", EndingProgress.FileName)));
+        }
+
+        [Test]
+        public void WriteToAReadOnlyFile_KeepsTheEndingInMemoryAndDoesNotThrow()
+        {
+            const string before = "{\"version\":1,\"seen\":[]}";
+            File.WriteAllText(FilePath, before);
+            File.SetAttributes(FilePath, FileAttributes.ReadOnly);
+            LogAssert.Expect(LogType.Error, new Regex("見たエンドの記録先に書き込めません"));
+
+            bool added = false;
+            Assert.DoesNotThrow(() => added = EndingProgress.Note(DormRoute.EndingId));
+
+            Assert.IsTrue(added);
+            Assert.IsTrue(EndingProgress.Has(DormRoute.EndingId), "書けなかったとき、このプレイの記録まで失った");
+            Assert.AreEqual(before, File.ReadAllText(FilePath), "読み取り専用のファイルが書き換わった");
         }
 
         [TestCase(null)]
