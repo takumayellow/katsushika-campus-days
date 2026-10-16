@@ -5,8 +5,14 @@
     python e2e/run_webgl_perf.py --serve build/WebGL --uncapped      # 上限なし
     python e2e/run_webgl_perf.py --url https://takumayellow.github.io/katsushika-campus-days/ --tiers high
     python e2e/run_webgl_perf.py --serve build/WebGL --cpu-throttle 4   # CPU を 4 倍遅くして測る
+    python e2e/run_webgl_perf.py --serve build/WebGL --phone portrait --cpu-throttle 4 --throttle-load
+                                                         # スマホの縦画面。読み込みから CPU を 4 倍遅くする
 
 Edge を headless（実 GPU）で開き, ビューポートは 1280×900。音は出さない。マウスは取らない（クリックしない）。
+--phone ならスマホの画面（縦 390×844 / 横 844×390, DPR 3, タッチ, Android の UA）で開き, 通信量の案内の
+「読み込む」とタイトル・選択はタップで, 歩きは左下のスティックを指で倒して進める。保存が無いときの段は
+スマホでは Low。読み込みの時間はローダーを取りに行ってから数える（案内を叩くまでの時間を含めない）。
+CPU を遅くする命令はページのメインスレッドに掛かり, data を展開する Worker には掛からない。
 
 1. 段ごとに新しいプロファイルで開き, タイトルの設定画面で段を変えてからキャンパスに入り,
    立ち（stand）と歩き（walk）をそれぞれ --seconds 秒記録する。
@@ -30,7 +36,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     from kcd_e2e.browser import BROWSERS, default_browser
-    from kcd_e2e.perf import TIERS
+    from kcd_e2e.perf import PHONES, TIERS
 
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -41,6 +47,9 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--uncapped", action="store_true", help="60 fps の上限を外して測る")
     parser.add_argument("--cpu-throttle", type=float, default=1.0,
                         help="読み込みのあと CPU をこの倍率だけ遅くして測る（1 = 掛けない）")
+    parser.add_argument("--throttle-load", action="store_true",
+                        help="--cpu-throttle を開く前から掛け, 読み込みの時間にも効かせる")
+    parser.add_argument("--phone", choices=tuple(PHONES), help="スマホの画面とタッチで測る（縦か横）")
     parser.add_argument("--seconds", type=float, default=10.0, help="立ちと歩きをそれぞれ記録する秒数")
     parser.add_argument("--frozen-rounds", type=int, default=2, help="ポーズ中の段の比べをくり返す回数")
     parser.add_argument("--frozen-seconds", type=float, default=3.0, help="ポーズ中に 1 つの段を記録する秒数")
@@ -54,6 +63,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         parser.error(f"--tiers は {TIERS} から選ぶ: {args.tiers}")
     if args.cpu_throttle < 1:
         parser.error("--cpu-throttle は 1 以上")
+    if args.throttle_load and args.cpu_throttle == 1:
+        parser.error("--throttle-load は --cpu-throttle（1 より大きい倍率）と組み合わせる")
     if args.frozen_rounds < 0 or args.seconds <= 0 or args.frozen_seconds <= 0:
         parser.error("--frozen-rounds は 0 以上, --seconds と --frozen-seconds は正の数")
     args.tiers = tiers
@@ -77,7 +88,7 @@ def main(argv: list[str]) -> int:
     args = parse_args(argv[1:])
 
     from kcd_e2e.browser import launch_config
-    from kcd_e2e.perf import PerfOptions, run_perf, uncapped_args
+    from kcd_e2e.perf import PHONES, PerfOptions, run_perf, uncapped_args
     from kcd_e2e.server import serve_build
     from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
@@ -89,7 +100,9 @@ def main(argv: list[str]) -> int:
     def run(url: str) -> int:
         options = PerfOptions(url=url, out_dir=out_dir, launch=launch, tiers=args.tiers,
                               measure_s=args.seconds, frozen_rounds=args.frozen_rounds,
-                              frozen_s=args.frozen_seconds, cpu_throttle=args.cpu_throttle)
+                              frozen_s=args.frozen_seconds, cpu_throttle=args.cpu_throttle,
+                              throttle_load=args.throttle_load,
+                              phone=PHONES[args.phone] if args.phone else None)
         try:
             result = run_perf(options)
         except (TimeoutError, PlaywrightTimeoutError) as error:
@@ -99,6 +112,10 @@ def main(argv: list[str]) -> int:
         for session in result.sessions:
             heap = session.heap_campus / 2**20 if session.heap_campus else float("nan")
             print(f"{session.tier}: canvas {session.canvas} / heap {heap:.1f} MiB")
+            title = session.heap_title / 2**20 if session.heap_title else float("nan")
+            ready = (session.load or {}).get("ready_after_request")
+            ready_s = ready / 1000 if ready is not None else float("nan")
+            print(f"{session.tier}: タイトルの heap {title:.1f} MiB / ローダーを取りに行ってから起動まで {ready_s:.1f} 秒")
         if result.sessions:
             print(f"起動時: {result.sessions[0].startup_log}")
         print(f"結果: {out_dir}")

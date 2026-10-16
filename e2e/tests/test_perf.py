@@ -2,9 +2,12 @@
 
 集計は数値だけで確かめる。perf_probe.js は SwiftShader のブラウザで小さな WebGL 2 のページを動かし,
 requestAnimationFrame の 1 回ごとに描画コールと三角形を数えられるかを確かめる（Unity のビルドは要らない）。
+スマホの画面では, テンプレートを偽のローダーで開き, 案内を叩いてからの読み込みの時刻を数えられるかを確かめる。
 """
 
 from __future__ import annotations
+
+from pathlib import Path
 
 import pytest
 
@@ -105,6 +108,69 @@ def test_cpu_throttle_command_rejects_rates_below_one():
         perf.cpu_throttle_command(0.5)
 
 
+# ---- スマホの画面 ----
+
+@pytest.mark.parametrize("phone, tier", [(None, "medium"), (perf.PHONES["portrait"], "low")])
+def test_start_tier_is_low_on_phones(phone, tier):
+    assert perf.start_tier(phone) == tier
+
+
+@pytest.mark.parametrize("tier, keys", [
+    ("low", []),
+    ("medium", ["ArrowRight"]),
+    ("high", ["ArrowLeft"]),
+])
+def test_tier_keys_step_from_the_phone_default(tier, keys):
+    assert perf.tier_keys(tier, perf.PHONES["landscape"]) == keys
+
+
+def test_context_options_for_pc_are_the_desktop_page():
+    assert perf.context_options(None, (1280, 900)) == {
+        "viewport": {"width": 1280, "height": 900}, "device_scale_factor": 1, "locale": "ja-JP"}
+
+
+@pytest.mark.parametrize("name, size", [("portrait", (390, 844)), ("landscape", (844, 390))])
+def test_context_options_for_phones_are_a_touch_phone(name, size):
+    options = perf.context_options(perf.PHONES[name], (1280, 900))
+    assert options["viewport"] == {"width": size[0], "height": size[1]}
+    assert options["device_scale_factor"] == 3
+    assert options["is_mobile"] and options["has_touch"]
+    assert options["user_agent"].startswith("Mozilla/5.0") and "Android" in options["user_agent"]
+    assert options["locale"] == "ja-JP"
+
+
+@pytest.mark.parametrize("phone", perf.PHONES.values(), ids=list(perf.PHONES))
+def test_phone_touches_are_on_screen_and_start_the_stick(phone):
+    width, height = phone.viewport
+    for x, y in (phone.title_tap, phone.select_tap, phone.stick_from, phone.stick_to):
+        assert 0 <= x < width and 0 <= y < height
+    # スティックは画面の左 45%・下から 85% の中で指を置く（UIFactory.Touch.BuildStick）。
+    assert phone.stick_from[0] < 0.45 * width and phone.stick_from[1] > 0.15 * height
+    # 真上へ, スティックの届く範囲より長く倒す。範囲は 90 単位で, タッチ用の Canvas は短い辺を 720 に合わせる。
+    assert phone.stick_to[0] == phone.stick_from[0]
+    assert phone.stick_from[1] - phone.stick_to[1] > 90 * min(width, height) / 720
+
+
+def test_slide_points_go_straight_to_the_end():
+    assert perf.slide_points((90, 650), (90, 530), 4) == [(90, 620), (90, 590), (90, 560), (90, 530)]
+    with pytest.raises(ValueError):
+        perf.slide_points((0, 0), (1, 1), 0)
+
+
+def test_load_times_count_from_the_loader_request():
+    times = perf.load_times({"loader_requested": 1200.4, "loader_loaded": 1300.2, "first_progress": 1310.6,
+                             "download_done": 9000.3, "unity_ready": 15000.7})
+    assert times == {"loader_requested": 1200, "loader_loaded": 1300, "first_progress": 1311,
+                     "download_done": 9000, "unity_ready": 15001, "ready_after_request": 13800}
+
+
+def test_load_times_without_a_start_or_an_end_have_no_duration():
+    times = perf.load_times({"loader_requested": None, "loader_loaded": None, "first_progress": None,
+                             "download_done": None, "unity_ready": 15000.7})
+    assert times["loader_requested"] is None and times["ready_after_request"] is None
+    assert perf.load_times({"loader_requested": 10.0, "unity_ready": None})["ready_after_request"] is None
+
+
 # ---- perf_probe.js をブラウザで動かす ----
 
 PAGE = """<!doctype html><canvas id="c" width="64" height="64"></canvas><script>
@@ -138,7 +204,7 @@ requestAnimationFrame(frame);
 
 
 @pytest.fixture(scope="module")
-def page():
+def browser():
     pytest.importorskip("playwright.sync_api")
     from playwright.sync_api import Error as PlaywrightError
     from playwright.sync_api import sync_playwright
@@ -148,17 +214,23 @@ def page():
     config = launch_config(default_browser(), headless=True, gl="software")
     with sync_playwright() as playwright:
         try:
-            browser = playwright.chromium.launch(**config.launch_kwargs())
+            launched = playwright.chromium.launch(**config.launch_kwargs())
         except PlaywrightError as error:
             pytest.skip(f"ブラウザを起動できない: {error}")
         try:
-            context = browser.new_context()
-            context.add_init_script(path=str(perf.PROBE_JS))
-            tab = context.new_page()
-            tab.set_content(PAGE)
-            yield tab
+            yield launched
         finally:
-            browser.close()
+            launched.close()
+
+
+@pytest.fixture(scope="module")
+def page(browser):
+    context = browser.new_context()
+    context.add_init_script(path=str(perf.PROBE_JS))
+    tab = context.new_page()
+    tab.set_content(PAGE)
+    yield tab
+    context.close()
 
 
 def test_probe_counts_draws_and_triangles_per_frame(page):
@@ -182,3 +254,48 @@ def test_probe_stops_recording(page):
     page.wait_for_timeout(200)
     again = page.evaluate(perf.STOP_JS)
     assert first and again == []
+
+
+# ---- スマホの画面で, 案内を叩いてからの読み込みの時刻を数える ----
+
+FAKE_LOADER = Path(__file__).with_name("fake_unity_loader.js").read_text(encoding="utf-8")
+TIMEOUT_MS = 10_000
+
+
+@pytest.fixture(scope="module")
+def template_site(tmp_path_factory):
+    from kcd_e2e.server import serve_build
+    from kcd_e2e.template import write_template_build
+
+    root = write_template_build(tmp_path_factory.mktemp("kcd-template") / "WebGL")
+    with serve_build(root) as base:
+        yield base
+
+
+def test_phone_loads_after_the_notice_and_times_count_from_the_loader(browser, template_site):
+    from kcd_e2e.template import LOADER_FILENAME
+
+    context = browser.new_context(**perf.context_options(perf.PHONES["portrait"], (1280, 900)))
+    try:
+        context.add_init_script(path=str(perf.INSTRUMENT_JS))
+        context.add_init_script("window.__kcdFakeScenario = 'success';")
+        tab = context.new_page()
+        tab.route(f"**/Build/{LOADER_FILENAME}", lambda route: route.fulfill(
+            status=200, content_type="application/javascript", body=FAKE_LOADER))
+        tab.goto(template_site, wait_until="domcontentloaded")
+        assert tab.evaluate("() => devicePixelRatio") == perf.PHONE_DPR
+        # 指だけの端末では「読み込む」を叩くまでローダーを取りに行かない。
+        tab.wait_for_timeout(300)
+        assert tab.evaluate(perf.LOAD_JS)["loader_requested"] is None
+        tab.locator(perf.DATA_NOTICE_BUTTON).tap()
+        tab.wait_for_function("() => window.__kcdFake && window.__kcdFake.release", timeout=TIMEOUT_MS)
+        tab.evaluate("() => window.__kcdFake.release()")
+        tab.wait_for_function(perf.READY_JS, timeout=TIMEOUT_MS)
+        times = perf.load_times(tab.evaluate(perf.LOAD_JS))
+        order = [times[key] for key in
+                 ("loader_requested", "loader_loaded", "first_progress", "download_done", "unity_ready")]
+        assert None not in order and order == sorted(order), times
+        assert times["ready_after_request"] > 0
+        assert tab.evaluate("() => document.querySelector('#unity-canvas').classList.contains('unity-mobile')")
+    finally:
+        context.close()
