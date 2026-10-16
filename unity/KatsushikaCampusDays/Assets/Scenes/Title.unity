@@ -1617,10 +1617,10 @@ RectTransform:
   - {fileID: 849013398}
   m_Father: {fileID: 1367121855}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: -40}
-  m_SizeDelta: {x: 820, y: 460}
+  m_SizeDelta: {x: -140, y: -160}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &696549984
 GameObject:
@@ -2949,8 +2949,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3056800d07264283a732777ee98d942e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: KCD.Runtime::KCD.FitInCanvas
-  _reflow: 0
-  _portraitHeight: 0
+  _reflow: 1
+  _portraitHeight: 1200
 --- !u!1 &1376073271
 GameObject:
   m_ObjectHideFlags: 0
@@ -3774,10 +3774,10 @@ RectTransform:
   - {fileID: 782903290}
   m_Father: {fileID: 1367121855}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 1}
-  m_AnchorMax: {x: 0.5, y: 1}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: -28}
-  m_SizeDelta: {x: 900, y: 70}
+  m_SizeDelta: {x: -60, y: 70}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!43 &1823629486
 Mesh:
