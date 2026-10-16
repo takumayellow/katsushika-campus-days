@@ -33,6 +33,18 @@ namespace KCD.Editor
         /// <summary>縦長の画面での会話の枠の高さ。幅 800 では 1 行が 20 字ほどになるので、6 行入れる。</summary>
         private const float PortraitDialogueHeight = 440f;
 
+        /// <summary>
+        /// 縦長の画面でのクエストログの高さ。幅 1000 の枠を幅 800 に縮めると本文が 11 px ほどになっていたので、
+        /// 縮めずに幅を狭めて折り返し、増えた行を縦に入れる。iPhone SE の縦（Canvas の高さ 1423）にも収まる。
+        /// </summary>
+        private const float PortraitQuestLogHeight = 1100f;
+
+        /// <summary>クエストログの本文の大きさ。受注中のものが多くて枠に入らないときは、下限まで小さくする。</summary>
+        private const float QuestLogFontSize = 28f;
+
+        /// <summary>クエストログの本文を小さくするときの下限。</summary>
+        private const float QuestLogMinFontSize = 18f;
+
         /// <summary>会話の枠の上に出す話し手の顔の大きさ。</summary>
         private const float DialoguePortraitSize = 200f;
 
@@ -164,9 +176,12 @@ namespace KCD.Editor
             RectTransform rect = Rect(parent, "QuestLog", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
                 Vector2.zero, new Vector2(1000f, 700f));
             Backdrop(rect, new Color(0.05f, 0.07f, 0.11f, 0.92f));
-            KeepInCanvas(rect);
+            ReflowInCanvas(rect, PortraitQuestLogHeight);
 
-            TMP_Text body = Label(rect, "Body", string.Empty, 28f, TextAlignmentOptions.TopLeft);
+            TMP_Text body = Label(rect, "Body", string.Empty, QuestLogFontSize, TextAlignmentOptions.TopLeft);
+            body.enableAutoSizing = true;
+            body.fontSizeMax = QuestLogFontSize;
+            body.fontSizeMin = QuestLogMinFontSize;
             rect.gameObject.SetActive(false);
 
             QuestLogView view = host.AddComponent<QuestLogView>();
