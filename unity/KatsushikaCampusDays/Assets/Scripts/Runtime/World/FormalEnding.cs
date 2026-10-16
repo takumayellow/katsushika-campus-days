@@ -76,6 +76,9 @@ namespace KCD
         /// <summary>下段の案内を指のときの文面で書いているか。入力の種類が変わったら書き直す。</summary>
         private bool _choiceForTouch;
 
+        /// <summary>本文の折り返しを縦長の画面に合わせて決めたか。画面の向きが変わったら決め直す。</summary>
+        private bool _wrapForPortrait;
+
         /// <summary>ページを出している最中か。</summary>
         public bool IsShowing => _showing;
 
@@ -301,6 +304,11 @@ namespace KCD
                 PaintChoice(L.IsEnglish);
             }
 
+            if (_showing && ScreenShape.IsPortrait != _wrapForPortrait)
+            {
+                ApplyWrap();
+            }
+
             if (ShouldAdvance(_showing, Time.unscaledTime - _openedAt,
                     KCDInput.SubmitPressed || KCDInput.InteractPressed))
             {
@@ -452,8 +460,7 @@ namespace KCD
             if (_body != null)
             {
                 _body.text = _pages != null && _page < _pages.Length ? _pages[_page] : string.Empty;
-                // クレジットは長い 1 行が多く、折り返すと 1 文字だけ次の行に落ちる。折り返さずに文字を縮める。
-                _body.textWrappingMode = _page == PageCount - 1 ? TextWrappingModes.NoWrap : TextWrappingModes.Normal;
+                ApplyWrap();
             }
 
             PaintChoice(english);
@@ -467,6 +474,26 @@ namespace KCD
             if (_showing)
             {
                 NextPage();
+            }
+        }
+
+        /// <summary>
+        /// page の本文を折り返すか。クレジットは長い 1 行が多く、折り返すと 1 文字だけ次の行に落ちるので、
+        /// 横長では折り返さずに文字を縮める。縦長の画面は幅が狭く、折り返さないと文字が 8 px ほどまで縮む (#187)。
+        /// </summary>
+        public static bool WrapsBody(int page, bool portrait)
+        {
+            return portrait || page < PageCount - 1;
+        }
+
+        private void ApplyWrap()
+        {
+            _wrapForPortrait = ScreenShape.IsPortrait;
+            if (_body != null)
+            {
+                _body.textWrappingMode = WrapsBody(_page, _wrapForPortrait)
+                    ? TextWrappingModes.Normal
+                    : TextWrappingModes.NoWrap;
             }
         }
 

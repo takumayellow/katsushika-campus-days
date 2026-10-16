@@ -53,21 +53,30 @@ namespace KCD.Editor
             return view;
         }
 
+        /// <summary>
+        /// 縦長の画面でのクレジットの枠の高さ (#187)。幅 1240 の枠を Canvas の幅 800 に縮めると補足の行が 6 px ほどになるので、
+        /// 縦長では縮めずに幅を合わせ、折り返して増えた行をこの高さに入れる。
+        /// </summary>
+        public const float PortraitCreditsHeight = 1300f;
+
         /// <summary>クレジットパネル。閉じた状態で置く。</summary>
         public static CreditsView BuildCredits(GameObject host, RectTransform parent)
         {
             RectTransform rect = Rect(parent, "Credits", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
                 Vector2.zero, new Vector2(1240f, 720f));
             Backdrop(rect, PanelDark);
-            KeepInCanvas(rect);
+            ReflowInCanvas(rect, PortraitCreditsHeight);
 
-            RectTransform headingBox = Rect(rect, "Heading", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-                new Vector2(0f, -28f), new Vector2(1100f, 70f));
+            // 見出しと本文は枠に合わせて伸び縮みさせる。縦持ちでは枠の幅と高さが変わる（FitInCanvas）。
+            RectTransform headingBox = Rect(rect, "Heading", new Vector2(0f, 1f), new Vector2(0.5f, 1f),
+                new Vector2(0f, -28f), new Vector2(-140f, 70f));
+            headingBox.anchorMax = Vector2.one;
             TMP_Text heading = Label(headingBox, "Label", "クレジット", 44f, TextAlignmentOptions.Center);
             heading.fontStyle = FontStyles.Bold;
 
-            RectTransform bodyBox = Rect(rect, "Body", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                new Vector2(0f, -44f), new Vector2(1120f, 560f));
+            RectTransform bodyBox = Stretch(rect, "Body");
+            bodyBox.offsetMin = new Vector2(60f, 36f);
+            bodyBox.offsetMax = new Vector2(-60f, -124f);
             TMP_Text body = Label(bodyBox, "Label", string.Empty, 26f, TextAlignmentOptions.TopLeft);
 
             rect.gameObject.SetActive(false);

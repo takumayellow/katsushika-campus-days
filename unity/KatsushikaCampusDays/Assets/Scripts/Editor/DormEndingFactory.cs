@@ -43,22 +43,26 @@ namespace KCD.Editor
             var center = new Vector2(0.5f, 0.5f);
             RectTransform rect = UIFactory.Rect(parent, "DormEnding", center, center, Vector2.zero, PanelSize);
             UIFactory.Backdrop(rect, PanelDark);
-            UIFactory.KeepInCanvas(rect);
+            // 縦持ちのスマホでは縮めずに幅を Canvas に合わせ、本文を折り返す (#187)。高さは組んだままで入る。
+            UIFactory.ReflowInCanvas(rect);
 
-            RectTransform headingBox = UIFactory.Rect(rect, "Heading", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-                new Vector2(0f, -36f), new Vector2(900f, 72f));
+            RectTransform headingBox = UIFactory.Rect(rect, "Heading", new Vector2(0f, 1f), new Vector2(0.5f, 1f),
+                new Vector2(0f, -36f), new Vector2(-100f, 72f));
+            headingBox.anchorMax = Vector2.one;
             TMP_Text heading = UIFactory.Label(headingBox, "Label",
                 DormEnding.HeadingText(false), 44f, TextAlignmentOptions.Center);
             heading.fontStyle = FontStyles.Bold;
 
-            RectTransform bodyBox = UIFactory.Rect(rect, "Body", center, center,
-                new Vector2(0f, -6f), new Vector2(880f, 340f));
+            RectTransform bodyBox = UIFactory.Stretch(rect, "Body");
+            bodyBox.offsetMin = new Vector2(60f, 104f);
+            bodyBox.offsetMax = new Vector2(-60f, -116f);
             TMP_Text body = UIFactory.Label(bodyBox, "Label", string.Empty, 32f, TextAlignmentOptions.Center);
             // 本文の中で時刻だけ <size=200%> に拡がる。色は本文と同じにせず、時計として目立たせる。
             body.color = ClockGold;
 
-            RectTransform choiceBox = UIFactory.Rect(rect, "Choice", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
-                new Vector2(0f, 34f), new Vector2(900f, 56f));
+            RectTransform choiceBox = UIFactory.Rect(rect, "Choice", Vector2.zero, new Vector2(0.5f, 0f),
+                new Vector2(0f, 34f), new Vector2(-100f, 56f));
+            choiceBox.anchorMax = new Vector2(1f, 0f);
             TMP_Text choice = UIFactory.Label(choiceBox, "Label",
                 DormEnding.ChoiceText(false), 30f, TextAlignmentOptions.Center);
             choice.color = Muted;
