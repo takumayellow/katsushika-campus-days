@@ -92,6 +92,9 @@ namespace KCD
         /// <summary>最後に称号を数えたときの DayStats.Version。</summary>
         private int _achievementStatsVersion = -1;
 
+        /// <summary>最後に称号を数えたときの EndingProgress.Version。</summary>
+        private int _endingProgressVersion = -1;
+
         /// <summary>購読している QuestSystem。付け替えのときに外す。</summary>
         private QuestSystem _subscribedQuests;
 
@@ -240,7 +243,8 @@ namespace KCD
         /// </summary>
         private void RefreshAchievements(bool announce)
         {
-            if (!_achievementsDirty && _achievementStatsVersion == DayStats.Version)
+            if (!_achievementsDirty && _achievementStatsVersion == DayStats.Version &&
+                _endingProgressVersion == EndingProgress.Version)
             {
                 return;
             }
@@ -248,6 +252,7 @@ namespace KCD
             _achievementsDirty = false;
             QuestRewards.GrantCompleted(Quests);
             _achievementStatsVersion = DayStats.Version;
+            _endingProgressVersion = EndingProgress.Version;
 
             List<CatalogAchievement> unlocked =
                 Achievements.Refresh(CollectibleCatalog.Instance, AchievementRecord.FromDayStats(Quests));

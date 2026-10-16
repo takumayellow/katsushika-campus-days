@@ -10,7 +10,8 @@ namespace KCD
     public readonly struct AchievementRecord
     {
         public AchievementRecord(IEnumerable<string> collected, IEnumerable<string> photos, int buildingCount,
-            IEnumerable<string> talked, IEnumerable<QuestData> quests, Func<string, bool> isCompleted)
+            IEnumerable<string> talked, IEnumerable<QuestData> quests, Func<string, bool> isCompleted,
+            IEnumerable<string> endingsSeen = null)
         {
             Collected = collected;
             Photos = photos;
@@ -18,6 +19,7 @@ namespace KCD
             Talked = talked;
             Quests = quests;
             IsCompleted = isCompleted;
+            EndingsSeen = endingsSeen;
         }
 
         /// <summary>拾った物の id（一覧に無い物も混ざってよい）。</summary>
@@ -38,7 +40,12 @@ namespace KCD
         /// <summary>クエストを達成済みか。</summary>
         public Func<string, bool> IsCompleted { get; }
 
-        /// <summary>いまの DayStats と QuestSystem から作る。quests が null ならクエストの条件はどれも満たさない。</summary>
+        /// <summary>見たエンドの id (#41)。ending_seen の判定に使う。null なら何も見ていない。</summary>
+        public IEnumerable<string> EndingsSeen { get; }
+
+        /// <summary>
+        /// いまの DayStats・EndingProgress と QuestSystem から作る。quests が null ならクエストの条件はどれも満たさない。
+        /// </summary>
         public static AchievementRecord FromDayStats(QuestSystem quests)
         {
             Func<string, bool> isCompleted = null;
@@ -48,12 +55,12 @@ namespace KCD
             }
 
             return new AchievementRecord(DayStats.CollectedIds, DayStats.PhotoSpotIds, DayStats.BuildingCount,
-                DayStats.TalkedIds, quests?.All, isCompleted);
+                DayStats.TalkedIds, quests?.All, isCompleted, EndingProgress.SeenIds);
         }
     }
 
     /// <summary>
-    /// collectibles.json の称号 14 件を判定し、獲得済みを覚えておく (#65)。
+    /// collectibles.json の称号 15 件を判定し、獲得済みを覚えておく (#65)。
     /// 以前は称号を読むコードが無く、クエストの報酬の 4 件がトーストに名前を出すだけだった。
     ///
     /// 数は結果画面と同じ数え方をする: 隠しアイテムは一覧の source = hidden だけ、写真は一覧の ps_ だけ。
@@ -69,6 +76,9 @@ namespace KCD
         public const string NpcCount = "npc_count";
         public const string QuestCount = "quest_count";
         public const string QuestComplete = "quest_complete";
+
+        /// <summary>見たエンドの id が TargetId と同じなら満たす (#41)。見たエンドは <see cref="EndingProgress"/>。</summary>
+        public const string EndingSeen = "ending_seen";
 
         /// <summary>quest_count の scope がこれなら、サブクエスト（side）を数えない。</summary>
         public const string ScopeMain = "main";
@@ -137,9 +147,30 @@ namespace KCD
                 case QuestComplete:
                     return !string.IsNullOrEmpty(achievement.TargetId) && record.IsCompleted != null &&
                            record.IsCompleted(achievement.TargetId);
+                case EndingSeen:
+                    return !string.IsNullOrEmpty(achievement.TargetId) && Contains(record.EndingsSeen, achievement.TargetId);
                 default:
                     return false;
             }
+        }
+
+        /// <summary>id の並びに入っているか。null は空として扱う。</summary>
+        private static bool Contains(IEnumerable<string> ids, string id)
+        {
+            if (ids == null)
+            {
+                return false;
+            }
+
+            foreach (string candidate in ids)
+            {
+                if (string.Equals(candidate, id, StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>数の条件。0 以下の値は「何もしなくても獲得」にならないよう満たさない扱いにする。</summary>

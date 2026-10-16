@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using NUnit.Framework;
@@ -6,9 +7,10 @@ using UnityEngine;
 namespace KCD.Tests
 {
     /// <summary>
-    /// 称号 14 件の判定 (#65, #175)。以前は collectibles.json の achievements を読むコードが無く、
+    /// 称号 15 件の判定 (#65, #175, #41)。以前は collectibles.json の achievements を読むコードが無く、
     /// クエストの報酬の 4 件がトーストに名前を出すだけで、残りの 9 件は取る手段が無かった。
     /// 判定は実データの条件で見る。数え方は結果画面と同じ（一覧に載った hidden と ps_ だけ）。
+    /// 見たエンド（ending_seen）は EndingProgress が持つので、ゲームの記録から作る道は空のフォルダに向けて通す。
     /// </summary>
     public sealed class AchievementBookTests
     {
@@ -83,11 +85,11 @@ namespace KCD.Tests
 
         private static AchievementRecord Record(IEnumerable<string> collected = null, IEnumerable<string> photos = null,
             int buildings = 0, IEnumerable<string> talked = null, IEnumerable<QuestData> quests = null,
-            ICollection<string> completed = null)
+            ICollection<string> completed = null, IEnumerable<string> endingsSeen = null)
         {
             return new AchievementRecord(collected ?? new string[0], photos ?? new string[0], buildings,
                 talked ?? new string[0], quests ?? new List<QuestData>(),
-                id => completed != null && completed.Contains(id));
+                id => completed != null && completed.Contains(id), endingsSeen);
         }
 
         private static bool Met(CollectibleCatalog catalog, string id, AchievementRecord record)
@@ -95,16 +97,29 @@ namespace KCD.Tests
             return AchievementBook.IsMet(Find(catalog, id), catalog, record);
         }
 
+        private string _folder;
+
         [SetUp]
         public void SetUp()
         {
             DayStats.Reset();
+
+            // FromDayStats は見たエンドの記録を読む。この端末で遊んだ記録（persistentDataPath）に結果が左右されないよう、
+            // 空のフォルダに向ける。EndingProgress は置き場が変わると読み直す。
+            _folder = Path.Combine(Path.GetTempPath(), "kcd-editmode-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(_folder);
+            SaveSystem.DirectoryOverride = _folder;
         }
 
         [TearDown]
         public void TearDown()
         {
             DayStats.Reset();
+            SaveSystem.DirectoryOverride = null;
+            if (Directory.Exists(_folder))
+            {
+                Directory.Delete(_folder, true);
+            }
         }
 
         [Test]
@@ -256,7 +271,7 @@ namespace KCD.Tests
         }
 
         [Test]
-        public void AllFourteen_CanBeUnlocked()
+        public void AllFifteen_CanBeUnlocked()
         {
             CollectibleCatalog catalog = Catalog();
             List<QuestData> quests = Quests();
@@ -272,7 +287,8 @@ namespace KCD.Tests
                 DayEndEvaluator.DefaultBuildingTotal,
                 Find(catalog, "ach_friends").Npcs,
                 quests,
-                completed);
+                completed,
+                new[] { DormRoute.EndingId });
 
             var book = new AchievementBook();
             List<CatalogAchievement> unlocked = book.Refresh(catalog, everything);
@@ -287,7 +303,7 @@ namespace KCD.Tests
             }
 
             Assert.IsEmpty(missing, "取れない称号: " + string.Join(", ", missing));
-            Assert.AreEqual(14, unlocked.Count);
+            Assert.AreEqual(15, unlocked.Count);
         }
 
         [Test]
@@ -314,11 +330,65 @@ namespace KCD.Tests
                 "{\"achievements\":[" +
                 "{\"id\":\"ach_zero\",\"condition\":{\"type\":\"collect_count\",\"value\":0}}," +
                 "{\"id\":\"ach_odd\",\"condition\":{\"type\":\"dance_count\",\"value\":1}}," +
-                "{\"id\":\"ach_none\",\"condition\":{\"type\":\"quest_complete\"}}]}");
+                "{\"id\":\"ach_none\",\"condition\":{\"type\":\"quest_complete\"}}," +
+                "{\"id\":\"ach_no_ending\",\"condition\":{\"type\":\"ending_seen\"}}]}");
 
-            Assert.IsEmpty(new AchievementBook().Refresh(catalog, Record(completed: new HashSet<string> { "" })));
+            Assert.IsEmpty(new AchievementBook().Refresh(catalog,
+                Record(completed: new HashSet<string> { "" }, endingsSeen: new[] { "" })));
             Assert.IsFalse(AchievementBook.IsMet(null, catalog, Record()));
             Assert.IsFalse(AchievementBook.IsMet(catalog.Achievements[0], null, Record()));
+        }
+
+        [Test]
+        public void EndingSeen_NeedsTheEndingOfTheAchievement()
+        {
+            CollectibleCatalog catalog = Catalog();
+
+            Assert.IsFalse(Met(catalog, "ach_skip_school", Record()));
+            Assert.IsFalse(Met(catalog, "ach_skip_school", Record(endingsSeen: new[] { "end_other" })));
+            Assert.IsTrue(Met(catalog, "ach_skip_school", Record(endingsSeen: new[] { DormRoute.EndingId })));
+
+            // id の大文字小文字は区別する（ファイルに書かれた id と同じ並びだけを見たことにする）。
+            Assert.IsFalse(Met(catalog, "ach_skip_school", Record(endingsSeen: new[] { DormRoute.EndingId.ToUpperInvariant() })));
+        }
+
+        [Test]
+        public void SkipSchool_IsTiedToTheDormEnding()
+        {
+            CatalogAchievement achievement = Find(Catalog(), "ach_skip_school");
+
+            Assert.AreEqual(AchievementBook.EndingSeen, achievement.ConditionType);
+            Assert.AreEqual(DormRoute.EndingId, achievement.TargetId, "称号の条件が寮のエンドの id とずれた");
+        }
+
+        [Test]
+        public void FromDayStats_ReadsTheEndingRecord()
+        {
+            CollectibleCatalog catalog = Catalog();
+            Assert.IsFalse(Met(catalog, "ach_skip_school", AchievementRecord.FromDayStats(null)));
+
+            EndingProgress.Note(DormRoute.EndingId);
+
+            Assert.IsTrue(Met(catalog, "ach_skip_school", AchievementRecord.FromDayStats(null)));
+        }
+
+        [Test]
+        public void SeenEndings_SurviveANewGame()
+        {
+            // 見たエンドはこの端末の記録で、プレイごとの記録ではない。「はじめから」は称号と DayStats を空にするが、
+            // ファイルには触れないので、次に数えたときに自主休講はまた獲得になる。
+            CollectibleCatalog catalog = Catalog();
+            var book = new AchievementBook();
+            EndingProgress.Note(DormRoute.EndingId);
+            Assert.AreEqual(1, book.Refresh(catalog, AchievementRecord.FromDayStats(null)).Count);
+
+            book.Reset();
+            DayStats.Reset();
+
+            Assert.IsFalse(book.IsUnlocked("ach_skip_school"));
+            List<CatalogAchievement> again = book.Refresh(catalog, AchievementRecord.FromDayStats(null));
+            Assert.AreEqual(1, again.Count);
+            Assert.AreEqual("ach_skip_school", again[0].Id);
         }
 
         [Test]
