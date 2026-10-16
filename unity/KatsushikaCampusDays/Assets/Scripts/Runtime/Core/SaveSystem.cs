@@ -45,6 +45,8 @@ namespace KCD
             data.Collected = DayStats.SortedCollectedIds();
             data.PhotoSpots = DayStats.SortedPhotoSpotIds();
             data.Talked = DayStats.SortedTalkedIds();
+            data.Affinity = NpcAffinity.SortedValues();
+            data.AnsweredChoices = NpcAffinity.SortedAnswered();
 
             var player = UnityEngine.Object.FindAnyObjectByType<PlayerController>();
             if (player != null)
@@ -252,6 +254,7 @@ namespace KCD
             manager.DayNumber = data.DayNumber;
 
             DayStats.Restore(data.Buildings, data.Collected, data.PhotoSpots, data.Talked);
+            NpcAffinity.Restore(data.Affinity, data.AnsweredChoices);
             manager.Quests?.NoteHeldFromSave(data.Collected);
             manager.Quests?.Restore(data.Quests);
 

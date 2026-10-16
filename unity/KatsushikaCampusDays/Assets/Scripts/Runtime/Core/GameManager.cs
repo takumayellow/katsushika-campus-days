@@ -187,6 +187,7 @@ namespace KCD
 
             // 探索率のもと。static なのでアプリを起動している間ずっと残る（シーンでは消えない）。
             DayStats.Reset();
+            NpcAffinity.Reset();
 
             // 「つづきから」を選びかけて読んだセーブが残っていたら、キャンパスで当てないよう捨てる。
             SaveSystem.DiscardPending();

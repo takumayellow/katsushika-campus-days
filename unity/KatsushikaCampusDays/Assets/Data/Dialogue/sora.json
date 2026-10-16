@@ -90,6 +90,52 @@
       ]
     },
     {
+      "id": "t_choice",
+      "requiresCompletedQuest": "q_coffee",
+      "once": true,
+      "lines": [
+        {
+          "text": "ねえ。ゼミの相談をひとりでするのって、変だと思う？",
+          "text_en": "Hey. Do you think it's weird to plan seminar stuff alone?"
+        }
+      ],
+      "choices": [
+        {
+          "text": "変じゃないです。考えをまとめるのは一人でもできます。",
+          "text_en": "It's not weird. You can sort out your thoughts on your own.",
+          "affinity": 2,
+          "lines": [
+            {
+              "text": "……そう言ってくれる人、初めてかも。ありがと。",
+              "text_en": "...You might be the first person to say that. Thanks."
+            }
+          ]
+        },
+        {
+          "text": "誰かを誘えばいいのでは。",
+          "text_en": "Why not invite someone?",
+          "affinity": 1,
+          "lines": [
+            {
+              "text": "それができたら苦労しないの。……でも、覚えとく。",
+              "text_en": "If I could, I wouldn't be struggling. ...But I'll keep it in mind."
+            }
+          ]
+        },
+        {
+          "text": "ラテ、冷めてません？",
+          "text_en": "Isn't your latte cold?",
+          "affinity": 0,
+          "lines": [
+            {
+              "text": "冷めた。あなたのせいじゃないけど。",
+              "text_en": "It is. Not your fault, though."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "t_sq_lab_notebook_active",
       "requiresActiveQuest": "q_sq_lab_notebook",
       "lines": [
@@ -124,6 +170,21 @@
         {
           "text": "……条件を変えて、何回も試した結果。",
           "text_en": "...The result of changing one condition and trying, over and over."
+        }
+      ]
+    },
+    {
+      "id": "t_friend",
+      "requiresAffinity": 2,
+      "once": true,
+      "lines": [
+        {
+          "text": "あ、きた。今日はベンチ、半分あけてある。",
+          "text_en": "Oh, you came. I left half the bench open today."
+        },
+        {
+          "text": "……別に、あなたのためってわけじゃないけど。",
+          "text_en": "...Not that it's for you or anything."
         }
       ]
     },

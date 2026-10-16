@@ -20,7 +20,24 @@ namespace KCD
 
         private DialogueTopic _topic;
         private string _topicKey = string.Empty;
+
+        /// <summary>話しかけた NPC の会話データの id。好感度はこの id で動かす。NPC の決まらない会話（メモ）では空。</summary>
+        private string _dialogueId = string.Empty;
+
+        /// <summary>送っている行。話題の行か、選んだ選択肢の返事の行。</summary>
+        private List<DialogueLine> _lines;
         private int _lineIndex;
+
+        /// <summary>選択肢を出していて、まだ選んでいないか (#9)。</summary>
+        private bool _choosing;
+        private int _choiceIndex;
+        private int _choicesShownFrame = -1;
+
+        /// <summary>
+        /// 選択肢を出したあとに指を新しく置いたか。最後の行を送った指を離したときの叩きで選ばないための印。
+        /// 会話の板は指を置くと E になるので、選択肢を出したフレームより後の E で立てる。
+        /// </summary>
+        private bool _tapArmed;
         private float _lineStartedAt;
 
         /// <summary>シーンに 1 つだけ存在する。</summary>
@@ -31,7 +48,20 @@ namespace KCD
 
         /// <summary>表示中の行。会話していなければ null。</summary>
         public DialogueLine CurrentLine =>
-            _topic != null && _lineIndex < _topic.Lines.Count ? _topic.Lines[_lineIndex] : null;
+            _topic != null && !_choosing && _lines != null && _lineIndex < _lines.Count ? _lines[_lineIndex] : null;
+
+        /// <summary>選択肢を出しているか (#9)。</summary>
+        public bool IsChoosing => _choosing;
+
+        /// <summary>いま選んでいる選択肢の番号。</summary>
+        public int ChoiceIndex => _choiceIndex;
+
+        /// <summary>出している選択肢。選ばせていなければ空。</summary>
+        public IReadOnlyList<DialogueChoice> Choices =>
+            _choosing ? _topic.Choices : (IReadOnlyList<DialogueChoice>)Array.Empty<DialogueChoice>();
+
+        /// <summary>選択肢を出したときと、選んでいる選択肢が変わったとき。</summary>
+        public event Action ChoicesChanged;
 
         /// <summary>行が切り替わったとき。</summary>
         public event Action<DialogueLine> LineChanged;
@@ -110,9 +140,20 @@ namespace KCD
                 return;
             }
 
+            if (_choosing && InputMode.IsTouch && KCDInput.InteractPressed && Time.frameCount > _choicesShownFrame)
+            {
+                _tapArmed = true;
+            }
+
             // 開いた直後の 1 フレームで送られてしまわないよう、わずかに間を置く。
             if (Time.unscaledTime - _lineStartedAt < 0.15f)
             {
+                return;
+            }
+
+            if (_choosing)
+            {
+                UpdateChoosing();
                 return;
             }
 
@@ -146,6 +187,7 @@ namespace KCD
             }
 
             _topic = chosen;
+            _lines = chosen.Lines;
             _lineIndex = 0;
             _lineStartedAt = Time.unscaledTime;
 
@@ -154,7 +196,9 @@ namespace KCD
 
             // talk の報告は封鎖のあと。「〜と話す」で達成したときに PlayerAnimatorDriver が会話中だと分かって手を振らない。
             _topic = ReportTalkAndSelect(data, GameManager.Instance.Quests, _spentTopics, chosen);
+            _lines = _topic.Lines;
             _topicKey = data.Id + "/" + _topic.Id;
+            _dialogueId = data.Id;
             LineChanged?.Invoke(CurrentLine);
             return true;
         }
@@ -193,6 +237,12 @@ namespace KCD
                 string key = data.Id + "/" + topic.Id;
 
                 if (topic.Once && spentTopics != null && spentTopics.Contains(key))
+                {
+                    continue;
+                }
+
+                // 選択肢に答えた話題はセーブに載るので、ロードのあとも二度出さない（好感度を何度も上げさせない）(#9)。
+                if (topic.HasChoices && NpcAffinity.HasAnswered(key))
                 {
                     continue;
                 }
@@ -242,6 +292,16 @@ namespace KCD
                 if (topic.HasItemCondition)
                 {
                     if (!ItemConditionMet(topic, hiddenCount, hasItem))
+                    {
+                        continue;
+                    }
+
+                    conditional = true;
+                }
+
+                if (topic.RequiresAffinity > 0)
+                {
+                    if (NpcAffinity.Get(data.Id) < topic.RequiresAffinity)
                     {
                         continue;
                     }
@@ -333,6 +393,16 @@ namespace KCD
                     continue;
                 }
 
+                if (topic.RequiresAffinity > 0 && NpcAffinity.Get(data.Id) < topic.RequiresAffinity)
+                {
+                    continue;
+                }
+
+                if (topic.HasChoices && NpcAffinity.HasAnswered(data.Id + "/" + topic.Id))
+                {
+                    continue;
+                }
+
                 return topic;
             }
 
@@ -384,7 +454,9 @@ namespace KCD
             }
 
             _topic = topic;
+            _lines = topic.Lines;
             _topicKey = string.Empty;
+            _dialogueId = string.Empty;
             _lineIndex = 0;
             _lineStartedAt = Time.unscaledTime;
             KCDInput.Block(this);
@@ -406,13 +478,14 @@ namespace KCD
             }
 
             _topicKey = dialogueId + "/" + topic.Id;
+            _dialogueId = dialogueId;
             return true;
         }
 
-        /// <summary>次の行へ。最後まで行けば会話を閉じる。</summary>
+        /// <summary>次の行へ。話題の最後の行のあとは選択肢があれば選ばせ、無ければ（返事の最後の行のあとも）会話を閉じる。</summary>
         public void Advance()
         {
-            if (_topic == null)
+            if (_topic == null || _choosing)
             {
                 return;
             }
@@ -420,13 +493,126 @@ namespace KCD
             _lineIndex++;
             _lineStartedAt = Time.unscaledTime;
 
-            if (_lineIndex >= _topic.Lines.Count)
+            if (_lineIndex < _lines.Count)
             {
-                Finish();
+                LineChanged?.Invoke(CurrentLine);
                 return;
             }
 
+            if (_lines == _topic.Lines && _topic.HasChoices)
+            {
+                _choosing = true;
+                _choiceIndex = 0;
+                _choicesShownFrame = Time.frameCount;
+                _tapArmed = false;
+                ChoicesChanged?.Invoke();
+                return;
+            }
+
+            Finish();
+        }
+
+        /// <summary>
+        /// 選択肢の入力。↑↓ で選び、E / Enter で決める。指で遊んでいるときは選択肢を叩いて決める
+        /// （画面のどこを叩いても E になる板があるので、E では決めない）。Esc は選ばずに閉じる。
+        /// </summary>
+        private void UpdateChoosing()
+        {
+            int step = KCDInput.MenuVertical;
+            if (step != 0)
+            {
+                _choiceIndex = StepChoice(_choiceIndex, step, _topic.Choices.Count);
+                AudioManager.Instance?.PlayUi("ui_move");
+                ChoicesChanged?.Invoke();
+            }
+            else if (!InputMode.IsTouch && (KCDInput.InteractPressed || KCDInput.SubmitPressed))
+            {
+                Choose(_choiceIndex);
+            }
+            else if (KCDInput.MenuPressed)
+            {
+                Finish();
+            }
+        }
+
+        /// <summary>上下で 1 つずらした先。下が +1 で、端から先は反対の端へ回り込む。</summary>
+        public static int StepChoice(int index, int step, int count)
+        {
+            if (count <= 0)
+            {
+                return 0;
+            }
+
+            return ((index + step) % count + count) % count;
+        }
+
+        /// <summary>指で選択肢を叩いたとき。選択肢を出したあとに置いた指でなければ選ばない。</summary>
+        public bool TapChoice(int index)
+        {
+            return _tapArmed && Choose(index);
+        }
+
+        /// <summary>
+        /// 選択肢を選ぶ。好感度を動かし、この話題を答えた話題として覚え、返事の行を送り始める（無ければ閉じる）。
+        /// 選ばせていないときと範囲の外は何もせず false。
+        /// </summary>
+        public bool Choose(int index)
+        {
+            if (!_choosing || index < 0 || index >= _topic.Choices.Count)
+            {
+                return false;
+            }
+
+            DialogueChoice choice = _topic.Choices[index];
+            _choosing = false;
+            _tapArmed = false;
+            _choiceIndex = index;
+            AudioManager.Instance?.PlayUi("ui_confirm");
+
+            ApplyChoice(_dialogueId, _topicKey, choice);
+            if (!string.IsNullOrEmpty(choice.SetsFlag))
+            {
+                _flags.Add(choice.SetsFlag);
+                GameManager.Instance.Quests?.ReportFlag(choice.SetsFlag);
+            }
+
+            _lines = choice.Lines;
+            _lineIndex = 0;
+            _lineStartedAt = Time.unscaledTime;
+            if (_lines.Count == 0)
+            {
+                Finish();
+                return true;
+            }
+
             LineChanged?.Invoke(CurrentLine);
+            return true;
+        }
+
+        /// <summary>選んだ選択肢の好感度を NPC に足し、話題を答えた話題として覚える（テストから呼ぶ）。</summary>
+        public static void ApplyChoice(string dialogueId, string topicKey, DialogueChoice choice)
+        {
+            if (choice == null)
+            {
+                return;
+            }
+
+            NpcAffinity.Add(dialogueId, choice.Affinity);
+            NpcAffinity.NoteAnswered(topicKey);
+        }
+
+        /// <summary>
+        /// 閉じたときに once の話題を使い終えたことにするか。選択肢の話題は答えたときだけ使い終える
+        /// （選ばずに Esc で閉じたら、次に話しかけたときにもう一度聞く）。
+        /// </summary>
+        public static bool SpendsOnFinish(DialogueTopic topic, string topicKey)
+        {
+            if (topic == null || !topic.Once || string.IsNullOrEmpty(topicKey))
+            {
+                return false;
+            }
+
+            return !topic.HasChoices || NpcAffinity.HasAnswered(topicKey);
         }
 
         private void Finish()
@@ -435,14 +621,19 @@ namespace KCD
             string finishedKey = _topicKey;
             _topic = null;
             _topicKey = string.Empty;
+            _dialogueId = string.Empty;
+            _lines = null;
             _lineIndex = 0;
+            _choosing = false;
+            _choiceIndex = 0;
+            _tapArmed = false;
             KCDInput.Unblock(this);
             // 最終行を送った Enter / E を、同じフレームで InteractionPrompt が拾って会話を再開しないようにする。
             KCDInput.MarkModalClosed();
 
             if (finished != null)
             {
-                if (finished.Once && !string.IsNullOrEmpty(finishedKey))
+                if (SpendsOnFinish(finished, finishedKey))
                 {
                     _spentTopics.Add(finishedKey);
                 }
