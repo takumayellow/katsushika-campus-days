@@ -211,7 +211,7 @@ namespace KCD.Editor
         private static void BuildElevatorMenu(GameObject host, RectTransform parent)
         {
             RectTransform rect = Rect(parent, "Elevator", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                Vector2.zero, new Vector2(700f, 540f));
+                Vector2.zero, ElevatorMenu.FrameSize(false, false));
             Backdrop(rect, new Color(0.04f, 0.05f, 0.09f, 0.94f));
             KeepInCanvas(rect);
 

@@ -12,6 +12,16 @@ namespace KCD
     /// </summary>
     public sealed class ElevatorMenu : MonoBehaviour
     {
+        /// <summary>
+        /// 横持ちのスマホで指で遊ぶときの行の高さ (#187)。文字の大きさ 30 で 60 になり、高さ 720 の Canvas を 390 px で描くと約 32 px。
+        /// 縦持ちと同じ <see cref="TmpLinkTap.TapRowLineHeight"/> にすると、7 階の建物で枠が Canvas に収まらずに縮む。
+        /// </summary>
+        public const string LandscapeTapRowLineHeight = "<line-height=2em>";
+
+        private static readonly Vector2 KeysFrameSize = new Vector2(700f, 540f);
+        private static readonly Vector2 PortraitTouchFrameSize = new Vector2(700f, 820f);
+        private static readonly Vector2 LandscapeTouchFrameSize = new Vector2(700f, 600f);
+
         /// <summary>1 フレーム分の入力。<see cref="Update"/> が KCDInput から組んで <see cref="Tick"/> に渡す。</summary>
         public readonly struct FrameInput
         {
@@ -48,6 +58,7 @@ namespace KCD
         private int _openedFrame = KCDInput.NoFrame;
         private int _pendingTap = -1;
         private bool _drawnForTouch;
+        private bool _drawnPortrait;
         private float _previousTimeScale = 1f;
 
         /// <summary>現在のシーンの画面。</summary>
@@ -115,7 +126,7 @@ namespace KCD
                 return;
             }
 
-            if (InputMode.IsTouch != _drawnForTouch)
+            if (InputMode.IsTouch != _drawnForTouch || ScreenShape.IsPortrait != _drawnPortrait)
             {
                 Redraw();
             }
@@ -255,27 +266,45 @@ namespace KCD
 
         private void Redraw()
         {
-            if (_body == null || _panel == null)
+            if (_root == null || _body == null || _panel == null)
             {
                 return;
             }
 
             _drawnForTouch = InputMode.IsTouch;
-            _body.text = Compose(_panel.Stops, _panel.CurrentIndex, _index, _drawnForTouch, _panel.Stairs);
+            _drawnPortrait = ScreenShape.IsPortrait;
+            ((RectTransform)_root.transform).sizeDelta = FrameSize(_drawnForTouch, _drawnPortrait);
+            _body.text = Compose(_panel.Stops, _panel.CurrentIndex, _index, _drawnForTouch, _panel.Stairs,
+                _drawnPortrait);
+        }
+
+        /// <summary>
+        /// 枠の大きさ。キーとマウスでは組んだときの大きさ。指のときは行の間隔を広げた分だけ高くする
+        /// （いちばん階の多い 7 階の建物で、枠を縮めずに入る高さ）。
+        /// </summary>
+        public static Vector2 FrameSize(bool links, bool portrait)
+        {
+            return !links ? KeysFrameSize : portrait ? PortraitTouchFrameSize : LandscapeTouchFrameSize;
         }
 
         /// <summary>
         /// 見出しと階の一覧と「やめる」。今の階には「いまの階」を添え、selected の行にだけ ▶ と色を付ける。
         /// links なら各行を <c>&lt;link="choice:N"&gt;</c> で囲み、叩けるようにする（N は stops の番号、「やめる」は階の数）。
         /// キーの案内は指で遊んでいないときだけ出す。stairs なら見出しを「階段」にする。
+        /// 指のときは行の間隔を指の幅まで広げ（portrait なら縦持ちの幅）、間隔だけで区切れるので空行を挟まない。
         /// </summary>
         public static string Compose(ElevatorPanel.Stop[] stops, int current, int selected, bool links,
-            bool stairs = false)
+            bool stairs = false, bool portrait = false)
         {
             var builder = new StringBuilder(256);
+            if (links)
+            {
+                builder.Append(portrait ? TmpLinkTap.TapRowLineHeight : LandscapeTapRowLineHeight);
+            }
+
             builder.Append("<size=110%>")
                 .Append(stairs ? L.Pick("階段", "Stairs") : L.Pick("エレベーター", "Elevator"))
-                .Append("</size>\n\n");
+                .Append(links ? "</size>\n" : "</size>\n\n");
             for (int i = stops.Length - 1; i >= 0; i--)
             {
                 string label = stops[i].Floor;
@@ -293,7 +322,11 @@ namespace KCD
                 AppendRow(builder, i, label, i == selected, links);
             }
 
-            builder.Append('\n');
+            if (!links)
+            {
+                builder.Append('\n');
+            }
+
             AppendRow(builder, stops.Length, L.Pick("やめる", "Cancel"), selected == stops.Length, links);
             if (!links)
             {

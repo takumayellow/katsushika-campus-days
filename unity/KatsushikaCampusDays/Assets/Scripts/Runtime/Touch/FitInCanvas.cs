@@ -17,6 +17,7 @@ namespace KCD
 
         [SerializeField] private bool _reflow;
         [SerializeField] private float _portraitHeight;
+        [SerializeField] private bool _portraitOnly;
 
         private RectTransform _rect;
         private RectTransform _canvasRect;
@@ -25,12 +26,14 @@ namespace KCD
 
         /// <summary>
         /// 幅が足りないときは縮めずに幅を狭める。portraitHeight が正なら、縦長の画面ではその高さにする
-        /// （折り返して増えた行を入れる）。SceneBuilder から差し込む。
+        /// （折り返して増えた行を入れる）。portraitOnly なら、横長の画面では組んだ大きさのまま縮める
+        /// （中の箱を左右に並べていて、幅を狭めると重なる枠）。SceneBuilder から差し込む。
         /// </summary>
-        public void BindReflow(float portraitHeight)
+        public void BindReflow(float portraitHeight, bool portraitOnly = false)
         {
             _reflow = true;
             _portraitHeight = portraitHeight;
+            _portraitOnly = portraitOnly;
         }
 
         /// <summary>
@@ -111,8 +114,14 @@ namespace KCD
         /// <summary>枠の幅を Canvas に合わせ、縦長の画面では高さを足す。アンカーは 1 点に置いた枠だけを扱う。</summary>
         private void Reflow()
         {
-            float height = _portraitHeight > 0f && ScreenShape.IsPortrait ? _portraitHeight : _size.y;
-            var size = new Vector2(WidthToFit(_size.x, _canvasRect.rect.width, Margin), height);
+            bool portrait = ScreenShape.IsPortrait;
+            Vector2 size = _size;
+            if (portrait || !_portraitOnly)
+            {
+                float height = _portraitHeight > 0f && portrait ? _portraitHeight : _size.y;
+                size = new Vector2(WidthToFit(_size.x, _canvasRect.rect.width, Margin), height);
+            }
+
             if (_rect.sizeDelta != size)
             {
                 _rect.sizeDelta = size;

@@ -20,21 +20,30 @@ namespace KCD.Editor
         /// </summary>
         private const float PhotoHintTouchBottom = 210f;
 
+        /// <summary>
+        /// 縦長の画面での設定パネルの高さ。指で遊ぶときは名前と値を 2 行に分け、行の間隔を広げるので
+        /// （<see cref="SettingsView.StackedLineHeight"/>）、横長の 620 では入らない。iPhone SE の縦（Canvas の高さ 1423）にも収まる。
+        /// </summary>
+        public const float PortraitSettingsHeight = 1200f;
+
         /// <summary>設定パネル。閉じた状態で置く。</summary>
         public static SettingsView BuildSettings(GameObject host, RectTransform parent)
         {
             RectTransform rect = Rect(parent, "Settings", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
                 Vector2.zero, new Vector2(960f, 620f));
             Backdrop(rect, PanelDark);
-            KeepInCanvas(rect);
+            ReflowInCanvas(rect, PortraitSettingsHeight);
 
-            RectTransform headingBox = Rect(rect, "Heading", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-                new Vector2(0f, -28f), new Vector2(900f, 70f));
+            // 見出しと本文は枠に合わせて伸び縮みさせる。縦持ちでは枠の幅と高さが変わる（FitInCanvas）。
+            RectTransform headingBox = Rect(rect, "Heading", new Vector2(0f, 1f), new Vector2(0.5f, 1f),
+                new Vector2(0f, -28f), new Vector2(-60f, 70f));
+            headingBox.anchorMax = Vector2.one;
             TMP_Text heading = Label(headingBox, "Label", "設定", 44f, TextAlignmentOptions.Center);
             heading.fontStyle = FontStyles.Bold;
 
-            RectTransform bodyBox = Rect(rect, "Body", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                new Vector2(0f, -40f), new Vector2(820f, 460f));
+            RectTransform bodyBox = Stretch(rect, "Body");
+            bodyBox.offsetMin = new Vector2(70f, 40f);
+            bodyBox.offsetMax = new Vector2(-70f, -120f);
             TMP_Text body = Label(bodyBox, "Label", string.Empty, 30f, TextAlignmentOptions.TopLeft);
 
             rect.gameObject.SetActive(false);

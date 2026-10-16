@@ -11676,10 +11676,10 @@ RectTransform:
   - {fileID: 1198491957}
   m_Father: {fileID: 2064404546}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 1}
-  m_AnchorMax: {x: 0.5, y: 1}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: -28}
-  m_SizeDelta: {x: 900, y: 70}
+  m_SizeDelta: {x: -60, y: 70}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!1 &109748266
 GameObject:
@@ -12064,10 +12064,10 @@ RectTransform:
   - {fileID: 1411352010}
   m_Father: {fileID: 2064404546}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: -40}
-  m_SizeDelta: {x: 820, y: 460}
+  m_SizeDelta: {x: -140, y: -160}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &112084473
 GameObject:
@@ -40602,8 +40602,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3056800d07264283a732777ee98d942e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: KCD.Runtime::KCD.FitInCanvas
-  _reflow: 0
-  _portraitHeight: 0
+  _reflow: 1
+  _portraitHeight: 1060
+  _portraitOnly: 1
 --- !u!1 &381903815
 GameObject:
   m_ObjectHideFlags: 0
@@ -126745,6 +126746,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1166220952}
+  - component: {fileID: 551067389}
   m_Layer: 5
   m_Name: Rank
   m_TagString: Untagged
@@ -126752,6 +126754,20 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &551067389
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1166220951}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ee953f0b033446b7a342c54070f23065, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: KCD.Runtime::KCD.PortraitPosition
+  _portraitAnchor: {x: 0.5, y: 1}
+  _portraitPosition: {x: -130, y: -250}
 --- !u!224 &1166220952
 RectTransform:
   m_ObjectHideFlags: 0
@@ -129767,10 +129783,10 @@ RectTransform:
   - {fileID: 830962311}
   m_Father: {fileID: 381135701}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 1}
-  m_AnchorMax: {x: 0.5, y: 1}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: -28}
-  m_SizeDelta: {x: 1000, y: 70}
+  m_SizeDelta: {x: -100, y: 70}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!1 &1192718747
 GameObject:
@@ -194441,10 +194457,10 @@ RectTransform:
   - {fileID: 1915506179}
   m_Father: {fileID: 381135701}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0}
-  m_AnchorMax: {x: 0.5, y: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 0}
   m_AnchoredPosition: {x: 0, y: 36}
-  m_SizeDelta: {x: 1000, y: 60}
+  m_SizeDelta: {x: -100, y: 60}
   m_Pivot: {x: 0.5, y: 0}
 --- !u!1 &1813995205
 GameObject:
@@ -197367,6 +197383,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1833138133}
+  - component: {fileID: 1681383942}
   m_Layer: 5
   m_Name: Body
   m_TagString: Untagged
@@ -197374,6 +197391,20 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &1681383942
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1833138132}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ee953f0b033446b7a342c54070f23065, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: KCD.Runtime::KCD.PortraitPosition
+  _portraitAnchor: {x: 0.5, y: 1}
+  _portraitPosition: {x: -340, y: -680}
 --- !u!224 &1833138133
 RectTransform:
   m_ObjectHideFlags: 0
@@ -224680,8 +224711,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3056800d07264283a732777ee98d942e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: KCD.Runtime::KCD.FitInCanvas
-  _reflow: 0
-  _portraitHeight: 0
+  _reflow: 1
+  _portraitHeight: 1200
 --- !u!1 &2064574413
 GameObject:
   m_ObjectHideFlags: 0

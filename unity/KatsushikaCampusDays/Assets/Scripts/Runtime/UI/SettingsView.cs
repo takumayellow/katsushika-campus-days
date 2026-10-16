@@ -9,6 +9,8 @@ namespace KCD
     /// カメラの感度・上下の反転・フルスクリーン (#6)。
     /// ポーズメニューとタイトルの両方から開く。Esc か「閉じる」で戻る。
     /// 指で遊んでいるときは、◀ ▶ を叩くとその行の値が変わり、「閉じる」を叩くと戻る (#187)。
+    /// 縦持ちのスマホでは名前と値を 2 行に分けて書く。幅 800 の Canvas では 1 行に入らず、
+    /// 枠ごと縮めると文字が 11 px、行の間隔が 18 px ほどになって、隣の行を叩いてしまう。
     /// </summary>
     public sealed class SettingsView : MonoBehaviour
     {
@@ -26,6 +28,30 @@ namespace KCD
         /// <summary>本文を縮めるときの下限。</summary>
         private const float MinBodyFontSize = 22f;
 
+        /// <summary>
+        /// 名前と値を 2 行に分けて書くときの行の高さ。1 項目が 2 行なので、叩ける高さは 3.3em
+        /// （文字の大きさ 30 で 99、縦持ちで約 48 px）になり、<see cref="TmpLinkTap.TapRowLineHeight"/> の 3em を下回らない。
+        /// </summary>
+        public const string StackedLineHeight = "<line-height=1.65em>";
+
+        /// <summary>2 行に分けたときの値の行の字下げ。名前の頭の ▶ と空白の幅にそろえる。</summary>
+        private const string StackedValueIndent = "      ";
+
+        /// <summary>設定の 1 項目。名前・値・値を ◀ ▶ で挟むか。</summary>
+        public readonly struct Entry
+        {
+            public readonly string Label;
+            public readonly string Value;
+            public readonly bool Arrows;
+
+            public Entry(string label, string value, bool arrows)
+            {
+                Label = label;
+                Value = value;
+                Arrows = arrows;
+            }
+        }
+
         [SerializeField] private GameObject _root;
         [SerializeField] private TMP_Text _heading;
         [SerializeField] private TMP_Text _body;
@@ -42,6 +68,9 @@ namespace KCD
         /// Esc でブラウザ側から抜けたときも同じ。
         /// </summary>
         private bool _drawnFullscreen;
+
+        /// <summary>名前と値を 2 行に分けて書いたか。画面の向きが変わったら書き直す。</summary>
+        private bool _drawnStacked;
 
         public bool IsOpen => _root != null && _root.activeSelf;
 
@@ -126,7 +155,8 @@ namespace KCD
                 return;
             }
 
-            if (InputMode.IsTouch != _drawnForTouch || Screen.fullScreen != _drawnFullscreen)
+            if (InputMode.IsTouch != _drawnForTouch || Screen.fullScreen != _drawnFullscreen
+                || ScreenShape.IsPortrait != _drawnStacked)
             {
                 Redraw();
             }
@@ -280,7 +310,8 @@ namespace KCD
             return Mathf.Clamp(Mathf.RoundToInt(value * 10f), 0, 10);
         }
 
-        private static string Bar(float value)
+        /// <summary>音量を棒と % で書く。</summary>
+        public static string Bar(float value)
         {
             int filled = Level(value);
             return new string('■', filled) + new string('□', 10 - filled) + "  " + (filled * 10) + "%";
@@ -312,6 +343,7 @@ namespace KCD
 
             _drawnForTouch = InputMode.IsTouch;
             _drawnFullscreen = Screen.fullScreen;
+            _drawnStacked = ScreenShape.IsPortrait;
             bool links = _drawnForTouch;
             AudioManager audio = AudioManager.Instance;
             string bgm = audio != null ? Bar(audio.BgmVolume) : "-";
@@ -322,26 +354,47 @@ namespace KCD
 
             // 音量の ◀ ▶ は指のときだけ出す。キーでは ←→ で変えるので、棒だけで足りる。
             bool volumeArrows = links && audio != null;
+            // 行の番号は Adjust と叩いた行の受け口と同じ Row の定数で引く。
+            var entries = new Entry[RowClose];
+            entries[RowBgm] = new Entry(L.Get("ui.settings.bgm_volume", "音楽の音量"), bgm, volumeArrows);
+            entries[RowSe] = new Entry(L.Get("ui.settings.se_volume", "効果音の音量"), se, volumeArrows);
+            entries[RowAmbient] = new Entry(L.Pick("環境音の音量", "Ambient Volume"), ambient, volumeArrows);
+            entries[RowLanguage] = new Entry(L.Get("ui.settings.language", "言語"), language, true);
+            entries[RowQuality] = new Entry(L.Get("ui.settings.quality", "画質"), quality, true);
+            entries[RowSensitivity] = new Entry(L.Get("ui.settings.look_sensitivity", "カメラの感度"),
+                SensitivityBar(CameraPrefs.SensitivityLevel), links);
+            entries[RowInvert] = new Entry(L.Get("ui.settings.invert_y", "カメラ上下を反転"), OnOff(CameraPrefs.InvertY), true);
+            entries[RowFullscreen] = new Entry(L.Get("ui.settings.fullscreen", "フルスクリーン"), OnOff(_drawnFullscreen), true);
+            _body.text = Compose(entries, _index, links, _drawnStacked);
+        }
+
+        /// <summary>
+        /// 本文を組む。entries は「閉じる」より前の行を順に並べたもの。selected は選んでいる行。
+        /// stacked なら名前と値を 2 行に分け、行の間隔を指の幅まで広げる。
+        /// </summary>
+        public static string Compose(Entry[] entries, int selected, bool links, bool stacked)
+        {
             var builder = new System.Text.StringBuilder(1024);
-            AppendRow(builder, RowBgm, L.Get("ui.settings.bgm_volume", "音楽の音量"), bgm, volumeArrows, links);
-            AppendRow(builder, RowSe, L.Get("ui.settings.se_volume", "効果音の音量"), se, volumeArrows, links);
-            AppendRow(builder, RowAmbient, L.Pick("環境音の音量", "Ambient Volume"), ambient, volumeArrows, links);
-            AppendRow(builder, RowLanguage, L.Get("ui.settings.language", "言語"), language, true, links);
-            AppendRow(builder, RowQuality, L.Get("ui.settings.quality", "画質"), quality, true, links);
-            AppendRow(builder, RowSensitivity, L.Get("ui.settings.look_sensitivity", "カメラの感度"),
-                SensitivityBar(CameraPrefs.SensitivityLevel), links, links);
-            AppendRow(builder, RowInvert, L.Get("ui.settings.invert_y", "カメラ上下を反転"),
-                OnOff(CameraPrefs.InvertY), true, links);
-            AppendRow(builder, RowFullscreen, L.Get("ui.settings.fullscreen", "フルスクリーン"),
-                OnOff(_drawnFullscreen), true, links);
+            if (stacked)
+            {
+                builder.Append(StackedLineHeight);
+            }
+
+            for (int row = 0; row < entries.Length; row++)
+            {
+                Entry entry = entries[row];
+                AppendRow(builder, row, row == selected, entry.Label, entry.Value, entry.Arrows, links, stacked);
+            }
+
             builder.Append('\n');
-            AppendRow(builder, RowClose, L.Pick("閉じる", "Close"), string.Empty, false, links);
+            AppendRow(builder, RowClose, RowClose == selected, L.Pick("閉じる", "Close"), string.Empty, false, links,
+                stacked);
             builder.Append("\n<size=70%><alpha=#99>");
             builder.Append(links
                 ? L.Pick("◀ ▶ を叩いて変更　「閉じる」で戻る", "Tap ◀ ▶ to change   Close: back")
                 : L.Pick("↑↓ で選択　←→ で変更　Esc で戻る", "Up/Down: select   Left/Right: change   Esc: back"));
             builder.Append("<alpha=#FF></size>");
-            _body.text = builder.ToString();
+            return builder.ToString();
         }
 
         private static string QualityLabel(QualityTier tier)
@@ -363,24 +416,19 @@ namespace KCD
             return L.Get(QualityTiers.LabelKey(tier), fallback);
         }
 
-        private void AppendRow(System.Text.StringBuilder builder, int row, string label, string value, bool arrows,
-            bool links)
-        {
-            AppendRow(builder, row, row == _index, label, value, arrows, links);
-        }
-
         /// <summary>
         /// 1 行を足す。選んでいる行にだけ ▶ と色を付ける。arrows なら値を ◀ ▶ で挟む。
         /// links なら名前を <c>&lt;link="choice:N"&gt;</c>、◀ を "dec:N"、▶ を "inc:N" で囲み、叩けるようにする。
+        /// stacked なら値を次の行に字下げして書く。
         /// </summary>
         public static void AppendRow(System.Text.StringBuilder builder, int row, bool selected, string label,
-            string value, bool arrows, bool links)
+            string value, bool arrows, bool links, bool stacked = false)
         {
             builder.Append(selected ? "<color=#FFD98A>" : string.Empty);
             AppendLinked(builder, links ? "choice:" : null, row, (selected ? "▶ " : "   ") + label);
             if (!string.IsNullOrEmpty(value))
             {
-                builder.Append("　　");
+                builder.Append(stacked ? "\n" + StackedValueIndent : "　　");
                 if (arrows)
                 {
                     AppendLinked(builder, links ? "dec:" : null, row, "◀");
