@@ -20,7 +20,7 @@ WebGL 2 対応 GPU。初回は約 70 MB を読み込む。セーブはブラウ�
 
 ## 遊ぶ（配布版）
 
-`dist/KatsushikaCampusDays_v<版>_<commit の先頭 7 桁>_win64.zip` を展開して `KatsushikaCampusDays.exe` を起動する。
+`dist/KatsushikaCampusDays_v<版>_<commit の先頭 7 桁>_win64.zip` を展開して `KatsushikaCampusDays/KatsushikaCampusDays.exe` を起動する。
 Windows 10/11 64bit、インストール不要。操作は WASD / 矢印キー移動、マウス視点、Shift ダッシュ、Space ジャンプ、
 E で話す/入る、Tab クエストログ、Esc メニュー。詳細は [docs/HOW_TO_PLAY.md](docs/HOW_TO_PLAY.md)。
 
@@ -99,8 +99,8 @@ python tools/run_tests.py   # EditMode → PlayMode → pytest。Unity が動い
 python -m pytest -q         # pytest だけ（tests/, tools/, blender/kcd_lib の純 Python 部分。bpy は差し替え。数秒。pip install -r requirements-test.txt）
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/smoke_run.ps1 -WaitSec 25 -Out docs/screenshots/smoke_title.png
 
-# 5. 配布 zip
-python tools/package_zip.py
+# 5. 配布 zip（dist/KatsushikaCampusDays_v<版>_<commit の先頭 7 桁>_win64.zip）
+python tools/package_windows.py
 
 # 6. ブラウザ版を GitHub Pages に載せる（WebGL ビルド → Release web-latest → pages.yml）
 #    unity/KatsushikaCampusDays の下に未コミットの変更があると止まる（--allow-dirty で通す）。

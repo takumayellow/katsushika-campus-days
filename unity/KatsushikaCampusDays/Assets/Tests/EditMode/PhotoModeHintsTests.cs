@@ -66,6 +66,36 @@ namespace KCD.Tests
         }
 
         [Test]
+        public void TouchText_NamesTheButtonsOnTheScreen()
+        {
+            // 指で遊ぶ間は仮想のゲームパッドから入るので、gamepad が立っていてもタッチの文にする。
+            foreach (bool gamepad in new[] { false, true })
+            {
+                string ja = PhotoModeHints.Text(false, gamepad, true);
+                string en = PhotoModeHints.Text(true, gamepad, true);
+                Assert.AreEqual(2, ja.Split('\n').Length);
+                Assert.AreEqual(2, en.Split('\n').Length);
+                foreach (string word in new[] { "「撮影」", "「戻る」", "なぞる", "つまむ" })
+                {
+                    StringAssert.Contains(word, ja);
+                }
+
+                foreach (string word in new[] { "Shoot button", "Back button", "Drag", "Pinch" })
+                {
+                    StringAssert.Contains(word, en);
+                }
+
+                foreach (string key in new[] { "WASD", "Esc", "A / X", "Y / B" })
+                {
+                    StringAssert.DoesNotContain(key, ja);
+                    StringAssert.DoesNotContain(key, en);
+                }
+            }
+
+            Assert.AreNotEqual(PhotoModeHints.Text(false, false), PhotoModeHints.Text(false, false, true));
+        }
+
+        [Test]
         public void Text_JapaneseAndEnglishUseTheirOwnWords()
         {
             StringAssert.Contains("撮影", PhotoModeHints.Text(false, false));

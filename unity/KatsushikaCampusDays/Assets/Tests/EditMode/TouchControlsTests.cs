@@ -187,6 +187,32 @@ namespace KCD.Tests
             Assert.AreEqual(expected, TouchHud.ShowsPlayControls(touch, blocked));
         }
 
+        [TestCase(false, false, false, false, TouchHud.Layout.Hidden)]
+        [TestCase(false, false, true, false, TouchHud.Layout.Hidden)]
+        [TestCase(true, false, false, false, TouchHud.Layout.Play)]
+        [TestCase(true, true, false, false, TouchHud.Layout.Hidden)]
+        [TestCase(true, true, true, false, TouchHud.Layout.Photo)]
+        [TestCase(true, true, true, true, TouchHud.Layout.Hidden)]
+        [TestCase(true, false, false, true, TouchHud.Layout.Hidden)]
+        public void TouchHud_LayoutFor_KeepsTheCameraButtonsInPhotoMode(bool touch, bool blocked, bool photoMode,
+            bool capturing, TouchHud.Layout expected)
+        {
+            // 写真モードは操作を止める（blocked）が、動かす・向ける・撮る・戻るのボタンは出す。撮る瞬間は写らないよう隠す。
+            Assert.AreEqual(expected, TouchHud.LayoutFor(touch, blocked, photoMode, capturing));
+        }
+
+        [Test]
+        public void KCDInput_PhotoZoomPerPinch_ZoomsAboutAsMuchAsTheFingersSpread()
+        {
+            // 2 本指の間隔を e 倍に広げたときに狭まる画角（度）。小さいと端から端まで何度もつまみ直す。
+            float degrees = TouchInput.ZoomPerPinchLog * KCDInput.PhotoZoomPerPinch * PhotoFreeCamera.ZoomStepDegrees;
+            Assert.That(degrees, Is.InRange(25f, 45f));
+
+            // 広角の端から望遠の端まで、指の間隔の倍率。片手の 2 本指で届く範囲に収める。
+            float spread = Mathf.Exp((PhotoFreeCamera.MaxFieldOfView - PhotoFreeCamera.MinFieldOfView) / degrees);
+            Assert.That(spread, Is.InRange(3f, 8f));
+        }
+
         [Test]
         public void TmpLinkTap_Pick_InsideWinsOverTheNeighboursMargin()
         {

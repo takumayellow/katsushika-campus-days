@@ -212,9 +212,16 @@
       // いまは、ロックが外れた直後と、外れている間にマウスを動かしたときだけ数秒出す。
       const OVERLAY_MS = 3500;
       let overlayTimer = 0;
+      // 案内はマウスとキーボード向けなので、最後に触ったのが指なら出さない。キーを押すとゲームは
+      // マウスの操作に切り替わってロックを掛け、そのあと指で触るとロックを外す。この外れたときにも
+      // pointerlockchange が来る (#187)。指で叩いたときの互換の mousemove も同じく無視する。
+      let touchedLast = isTouchOnly();
+      function notePointer(e) { touchedLast = e.pointerType === "touch"; }
+      document.addEventListener("pointerdown", notePointer, true);
+      document.addEventListener("pointermove", notePointer, true);
       function isLocked() { return document.pointerLockElement === canvas; }
       function showOverlayBriefly() {
-        if (isLocked()) return;
+        if (isLocked() || touchedLast) return;
         overlay.classList.remove("kcd-hidden");
         clearTimeout(overlayTimer);
         overlayTimer = setTimeout(() => overlay.classList.add("kcd-hidden"), OVERLAY_MS);
