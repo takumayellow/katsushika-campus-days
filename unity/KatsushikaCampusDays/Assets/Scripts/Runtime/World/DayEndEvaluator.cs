@@ -277,6 +277,14 @@ namespace KCD
                 }
             }
 
+            // 待っても屋内のままなら、出入り係の移動を止めて外にいる扱いにする。止めずにスポーンへ飛ばすと、
+            // 残った移動があとで入口へ置き直し、ミニマップの屋内表示と出入り係の入力の封鎖も残る。
+            if (DayRestart.NeedsInteriorExit(interior != null, interior != null && interior.IsInside))
+            {
+                Debug.LogWarning("[DayEndEvaluator] 屋内から出られなかったので、外にいる扱いに戻してから翌朝にする (#16)");
+                interior.RestoreOutside();
+            }
+
             if (player != null)
             {
                 Vector3 position = DayRestart.ReturnPoint(_hasSpawn, _spawnPosition, player.transform.position);

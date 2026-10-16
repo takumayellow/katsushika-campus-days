@@ -503,7 +503,7 @@ namespace KCD.Tests
 
         // ---- 設定パネルを叩く ----
 
-        private const int SettingsCloseRow = 5;
+        private const int SettingsCloseRow = 8;
 
         [Test]
         public void SettingsTap_OnClose_ClosesAndCallsBack()
