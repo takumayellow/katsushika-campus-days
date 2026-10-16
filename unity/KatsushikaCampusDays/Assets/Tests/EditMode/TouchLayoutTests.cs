@@ -347,6 +347,44 @@ namespace KCD.Tests
             }
         }
 
+        [Test]
+        public void CampusScene_TopButtonsLeaveAGapBetweenThem()
+        {
+            // 上端に並ぶポーズ・クエストログ・写真の丸の間が狭いと、隣を押し間違える（縦横とも CSS 14 px 以上）。
+            const float minGap = 26f;
+            Scene scene = EditorSceneManager.OpenScene(CampusScenePath, OpenSceneMode.Additive);
+            try
+            {
+                List<RectTransform> rects = scene.GetRootGameObjects()
+                    .SelectMany(r => r.GetComponentsInChildren<RectTransform>(true)).ToList();
+                RectTransform[] buttons = new[] { "PauseButton", "QuestLogButton", "PhotoButton" }
+                    .Select(name => rects.First(r => r.name == name)).ToArray();
+
+                for (int i = 1; i < buttons.Length; i++)
+                {
+                    RectTransform left = buttons[i - 1];
+                    RectTransform right = buttons[i];
+                    float edges = (left.sizeDelta.x + right.sizeDelta.x) * 0.5f;
+
+                    float landscape = right.anchoredPosition.x - left.anchoredPosition.x - edges;
+                    Assert.GreaterOrEqual(landscape, minGap, left.name + " と " + right.name + " が横長の画面で近すぎる");
+
+                    float portrait = PortraitX(right) - PortraitX(left) - edges;
+                    Assert.GreaterOrEqual(portrait, minGap, left.name + " と " + right.name + " が縦長の画面で近すぎる");
+                }
+            }
+            finally
+            {
+                EditorSceneManager.CloseScene(scene, true);
+            }
+        }
+
+        private static float PortraitX(RectTransform button)
+        {
+            return new SerializedObject(button.GetComponent<PortraitPosition>())
+                .FindProperty("_portraitPosition").vector2Value.x;
+        }
+
         private static void CheckScene(string path, IEnumerable<string> panels)
         {
             Scene scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Additive);
