@@ -7,6 +7,15 @@
     <!-- アイコンは外部ファイルを増やさないよう SVG を埋め込む。 -->
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2312151b'/%3E%3Cpath d='M6 20l10-9 10 9v6H6z' fill='%233f7ad6'/%3E%3C/svg%3E">
     <link rel="stylesheet" href="TemplateData/style.css">
+    <!-- ホーム画面に追加して開くと、ブラウザの枠を出さずに画面いっぱいで遊べる (#187)。
+         iPhone の Safari はページの一部を全画面にできないので、全画面で遊ぶ道はこれだけになる。 -->
+    <link rel="manifest" href="TemplateData/manifest.webmanifest">
+    <link rel="apple-touch-icon" href="TemplateData/icon-180.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="葛飾キャンパス">
+    <meta name="theme-color" content="#12151b">
     <!-- 次の行は tools/deploy_pages.py --build がビルド元のコミットと作業ツリーの状態を書いた
          <meta name="kcd-build"> に置き換える (#75)。 -->
     <!-- KCD_BUILD_STAMP -->
@@ -21,6 +30,7 @@
         <h2 id="kcd-data-notice-title">読み込む前に</h2>
         <p>はじめて開くときは数十 MB の通信があります。Wi-Fi につないで読み込むのがおすすめです。2 回目からはブラウザに残った分を使います。</p>
         <p class="kcd-sub">縦に持っても横に持っても遊べます。左側で歩き、右側をなぞると見回せます。</p>
+        <p class="kcd-sub" id="kcd-home-screen-hint" hidden>画面いっぱいで遊ぶには、共有ボタンから「ホーム画面に追加」を選び、追加したアイコンから開いてください。</p>
         <button type="button" id="kcd-data-notice-continue">読み込む</button>
       </section>
 
@@ -248,6 +258,44 @@
         if (document.activeElement !== canvas) canvas.focus({ preventScroll: true });
       }
 
+      // スマホの全画面 (#187)。下の案内の全画面ボタンはスマホでは隠していて、キャンバスの中の案内も
+      // 指で触ると出さないので、スマホには全画面にする手立てが無かった。そこで「読み込む」のタップで
+      // 全画面にし、抜けたあとはキャンバスをタップすると戻す。ボタンを置くと HUD と場所を取り合う。
+      // ブラウザは利用者の操作の中でしか全画面を許さないので、どちらもタップの処理の中から呼ぶ。
+      // iPhone の Safari はページの一部を全画面にできない（iPad は webkit の名前で持つ）。
+      function fullscreenElement() {
+        return document.fullscreenElement || document.webkitFullscreenElement || null;
+      }
+      function canFullscreen() {
+        return !!(fullscreenContainer.requestFullscreen || fullscreenContainer.webkitRequestFullscreen);
+      }
+      function enterFullscreen() {
+        if (fullscreenElement() || !canFullscreen()) return;
+        try {
+          const request = fullscreenContainer.requestFullscreen
+            ? fullscreenContainer.requestFullscreen({ navigationUI: "hide" })
+            : fullscreenContainer.webkitRequestFullscreen();
+          // 断られても（設定で禁止されているなど）画面の中で遊べるので、知らせずに続ける。
+          if (request && request.catch) request.catch(() => {});
+        } catch (e) {
+          // 同上。
+        }
+      }
+      // 指を離したときに戻す。ブラウザが全画面を許す操作は、指では押したときでなく離したとき。
+      fullscreenContainer.addEventListener("pointerup", (e) => {
+        if (e.pointerType !== "mouse" && container.classList.contains("unity-mobile")) enterFullscreen();
+      });
+
+      // ホーム画面から開いたか。そのときはもうブラウザの枠が無い。
+      function isStandalone() {
+        return navigator.standalone === true
+          || (!!window.matchMedia && matchMedia("(display-mode: fullscreen), (display-mode: standalone)").matches);
+      }
+      function isAppleMobile() {
+        return /iPhone|iPad|iPod/.test(navigator.userAgent)
+          || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+      }
+
       // ローダーを差し込んでゲームを読み込む。ここを呼ぶまで Build/ のファイルは取りに行かない。
       function startLoading() {
         applyMobileLayout();
@@ -300,12 +348,19 @@
       // 指だけの端末では、通信量の案内を出して「読み込む」を待つ (#73 #187)。
       if (isTouchOnly()) {
         const notice = document.querySelector("#kcd-data-notice");
+        const proceed = document.querySelector("#kcd-data-notice-continue");
         container.classList.add("kcd-gated");
         notice.hidden = false;
-        document.querySelector("#kcd-data-notice-continue").addEventListener("click", () => {
+        if (canFullscreen()) {
+          proceed.textContent = "全画面で読み込む";
+        } else if (isAppleMobile() && !isStandalone()) {
+          document.querySelector("#kcd-home-screen-hint").hidden = false;
+        }
+        proceed.addEventListener("click", () => {
           notice.hidden = true;
           container.classList.remove("kcd-gated");
           startLoading();
+          enterFullscreen();
         }, { once: true });
       } else {
         startLoading();

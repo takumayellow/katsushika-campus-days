@@ -13,16 +13,20 @@ namespace KCD.Editor
         /// <summary>タイトルシーンの中身を root の下に組む。</summary>
         public static void Build(Transform root)
         {
-            BuildCamera(root);
+            Camera camera = BuildCamera(root);
             BuildLighting(root);
 
             Transform[] stands = BuildStands(root);
-            BuildUI(root, stands);
+            BuildUI(root, stands, camera);
             AudioFactory.Place(root);
             PostProcessFactory.Place(root, false);
         }
 
-        private static void BuildCamera(Transform root)
+        /// <summary>
+        /// 横長の PC 画面に合わせて置く。指で遊ぶ画面と縦長の画面では TitleLayout が画角と位置を決め直すので、
+        /// PortraitFieldOfView は付けない（付けると縦長の画面で画角を取り合う）。
+        /// </summary>
+        private static Camera BuildCamera(Transform root)
         {
             var go = new GameObject("MainCamera");
             go.tag = "MainCamera";
@@ -32,13 +36,13 @@ namespace KCD.Editor
 
             Camera camera = go.AddComponent<Camera>();
             camera.fieldOfView = 42f;
-            go.AddComponent<PortraitFieldOfView>();
             camera.nearClipPlane = 0.1f;
             camera.farClipPlane = 60f;
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = new Color(0.09f, 0.13f, 0.2f, 1f);
             go.AddComponent<AudioListener>();
             PostProcessFactory.EnableOnCamera(camera);
+            return camera;
         }
 
         /// <summary>
@@ -122,7 +126,7 @@ namespace KCD.Editor
         }
 
         /// <summary>タイトル表示と選択画面。どちらも同じ Canvas に置き、TitleMenu が切り替える。</summary>
-        private static void BuildUI(Transform root, Transform[] stands)
+        private static void BuildUI(Transform root, Transform[] stands, Camera camera)
         {
             Canvas canvas = UIFactory.CreateCanvas(root, "TitleCanvas", 0);
             UIFactory.EnsureEventSystem(root);
@@ -130,45 +134,30 @@ namespace KCD.Editor
             var canvasRect = (RectTransform)canvas.transform;
             GameObject host = canvas.gameObject;
 
+            var top = new Vector2(0.5f, 1f);
+            var bottom = new Vector2(0.5f, 0f);
+
             RectTransform titleRoot = UIFactory.Stretch(canvasRect, "TitleRoot");
-            RectTransform titleBox = UIFactory.Rect(titleRoot, "Title", new Vector2(0.5f, 1f),
-                new Vector2(0.5f, 1f), new Vector2(0f, -120f), new Vector2(1400f, 160f));
-            TMP_Text title = UIFactory.Label(
-                titleBox, "Label", "葛飾キャンパスデイズ", 96f, TextAlignmentOptions.Center);
+            RectTransform titleBox = Box(titleRoot, "Title", TitleLayout.Part.Title, top);
+            TMP_Text title = Text(titleBox, "葛飾キャンパスデイズ", TitleLayout.Part.Title);
             title.fontStyle = FontStyles.Bold;
-            UIFactory.ReflowLabel(titleBox, title, 48f);
 
-            RectTransform subtitleBox = UIFactory.Rect(titleRoot, "Subtitle", new Vector2(0.5f, 1f),
-                new Vector2(0.5f, 1f), new Vector2(0f, -280f), new Vector2(1400f, 60f));
-            TMP_Text subtitle = UIFactory.Label(
-                subtitleBox, "Label", "東京理科大学 葛飾キャンパス 探索記", 34f, TextAlignmentOptions.Center);
-            UIFactory.ReflowLabel(subtitleBox, subtitle, 24f);
+            RectTransform subtitleBox = Box(titleRoot, "Subtitle", TitleLayout.Part.Subtitle, top);
+            TMP_Text subtitle = Text(subtitleBox, "東京理科大学 葛飾キャンパス 探索記", TitleLayout.Part.Subtitle);
 
-            RectTransform promptBox = UIFactory.Rect(titleRoot, "Prompt", new Vector2(0.5f, 0f),
-                new Vector2(0.5f, 0f), new Vector2(0f, 150f), new Vector2(1200f, 64f));
-            TMP_Text prompt = UIFactory.Label(
-                promptBox, "Label", "Enter ではじめる", 36f, TextAlignmentOptions.Center);
-            UIFactory.ReflowLabel(promptBox, prompt, 24f);
+            RectTransform promptBox = Box(titleRoot, "Prompt", TitleLayout.Part.Prompt, bottom);
+            TMP_Text prompt = Text(promptBox, "Enter ではじめる", TitleLayout.Part.Prompt);
 
             RectTransform selectRoot = UIFactory.Stretch(canvasRect, "SelectRoot");
-            RectTransform nameBox = UIFactory.Rect(selectRoot, "Name", new Vector2(0.5f, 0f),
-                new Vector2(0.5f, 0f), new Vector2(0f, 236f), new Vector2(900f, 80f));
-            TMP_Text nameLabel = UIFactory.Label(
-                nameBox, "Label", string.Empty, 56f, TextAlignmentOptions.Center);
+            RectTransform nameBox = Box(selectRoot, "Name", TitleLayout.Part.Name, bottom);
+            TMP_Text nameLabel = Text(nameBox, string.Empty, TitleLayout.Part.Name);
             nameLabel.fontStyle = FontStyles.Bold;
-            UIFactory.ReflowLabel(nameBox, nameLabel, 36f);
 
-            RectTransform taglineBox = UIFactory.Rect(selectRoot, "Tagline", new Vector2(0.5f, 0f),
-                new Vector2(0.5f, 0f), new Vector2(0f, 168f), new Vector2(1200f, 60f));
-            TMP_Text tagline = UIFactory.Label(
-                taglineBox, "Label", string.Empty, 32f, TextAlignmentOptions.Center);
-            UIFactory.ReflowLabel(taglineBox, tagline, 20f);
+            RectTransform taglineBox = Box(selectRoot, "Tagline", TitleLayout.Part.Tagline, bottom);
+            TMP_Text tagline = Text(taglineBox, string.Empty, TitleLayout.Part.Tagline);
 
-            RectTransform hintBox = UIFactory.Rect(selectRoot, "Hint", new Vector2(0.5f, 0f),
-                new Vector2(0.5f, 0f), new Vector2(0f, 92f), new Vector2(1200f, 56f));
-            TMP_Text hint = UIFactory.Label(
-                hintBox, "Label", string.Empty, 30f, TextAlignmentOptions.Center);
-            UIFactory.ReflowLabel(hintBox, hint, 20f);
+            RectTransform hintBox = Box(selectRoot, "Hint", TitleLayout.Part.Hint, bottom);
+            TMP_Text hint = Text(hintBox, string.Empty, TitleLayout.Part.Hint);
 
             CharacterSelect select = host.AddComponent<CharacterSelect>();
             select.Bind(stands, nameLabel, tagline, hint);
@@ -184,6 +173,26 @@ namespace KCD.Editor
             CreditsView credits = UIFactory.BuildCredits(host, canvasRect);
             menu.BindExtras(settings, credits);
             menu.BindHeadings(title, subtitle);
+
+            host.AddComponent<TitleLayout>().Bind(camera, select, selectRoot.gameObject,
+                new[] { titleBox, subtitleBox, promptBox, nameBox, taglineBox, hintBox },
+                new[] { title, subtitle, prompt, nameLabel, tagline, hint });
+        }
+
+        /// <summary>文字の枠を 1 つ。位置と大きさは TitleLayout の PC の表から取る。</summary>
+        private static RectTransform Box(RectTransform parent, string name, TitleLayout.Part part, Vector2 anchor)
+        {
+            TitleLayout.Slot slot = TitleLayout.SlotFor(TitleLayout.Shape.Desktop, part);
+            return UIFactory.Rect(parent, name, anchor, anchor, slot.Position, slot.Size);
+        }
+
+        /// <summary>枠いっぱいの文字。幅が足りなければ TitleLayout の表の下限まで小さくする。</summary>
+        private static TMP_Text Text(RectTransform box, string text, TitleLayout.Part part)
+        {
+            TitleLayout.Slot slot = TitleLayout.SlotFor(TitleLayout.Shape.Desktop, part);
+            TMP_Text label = UIFactory.Label(box, "Label", text, slot.FontSize, TextAlignmentOptions.Center);
+            UIFactory.ReflowLabel(box, label, slot.MinSize);
+            return label;
         }
 
         /// <summary>

@@ -7,6 +7,7 @@ namespace KCD
     /// タイトルのキャラクター選択。3 人が回転台に立ち、←→ で切り替え、Enter で決定。
     /// 選ばれていない子はひと回り小さく、後ろに下がって薄くなる。
     /// 指で遊んでいるときは、名前の両脇の ◀ ▶ を叩いて切り替え、名前を叩いて決定 (#187)。
+    /// 縦長の画面では 3 人が横に並びきらないので、選んでいる子を真ん中に寄せ、両隣を左右に置く（<see cref="SetCarousel"/>）。
     /// </summary>
     public sealed class CharacterSelect : MonoBehaviour
     {
@@ -38,6 +39,12 @@ namespace KCD
 
         private int _index;
         private bool _active;
+
+        /// <summary>組んだときの横の位置。真ん中に寄せないときはここへ戻る。</summary>
+        private float[] _homeX = new float[0];
+
+        /// <summary>真ん中に寄せるときの両隣までの間隔。0 なら寄せない。</summary>
+        private float _carouselSpacing;
 
         /// <summary>選択を受け付け始めたフレーム。そのフレームの入力は捨てる（#6）。</summary>
         private int _activatedFrame = KCDInput.NoFrame;
@@ -73,6 +80,42 @@ namespace KCD
             if (_tap != null)
             {
                 _tap.Tapped -= OnTapped;
+            }
+        }
+
+        /// <summary>選ばれていない子が下がる奥行き。</summary>
+        public float IdleDepth => _idleDepth;
+
+        /// <summary>
+        /// 選んでいる子を真ん中に、両隣を spacing だけ離して置く。0 以下なら組んだときの並びに戻す。
+        /// 縦長の画面で <see cref="TitleLayout"/> が毎フレーム呼ぶ。
+        /// </summary>
+        public void SetCarousel(float spacing)
+        {
+            _carouselSpacing = Mathf.Max(0f, spacing);
+        }
+
+        /// <summary>
+        /// 真ん中に寄せたときの i 番目の子の場所。選んでいる子が 0、右隣が 1、左隣が -1。
+        /// 端を越えると反対の端の子が隣に回る（3 人なら、いつも左右に 1 人ずつ）。
+        /// </summary>
+        public static int CarouselSlot(int i, int index, int count)
+        {
+            if (count <= 0)
+            {
+                return 0;
+            }
+
+            int offset = ((i - index) % count + count) % count;
+            return offset * 2 > count ? offset - count : offset;
+        }
+
+        private void Awake()
+        {
+            _homeX = new float[_stands.Length];
+            for (int i = 0; i < _stands.Length; i++)
+            {
+                _homeX[i] = _stands[i] != null ? _stands[i].localPosition.x : 0f;
             }
         }
 
@@ -185,6 +228,7 @@ namespace KCD
         private void AnimateStands()
         {
             float deltaTime = Time.unscaledDeltaTime;
+            int count = _stands.Length;
 
             for (int i = 0; i < _stands.Length; i++)
             {
@@ -213,6 +257,10 @@ namespace KCD
 
                 Vector3 position = stand.localPosition;
                 float targetZ = selected ? 0f : _idleDepth;
+                float targetX = _carouselSpacing > 0f
+                    ? CarouselSlot(i, _index, count) * _carouselSpacing
+                    : i < _homeX.Length ? _homeX[i] : position.x;
+                position.x = Mathf.Lerp(position.x, targetX, _turnSpeed * deltaTime);
                 position.z = Mathf.Lerp(position.z, targetZ, _turnSpeed * deltaTime);
                 stand.localPosition = position;
             }
