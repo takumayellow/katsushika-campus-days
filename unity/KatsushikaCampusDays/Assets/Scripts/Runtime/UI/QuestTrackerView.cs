@@ -18,6 +18,12 @@ namespace KCD
 
         private QuestSystem _quests;
 
+        /// <summary>ステップ欄の本来の文字の大きさ。取り残された 1 文字を前の行に収めるとき、ここから小さくする。</summary>
+        private float _stepSize;
+
+        /// <summary>大きさを合わせた本文（ステップ欄の 1 段落目）。残り秒だけが変わったときは測り直さない。</summary>
+        private string _fittedBody;
+
         /// <summary>いま表示しているクエストと残り秒。秒が変わったときだけ文字列を作り直す。</summary>
         private QuestData _shownQuest;
         private int _shownSecond = -1;
@@ -122,7 +128,28 @@ namespace KCD
 
             _shownQuest = tracked;
             _shownSecond = second;
-            _stepLabel.text = StepLine(tracked);
+            ShowStep(tracked);
+        }
+
+        private void ShowStep(QuestData quest)
+        {
+            if (_stepSize <= 0f)
+            {
+                _stepSize = _stepLabel.enableAutoSizing ? _stepLabel.fontSizeMax : _stepLabel.fontSize;
+            }
+
+            // 取り残された行は本文だけで測る（2 行目の案内の短い行で本文まで小さくしない）。
+            string line = StepLine(quest);
+            int lineBreak = line.IndexOf('\n');
+            string body = lineBreak < 0 ? line : line.Substring(0, lineBreak);
+            if (body != _fittedBody)
+            {
+                _stepLabel.text = body;
+                OrphanLineFit.Apply(_stepLabel, _stepSize);
+                _fittedBody = body;
+            }
+
+            _stepLabel.text = line;
         }
 
         /// <summary>
@@ -360,7 +387,7 @@ namespace KCD
 
             if (_stepLabel != null)
             {
-                _stepLabel.text = StepLine(tracked);
+                ShowStep(tracked);
             }
         }
     }
