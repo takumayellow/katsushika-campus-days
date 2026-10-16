@@ -75,6 +75,9 @@ namespace KCD
                 return;
             }
 
+            // 設定画面の感度と上下の反転 (#6) を、シーンに置いた感度と向きに重ねる。
+            float lookSensitivity = _lookSensitivity * CameraPrefs.SensitivityScale;
+            float verticalSign = (_invertVertical ? -1f : 1f) * CameraPrefs.VerticalSign;
             Vector2 look = KCDInput.Look;
             float zoom = KCDInput.Zoom;
 
@@ -89,9 +92,8 @@ namespace KCD
                 ref InputAxis axis = ref descriptor.DrivenAxis();
                 float delta = descriptor.Hint switch
                 {
-                    IInputAxisOwner.AxisDescriptor.Hints.X => look.x * _lookSensitivity,
-                    IInputAxisOwner.AxisDescriptor.Hints.Y =>
-                        look.y * _lookSensitivity * (_invertVertical ? -1f : 1f),
+                    IInputAxisOwner.AxisDescriptor.Hints.X => look.x * lookSensitivity,
+                    IInputAxisOwner.AxisDescriptor.Hints.Y => look.y * lookSensitivity * verticalSign,
                     _ => -zoom * _zoomSensitivity
                 };
 

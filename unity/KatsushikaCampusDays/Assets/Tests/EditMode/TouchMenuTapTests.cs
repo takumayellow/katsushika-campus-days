@@ -102,7 +102,7 @@ namespace KCD.Tests
 
         [TestCase("dec:0", 0, -1)]
         [TestCase("inc:4", 4, 1)]
-        [TestCase("choice:5", 5, 0)]
+        [TestCase("choice:8", 8, 0)]
         public void SettingsView_TryParseTap_ReadsRowAndDirection(string id, int row, int direction)
         {
             Assert.IsTrue(SettingsView.TryParseTap(id, out int parsedRow, out int parsedDirection));
@@ -110,8 +110,8 @@ namespace KCD.Tests
             Assert.AreEqual(direction, parsedDirection);
         }
 
-        [TestCase("inc:6")]
-        [TestCase("choice:9")]
+        [TestCase("inc:9")]
+        [TestCase("choice:12")]
         [TestCase("up:1")]
         [TestCase(null)]
         public void SettingsView_TryParseTap_RejectsOutsideTheRows(string id)
@@ -163,9 +163,9 @@ namespace KCD.Tests
         public void SettingsView_AppendRow_CloseRowHasNoArrows()
         {
             var builder = new StringBuilder();
-            SettingsView.AppendRow(builder, 5, true, "閉じる", string.Empty, false, true);
+            SettingsView.AppendRow(builder, 8, true, "閉じる", string.Empty, false, true);
 
-            Assert.AreEqual("<color=#FFD98A><link=\"choice:5\">▶ 閉じる</link></color>\n", builder.ToString());
+            Assert.AreEqual("<color=#FFD98A><link=\"choice:8\">▶ 閉じる</link></color>\n", builder.ToString());
         }
 
         // ---- クレジット・エンディング ----
