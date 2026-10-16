@@ -109,7 +109,7 @@
     "ui.questlog.heading": "Quest Log",
     "ui.questlog.empty": "No quests yet.\nWalk the campus and talk to someone.",
     "ui.questlog.active": "[Active] ",
-    "ui.questlog.completed": "[Done] ",
+    "ui.questlog.completed_heading": "Completed ({0})",
     "ui.questlog.side": "Side",
     "ui.questlog.reward": "Reward: {0}",
     "ui.collection.heading": "Collection",

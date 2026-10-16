@@ -54124,9 +54124,9 @@ MonoBehaviour:
   m_fontSize: 28
   m_fontSizeBase: 28
   m_fontWeight: 400
-  m_enableAutoSizing: 0
+  m_enableAutoSizing: 1
   m_fontSizeMin: 18
-  m_fontSizeMax: 72
+  m_fontSizeMax: 28
   m_fontStyle: 0
   m_HorizontalAlignment: 1
   m_VerticalAlignment: 256
@@ -134223,8 +134223,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3056800d07264283a732777ee98d942e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: KCD.Runtime::KCD.FitInCanvas
-  _reflow: 0
-  _portraitHeight: 0
+  _reflow: 1
+  _portraitHeight: 1100
 --- !u!1 &1235039721
 GameObject:
   m_ObjectHideFlags: 0

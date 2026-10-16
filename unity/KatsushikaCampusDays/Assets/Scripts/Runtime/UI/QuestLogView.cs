@@ -252,50 +252,88 @@ namespace KCD
             into.Append(part);
         }
 
-        /// <summary>受注中・完了済みのクエストを一覧の文面にして足す。題名・あらすじ・目標はいまの言語で出す。</summary>
+        /// <summary>
+        /// 受注中・完了済みのクエストを一覧の文面にして足す。題名・あらすじ・目標はいまの言語で出す。
+        /// 受注中のものを目標まで書き、達成したものは題名だけを 1 段落にまとめて後ろに置く。
+        /// 達成したものまで目標を書くと、全部を終えるころには 90 行近くになり枠に収まらない。
+        /// </summary>
         public static void Compose(StringBuilder into, QuestSystem quests)
         {
             int shown = 0;
-
+            int completed = 0;
             for (int i = 0; i < quests.All.Count; i++)
             {
                 QuestData quest = quests.All[i];
-                bool active = quests.IsActive(quest.Id);
-                bool completed = quests.IsCompleted(quest.Id);
-                if (!active && !completed)
+                if (quests.IsCompleted(quest.Id))
                 {
-                    continue;
+                    completed++;
                 }
-
-                shown++;
-                into.Append(completed ? "<color=#8FD48F>" : "<color=#FFE6A8>");
-                into.Append(completed
-                    ? L.Get("ui.questlog.completed", "[達成] ")
-                    : L.Get("ui.questlog.active", "[受注中] "));
-                into.Append(quest.DisplayTitle);
-                into.Append("</color>\n");
-
-                string summary = quest.DisplaySummary;
-                if (!string.IsNullOrEmpty(summary))
+                else if (quests.IsActive(quest.Id))
                 {
-                    into.Append("  ").Append(summary).Append('\n');
+                    AppendActive(into, quest);
+                    shown++;
                 }
+            }
 
-                for (int s = 0; s < quest.Steps.Count; s++)
-                {
-                    QuestStep step = quest.Steps[s];
-                    into.Append(step.Completed ? "  <s>" : "  ");
-                    into.Append("・").Append(step.DisplayText);
-                    into.Append(step.Completed ? "</s>\n" : "\n");
-                }
-
-                into.Append('\n');
+            if (completed > 0)
+            {
+                AppendCompleted(into, quests, completed);
+                shown += completed;
             }
 
             if (shown == 0)
             {
                 into.Append(L.Get("ui.questlog.empty", "まだ受けているクエストはない。\nキャンパスを歩いて、誰かに話しかけてみよう。"));
             }
+        }
+
+        private static void AppendActive(StringBuilder into, QuestData quest)
+        {
+            into.Append("<color=#FFE6A8>").Append(L.Get("ui.questlog.active", "[受注中] ")).Append(quest.DisplayTitle)
+                .Append("</color>\n");
+
+            string summary = quest.DisplaySummary;
+            if (!string.IsNullOrEmpty(summary))
+            {
+                into.Append("  ").Append(summary).Append('\n');
+            }
+
+            for (int s = 0; s < quest.Steps.Count; s++)
+            {
+                QuestStep step = quest.Steps[s];
+                into.Append(step.Completed ? "  <s>" : "  ");
+                into.Append("・").Append(step.DisplayText);
+                into.Append(step.Completed ? "</s>\n" : "\n");
+            }
+
+            into.Append('\n');
+        }
+
+        /// <summary>達成したクエストの数の見出しと、題名を読点でつないだ段落。</summary>
+        private static void AppendCompleted(StringBuilder into, QuestSystem quests, int count)
+        {
+            into.Append("<color=#8FD48F>").Append(L.Format("ui.questlog.completed_heading", count))
+                .Append("</color>\n<size=85%><alpha=#CC>");
+            string separator = L.Pick("、", ", ");
+            bool first = true;
+            for (int i = 0; i < quests.All.Count; i++)
+            {
+                QuestData quest = quests.All[i];
+                if (!quests.IsCompleted(quest.Id))
+                {
+                    continue;
+                }
+
+                if (!first)
+                {
+                    into.Append(separator);
+                }
+
+                into.Append(quest.DisplayTitle);
+                first = false;
+            }
+
+            into.Append("<alpha=#FF></size>\n");
         }
     }
 }
