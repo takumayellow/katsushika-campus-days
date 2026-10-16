@@ -2328,10 +2328,10 @@ RectTransform:
   - {fileID: 1074268752}
   m_Father: {fileID: 1925621498}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: -44}
-  m_SizeDelta: {x: 1120, y: 560}
+  m_SizeDelta: {x: -120, y: -160}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &982490243
 GameObject:
@@ -2510,10 +2510,10 @@ RectTransform:
   - {fileID: 303640594}
   m_Father: {fileID: 1925621498}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 1}
-  m_AnchorMax: {x: 0.5, y: 1}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: -28}
-  m_SizeDelta: {x: 1100, y: 70}
+  m_SizeDelta: {x: -140, y: 70}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!1 &1074268751
 GameObject:
@@ -4284,8 +4284,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3056800d07264283a732777ee98d942e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: KCD.Runtime::KCD.FitInCanvas
-  _reflow: 0
-  _portraitHeight: 0
+  _reflow: 1
+  _portraitHeight: 1300
 --- !u!1 &1977203228
 GameObject:
   m_ObjectHideFlags: 0
