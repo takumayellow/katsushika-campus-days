@@ -95,6 +95,16 @@ def test_launch_args_for_uncapped_frames():
     assert perf.uncapped_args(False) == ()
 
 
+def test_cpu_throttle_command_slows_the_cpu_by_the_rate():
+    assert perf.cpu_throttle_command(4) == ("Emulation.setCPUThrottlingRate", {"rate": 4})
+    assert perf.cpu_throttle_command(1) is None
+
+
+def test_cpu_throttle_command_rejects_rates_below_one():
+    with pytest.raises(ValueError):
+        perf.cpu_throttle_command(0.5)
+
+
 # ---- perf_probe.js をブラウザで動かす ----
 
 PAGE = """<!doctype html><canvas id="c" width="64" height="64"></canvas><script>
