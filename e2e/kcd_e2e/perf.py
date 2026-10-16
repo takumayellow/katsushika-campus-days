@@ -50,6 +50,15 @@ def uncapped_args(uncapped: bool) -> tuple[str, ...]:
     return UNCAPPED_ARGS if uncapped else ()
 
 
+def cpu_throttle_command(rate: float) -> tuple[str, dict[str, float]] | None:
+    """遅い CPU を真似る CDP の命令。rate 倍だけメインスレッドを遅くする。1 なら掛けない。"""
+    if rate < 1:
+        raise ValueError(f"CPU を遅くする倍率は 1 以上: {rate}")
+    if rate == 1:
+        return None
+    return "Emulation.setCPUThrottlingRate", {"rate": rate}
+
+
 def percentile(values: list[float], percent: float) -> float:
     """最も近い順位の方法の百分位数。"""
     ordered = sorted(values)
@@ -97,6 +106,8 @@ class PerfOptions:
     load_timeout_s: float = 180.0
     scene_timeout_s: float = 60.0
     viewport: tuple[int, int] = (1280, 900)
+    # 読み込みが済んでから掛ける CPU の遅さ（倍）。読み込みまで遅くすると待ちが長くなるだけなので, 測る間だけ掛ける。
+    cpu_throttle: float = 1.0
 
 
 @dataclass
@@ -155,7 +166,8 @@ def run_perf(options: PerfOptions) -> PerfResult:
                     result.frozen = _measure_frozen(page, console, options)
         finally:
             browser.close()
-    payload = {"url": options.url, "launch": list(options.launch.args), **result.as_dict()}
+    payload = {"url": options.url, "launch": list(options.launch.args), "cpu_throttle": options.cpu_throttle,
+               **result.as_dict()}
     (options.out_dir / "perf.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2),
                                                encoding="utf-8")
     return result
@@ -176,6 +188,9 @@ def _session(browser: Browser, options: PerfOptions) -> Iterator[tuple[Page, lis
         page.goto(options.url, wait_until="domcontentloaded", timeout=options.load_timeout_s * 1000)
         page.wait_for_function(READY_JS, timeout=options.load_timeout_s * 1000, polling=250)
         _wait_drawn(page, options.scene_timeout_s)
+        throttle = cpu_throttle_command(options.cpu_throttle)
+        if throttle is not None:
+            context.new_cdp_session(page).send(*throttle)
         # クリックはしない。Unity がマウスをロックし, 手元のマウスを取ってしまう。キーはフォーカスで届く。
         page.locator("#unity-canvas").focus()
         yield page, console
