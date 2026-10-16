@@ -16,18 +16,18 @@
 ## 遊ぶ（ブラウザ版）
 
 https://takumayellow.github.io/katsushika-campus-days/ を開く。Chrome / Edge / Firefox の最新版、
-WebGL 2 対応 GPU。初回は約 100 MB を読み込む。セーブはブラウザに 1 枠（PlayerPrefs = IndexedDB）。
+WebGL 2 対応 GPU。初回は約 70 MB を読み込む。セーブはブラウザに 1 枠（PlayerPrefs = IndexedDB）。
 
 ## 遊ぶ（配布版）
 
-`dist/KatsushikaCampusDays_win64.zip` を展開して `KatsushikaCampusDays.exe` を起動する。
+`dist/KatsushikaCampusDays_v<版>_<commit の先頭 7 桁>_win64.zip` を展開して `KatsushikaCampusDays.exe` を起動する。
 Windows 10/11 64bit、インストール不要。操作は WASD / 矢印キー移動、マウス視点、Shift ダッシュ、Space ジャンプ、
 E で話す/入る、Tab クエストログ、Esc メニュー。詳細は [docs/HOW_TO_PLAY.md](docs/HOW_TO_PLAY.md)。
 
 ## 遊び方
 
-ブラウザ版は https://takumayellow.github.io/katsushika-campus-days/ 。キーボードとマウスのある PC で開く
-（スマートフォンとタブレットでは操作できない、#73）。
+ブラウザ版は https://takumayellow.github.io/katsushika-campus-days/ 。PC はキーボードとマウスかゲームパッドで、
+スマートフォンとタブレットは画面のスティックとボタンで遊ぶ（縦持ち・横持ちのどちらでもよい、#187）。
 
 タイトル画面で主人公を ← → か A / D で選び、Enter で決める。C でクレジット、O で設定を開く。
 朝 8:30 のキャンパスから 1 日が始まり、学生や教授と話すとクエストが進み、夜にリザルト画面が出る。
