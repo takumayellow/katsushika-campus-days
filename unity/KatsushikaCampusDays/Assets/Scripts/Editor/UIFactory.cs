@@ -33,6 +33,9 @@ namespace KCD.Editor
         /// <summary>縦長の画面での会話の枠の高さ。幅 800 では 1 行が 20 字ほどになるので、6 行入れる。</summary>
         private const float PortraitDialogueHeight = 440f;
 
+        /// <summary>会話の枠の上に出す話し手の顔の大きさ。</summary>
+        private const float DialoguePortraitSize = 200f;
+
         /// <summary>Campus シーンの表示一式。HUD を返す。</summary>
         public static HUD BuildCampusUI(Transform root, GameObject player)
         {
@@ -54,7 +57,7 @@ namespace KCD.Editor
             hud.QuestLogView = BuildQuestLog(canvas.gameObject, canvasRect);
             hud.PauseMenu = BuildPauseMenu(canvas.gameObject, canvasRect);
             BuildElevatorMenu(canvas.gameObject, canvasRect);
-            BuildDialogue(canvas.gameObject, canvasRect);
+            BuildDialogue(canvas.gameObject, canvasRect, player.transform);
             hud.PauseMenu.Settings = BuildSettings(canvas.gameObject, canvasRect);
             BuildPhotoOverlay(canvas.gameObject, canvasRect);
 
@@ -206,7 +209,7 @@ namespace KCD.Editor
         }
 
         /// <summary>下部の会話ウィンドウ。</summary>
-        private static void BuildDialogue(GameObject host, RectTransform parent)
+        private static void BuildDialogue(GameObject host, RectTransform parent, Transform player)
         {
             RectTransform rect = Rect(parent, "Dialogue", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
                 new Vector2(0f, 48f), new Vector2(1520f, 300f));
@@ -232,11 +235,30 @@ namespace KCD.Editor
             TMP_Text mark = Label(markRect, "Mark", "▼", 28f, TextAlignmentOptions.Center);
             mark.color = Accent;
 
+            BuildDialoguePortrait(host, rect, player);
+
             rect.gameObject.SetActive(false);
             tap.Bind(body);
             DialogueView view = host.AddComponent<DialogueView>();
             view.Bind(rect.gameObject, speaker, body, markRect.gameObject);
             view.BindTap(tap);
+        }
+
+        /// <summary>話し手の顔の枠 (#11)。会話の枠の左上の外側に置き、本文の幅は削らない。</summary>
+        private static void BuildDialoguePortrait(GameObject host, RectTransform dialogue, Transform player)
+        {
+            RectTransform frame = Rect(dialogue, "Portrait", new Vector2(0f, 1f), new Vector2(0f, 0f),
+                new Vector2(24f, 8f), new Vector2(DialoguePortraitSize, DialoguePortraitSize));
+            Backdrop(frame, new Color(0.05f, 0.07f, 0.12f, 0.9f));
+
+            RectTransform faceRect = Stretch(frame, "Face");
+            faceRect.offsetMin = new Vector2(6f, 6f);
+            faceRect.offsetMax = new Vector2(-6f, -6f);
+            RawImage face = faceRect.gameObject.AddComponent<RawImage>();
+            face.raycastTarget = false;
+
+            frame.gameObject.SetActive(false);
+            host.AddComponent<DialoguePortrait>().Bind(frame.gameObject, face, player);
         }
     }
 }

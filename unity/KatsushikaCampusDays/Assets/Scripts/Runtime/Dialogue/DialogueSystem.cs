@@ -50,6 +50,9 @@ namespace KCD
         public DialogueLine CurrentLine =>
             _topic != null && !_choosing && _lines != null && _lineIndex < _lines.Count ? _lines[_lineIndex] : null;
 
+        /// <summary>話しかけた NPC の会話データの id。NPC の決まらない会話（メモ）や会話の外では空。</summary>
+        public string DialogueId => _dialogueId;
+
         /// <summary>選択肢を出しているか (#9)。</summary>
         public bool IsChoosing => _choosing;
 
