@@ -24,6 +24,12 @@ namespace KCD.Editor
         /// <summary>パネルの大きさ（1920x1080 換算）。クレジットの本文の枠 1084x536 が収まる大きさ。</summary>
         private static readonly Vector2 PanelSize = new Vector2(1240f, 800f);
 
+        /// <summary>
+        /// 縦長の画面での枠の高さ (#187)。縦長では縮めずに幅を Canvas に合わせ、クレジットのページは折り返す
+        /// （<see cref="FormalEnding.WrapsBody"/>）。折り返して増えた行をこの高さに入れる。
+        /// </summary>
+        public const float PortraitHeight = 1300f;
+
         /// <summary>画面を組んで FormalEnding を Systems に付ける。EventSystem は UIFactory.BuildCampusUI が置く。</summary>
         public static FormalEnding Build(Transform root)
         {
@@ -34,25 +40,29 @@ namespace KCD.Editor
             var center = new Vector2(0.5f, 0.5f);
             RectTransform rect = UIFactory.Rect(parent, "FormalEnding", center, center, Vector2.zero, PanelSize);
             UIFactory.Backdrop(rect, PanelDark);
-            UIFactory.KeepInCanvas(rect);
+            UIFactory.ReflowInCanvas(rect, PortraitHeight);
 
-            RectTransform headingBox = UIFactory.Rect(rect, "Heading", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-                new Vector2(0f, -40f), new Vector2(1120f, 72f));
+            // 見出し・本文・案内は枠に合わせて伸び縮みさせる。縦持ちでは枠の幅と高さが変わる（FitInCanvas）。
+            RectTransform headingBox = UIFactory.Rect(rect, "Heading", new Vector2(0f, 1f), new Vector2(0.5f, 1f),
+                new Vector2(0f, -40f), new Vector2(-120f, 72f));
+            headingBox.anchorMax = Vector2.one;
             TMP_Text heading = UIFactory.Label(headingBox, "Label",
                 FormalEnding.HeadingText(0, false), 44f, TextAlignmentOptions.Center);
             heading.fontStyle = FontStyles.Bold;
             heading.color = HeadingGold;
 
-            RectTransform bodyBox = UIFactory.Rect(rect, "Body", center, center,
-                new Vector2(0f, 4f), new Vector2(1120f, 580f));
+            RectTransform bodyBox = UIFactory.Stretch(rect, "Body");
+            bodyBox.offsetMin = new Vector2(60f, 114f);
+            bodyBox.offsetMax = new Vector2(-60f, -106f);
             TMP_Text body = UIFactory.Label(bodyBox, "Label", string.Empty, 30f, TextAlignmentOptions.Center);
             // クレジットのページは行が多いので、枠に収まるまで縮める。振り返りと会った人は 30 のまま。
             body.enableAutoSizing = true;
             body.fontSizeMin = 18f;
             body.fontSizeMax = 30f;
 
-            RectTransform choiceBox = UIFactory.Rect(rect, "Choice", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
-                new Vector2(0f, 34f), new Vector2(1120f, 56f));
+            RectTransform choiceBox = UIFactory.Rect(rect, "Choice", Vector2.zero, new Vector2(0.5f, 0f),
+                new Vector2(0f, 34f), new Vector2(-120f, 56f));
+            choiceBox.anchorMax = new Vector2(1f, 0f);
             TMP_Text choice = UIFactory.Label(choiceBox, "Label",
                 FormalEnding.ChoiceText(0, false), 28f, TextAlignmentOptions.Center);
             choice.color = Muted;
