@@ -61,6 +61,12 @@ namespace KCD
         /// <summary>話しかけた NPC（DayStats）。称号「顔なじみ」が数える。</summary>
         public List<string> Talked = new List<string>();
 
+        /// <summary>NPC ごとの好感度（NpcAffinity）。"会話データの id=値" の形 (#9)。</summary>
+        public List<string> Affinity = new List<string>();
+
+        /// <summary>選択肢に答えた話題（NpcAffinity）。"会話データの id/話題 id" の形 (#9)。</summary>
+        public List<string> AnsweredChoices = new List<string>();
+
         public Vector3 PlayerPosition => new Vector3(PlayerX, PlayerY, PlayerZ);
 
         public Vector3 ReturnPosition => new Vector3(ReturnX, ReturnY, ReturnZ);

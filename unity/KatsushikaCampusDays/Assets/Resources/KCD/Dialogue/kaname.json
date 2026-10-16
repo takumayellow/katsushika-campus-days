@@ -94,6 +94,52 @@
       ]
     },
     {
+      "id": "t_choice",
+      "requiresCompletedQuest": "q_lunch",
+      "once": true,
+      "lines": [
+        {
+          "text": "ねえ、さっきの日替わり、どうだった？ 正直に。",
+          "text_en": "So, how was the daily special? Be honest."
+        }
+      ],
+      "choices": [
+        {
+          "text": "おいしかったです。また来ます。",
+          "text_en": "It was great. I'll be back.",
+          "affinity": 2,
+          "lines": [
+            {
+              "text": "でしょ！ 明日も来なさい。12 時 20 分より前にね。",
+              "text_en": "Right?! Come again tomorrow. Before 12:20, mind you."
+            }
+          ]
+        },
+        {
+          "text": "量が多くて驚きました。",
+          "text_en": "I was surprised how big it was.",
+          "affinity": 1,
+          "lines": [
+            {
+              "text": "学生さん向けだからね。残してもいいけど、残したら顔に出るよ、わたし。",
+              "text_en": "It's made for students. You can leave some, but it'll show on my face if you do."
+            }
+          ]
+        },
+        {
+          "text": "まだ食べてないです。",
+          "text_en": "I haven't eaten it yet.",
+          "affinity": 0,
+          "lines": [
+            {
+              "text": "……冷める前に食べてきなさい。話はそれから。",
+              "text_en": "...Go eat it before it gets cold. We can talk after."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "t_sq_lost_card_active",
       "requiresActiveQuest": "q_sq_lost_card",
       "lines": [
@@ -128,6 +174,21 @@
         {
           "text": "二回来たら常連。この食堂のルール。",
           "text_en": "Twice makes a regular. Cafeteria rules."
+        }
+      ]
+    },
+    {
+      "id": "t_friend",
+      "requiresAffinity": 2,
+      "once": true,
+      "lines": [
+        {
+          "text": "あ、来た来た。あなたの分、唐揚げひとつ多めに乗せとく。内緒ね。",
+          "text_en": "Oh, there you are. I'll put one extra piece of fried chicken on yours. Keep it quiet."
+        },
+        {
+          "text": "常連の顔を覚えるのも、仕事のうちだから。",
+          "text_en": "Remembering the regulars' faces is part of the job."
         }
       ]
     },

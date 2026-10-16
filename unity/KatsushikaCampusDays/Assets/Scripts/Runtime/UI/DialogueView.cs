@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Text;
 using TMPro;
 using UnityEngine;
 
@@ -6,6 +8,7 @@ namespace KCD
     /// <summary>
     /// 会話ウィンドウ。DialogueSystem の行更新を受けて、1 文字ずつ送る。
     /// 送り終わっていない状態で E を押すと全文表示、もう一度で次の行へ進む。
+    /// 選択肢を出している間は、本文の欄に選択肢を並べる (#9)。
     /// </summary>
     public sealed class DialogueView : MonoBehaviour
     {
@@ -14,6 +17,7 @@ namespace KCD
         [SerializeField] private TMP_Text _bodyLabel;
         [SerializeField] private GameObject _continueMark;
         [SerializeField] private float _charactersPerSecond = 42f;
+        [SerializeField] private TmpLinkTap _tap;
 
         private DialogueSystem _dialogue;
 
@@ -27,6 +31,9 @@ namespace KCD
         private string _voice = string.Empty;
         private int _lastBlipAt;
 
+        /// <summary>選択肢を指のときの形で描いているか。入力の種類が変わったら描き直す。</summary>
+        private bool _choicesDrawnForTouch;
+
         /// <summary>SceneBuilder から差し込む。</summary>
         public void Bind(GameObject root, TMP_Text speaker, TMP_Text body, GameObject continueMark)
         {
@@ -34,6 +41,12 @@ namespace KCD
             _speakerLabel = speaker;
             _bodyLabel = body;
             _continueMark = continueMark;
+        }
+
+        /// <summary>選択肢を叩く受け口。SceneBuilder から差し込む。</summary>
+        public void BindTap(TmpLinkTap tap)
+        {
+            _tap = tap;
         }
 
         /// <summary>言語の切り替えは DialogueSystem の有無と関係なく、生きているあいだずっと受ける。</summary>
@@ -53,7 +66,12 @@ namespace KCD
 
             _dialogue.LineChanged += OnLineChanged;
             _dialogue.Finished += OnFinished;
+            _dialogue.ChoicesChanged += OnChoicesChanged;
             _dialogue.AdvanceGate = IsFullyRevealed;
+            if (_tap != null)
+            {
+                _tap.Tapped += OnTapped;
+            }
             SetVisible(false);
         }
 
@@ -64,7 +82,13 @@ namespace KCD
             {
                 _dialogue.LineChanged -= OnLineChanged;
                 _dialogue.Finished -= OnFinished;
+                _dialogue.ChoicesChanged -= OnChoicesChanged;
                 _dialogue.AdvanceGate = null;
+            }
+
+            if (_tap != null)
+            {
+                _tap.Tapped -= OnTapped;
             }
         }
 
@@ -117,6 +141,84 @@ namespace KCD
             }
         }
 
+        /// <summary>マウスのクリックは TmpLinkTap が捨てる。叩いたのが選択肢なら選ぶ。</summary>
+        private void OnTapped(string linkId)
+        {
+            if (_dialogue == null || !_dialogue.IsChoosing || !InputMode.IsTouch)
+            {
+                return;
+            }
+
+            int index = TmpLinkTap.ChoiceIn(linkId, _dialogue.Choices.Count);
+            if (index >= 0)
+            {
+                _dialogue.TapChoice(index);
+            }
+        }
+
+        /// <summary>選択肢を出したときと、選んでいる選択肢が変わったとき。本文の欄に選択肢を並べ、すぐに全部見せる。</summary>
+        private void OnChoicesChanged()
+        {
+            if (_dialogue == null || !_dialogue.IsChoosing)
+            {
+                return;
+            }
+
+            _line = null;
+            _voice = string.Empty;
+            _choicesDrawnForTouch = InputMode.IsTouch;
+            if (_speakerLabel != null)
+            {
+                _speakerLabel.text = GameManager.Instance.SelectedCharacterShortName;
+            }
+
+            _fullText = ComposeChoices(_dialogue.Choices, _dialogue.ChoiceIndex, _choicesDrawnForTouch);
+            _revealed = _fullText.Length;
+            _revealedFrame = Time.frameCount;
+            _lastBlipAt = _fullText.Length;
+            if (_bodyLabel != null)
+            {
+                _bodyLabel.text = _fullText;
+                _bodyLabel.maxVisibleCharacters = _fullText.Length;
+            }
+
+            if (_continueMark != null)
+            {
+                _continueMark.SetActive(false);
+            }
+        }
+
+        /// <summary>
+        /// 選択肢を 1 行ずつ並べる。selected の行にだけ ▶ と色を付け、各行を <c>&lt;link="choice:N"&gt;</c> で囲む。
+        /// 指のときは行の間を広げて叩きやすくし、指でないときはキーの案内を添える。
+        /// </summary>
+        public static string ComposeChoices(IReadOnlyList<DialogueChoice> choices, int selected, bool touch)
+        {
+            var builder = new StringBuilder(256);
+            if (touch)
+            {
+                builder.Append("<line-height=2em>");
+            }
+
+            for (int i = 0; i < choices.Count; i++)
+            {
+                builder.Append("<link=\"choice:").Append(i).Append("\">");
+                builder.Append(i == selected ? "<color=#FFD98A>▶ " : "   ");
+                builder.Append(choices[i].DisplayText);
+                builder.Append(i == selected ? "</color>" : string.Empty);
+                builder.Append("</link>\n");
+            }
+
+            if (!touch)
+            {
+                builder.Append("<size=75%><alpha=#99>")
+                    .Append(L.Pick("↑↓ えらぶ　Enter 決める", "Up/Down choose   Enter pick"))
+                    .Append("<alpha=#FF></size>");
+            }
+
+            return builder.ToString();
+        }
+
         /// <summary>話者欄の名前。話者が空ならプレイヤー、それ以外はいまの言語での話者名。</summary>
         public static string SpeakerLabel(DialogueLine line, string playerName)
         {
@@ -137,6 +239,12 @@ namespace KCD
         /// </summary>
         private void OnLocaleChanged()
         {
+            if (_dialogue != null && _dialogue.IsChoosing)
+            {
+                OnChoicesChanged();
+                return;
+            }
+
             DialogueLine line = _line;
             if (line == null || _root == null || !_root.activeSelf)
             {
@@ -166,6 +274,16 @@ namespace KCD
         {
             if (_root == null || !_root.activeSelf || _bodyLabel == null)
             {
+                return;
+            }
+
+            if (_dialogue != null && _dialogue.IsChoosing)
+            {
+                if (InputMode.IsTouch != _choicesDrawnForTouch)
+                {
+                    OnChoicesChanged();
+                }
+
                 return;
             }
 

@@ -30,6 +30,29 @@ namespace KCD
             L.IsEnglish && !string.IsNullOrEmpty(SpeakerKey) ? L.Get(SpeakerKey, Speaker) : Speaker;
     }
 
+    /// <summary>
+    /// 話題の終わりに出す選択肢の 1 つ (#9)。選ぶとその NPC の好感度が Affinity だけ動き、返事の行が続く。
+    /// </summary>
+    public sealed class DialogueChoice
+    {
+        public string Text = string.Empty;
+
+        /// <summary>英語の文（JSON の text_en）。空なら英語表示でも Text を出す。</summary>
+        public string TextEn = string.Empty;
+
+        /// <summary>選んだときに動く好感度。</summary>
+        public int Affinity;
+
+        /// <summary>選んだときに立てるフラグ。</summary>
+        public string SetsFlag = string.Empty;
+
+        /// <summary>選んだあとに続く行。空なら選んだところで会話を閉じる。</summary>
+        public readonly List<DialogueLine> Lines = new List<DialogueLine>();
+
+        /// <summary>画面に出す文。いまの言語で選ぶ。</summary>
+        public string DisplayText => L.Pick(Text, TextEn);
+    }
+
     /// <summary>ひとまとまりの会話。条件を満たしたものが上から順に選ばれる。</summary>
     public sealed class DialogueTopic
     {
@@ -47,6 +70,9 @@ namespace KCD
         /// <summary>このアイテム（コレクション id）を拾っているときだけ出す。空なら無条件。</summary>
         public string RequiresItem = string.Empty;
 
+        /// <summary>この NPC の好感度がこの値以上のときだけ出す。0 なら無条件 (#9)。</summary>
+        public int RequiresAffinity;
+
         /// <summary>クエスト以外の条件（隠しアイテムの数・持ち物）があるか。</summary>
         public bool HasItemCondition => RequiresHiddenCount > 0 || !string.IsNullOrEmpty(RequiresItem);
 
@@ -60,6 +86,12 @@ namespace KCD
         public string SetsFlag = string.Empty;
 
         public readonly List<DialogueLine> Lines = new List<DialogueLine>();
+
+        /// <summary>最後の行のあとに出す選択肢。空なら選ばせない (#9)。</summary>
+        public readonly List<DialogueChoice> Choices = new List<DialogueChoice>();
+
+        /// <summary>選択肢があるか。</summary>
+        public bool HasChoices => Choices.Count > 0;
     }
 
     /// <summary>NPC 1 人ぶんの会話データ。</summary>
@@ -129,18 +161,43 @@ namespace KCD
                 RequiresCompletedQuest = MiniJson.GetString(node, "requiresCompletedQuest"),
                 RequiresHiddenCount = MiniJson.GetInt(node, "requiresHiddenCount"),
                 RequiresItem = MiniJson.GetString(node, "requiresItem"),
+                RequiresAffinity = MiniJson.GetInt(node, "requiresAffinity"),
                 Once = MiniJson.GetBool(node, "once"),
                 StartsQuest = MiniJson.GetString(node, "startsQuest"),
                 SetsFlag = MiniJson.GetString(node, "setsFlag")
             };
 
-            List<object> lines = MiniJson.GetArray(node, "lines");
+            ParseLines(MiniJson.GetArray(node, "lines"), data, topic.Lines);
+
+            List<object> choices = MiniJson.GetArray(node, "choices");
+            for (int i = 0; i < choices.Count; i++)
+            {
+                if (choices[i] is Dictionary<string, object> choiceNode)
+                {
+                    var choice = new DialogueChoice
+                    {
+                        Text = MiniJson.GetString(choiceNode, "text"),
+                        TextEn = MiniJson.GetString(choiceNode, "text_en"),
+                        Affinity = MiniJson.GetInt(choiceNode, "affinity"),
+                        SetsFlag = MiniJson.GetString(choiceNode, "setsFlag")
+                    };
+                    ParseLines(MiniJson.GetArray(choiceNode, "lines"), data, choice.Lines);
+                    topic.Choices.Add(choice);
+                }
+            }
+
+            return topic;
+        }
+
+        /// <summary>行の配列を into に足す。文字列だけの行はこの NPC の台詞として扱う。</summary>
+        private static void ParseLines(List<object> lines, DialogueData data, List<DialogueLine> into)
+        {
             for (int i = 0; i < lines.Count; i++)
             {
                 if (lines[i] is Dictionary<string, object> lineNode)
                 {
                     string speaker = MiniJson.GetString(lineNode, "speaker", data.Speaker);
-                    topic.Lines.Add(new DialogueLine
+                    into.Add(new DialogueLine
                     {
                         Speaker = speaker,
                         SpeakerKey = data.SpeakerKeyFor(speaker),
@@ -151,7 +208,7 @@ namespace KCD
                 }
                 else if (lines[i] is string plain)
                 {
-                    topic.Lines.Add(new DialogueLine
+                    into.Add(new DialogueLine
                     {
                         Speaker = data.Speaker,
                         SpeakerKey = data.SpeakerKeyFor(data.Speaker),
@@ -159,8 +216,6 @@ namespace KCD
                     });
                 }
             }
-
-            return topic;
         }
     }
 }

@@ -212,7 +212,7 @@ namespace KCD.Editor
                 new Vector2(0f, 48f), new Vector2(1520f, 300f));
             Backdrop(rect, new Color(0.05f, 0.07f, 0.12f, 0.9f));
             ReflowInCanvas(rect, PortraitDialogueHeight);
-            AddDialogueTapArea(rect);
+            TmpLinkTap tap = AddDialogueTapArea(rect);
 
             // 話者名の札は枠の内側（上端から 14 px 下）に置き、本文はその下から始める。
             // 札を枠の上にはみ出させると、背景から浮いて本文の 1 行目にも重なる。
@@ -233,7 +233,10 @@ namespace KCD.Editor
             mark.color = Accent;
 
             rect.gameObject.SetActive(false);
-            host.AddComponent<DialogueView>().Bind(rect.gameObject, speaker, body, markRect.gameObject);
+            tap.Bind(body);
+            DialogueView view = host.AddComponent<DialogueView>();
+            view.Bind(rect.gameObject, speaker, body, markRect.gameObject);
+            view.BindTap(tap);
         }
     }
 }
