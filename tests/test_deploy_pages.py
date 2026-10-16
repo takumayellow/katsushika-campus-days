@@ -378,6 +378,7 @@ class Calls:
         self.unity = 0
         self.uploads = []
         self.dispatched = []
+        self.page = []  # 遊び方のページとして zip に足すファイル（サイトの根からのパス, 中身）
 
 
 @pytest.fixture
@@ -394,6 +395,7 @@ def fake(monkeypatch, tmp_path):
     monkeypatch.setattr(dp, "upload_release", lambda zip_path, tag, notes: calls.uploads.append(notes))
     monkeypatch.setattr(dp, "dispatch_workflow", lambda tag: calls.dispatched.append(tag))
     monkeypatch.setattr(dp, "utc_now", lambda: "2026-09-24T00:00:00Z")
+    monkeypatch.setattr(dp.howto_page, "site_files", lambda: calls.page)
     calls.build = build
     calls.argv = ["deploy_pages.py", "--build-dir", str(build), "--zip", str(tmp_path / "dist" / "webgl.zip")]
     return calls
@@ -735,3 +737,199 @@ def test_no_deploy_warns_about_oversize_and_keeps_zip(monkeypatch, fake, tmp_pat
     assert (tmp_path / "dist" / "webgl.zip").is_file()
     assert fake.uploads == []
     assert "配信するなら止まる" in capsys.readouterr().err
+
+
+# --- 遊び方のページ (#18) -------------------------------------------------
+
+# zip に足すファイルの例。サイトの根からのパスと中身。
+PAGE = [
+    ("howto/index.html", b"<!DOCTYPE html>\n<title>t</title>\n"),
+    ("howto/img/a.png", b"\x89PNG-a"),
+    ("howto/img/b.jpg", b"\xff\xd8-b"),
+]
+PAGE_BYTES = sum(len(data) for _, data in PAGE)
+BUILD_FILES = 2 + len(HASHES)  # index.html, TemplateData/style.css と Build/ の 4 つ
+
+
+def test_zip_adds_extra_files_without_compression(tmp_path):
+    build = make_build(tmp_path)
+    out = tmp_path / "webgl.zip"
+    assert dp.make_zip(build, out, extras=PAGE) == 0
+    with zipfile.ZipFile(out) as zf:
+        names = zf.namelist()
+        assert all(info.compress_type == zipfile.ZIP_STORED for info in zf.infolist())
+        assert zf.testzip() is None
+        for name, data in PAGE:
+            assert zf.read(name) == data
+    expected = {"index.html", "TemplateData/style.css"} | {f"Build/{n}" for n in HASHES.values()}
+    assert set(names) == expected | {name for name, _ in PAGE}
+    assert len(names) == len(set(names))
+
+
+def test_zip_extra_files_are_world_readable_regular_files(tmp_path):
+    # pages.yml の upload-pages-artifact は, 誰でも読めないファイルがあると警告して権限を直す。
+    build = make_build(tmp_path)
+    out = tmp_path / "webgl.zip"
+    assert dp.make_zip(build, out, extras=PAGE) == 0
+    with zipfile.ZipFile(out) as zf:
+        for name, _ in PAGE:
+            info = zf.getinfo(name)
+            assert info.create_system == 3
+            assert info.external_attr >> 16 == 0o100644, name
+
+
+def test_zip_extra_files_unpack_into_directories(tmp_path):
+    # pages.yml は unzip -q webgl.zip -d site で展開する。howto/index.html と howto/img/ ができる。
+    build = make_build(tmp_path)
+    out = tmp_path / "webgl.zip"
+    assert dp.make_zip(build, out, extras=PAGE) == 0
+    site = tmp_path / "site"
+    with zipfile.ZipFile(out) as zf:
+        zf.extractall(site)
+    assert (site / "index.html").is_file()
+    for name, data in PAGE:
+        assert (site / name).read_bytes() == data
+
+
+def test_zip_without_extras_is_unchanged(tmp_path, capsys):
+    build = make_build(tmp_path)
+    out = tmp_path / "webgl.zip"
+    assert dp.make_zip(build, out) == 0
+    with zipfile.ZipFile(out) as zf:
+        assert len(zf.namelist()) == BUILD_FILES
+    assert f" : {BUILD_FILES} files," in capsys.readouterr().out
+
+
+def test_zip_counts_extra_files_in_its_report(tmp_path, capsys):
+    build = make_build(tmp_path)
+    assert dp.make_zip(build, tmp_path / "webgl.zip", extras=PAGE) == 0
+    assert f" : {BUILD_FILES + len(PAGE)} files," in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("extras, message", [
+    ([(f"Build/{HASHES['code']}", b"x")], "同じ名前"),                # ビルドのファイルを上書きしない
+    ([("index.html", b"x")], "同じ名前"),
+    ([("howto/a.html", b"1"), ("howto/a.html", b"2")], "同じ名前"),   # 足すファイルどうし
+    ([("../x.html", b"x")], "根の外"),
+    ([("howto/../../x.html", b"x")], "根の外"),
+    ([("/x.html", b"x")], "根の外"),
+    ([("howto\\x.html", b"x")], "根の外"),
+])
+def test_zip_rejects_extras_that_clash_or_leave_the_site(tmp_path, capsys, extras, message):
+    build = make_build(tmp_path)
+    out = tmp_path / "webgl.zip"
+    assert dp.make_zip(build, out, extras=extras) == 1
+    assert not out.exists()  # 半端な zip を残さない
+    assert message in capsys.readouterr().err
+
+
+def test_extras_problem_accepts_the_page_and_names_every_offender():
+    assert dp.extras_problem(["index.html"], PAGE) is None
+    assert dp.extras_problem([], []) is None
+    reason = dp.extras_problem([], [("../a", b""), ("/b", b""), ("c", b"")])
+    assert "../a" in reason and "/b" in reason and "c" not in reason.replace("根の外", "")
+    reason = dp.extras_problem(["a", "b"], [("a", b""), ("c", b""), ("c", b""), ("d", b"")])
+    assert "a" in reason and "c" in reason and "d" not in reason
+
+
+def test_payload_size_does_not_count_the_howto_page(tmp_path):
+    build = make_build(tmp_path)
+    (build / "Build" / HASHES["data"]).write_bytes(b"x" * 1000)
+    plain, with_page = tmp_path / "plain.zip", tmp_path / "with-page.zip"
+    assert dp.make_zip(build, plain) == 0
+    assert dp.make_zip(build, with_page, extras=PAGE) == 0
+    base, size = dp.payload_size(plain), dp.payload_size(with_page)
+    assert base.page == 0 and size.page == PAGE_BYTES
+    # 1 台がゲームを読む量は変わらない。zip の中身の合計とファイル数は増える。
+    assert (size.total, size.data) == (base.total, base.data)
+    assert size.stored == base.stored + PAGE_BYTES
+    assert size.files == base.files + len(PAGE)
+
+
+@pytest.mark.parametrize("dxt, astc", [(1000, 600), (600, 1000)])
+def test_payload_size_page_and_astc_data_are_counted_apart(tmp_path, dxt, astc):
+    build = make_build(tmp_path, html=built_index(astc=ASTC_DATA))
+    (build / "Build" / HASHES["data"]).write_bytes(b"x" * dxt)
+    (build / "Build" / ASTC_DATA).write_bytes(b"a" * astc)
+    plain, with_page = tmp_path / "plain.zip", tmp_path / "with-page.zip"
+    assert dp.make_zip(build, plain) == 0
+    assert dp.make_zip(build, with_page, extras=PAGE) == 0
+    base, size = dp.payload_size(plain), dp.payload_size(with_page)
+    assert (size.total, size.data, size.astc_data) == (base.total, base.data, base.astc_data)
+    assert size.page == PAGE_BYTES and size.stored == base.stored + PAGE_BYTES
+
+
+def test_main_puts_the_page_in_the_zip_and_reports_its_size(fake, tmp_path, capsys):
+    make_build(tmp_path)
+    fake.page.extend(PAGE)
+    assert dp.main(fake.argv + ["--no-deploy"]) == 0
+    with zipfile.ZipFile(tmp_path / "dist" / "webgl.zip") as zf:
+        assert zf.read("howto/index.html") == PAGE[0][1]
+        assert zf.read("howto/img/a.png") == PAGE[1][1]
+    out = capsys.readouterr().out
+    assert "遊び方のページ（howto/）" in out and "合計と data には数えない" in out
+
+
+def test_main_without_a_page_prints_no_page_line(fake, tmp_path, capsys):
+    make_build(tmp_path)
+    assert dp.main(fake.argv + ["--no-deploy"]) == 0
+    assert "遊び方のページ" not in capsys.readouterr().out
+
+
+def test_main_deploys_the_zip_with_the_page(fake, tmp_path):
+    clean_build(tmp_path)
+    fake.page.extend(PAGE)
+    assert dp.main(fake.argv) == 0
+    assert len(fake.uploads) == 1 and fake.dispatched == [dp.TAG]
+    with zipfile.ZipFile(tmp_path / "dist" / "webgl.zip") as zf:
+        assert "howto/index.html" in zf.namelist()
+
+
+def test_howto_page_does_not_count_toward_the_size_limits(monkeypatch, fake, tmp_path):
+    clean_build(tmp_path)
+    assert dp.main(fake.argv + ["--no-deploy"]) == 0
+    size = dp.payload_size(tmp_path / "dist" / "webgl.zip")
+    # 上限をゲームの大きさちょうどにしても, ページを足して配信できる
+    monkeypatch.setattr(dp, "MAX_TOTAL_BYTES", size.total)
+    monkeypatch.setattr(dp, "MAX_DATA_BYTES", size.data)
+    fake.page.extend(PAGE)
+    assert dp.main(fake.argv) == 0
+    assert len(fake.uploads) == 1
+    assert dp.payload_size(tmp_path / "dist" / "webgl.zip").total == size.total
+
+
+@pytest.mark.parametrize("limit", ["MAX_TOTAL_BYTES", "MAX_DATA_BYTES"])
+def test_oversize_game_still_stops_with_a_page(monkeypatch, fake, tmp_path, limit):
+    clean_build(tmp_path)
+    fake.page.extend(PAGE)
+    monkeypatch.setattr(dp, limit, 15)
+    assert dp.main(fake.argv) == 1
+    assert fake.uploads == [] and fake.dispatched == []
+
+
+@pytest.mark.parametrize("error", [ValueError("13 行目: 画像は使えない"), FileNotFoundError("talk.jpg")])
+def test_main_stops_before_building_when_the_page_cannot_be_made(monkeypatch, fake, tmp_path, capsys, error):
+    def broken():
+        raise error
+
+    monkeypatch.setattr(dp.howto_page, "site_files", broken)
+    monkeypatch.setattr(dp, "git_state", lambda: dp.GitState(SHA))
+    assert dp.main(fake.argv + ["--build"]) == 1
+    assert fake.unity == 0  # 時間のかかる Unity のビルドを始めない
+    assert fake.uploads == [] and fake.dispatched == []
+    assert not (tmp_path / "dist" / "webgl.zip").exists()
+    err = capsys.readouterr().err
+    assert "遊び方のページを作れない" in err and str(error) in err
+
+
+def test_real_howto_page_goes_into_the_zip(tmp_path):
+    build = make_build(tmp_path)
+    out = tmp_path / "webgl.zip"
+    page = dp.howto_page.site_files()  # 本物の docs/HOW_TO_PLAY.md と docs/screenshots
+    assert dp.make_zip(build, out, extras=page) == 0
+    with zipfile.ZipFile(out) as zf:
+        names = set(zf.namelist())
+        html = zf.read("howto/index.html").decode("utf-8")
+    assert {name for name, _ in page} <= names
+    assert html.startswith("<!DOCTYPE html>")
+    assert dp.payload_size(out).page == sum(len(data) for _, data in page)

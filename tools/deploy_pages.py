@@ -38,6 +38,13 @@ ASTC の data (#187):
     MAX_DATA_BYTES, 決め方は定数のコメント）を超えていれば配信しない。--allow-oversize で通す。
     端末は DXT と ASTC の data のどちらか一方しか読まないので, 大きい方で測る。
     --no-deploy のときは超えていても zip を残し, 超えたことだけを知らせる。
+
+遊び方のページ (#18):
+    zip には docs/HOW_TO_PLAY.md から作った howto/index.html と, その画像（howto/img/）を足す。
+    Pages は zip の中身をそのまま載せ, pages.yml はリポジトリを checkout しないので, ページは zip に
+    入れておく。作り方は tools/howto_page.py。遊び方に変換できない書き方があるときは, 時間のかかる
+    Unity のビルドより前に止める。ページの分は zip 全体（stored）と files に数え, 合計と data には
+    数えない（ゲームを読む量ではない）。
 """
 
 from __future__ import annotations
@@ -47,12 +54,17 @@ import json
 import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
+import time
 import zipfile
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+
+import howto_page
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT / "unity" / "KatsushikaCampusDays"
@@ -120,6 +132,8 @@ class PayloadSize:
     total と data は 1 台の端末が読む量。data は index.html が data として読むファイルの合計で,
     ASTC の data もあれば, DXT と ASTC の大きい方を取る。total は data 以外のファイルにその data を足したもの。
     stored は zip に入れた全ファイルの合計（Pages に置く量）, astc_data は ASTC の data の大きさ。
+    page は遊び方のページ（howto/）の大きさ。zip と Pages には載るが, ゲームを読む量ではないので
+    total にも data にも数えない。
     """
 
     total: int
@@ -127,6 +141,7 @@ class PayloadSize:
     files: int
     stored: int = 0
     astc_data: int = 0
+    page: int = 0
 
 
 @dataclass(frozen=True)
@@ -351,7 +366,33 @@ def select_files(build_dir: Path) -> list[Path]:
     return selected
 
 
-def make_zip(build_dir: Path, out: Path) -> int:
+def extras_problem(taken: Sequence[str], extras: Sequence[tuple[str, bytes]]) -> str | None:
+    """ビルドの外から足すファイル（extras）を zip に足せない理由。足せるなら None。"""
+    names = [name for name, _ in extras]
+    unsafe = [name for name in names if name.startswith("/") or "\\" in name or ".." in name.split("/")]
+    if unsafe:
+        return "サイトの根の外を指す名前がある: " + ", ".join(unsafe)
+    clash = sorted({name for name in names if name in taken or names.count(name) > 1})
+    if clash:
+        return "同じ名前のファイルが 2 つある: " + ", ".join(clash)
+    return None
+
+
+def extra_info(name: str, date_time: tuple[int, int, int, int, int, int]) -> zipfile.ZipInfo:
+    """ビルドの外から足すファイルの zip の項目。権限は 0644 に決める。
+
+    upload-pages-artifact は誰でも読めるファイルでないと警告し, 権限を直す。ビルドのファイルは
+    zf.write() が作業ツリーの権限を写すので, 足すファイルは権限をこちらで決める。
+    """
+    info = zipfile.ZipInfo(name, date_time=date_time)
+    info.compress_type = zipfile.ZIP_STORED
+    info.create_system = 3  # Unix。unzip が external_attr の権限を読む
+    info.external_attr = (stat.S_IFREG | 0o644) << 16
+    return info
+
+
+def make_zip(build_dir: Path, out: Path, extras: Sequence[tuple[str, bytes]] = ()) -> int:
+    """build_dir の配信するファイルを zip にする。extras は足すファイル（サイトの根からのパス, 中身）。"""
     index = build_dir / "index.html"
     if not index.is_file():
         print(f"WebGL ビルドが見つからない: {index}", file=sys.stderr)
@@ -363,14 +404,22 @@ def make_zip(build_dir: Path, out: Path) -> int:
         print(f"zip を作れない: {error}", file=sys.stderr)
         return 1
 
+    problem = extras_problem([path.relative_to(build_dir).as_posix() for path in files], extras)
+    if problem is not None:
+        print(f"zip を作れない: {problem}", file=sys.stderr)
+        return 1
+
     out.parent.mkdir(parents=True, exist_ok=True)
     # .gz / .wasm / .data は既に圧縮済みなので、zip 自体は無圧縮で速く作る。
     with zipfile.ZipFile(out, "w", compression=zipfile.ZIP_STORED) as zf:
         for path in files:
             zf.write(path, path.relative_to(build_dir).as_posix())
+        now = time.localtime()[:6]
+        for name, data in extras:
+            zf.writestr(extra_info(name, now), data)
 
     size_mib = out.stat().st_size / (1024 * 1024)
-    print(f"{out} : {len(files)} files, {size_mib:.1f} MiB")
+    print(f"{out} : {len(files) + len(extras)} files, {size_mib:.1f} MiB")
     return 0
 
 
@@ -390,10 +439,12 @@ def payload_size(zip_path: Path) -> PayloadSize:
     dxt_paths = data_paths(html)
     data = sum(sizes.get(path, 0) for path in dxt_paths)
     astc = sum(sizes.get(path, 0) for path in astc_data_paths(html) if path not in dxt_paths)
+    # 遊び方のページはゲームを読む量ではないので, 合計に数えない。
+    page = sum(size for name, size in sizes.items() if name.startswith(f"{howto_page.PAGE_DIR}/"))
     stored = sum(sizes.values())
     largest = max(data, astc)
-    return PayloadSize(total=stored - data - astc + largest, data=largest, files=len(sizes),
-                       stored=stored, astc_data=astc)
+    return PayloadSize(total=stored - page - data - astc + largest, data=largest, files=len(sizes),
+                       stored=stored, astc_data=astc, page=page)
 
 
 def to_mib(size: int) -> str:
@@ -498,6 +549,13 @@ def main(argv: list[str]) -> int:
     args = parse_args(argv)
     build_dir = Path(args.build_dir)
 
+    # 遊び方に変換できない書き方があれば, 時間のかかるビルドの前に止める。
+    try:
+        page = howto_page.site_files()
+    except (ValueError, OSError) as error:
+        print(f"遊び方のページを作れない: {error}", file=sys.stderr)
+        return 1
+
     if args.build:
         state = git_state()
         if state.dirty:
@@ -535,7 +593,7 @@ def main(argv: list[str]) -> int:
     zip_path.parent.mkdir(parents=True, exist_ok=True)
     if zip_path.exists():
         zip_path.unlink()
-    rc = make_zip(build_dir, zip_path)
+    rc = make_zip(build_dir, zip_path, extras=page)
     if rc != 0:
         return rc
 
@@ -544,6 +602,8 @@ def main(argv: list[str]) -> int:
           f"data {to_mib(size.data)}（上限 {to_mib(MAX_DATA_BYTES)}）")
     if size.astc_data:
         print(f"  ASTC の data {to_mib(size.astc_data)}, zip 全体 {to_mib(size.stored)}")
+    if size.page:
+        print(f"  遊び方のページ（{howto_page.PAGE_DIR}/）{to_mib(size.page)}（合計と data には数えない）")
     oversize = size_refusal(size)
     if args.no_deploy:
         if oversize is not None:
