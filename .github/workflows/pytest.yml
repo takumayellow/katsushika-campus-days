@@ -8,6 +8,9 @@ on:
       - "blender/**"
       - "tools/**"
       - "tests/**"
+      # 遊び方のページ（tools/howto_page.py）の元の文書と画像。変換できない書き方や画像の欠けを見つける（#18）
+      - "docs/HOW_TO_PLAY.md"
+      - "docs/screenshots/**"
       - "data/osm/**"
       - "unity/KatsushikaCampusDays/Assets/Audio/SE/se_chime.wav"
       - "unity/KatsushikaCampusDays/Assets/Audio/SE/piano_library.wav"
@@ -28,6 +31,9 @@ on:
       - "blender/**"
       - "tools/**"
       - "tests/**"
+      # 遊び方のページ（tools/howto_page.py）の元の文書と画像。変換できない書き方や画像の欠けを見つける（#18）
+      - "docs/HOW_TO_PLAY.md"
+      - "docs/screenshots/**"
       - "data/osm/**"
       - "unity/KatsushikaCampusDays/Assets/Audio/SE/se_chime.wav"
       - "unity/KatsushikaCampusDays/Assets/Audio/SE/piano_library.wav"
