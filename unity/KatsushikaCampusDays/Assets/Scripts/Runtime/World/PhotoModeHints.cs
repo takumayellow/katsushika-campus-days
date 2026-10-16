@@ -23,7 +23,7 @@ namespace KCD
             "Shoot A / X   Reset R3   Help L3   Back Y / B";
 
         private const string TouchJa =
-            "移動 左のスティック　向き 画面をなぞる　ズーム 2 本指で広げる・つまむ\n" +
+            "移動 左のスティック　向き なぞる　ズーム つまむ・広げる\n" +
             "撮影 「撮影」のボタン　戻る 「戻る」のボタン";
 
         private const string TouchEn =
