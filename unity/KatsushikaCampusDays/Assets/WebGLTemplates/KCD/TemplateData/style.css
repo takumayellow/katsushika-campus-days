@@ -183,6 +183,22 @@ body {
   aspect-ratio: auto;
   border-radius: 0;
 }
+/* 全画面では箱が画面の端まで広がるので、切り欠きを避ける余白を箱の内側に取り直す。
+   :-webkit-full-screen を知らないブラウザで規則ごと捨てられないよう、2 つは分けて書く。 */
+#unity-container.unity-mobile #unity-fullscreen-container:fullscreen {
+  box-sizing: border-box;
+  height: 100%;
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
+    env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+  background: #000;
+}
+#unity-container.unity-mobile #unity-fullscreen-container:-webkit-full-screen {
+  box-sizing: border-box;
+  height: 100%;
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
+    env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+  background: #000;
+}
 
 /* 指だけの端末に読み込み前に出す通信量の案内 (#73 #187)。出している間はキャンバスと操作の案内を隠す。 */
 #kcd-data-notice {

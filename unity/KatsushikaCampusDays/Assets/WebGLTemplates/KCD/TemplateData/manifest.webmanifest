@@ -1,0 +1,12 @@
+{
+  "name": "葛飾キャンパスデイズ",
+  "short_name": "葛飾キャンパス",
+  "start_url": "../",
+  "scope": "../",
+  "display": "fullscreen",
+  "background_color": "#12151b",
+  "theme_color": "#12151b",
+  "icons": [
+    { "src": "icon-180.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}

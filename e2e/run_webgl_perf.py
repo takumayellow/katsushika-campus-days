@@ -4,6 +4,7 @@
     python e2e/run_webgl_perf.py --serve build/WebGL                 # ローカルのビルド, 60 fps の上限あり
     python e2e/run_webgl_perf.py --serve build/WebGL --uncapped      # 上限なし
     python e2e/run_webgl_perf.py --url https://takumayellow.github.io/katsushika-campus-days/ --tiers high
+    python e2e/run_webgl_perf.py --serve build/WebGL --cpu-throttle 4   # CPU を 4 倍遅くして測る
 
 Edge を headless（実 GPU）で開き, ビューポートは 1280×900。音は出さない。マウスは取らない（クリックしない）。
 
@@ -38,6 +39,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     where.add_argument("--serve", metavar="DIR", help="この WebGL ビルドを 127.0.0.1 で配信して開く")
     parser.add_argument("--tiers", default=",".join(TIERS), help="測る段（カンマ区切り）")
     parser.add_argument("--uncapped", action="store_true", help="60 fps の上限を外して測る")
+    parser.add_argument("--cpu-throttle", type=float, default=1.0,
+                        help="読み込みのあと CPU をこの倍率だけ遅くして測る（1 = 掛けない）")
     parser.add_argument("--seconds", type=float, default=10.0, help="立ちと歩きをそれぞれ記録する秒数")
     parser.add_argument("--frozen-rounds", type=int, default=2, help="ポーズ中の段の比べをくり返す回数")
     parser.add_argument("--frozen-seconds", type=float, default=3.0, help="ポーズ中に 1 つの段を記録する秒数")
@@ -49,6 +52,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     unknown = [t for t in tiers if t not in TIERS]
     if not tiers or unknown:
         parser.error(f"--tiers は {TIERS} から選ぶ: {args.tiers}")
+    if args.cpu_throttle < 1:
+        parser.error("--cpu-throttle は 1 以上")
     if args.frozen_rounds < 0 or args.seconds <= 0 or args.frozen_seconds <= 0:
         parser.error("--frozen-rounds は 0 以上, --seconds と --frozen-seconds は正の数")
     args.tiers = tiers
@@ -84,7 +89,7 @@ def main(argv: list[str]) -> int:
     def run(url: str) -> int:
         options = PerfOptions(url=url, out_dir=out_dir, launch=launch, tiers=args.tiers,
                               measure_s=args.seconds, frozen_rounds=args.frozen_rounds,
-                              frozen_s=args.frozen_seconds)
+                              frozen_s=args.frozen_seconds, cpu_throttle=args.cpu_throttle)
         try:
             result = run_perf(options)
         except (TimeoutError, PlaywrightTimeoutError) as error:
