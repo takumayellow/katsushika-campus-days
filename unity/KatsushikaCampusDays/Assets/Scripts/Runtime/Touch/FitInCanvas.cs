@@ -21,6 +21,7 @@ namespace KCD
         private RectTransform _rect;
         private RectTransform _canvasRect;
         private Vector2 _size;
+        private bool _hasSize;
 
         /// <summary>
         /// 幅が足りないときは縮めずに幅を狭める。portraitHeight が正なら、縦長の画面ではその高さにする
@@ -30,6 +31,16 @@ namespace KCD
         {
             _reflow = true;
             _portraitHeight = portraitHeight;
+        }
+
+        /// <summary>
+        /// 元の大きさを差し替える。画面の向きで枠の置き方を変えるとき（<see cref="TitleLayout"/>）に使う。
+        /// 差し替えないと、次のフレームで元の大きさに書き戻される。
+        /// </summary>
+        public void SetSize(Vector2 size)
+        {
+            _size = size;
+            _hasSize = true;
         }
 
         /// <summary>
@@ -60,7 +71,10 @@ namespace KCD
         private void Awake()
         {
             _rect = (RectTransform)transform;
-            _size = _rect.sizeDelta;
+            if (!_hasSize)
+            {
+                _size = _rect.sizeDelta;
+            }
         }
 
         private void OnEnable()

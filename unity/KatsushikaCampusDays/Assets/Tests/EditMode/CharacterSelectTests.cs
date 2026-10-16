@@ -1,3 +1,4 @@
+using System.Linq;
 using NUnit.Framework;
 
 namespace KCD.Tests
@@ -61,6 +62,28 @@ namespace KCD.Tests
             }
 
             Assert.AreEqual(0, index, "一周しても最初の子に戻らない");
+        }
+
+        [TestCase(0, 0, 3, 0)]
+        [TestCase(1, 0, 3, 1)]
+        [TestCase(2, 0, 3, -1)]
+        [TestCase(0, 2, 3, 1)]
+        [TestCase(1, 2, 3, -1)]
+        [TestCase(2, 2, 3, 0)]
+        public void CarouselSlot_PutsOneNeighbourOnEachSide(int i, int index, int count, int expected)
+        {
+            Assert.AreEqual(expected, CharacterSelect.CarouselSlot(i, index, count));
+        }
+
+        [Test]
+        public void CarouselSlot_SelectedIsAlwaysInTheMiddle()
+        {
+            for (int index = 0; index < Count; index++)
+            {
+                Assert.AreEqual(0, CharacterSelect.CarouselSlot(index, index, Count));
+                var slots = Enumerable.Range(0, Count).Select(i => CharacterSelect.CarouselSlot(i, index, Count));
+                Assert.AreEqual(Count, slots.Distinct().Count(), "2 人が同じ場所に重なる");
+            }
         }
     }
 }
