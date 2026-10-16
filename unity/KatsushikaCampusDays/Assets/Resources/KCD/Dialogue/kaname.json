@@ -94,6 +94,44 @@
       ]
     },
     {
+      "id": "t_sq_lost_card_active",
+      "requiresActiveQuest": "q_sq_lost_card",
+      "lines": [
+        {
+          "text": "注文端末は入って左の壁ぎわ、白い端末が並んでるところ。返却口は反対側の奥。",
+          "text_en": "The order terminals are along the left wall as you come in, the row of white ones. The tray return is at the far end on the opposite side."
+        },
+        {
+          "text": "配膳カウンターは 36 m もあるから、まっすぐ歩けば着くわ。",
+          "text_en": "The serving counter runs 36 metres, so just walk straight along it and you'll get there."
+        }
+      ]
+    },
+    {
+      "id": "t_sq_lost_card_done",
+      "requiresCompletedQuest": "q_sq_lost_card",
+      "once": true,
+      "lines": [
+        {
+          "text": "ありがと。持ち主、2 階の回廊でお昼食べてた子だったみたい。さっき取りに来た。",
+          "text_en": "Thanks. Looks like the owner was someone eating lunch up on the second-floor gallery. They just came to collect it."
+        },
+        {
+          "text": "あなた、もう常連ね。顔、覚えたから。",
+          "text_en": "You're a regular now, you know. I've got your face memorised."
+        },
+        {
+          "speaker": "自分",
+          "text": "まだ二回目なんですけど。",
+          "text_en": "This is only my second time here."
+        },
+        {
+          "text": "二回来たら常連。この食堂のルール。",
+          "text_en": "Twice makes a regular. Cafeteria rules."
+        }
+      ]
+    },
+    {
       "id": "t_choice",
       "requiresCompletedQuest": "q_lunch",
       "once": true,
@@ -136,44 +174,6 @@
               "text_en": "...Go eat it before it gets cold. We can talk after."
             }
           ]
-        }
-      ]
-    },
-    {
-      "id": "t_sq_lost_card_active",
-      "requiresActiveQuest": "q_sq_lost_card",
-      "lines": [
-        {
-          "text": "注文端末は入って左の壁ぎわ、白い端末が並んでるところ。返却口は反対側の奥。",
-          "text_en": "The order terminals are along the left wall as you come in, the row of white ones. The tray return is at the far end on the opposite side."
-        },
-        {
-          "text": "配膳カウンターは 36 m もあるから、まっすぐ歩けば着くわ。",
-          "text_en": "The serving counter runs 36 metres, so just walk straight along it and you'll get there."
-        }
-      ]
-    },
-    {
-      "id": "t_sq_lost_card_done",
-      "requiresCompletedQuest": "q_sq_lost_card",
-      "once": true,
-      "lines": [
-        {
-          "text": "ありがと。持ち主、2 階の回廊でお昼食べてた子だったみたい。さっき取りに来た。",
-          "text_en": "Thanks. Looks like the owner was someone eating lunch up on the second-floor gallery. They just came to collect it."
-        },
-        {
-          "text": "あなた、もう常連ね。顔、覚えたから。",
-          "text_en": "You're a regular now, you know. I've got your face memorised."
-        },
-        {
-          "speaker": "自分",
-          "text": "まだ二回目なんですけど。",
-          "text_en": "This is only my second time here."
-        },
-        {
-          "text": "二回来たら常連。この食堂のルール。",
-          "text_en": "Twice makes a regular. Cafeteria rules."
         }
       ]
     },

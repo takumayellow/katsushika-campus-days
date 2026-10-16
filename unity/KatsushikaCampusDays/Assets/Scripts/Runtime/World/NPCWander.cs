@@ -328,6 +328,50 @@ namespace KCD
             }
         }
 
+        /// <summary>
+        /// ホーム地点を移す（NpcSchedule が時間帯で呼ぶ, #9）。warp なら新しいホームへ一瞬で移り、
+        /// そうでなければ NavMesh の上を歩いて向かう。着いたらそのまわりで歩き回る。
+        /// 新しいホームの近くに NavMesh が無ければ動かない。歩いてたどり着けないときは一瞬で移る。
+        /// </summary>
+        public void Relocate(Vector3 home, bool warp)
+        {
+            if (!_navMeshReady)
+            {
+                // NavMesh に乗る前なら置き直すだけ。TryAttachToNavMesh がこの位置から乗る。
+                _home = home;
+                transform.position = home;
+                return;
+            }
+
+            if (!NavMesh.SamplePosition(home, out NavMeshHit hit, NavMeshSnapDistance, NavMesh.AllAreas))
+            {
+                Debug.LogWarning($"[KCD] {name} の移り先 {home} の近くに NavMesh がありません。");
+                return;
+            }
+
+            _home = hit.position;
+            if (!warp && !CanWalkTo(hit.position))
+            {
+                warp = true;
+            }
+
+            if (warp)
+            {
+                _agent.Warp(hit.position);
+                _agent.ResetPath();
+                return;
+            }
+
+            _agent.SetDestination(hit.position);
+            _nextDecisionAt = Time.time + _minIdleSeconds;
+        }
+
+        private bool CanWalkTo(Vector3 destination)
+        {
+            var path = new NavMeshPath();
+            return _agent.CalculatePath(destination, path) && path.status == NavMeshPathStatus.PathComplete;
+        }
+
         private bool TryPickDestination(out Vector3 destination)
         {
             for (int attempt = 0; attempt < 6; attempt++)
