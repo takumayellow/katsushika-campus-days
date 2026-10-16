@@ -7,6 +7,7 @@ namespace KCD
     /// 画面の下に置いた知らせはボタンの上へ逃がす。会話やメニューでボタンが隠れている間と、
     /// キーボード・マウスに戻したときは元の場所に置く（上げたままだと、ポーズの枠越しに一覧の行に重なる）。
     /// 縦長の画面ではボタンが画面の幅の大半を占めるので、ボタンの上へ逃がす場所を別に持つ。
+    /// 写真モードの間も、撮影と戻るのボタンが出ているので逃がす。
     /// </summary>
     [RequireComponent(typeof(RectTransform))]
     public sealed class TouchPosition : MonoBehaviour
@@ -30,7 +31,7 @@ namespace KCD
             _portraitTouchPosition = portraitTouchPosition;
         }
 
-        /// <summary>指で遊ぶボタンが出ているか（<see cref="TouchHud.ShowsPlayControls"/>）に合う場所。</summary>
+        /// <summary>指で遊ぶボタンが出ているか（<see cref="TouchHud.LayoutFor"/>）に合う場所。</summary>
         public static Vector2 PositionFor(bool buttonsShown, Vector2 pointerPosition, Vector2 touchPosition)
         {
             return buttonsShown ? touchPosition : pointerPosition;
@@ -61,7 +62,9 @@ namespace KCD
 
         private void Sync()
         {
-            bool buttonsShown = TouchHud.ShowsPlayControls(InputMode.IsTouch, KCDInput.GameplayBlocked);
+            // 撮影の瞬間にボタンを隠しても、枠は動かさない（撮ったあとの知らせが跳ねる）。
+            bool buttonsShown = TouchHud.LayoutFor(InputMode.IsTouch, KCDInput.GameplayBlocked, KCDInput.PhotoMode, false)
+                                != TouchHud.Layout.Hidden;
             Vector2 position = PositionFor(
                 buttonsShown, ScreenShape.IsPortrait, _pointerPosition, _touchPosition, _portraitTouchPosition);
             if (_rect.anchoredPosition != position)

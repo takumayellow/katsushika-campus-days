@@ -252,7 +252,7 @@ namespace KCD
 
             if (visible && _hintLabel != null)
             {
-                _hintLabel.text = PhotoModeHints.Text(L.IsEnglish, _hintsForGamepad);
+                _hintLabel.text = PhotoModeHints.Text(L.IsEnglish, _hintsForGamepad, InputMode.IsTouch);
             }
         }
 
