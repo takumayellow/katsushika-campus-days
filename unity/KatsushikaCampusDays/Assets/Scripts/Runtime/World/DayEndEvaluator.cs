@@ -277,15 +277,15 @@ namespace KCD
                 }
             }
 
-            // 待ちきれずに屋内のままなら、スポーンへは飛ばさない。出入り係の Travel がまだ動いていて、
-            // 終わったときに建物の入口へ置き直すので、ここで飛ばしても取り消され、屋内の表示だけが残る。
-            bool stillInside = DayRestart.NeedsInteriorExit(interior != null, interior != null && interior.IsInside);
-            if (stillInside)
+            // 待っても屋内のままなら、出入り係の移動を止めて外にいる扱いにする。止めずにスポーンへ飛ばすと、
+            // 残った移動があとで入口へ置き直し、ミニマップの屋内表示と出入り係の入力の封鎖も残る。
+            if (DayRestart.NeedsInteriorExit(interior != null, interior != null && interior.IsInside))
             {
-                Debug.LogWarning("[DayEndEvaluator] 屋内から出られないまま翌朝にした。スポーンへは戻さない (#16)");
+                Debug.LogWarning("[DayEndEvaluator] 屋内から出られなかったので、外にいる扱いに戻してから翌朝にする (#16)");
+                interior.RestoreOutside();
             }
 
-            if (player != null && !stillInside)
+            if (player != null)
             {
                 Vector3 position = DayRestart.ReturnPoint(_hasSpawn, _spawnPosition, player.transform.position);
                 float yaw = DayRestart.ReturnYaw(_hasSpawn, _spawnYaw, player.transform.eulerAngles.y);
