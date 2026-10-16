@@ -159,52 +159,6 @@
       ]
     },
     {
-      "id": "t_choice",
-      "requiresCompletedQuest": "q_library",
-      "once": true,
-      "lines": [
-        {
-          "text": "ねえ、水盤に映る図書館と、本物の図書館。どっちが好き？",
-          "text_en": "Hey, the library reflected in the pool, or the real one. Which do you like?"
-        }
-      ],
-      "choices": [
-        {
-          "text": "映っているほうです。揺れるのがいい。",
-          "text_en": "The reflection. I like how it ripples.",
-          "affinity": 2,
-          "lines": [
-            {
-              "text": "わかってるじゃない。風が吹くと消えちゃうところも込みで、ね。",
-              "text_en": "You get it. Including how it vanishes when the wind blows."
-            }
-          ]
-        },
-        {
-          "text": "本物のほうです。中に入れるので。",
-          "text_en": "The real one. You can go inside.",
-          "affinity": 1,
-          "lines": [
-            {
-              "text": "現実派ね。嫌いじゃないよ、そういうの。",
-              "text_en": "A realist. I don't mind that."
-            }
-          ]
-        },
-        {
-          "text": "どっちも同じでは。",
-          "text_en": "Aren't they the same?",
-          "affinity": 0,
-          "lines": [
-            {
-              "text": "……あなた、詩の授業は取らないほうがいいかも。",
-              "text_en": "...Maybe skip the poetry classes."
-            }
-          ]
-        }
-      ]
-    },
-    {
       "id": "t_sq_stray_book_active",
       "requiresActiveQuest": "q_sq_stray_book",
       "lines": [
@@ -277,6 +231,52 @@
           "speaker": "自分",
           "text": "……何を書くか、考えておきます。",
           "text_en": "...I'll think about what to write."
+        }
+      ]
+    },
+    {
+      "id": "t_choice",
+      "requiresCompletedQuest": "q_library",
+      "once": true,
+      "lines": [
+        {
+          "text": "ねえ、水盤に映る図書館と、本物の図書館。どっちが好き？",
+          "text_en": "Hey, the library reflected in the pool, or the real one. Which do you like?"
+        }
+      ],
+      "choices": [
+        {
+          "text": "映っているほうです。揺れるのがいい。",
+          "text_en": "The reflection. I like how it ripples.",
+          "affinity": 2,
+          "lines": [
+            {
+              "text": "わかってるじゃない。風が吹くと消えちゃうところも込みで、ね。",
+              "text_en": "You get it. Including how it vanishes when the wind blows."
+            }
+          ]
+        },
+        {
+          "text": "本物のほうです。中に入れるので。",
+          "text_en": "The real one. You can go inside.",
+          "affinity": 1,
+          "lines": [
+            {
+              "text": "現実派ね。嫌いじゃないよ、そういうの。",
+              "text_en": "A realist. I don't mind that."
+            }
+          ]
+        },
+        {
+          "text": "どっちも同じでは。",
+          "text_en": "Aren't they the same?",
+          "affinity": 0,
+          "lines": [
+            {
+              "text": "……あなた、詩の授業は取らないほうがいいかも。",
+              "text_en": "...Maybe skip the poetry classes."
+            }
+          ]
         }
       ]
     },

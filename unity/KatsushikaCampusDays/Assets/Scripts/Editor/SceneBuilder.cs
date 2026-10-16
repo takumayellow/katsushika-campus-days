@@ -20,14 +20,29 @@ namespace KCD.Editor
             public float Distance;
             public Vector2 Fallback;
             public float WanderRadius;
+
+            /// <summary>午後に移る先（#9）。空なら一日じゅう同じ所にいる。</summary>
+            public string AfternoonBuildingId;
+            public float AfternoonDistance;
+            public Vector2 AfternoonFallback;
+
+            /// <summary>このクエストを終えるまでは午後になっても動かない。</summary>
+            public string HoldUntilQuest;
         }
+
+        /// <summary>午後の始まり（3 限の始まり）。</summary>
+        public const float AfternoonHour = 13f;
 
         private static readonly NpcSpot[] Npcs =
         {
             new NpcSpot
             {
                 Id = "prof", Name = "教授", BuildingId = "lecture",
-                Distance = 3.6f, Fallback = new Vector2(108.5f, -52.5f), WanderRadius = 2f
+                Distance = 3.6f, Fallback = new Vector2(108.5f, -52.5f), WanderRadius = 2f,
+                // 情報工学科の研究室は第2研究棟の 4F・5F にある（docs/ref/interiors/research2/spec.md）。
+                // 「体育館まで 60 秒」は講義棟の前から走る長さで決めてあるので、それが済むまでは動かない。
+                AfternoonBuildingId = "research2", AfternoonDistance = 3.6f,
+                AfternoonFallback = new Vector2(-2.9f, -12f), HoldUntilQuest = "q_gym"
             },
             new NpcSpot
             {
@@ -168,11 +183,27 @@ namespace KCD.Editor
                     : CampusProps.Outward(spot.BuildingId, spot.Distance, spot.Fallback);
 
                 float yaw = YawTowardMall(position);
-                ActorFactory.CreateNpc(
+                GameObject npc = ActorFactory.CreateNpc(
                     group.transform, spot.Id, spot.Name, position, yaw, spot.WanderRadius);
+                AddSchedule(npc, spot, position);
             }
 
             EditorPaths.Report("NPC を " + Npcs.Length + " 人置きました。");
+        }
+
+        /// <summary>午後に移る先があれば、時間帯で居場所を変える NpcSchedule を付ける（#9）。</summary>
+        private static void AddSchedule(GameObject npc, NpcSpot spot, Vector3 morning)
+        {
+            if (npc == null || string.IsNullOrEmpty(spot.AfternoonBuildingId))
+            {
+                return;
+            }
+
+            Vector3 afternoon = CampusProps.Outward(spot.AfternoonBuildingId, spot.AfternoonDistance, spot.AfternoonFallback);
+            npc.AddComponent<NpcSchedule>().Configure(
+                new[] { DayRestart.DayStartHour, AfternoonHour }, new[] { morning, afternoon }, spot.HoldUntilQuest);
+            EditorPaths.Report(spot.Name + " は " + AfternoonHour + " 時から " + spot.AfternoonBuildingId +
+                               " の前 " + afternoon + " に移ります。");
         }
 
         /// <summary>メインストリートの中心を向く角度。だいたいプレイヤーが来る方角になる。</summary>

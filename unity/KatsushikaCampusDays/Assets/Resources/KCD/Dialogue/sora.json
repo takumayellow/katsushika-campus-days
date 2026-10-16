@@ -90,6 +90,44 @@
       ]
     },
     {
+      "id": "t_sq_lab_notebook_active",
+      "requiresActiveQuest": "q_sq_lab_notebook",
+      "lines": [
+        {
+          "text": "第1実験棟は温室の西どなり。廊下を進んで、実験室は奥のほう。",
+          "text_en": "Experiment Building 1 is just west of the greenhouse. Go down the corridor, the lab is at the far end."
+        },
+        {
+          "text": "ノートは表紙に何も書いてない。ゴーグルが目印。",
+          "text_en": "The notebook has nothing on the cover. Look for the goggles."
+        }
+      ]
+    },
+    {
+      "id": "t_sq_lab_notebook_done",
+      "requiresCompletedQuest": "q_sq_lab_notebook",
+      "once": true,
+      "lines": [
+        {
+          "text": "ありがと。……これ、あげる。",
+          "text_en": "Thanks. ...Here, this is for you."
+        },
+        {
+          "text": "試験管のチャーム。中の青いの、本物じゃないから安心して。",
+          "text_en": "A test-tube charm. The blue stuff inside isn't real, don't worry."
+        },
+        {
+          "speaker": "自分",
+          "text": "本物だったら、何が入ってたんですか。",
+          "text_en": "If it were real, what would be in it?"
+        },
+        {
+          "text": "……条件を変えて、何回も試した結果。",
+          "text_en": "...The result of changing one condition and trying, over and over."
+        }
+      ]
+    },
+    {
       "id": "t_choice",
       "requiresCompletedQuest": "q_coffee",
       "once": true,
@@ -132,44 +170,6 @@
               "text_en": "It is. Not your fault, though."
             }
           ]
-        }
-      ]
-    },
-    {
-      "id": "t_sq_lab_notebook_active",
-      "requiresActiveQuest": "q_sq_lab_notebook",
-      "lines": [
-        {
-          "text": "第1実験棟は温室の西どなり。廊下を進んで、実験室は奥のほう。",
-          "text_en": "Experiment Building 1 is just west of the greenhouse. Go down the corridor, the lab is at the far end."
-        },
-        {
-          "text": "ノートは表紙に何も書いてない。ゴーグルが目印。",
-          "text_en": "The notebook has nothing on the cover. Look for the goggles."
-        }
-      ]
-    },
-    {
-      "id": "t_sq_lab_notebook_done",
-      "requiresCompletedQuest": "q_sq_lab_notebook",
-      "once": true,
-      "lines": [
-        {
-          "text": "ありがと。……これ、あげる。",
-          "text_en": "Thanks. ...Here, this is for you."
-        },
-        {
-          "text": "試験管のチャーム。中の青いの、本物じゃないから安心して。",
-          "text_en": "A test-tube charm. The blue stuff inside isn't real, don't worry."
-        },
-        {
-          "speaker": "自分",
-          "text": "本物だったら、何が入ってたんですか。",
-          "text_en": "If it were real, what would be in it?"
-        },
-        {
-          "text": "……条件を変えて、何回も試した結果。",
-          "text_en": "...The result of changing one condition and trying, over and over."
         }
       ]
     },
