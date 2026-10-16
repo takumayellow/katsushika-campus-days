@@ -24,10 +24,11 @@ namespace KCD.Editor
         /// <summary>
         /// 縦長の画面での上端のボタンの位置（左上から、幅 720 の Canvas の単位）。左上のクエストの枠
         /// （下端は上から CSS で約 93 px、この Canvas で 172）のすぐ下に、ポーズ・クエストログ・写真の順で横に並べる。
+        /// 隣のボタンとの間は 26 以上（縦持ちのスマホで CSS 14 px）空け、隣を押し間違えないようにする。
         /// </summary>
         private static readonly Vector2 PortraitPausePosition = new Vector2(84f, -236f);
-        private static readonly Vector2 PortraitQuestLogPosition = new Vector2(204f, -236f);
-        private static readonly Vector2 PortraitPhotoPosition = new Vector2(324f, -236f);
+        private static readonly Vector2 PortraitQuestLogPosition = new Vector2(214f, -236f);
+        private static readonly Vector2 PortraitPhotoPosition = new Vector2(344f, -236f);
 
         private static readonly Color TouchFace = new Color(0.06f, 0.08f, 0.12f, 0.55f);
         private static readonly Color StickBase = new Color(1f, 1f, 1f, 0.18f);
@@ -60,12 +61,12 @@ namespace KCD.Editor
             CanvasGroup extrasGroup = extras.gameObject.AddComponent<CanvasGroup>();
 
             // クエストログはポーズのボタンの右隣。ログを開くと操作を止めるので、閉じるのはログ自体を叩く。
-            TMP_Text questLabel = BuildPadButton(extras, "QuestLogButton", new Vector2(130f, -64f), 104f,
+            TMP_Text questLabel = BuildPadButton(extras, "QuestLogButton", new Vector2(140f, -64f), 104f,
                 "<Gamepad>/select", 20f, new Vector2(0.5f, 1f));
             PlaceInPortrait(questLabel, PortraitQuestLogPosition);
 
             // 写真モードの出入り。クエストログの右隣。写真モードの間はジャンプのボタンで撮る。
-            TMP_Text photoLabel = BuildPadButton(play, "PhotoButton", new Vector2(250f, -64f), 104f,
+            TMP_Text photoLabel = BuildPadButton(play, "PhotoButton", new Vector2(270f, -64f), 104f,
                 "<Gamepad>/buttonNorth", 24f, new Vector2(0.5f, 1f));
             PlaceInPortrait(photoLabel, PortraitPhotoPosition);
 
