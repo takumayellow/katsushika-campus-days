@@ -59,6 +59,11 @@ CREDITS.md を CREDITS.txt として同梱する。地図データの帰属（©
 
 Windows 版のプレイ画面。正門からメインストリートの並木を見たところで、左上が進行中のクエスト、右上がミニマップと時刻。
 
+<img src="docs/screenshots/walk.webp" alt="正門からメインストリートを歩き、途中から走るプレイ画面の動画" width="100%">
+
+ブラウザ版（画質 Medium）で正門からメインストリートを北東へ歩き、途中から Shift で走ったところ（約 7.6 秒）。
+headless の Edge で `e2e/kcd_e2e/perf.py` と同じ手順でキャンパスに入り、W を押したままキャンバスを約 12 コマ/秒で撮って、640×400 のアニメーション WebP にした。
+
 <p>
 <img src="docs/screenshots/talk.jpg" alt="花之木いなりとの会話" width="49%">
 <img src="docs/screenshots/interior.jpg" alt="図書館 1 階の閲覧席" width="49%">
