@@ -183,11 +183,19 @@ namespace KCD
             _drawnForTouch = InputMode.IsTouch;
             if (_drawnForTouch)
             {
-                _builder.Append("\n<size=70%><alpha=#99>").Append(L.Pick("タップで閉じる", "Tap to close"))
-                    .Append("<alpha=#FF></size>");
+                _builder.Append(CloseHint());
             }
 
             _bodyLabel.text = _builder.ToString();
+        }
+
+        /// <summary>
+        /// 指のときに一覧の末尾へ足す「タップで閉じる」。本文と同じ大きさで、薄くだけする。
+        /// 70% にすると縦 360 幅で 8.8 px まで小さくなる (#187)。
+        /// </summary>
+        public static string CloseHint()
+        {
+            return "\n<alpha=#99>" + L.Pick("タップで閉じる", "Tap to close") + "<alpha=#FF>";
         }
 
         /// <summary>この周回で集めた数を、一覧の先頭に足す (#10)。</summary>

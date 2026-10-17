@@ -1,3 +1,6 @@
+#if UNITY_WEBGL && !UNITY_EDITOR
+using System.Runtime.InteropServices;
+#endif
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -61,9 +64,43 @@ namespace KCD
             return legacy != null && legacy.isFocused;
         }
 
-        /// <summary>全画面と窓表示を入れ替える。</summary>
+        /// <summary>テストが全画面の可否を差し替える。null なら実際の端末の答えを使う。</summary>
+        public static bool? FullscreenSupportOverride { get; set; }
+
+        /// <summary>
+        /// この端末のブラウザが全画面を許すか。iPhone の Safari は canvas の Fullscreen API を受け付けず、
+        /// 全画面にしようとしても何も起きない（iPad は許す）。Web 版以外では常に true。
+        /// </summary>
+        public static bool FullscreenSupported
+        {
+            get
+            {
+                if (FullscreenSupportOverride.HasValue)
+                {
+                    return FullscreenSupportOverride.Value;
+                }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+                return KCD_FullscreenSupported() != 0;
+#else
+                return true;
+#endif
+            }
+        }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+        [DllImport("__Internal")]
+        private static extern int KCD_FullscreenSupported();
+#endif
+
+        /// <summary>全画面と窓表示を入れ替える。全画面を使えない端末では何もしない。</summary>
         public static void Toggle()
         {
+            if (!FullscreenSupported)
+            {
+                return;
+            }
+
 #if UNITY_WEBGL && !UNITY_EDITOR
             // Web 版に窓／全画面の区別は無く、ブラウザの全画面要求をこの打鍵のイベントの中で出すだけ。
             Screen.fullScreen = !Screen.fullScreen;

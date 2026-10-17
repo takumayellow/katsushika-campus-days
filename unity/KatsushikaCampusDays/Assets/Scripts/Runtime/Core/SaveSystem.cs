@@ -22,7 +22,13 @@ namespace KCD
         /// </summary>
         public static string DirectoryOverride { get; set; }
 
-        private static string FilePath => Path.Combine(DirectoryOverride ?? Application.persistentDataPath, FileName);
+        /// <summary>
+        /// セーブと同じ置き場にある別ファイルのパス。置き場は <see cref="DirectoryOverride"/> に従う。
+        /// 見たエンドの記録（<see cref="EndingProgress"/>）が使う。
+        /// </summary>
+        public static string PathOf(string fileName) => Path.Combine(DirectoryOverride ?? Application.persistentDataPath, fileName);
+
+        private static string FilePath => PathOf(FileName);
 
         /// <summary>タイトルの「つづきから」で読んだセーブ。位置と屋内はキャンパスの最初のフレームで当てる。</summary>
         private static SaveData _pending;

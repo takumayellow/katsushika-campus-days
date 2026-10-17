@@ -33,7 +33,7 @@ python -c "import sys; sys.path.insert(0, 'blender'); from kcd_route import grou
 | `--json` | `data/osm/route.json` | 入力 |
 | `--out-dir` | `unity/.../Assets/Models/Campus` | FBX と sidecar の出力先 |
 | `--name` | `route` | 出力名（`route.fbx` / `route.json`） |
-| `--budget` | `14000` | 三角形の上限。超えたら例外で止める |
+| `--budget` | `16000` | 三角形の上限。超えたら例外で止める |
 | `--window-budget` | `700` | 窓の数の上限。これに収まるまで窓の間隔を自動で広げる |
 | `--no-lamps` | off | 街灯を置かない |
 | `--preview` | off | プレビュー PNG を 4 枚レンダする |
@@ -138,14 +138,18 @@ def excluded(road):
 
 ```
 bld_route_background   5,960 verts   4,790 faces   9,112 tris
+bld_dorm_trim          1,762 verts   1,142 faces   2,284 tris
 route_ground           1,347 verts     910 faces   1,820 tris
+bld_dorm                 899 verts     691 faces   1,357 tris
 bld_route_fence          344 verts     302 faces     604 tris
 route_props_lamp         224 verts     208 faces     352 tris
                                                    -------
-                                                   11,888 tris   route.fbx 0.16 MB
+                                                   15,529 tris   route.fbx 0.25 MB
 ```
 
-窓 656 個で 7,872 三角形（全体の 66 %）。減らすなら `--window-budget` を下げる。
+`bld_dorm` は寮の躯体、`bld_dorm_trim` は手すり・デッキ・玄関などの細部（`kcd_route/dorm.py`）。
+
+沿道の窓 656 個で 7,872 三角形（全体の 51 %）。減らすなら `--window-budget` を下げる。
 
 ## sidecar（`Assets/Models/Campus/route.json`）
 

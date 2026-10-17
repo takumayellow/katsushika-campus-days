@@ -277,6 +277,12 @@ namespace KCD
         /// <summary>ステップの表示。制限時間つきなら、状態に応じて 2 行目を足す。目標文はいまの言語で出す。</summary>
         public static string StepLine(QuestData quest)
         {
+            return StepLine(quest, ScreenShape.IsPortrait);
+        }
+
+        /// <summary>縦長の画面では 2 行目を縮めない (#187)。</summary>
+        public static string StepLine(QuestData quest, bool portrait)
+        {
             QuestStep step = quest?.CurrentStep;
             if (step == null)
             {
@@ -297,7 +303,7 @@ namespace KCD
             if (step.Timer.IsRunning)
             {
                 return text + SubLine("#FFB3B3",
-                    L.Format("ui.hud.time_remaining", Mathf.CeilToInt(step.Timer.Remaining)));
+                    L.Format("ui.hud.time_remaining", Mathf.CeilToInt(step.Timer.Remaining)), portrait);
             }
 
             if (!step.AwaitingGiver)
@@ -307,14 +313,18 @@ namespace KCD
 
             // 時間切れなら失敗と再挑戦のしかた、ロード直後なら始め方を出す。
             return step.Timer.HasFailed
-                ? text + SubLine("#FF8A8A", L.Format("ui.hud.challenge_failed", GiverName(step)))
-                : text + SubLine("#FFE08A", L.Format("ui.hud.challenge_ready", GiverName(step)));
+                ? text + SubLine("#FF8A8A", L.Format("ui.hud.challenge_failed", GiverName(step)), portrait)
+                : text + SubLine("#FFE08A", L.Format("ui.hud.challenge_ready", GiverName(step)), portrait);
         }
 
-        /// <summary>2 行目。追跡枠の高さに収まるよう少し小さくする。</summary>
-        private static string SubLine(string color, string message)
+        /// <summary>
+        /// 2 行目。横長では追跡枠の高さに収まるよう 80% にする。縦長の画面では枠ごと縮んで 10 px を切るので、
+        /// 本文と同じ大きさのまま出す（いちばん長い 2 行目でも幅に 1 行で入り、本文は縮まない）。
+        /// </summary>
+        public static string SubLine(string color, string message, bool portrait)
         {
-            return "\n<size=80%><color=" + color + ">" + message + "</color></size>";
+            string line = "<color=" + color + ">" + message + "</color>";
+            return portrait ? "\n" + line : "\n<size=80%>" + line + "</size>";
         }
 
         private void OnQuestCompleted(QuestData quest)

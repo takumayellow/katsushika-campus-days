@@ -67,7 +67,7 @@ namespace KCD.Editor
 
             Minimap minimap = host.AddComponent<Minimap>();
             minimap.Bind(mapRect, markers, arrowRect, caption, MinimapAssets.Dot(), MinimapAssets.Ring(),
-                captionRect.gameObject);
+                captionRect.gameObject, north);
             minimap.Configure(info.Center, info.HalfExtent, MinimapViewMeters, MinimapInner * 0.5f);
             minimap.Target = target;
         }

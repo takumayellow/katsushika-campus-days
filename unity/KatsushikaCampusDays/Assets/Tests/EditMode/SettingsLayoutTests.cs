@@ -33,8 +33,154 @@ namespace KCD.Tests
             var builder = new StringBuilder();
             SettingsView.AppendRow(builder, 1, false, "効果音の音量", "■■□", true, true, true);
 
-            Assert.AreEqual("<link=\"choice:1\">   効果音の音量</link>\n      <link=\"dec:1\">◀</link> ■■□ <link=\"inc:1\">▶</link>\n",
+            Assert.AreEqual("<link=\"dec:1\">   効果音</link><link=\"inc:1\">の音量</link>\n      <link=\"dec:1\">◀</link> ■■□ <link=\"inc:1\">▶</link>\n",
                 builder.ToString());
+        }
+
+        [Test]
+        public void AppendRow_StackedNameWithoutArrowsStaysAChoice()
+        {
+            var builder = new StringBuilder();
+            SettingsView.AppendRow(builder, 8, false, "閉じる", string.Empty, false, true, true);
+
+            Assert.AreEqual("<link=\"choice:8\">   閉じる</link>\n", builder.ToString());
+        }
+
+        [Test]
+        public void Hint_IsAtLeast85PercentOfTheBody()
+        {
+            foreach (bool stacked in new[] { false, true })
+            {
+                string text = SettingsView.Compose(LongestEntries(), 0, true, stacked);
+                StringAssert.Contains("<size=85%>", text);
+                StringAssert.DoesNotContain("<size=70%>", text);
+            }
+
+            StringAssert.Contains("<size=85%>", SettingsView.Compose(LongestEntries(), 0, false, false));
+            StringAssert.Contains("<size=85%>", SettingsView.Compose(LongestEntries(), 0, true, false, true));
+        }
+
+        // ---- 横持ちの指（2 列） ----
+
+        [TestCase(true, false, true)]
+        [TestCase(true, true, false)]
+        [TestCase(false, false, false)]
+        [TestCase(false, true, false)]
+        public void UseTwoColumns_OnlyForTouchInLandscape(bool touch, bool portrait, bool expected)
+        {
+            Assert.AreEqual(expected, SettingsView.UseTwoColumns(touch, portrait));
+        }
+
+        [Test]
+        public void TwoColumns_PairsTwoLinesPerItemAtTheTapHeight()
+        {
+            string text = SettingsView.Compose(LongestEntries(), 0, true, false, true);
+
+            StringAssert.StartsWith(SettingsView.TwoColumnLineHeight, text);
+            // 5 段 x 2 行。末尾の改行で空の要素が 1 つ増える。
+            Assert.AreEqual(11, text.Split('\n').Length, text);
+            Assert.AreEqual(8, CountOf(text, SettingsView.RightColumnPos), "右の列が 3 項目 + 閉じる + 案内になっていない");
+        }
+
+        [Test]
+        public void TwoColumns_EveryRowCanBeTappedAndNamesChangeTheValue()
+        {
+            string text = SettingsView.Compose(LongestEntries(), 3, true, false, true);
+
+            for (int row = 0; row < 8; row++)
+            {
+                StringAssert.Contains("<link=\"dec:" + row + "\">", text, "行 " + row + " に ◀ が無い");
+                StringAssert.Contains("<link=\"inc:" + row + "\">", text, "行 " + row + " に ▶ が無い");
+                StringAssert.DoesNotContain("<link=\"choice:" + row + "\">", text, "行 " + row + " の名前が値を変えない");
+            }
+
+            StringAssert.Contains("<link=\"choice:8\">", text);
+            // 名前の前半と後半、値の ◀ と ▶ で 1 項目 4 つ。8 項目と「閉じる」で 33。
+            Assert.AreEqual(33, CountOf(text, "<link="), text);
+        }
+
+        [Test]
+        public void TwoColumns_LeftHoldsFiveItemsAndRightTheRestWithTheHint()
+        {
+            string[] lines = SettingsView.Compose(LongestEntries(), 0, true, false, true).Split('\n');
+            string[] sep = { SettingsView.RightColumnPos };
+            for (int slot = 0; slot < 3; slot++)
+            {
+                StringAssert.Contains("dec:" + (5 + slot) + "\"", lines[slot * 2].Split(sep, StringSplitOptions.None)[1]);
+            }
+
+            StringAssert.Contains("choice:8", lines[6].Split(sep, StringSplitOptions.None)[1]);
+            StringAssert.Contains("size=85%", lines[8].Split(sep, StringSplitOptions.None)[1]);
+        }
+
+        [TestCase("ja", true)]
+        [TestCase("en", true)]
+        [TestCase("ja", false)]
+        [TestCase("en", false)]
+        public void TwoColumns_FitTheFrameAtTheNarrowestPhone(string locale, bool fullscreenSupported)
+        {
+            In(locale, () => WithSettings("Assets/Scenes/Campus.unity", (frame, body) =>
+            {
+                // 667x375 は Canvas が 1280x720。枠は Canvas の幅 -32 まで縮む。
+                var size = new Vector2(FitInCanvas.WidthToFit(SettingsView.TwoColumnFrameWidth, 1280f, FitInCanvas.Margin),
+                    SettingsView.NormalFrameSize.y);
+                var bodyBox = (RectTransform)body.rectTransform.parent;
+                Vector2 inner = size + bodyBox.sizeDelta + body.rectTransform.sizeDelta;
+                string text = SettingsView.Compose(LongestEntries(fullscreenSupported), 0, true, false, true);
+
+                body.enableAutoSizing = false;
+                body.fontSize = FontSize;
+                float needed = body.GetPreferredValues(text, inner.x, 0f).y;
+                float unwrapped = body.GetPreferredValues(text, 100000f, 0f).y;
+                Assert.AreEqual(unwrapped, needed, 1f, "横で行が折り返す");
+                Assert.LessOrEqual(needed, inner.y, "横で本文が枠に入らない");
+                // 10 行のうち下の 9 行ぶんの間隔が 1.45em（1 項目 87 単位）。最後の行は文字の高さだけ。
+                Assert.GreaterOrEqual(unwrapped, 9f * FontSize * 1.45f, "1 項目が 87 単位にならない");
+
+                string[] sep = { SettingsView.RightColumnPos };
+                foreach (string line in text.Split('\n'))
+                {
+                    foreach (string cell in line.Split(sep, StringSplitOptions.None))
+                    {
+                        Assert.LessOrEqual(body.GetPreferredValues(cell, 100000f, 0f).x, inner.x / 2f, "列に入らない: " + cell);
+                    }
+                }
+            }));
+        }
+
+        // ---- 全画面を使えない端末 ----
+
+        [Test]
+        public void FullscreenEntry_UnsupportedExplainsInsteadOfOffering()
+        {
+            SettingsView.Entry entry = SettingsView.FullscreenEntry(false, false);
+            Assert.IsFalse(entry.Arrows, "押しても変わらない ◀ ▶ を出している");
+            StringAssert.Contains(L.Pick("ホーム画面", "Home Screen"), entry.Value);
+
+            SettingsView.Entry usable = SettingsView.FullscreenEntry(true, true);
+            Assert.IsTrue(usable.Arrows);
+            StringAssert.DoesNotContain(L.Pick("ホーム画面", "Home Screen"), usable.Value);
+        }
+
+        [Test]
+        public void FullscreenEntry_UnsupportedRowIsOnlyChosenNotChanged()
+        {
+            string text = SettingsView.Compose(LongestEntries(false), 0, true, true);
+            StringAssert.DoesNotContain("dec:7", text);
+            StringAssert.DoesNotContain("inc:7", text);
+            StringAssert.Contains("<link=\"choice:7\">", text);
+        }
+
+        private static int CountOf(string text, string part)
+        {
+            int count = 0;
+            for (int i = text.IndexOf(part, StringComparison.Ordinal); i >= 0;
+                 i = text.IndexOf(part, i + part.Length, StringComparison.Ordinal))
+            {
+                count++;
+            }
+
+            return count;
         }
 
         [Test]
@@ -72,9 +218,11 @@ namespace KCD.Tests
             });
         }
 
-        [TestCase("ja")]
-        [TestCase("en")]
-        public void Portrait_StackedRowsFitAtFullSizeWithoutWrapping(string locale)
+        [TestCase("ja", true)]
+        [TestCase("en", true)]
+        [TestCase("ja", false)]
+        [TestCase("en", false)]
+        public void Portrait_StackedRowsFitAtFullSizeWithoutWrapping(string locale, bool fullscreenSupported)
         {
             In(locale, () => WithSettings("Assets/Scenes/Campus.unity", (frame, body) =>
             {
@@ -86,7 +234,7 @@ namespace KCD.Tests
                 // 本文は枠から本文の箱の余白と UIKit.Label の余白を引いた大きさ。どちらも sizeDelta が負の余白の合計。
                 var bodyBox = (RectTransform)body.rectTransform.parent;
                 Vector2 inner = size + bodyBox.sizeDelta + body.rectTransform.sizeDelta;
-                string text = SettingsView.Compose(LongestEntries(), 0, true, true);
+                string text = SettingsView.Compose(LongestEntries(fullscreenSupported), 0, true, true);
 
                 body.enableAutoSizing = false;
                 body.fontSize = FontSize;
@@ -98,7 +246,7 @@ namespace KCD.Tests
         }
 
         /// <summary>いちばん長くなる値で並べた 8 項目。</summary>
-        private static SettingsView.Entry[] LongestEntries()
+        private static SettingsView.Entry[] LongestEntries(bool fullscreenSupported = true)
         {
             string volume = SettingsView.Bar(1f);
             return new[]
@@ -111,7 +259,7 @@ namespace KCD.Tests
                 new SettingsView.Entry(L.Get("ui.settings.look_sensitivity", "カメラの感度"),
                     SettingsView.SensitivityBar(CameraPrefs.MaxLevel), true),
                 new SettingsView.Entry(L.Get("ui.settings.invert_y", "カメラ上下を反転"), L.Pick("オフ", "Off"), true),
-                new SettingsView.Entry(L.Get("ui.settings.fullscreen", "フルスクリーン"), L.Pick("オフ", "Off"), true),
+                SettingsView.FullscreenEntry(fullscreenSupported, false),
             };
         }
 

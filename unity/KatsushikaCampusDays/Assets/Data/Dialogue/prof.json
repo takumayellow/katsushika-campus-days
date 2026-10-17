@@ -36,7 +36,9 @@
         },
         {
           "text": "メインストリートを北へ折れれば体育館だ。Shift を押しっぱなしで走りなさい。",
-          "text_en": "Turn north off Main Street and you'll reach the gym. Hold Shift and run."
+          "text_en": "Turn north off Main Street and you'll reach the gym. Hold Shift and run.",
+          "text_touch": "メインストリートを北へ折れれば体育館だ。「走る」ボタンを 1 回押せば、走り続けられる。",
+          "text_touch_en": "Turn north off Main Street and you'll reach the gym. Tap the Run button once and you'll keep running."
         }
       ]
     },
