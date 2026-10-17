@@ -16,6 +16,11 @@ namespace KCD
         /// <summary>英語の本文（JSON の text_en）。空なら英語表示でも Text を出す。</summary>
         public string TextEn = string.Empty;
 
+        /// <summary>指で遊んでいるときの本文（JSON の text_touch / text_touch_en）。キー操作の案内を指の操作に言い換えた文。空なら Text を出す。</summary>
+        public string TextTouch = string.Empty;
+
+        public string TextTouchEn = string.Empty;
+
         /// <summary>英語表示で話者名を引く辞書キー（ui.npc.*）。空なら英語表示でも Speaker を出す。</summary>
         public string SpeakerKey = string.Empty;
 
@@ -23,7 +28,9 @@ namespace KCD
         public bool Written;
 
         /// <summary>画面に出す本文。いまの言語で選ぶ。</summary>
-        public string DisplayText => L.Pick(Text, TextEn);
+        public string DisplayText => InputMode.IsTouch && !string.IsNullOrEmpty(TextTouch)
+            ? L.Pick(TextTouch, TextTouchEn)
+            : L.Pick(Text, TextEn);
 
         /// <summary>画面に出す話者名。日本語ではデータのまま、英語では辞書の名前（無ければデータのまま）。</summary>
         public string DisplaySpeaker =>
@@ -203,6 +210,8 @@ namespace KCD
                         SpeakerKey = data.SpeakerKeyFor(speaker),
                         Text = MiniJson.GetString(lineNode, "text"),
                         TextEn = MiniJson.GetString(lineNode, "text_en"),
+                        TextTouch = MiniJson.GetString(lineNode, "text_touch"),
+                        TextTouchEn = MiniJson.GetString(lineNode, "text_touch_en"),
                         Written = MiniJson.GetBool(lineNode, "written")
                     });
                 }

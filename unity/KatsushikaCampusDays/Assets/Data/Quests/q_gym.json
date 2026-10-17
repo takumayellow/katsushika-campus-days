@@ -4,6 +4,8 @@
   "title_en": "Sixty Seconds to the Gym",
   "summary": "教授いわく、体育館の鍵を閉めるまであと 1 分。メインストリートを北へ折れて、Shift でダッシュすれば間に合うはず。間に合わなかったら、教授に話しかければもう一度挑戦できる。",
   "summary_en": "According to the professor, the gym gets locked in one minute. Turn north off Main Street and sprint with Shift and you should make it. If you miss it, talk to the professor to try again.",
+  "summary_touch": "教授いわく、体育館の鍵を閉めるまであと 1 分。メインストリートを北へ折れて、「走る」ボタンを 1 回押して走れば間に合うはず。間に合わなかったら、教授に話しかければもう一度挑戦できる。",
+  "summary_touch_en": "According to the professor, the gym gets locked in one minute. Turn north off Main Street and tap the Run button once to sprint, and you should make it. If you miss it, talk to the professor to try again.",
   "order": 5,
   "autoStart": false,
   "prerequisites": [
