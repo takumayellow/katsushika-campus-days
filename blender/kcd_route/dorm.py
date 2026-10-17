@@ -266,7 +266,7 @@ def _downpipe(mb, fr, t, z1):
 
 
 def _side_ground(shell, trim, fs, dorm, top1):
-    """東北東面の 1 階: 階段室の脇の茶色い付属棟、その先の暗い灰色の基壇と厨房の勝手口。"""
+    """東北東面の 1 階: 階段室の脇の茶色い付属棟、その先の暗い灰色の基壇と自販機、厨房の勝手口。"""
     a1 = CORE_U + ANNEX_L
     # 付属棟。階段室に当たる端は抜く
     _box_open(shell, fs, CORE_U, a1, -ANNEX_D, 0.0, 0.0, top1, "panel_brown", "t0")
@@ -278,8 +278,9 @@ def _side_ground(shell, trim, fs, dorm, top1):
     k0, k1 = _span(dorm, fs, 8.0, KITCHEN_Y[0], 8.0, KITCHEN_Y[1])
     _pane(trim, fs, k0 + 0.60, k0 + 1.50, -CORE_IN + 0.02, 0.0, 2.10, "metal_charcoal")
     _pane(trim, fs, k1 - 1.60, k1 - 0.60, -CORE_IN + 0.02, 1.60, 2.40, "metal_grey")
-    # 付属棟の前の自販機（銘柄・ロゴは入れない）
-    _box(trim, fs, CORE_U + 1.00, CORE_U + 2.00, 0.10, 0.85, 0.0, 1.83, "vending_blue",
+    # 基壇の壁際の自販機（銘柄・ロゴは入れない）。外形線から出さないため、奥行きは CORE_IN の
+    # 凹みに収まる分だけにする
+    _box(trim, fs, a1 + 0.60, a1 + 1.60, -CORE_IN + 0.02, -0.02, 0.0, 1.83, "vending_blue",
          "metal_white")
 
 
