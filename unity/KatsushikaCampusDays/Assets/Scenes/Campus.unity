@@ -138116,7 +138116,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1269987750}
   - component: {fileID: 1269987753}
-  - component: {fileID: 1269987752}
+  - component: {fileID: 1017694916}
   - component: {fileID: 1269987751}
   m_Layer: 5
   m_Name: Toast
@@ -138158,7 +138158,7 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
---- !u!114 &1269987752
+--- !u!114 &1017694916
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -138167,11 +138167,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 1269987749}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 87d44b3e0d6547debcdf30b163ea03a1, type: 3}
+  m_Script: {fileID: 11500000, guid: c6db444833859e84089cfb757db077c0, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: KCD.Runtime::KCD.TouchPosition
-  _touchPosition: {x: 0, y: 278}
-  _portraitTouchPosition: {x: 0, y: 468}
+  m_EditorClassIdentifier: KCD.Runtime::KCD.ToastLayout
+  _rightColumn:
+  - {fileID: 1400512119}
+  - {fileID: 1821141461}
+  - {fileID: 652587962}
 --- !u!114 &1269987753
 MonoBehaviour:
   m_ObjectHideFlags: 0

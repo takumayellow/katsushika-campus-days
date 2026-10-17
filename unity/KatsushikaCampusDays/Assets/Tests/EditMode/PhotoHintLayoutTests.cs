@@ -91,18 +91,18 @@ namespace KCD.Tests
                 var screen = new Vector2(width, height);
                 string at = " (" + width + "x" + height + ")";
                 Rect hint = HintOnScreen(photo, PhotoHintLayout.Shape.Portrait, screen);
-                AssertInside(screen, hint, "案内が画面からはみ出す" + at);
+                CanvasScreen.AssertInside(screen, hint, "案内が画面からはみ出す" + at);
                 foreach (RectTransform button in photo.Buttons.Append(photo.Stick))
                 {
-                    Rect place = TouchOnScreen(photo, button, screen);
-                    AssertInside(screen, place, button.name + " が画面からはみ出す" + at);
+                    Rect place = CanvasScreen.OnScreen(photo.TouchScaler, button, screen, true);
+                    CanvasScreen.AssertInside(screen, place, button.name + " が画面からはみ出す" + at);
                     Assert.IsFalse(hint.Overlaps(place), "案内が " + button.name + " にかかる" + at);
                 }
 
                 // 上の並び（戻る・案内）より上で止まる。y は画面の下から。
                 foreach (RectTransform button in photo.Buttons.Where(b => b.name != "Jump"))
                 {
-                    Assert.Greater(hint.yMin, TouchOnScreen(photo, button, screen).yMax,
+                    Assert.Greater(hint.yMin, CanvasScreen.OnScreen(photo.TouchScaler, button, screen, true).yMax,
                         "案内が " + button.name + " の上端より下に来る" + at);
                 }
             });
@@ -170,24 +170,18 @@ namespace KCD.Tests
         {
             string at = " (" + screen.x + "x" + screen.y + ")";
             Rect hint = HintOnScreen(photo, PhotoHintLayout.Shape.LandscapeTouch, screen);
-            AssertInside(screen, hint, "案内が画面からはみ出す" + at);
+            CanvasScreen.AssertInside(screen, hint, "案内が画面からはみ出す" + at);
             foreach (RectTransform button in photo.Buttons)
             {
-                Rect place = TouchOnScreen(photo, button, screen);
-                AssertInside(screen, place, button.name + " が画面からはみ出す" + at);
+                Rect place = CanvasScreen.OnScreen(photo.TouchScaler, button, screen, true);
+                CanvasScreen.AssertInside(screen, place, button.name + " が画面からはみ出す" + at);
                 Assert.IsFalse(hint.Overlaps(place), "案内が " + button.name + " にかかる" + at);
             }
 
             // y は画面の下から。スティックの丸（指を置く前の位置）と人物の頭より上で止まる。
-            Assert.Greater(hint.yMin, TouchOnScreen(photo, photo.Stick, screen).yMax, "案内がスティックの丸にかかる" + at);
+            Assert.Greater(hint.yMin, CanvasScreen.OnScreen(photo.TouchScaler, photo.Stick, screen, true).yMax,
+                "案内がスティックの丸にかかる" + at);
             Assert.GreaterOrEqual(hint.yMin, screen.y * (1f - PlayerTop), "案内が人物にかかる" + at);
-        }
-
-        private static void AssertInside(Vector2 screen, Rect rect, string message)
-        {
-            const float slack = 0.01f;
-            Assert.IsTrue(rect.xMin >= -slack && rect.yMin >= -slack && rect.xMax <= screen.x + slack &&
-                          rect.yMax <= screen.y + slack, message + ": " + rect);
         }
 
         /// <summary>案内の枠の、画面の px での四角（左下が原点）。指で遊んでいるときの Canvas の大きさで置く。</summary>
@@ -197,8 +191,8 @@ namespace KCD.Tests
             Vector2 canvas = screen / factor;
             Vector2 size = HintSize(photo, shape, screen);
             PhotoHintLayout.Slot slot = PhotoHintLayout.SlotFor(shape);
-            Rect inCanvas = Place(new Rect(Vector2.zero, canvas), slot.Anchor, slot.Anchor, slot.Anchor, slot.Position, size,
-                FitInCanvas.ScaleToFit(size, canvas, FitInCanvas.Margin));
+            Rect inCanvas = CanvasScreen.Place(new Rect(Vector2.zero, canvas), slot.Anchor, slot.Anchor, slot.Anchor,
+                slot.Position, size, FitInCanvas.ScaleToFit(size, canvas, FitInCanvas.Margin));
             return new Rect(inCanvas.position * factor, inCanvas.size * factor);
         }
 
@@ -213,49 +207,6 @@ namespace KCD.Tests
             Vector2 size = PhotoHintLayout.SlotFor(shape).Size;
             float height = portrait && photo.PortraitHeight > 0f ? photo.PortraitHeight : size.y;
             return new Vector2(FitInCanvas.WidthToFit(size.x, canvas.x, FitInCanvas.Margin), height);
-        }
-
-        /// <summary>指の操作の Canvas にある rect の、画面の px での四角（左下が原点）。</summary>
-        private static Rect TouchOnScreen(Photo photo, RectTransform rect, Vector2 screen)
-        {
-            float factor = CanvasScreen.Factor(photo.TouchScaler, screen, true);
-            bool portrait = ScreenShape.IsPortraitSize(screen.x, screen.y);
-            Rect inCanvas = InCanvas(rect, (RectTransform)photo.TouchScaler.transform, screen / factor, portrait);
-            return new Rect(inCanvas.position * factor, inCanvas.size * factor);
-        }
-
-        /// <summary>rect の、Canvas の単位での四角（左下が原点）。親をたどり、縦長の画面では PortraitPosition の置き方にする。</summary>
-        private static Rect InCanvas(RectTransform rect, RectTransform canvas, Vector2 canvasSize, bool portrait)
-        {
-            if (rect == canvas)
-            {
-                return new Rect(Vector2.zero, canvasSize);
-            }
-
-            Rect parent = InCanvas((RectTransform)rect.parent, canvas, canvasSize, portrait);
-            Vector2 anchorMin = rect.anchorMin;
-            Vector2 anchorMax = rect.anchorMax;
-            Vector2 position = rect.anchoredPosition;
-            if (portrait && rect.TryGetComponent(out PortraitPosition moved))
-            {
-                var serialized = new SerializedObject(moved);
-                anchorMin = serialized.FindProperty("_portraitAnchor").vector2Value;
-                anchorMax = anchorMin;
-                position = serialized.FindProperty("_portraitPosition").vector2Value;
-            }
-
-            return Place(parent, anchorMin, anchorMax, rect.pivot, position, rect.sizeDelta, rect.localScale.x);
-        }
-
-        /// <summary>RectTransform と同じ置き方。ピボットを中心に scale 倍する。</summary>
-        private static Rect Place(Rect parent, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 position,
-            Vector2 sizeDelta, float scale)
-        {
-            Vector2 low = parent.min + Vector2.Scale(parent.size, anchorMin);
-            Vector2 high = parent.min + Vector2.Scale(parent.size, anchorMax);
-            Vector2 size = (high - low + sizeDelta) * scale;
-            Vector2 at = low + Vector2.Scale(high - low, pivot) + position;
-            return new Rect(at - Vector2.Scale(pivot, size), size);
         }
 
         private static void WithScene(Action<Photo> body)

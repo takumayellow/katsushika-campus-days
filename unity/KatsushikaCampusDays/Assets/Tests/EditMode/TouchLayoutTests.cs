@@ -245,8 +245,6 @@ namespace KCD.Tests
         [Test]
         public void CampusScene_HudCornersStayOutOfTheButtons()
         {
-            // 知らせと「話す」の案内は同時に出ることがある。間が詰まると一つの塊に見える（横 844×390 で CSS 14 px 以上）。
-            const float minToastGap = 24f;
             Scene scene = EditorSceneManager.OpenScene(CampusScenePath, OpenSceneMode.Additive);
             try
             {
@@ -257,21 +255,13 @@ namespace KCD.Tests
                 Assert.IsNotNull(Find("Minimap")?.GetComponent<KeepPointerSize>(), "Minimap に KeepPointerSize が無い（KCD/シーンを組み直す）");
                 Assert.IsNotNull(Find("Clock")?.GetComponent<KeepPointerSize>(), "Clock に KeepPointerSize が無い（KCD/シーンを組み直す）");
                 Assert.IsNotNull(Find("QuestTracker")?.GetComponent<KeepLeftOfCenter>(), "QuestTracker に KeepLeftOfCenter が無い（KCD/シーンを組み直す）");
-                TouchPosition toast = Find("Toast")?.GetComponent<TouchPosition>();
-                Assert.IsNotNull(toast, "Toast に TouchPosition が無い（KCD/シーンを組み直す）");
                 RectTransform prompt = Find("Prompt");
                 Assert.IsNotNull(prompt, "Prompt が無い");
-                float touchBottom = new SerializedObject(toast).FindProperty("_touchPosition").vector2Value.y;
-                Assert.GreaterOrEqual(touchBottom - (prompt.anchoredPosition.y + prompt.sizeDelta.y), minToastGap,
-                    "指のときの知らせが「話す」の案内にくっつく（場所が入っていない）");
 
                 TouchPosition promptTouch = prompt.GetComponent<TouchPosition>();
                 Assert.IsNotNull(promptTouch, "Prompt に TouchPosition が無い（KCD/シーンを組み直す）");
                 float portraitPrompt = new SerializedObject(promptTouch).FindProperty("_portraitTouchPosition").vector2Value.y;
-                float portraitToast = new SerializedObject(toast).FindProperty("_portraitTouchPosition").vector2Value.y;
                 Assert.Greater(portraitPrompt, prompt.anchoredPosition.y, "縦長の画面で「話す」の案内がボタンの上へ逃げない");
-                Assert.GreaterOrEqual(portraitToast - (portraitPrompt + prompt.sizeDelta.y), minToastGap,
-                    "縦長の画面で知らせが「話す」の案内にくっつく");
             }
             finally
             {

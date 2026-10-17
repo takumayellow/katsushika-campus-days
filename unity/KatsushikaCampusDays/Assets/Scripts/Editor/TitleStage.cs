@@ -171,7 +171,7 @@ namespace KCD.Editor
 
             SettingsView settings = UIFactory.BuildSettings(host, canvasRect);
             CreditsView credits = UIFactory.BuildCredits(host, canvasRect);
-            attribution.Avoid(Child(canvasRect, "Settings"), Child(canvasRect, "Credits"));
+            attribution.Avoid(UIFactory.Child(canvasRect, "Settings"), UIFactory.Child(canvasRect, "Credits"));
             menu.BindExtras(settings, credits);
             menu.BindHeadings(title, subtitle);
 
@@ -214,17 +214,6 @@ namespace KCD.Editor
             MapAttributionLabel attribution = box.gameObject.AddComponent<MapAttributionLabel>();
             attribution.Bind(label);
             return attribution;
-        }
-
-        /// <summary>parent の直下にある name の枠。UIFactory が付けた名前で探すので、見つからなければ組み立てを止める。</summary>
-        private static RectTransform Child(RectTransform parent, string name)
-        {
-            if (!(parent.Find(name) is RectTransform child))
-            {
-                throw new System.InvalidOperationException(parent.name + " の直下に " + name + " が無い");
-            }
-
-            return child;
         }
     }
 }

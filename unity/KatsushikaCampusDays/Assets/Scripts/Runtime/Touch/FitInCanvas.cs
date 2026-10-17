@@ -38,7 +38,7 @@ namespace KCD
 
         /// <summary>
         /// 元の大きさを差し替える。画面の向きで枠の置き方を変えるとき（<see cref="TitleLayout"/>、
-        /// <see cref="PhotoHintLayout"/>）に使う。
+        /// <see cref="PhotoHintLayout"/>、<see cref="ToastLayout"/>）に使う。
         /// 差し替えないと、次のフレームで元の大きさに書き戻される。
         /// </summary>
         public void SetSize(Vector2 size)

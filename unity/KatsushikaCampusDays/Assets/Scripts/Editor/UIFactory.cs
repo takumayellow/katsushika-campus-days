@@ -16,22 +16,10 @@ namespace KCD.Editor
         private const float PromptHeight = 64f;
 
         /// <summary>
-        /// 指のときの知らせと「話す」の案内の間。2 つが同時に出ても別々に読めるよう、
-        /// 横持ちのスマホ（844×390）で CSS 約 14 px 空ける。
-        /// </summary>
-        private const float ToastPromptGap = 24f;
-
-        /// <summary>指のときの知らせの下端。「話す」のボタンに隠れないよう、案内の上に出す。</summary>
-        private const float ToastTouchBottom = PromptBottom + PromptHeight + ToastPromptGap;
-
-        /// <summary>
         /// 縦長の画面で指のときの「話す」の案内の下端。画面の幅の大半を右下のボタンが占めるので、
         /// 「走る」のボタン（上端は下から CSS で約 178 px、幅 800 の Canvas で 365）より上に出す。
         /// </summary>
         private const float PortraitPromptBottom = 380f;
-
-        /// <summary>縦長の画面で指のときの知らせの下端。案内の上。</summary>
-        private const float PortraitToastTouchBottom = PortraitPromptBottom + PromptHeight + ToastPromptGap;
 
         /// <summary>縦長の画面での知らせの高さ。幅 800 では 2 行に折り返すことがある。</summary>
         private const float PortraitToastHeight = 100f;
@@ -72,6 +60,11 @@ namespace KCD.Editor
             BuildClock(canvas.gameObject, gameplay);
             BuildMinimap(canvas.gameObject, gameplay, player.transform);
 
+            // 横の指では、知らせを右上の列（ミニマップ・その下の名前・時計）の手前までに狭める。
+            RectTransform minimap = Child(gameplay, "Minimap");
+            ToastLayout toastLayout = Child(gameplay, "Toast").GetComponent<ToastLayout>();
+            toastLayout.Bind(minimap, Child(minimap, "Caption"), Child(gameplay, "Clock"));
+
             hud.QuestLogView = BuildQuestLog(canvas.gameObject, canvasRect);
             hud.PauseMenu = BuildPauseMenu(canvas.gameObject, canvasRect);
             BuildElevatorMenu(canvas.gameObject, canvasRect);
@@ -109,15 +102,14 @@ namespace KCD.Editor
             return view;
         }
 
-        /// <summary>画面下のトースト。</summary>
+        /// <summary>知らせ（トースト）。置き場所は ToastLayout が画面と入力に合わせて変える。</summary>
         private static ToastView BuildToast(GameObject host, RectTransform parent)
         {
-            RectTransform rect = Rect(parent, "Toast", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
-                new Vector2(0f, 96f), new Vector2(1080f, 60f));
+            ToastLayout.Slot pointer = ToastLayout.SlotFor(ToastLayout.Shape.Pointer);
+            RectTransform rect = Rect(parent, "Toast", pointer.Anchor, ToastLayout.Pivot, pointer.Position, pointer.Size);
             Backdrop(rect, Panel);
             ReflowInCanvas(rect, PortraitToastHeight);
-            rect.gameObject.AddComponent<TouchPosition>().Bind(
-                new Vector2(0f, ToastTouchBottom), new Vector2(0f, PortraitToastTouchBottom));
+            rect.gameObject.AddComponent<ToastLayout>();
 
             CanvasGroup group = rect.gameObject.AddComponent<CanvasGroup>();
             group.alpha = 0f;
