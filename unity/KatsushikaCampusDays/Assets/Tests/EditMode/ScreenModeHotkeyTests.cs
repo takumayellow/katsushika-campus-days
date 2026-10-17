@@ -13,6 +13,19 @@ namespace KCD.Tests
         public void TearDown()
         {
             ScreenModeHotkey.KeyCaptureActive = false;
+            ScreenModeHotkey.FullscreenSupportOverride = null;
+        }
+
+        [Test]
+        public void FullscreenSupported_FollowsTheOverrideAndDefaultsToTrueOutsideTheWebPlayer()
+        {
+            Assert.IsTrue(ScreenModeHotkey.FullscreenSupported, "エディタで全画面が使えない扱いになっている");
+
+            ScreenModeHotkey.FullscreenSupportOverride = false;
+            Assert.IsFalse(ScreenModeHotkey.FullscreenSupported);
+
+            ScreenModeHotkey.FullscreenSupportOverride = true;
+            Assert.IsTrue(ScreenModeHotkey.FullscreenSupported);
         }
 
         [Test]
