@@ -86,6 +86,11 @@ namespace KCD
         public string TitleEn = string.Empty;
         public string SummaryEn = string.Empty;
 
+        /// <summary>指で遊んでいるときのあらすじ（JSON の summary_touch / summary_touch_en）。キー操作の案内を指の操作に言い換えた文。空なら Summary を出す。</summary>
+        public string SummaryTouch = string.Empty;
+
+        public string SummaryTouchEn = string.Empty;
+
         public int Order;
         public bool AutoStart;
 
@@ -137,7 +142,9 @@ namespace KCD
 
         /// <summary>画面に出す題名・あらすじ・報酬文。いまの言語で選ぶ。</summary>
         public string DisplayTitle => L.Pick(Title, TitleEn);
-        public string DisplaySummary => L.Pick(Summary, SummaryEn);
+        public string DisplaySummary => InputMode.IsTouch && !string.IsNullOrEmpty(SummaryTouch)
+            ? L.Pick(SummaryTouch, SummaryTouchEn)
+            : L.Pick(Summary, SummaryEn);
         public string DisplayRewardText => L.Pick(RewardText, RewardTextEn);
 
         /// <summary>JSON ノードからクエストを組み立てる。壊れていれば null。</summary>
@@ -161,6 +168,8 @@ namespace KCD
                 Summary = MiniJson.GetString(node, "summary"),
                 TitleEn = MiniJson.GetString(node, "title_en"),
                 SummaryEn = MiniJson.GetString(node, "summary_en"),
+                SummaryTouch = MiniJson.GetString(node, "summary_touch"),
+                SummaryTouchEn = MiniJson.GetString(node, "summary_touch_en"),
                 Order = MiniJson.GetInt(node, "order", 999),
                 AutoStart = MiniJson.GetBool(node, "autoStart"),
                 Side = MiniJson.GetBool(node, "side"),
