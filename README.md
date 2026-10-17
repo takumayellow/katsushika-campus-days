@@ -108,7 +108,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/smoke_run.ps1 -Wai
 python tools/package_windows.py
 
 # 6. ブラウザ版を GitHub Pages に載せる（WebGL ビルド → Release web-latest → pages.yml）
-#    unity/KatsushikaCampusDays の下に未コミットの変更があると止まる（--allow-dirty で通す）。
+#    unity/KatsushikaCampusDays の下と、遊び方のページの元（docs/HOW_TO_PLAY.md など）に
+#    未コミットの変更があると止まる（--allow-dirty で通す）。
 #    ビルド元のコミットは index.html の <meta name="kcd-build"> とページ右下に出る。
 python tools/deploy_pages.py --build --smoke   # --smoke: 載せる前に build/WebGL を E2E スモーク
 

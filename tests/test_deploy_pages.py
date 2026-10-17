@@ -1,7 +1,7 @@
 """tools/deploy_pages.py のテスト (#75)。python -m pytest tests で回す。
 
-Unity と gh は呼ばない。unity_build / upload_release / dispatch_workflow / git_state は差し替える。
-git_state だけは一時ディレクトリに本物の git リポジトリを作って確かめる。
+Unity と gh は呼ばない。unity_build / upload_release / dispatch_workflow / git_state / page_state は差し替える。
+git_state と page_state だけは一時ディレクトリに本物の git リポジトリを作って確かめる。
 """
 
 from __future__ import annotations
@@ -262,6 +262,38 @@ def test_release_notes_link_commit():
     assert "記録されていない" in dp.release_notes(None)
 
 
+PAGE_SHA = "fedcba9876543210fedcba9876543210fedcba98"
+
+
+def test_release_notes_name_the_commit_the_page_was_made_from():
+    stamp = dp.BuildStamp(SHA, "clean", "t")
+    notes = dp.release_notes(stamp, dp.GitState(PAGE_SHA))
+    assert f"{dp.REPO_URL}/commit/{SHA}" in notes and f"{dp.REPO_URL}/commit/{PAGE_SHA}" in notes
+    assert "遊び方のページ" in notes
+    assert "未コミット" not in notes  # ゲームもページもきれい
+
+
+def test_release_notes_say_when_the_page_has_uncommitted_changes():
+    stamp = dp.BuildStamp(SHA, "clean", "t")
+    notes = dp.release_notes(stamp, dp.GitState(PAGE_SHA, ("docs/HOW_TO_PLAY.md",)))
+    assert "遊び方のページ" in notes and "未コミット" in notes
+    # ゲームのビルドの記録とは別に書く。ゲームがきれいなら「作業ツリーはきれい」も残る。
+    assert "作業ツリーはきれい" in notes
+
+
+def test_release_notes_without_a_page_are_unchanged():
+    stamp = dp.BuildStamp(SHA, "clean", "t")
+    assert dp.release_notes(stamp, None) == dp.release_notes(stamp)
+    assert "遊び方のページ" not in dp.release_notes(stamp)
+
+
+def test_page_refusal():
+    assert dp.page_refusal(dp.GitState(PAGE_SHA)) is None
+    reason = dp.page_refusal(dp.GitState(PAGE_SHA, ("docs/HOW_TO_PLAY.md", "tools/howto_page.py")))
+    assert reason is not None
+    assert "docs/HOW_TO_PLAY.md" in reason and "tools/howto_page.py" in reason and "--allow-dirty" in reason
+
+
 # --- zip ------------------------------------------------------------------
 
 def test_zip_keeps_only_referenced_build_files(tmp_path):
@@ -332,15 +364,23 @@ def git(repo: Path, *args: str) -> str:
         capture_output=True, text=True, check=True).stdout.strip()
 
 
+# 遊び方のページの元（howto_page.source_paths() と同じ形）。repo に置く。
+PAGE_SOURCES = ("docs/HOW_TO_PLAY.md", "docs/screenshots/a.png", "tools/howto_page.py")
+
+
 @pytest.fixture
 def repo(tmp_path):
     repo = tmp_path / "repo"
     (repo / "unity" / "KatsushikaCampusDays" / "Assets").mkdir(parents=True)
     (repo / "tools").mkdir()
+    (repo / "docs" / "screenshots").mkdir(parents=True)
     (repo / "unity" / "KatsushikaCampusDays" / "Assets" / "a.cs").write_text("class A {}\n", encoding="utf-8")
     (repo / "tools" / "t.py").write_text("x = 1\n", encoding="utf-8")
+    (repo / "tools" / "howto_page.py").write_text("y = 1\n", encoding="utf-8")
+    (repo / "docs" / "HOW_TO_PLAY.md").write_text("# 遊び方\n", encoding="utf-8")
+    (repo / "docs" / "screenshots" / "a.png").write_bytes(b"\x89PNG-a")
     git(repo, "init", "-q")
-    git(repo, "add", "unity/KatsushikaCampusDays/Assets/a.cs", "tools/t.py")
+    git(repo, "add", "unity/KatsushikaCampusDays/Assets/a.cs", "tools/t.py", *PAGE_SOURCES)
     git(repo, "commit", "-q", "-m", "init")
     return repo
 
@@ -371,6 +411,60 @@ def test_git_state_ignores_changes_outside_unity_project(repo):
     assert not dp.git_state(repo).dirty
 
 
+def test_git_state_ignores_changes_to_the_page_sources(repo):
+    # ゲームのビルドに入るのは Unity プロジェクトの下だけ。ページの元は page_state が見る。
+    (repo / "docs" / "HOW_TO_PLAY.md").write_text("# 変えた\n", encoding="utf-8")
+    (repo / "tools" / "howto_page.py").write_text("y = 2\n", encoding="utf-8")
+    assert not dp.git_state(repo).dirty
+
+
+# --- 遊び方のページの元の状態 (#18) ----------------------------------------
+
+def test_page_state_clean(repo):
+    state = dp.page_state(repo, PAGE_SOURCES)
+    assert state.commit == git(repo, "rev-parse", "HEAD") and len(state.commit) == 40
+    assert not state.dirty and state.tree == "clean"
+
+
+@pytest.mark.parametrize("path", PAGE_SOURCES)
+def test_page_state_modified_source_is_dirty(repo, path):
+    (repo / path).write_bytes(b"changed\n")
+    state = dp.page_state(repo, PAGE_SOURCES)
+    assert state.dirty and state.dirty_paths == (path,)
+
+
+def test_page_state_staged_but_uncommitted_source_is_dirty(repo):
+    (repo / "docs" / "HOW_TO_PLAY.md").write_text("# 直した\n", encoding="utf-8")
+    git(repo, "add", "docs/HOW_TO_PLAY.md")
+    assert dp.page_state(repo, PAGE_SOURCES).dirty_paths == ("docs/HOW_TO_PLAY.md",)
+
+
+def test_page_state_deleted_source_is_dirty(repo):
+    (repo / "docs" / "screenshots" / "a.png").unlink()
+    assert dp.page_state(repo, PAGE_SOURCES).dirty_paths == ("docs/screenshots/a.png",)
+
+
+def test_page_state_untracked_source_is_dirty(repo):
+    # ページが新しく使う画像が、まだ git に入っていない
+    (repo / "docs" / "screenshots" / "b.png").write_bytes(b"\x89PNG-b")
+    assert dp.page_state(repo, PAGE_SOURCES + ("docs/screenshots/b.png",)).dirty_paths == (
+        "docs/screenshots/b.png",)
+
+
+def test_page_state_looks_only_at_the_sources(repo):
+    # ページが使わない画像や、ゲームのビルドの変更では止まらない
+    (repo / "docs" / "screenshots" / "unused.png").write_bytes(b"\x89PNG-u")
+    (repo / "tools" / "t.py").write_text("x = 2\n", encoding="utf-8")
+    (repo / "unity" / "KatsushikaCampusDays" / "Assets" / "a.cs").write_text("class B {}\n", encoding="utf-8")
+    assert not dp.page_state(repo, PAGE_SOURCES).dirty
+
+
+def test_page_state_defaults_to_the_sources_the_page_is_made_from(repo, monkeypatch):
+    monkeypatch.setattr(dp.howto_page, "source_paths", lambda: PAGE_SOURCES)
+    (repo / "docs" / "HOW_TO_PLAY.md").write_text("# 変えた\n", encoding="utf-8")
+    assert dp.page_state(repo).dirty_paths == ("docs/HOW_TO_PLAY.md",)
+
+
 # --- main -----------------------------------------------------------------
 
 class Calls:
@@ -379,6 +473,7 @@ class Calls:
         self.uploads = []
         self.dispatched = []
         self.page = []  # 遊び方のページとして zip に足すファイル（サイトの根からのパス, 中身）
+        self.page_git = dp.GitState(PAGE_SHA)  # ページの元の git の状態。既定はきれい
 
 
 @pytest.fixture
@@ -396,6 +491,7 @@ def fake(monkeypatch, tmp_path):
     monkeypatch.setattr(dp, "dispatch_workflow", lambda tag: calls.dispatched.append(tag))
     monkeypatch.setattr(dp, "utc_now", lambda: "2026-09-24T00:00:00Z")
     monkeypatch.setattr(dp.howto_page, "site_files", lambda: calls.page)
+    monkeypatch.setattr(dp, "page_state", lambda: calls.page_git)
     calls.build = build
     calls.argv = ["deploy_pages.py", "--build-dir", str(build), "--zip", str(tmp_path / "dist" / "webgl.zip")]
     return calls
@@ -933,3 +1029,94 @@ def test_real_howto_page_goes_into_the_zip(tmp_path):
     assert {name for name, _ in page} <= names
     assert html.startswith("<!DOCTYPE html>")
     assert dp.payload_size(out).page == sum(len(data) for _, data in page)
+
+
+# ページの元に未コミットの変更があるとき。ページは作業ツリーから作って zip に入れるので,
+# index.html の記録（ゲームのビルドの commit と tree）には現れない。
+DIRTY_PAGE = dp.GitState(PAGE_SHA, ("docs/HOW_TO_PLAY.md", "docs/screenshots/a.png"))
+
+
+def test_deploy_stops_when_the_page_sources_have_uncommitted_changes(fake, tmp_path, capsys):
+    clean_build(tmp_path)
+    fake.page_git = DIRTY_PAGE
+    assert dp.main(fake.argv) == 1
+    assert fake.uploads == [] and fake.dispatched == []
+    err = capsys.readouterr().err
+    assert "遊び方のページの元" in err and "docs/HOW_TO_PLAY.md" in err and "--allow-dirty" in err
+
+
+def test_allow_dirty_deploys_a_dirty_page_and_the_notes_say_so(fake, tmp_path, capsys):
+    clean_build(tmp_path)
+    fake.page_git = DIRTY_PAGE
+    assert dp.main(fake.argv + ["--allow-dirty"]) == 0
+    assert len(fake.uploads) == 1 and fake.dispatched == [dp.TAG]
+    assert f"{dp.REPO_URL}/commit/{PAGE_SHA}" in fake.uploads[0] and "未コミット" in fake.uploads[0]
+    assert "--allow-dirty なので配信する" in capsys.readouterr().err
+
+
+def test_allow_oversize_does_not_let_a_dirty_page_through(monkeypatch, fake, tmp_path):
+    clean_build(tmp_path)
+    fake.page_git = DIRTY_PAGE
+    monkeypatch.setattr(dp, "MAX_DATA_BYTES", 15)
+    assert dp.main(fake.argv + ["--allow-oversize"]) == 1
+    assert fake.uploads == []
+
+
+def test_deploy_reports_the_page_among_every_refusal(monkeypatch, fake, tmp_path, capsys):
+    make_build(tmp_path)  # ビルド元の記録なし
+    fake.page_git = DIRTY_PAGE
+    monkeypatch.setattr(dp, "MAX_DATA_BYTES", 15)
+    assert dp.main(fake.argv) == 1
+    err = capsys.readouterr().err
+    assert "ビルド元のコミットの記録が無い" in err and "遊び方のページの元" in err and "data " in err
+
+
+def test_no_deploy_makes_the_zip_even_when_the_page_sources_are_dirty(fake, tmp_path):
+    make_build(tmp_path)
+    fake.page_git = DIRTY_PAGE
+    assert dp.main(fake.argv + ["--no-deploy"]) == 0
+    assert (tmp_path / "dist" / "webgl.zip").is_file() and fake.uploads == []
+
+
+def test_build_stops_before_unity_when_the_page_sources_are_dirty(monkeypatch, fake, capsys):
+    monkeypatch.setattr(dp, "git_state", lambda: dp.GitState(SHA))
+    fake.page_git = DIRTY_PAGE
+    assert dp.main(fake.argv + ["--build"]) == 1
+    assert fake.unity == 0 and fake.uploads == [] and fake.dispatched == []
+    err = capsys.readouterr().err
+    assert "遊び方のページの元" in err and "docs/HOW_TO_PLAY.md" in err
+
+
+def test_build_lists_every_place_with_uncommitted_changes(monkeypatch, fake, capsys):
+    monkeypatch.setattr(dp, "git_state", lambda: dp.GitState(SHA, ("unity/KatsushikaCampusDays/Assets/a.cs",)))
+    fake.page_git = DIRTY_PAGE
+    assert dp.main(fake.argv + ["--build"]) == 1
+    err = capsys.readouterr().err
+    assert "unity/KatsushikaCampusDays/Assets/a.cs" in err and "docs/HOW_TO_PLAY.md" in err
+    assert fake.unity == 0
+
+
+def test_build_allow_dirty_continues_with_a_dirty_page(monkeypatch, fake):
+    monkeypatch.setattr(dp, "git_state", lambda: dp.GitState(SHA))
+    fake.page_git = DIRTY_PAGE
+    assert dp.main(fake.argv + ["--build", "--allow-dirty"]) == 0
+    assert fake.unity == 1
+    # index.html の記録はゲームのビルドのもの。ページの状態は Release の説明に書く。
+    stamp = dp.read_stamp((fake.build / "index.html").read_text(encoding="utf-8"))
+    assert stamp.tree == "clean"
+    assert f"{dp.REPO_URL}/commit/{PAGE_SHA}" in fake.uploads[0] and "未コミット" in fake.uploads[0]
+
+
+def test_build_without_deploy_goes_on_with_a_dirty_page(monkeypatch, fake):
+    # 配信しないなら、ページの元が未コミットでも困らない
+    monkeypatch.setattr(dp, "git_state", lambda: dp.GitState(SHA))
+    fake.page_git = DIRTY_PAGE
+    assert dp.main(fake.argv + ["--build", "--no-deploy"]) == 0
+    assert fake.unity == 1 and fake.uploads == []
+
+
+def test_deploy_notes_name_the_page_commit_when_everything_is_clean(fake, tmp_path):
+    clean_build(tmp_path)
+    assert dp.main(fake.argv) == 0
+    assert f"{dp.REPO_URL}/commit/{PAGE_SHA}" in fake.uploads[0]
+    assert "未コミット" not in fake.uploads[0]

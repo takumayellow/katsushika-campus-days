@@ -138,7 +138,10 @@ a:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 }
 .brand { color: var(--kcd-muted); font-weight: 600; letter-spacing: 0.08em; }
 .play {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  min-height: 2.75rem;
   padding: 0.3rem 1.1rem;
   border-radius: 0.4rem;
   background: var(--kcd-accent);
@@ -147,6 +150,8 @@ a:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
   font-weight: 700;
   line-height: 1.5;
   text-decoration: none;
+  white-space: nowrap;
+  overflow-wrap: normal;
 }
 .play:hover { background: var(--kcd-accent-hover); }
 
@@ -228,7 +233,11 @@ footer {
 .back { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; margin: 0; }
 .top { display: inline-flex; align-items: center; min-height: 2.75rem; padding: 0 0.75rem; }
 
-/* 狭い画面では、3 列以上の表を行ごとの札に組み替える（横にはみ出させない）。 */
+/* 目次のチップは、狭い画面と指で押す画面では、押しやすい高さにする。 */
+@media (max-width: 40rem), (pointer: coarse) {
+  .toc a { display: flex; align-items: center; min-height: 2.75rem; }
+}
+/* 狭い画面では、3 列以上の表を行ごとの札に組み替え（横にはみ出させない）、目次を 1 行の横送りにする。 */
 @media (max-width: 40rem) {
   .table-wrap { overflow: visible; border: 0; background: none; }
   table.cards, table.cards tbody, table.cards tr, table.cards th, table.cards td { display: block; }
@@ -254,7 +263,7 @@ footer {
     gap: 0.6rem;
   }
   table.cards td::before { content: attr(data-label); color: var(--kcd-muted); font-size: 0.85rem; }
-  /* 目次のチップは 1 行に並べて横に送る。12 個を折り返すと 5 段（222 px）になり、最初の見出しが画面の外に出る。 */
+  /* 目次のチップは 1 行に並べて横に送る。折り返すと、見出しが増えるほど段が増えて、最初の見出しが画面の外に出る。 */
   .toc ul {
     --edge-left: max(var(--gutter), env(safe-area-inset-left, 0px));
     --edge-right: max(var(--gutter), env(safe-area-inset-right, 0px));
@@ -265,9 +274,10 @@ footer {
     scroll-padding-inline: var(--edge-left) var(--edge-right);
   }
   .toc li { flex: none; }
-  .toc a { display: flex; align-items: center; min-height: 2.75rem; white-space: nowrap; }
+  .toc a { white-space: nowrap; }
 }
-@media (max-width: 22.5rem) {
+/* ブランドとボタンが 1 行に並ばない幅では、ブランドを消してボタンだけを置く。 */
+@media (max-width: 24rem) {
   .brand { display: none; }
   .bar-in { justify-content: center; }
 }
@@ -337,6 +347,17 @@ def image_names() -> tuple[str, ...]:
     return tuple(dict.fromkeys(names))
 
 
+def source_paths() -> tuple[str, ...]:
+    """ページを作るのに読むファイルの, リポジトリの根からのパス（/ 区切り）。
+
+    ページは作業ツリーのこれらから作るので、未コミットの変更があれば、記録したコミットの
+    ページとは違う中身が配信される。使わない画像は入れない。
+    """
+    paths = [GUIDE, *(SCREENSHOTS / name for name in image_names()),
+             Path(__file__).resolve(), Path(mini_markdown.__file__).resolve()]
+    return tuple(path.relative_to(ROOT).as_posix() for path in paths)
+
+
 # ---- ページ ----
 
 def _figure(figure: Figure, sizes: Mapping[str, tuple[int, int]], *, hero: bool = False) -> str:
@@ -362,7 +383,7 @@ def _toc(blocks: tuple[mini_markdown.Block, ...]) -> str:
              for block in blocks if isinstance(block, Heading) and block.level in (2, 3)]
     if not items:
         return ""
-    return '<nav class="toc" id="toc" aria-label="目次">\n<ul>\n' + "\n".join(items) + "\n</ul>\n</nav>"
+    return '<nav class="toc" aria-label="目次">\n<ul>\n' + "\n".join(items) + "\n</ul>\n</nav>"
 
 
 def _main(blocks: tuple[mini_markdown.Block, ...], sizes: Mapping[str, tuple[int, int]]) -> str:

@@ -8,8 +8,10 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import re
 import struct
 import sys
+import unicodedata
 from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import unquote
@@ -261,10 +263,9 @@ def test_page_follows_the_guide_text():
     assert 'id="言語"' in render() and 'id="言語"' not in render(removed)
 
 
-def test_guide_keeps_the_headings_the_page_and_the_zip_need():
+def test_guide_keeps_the_headings_the_figures_sit_under():
     headings = {md.plain_text(block.text) for block in md.parse(GUIDE) if isinstance(block, md.Heading)}
     assert set(hp.FIGURES) <= headings
-    assert {"操作", "動作環境", "既知の問題", "クレジット"} <= headings
 
 
 def test_toc_lists_every_h2_and_h3_and_each_link_has_a_target():
@@ -282,6 +283,12 @@ def test_toc_lists_every_h2_and_h3_and_each_link_has_a_target():
 def test_heading_ids_are_unique():
     ids = [a["id"] for name, a in Page(render()).tags if name in ("h1", "h2", "h3")]
     assert len(ids) == len(set(ids))
+
+
+def test_only_headings_carry_ids_so_a_heading_can_take_any_name():
+    assert {name for name, a in Page(render()).tags if "id" in a} <= {"h1", "h2", "h3"}
+    named_toc = Page(render(GUIDE + "\n## toc\n\n本文\n"))
+    assert [name for name, a in named_toc.tags if a.get("id") == "toc"] == ["h2"]
 
 
 # ---- ゲームへ戻るリンク ----
@@ -379,14 +386,60 @@ def test_file_names_in_img_src_are_url_quoted_and_escaped(monkeypatch):
 
 # ---- 見た目の取り決め（ブラウザでの確認は撮影で行う） ----
 
+NARROW = "@media (max-width: 40rem) {"
+
+
+def block(css: str, opening: str) -> str:
+    """css の中で、行頭が opening（例 "h1 {"）で始まる規則の { } の中身。入れ子の { } も数える。"""
+    found = re.search(r"(?m)^[ \t]*" + re.escape(opening), css)
+    assert found, f"{opening} で始まる規則が無い"
+    start = found.end()
+    depth = 1
+    for end in range(start, len(css)):
+        depth += {"{": 1, "}": -1}.get(css[end], 0)
+        if depth == 0:
+            return css[start:end]
+    raise AssertionError(f"{opening} が閉じていない")
+
+
+def css_rem(source: str, pattern: str) -> float:
+    """source の中で pattern（数を 1 つ括る）に合う宣言の値（rem か em の数）。"""
+    found = re.search(pattern, source)
+    assert found, f"{pattern} に合う宣言が無い"
+    return float(found.group(1))
+
+
 def test_css_keeps_wide_things_inside_the_screen():
     css = hp.CSS
-    assert ".shot img" in css and "width: 100%" in css and "height: auto" in css
-    assert "overflow-x: auto" in css                      # 表の入れ物は横にスクロールさせる
-    assert "@media (max-width: 40rem)" in css             # 狭い画面で札に組み替える
-    assert "content: attr(data-label)" in css
-    assert "env(safe-area-inset-left" in css and "viewport-fit" not in css
-    assert "minmax(0, 1fr)" in css                        # 画像の枠が中身で広がらない
+    shot = block(css, ".shot img {")
+    assert "width: 100%" in shot and "height: auto" in shot       # 画像は枠の幅に合わせる
+    assert "overflow-x: auto" in block(css, ".table-wrap {")      # 表の入れ物は横にスクロールさせる
+    assert "minmax(0, 1fr)" in block(css, ".gallery {")           # 画像の枠が中身で広がらない
+    assert "env(safe-area-inset-left" in block(css, ".bar-in, main, footer {")
+    assert "viewport-fit=cover" in Page(render()).meta("viewport")
+
+
+def test_narrow_screen_turns_a_wide_table_into_cards():
+    narrow = block(hp.CSS, NARROW)
+    assert "overflow: visible" in block(narrow, ".table-wrap {")
+    assert "display: block" in block(
+        narrow, "table.cards, table.cards tbody, table.cards tr, table.cards th, table.cards td {")
+    cell = block(narrow, "table.cards td {")
+    assert "display: grid" in cell and "minmax(0, 1fr)" in cell   # ラベルと中身の 2 列。中身で広がらない
+    assert "content: attr(data-label)" in block(narrow, "table.cards td::before {")
+
+
+def test_page_uses_the_card_class_the_css_styles():
+    assert '<table class="cards">' in render()
+
+
+def test_a_card_cell_holds_one_span_for_the_grid_to_place():
+    decorated = GUIDE + "\n## 札\n\n| 操作 | キー | パッド |\n| --- | --- | --- |\n| 走る | **Shift** を押す | `LB` または `LT` |\n"
+    for source in (GUIDE, decorated):
+        cells = re.findall(r'<td data-label="[^"]*">(.*?)</td>', render(source))
+        assert cells
+        assert all(cell.startswith("<span>") and cell.endswith("</span>") and cell.count("<span>") == 1
+                   for cell in cells), cells
 
 
 def test_css_uses_the_game_page_palette():
@@ -394,21 +447,39 @@ def test_css_uses_the_game_page_palette():
         assert token in hp.CSS
 
 
-def test_page_uses_the_card_class_the_css_styles():
-    page = render()
-    assert '<table class="cards">' in page
-    assert "table.cards" in hp.CSS
+def test_play_button_neither_shrinks_nor_wraps():
+    play = block(hp.CSS, ".play {")
+    assert "flex: none" in play and "white-space: nowrap" in play and "overflow-wrap: normal" in play
 
 
-def block(css: str, opening: str) -> str:
-    """css の中で opening（例 "h1 {"）に始まる { } の中身。入れ子の { } も数える。"""
-    start = css.index(opening) + len(opening)
-    depth = 1
-    for end in range(start, len(css)):
-        depth += {"{": 1, "}": -1}.get(css[end], 0)
-        if depth == 0:
-            return css[start:end]
-    raise AssertionError(f"{opening} が閉じていない")
+def test_play_button_is_as_tall_as_a_tap_target():
+    play = block(hp.CSS, ".play {")
+    assert "min-height: 2.75rem" in play and "display: inline-flex" in play and "align-items: center" in play
+
+
+def test_bar_is_as_tall_as_the_scroll_offset_assumes():
+    # 目次で飛んだ見出しがバーに隠れないよう、バーの高さは --bar で決まり、ボタンの高さで伸びない。
+    css = hp.CSS
+    bar_in = block(css, ".bar-in {")
+    padding = css_rem(bar_in, r"padding-top: ([\d.]+)rem") + css_rem(bar_in, r"padding-bottom: ([\d.]+)rem")
+    button = css_rem(block(css, ".play {"), r"min-height: ([\d.]+)rem")
+    assert "min-height: var(--bar)" in bar_in
+    assert css_rem(css, r"--bar: ([\d.]+)rem") >= button + padding
+    assert "var(--bar)" in block(css, "html {")
+
+
+def test_brand_is_dropped_where_it_and_the_play_button_no_longer_fit_on_one_line():
+    css = hp.CSS
+    label = re.search(r'<a class="play" href="\.\./">(.*?)</a>', render()).group(1)
+    assert all(unicodedata.east_asian_width(ch) in "WF" for ch in hp.SITE_NAME + label)  # 全角は 1 字が 1em
+    play = block(css, ".play {")
+    needed = (2 * css_rem(css, r"--gutter: ([\d.]+)rem")                                 # 左右の余白
+              + len(hp.SITE_NAME) * (1 + css_rem(block(css, ".brand {"), r"letter-spacing: ([\d.]+)em"))
+              + css_rem(block(css, ".bar-in {"), r"gap: [\d.]+rem ([\d.]+)rem")          # 2 つの間
+              + len(label) * css_rem(play, r"font-size: ([\d.]+)rem")
+              + 2 * css_rem(play, r"padding: [\d.]+rem ([\d.]+)rem"))
+    dropped = re.search(r"@media \(max-width: ([\d.]+)rem\) \{\s*\.brand \{ display: none; \}", css)
+    assert dropped and float(dropped.group(1)) >= needed
 
 
 def test_title_scales_with_the_screen_so_it_stays_on_one_line_on_a_phone():
@@ -423,12 +494,17 @@ def test_text_avoids_a_last_line_of_one_character_where_the_browser_supports_it(
     assert "text-wrap: pretty" in block(hp.CSS, "p, li, td {")
 
 
-def test_toc_is_one_scrolling_row_of_tap_sized_chips_on_a_phone():
-    narrow = block(hp.CSS, "@media (max-width: 40rem) {")
+def test_toc_is_one_scrolling_row_on_a_phone():
+    narrow = block(hp.CSS, NARROW)
     row = block(narrow, ".toc ul {")
     assert "flex-wrap: nowrap" in row and "overflow-x: auto" in row
-    assert "min-height: 2.75rem" in block(narrow, ".toc a {")
+    assert "white-space: nowrap" in block(narrow, ".toc a {")
     assert "flex-wrap: wrap" in block(hp.CSS, ".toc ul {")  # 広い画面では折り返して全部見せる
+
+
+def test_toc_chips_are_tap_sized_wherever_a_finger_points():
+    touch = block(hp.CSS, "@media (max-width: 40rem), (pointer: coarse) {")
+    assert "min-height: 2.75rem" in block(touch, ".toc a {")
 
 
 def test_back_to_top_link_is_as_tall_as_a_tap_target():
@@ -508,6 +584,23 @@ def test_site_files_limit_the_total_size(source):
     assert sum(len(data) for _, data in hp.site_files(guide, screenshots, max_bytes=total)) == total
     with pytest.raises(ValueError, match="上限"):
         hp.site_files(guide, screenshots, max_bytes=total - 1)
+
+
+# ---- ページの元（未コミットの検査が見るファイル） ----
+
+def test_source_paths_name_every_file_the_page_is_made_from():
+    paths = hp.source_paths()
+    assert paths[0] == "docs/HOW_TO_PLAY.md"
+    shots = [path for path in paths if path.startswith("docs/screenshots/")]
+    assert shots == [f"docs/screenshots/{name}" for name in hp.image_names()]  # 使わない画像は入れない
+    assert {"tools/howto_page.py", "tools/mini_markdown.py"} <= set(paths)  # 変換のコードが変わればページも変わる
+    assert len(paths) == len(set(paths))
+
+
+def test_source_paths_are_files_in_the_repo_in_the_form_git_takes():
+    for path in hp.source_paths():
+        assert "\\" not in path and not path.startswith("/")
+        assert (hp.ROOT / path).is_file(), path
 
 
 # ---- 実物 ----
