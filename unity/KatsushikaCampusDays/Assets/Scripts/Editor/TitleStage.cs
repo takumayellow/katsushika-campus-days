@@ -167,10 +167,11 @@ namespace KCD.Editor
             menu.Bind(titleRoot.gameObject, selectRoot.gameObject, prompt, select);
             menu.BindTap(UIFactory.AddLinkTapArea(titleRoot, prompt));
 
-            BuildMapAttribution(canvasRect);
+            MapAttributionLabel attribution = BuildMapAttribution(canvasRect);
 
             SettingsView settings = UIFactory.BuildSettings(host, canvasRect);
             CreditsView credits = UIFactory.BuildCredits(host, canvasRect);
+            attribution.Avoid(Child(canvasRect, "Settings"), Child(canvasRect, "Credits"));
             menu.BindExtras(settings, credits);
             menu.BindHeadings(title, subtitle);
 
@@ -197,10 +198,11 @@ namespace KCD.Editor
 
         /// <summary>
         /// 地図データの帰属表示（ODbL）を右下に小さく出す (#20)。TitleRoot と SelectRoot の外に置くので、
-        /// タイトルと主人公選びのどちらでも見える。設定とクレジットの画面はこの後に作るので、重なればそちらが上に描かれる。
+        /// タイトルと主人公選びのどちらでも見える。設定とクレジットの枠はこの後に作るのでそちらが上に描かれ、
+        /// 開いた枠が文字にかかる間は MapAttributionLabel が文字を隠す (#187)。
         /// 下端から 12〜68 px に収め、いちばん下にある主人公選びの操作説明（下端から 92 px より上）と重ならない。
         /// </summary>
-        private static void BuildMapAttribution(RectTransform canvasRect)
+        private static MapAttributionLabel BuildMapAttribution(RectTransform canvasRect)
         {
             RectTransform box = UIFactory.Rect(canvasRect, "MapAttribution", new Vector2(1f, 0f),
                 new Vector2(1f, 0f), new Vector2(-24f, 12f), new Vector2(900f, 56f));
@@ -209,7 +211,20 @@ namespace KCD.Editor
             Color ink = label.color;
             label.color = new Color(ink.r, ink.g, ink.b, 0.8f);
             UIFactory.ReflowLabel(box, label, 16f);
-            box.gameObject.AddComponent<MapAttributionLabel>().Bind(label);
+            MapAttributionLabel attribution = box.gameObject.AddComponent<MapAttributionLabel>();
+            attribution.Bind(label);
+            return attribution;
+        }
+
+        /// <summary>parent の直下にある name の枠。UIFactory が付けた名前で探すので、見つからなければ組み立てを止める。</summary>
+        private static RectTransform Child(RectTransform parent, string name)
+        {
+            if (!(parent.Find(name) is RectTransform child))
+            {
+                throw new System.InvalidOperationException(parent.name + " の直下に " + name + " が無い");
+            }
+
+            return child;
         }
     }
 }
