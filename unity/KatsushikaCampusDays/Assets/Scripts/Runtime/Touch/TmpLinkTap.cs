@@ -24,6 +24,15 @@ namespace KCD
         /// </summary>
         public const string TapRowLineHeight = "<line-height=3em>";
 
+        /// <summary>
+        /// 行の間隔を em で指定した <c>&lt;line-height&gt;</c>。縦持ちの枠は Canvas に収めるために縮むので、
+        /// 画面ごとに <see cref="TapRowLineHeight"/> より広い間隔を使うときに使う。
+        /// </summary>
+        public static string RowHeight(float em)
+        {
+            return "<line-height=" + em.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + "em>";
+        }
+
         private const string ChoicePrefix = "choice:";
 
         [SerializeField] private TMP_Text _text;

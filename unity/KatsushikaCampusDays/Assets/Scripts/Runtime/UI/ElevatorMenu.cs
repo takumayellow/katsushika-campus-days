@@ -12,15 +12,33 @@ namespace KCD
     /// </summary>
     public sealed class ElevatorMenu : MonoBehaviour
     {
+        /// <summary>縦持ちで指で遊ぶときの行の間隔（em）。幅 800 の Canvas を 360 px で描くと 44.6 px。</summary>
+        public const float PortraitRowEm = 3.3f;
+
+        /// <summary>横持ちで指で遊ぶときの行の間隔の上限（em）。階が少ないときはこれまで。</summary>
+        public const float LandscapeMaxRowEm = 3f;
+
         /// <summary>
-        /// 横持ちのスマホで指で遊ぶときの行の高さ (#187)。文字の大きさ 30 で 60 になり、高さ 720 の Canvas を 390 px で描くと約 32 px。
-        /// 縦持ちと同じ <see cref="TmpLinkTap.TapRowLineHeight"/> にすると、7 階の建物で枠が Canvas に収まらずに縮む。
+        /// 横持ちで見出しを「やめる」と同じ行に入れ始める階の数。講義棟（7 階）だと見出し 1 行・7 階・「やめる」で
+        /// 9 行になり、枠に入る間隔が 2.3em まで下がるので、「やめる」を見出しの右に寄せて 8 行にする。
         /// </summary>
-        public const string LandscapeTapRowLineHeight = "<line-height=2em>";
+        public const int MergedCancelFloors = 7;
+
+        /// <summary>横持ちの枠の中で、本文の行が使える高さ。枠の高さ 620 から文字枠の上下の余白 24 と余裕 2 を引いた値。</summary>
+        public const float LandscapeBodyHeight = 594f;
+
+        /// <summary>
+        /// 1 行目の高さ（見出しは 110% の大きさ）。<c>&lt;line-height&gt;</c> は 2 行目から効くので、
+        /// 本文の高さは 1 行目 + 残りの行 × 間隔になる（実測: 7 階・間隔 78 で 586）。
+        /// </summary>
+        public const float FirstRowHeight = 41f;
+
+        private const float FontSize = 30f;
+        private const float HeadingGap = 200f;
 
         private static readonly Vector2 KeysFrameSize = new Vector2(700f, 540f);
-        private static readonly Vector2 PortraitTouchFrameSize = new Vector2(700f, 820f);
-        private static readonly Vector2 LandscapeTouchFrameSize = new Vector2(700f, 600f);
+        private static readonly Vector2 PortraitTouchFrameSize = new Vector2(700f, 870f);
+        private static readonly Vector2 LandscapeTouchFrameSize = new Vector2(700f, 620f);
 
         /// <summary>1 フレーム分の入力。<see cref="Update"/> が KCDInput から組んで <see cref="Tick"/> に渡す。</summary>
         public readonly struct FrameInput
@@ -280,7 +298,8 @@ namespace KCD
 
         /// <summary>
         /// 枠の大きさ。キーとマウスでは組んだときの大きさ。指のときは行の間隔を広げた分だけ高くする
-        /// （いちばん階の多い 7 階の建物で、枠を縮めずに入る高さ）。
+        /// （いちばん階の多い 7 階の建物で、枠を縮めずに入る高さ。横の 620 は、844x390 と 780x360 の Canvas の高さ 652 から
+        /// 上下の余白 16 ずつを引いた値）。
         /// </summary>
         public static Vector2 FrameSize(bool links, bool portrait)
         {
@@ -291,20 +310,35 @@ namespace KCD
         /// 見出しと階の一覧と「やめる」。今の階には「いまの階」を添え、selected の行にだけ ▶ と色を付ける。
         /// links なら各行を <c>&lt;link="choice:N"&gt;</c> で囲み、叩けるようにする（N は stops の番号、「やめる」は階の数）。
         /// キーの案内は指で遊んでいないときだけ出す。stairs なら見出しを「階段」にする。
-        /// 指のときは行の間隔を指の幅まで広げ（portrait なら縦持ちの幅）、間隔だけで区切れるので空行を挟まない。
+        /// 指のときは行の間隔を指の幅まで広げ、間隔だけで区切れるので空行を挟まない。
+        /// 縦持ちは <see cref="PortraitRowEm"/> 固定（9 行で 832 が入る枠の高さ 870）。横持ちは枠の高さに入る範囲で最大 <see cref="LandscapeMaxRowEm"/> とし、
+        /// 階が <see cref="MergedCancelFloors"/> 以上なら「やめる」を見出しの行に入れる（<see cref="RowEm"/>）。
         /// </summary>
         public static string Compose(ElevatorPanel.Stop[] stops, int current, int selected, bool links,
             bool stairs = false, bool portrait = false)
         {
             var builder = new StringBuilder(256);
+            bool merged = MergesCancel(stops.Length, links, portrait);
             if (links)
             {
-                builder.Append(portrait ? TmpLinkTap.TapRowLineHeight : LandscapeTapRowLineHeight);
+                builder.Append(TmpLinkTap.RowHeight(RowEm(stops.Length, portrait)));
             }
 
             builder.Append("<size=110%>")
                 .Append(stairs ? L.Pick("階段", "Stairs") : L.Pick("エレベーター", "Elevator"))
-                .Append(links ? "</size>\n" : "</size>\n\n");
+                .Append("</size>");
+            if (merged)
+            {
+                // 見出しの右に「やめる」を置く。中央揃えの行なので、間の空きで右へ寄る。
+                builder.Append("<space=").Append(HeadingGap.ToString(System.Globalization.CultureInfo.InvariantCulture))
+                    .Append('>');
+                AppendRow(builder, stops.Length, L.Pick("やめる", "Cancel"), selected == stops.Length, links);
+            }
+            else
+            {
+                builder.Append(links ? "\n" : "\n\n");
+            }
+
             for (int i = stops.Length - 1; i >= 0; i--)
             {
                 string label = stops[i].Floor;
@@ -327,7 +361,11 @@ namespace KCD
                 builder.Append('\n');
             }
 
-            AppendRow(builder, stops.Length, L.Pick("やめる", "Cancel"), selected == stops.Length, links);
+            if (!merged)
+            {
+                AppendRow(builder, stops.Length, L.Pick("やめる", "Cancel"), selected == stops.Length, links);
+            }
+
             if (!links)
             {
                 builder.Append("\n<size=75%>").Append(L.Pick("↑↓ えらぶ　Enter 決める　Esc やめる",
@@ -335,6 +373,29 @@ namespace KCD
             }
 
             return builder.ToString();
+        }
+
+        /// <summary>指のとき、横持ちで見出しと「やめる」を同じ行に入れるか。</summary>
+        public static bool MergesCancel(int stopCount, bool links, bool portrait)
+        {
+            return links && !portrait && stopCount >= MergedCancelFloors;
+        }
+
+        /// <summary>
+        /// 指のときの行の間隔（em）。縦持ちは <see cref="PortraitRowEm"/>。
+        /// 横持ちは本文の高さ <see cref="LandscapeBodyHeight"/> に行が入る最大の値を 0.1 刻みで取り、上限は <see cref="LandscapeMaxRowEm"/>。
+        /// 7 階なら 8 行で 2.6em（844x390 で 46.6 px、780x360 で 43.0 px）、5 階以下なら 3em（53.7 px、49.7 px）。
+        /// </summary>
+        public static float RowEm(int stopCount, bool portrait)
+        {
+            if (portrait)
+            {
+                return PortraitRowEm;
+            }
+
+            int rows = stopCount + (MergesCancel(stopCount, true, false) ? 1 : 2);
+            float em = Mathf.Floor((LandscapeBodyHeight - FirstRowHeight) / ((rows - 1) * FontSize) * 10f + 1e-3f) / 10f;
+            return Mathf.Min(LandscapeMaxRowEm, em);
         }
 
         private static void AppendRow(StringBuilder builder, int index, string label, bool selected, bool links)
