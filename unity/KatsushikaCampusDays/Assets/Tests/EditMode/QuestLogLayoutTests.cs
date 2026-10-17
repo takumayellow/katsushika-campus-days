@@ -95,7 +95,7 @@ namespace KCD.Tests
                 // 集めた数の行はいちばん長くなる形で入れる（どの数も 2 桁まで）。
                 QuestLogView.ComposeProgress(builder, 99, 99, 99, 99, 99, 99);
                 QuestLogView.Compose(builder, quests);
-                builder.Append("\n<size=70%>").Append(L.Pick("タップで閉じる", "Tap to close")).Append("</size>");
+                builder.Append(QuestLogView.CloseHint());
 
                 Vector2 size = frame.sizeDelta;
                 if (portrait)
