@@ -101,6 +101,14 @@ def test_every_sign_has_text_and_a_name(built):
     assert len(named) >= 20
 
 
+def test_kiosk_signs_do_not_carry_a_real_shop_name(built):
+    kiosk = [r["ja"] for r in built.signs if "券売機" in r["ja"]]
+    assert "【1F 専用券売機】\nキャッシュレス決済のみ" in kiosk
+    assert "【1F 専用券売機】" in kiosk
+    assert not [s for s in kiosk if "葛飾店" in s]
+    assert not [r for r in built.signs if "葛飾店" in r["ja"]]
+
+
 def test_hanging_sign_roots_match_the_table(built):
     roots = sorted((round(x, 3), round(y, 3)) for x, y, _z in PS.HANGS)
     hung = sorted((round(r["pos"]["x"], 3), round(r["pos"]["z"], 3)) for r in built.signs

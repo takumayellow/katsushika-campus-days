@@ -357,8 +357,8 @@ Y=44 +--+
 | 黒い案内板の貼り紙 2 | wall（plate paper_white、0.8 × 1.1） | 食堂2階\n奥↑か手前→の\n階段で2階へ進む | 2F: take the stairs | 高（日本語）/ 低（英語・改行） | TB08 |
 | 黒い案内板の右の帯 | wall（縦長、0.6 × 2.4） | →\nトイレ\n多目的\nトイレ\n階段 | Restrooms\nStairs | 中（実物は「→」とピクトグラム。文字はその役割から） | TB08 |
 | 優先時間帯の立て看板 | wall（白い A 型、0.6 × 1.4） | 11:45〜12:30\n理科大生\n優先時間帯 | 11:45-12:30\nTUS students first | 高 | V-KITA 7:30 |
-| SUNMI 端末の上の掲示（X −4.6 の壁の西の面） | wall（白地、黄色の帯、1.6 × 0.5） | 【葛飾店 1F 専用券売機】\nキャッシュレス決済のみ | 1F Order Kiosks\nCashless only | 高 | TUS22-03 |
-| えんじのパネルの掲示 | wall（白地、黄色の帯、1.6 × 0.5） | 【葛飾店 1F 専用券売機】 | 1F Order Kiosks | 高 | TH02、V-KITA 8:30 |
+| SUNMI 端末の上の掲示（X −4.6 の壁の西の面） | wall（白地、黄色の帯、1.6 × 0.5） | 【1F 専用券売機】\nキャッシュレス決済のみ | 1F Order Kiosks\nCashless only | 高 | TUS22-03 |
+| えんじのパネルの掲示 | wall（白地、黄色の帯、1.6 × 0.5） | 【1F 専用券売機】 | 1F Order Kiosks | 高 | TH02、V-KITA 8:30 |
 | 配膳口の帯（X −18.0） | wall（plate research2_band_enji、2.4 × 0.5） | 本日のランチ | TODAY'S LUNCH | 高（英語）/ 低（日本語） | TB02、BL09 |
 | 配膳口の帯（X −10.0） | wall（同、2.4 × 0.5） | 麺 | NOODLES | 高（英語）/ 低（日本語） | V-KITA 8:10 |
 | 配膳口の帯（X −4.0） | wall（同、2.4 × 0.5） | 丼・カレー | DON・CURRY | 中（英語の続きは画面の外。2013 年の帯の「DON・CURRY」から） | V-KITA 8:10、AM07 |
