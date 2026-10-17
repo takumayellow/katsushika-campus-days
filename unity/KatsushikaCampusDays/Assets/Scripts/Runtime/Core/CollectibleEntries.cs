@@ -164,13 +164,13 @@ namespace KCD
         public string DescJa = string.Empty;
         public string DescEn = string.Empty;
 
-        /// <summary>condition.type（collect_count / rarity_count / photo_count / building_count / npc_count / quest_count / quest_complete）。</summary>
+        /// <summary>condition.type（collect_count / rarity_count / photo_count / building_count / npc_count / quest_count / quest_complete / ending_seen）。</summary>
         public string ConditionType = string.Empty;
 
         /// <summary>condition.value が数のとき、その値。</summary>
         public int Count;
 
-        /// <summary>condition.value が文字列のとき、その値（quest_complete のクエスト id）。</summary>
+        /// <summary>condition.value が文字列のとき、その値（quest_complete のクエスト id、ending_seen のエンド id）。</summary>
         public string TargetId = string.Empty;
 
         /// <summary>condition.rarity（rarity_count のとき）。</summary>

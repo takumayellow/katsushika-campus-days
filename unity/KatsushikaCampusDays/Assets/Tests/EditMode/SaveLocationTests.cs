@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using NUnit.Framework;
+using UnityEngine;
 
 namespace KCD.Tests
 {
@@ -48,6 +49,17 @@ namespace KCD.Tests
             Assert.IsNotNull(read, "差し替えたフォルダのセーブを読めない");
             Assert.AreEqual(3, read.DayNumber);
             Assert.AreEqual("botchan", read.CharacterId);
+        }
+
+        [Test]
+        public void PathOf_FollowsTheOverrideAndOtherwiseThePersistentDataPath()
+        {
+            // セーブと同じ置き場の別ファイル（見たエンドの記録）も、差し替えたフォルダに置く。
+            Assert.AreEqual(Path.Combine(_folder, "kcd_endings.json"), SaveSystem.PathOf("kcd_endings.json"));
+
+            SaveSystem.DirectoryOverride = null;
+            Assert.AreEqual(Path.Combine(Application.persistentDataPath, "kcd_endings.json"),
+                SaveSystem.PathOf("kcd_endings.json"));
         }
     }
 }

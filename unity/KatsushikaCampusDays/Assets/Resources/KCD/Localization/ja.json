@@ -560,6 +560,8 @@
     "ach.ach_full_day.name": "一日の終わり",
     "ach.ach_full_day.desc": "帰り道を達成する。",
     "ach.ach_next_keeper.name": "来年の当番",
-    "ach.ach_next_keeper.desc": "はじまりの春の宝探しを終える。"
+    "ach.ach_next_keeper.desc": "はじまりの春の宝探しを終える。",
+    "ach.ach_skip_school.name": "自主休講",
+    "ach.ach_skip_school.desc": "授業をサボって寮でぐーたらする。"
   }
 }
