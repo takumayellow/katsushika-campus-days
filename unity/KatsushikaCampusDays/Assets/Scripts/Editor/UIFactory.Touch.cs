@@ -24,11 +24,13 @@ namespace KCD.Editor
         /// <summary>
         /// 縦長の画面での上端のボタンの位置（左上から、幅 720 の Canvas の単位）。左上のクエストの枠
         /// （下端は上から CSS で約 93 px、この Canvas で 172）のすぐ下に、ポーズ・クエストログ・写真の順で横に並べる。
+        /// 写真モードの間だけ出す案内のボタンは、写真（戻る）の右隣。
         /// 隣のボタンとの間は 26 以上（縦持ちのスマホで CSS 14 px）空け、隣を押し間違えないようにする。
         /// </summary>
         private static readonly Vector2 PortraitPausePosition = new Vector2(84f, -236f);
         private static readonly Vector2 PortraitQuestLogPosition = new Vector2(214f, -236f);
         private static readonly Vector2 PortraitPhotoPosition = new Vector2(344f, -236f);
+        private static readonly Vector2 PortraitPhotoHintPosition = new Vector2(474f, -236f);
 
         private static readonly Color TouchFace = new Color(0.06f, 0.08f, 0.12f, 0.55f);
         private static readonly Color StickBase = new Color(1f, 1f, 1f, 0.18f);
@@ -70,6 +72,14 @@ namespace KCD.Editor
                 "<Gamepad>/buttonNorth", 24f, new Vector2(0.5f, 1f));
             PlaceInPortrait(photoLabel, PortraitPhotoPosition);
 
+            // 写真モードの間だけ出すボタン。操作の案内を出し入れする（L3 と同じ口）。横長の画面では戻るの真下
+            // （正方形に近い横長の画面でも画面に収まる）、縦長の画面では戻るの右隣に置く。
+            RectTransform photoExtras = Stretch(play, "PhotoExtras");
+            CanvasGroup photoExtrasGroup = photoExtras.gameObject.AddComponent<CanvasGroup>();
+            TMP_Text hintLabel = BuildPadButton(photoExtras, "PhotoHintButton", new Vector2(270f, -194f), 104f,
+                "<Gamepad>/leftStickPress", 24f, new Vector2(0.5f, 1f));
+            PlaceInPortrait(hintLabel, PortraitPhotoHintPosition);
+
             TMP_Text jumpLabel = BuildPadButton(play, "Jump", new Vector2(-120f, 130f), 140f,
                 "<Gamepad>/buttonSouth", 30f);
             TMP_Text interactLabel = BuildPadButton(extras, "Interact", new Vector2(-290f, 105f), 124f,
@@ -92,6 +102,7 @@ namespace KCD.Editor
             TouchHud hud = canvas.gameObject.AddComponent<TouchHud>();
             hud.Bind(controls.gameObject, playGroup, extrasGroup, pauseGroup);
             hud.BindLabels(jumpLabel, interactLabel, sprintLabel, questLabel, photoLabel);
+            hud.BindPhotoExtras(photoExtrasGroup, hintLabel);
             return hud;
         }
 

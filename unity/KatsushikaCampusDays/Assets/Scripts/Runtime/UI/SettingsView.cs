@@ -34,6 +34,24 @@ namespace KCD
         /// </summary>
         public const string StackedLineHeight = "<line-height=1.65em>";
 
+        /// <summary>
+        /// 横持ちの指で 2 列に並べるときの行の間隔。1 項目が 2 行で 87 単位になり、844×390 で約 52 px、
+        /// 740×360 で約 47 px（44 px 以上）。10 行で 435 単位なので、文字の欄の高さ 436 に入る。
+        /// </summary>
+        public const string TwoColumnLineHeight = "<line-height=1.45em>";
+
+        /// <summary>2 列のとき、右の列を始める位置（文字の欄の幅に対する割合）。</summary>
+        public const string RightColumnPos = "<pos=50%>";
+
+        /// <summary>2 列に並べるときの枠の幅。1 列が値の行の最大 499 単位に収まる（667×375 では Canvas の幅に縮む）。</summary>
+        public const float TwoColumnFrameWidth = 1360f;
+
+        /// <summary>設定の枠の元の大きさ（UIFactory.Settings）。2 列を畳むときに戻す。</summary>
+        public static readonly Vector2 NormalFrameSize = new Vector2(960f, 620f);
+
+        /// <summary>案内の書き出し。30 の本文で 25.5 単位（360 幅の縦持ちで約 11.5 px）。</summary>
+        private const string HintOpen = "<size=85%><alpha=#99>";
+
         /// <summary>2 行に分けたときの値の行の字下げ。名前の頭の ▶ と空白の幅にそろえる。</summary>
         private const string StackedValueIndent = "      ";
 
@@ -71,6 +89,9 @@ namespace KCD
 
         /// <summary>名前と値を 2 行に分けて書いたか。画面の向きが変わったら書き直す。</summary>
         private bool _drawnStacked;
+
+        /// <summary>横持ちの指で、2 列に並べて書いたか。</summary>
+        private bool _drawnTwoColumns;
 
         public bool IsOpen => _root != null && _root.activeSelf;
 
@@ -156,7 +177,8 @@ namespace KCD
             }
 
             if (InputMode.IsTouch != _drawnForTouch || Screen.fullScreen != _drawnFullscreen
-                || ScreenShape.IsPortrait != _drawnStacked)
+                || ScreenShape.IsPortrait != _drawnStacked
+                || UseTwoColumns(InputMode.IsTouch, ScreenShape.IsPortrait) != _drawnTwoColumns)
             {
                 Redraw();
             }
@@ -287,6 +309,11 @@ namespace KCD
                     CameraPrefs.InvertY = !CameraPrefs.InvertY;
                     return true;
                 case RowFullscreen:
+                    if (!ScreenModeHotkey.FullscreenSupported)
+                    {
+                        return false;
+                    }
+
                     // ブラウザはキーやタップの処理の中でしか全画面を許さない。Ctrl+F と同じ切り替えを使う。
                     ScreenModeHotkey.Toggle();
                     return true;
@@ -364,16 +391,57 @@ namespace KCD
             entries[RowSensitivity] = new Entry(L.Get("ui.settings.look_sensitivity", "カメラの感度"),
                 SensitivityBar(CameraPrefs.SensitivityLevel), links);
             entries[RowInvert] = new Entry(L.Get("ui.settings.invert_y", "カメラ上下を反転"), OnOff(CameraPrefs.InvertY), true);
-            entries[RowFullscreen] = new Entry(L.Get("ui.settings.fullscreen", "フルスクリーン"), OnOff(_drawnFullscreen), true);
-            _body.text = Compose(entries, _index, links, _drawnStacked);
+            entries[RowFullscreen] = FullscreenEntry(ScreenModeHotkey.FullscreenSupported, _drawnFullscreen);
+            _drawnTwoColumns = UseTwoColumns(links, _drawnStacked);
+            ResizeFrame(_drawnTwoColumns);
+            _body.text = Compose(entries, _index, links, _drawnStacked, _drawnTwoColumns);
+        }
+
+        /// <summary>横持ちの指のときだけ 2 列に並べる。縦持ちは 2 行の組み、キーとマウスは 1 行の組み。</summary>
+        public static bool UseTwoColumns(bool links, bool portrait)
+        {
+            return links && !portrait;
+        }
+
+        /// <summary>
+        /// 「フルスクリーン」の項目。全画面を使えない端末（iPhone の Safari）では、押しても変わらない ◀ ▶ を出さず、
+        /// 値の代わりにホーム画面に追加する案内を書く。
+        /// </summary>
+        public static Entry FullscreenEntry(bool supported, bool on)
+        {
+            string label = L.Get("ui.settings.fullscreen", "フルスクリーン");
+            if (!supported)
+            {
+                return new Entry(label, "<size=80%>" + L.Pick("ホーム画面に追加で全画面", "Add to Home Screen for fullscreen")
+                    + "</size>", false);
+            }
+
+            return new Entry(label, OnOff(on), true);
+        }
+
+        /// <summary>2 列のときだけ枠を横に広げる。FitInCanvas が Canvas の幅 −32 まで縮める。</summary>
+        private void ResizeFrame(bool twoColumns)
+        {
+            FitInCanvas fit = _root != null ? _root.GetComponent<FitInCanvas>() : null;
+            if (fit == null)
+            {
+                return;
+            }
+
+            fit.SetSize(twoColumns ? new Vector2(TwoColumnFrameWidth, NormalFrameSize.y) : NormalFrameSize);
         }
 
         /// <summary>
         /// 本文を組む。entries は「閉じる」より前の行を順に並べたもの。selected は選んでいる行。
         /// stacked なら名前と値を 2 行に分け、行の間隔を指の幅まで広げる。
         /// </summary>
-        public static string Compose(Entry[] entries, int selected, bool links, bool stacked)
+        public static string Compose(Entry[] entries, int selected, bool links, bool stacked, bool twoColumns = false)
         {
+            if (twoColumns)
+            {
+                return ComposeTwoColumns(entries, selected);
+            }
+
             var builder = new System.Text.StringBuilder(1024);
             if (stacked)
             {
@@ -389,12 +457,75 @@ namespace KCD
             builder.Append('\n');
             AppendRow(builder, RowClose, RowClose == selected, L.Pick("閉じる", "Close"), string.Empty, false, links,
                 stacked);
-            builder.Append("\n<size=70%><alpha=#99>");
-            builder.Append(links
-                ? L.Pick("◀ ▶ を叩いて変更　「閉じる」で戻る", "Tap ◀ ▶ to change   Close: back")
-                : L.Pick("↑↓ で選択　←→ で変更　Esc で戻る", "Up/Down: select   Left/Right: change   Esc: back"));
-            builder.Append("<alpha=#FF></size>");
+            builder.Append('\n').Append(HintOpen).Append(HintText(links)).Append("<alpha=#FF></size>");
             return builder.ToString();
+        }
+
+        private static string HintText(bool links)
+        {
+            return links
+                ? L.Pick("◀ ▶ を叩いて変更　「閉じる」で戻る", "Tap ◀ ▶ to change   Close: back")
+                : L.Pick("↑↓ で選択　←→ で変更　Esc で戻る", "Up/Down: select   Left/Right: change   Esc: back");
+        }
+
+        /// <summary>
+        /// 横持ちの指の本文。1 項目を 2 行（名前・値）にして 2 列に並べる。左の列は先頭から 5 項目、
+        /// 右の列は残りの項目と「閉じる」で、その次の段に案内を置く。右の列は同じ行の中で <c>&lt;pos=50%&gt;</c> から書く。
+        /// </summary>
+        public static string ComposeTwoColumns(Entry[] entries, int selected)
+        {
+            const int leftCount = 5;
+            var builder = new System.Text.StringBuilder(1024);
+            builder.Append(TwoColumnLineHeight);
+            int closeSlot = entries.Length - leftCount;
+            for (int slot = 0; slot < leftCount; slot++)
+            {
+                int right = leftCount + slot;
+                AppendCellName(builder, slot, selected, entries[slot].Label, entries[slot].Arrows);
+                if (slot < closeSlot)
+                {
+                    builder.Append(RightColumnPos);
+                    AppendCellName(builder, right, selected, entries[right].Label, entries[right].Arrows);
+                }
+                else if (slot == closeSlot)
+                {
+                    builder.Append(RightColumnPos);
+                    AppendCellName(builder, RowClose, selected, L.Pick("閉じる", "Close"), false);
+                }
+                else if (slot == closeSlot + 1)
+                {
+                    builder.Append(RightColumnPos).Append(HintOpen).Append(HintText(true)).Append("<alpha=#FF></size>");
+                }
+
+                builder.Append('\n');
+                AppendCellValue(builder, slot, selected, entries[slot]);
+                if (slot < closeSlot)
+                {
+                    builder.Append(RightColumnPos);
+                    AppendCellValue(builder, right, selected, entries[right]);
+                }
+
+                builder.Append('\n');
+            }
+
+            return builder.ToString();
+        }
+
+        private static void AppendCellName(System.Text.StringBuilder builder, int row, int selected, string label,
+            bool arrows)
+        {
+            bool on = row == selected;
+            builder.Append(on ? "<color=#FFD98A>" : string.Empty);
+            AppendName(builder, row, on, label, arrows, true);
+            builder.Append(on ? "</color>" : string.Empty);
+        }
+
+        private static void AppendCellValue(System.Text.StringBuilder builder, int row, int selected, Entry entry)
+        {
+            bool on = row == selected;
+            builder.Append(on ? "<color=#FFD98A>" : string.Empty).Append(StackedValueIndent);
+            AppendValue(builder, row, entry.Value, entry.Arrows, true);
+            builder.Append(on ? "</color>" : string.Empty);
         }
 
         private static string QualityLabel(QualityTier tier)
@@ -419,31 +550,63 @@ namespace KCD
         /// <summary>
         /// 1 行を足す。選んでいる行にだけ ▶ と色を付ける。arrows なら値を ◀ ▶ で挟む。
         /// links なら名前を <c>&lt;link="choice:N"&gt;</c>、◀ を "dec:N"、▶ を "inc:N" で囲み、叩けるようにする。
-        /// stacked なら値を次の行に字下げして書く。
+        /// stacked なら値を次の行に字下げして書き、名前の行も値を変えるリンクにする（<see cref="AppendName"/>）。
         /// </summary>
         public static void AppendRow(System.Text.StringBuilder builder, int row, bool selected, string label,
             string value, bool arrows, bool links, bool stacked = false)
         {
             builder.Append(selected ? "<color=#FFD98A>" : string.Empty);
-            AppendLinked(builder, links ? "choice:" : null, row, (selected ? "▶ " : "   ") + label);
+            AppendName(builder, row, selected, label, arrows && stacked, links);
             if (!string.IsNullOrEmpty(value))
             {
                 builder.Append(stacked ? "\n" + StackedValueIndent : "　　");
-                if (arrows)
-                {
-                    AppendLinked(builder, links ? "dec:" : null, row, "◀");
-                    builder.Append(' ');
-                }
-
-                builder.Append(value);
-                if (arrows)
-                {
-                    builder.Append(' ');
-                    AppendLinked(builder, links ? "inc:" : null, row, "▶");
-                }
+                AppendValue(builder, row, value, arrows, links);
             }
 
             builder.Append(selected ? "</color>\n" : "\n");
+        }
+
+        /// <summary>
+        /// 名前を足す。links なら叩けるリンクにする。splitsValue（値を ◀ ▶ で変える行）は、名前の前半を ◀（"dec:N"）、
+        /// 後半を ▶（"inc:N"）にして、名前の行を叩いてもその項目の値が変わるようにする。1 項目の 2 行がまるごと叩ける。
+        /// それ以外は全体を "choice:N"（行を選ぶ、「閉じる」なら閉じる）。
+        /// </summary>
+        private static void AppendName(System.Text.StringBuilder builder, int row, bool selected, string label,
+            bool splitsValue, bool links)
+        {
+            string mark = selected ? "▶ " : "   ";
+            if (!links)
+            {
+                builder.Append(mark).Append(label);
+                return;
+            }
+
+            if (!splitsValue)
+            {
+                AppendLinked(builder, "choice:", row, mark + label);
+                return;
+            }
+
+            int half = label.Length / 2;
+            AppendLinked(builder, "dec:", row, mark + label.Substring(0, half));
+            AppendLinked(builder, "inc:", row, label.Substring(half));
+        }
+
+        private static void AppendValue(System.Text.StringBuilder builder, int row, string value, bool arrows,
+            bool links)
+        {
+            if (arrows)
+            {
+                AppendLinked(builder, links ? "dec:" : null, row, "◀");
+                builder.Append(' ');
+            }
+
+            builder.Append(value);
+            if (arrows)
+            {
+                builder.Append(' ');
+                AppendLinked(builder, links ? "inc:" : null, row, "▶");
+            }
         }
 
         /// <summary>prefix があれば text を <c>&lt;link="prefixN"&gt;</c> で囲んで足す。無ければそのまま足す。</summary>

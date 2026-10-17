@@ -53,6 +53,12 @@ namespace KCD
             public int Tap { get; }
         }
 
+        /// <summary>
+        /// 縦持ちで指で遊ぶときの行の間隔（em）。枠 820x560 は幅 800 の Canvas で 0.937 倍に縮むので、
+        /// 3em だと 390 px 幅で 41.1 px、360 px 幅で 37.9 px。3.5em なら 47.9 px、44.2 px。
+        /// </summary>
+        public const float PortraitRowEm = 3.5f;
+
         /// <summary>「タイトルへ戻る」の確認の選択肢の位置。上が「はい」、下が「いいえ」。</summary>
         private const int ConfirmYes = 0;
 
@@ -83,6 +89,7 @@ namespace KCD
 
         /// <summary>行を叩けるリンク付きで書いているか。入力の種類が変わったら書き直す。</summary>
         private bool _drawnForTouch;
+        private bool _drawnPortrait;
 
         /// <summary>時間を止めて封鎖を掛けているか。設定パネルを出している間（本体は隠れている）も true。</summary>
         private bool _paused;
@@ -195,7 +202,7 @@ namespace KCD
 
         private void Update()
         {
-            if (IsOpen && InputMode.IsTouch != _drawnForTouch)
+            if (IsOpen && (InputMode.IsTouch != _drawnForTouch || ScreenShape.IsPortrait != _drawnPortrait))
             {
                 Redraw();
             }
@@ -398,14 +405,17 @@ namespace KCD
             }
 
             _drawnForTouch = InputMode.IsTouch;
-            _bodyLabel.text = Compose(_confirmingTitle, _confirmingTitle ? _confirmIndex : _index, _drawnForTouch);
+            _drawnPortrait = ScreenShape.IsPortrait;
+            _bodyLabel.text = Compose(_confirmingTitle, _confirmingTitle ? _confirmIndex : _index, _drawnForTouch,
+                _drawnPortrait);
         }
 
         /// <summary>
         /// 本体の文面。確認の間は問いと「はい」「いいえ」、それ以外は項目の一覧。selected の行にだけ ▶ と色を付ける。
         /// links なら各行を <c>&lt;link="choice:N"&gt;</c> で囲み、叩けるようにする。
+        /// portrait の枠は幅 800 の Canvas で 0.937 倍に縮むので、行の間隔を <see cref="PortraitRowEm"/> まで広げる。
         /// </summary>
-        public static string Compose(bool confirming, int selected, bool links)
+        public static string Compose(bool confirming, int selected, bool links, bool portrait = false)
         {
             var builder = new System.Text.StringBuilder(256);
             if (confirming)
@@ -415,13 +425,13 @@ namespace KCD
                 builder.Append("<size=85%>");
                 builder.Append(L.Get("ui.pause.confirm_title", "セーブしていない進行は失われます。タイトルへ戻りますか？"));
                 builder.Append("</size>\n\n");
-                AppendRowHeight(builder, links);
+                AppendRowHeight(builder, links, portrait);
                 AppendEntry(builder, ConfirmYes, L.Get("ui.common.yes", "はい"), selected == ConfirmYes, links);
                 AppendEntry(builder, ConfirmNo, L.Get("ui.common.no", "いいえ"), selected == ConfirmNo, links);
             }
             else
             {
-                AppendRowHeight(builder, links);
+                AppendRowHeight(builder, links, portrait);
                 for (int i = 0; i < EntryKeys.Length; i++)
                 {
                     AppendEntry(builder, i, L.Get(EntryKeys[i], EntryFallbacks[i]), i == selected, links);
@@ -431,12 +441,15 @@ namespace KCD
             return builder.ToString();
         }
 
-        /// <summary>指で遊んでいるときだけ、行の間隔を指の幅まで広げる。5 行で 450 なので枠の高さ 560 に収まる。</summary>
-        private static void AppendRowHeight(System.Text.StringBuilder builder, bool links)
+        /// <summary>
+        /// 指で遊んでいるときだけ、行の間隔を指の幅まで広げる。
+        /// 横は 3em で 5 行 450、縦は 3.5em で 5 行 525 となり、どちらも枠の高さ 560（文字の領域 536）に収まる。
+        /// </summary>
+        private static void AppendRowHeight(System.Text.StringBuilder builder, bool links, bool portrait)
         {
             if (links)
             {
-                builder.Append(TmpLinkTap.TapRowLineHeight);
+                builder.Append(portrait ? TmpLinkTap.RowHeight(PortraitRowEm) : TmpLinkTap.TapRowLineHeight);
             }
         }
 
