@@ -96,6 +96,29 @@ def test_trailing_spaces_are_ignored():
     assert md.convert("本文   \n") == "<p>本文</p>"
 
 
+@pytest.mark.parametrize("source, html", [
+    ("本文   ", "<p>本文</p>"),                       # 最後の行
+    ("本文  \n\n次", "<p>本文</p>\n<p>次</p>"),        # 次が空行
+    ("本文\n  \n次", "<p>本文</p>\n<p>次</p>"),        # 空白だけの行も空行
+    ("- 項目  \n", "<ul>\n<li>項目</li>\n</ul>"),
+])
+def test_trailing_spaces_before_the_end_of_a_block_are_harmless(source, html):
+    assert md.convert(source) == html
+
+
+@pytest.mark.parametrize("source, line", [
+    ("行末  \n次の行", 1),                 # 空白 2 つの改行
+    ("行末     \n次の行", 1),
+    ("行末\\\n次の行", 1),                 # バックスラッシュの改行
+    ("一行目\n行末  \n次の行", 2),
+    ("- 項目  \n  続き", 1),
+])
+def test_line_break_markers_stop(source, line):
+    with pytest.raises(md.UnsupportedMarkdown) as error:
+        md.parse(source)
+    assert error.value.line == line
+
+
 # ---- 箇条書き ----
 
 def test_bullet_list():
@@ -131,6 +154,9 @@ def test_ordered_list_after_bullets_without_blank_line_is_a_new_list():
     ("+ プラス", 1),
     ("1) かっこ", 1),
     ("段落\n* 項目", 2),
+    ("- [ ] やること", 1),                                # チェックボックス
+    ("- 済み\n- [x] 済み", 2),
+    ("1. [X] 番号つき", 1),
 ])
 def test_unsupported_list_shapes_stop(source, line):
     with pytest.raises(md.UnsupportedMarkdown) as error:
@@ -148,8 +174,27 @@ def test_three_column_table_becomes_cards_with_labels():
     assert md.convert(TABLE_3) == (
         '<div class="table-wrap"><table class="cards"><thead><tr><th scope="col">操作</th>'
         '<th scope="col">キーボード</th><th scope="col">ゲームパッド</th></tr></thead>\n<tbody>\n'
-        '<tr><th scope="row">移動</th><td data-label="キーボード">WASD</td>'
-        '<td data-label="ゲームパッド">左スティック</td></tr>\n</tbody></table></div>')
+        '<tr><th scope="row">移動</th><td data-label="キーボード"><span>WASD</span></td>'
+        '<td data-label="ゲームパッド"><span>左スティック</span></td></tr>\n</tbody></table></div>')
+
+
+def test_card_cell_with_emphasis_and_code_is_wrapped_in_one_span():
+    html = md.convert("| 操作 | キー | パッド |\n| --- | --- | --- |\n"
+                      "| 走る | **Shift** を押す | `LB` または `LT` |\n")
+    assert '<td data-label="キー"><span><strong>Shift</strong> を押す</span></td>' in html
+    assert '<td data-label="パッド"><span><code>LB</code> または <code>LT</code></span></td>' in html
+
+
+def test_card_cell_span_is_escaped_like_any_other_text():
+    html = md.convert("| 操作 | キー | パッド |\n| --- | --- | --- |\n| a | 1 < 2 | https://example.com |\n")
+    assert '<td data-label="キー"><span>1 &lt; 2</span></td>' in html
+    assert ('<td data-label="パッド"><span><a href="https://example.com" rel="noopener noreferrer">'
+            "https://example.com</a></span></td>") in html
+
+
+def test_card_row_header_and_two_column_cells_are_not_wrapped():
+    assert "<span>" not in md.convert(TABLE_2)
+    assert '<th scope="row">移動</th>' in md.convert(TABLE_3)
 
 
 def test_two_column_table_stays_a_plain_table():
@@ -252,9 +297,25 @@ def test_list_item_text_is_html_escaped():
     ("***", 1),
     ("題\n===", 2),
     ("題\n---", 2),
+    ("題\n--", 2),                                  # 下線が 2 文字でも見出しになる
     ("*強調*", 1),
-    ("_強調_ と **太い** と *強調*", 1),
+    ("_強調_", 1),
+    ("__太字__", 1),
+    ("これは _ヒント_ です", 1),
+    ("段落\n\n_強調_ と **太い**", 3),
     ("~~消す~~", 1),
+    ("~強調~ と ~消す~", 1),
+    ("3~5 回と 10~20 回", 1),
+    ("[文字][1]", 1),                               # 参照リンク
+    ("[1]: https://example.com", 1),
+    ("本文[^1]", 1),                                # 脚注
+    ("[^1]: 注", 1),
+    ("a | b\n--- | ---\n1 | 2", 1),                 # 外側の | が無い表
+    ("本文 | 本文", 1),
+    ("# 題 #", 1),                                  # 閉じの #
+    ("## 題 ##", 1),
+    ("https://example.com/a(b)", 1),                # 括弧を含む URL
+    ("https://example.com/wiki/A_(b)", 1),
     ("&copy; 2026", 1),
     ("&#169;", 1),
     ("a \\# b", 1),
@@ -282,6 +343,32 @@ def test_less_than_before_a_space_or_digit_is_plain_text():
 
 def test_underscore_and_ampersand_text_without_a_semicolon_are_plain():
     assert md.convert("snake_case と R&D") == "<p>snake_case と R&amp;D</p>"
+
+
+def test_underscore_between_letters_is_plain():
+    assert md.convert("kcd_save.json と snake_case_name") == "<p>kcd_save.json と snake_case_name</p>"
+
+
+def test_one_tilde_is_plain():
+    assert md.convert("3~5 回") == "<p>3~5 回</p>"
+
+
+def test_hash_at_the_end_of_a_word_in_a_heading_is_plain():
+    assert md.convert("# C#") == '<h1 id="C#">C#</h1>'
+
+
+def test_brackets_and_bars_are_plain_in_code():
+    html = md.convert("`_x_` と `a | b` と `[1]: x` と `~a~ ~b~`")
+    assert html == "<p><code>_x_</code> と <code>a | b</code> と <code>[1]: x</code> と <code>~a~ ~b~</code></p>"
+
+
+def test_url_in_parentheses_is_linked_without_them():
+    assert md.convert("(https://example.com/x)") == (
+        '<p>(<a href="https://example.com/x" rel="noopener noreferrer">https://example.com/x</a>)</p>')
+
+
+def test_underscore_inside_a_url_is_linked_whole():
+    assert 'href="https://example.com/a_b"' in md.convert("https://example.com/a_b")
 
 
 def test_unsupported_syntax_in_a_table_cell_reports_the_row():

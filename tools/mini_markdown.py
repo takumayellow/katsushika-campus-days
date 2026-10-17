@@ -11,8 +11,11 @@
     リンク       https:// か http:// で始まる文字列は、そのままリンクにする
 
 これ以外の書き方は、黙って落としたり別の見た目にしたりせず UnsupportedMarkdown で止める
-（画像、[文字](URL)、生の HTML、引用、コードブロック、入れ子の箇条書き、& で始まる文字参照、
-バックスラッシュのエスケープ、* での強調など）。止めるときは行番号を添える。
+（画像、[文字](URL)、参照リンクと脚注、生の HTML、引用、コードブロック、入れ子の箇条書き、
+チェックボックス、& で始まる文字参照、バックスラッシュのエスケープ、* と _ での強調、
+~ での取り消し線、行末の空白 2 つやバックスラッシュでの改行、見出しの下線、見出し末尾の #、
+先頭が | でない表、括弧を含む URL など）。止めるときは行番号を添える。
+語の中の _（snake_case）と 1 つだけの ~ は文字のまま通す。止まった記号を文字として書くときは ` で囲む。
 
 文字はすべて HTML としてエスケープして出す。リンクの先は http と https だけで、
 リンクにする文字は ASCII の URL に使える文字に限る。
@@ -73,9 +76,13 @@ _HEADING = re.compile(r"(#{1,6})(?:[ ]+(\S.*))?")
 _ITEM = re.compile(r"(?:(?P<bullet>-)|(?P<number>[0-9]{1,9})\.)[ ]+(?P<body>\S.*)")
 _EMPTY_ITEM = re.compile(r"(?:[-*+]|[0-9]{1,9}[.)])")
 _OTHER_MARKER = re.compile(r"(?:[*+]|[0-9]{1,9}\))[ ]")
-_BREAK = re.compile(r"(?:-[ ]*){3,}|(?:\*[ ]*){3,}|(?:_[ ]*){3,}|=+")
+# - は 2 文字でも、段落の下に置くと見出しの下線になる
+_BREAK = re.compile(r"(?:-[ ]*){2,}|(?:\*[ ]*){3,}|(?:_[ ]*){3,}|=+")
 _FENCE = re.compile(r"```|~~~")
 _SEPARATOR_CELL = re.compile(r":?-+:?")
+_LINE_BREAK = re.compile(r"(?:[ ]{2,}|\\)$")
+_TASK = re.compile(r"\[[ xX]\](?:[ ]|$)")
+_CLOSING_HASHES = re.compile(r"(?:^|[ ])#+$")
 
 _CODE = re.compile(r"`([^`]+)`")
 _BOLD = re.compile(r"\*\*(?=\S)(.+?)(?<=\S)\*\*")
@@ -85,6 +92,9 @@ _URL_TAIL = ".,;:!?"
 _ENTITY = re.compile(r"&(?:#[0-9]+|#[xX][0-9A-Fa-f]+|[A-Za-z][A-Za-z0-9]*);")
 _TAG = re.compile(r"<[A-Za-z/!?]")
 _ESCAPE = re.compile(r"\\[!-/:-@\[-`{-~]")
+_DEFINITION = re.compile(r"\[[^\]]*\]:")
+# 語の端にある _（前後のどちらかが英数字でない）。snake_case のような語の中の _ は当たらない。
+_EDGE_UNDERSCORE = re.compile(r"(?<![^\W_])_|_(?![^\W_])")
 
 
 def escape(text: str) -> str:
@@ -104,7 +114,16 @@ def _lines(markdown: str) -> list[str]:
     for number, line in enumerate(lines, 1):
         if _CONTROL.search(line):
             raise UnsupportedMarkdown("タブと制御文字は使えない（空白にする）", number)
+        if _breaks_into_next_line(lines, number):
+            raise UnsupportedMarkdown("行末の空白 2 つと \\ では改行できない（行を分けるなら空行を挟む）", number)
     return [line.rstrip() for line in lines]
+
+
+def _breaks_into_next_line(lines: list[str], number: int) -> bool:
+    """number 行目（1 始まり）が、行末の空白 2 つか \\ で、空でない次の行へ続いているか。"""
+    line = lines[number - 1]
+    return (_LINE_BREAK.search(line) is not None and line.strip() != ""
+            and number < len(lines) and lines[number].strip() != "")
 
 
 def _reject_line(text: str, number: int) -> None:
@@ -192,6 +211,8 @@ def _read_list(lines: list[str], index: int) -> tuple[ListBlock, int]:
             if (item.group("number") is not None) != ordered:
                 break
             _reject_line(line, index + 1)
+            if _TASK.match(item.group("body")):
+                raise UnsupportedMarkdown("チェックボックス（- [ ]）は使えない", index + 1)
             items.append((index + 1, [item.group("body")]))
         elif _starts_block(line):
             break
@@ -261,6 +282,8 @@ def parse(markdown: str) -> tuple[Block, ...]:
                 raise UnsupportedMarkdown("見出しの文字が無い", number)
             if level > MAX_HEADING_LEVEL:
                 raise UnsupportedMarkdown(f"見出しは {'#' * MAX_HEADING_LEVEL} までしか使えない", number)
+            if _CLOSING_HASHES.search(text):
+                raise UnsupportedMarkdown("見出しの末尾に # は付けない", number)
             _check_inline(text, number)
             blocks.append(Heading(level, text, _slug(text, taken), number))
             index += 1
@@ -286,8 +309,18 @@ def _reject_inline(text: str) -> None:
         raise UnsupportedMarkdown("閉じていない ` がある")
     if "](" in text:
         raise UnsupportedMarkdown("リンク記法 [文字](URL) と画像は使えない（URL をそのまま書く）")
-    if "~~" in text:
-        raise UnsupportedMarkdown("取り消し線（~~）は使えない")
+    if "][" in text or _DEFINITION.search(text):
+        raise UnsupportedMarkdown("参照リンク（[文字][名前] と [名前]: URL）は使えない（URL をそのまま書く）")
+    if "[^" in text:
+        raise UnsupportedMarkdown("脚注（[^名前]）は使えない")
+    if any(text[match.end():match.end() + 1] == "(" for match in _URL.finditer(text)):
+        raise UnsupportedMarkdown("括弧を含む URL はリンクが途中で切れるので使えない")
+    if _EDGE_UNDERSCORE.search(text):
+        raise UnsupportedMarkdown("_ での強調は使えない（太字は **語** と書く。語の中の _ は文字のまま通る）")
+    if text.count("~") >= 2:
+        raise UnsupportedMarkdown("~ で囲む取り消し線は使えない（~ は 1 つだけなら文字のまま通る）")
+    if "|" in text:
+        raise UnsupportedMarkdown("表は | で始めて | で終える（| を文字として書くなら ` で囲む）")
     if _TAG.search(text):
         raise UnsupportedMarkdown("HTML のタグに見える < は使えない")
     if _ENTITY.search(text):
@@ -342,7 +375,9 @@ def _table_html(table: Table) -> str:
                 cells.append(f'<th scope="row">{inline(cell)}</th>')
                 continue
             label = f' data-label="{escape(plain_text(table.header[column]))}"' if labelled else ""
-            cells.append(f"<td{label}>{inline(cell)}</td>")
+            # 札の td は grid なので、太字やコードが並ぶセルが割れないよう中身を 1 つの span にまとめる
+            content = f"<span>{inline(cell)}</span>" if labelled else inline(cell)
+            cells.append(f"<td{label}>{content}</td>")
         rows.append(f"<tr>{''.join(cells)}</tr>")
     table_tag = '<table class="cards">' if labelled else "<table>"
     return ('<div class="table-wrap">' + table_tag +
