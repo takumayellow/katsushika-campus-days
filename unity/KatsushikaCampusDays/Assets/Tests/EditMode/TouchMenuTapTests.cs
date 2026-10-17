@@ -83,6 +83,9 @@ namespace KCD.Tests
             Assert.AreEqual(PauseMenu.EntryCount, CountLinks(linked), "行ごとに link が無い");
             StringAssert.Contains("<link=\"choice:2\"><color=#FFD98A>▶ ", linked);
             StringAssert.StartsWith(TmpLinkTap.TapRowLineHeight, linked, "指のときは行の間隔を広げる");
+            string portrait = InJapanese(() => PauseMenu.Compose(false, 2, true, true));
+            StringAssert.StartsWith(TmpLinkTap.RowHeight(PauseMenu.PortraitRowEm), portrait, "縦の指は枠が縮むぶん広げる");
+            Assert.AreEqual(3.5f, PauseMenu.PortraitRowEm);
             StringAssert.DoesNotContain("line-height", plain, "キーで遊ぶ人の行の間隔が変わった");
             Assert.AreEqual(plain, Regex.Replace(linked, "</?link[^>]*>|<line-height=[^>]*>", string.Empty),
                 "link と行の高さを外すとキーのときの文面と同じ");
@@ -95,6 +98,9 @@ namespace KCD.Tests
 
             Assert.AreEqual(2, CountLinks(linked));
             StringAssert.Contains("\n\n" + TmpLinkTap.TapRowLineHeight + "<link=\"choice:0\">   はい</link>", linked);
+            string portrait = InJapanese(() => PauseMenu.Compose(true, 1, true, true));
+            StringAssert.Contains("\n\n" + TmpLinkTap.RowHeight(PauseMenu.PortraitRowEm) + "<link=\"choice:0\">   はい</link>",
+                portrait);
             StringAssert.Contains("<link=\"choice:1\"><color=#FFD98A>▶ いいえ</color></link>", linked);
         }
 
