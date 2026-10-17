@@ -19,6 +19,7 @@ namespace KCD
         [SerializeField] private RectTransform _playerArrow;
         [SerializeField] private TMP_Text _caption;
         [SerializeField] private GameObject _captionPanel;
+        [SerializeField] private TMP_Text _northLabel;
         [SerializeField] private Sprite _dotSprite;
         [SerializeField] private Sprite _ringSprite;
         [SerializeField] private Transform _target;
@@ -51,8 +52,9 @@ namespace KCD
         /// <summary>SceneBuilder から差し込む。</summary>
         /// <param name="captionPanel">見出しの背景ごとの親。外では背景も消す (#181)。null なら文字だけを出し入れする。</param>
         public void Bind(RectTransform map, RectTransform markerRoot, RectTransform playerArrow, TMP_Text caption,
-            Sprite dotSprite, Sprite ringSprite, GameObject captionPanel = null)
+            Sprite dotSprite, Sprite ringSprite, GameObject captionPanel = null, TMP_Text northLabel = null)
         {
+            _northLabel = northLabel;
             _map = map;
             _markerRoot = markerRoot;
             _playerArrow = playerArrow;
@@ -71,6 +73,113 @@ namespace KCD
             _viewRadiusPixels = Mathf.Max(1f, viewRadiusPixels);
         }
 
+        // 見出し(建物と階の名前)と「N」の、組み立てたときの値。指か縦長の画面で文字を大きくして、戻すときに使う (#187)。
+        private const float CaptionHeight = 44f;
+        private const float CaptionWidth = 300f;
+        private const float CaptionWidthMax = 450f;
+        private const float CaptionPadding = 24f;
+        private const float CaptionMinFont = 22f;
+        private int _textKey = -1;
+        private float _captionBaseSize;
+        private float _northBaseSize;
+
+        /// <summary>文字を今の向きの大きさにする。縦横や指とマウスの切り替えにも追従する。</summary>
+        private void ApplyTextSize()
+        {
+            bool touch = InputMode.IsTouch;
+            bool portrait = ScreenShape.IsPortrait;
+            int key = HudTextScale.Key(touch, portrait);
+            if (key == _textKey)
+            {
+                return;
+            }
+
+            if (_northLabel == null && _playerArrow != null && _playerArrow.parent != null)
+            {
+                Transform north = _playerArrow.parent.Find("North/Label");
+                _northLabel = north != null ? north.GetComponent<TMP_Text>() : null;
+            }
+
+            if (_textKey < 0)
+            {
+                _captionBaseSize = _caption != null ? _caption.fontSize : 0f;
+                _northBaseSize = _northLabel != null ? _northLabel.fontSize : 0f;
+            }
+
+            _textKey = key;
+            if (_northLabel != null)
+            {
+                HudTextScale.FitRow(_northLabel, HudTextScale.Size(_northBaseSize, touch, portrait), CaptionHeight);
+            }
+
+            ApplyCaptionSize(touch, portrait);
+        }
+
+        /// <summary>
+        /// 見出しの文字と枠。大きくした文字が 1 行で入るよう、枠を左へ広げる
+        /// （右端は画面の端の余白に収める。左は円の外で空いている）。入らない長さは 22 まで縮める。
+        /// </summary>
+        private void ApplyCaptionSize(bool touch, bool portrait)
+        {
+            if (_caption == null)
+            {
+                return;
+            }
+
+            float size = HudTextScale.Size(_captionBaseSize, touch, portrait);
+            _caption.fontSize = size;
+            _caption.enableAutoSizing = false;
+            RectTransform label = _caption.rectTransform;
+            label.offsetMin = new Vector2(label.offsetMin.x, 0f);
+            label.offsetMax = new Vector2(label.offsetMax.x, 0f);
+
+            RectTransform panel = label.parent as RectTransform;
+            if (panel == null)
+            {
+                return;
+            }
+
+            if (!HudTextScale.Shrunk(touch, portrait))
+            {
+                SetCaptionBox(panel, CaptionWidth, false);
+                _caption.textWrappingMode = TextWrappingModes.Normal;
+                return;
+            }
+
+            float width = CaptionWidth;
+            if (!string.IsNullOrEmpty(_caption.text))
+            {
+                width = Mathf.Clamp(_caption.GetPreferredValues(_caption.text, 0f, 0f).x + CaptionPadding,
+                    CaptionWidth, CaptionWidthMax);
+            }
+
+            SetCaptionBox(panel, width, true);
+            _caption.enableAutoSizing = true;
+            _caption.fontSizeMax = size;
+            _caption.fontSizeMin = Mathf.Min(CaptionMinFont, size);
+            _caption.textWrappingMode = TextWrappingModes.NoWrap;
+        }
+
+        private static void SetCaptionBox(RectTransform panel, float width, bool anchorRight)
+        {
+            panel.sizeDelta = new Vector2(width, CaptionHeight);
+            if (anchorRight)
+            {
+                // ミニマップの右端にそろえ、画面の端の余白 40 のうち 30 まで右へ出す。
+                panel.anchorMin = new Vector2(1f, 0f);
+                panel.anchorMax = new Vector2(1f, 0f);
+                panel.pivot = new Vector2(1f, 1f);
+                panel.anchoredPosition = new Vector2(30f, -6f);
+            }
+            else
+            {
+                panel.anchorMin = new Vector2(0.5f, 0f);
+                panel.anchorMax = new Vector2(0.5f, 0f);
+                panel.pivot = new Vector2(0.5f, 1f);
+                panel.anchoredPosition = new Vector2(0f, -6f);
+            }
+        }
+
         /// <summary>建物に入った。キャンパスの絵を隠し、見出しを出す。</summary>
         public void SetIndoor(string caption)
         {
@@ -83,6 +192,10 @@ namespace KCD
             if (_caption != null)
             {
                 _caption.text = caption;
+                if (_textKey >= 0)
+                {
+                    ApplyCaptionSize(InputMode.IsTouch, ScreenShape.IsPortrait);
+                }
             }
 
             ShowCaption(!string.IsNullOrEmpty(caption));
@@ -143,6 +256,8 @@ namespace KCD
 
         private void LateUpdate()
         {
+            ApplyTextSize();
+
             if (_target == null || _map == null)
             {
                 return;
