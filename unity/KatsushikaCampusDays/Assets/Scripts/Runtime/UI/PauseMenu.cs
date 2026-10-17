@@ -53,13 +53,13 @@ namespace KCD
             public int Tap { get; }
         }
 
-        /// <summary>「タイトルへ戻る」の確認の選択肢の位置。上が「はい」、下が「いいえ」。</summary>
         /// <summary>
         /// 縦持ちで指で遊ぶときの行の間隔（em）。枠 820x560 は幅 800 の Canvas で 0.937 倍に縮むので、
         /// 3em だと 390 px 幅で 41.1 px、360 px 幅で 37.9 px。3.5em なら 47.9 px、44.2 px。
         /// </summary>
         public const float PortraitRowEm = 3.5f;
 
+        /// <summary>「タイトルへ戻る」の確認の選択肢の位置。上が「はい」、下が「いいえ」。</summary>
         private const int ConfirmYes = 0;
 
         private const int ConfirmNo = 1;
