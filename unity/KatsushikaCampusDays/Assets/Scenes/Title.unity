@@ -3729,6 +3729,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: KCD.Runtime::KCD.MapAttributionLabel
   _label: {fileID: 1560346977}
+  _avoid:
+  - {fileID: 1367121855}
+  - {fileID: 1925621498}
 --- !u!114 &1759611767
 MonoBehaviour:
   m_ObjectHideFlags: 0
