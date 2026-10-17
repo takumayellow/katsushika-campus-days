@@ -4,7 +4,7 @@ namespace KCD
 {
     /// <summary>
     /// 指で遊ぶボタンが出ている間だけ、枠を別の場所に置く (#187)。右下には「ジャンプ」「話す」のボタンが出るので、
-    /// 画面の下に置いた知らせはボタンの上へ逃がす。会話やメニューでボタンが隠れている間と、
+    /// 画面の下に置いた「話す」の案内はボタンの上へ逃がす。会話やメニューでボタンが隠れている間と、
     /// キーボード・マウスに戻したときは元の場所に置く（上げたままだと、ポーズの枠越しに一覧の行に重なる）。
     /// 縦長の画面ではボタンが画面の幅の大半を占めるので、ボタンの上へ逃がす場所を別に持つ。
     /// 写真モードの間も、撮影と戻るのボタンが出ているので逃がす。
@@ -62,7 +62,7 @@ namespace KCD
 
         private void Sync()
         {
-            // 撮影の瞬間にボタンを隠しても、枠は動かさない（撮ったあとの知らせが跳ねる）。
+            // 撮影の瞬間にボタンを隠しても、枠は動かさない。
             bool buttonsShown = TouchHud.LayoutFor(InputMode.IsTouch, KCDInput.GameplayBlocked, KCDInput.PhotoMode, false)
                                 != TouchHud.Layout.Hidden;
             Vector2 position = PositionFor(

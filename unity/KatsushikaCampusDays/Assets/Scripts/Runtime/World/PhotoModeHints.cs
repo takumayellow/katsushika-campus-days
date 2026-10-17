@@ -2,6 +2,7 @@ namespace KCD
 {
     /// <summary>
     /// フォトモードの操作案内の文 (#12)。キーボード・ゲームパッド・タッチ (#187)、日本語と英語で 6 通り。
+    /// キーボードとゲームパッドは 2 行、タッチは案内の出し入れを足した 3 行。
     /// キーの割り当ては KCDInput の Photo* と、タッチのボタンの文字は TouchHud と合わせる。
     /// </summary>
     public static class PhotoModeHints
@@ -24,11 +25,13 @@ namespace KCD
 
         private const string TouchJa =
             "移動 左のスティック　向き なぞる　ズーム つまむ・広げる\n" +
-            "撮影 「撮影」のボタン　戻る 「戻る」のボタン";
+            "撮影 「撮影」のボタン　戻る 「戻る」のボタン\n" +
+            "案内 「案内」のボタン";
 
         private const string TouchEn =
             "Move Left stick   Look Drag   Zoom Pinch\n" +
-            "Shoot the Shoot button   Back the Back button";
+            "Shoot the Shoot button   Back the Back button\n" +
+            "Help the Help button";
 
         /// <summary>
         /// 案内の文。english で英語、gamepad でゲームパッドのボタン名、touch で画面のボタンの名前にする。

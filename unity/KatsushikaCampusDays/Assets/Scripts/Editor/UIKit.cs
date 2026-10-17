@@ -115,6 +115,17 @@ namespace KCD.Editor
             return rect;
         }
 
+        /// <summary>parent の直下にある name の枠。UIFactory が付けた名前で探すので、見つからなければ組み立てを止める。</summary>
+        public static RectTransform Child(RectTransform parent, string name)
+        {
+            if (!(parent.Find(name) is RectTransform child))
+            {
+                throw new System.InvalidOperationException(parent.name + " の直下に " + name + " が無い");
+            }
+
+            return child;
+        }
+
         /// <summary>半透明の下敷き。文字を読みやすくする。</summary>
         public static Image Backdrop(RectTransform parent, Color color)
         {
