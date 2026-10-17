@@ -671,7 +671,7 @@
    "z": 6.822
   }
  },
- "triangles": 59663,
+ "triangles": 59367,
  "seats": 762,
  "notes": [
   "1F 食堂（配膳口・返却口・窓際の下がり天井）+ 2F 食堂（カフェテリア。木の天井・厨房前のカウンター・テラス）",
@@ -807,9 +807,9 @@
   {
    "empty": "sign_cafeteria_6",
    "kind": "wall",
-   "ja": "【葛飾店 1F 専用券売機】\nキャッシュレス決済のみ",
+   "ja": "【1F 専用券売機】\nキャッシュレス決済のみ",
    "en": "1F Order Kiosks\nCashless only",
-   "tris": 1110,
+   "tris": 940,
    "pos": {
     "x": -4.6,
     "y": 2.05,
@@ -830,9 +830,9 @@
   {
    "empty": "sign_cafeteria_7",
    "kind": "wall",
-   "ja": "【葛飾店 1F 専用券売機】",
+   "ja": "【1F 専用券売機】",
    "en": "1F Order Kiosks",
-   "tris": 693,
+   "tris": 567,
    "pos": {
     "x": -4.42,
     "y": 2.05,
@@ -1457,7 +1457,7 @@
    "drop": 0.25
   }
  ],
- "text_triangles": 14588,
+ "text_triangles": 14292,
  "ext": {
   "objects": [
    "ext_cafeteria",

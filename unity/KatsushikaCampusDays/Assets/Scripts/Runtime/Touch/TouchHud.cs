@@ -7,7 +7,8 @@ namespace KCD
     /// キャンパスのタッチの操作 UI (#187)。指で遊んでいる間だけ出す（<see cref="InputMode"/>）。
     /// マウスに戻ったら丸ごと止める。仮想のゲームパッドは最後の OnScreenControl が止まると消えるので、
     /// PC でゲームパッドを使う人の <c>Gamepad.current</c> を取らない。
-    /// 会話・メニューの間はスティックとボタンを隠す。写真モードの間は、動かす・向ける・撮る・戻るのボタンだけ出す。
+    /// 会話・メニューの間はスティックとボタンを隠す。写真モードの間は、動かす・向ける・撮る・戻るのボタンと、
+    /// 操作の案内を出し入れするボタンだけ出す。
     /// </summary>
     public sealed class TouchHud : MonoBehaviour
     {
@@ -23,11 +24,13 @@ namespace KCD
         [SerializeField] private CanvasGroup _play;
         [SerializeField] private CanvasGroup _extras;
         [SerializeField] private CanvasGroup _pause;
+        [SerializeField] private CanvasGroup _photoExtras;
         [SerializeField] private TMP_Text _jumpLabel;
         [SerializeField] private TMP_Text _interactLabel;
         [SerializeField] private TMP_Text _sprintLabel;
         [SerializeField] private TMP_Text _questLabel;
         [SerializeField] private TMP_Text _photoLabel;
+        [SerializeField] private TMP_Text _hintLabel;
 
         private Layout _shown = Layout.Hidden;
 
@@ -51,6 +54,13 @@ namespace KCD
             _sprintLabel = sprint;
             _questLabel = quest;
             _photoLabel = photo;
+        }
+
+        /// <summary>写真モードの間だけ出すボタン（操作の案内の出し入れ）と、その文字。SceneBuilder から差し込む。</summary>
+        public void BindPhotoExtras(CanvasGroup photoExtras, TMP_Text hintLabel)
+        {
+            _photoExtras = photoExtras;
+            _hintLabel = hintLabel;
         }
 
         /// <summary>
@@ -121,6 +131,7 @@ namespace KCD
             Show(_play, layout != Layout.Hidden);
             Show(_extras, layout == Layout.Play);
             Show(_pause, layout == Layout.Play);
+            Show(_photoExtras, layout == Layout.Photo);
             if (layout != _shown)
             {
                 _shown = layout;
@@ -165,6 +176,11 @@ namespace KCD
             if (_questLabel != null)
             {
                 _questLabel.text = L.Pick("クエスト", "Quests");
+            }
+
+            if (_hintLabel != null)
+            {
+                _hintLabel.text = L.Pick("案内", "Help");
             }
         }
     }

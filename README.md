@@ -10,7 +10,7 @@
 - アセット生成: Blender 4.5 LTS を headless Python で駆動（手作業ゼロで再生成できる）
 - 音声: BGM 8 / ジングル 2 / SE 41 / 環境音 7。タイトルとキャンパスの BGM 5 曲は東京理科大学校歌（タイトルは東北きりたんの歌唱 + ピアノ伴奏、キャンパスはピアノ伴奏）。図書館のピアノの曲はショパンの夜想曲 作品 9-2 の冒頭（CC0 の録音）。ほかは numpy で合成したオリジナル
 - 設計書: [docs/DESIGN.md](docs/DESIGN.md)、データ仕様: [docs/CONTENT_SPEC.md](docs/CONTENT_SPEC.md)
-- 遊び方: [docs/HOW_TO_PLAY.md](docs/HOW_TO_PLAY.md)
+- 遊び方: https://takumayellow.github.io/katsushika-campus-days/howto/ （元の文書は [docs/HOW_TO_PLAY.md](docs/HOW_TO_PLAY.md)）
 - 複数のエージェントで分担するときの決まり: [docs/AGENT_COORDINATION.md](docs/AGENT_COORDINATION.md)
 
 ## 遊ぶ（ブラウザ版）
@@ -108,7 +108,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/smoke_run.ps1 -Wai
 python tools/package_windows.py
 
 # 6. ブラウザ版を GitHub Pages に載せる（WebGL ビルド → Release web-latest → pages.yml）
-#    unity/KatsushikaCampusDays の下に未コミットの変更があると止まる（--allow-dirty で通す）。
+#    unity/KatsushikaCampusDays の下と、遊び方のページの元（docs/HOW_TO_PLAY.md など）に
+#    未コミットの変更があると止まる（--allow-dirty で通す）。
 #    ビルド元のコミットは index.html の <meta name="kcd-build"> とページ右下に出る。
 python tools/deploy_pages.py --build --smoke   # --smoke: 載せる前に build/WebGL を E2E スモーク
 
