@@ -608,6 +608,17 @@
         "type": "quest_complete",
         "value": "q_secret_spring_hunt"
       }
+    },
+    {
+      "id": "ach_skip_school",
+      "name_ja": "自主休講",
+      "name_en": "Self-Declared Day Off",
+      "desc_ja": "授業をサボって寮でぐーたらする。",
+      "desc_en": "Skip class and slack off at the dorm.",
+      "condition": {
+        "type": "ending_seen",
+        "value": "end_skip_school"
+      }
     }
   ]
 }

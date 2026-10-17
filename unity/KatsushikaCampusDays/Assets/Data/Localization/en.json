@@ -560,6 +560,8 @@
     "ach.ach_full_day.name": "End of the Day",
     "ach.ach_full_day.desc": "Complete The Way Home.",
     "ach.ach_next_keeper.name": "Next Year's Keeper",
-    "ach.ach_next_keeper.desc": "Finish the first spring's treasure hunt."
+    "ach.ach_next_keeper.desc": "Finish the first spring's treasure hunt.",
+    "ach.ach_skip_school.name": "Self-Declared Day Off",
+    "ach.ach_skip_school.desc": "Skip class and slack off at the dorm."
   }
 }
