@@ -11,7 +11,7 @@ Windows 版:
 
 1. zip を展開し、`KatsushikaCampusDays/KatsushikaCampusDays.exe` を起動する。
 2. Windows 10/11 64bit、DirectX 11 対応 GPU。インストールは不要。
-3. セーブデータは `%USERPROFILE%\AppData\LocalLow\KCD\Katsushika Campus Days\kcd_save.json` に 1 枠。
+3. セーブデータは `%USERPROFILE%\AppData\LocalLow\KCD\Katsushika Campus Days\kcd_save.json` に 1 枠。見たエンドの記録は同じフォルダの `kcd_endings.json` にあり、「はじめから」でも消えない。
 
 ## 動作環境
 

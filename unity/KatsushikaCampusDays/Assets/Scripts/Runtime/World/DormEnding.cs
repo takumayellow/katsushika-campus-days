@@ -319,7 +319,19 @@ namespace KCD
 
             _showing = true;
             _openedAt = Time.unscaledTime;
+            RecordSeen();
             AudioManager.Instance?.PlayJingle("jingle_day_end");
+        }
+
+        /// <summary>
+        /// 見たエンドとして記録する (#41)。結果が出てからにして、暗転の途中で閉じたときは見たことにしない。
+        /// エンドのあとは必ずタイトルへ戻って通常の保存の機会が無いので、セーブとは別のファイルにその場で書く。
+        /// HUD は隠してあるのでトーストは出ない（出すと音だけ鳴る）。称号は黙って獲得にしておく。
+        /// </summary>
+        private static void RecordSeen()
+        {
+            EndingProgress.Note(DormRoute.EndingId);
+            GameManager.Instance.SyncAchievementsQuietly();
         }
 
         /// <summary>
