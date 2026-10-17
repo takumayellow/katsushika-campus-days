@@ -31,6 +31,11 @@ namespace KCD
         /// <summary>寮長との会話が立てるフラグ。DormEnding がこれを見て裏エンドを出す。</summary>
         public const string FlagId = "dorm_skip_day";
 
+        /// <summary>
+        /// 裏エンドを見たときに EndingProgress へ記録する id。称号 ach_skip_school の condition.value と同じ値にする。
+        /// </summary>
+        public const string EndingId = "end_skip_school";
+
         // ---- 既定値（data/osm/route.json の実測。sidecar が無いときはこの値で組む）----
 
         /// <summary>建物の重心 x（m）。route.json stats.dorm_centroid。</summary>
