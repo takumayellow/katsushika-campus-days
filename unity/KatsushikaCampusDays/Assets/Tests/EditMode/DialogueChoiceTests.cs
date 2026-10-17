@@ -199,7 +199,8 @@ namespace KCD.Tests
             StringAssert.Contains("Enter", keys, "キーのときは操作の案内を出す");
 
             string touch = DialogueView.ComposeChoices(choices, 0, true);
-            StringAssert.StartsWith("<line-height=", touch);
+            StringAssert.StartsWith("<size=", touch);
+            StringAssert.Contains("choice:-1", touch, "指のときは選ばずに閉じるリンクを最後に置く");
             StringAssert.DoesNotContain("Enter", touch);
         }
 
