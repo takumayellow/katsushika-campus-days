@@ -419,6 +419,10 @@ def test_text_breaks_between_phrases_where_the_browser_supports_it():
     assert "word-break: auto-phrase" in block(hp.CSS, "body {")
 
 
+def test_text_avoids_a_last_line_of_one_character_where_the_browser_supports_it():
+    assert "text-wrap: pretty" in block(hp.CSS, "p, li, td {")
+
+
 def test_toc_is_one_scrolling_row_of_tap_sized_chips_on_a_phone():
     narrow = block(hp.CSS, "@media (max-width: 40rem) {")
     row = block(narrow, ".toc ul {")

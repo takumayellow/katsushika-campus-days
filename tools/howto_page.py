@@ -151,6 +151,8 @@ a:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 .play:hover { background: var(--kcd-accent-hover); }
 
 main { padding-bottom: 1rem; }
+/* 段落・箇条書き・表の値は、最後の行が 1 字だけにならないよう整える。 */
+p, li, td { text-wrap: pretty; }
 h1, h2, h3 { text-wrap: balance; }
 /* 題は 1 行に収める（390 px 幅で 28 px だと、末尾の 1 字だけが次の行に落ちる）。 */
 h1 { margin: 1.4rem 0 0.7rem; font-size: clamp(1.25rem, 6.4vw, 1.75rem); line-height: 1.4; }
