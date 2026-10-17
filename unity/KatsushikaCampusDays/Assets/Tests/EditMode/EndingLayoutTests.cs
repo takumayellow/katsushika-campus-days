@@ -42,7 +42,7 @@ namespace KCD.Tests
         public void Credits_FitInPortrait(string locale)
         {
             In(locale, () => With<CreditsView>(TitleScene, (frame, body) =>
-                AssertFits(frame, body, CreditsView.BuildText(true), body.fontSize, "クレジット")));
+                AssertFits(frame, body, CreditsView.BuildText(true, true), body.fontSize, "クレジット")));
         }
 
         [TestCase("ja")]
