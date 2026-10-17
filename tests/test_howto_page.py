@@ -400,6 +400,39 @@ def test_page_uses_the_card_class_the_css_styles():
     assert "table.cards" in hp.CSS
 
 
+def block(css: str, opening: str) -> str:
+    """css の中で opening（例 "h1 {"）に始まる { } の中身。入れ子の { } も数える。"""
+    start = css.index(opening) + len(opening)
+    depth = 1
+    for end in range(start, len(css)):
+        depth += {"{": 1, "}": -1}.get(css[end], 0)
+        if depth == 0:
+            return css[start:end]
+    raise AssertionError(f"{opening} が閉じていない")
+
+
+def test_title_scales_with_the_screen_so_it_stays_on_one_line_on_a_phone():
+    assert "clamp(" in block(hp.CSS, "h1 {")
+
+
+def test_text_breaks_between_phrases_where_the_browser_supports_it():
+    assert "word-break: auto-phrase" in block(hp.CSS, "body {")
+
+
+def test_toc_is_one_scrolling_row_of_tap_sized_chips_on_a_phone():
+    narrow = block(hp.CSS, "@media (max-width: 40rem) {")
+    row = block(narrow, ".toc ul {")
+    assert "flex-wrap: nowrap" in row and "overflow-x: auto" in row
+    assert "min-height: 2.75rem" in block(narrow, ".toc a {")
+    assert "flex-wrap: wrap" in block(hp.CSS, ".toc ul {")  # 広い画面では折り返して全部見せる
+
+
+def test_back_to_top_link_is_as_tall_as_a_tap_target():
+    top = [a for a in Page(render()).find("a") if a.get("href") == "#"]
+    assert len(top) == 1 and top[0]["class"] == "top"
+    assert "min-height: 2.75rem" in block(hp.CSS, ".top {")
+
+
 # ---- zip に足すファイル ----
 
 def write_screenshots(directory: Path) -> dict[str, bytes]:

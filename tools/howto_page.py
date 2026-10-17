@@ -108,6 +108,7 @@ body {
   color: var(--kcd-ink);
   font: 1rem/1.85 "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
   overflow-wrap: break-word;
+  word-break: auto-phrase;
 }
 a { color: var(--kcd-link); overflow-wrap: anywhere; }
 a:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
@@ -150,7 +151,9 @@ a:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 .play:hover { background: var(--kcd-accent-hover); }
 
 main { padding-bottom: 1rem; }
-h1 { margin: 1.4rem 0 0.7rem; font-size: 1.75rem; line-height: 1.4; }
+h1, h2, h3 { text-wrap: balance; }
+/* 題は 1 行に収める（390 px 幅で 28 px だと、末尾の 1 字だけが次の行に落ちる）。 */
+h1 { margin: 1.4rem 0 0.7rem; font-size: clamp(1.25rem, 6.4vw, 1.75rem); line-height: 1.4; }
 h2 {
   margin: 2.8rem 0 0.9rem;
   padding-bottom: 0.4rem;
@@ -220,7 +223,8 @@ footer {
   padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
   border-top: 1px solid var(--kcd-line);
 }
-.back { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; margin: 0; }
+.back { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; margin: 0; }
+.top { display: inline-flex; align-items: center; min-height: 2.75rem; padding: 0 0.75rem; }
 
 /* 狭い画面では、3 列以上の表を行ごとの札に組み替える（横にはみ出させない）。 */
 @media (max-width: 40rem) {
@@ -248,6 +252,18 @@ footer {
     gap: 0.6rem;
   }
   table.cards td::before { content: attr(data-label); color: var(--kcd-muted); font-size: 0.85rem; }
+  /* 目次のチップは 1 行に並べて横に送る。12 個を折り返すと 5 段（222 px）になり、最初の見出しが画面の外に出る。 */
+  .toc ul {
+    --edge-left: max(var(--gutter), env(safe-area-inset-left, 0px));
+    --edge-right: max(var(--gutter), env(safe-area-inset-right, 0px));
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin: 0 calc(-1 * var(--edge-right)) 0 calc(-1 * var(--edge-left));
+    padding: 0.25rem var(--edge-right) 0.25rem var(--edge-left);
+    scroll-padding-inline: var(--edge-left) var(--edge-right);
+  }
+  .toc li { flex: none; }
+  .toc a { display: flex; align-items: center; min-height: 2.75rem; white-space: nowrap; }
 }
 @media (max-width: 22.5rem) {
   .brand { display: none; }
@@ -396,7 +412,7 @@ def render_page(markdown: str, sizes: Mapping[str, tuple[int, int]]) -> str:
 {_main(blocks, sizes)}
 </main>
 <footer>
-<p class="back"><a class="play" href="{GAME_URL}">ゲームを遊ぶ</a><a href="#">ページの先頭へ</a></p>
+<p class="back"><a class="play" href="{GAME_URL}">ゲームを遊ぶ</a><a class="top" href="#">ページの先頭へ</a></p>
 </footer>
 </body>
 </html>
