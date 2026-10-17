@@ -13,8 +13,8 @@ namespace KCD.Tests
 {
     /// <summary>
     /// 指で遊ぶときの会話の選択肢 (#187)。選択肢どうしの間を TMP の段落の間で空け（折り返した 2 行目は詰める）、
-    /// 最後に「やめる」を置く。叩ける高さと、いちばん長い選択肢（prof・sora）が縦の本文の欄に入ることを、
-    /// シーンに置いた本文の欄と実際の会話データで確かめる。
+    /// 最後に「やめる」を置く。叩ける高さと、いちばん長い選択肢（prof・sora）が縦の本文の欄に入ること、
+    /// 横では本文の上端から枠の下端までに入ることを、シーンに置いた本文の欄と実際の会話データで確かめる。
     /// </summary>
     public sealed class DialogueChoiceLayoutTests
     {
@@ -22,9 +22,6 @@ namespace KCD.Tests
 
         /// <summary>縦持ちの Canvas（幅 800）を CSS の幅 390 px で描いたときの倍率。</summary>
         private const float PortraitScale390 = 390f / PortraitCanvasWidth;
-
-        /// <summary>横持ちで枠が収まる高さ。枠 300 から上の名札の 80 を引く。</summary>
-        private const float LandscapeFrameInnerHeight = 300f - 80f;
 
         private const string CampusScene = "Assets/Scenes/Campus.unity";
 
@@ -137,7 +134,7 @@ namespace KCD.Tests
             {
                 Prepare(body, portrait);
                 float width = BodyWidth(frame, body, portrait);
-                float limit = portrait ? BodyHeight(frame, body) : LandscapeFrameInnerHeight;
+                float limit = portrait ? BodyHeight(frame, body) : LandscapeHeight(frame, body);
                 int checkedTopics = 0;
                 foreach (string file in Directory.GetFiles("Assets/Data/Dialogue", "*.json"))
                 {
@@ -186,6 +183,13 @@ namespace KCD.Tests
             float portraitHeight = fit.FindProperty("_portraitHeight").floatValue;
             var box = (RectTransform)body.rectTransform.parent;
             return (portraitHeight > 0f ? portraitHeight : frame.sizeDelta.y) + box.sizeDelta.y + body.rectTransform.sizeDelta.y;
+        }
+
+        /// <summary>横持ちで選択肢を並べられる高さ。本文の上端から枠の下端まで（枠の高さから、名札の欄と本文の上の余白を引く）。</summary>
+        private static float LandscapeHeight(RectTransform frame, TMP_Text body)
+        {
+            var box = (RectTransform)body.rectTransform.parent;
+            return frame.sizeDelta.y + box.offsetMax.y + body.rectTransform.offsetMax.y;
         }
 
         private static void WithBody(Action<RectTransform, TMP_Text> run)

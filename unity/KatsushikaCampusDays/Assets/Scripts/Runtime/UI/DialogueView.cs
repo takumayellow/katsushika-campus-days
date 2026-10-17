@@ -34,6 +34,9 @@ namespace KCD
         /// <summary>選択肢を指のときの形で描いているか。入力の種類が変わったら描き直す。</summary>
         private bool _choicesDrawnForTouch;
 
+        /// <summary>選択肢を縦持ちの間で描いているか。画面を回したら描き直す。</summary>
+        private bool _choicesDrawnPortrait;
+
         /// <summary>SceneBuilder から差し込む。</summary>
         public void Bind(GameObject root, TMP_Text speaker, TMP_Text body, GameObject continueMark)
         {
@@ -181,14 +184,18 @@ namespace KCD
         /// <summary>指のときの選択肢の文字の大きさ（本文の欄の文字に対する割合）。「やめる」を足しても縦の欄 300 に収める。</summary>
         public const int TouchChoiceSizePercent = 85;
 
-        /// <summary>指のときの選択肢どうしの間（本文の欄の単位）。縦持ちは叩く高さ 44 px のために広く、横持ちは枠の高さに収める。</summary>
+        /// <summary>指で縦持ちのときの選択肢どうしの間（本文の欄の単位）。縦 390 px の画面で叩く高さを 44 px にする。</summary>
         public const float PortraitChoiceGap = 58f;
 
-        public const float LandscapeChoiceGap = 44f;
+        /// <summary>
+        /// 指で横持ちのときの選択肢どうしの間。本文の上端から枠の下端まで（枠 300 − 名札 80 − 本文の上の余白 12 = 208）に、
+        /// 選択肢 3 つと「やめる」の 4 行（4 × 32.64 + 2 × 38 = 206.6）を収める。
+        /// </summary>
+        public const float LandscapeChoiceGap = 38f;
 
         /// <summary>
         /// 選択肢を出している間の本文の欄の整え方。指なら選択肢どうしに間を空け、それ以外は間を空けない。
-        /// TMP の paragraphSpacing は改行の後にだけ付き、文字の大きさ（欄の大きさ）の 1/100 を 1 とするので、
+        /// TMP の paragraphSpacing は改行（LF）の後にだけ付き（垂直タブと折り返しには付かない）、文字の大きさ（欄の大きさ）の 1/100 を 1 とするので、
         /// 折り返した選択肢の 2 行目は詰まったまま、別の選択肢との間だけ空く。
         /// </summary>
         public static void ApplyChoiceSpacing(TMP_Text label, bool touch, bool portrait)
@@ -211,6 +218,7 @@ namespace KCD
             _line = null;
             _voice = string.Empty;
             _choicesDrawnForTouch = InputMode.IsTouch;
+            _choicesDrawnPortrait = ScreenShape.IsPortrait;
             if (_speakerLabel != null)
             {
                 _speakerLabel.text = GameManager.Instance.SelectedCharacterShortName;
@@ -220,7 +228,7 @@ namespace KCD
             _revealed = _fullText.Length;
             _revealedFrame = Time.frameCount;
             _lastBlipAt = _fullText.Length;
-            ApplyChoiceSpacing(_bodyLabel, _choicesDrawnForTouch, Screen.height > Screen.width);
+            ApplyChoiceSpacing(_bodyLabel, _choicesDrawnForTouch, _choicesDrawnPortrait);
             if (_bodyLabel != null)
             {
                 _bodyLabel.text = _fullText;
@@ -235,7 +243,8 @@ namespace KCD
 
         /// <summary>
         /// 選択肢を 1 行ずつ並べる。selected の行にだけ ▶ と色を付け、各行を <c>&lt;link="choice:N"&gt;</c> で囲む。
-        /// 指のときは行の間を広げて叩きやすくし、指でないときはキーの案内を添える。
+        /// 指のときは文字を <see cref="TouchChoiceSizePercent"/> に縮めて最後に「やめる」を置き、指でないときはキーの案内を添える。
+        /// 指のときの選択肢どうしの間は、本文の欄に <see cref="ApplyChoiceSpacing"/> で付ける。
         /// </summary>
         public static string ComposeChoices(IReadOnlyList<DialogueChoice> choices, int selected, bool touch)
         {
@@ -333,7 +342,7 @@ namespace KCD
 
             if (_dialogue != null && _dialogue.IsChoosing)
             {
-                if (InputMode.IsTouch != _choicesDrawnForTouch)
+                if (InputMode.IsTouch != _choicesDrawnForTouch || ScreenShape.IsPortrait != _choicesDrawnPortrait)
                 {
                     OnChoicesChanged();
                 }
