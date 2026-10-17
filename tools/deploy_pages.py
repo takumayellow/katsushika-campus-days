@@ -38,6 +38,17 @@ ASTC の data (#187):
     MAX_DATA_BYTES, 決め方は定数のコメント）を超えていれば配信しない。--allow-oversize で通す。
     端末は DXT と ASTC の data のどちらか一方しか読まないので, 大きい方で測る。
     --no-deploy のときは超えていても zip を残し, 超えたことだけを知らせる。
+
+遊び方のページ (#18):
+    zip には docs/HOW_TO_PLAY.md から作った howto/index.html と, その画像（howto/img/）を足す。
+    Pages は zip の中身をそのまま載せ, pages.yml はリポジトリを checkout しないので, ページは zip に
+    入れておく。作り方は tools/howto_page.py。遊び方に変換できない書き方があるときは, 時間のかかる
+    Unity のビルドより前に止める。ページの分は zip 全体（stored）と files に数え, 合計と data には
+    数えない（ゲームを読む量ではない）。
+    ページは作業ツリーのファイル（howto_page.source_paths(): docs/HOW_TO_PLAY.md, 使う画像, 変換の
+    コード）から作る。これらに未コミットの変更があれば, 配信するときは --build の前と配信の前に止める
+    （--allow-dirty で通す）。index.html の記録はゲームのビルドのものなので, ページの元の commit と
+    状態は Release の説明に別に書く。
 """
 
 from __future__ import annotations
@@ -47,12 +58,17 @@ import json
 import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
+import time
 import zipfile
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+
+import howto_page
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT / "unity" / "KatsushikaCampusDays"
@@ -108,7 +124,8 @@ MIB = 1024 * 1024
 #   wasm・framework・loader の大きさは Unity の版とコードの量で決まり, ほとんど変わらない。
 #   ふくらむのは data なので, 合計より先に data で止まるよう, data の幅を狭くしてある。
 # どちらも 1 台の端末が読む量で測る (#187)。端末が読むのは DXT か ASTC の data のどちらか一方なので,
-#   大きい方の data で測る。zip と Pages に置く量は data 1 つ分増える。
+#   大きい方の data で測る。zip と Pages に置く量は, 小さい方の data と遊び方のページ（howto/, 上限は
+#   howto_page.MAX_PAGE_BYTES）の分だけ増える。
 MAX_TOTAL_BYTES = 80 * MIB
 MAX_DATA_BYTES = 64 * MIB
 
@@ -120,6 +137,8 @@ class PayloadSize:
     total と data は 1 台の端末が読む量。data は index.html が data として読むファイルの合計で,
     ASTC の data もあれば, DXT と ASTC の大きい方を取る。total は data 以外のファイルにその data を足したもの。
     stored は zip に入れた全ファイルの合計（Pages に置く量）, astc_data は ASTC の data の大きさ。
+    page は遊び方のページ（howto/）の大きさ。zip と Pages には載るが, ゲームを読む量ではないので
+    total にも data にも数えない。
     """
 
     total: int
@@ -127,11 +146,12 @@ class PayloadSize:
     files: int
     stored: int = 0
     astc_data: int = 0
+    page: int = 0
 
 
 @dataclass(frozen=True)
 class GitState:
-    """ビルドを始める時点のリポジトリの状態。"""
+    """HEAD の SHA と, 調べた場所の未コミットの変更。ゲームのビルドと遊び方のページの元に使う。"""
 
     commit: str
     dirty_paths: tuple[str, ...] = ()
@@ -167,19 +187,35 @@ def run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
     return subprocess.run(cmd, **{"check": True, **kwargs})
 
 
+def head_commit(root: Path = ROOT) -> str:
+    return subprocess.run(["git", "-C", str(root), "rev-parse", "HEAD"],
+                          capture_output=True, text=True, check=True).stdout.strip()
+
+
+def dirty_paths(root: Path, pathspecs: Sequence[str]) -> tuple[str, ...]:
+    """pathspecs の下の未コミットの変更（ステージ済み・削除・未追跡を含む）のパス。"""
+    status = subprocess.run(
+        ["git", "-C", str(root), "status", "--porcelain", "--untracked-files=all", "--", *pathspecs],
+        capture_output=True, text=True, encoding="utf-8", check=True).stdout
+    return tuple(line[3:] for line in status.splitlines() if line.strip())
+
+
 def git_state(root: Path = ROOT, pathspec: str = PROJECT_PATHSPEC) -> GitState:
     """HEAD の SHA と, pathspec の下の未コミットの変更（未追跡を含む）を返す。
 
-    ビルドに入るのは Unity プロジェクトの下だけなので, 見るのもそこに絞る。
-    tools/ や docs/ の変更ではビルドは変わらない。
+    ゲームのビルドに入るのは Unity プロジェクトの下だけなので, 見るのもそこに絞る。
+    遊び方のページの元は page_state が見る。
     """
-    commit = subprocess.run(["git", "-C", str(root), "rev-parse", "HEAD"],
-                            capture_output=True, text=True, check=True).stdout.strip()
-    status = subprocess.run(
-        ["git", "-C", str(root), "status", "--porcelain", "--untracked-files=all", "--", pathspec],
-        capture_output=True, text=True, encoding="utf-8", check=True).stdout
-    paths = tuple(line[3:] for line in status.splitlines() if line.strip())
-    return GitState(commit=commit, dirty_paths=paths)
+    return GitState(commit=head_commit(root), dirty_paths=dirty_paths(root, (pathspec,)))
+
+
+def page_state(root: Path = ROOT, sources: Sequence[str] | None = None) -> GitState:
+    """HEAD の SHA と, 遊び方のページの元（既定は howto_page.source_paths()）の未コミットの変更を返す。
+
+    ページは作業ツリーのファイルから作って zip に入れるので, ゲームのビルドの記録とは別に見る。
+    """
+    sources = howto_page.source_paths() if sources is None else sources
+    return GitState(commit=head_commit(root), dirty_paths=dirty_paths(root, sources))
 
 
 def utc_now() -> str:
@@ -351,7 +387,33 @@ def select_files(build_dir: Path) -> list[Path]:
     return selected
 
 
-def make_zip(build_dir: Path, out: Path) -> int:
+def extras_problem(taken: Sequence[str], extras: Sequence[tuple[str, bytes]]) -> str | None:
+    """ビルドの外から足すファイル（extras）を zip に足せない理由。足せるなら None。"""
+    names = [name for name, _ in extras]
+    unsafe = [name for name in names if name.startswith("/") or "\\" in name or ".." in name.split("/")]
+    if unsafe:
+        return "サイトの根の外を指す名前がある: " + ", ".join(unsafe)
+    clash = sorted({name for name in names if name in taken or names.count(name) > 1})
+    if clash:
+        return "同じ名前のファイルが 2 つある: " + ", ".join(clash)
+    return None
+
+
+def extra_info(name: str, date_time: tuple[int, int, int, int, int, int]) -> zipfile.ZipInfo:
+    """ビルドの外から足すファイルの zip の項目。権限は 0644 に決める。
+
+    upload-pages-artifact は誰でも読めるファイルでないと警告し, 権限を直す。ビルドのファイルは
+    zf.write() が作業ツリーの権限を写すので, 足すファイルは権限をこちらで決める。
+    """
+    info = zipfile.ZipInfo(name, date_time=date_time)
+    info.compress_type = zipfile.ZIP_STORED
+    info.create_system = 3  # Unix。unzip が external_attr の権限を読む
+    info.external_attr = (stat.S_IFREG | 0o644) << 16
+    return info
+
+
+def make_zip(build_dir: Path, out: Path, extras: Sequence[tuple[str, bytes]] = ()) -> int:
+    """build_dir の配信するファイルを zip にする。extras は足すファイル（サイトの根からのパス, 中身）。"""
     index = build_dir / "index.html"
     if not index.is_file():
         print(f"WebGL ビルドが見つからない: {index}", file=sys.stderr)
@@ -363,14 +425,22 @@ def make_zip(build_dir: Path, out: Path) -> int:
         print(f"zip を作れない: {error}", file=sys.stderr)
         return 1
 
+    problem = extras_problem([path.relative_to(build_dir).as_posix() for path in files], extras)
+    if problem is not None:
+        print(f"zip を作れない: {problem}", file=sys.stderr)
+        return 1
+
     out.parent.mkdir(parents=True, exist_ok=True)
     # .gz / .wasm / .data は既に圧縮済みなので、zip 自体は無圧縮で速く作る。
     with zipfile.ZipFile(out, "w", compression=zipfile.ZIP_STORED) as zf:
         for path in files:
             zf.write(path, path.relative_to(build_dir).as_posix())
+        now = time.localtime()[:6]
+        for name, data in extras:
+            zf.writestr(extra_info(name, now), data)
 
     size_mib = out.stat().st_size / (1024 * 1024)
-    print(f"{out} : {len(files)} files, {size_mib:.1f} MiB")
+    print(f"{out} : {len(files) + len(extras)} files, {size_mib:.1f} MiB")
     return 0
 
 
@@ -390,10 +460,12 @@ def payload_size(zip_path: Path) -> PayloadSize:
     dxt_paths = data_paths(html)
     data = sum(sizes.get(path, 0) for path in dxt_paths)
     astc = sum(sizes.get(path, 0) for path in astc_data_paths(html) if path not in dxt_paths)
+    # 遊び方のページはゲームを読む量ではないので, 合計に数えない。
+    page = sum(size for name, size in sizes.items() if name.startswith(f"{howto_page.PAGE_DIR}/"))
     stored = sum(sizes.values())
     largest = max(data, astc)
-    return PayloadSize(total=stored - data - astc + largest, data=largest, files=len(sizes),
-                       stored=stored, astc_data=astc)
+    return PayloadSize(total=stored - page - data - astc + largest, data=largest, files=len(sizes),
+                       stored=stored, astc_data=astc, page=page)
 
 
 def to_mib(size: int) -> str:
@@ -431,13 +503,18 @@ def unity_build(unity: Path, build_dir: Path) -> None:
     ])
 
 
-def release_notes(stamp: BuildStamp | None) -> str:
+def release_notes(stamp: BuildStamp | None, page: GitState | None = None) -> str:
+    """Release の説明。page（遊び方のページの元の状態）があれば, ページを作った元のコミットも書く。"""
     if stamp is None or not stamp.known:
         source = "ビルド元のコミットは記録されていない"
     else:
         state = "作業ツリーはきれい" if stamp.clean else "未コミットの変更を含む作業ツリー"
         source = f"ビルド元 {REPO_URL}/commit/{stamp.commit} ({state}, {stamp.built})"
-    return f"WebGL ビルド。{source}。Pages 配信用の成果物なので、遊ぶには {SITE_URL} を開く。"
+    howto = ""
+    if page is not None:
+        state = "未コミットの変更を含む作業ツリー" if page.dirty else "作業ツリーはきれい"
+        howto = f"遊び方のページの元 {REPO_URL}/commit/{page.commit} ({state})。"
+    return f"WebGL ビルド。{source}。{howto}Pages 配信用の成果物なので、遊ぶには {SITE_URL} を開く。"
 
 
 def release_exists(tag: str) -> bool:
@@ -475,6 +552,32 @@ def deploy_refusal(stamp: BuildStamp | None) -> str | None:
     return None
 
 
+def list_paths(paths: Sequence[str], limit: int = 10) -> str:
+    """パスを limit 件まで並べ, 残りは件数にする。"""
+    more = f" ほか {len(paths) - limit} 件" if len(paths) > limit else ""
+    return ", ".join(paths[:limit]) + more
+
+
+def page_refusal(page: GitState) -> str | None:
+    """遊び方のページの元に未コミットの変更があるときの, 配信を止める理由。なければ None。"""
+    if not page.dirty:
+        return None
+    return (f"遊び方のページの元に未コミットの変更が {len(page.dirty_paths)} 件ある: "
+            f"{list_paths(page.dirty_paths)}。コミットしてから配信するか, 承知の上なら --allow-dirty を付ける。")
+
+
+def dirty_places(state: GitState, page: GitState | None) -> list[str]:
+    """未コミットの変更がある場所の説明。Unity プロジェクトの下, 遊び方のページの元の順。"""
+    places = []
+    if state.dirty:
+        places.append(f"{PROJECT_PATHSPEC} の下に未コミットの変更が {len(state.dirty_paths)} 件ある: "
+                      f"{list_paths(state.dirty_paths)}")
+    if page is not None and page.dirty:
+        places.append(f"遊び方のページの元に未コミットの変更が {len(page.dirty_paths)} 件ある: "
+                      f"{list_paths(page.dirty_paths)}")
+    return places
+
+
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -487,7 +590,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--smoke", action="store_true",
                         help="載せる前にローカル配信で E2E スモークを回し、落ちたら載せない")
     parser.add_argument("--allow-dirty", action="store_true",
-                        help=f"{PROJECT_PATHSPEC} の下に未コミットの変更があってもビルド・配信する")
+                        help=f"{PROJECT_PATHSPEC} の下か遊び方のページの元に未コミットの変更があっても"
+                             "ビルド・配信する")
     parser.add_argument("--allow-oversize", action="store_true",
                         help=f"配信サイズの上限（合計 {to_mib(MAX_TOTAL_BYTES)}, "
                              f"data {to_mib(MAX_DATA_BYTES)}）を超えていても配信する")
@@ -498,17 +602,26 @@ def main(argv: list[str]) -> int:
     args = parse_args(argv)
     build_dir = Path(args.build_dir)
 
+    # 遊び方に変換できない書き方があれば, 時間のかかるビルドの前に止める。
+    try:
+        page = howto_page.site_files()
+    except (ValueError, OSError) as error:
+        print(f"遊び方のページを作れない: {error}", file=sys.stderr)
+        return 1
+    page_git = page_state()
+
     if args.build:
         state = git_state()
-        if state.dirty:
-            shown = ", ".join(state.dirty_paths[:10])
-            more = f" ほか {len(state.dirty_paths) - 10} 件" if len(state.dirty_paths) > 10 else ""
-            print(f"{PROJECT_PATHSPEC} の下に未コミットの変更が {len(state.dirty_paths)} 件ある: {shown}{more}",
-                  file=sys.stderr)
+        # ページの元は配信するときだけ見る。配信しないなら未コミットでも困らない。
+        places = dirty_places(state, None if args.no_deploy else page_git)
+        if places:
+            for place in places:
+                print(place, file=sys.stderr)
             if not args.allow_dirty:
                 print("コミットしてからビルドする。承知の上なら --allow-dirty を付ける。", file=sys.stderr)
                 return 1
-            print("--allow-dirty なので続ける。index.html には tree=dirty と書く。", file=sys.stderr)
+            print("--allow-dirty なので続ける。Unity プロジェクトの分は index.html に tree=dirty と書き, "
+                  "ページの元の分は Release の説明に書く。", file=sys.stderr)
         unity_build(Path(args.unity), build_dir)
         index = build_dir / "index.html"
         if not index.is_file():
@@ -535,7 +648,7 @@ def main(argv: list[str]) -> int:
     zip_path.parent.mkdir(parents=True, exist_ok=True)
     if zip_path.exists():
         zip_path.unlink()
-    rc = make_zip(build_dir, zip_path)
+    rc = make_zip(build_dir, zip_path, extras=page)
     if rc != 0:
         return rc
 
@@ -544,6 +657,8 @@ def main(argv: list[str]) -> int:
           f"data {to_mib(size.data)}（上限 {to_mib(MAX_DATA_BYTES)}）")
     if size.astc_data:
         print(f"  ASTC の data {to_mib(size.astc_data)}, zip 全体 {to_mib(size.stored)}")
+    if size.page:
+        print(f"  遊び方のページ（{howto_page.PAGE_DIR}/）{to_mib(size.page)}（合計と data には数えない）")
     oversize = size_refusal(size)
     if args.no_deploy:
         if oversize is not None:
@@ -552,6 +667,7 @@ def main(argv: list[str]) -> int:
 
     refusals = []
     for reason, allowed, flag in ((deploy_refusal(stamp), args.allow_dirty, "--allow-dirty"),
+                                  (page_refusal(page_git), args.allow_dirty, "--allow-dirty"),
                                   (oversize, args.allow_oversize, "--allow-oversize")):
         if reason is None:
             continue
@@ -564,7 +680,7 @@ def main(argv: list[str]) -> int:
             print(reason, file=sys.stderr)
         return 1
 
-    upload_release(zip_path, args.tag, release_notes(stamp))
+    upload_release(zip_path, args.tag, release_notes(stamp, page_git))
     dispatch_workflow(args.tag)
     print(f"Pages ワークフローを起動した。数分後に {SITE_URL} が更新される。")
     print("進捗: gh run list --workflow pages.yml")
