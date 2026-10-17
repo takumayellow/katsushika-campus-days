@@ -122,6 +122,7 @@ namespace KCD
                 return;
             }
 
+            ApplyChoiceSpacing(_bodyLabel, false, false);
             _line = line;
             _playerName = playerName ?? string.Empty;
             SetVisible(true);
@@ -149,10 +150,53 @@ namespace KCD
                 return;
             }
 
-            int index = TmpLinkTap.ChoiceIn(linkId, _dialogue.Choices.Count);
-            if (index >= 0)
+            int index = TappedChoice(linkId, _dialogue.Choices.Count);
+            if (index != NoTap)
             {
                 _dialogue.TapChoice(index);
+            }
+        }
+
+        /// <summary>叩いたリンクが選択肢でも「やめる」でもないときの値。</summary>
+        public const int NoTap = int.MinValue;
+
+        /// <summary>「やめる」のリンクの id。選ばずに会話を閉じる（DialogueSystem.CloseChoice）。</summary>
+        public const string CloseLinkId = "choice:-1";
+
+        /// <summary>
+        /// 叩いたリンクが指す選択肢の番号。「やめる」なら DialogueSystem.CloseChoice、
+        /// 選択肢でも「やめる」でもなければ <see cref="NoTap"/>。
+        /// </summary>
+        public static int TappedChoice(string linkId, int count)
+        {
+            if (linkId == CloseLinkId)
+            {
+                return DialogueSystem.CloseChoice;
+            }
+
+            int index = TmpLinkTap.ChoiceIn(linkId, count);
+            return index >= 0 ? index : NoTap;
+        }
+
+        /// <summary>指のときの選択肢の文字の大きさ（本文の欄の文字に対する割合）。「やめる」を足しても縦の欄 300 に収める。</summary>
+        public const int TouchChoiceSizePercent = 85;
+
+        /// <summary>指のときの選択肢どうしの間（本文の欄の単位）。縦持ちは叩く高さ 44 px のために広く、横持ちは枠の高さに収める。</summary>
+        public const float PortraitChoiceGap = 58f;
+
+        public const float LandscapeChoiceGap = 44f;
+
+        /// <summary>
+        /// 選択肢を出している間の本文の欄の整え方。指なら選択肢どうしに間を空け、それ以外は間を空けない。
+        /// TMP の paragraphSpacing は改行の後にだけ付き、文字の大きさ（欄の大きさ）の 1/100 を 1 とするので、
+        /// 折り返した選択肢の 2 行目は詰まったまま、別の選択肢との間だけ空く。
+        /// </summary>
+        public static void ApplyChoiceSpacing(TMP_Text label, bool touch, bool portrait)
+        {
+            if (label != null)
+            {
+                float gap = portrait ? PortraitChoiceGap : LandscapeChoiceGap;
+                label.paragraphSpacing = touch ? gap * 100f / label.fontSize : 0f;
             }
         }
 
@@ -176,6 +220,7 @@ namespace KCD
             _revealed = _fullText.Length;
             _revealedFrame = Time.frameCount;
             _lastBlipAt = _fullText.Length;
+            ApplyChoiceSpacing(_bodyLabel, _choicesDrawnForTouch, Screen.height > Screen.width);
             if (_bodyLabel != null)
             {
                 _bodyLabel.text = _fullText;
@@ -197,7 +242,7 @@ namespace KCD
             var builder = new StringBuilder(256);
             if (touch)
             {
-                builder.Append("<line-height=2em>");
+                builder.Append("<size=").Append(TouchChoiceSizePercent).Append("%>");
             }
 
             for (int i = 0; i < choices.Count; i++)
@@ -206,10 +251,19 @@ namespace KCD
                 builder.Append(i == selected ? "<color=#FFD98A>▶ " : "   ");
                 builder.Append(choices[i].DisplayText);
                 builder.Append(i == selected ? "</color>" : string.Empty);
-                builder.Append("</link>\n");
+                builder.Append("</link>");
+
+                // 指では最後の選択肢と「やめる」の間に間を空けない（垂直タブは段落の間を足さない改行）。
+                builder.Append(touch && i == choices.Count - 1 ? "\u000B" : "\n");
             }
 
-            if (!touch)
+            if (touch)
+            {
+                // 指には Esc が無いので、選ばずに閉じるリンクを最後に置く。
+                builder.Append("<link=\"").Append(CloseLinkId).Append("\">   ")
+                    .Append(L.Pick("やめる", "Cancel")).Append("</link></size>");
+            }
+            else
             {
                 builder.Append("<size=75%><alpha=#99>")
                     .Append(L.Pick("↑↓ えらぶ　Enter 決める", "Up/Down choose   Enter pick"))
