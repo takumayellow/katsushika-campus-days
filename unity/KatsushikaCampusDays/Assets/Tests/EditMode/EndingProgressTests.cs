@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 using UnityEngine;
@@ -10,7 +11,8 @@ namespace KCD.Tests
 {
     /// <summary>
     /// 見たエンドの記録 (#41) の書く・読むの端。セーブの 1 枠とは別のファイル kcd_endings.json に置き、
-    /// 無い・壊れている・知らない版のどれでも例外を出さず、空として扱うこと。
+    /// 無い・壊れている・新しい版・読めないのどれでも例外を出さず、空として扱うこと。
+    /// 読めなかったファイルは、新しい版と読めないものは上書きせず、壊れたものは .bak に残してから書き直すこと。
     /// 置き場は <see cref="SaveSystem.DirectoryOverride"/> に従うので、テストは一時フォルダに向けて、
     /// この端末で遊んでいる記録（persistentDataPath/kcd_endings.json）に触らない。
     /// </summary>
@@ -19,6 +21,8 @@ namespace KCD.Tests
         private string _folder;
 
         private string FilePath => Path.Combine(_folder, EndingProgress.FileName);
+
+        private string BackupPath => Path.Combine(_folder, EndingProgress.BackupFileName);
 
         [SetUp]
         public void SetUp()
@@ -129,7 +133,6 @@ namespace KCD.Tests
         [TestCase("{")]
         [TestCase("this is not json")]
         [TestCase("{\"version\":1,\"seen\":")]
-        [TestCase("{\"version\":2,\"seen\":[\"end_skip_school\"]}")]
         public void BrokenFile_IsTreatedAsNothingSeen(string content)
         {
             File.WriteAllText(FilePath, content);
@@ -142,14 +145,97 @@ namespace KCD.Tests
         }
 
         [Test]
-        public void Note_AfterABrokenFile_StartsTheRecordAgain()
+        public void Note_AfterABrokenFile_KeepsItsContentInTheBackupAndStartsTheRecordAgain()
         {
             File.WriteAllText(FilePath, "this is not json");
+            LogAssert.Expect(LogType.Warning, new Regex("見たエンドの記録の形式が壊れている"));
+            LogAssert.Expect(LogType.Warning, new Regex(Regex.Escape(EndingProgress.BackupFileName)));
+
+            Assert.IsTrue(EndingProgress.Note(DormRoute.EndingId));
+
+            Assert.AreEqual("{\"version\":1,\"seen\":[\"end_skip_school\"]}", File.ReadAllText(FilePath));
+            Assert.AreEqual("this is not json", File.ReadAllText(BackupPath), "壊れていた中身を残していない");
+        }
+
+        [Test]
+        public void Note_AfterAnEmptyFile_HasNothingToKeepAndLeavesAnEarlierBackupAlone()
+        {
+            File.WriteAllText(FilePath, string.Empty);
+            File.WriteAllText(BackupPath, "earlier copy");
             LogAssert.Expect(LogType.Warning, new Regex("見たエンドの記録の形式が壊れている"));
 
             Assert.IsTrue(EndingProgress.Note(DormRoute.EndingId));
 
             Assert.AreEqual("{\"version\":1,\"seen\":[\"end_skip_school\"]}", File.ReadAllText(FilePath));
+            Assert.AreEqual("earlier copy", File.ReadAllText(BackupPath), "空のファイルで前の控えを潰した");
+        }
+
+        [Test]
+        public void Note_AfterABrokenFileBecameReadable_KeepsWhatItHolds()
+        {
+            File.WriteAllText(FilePath, "this is not json");
+            LogAssert.Expect(LogType.Warning, new Regex("見たエンドの記録の形式が壊れている"));
+            EndingProgress.Reload();
+
+            // 読めなかったあとにファイルが直った。上書きで消さず、中身を取り込んで書く。
+            File.WriteAllText(FilePath, "{\"version\":1,\"seen\":[\"end_other\"]}");
+
+            Assert.IsTrue(EndingProgress.Note(DormRoute.EndingId));
+
+            Assert.AreEqual("{\"version\":1,\"seen\":[\"end_other\",\"end_skip_school\"]}", File.ReadAllText(FilePath));
+            Assert.IsTrue(EndingProgress.Has("end_other"));
+            Assert.IsFalse(File.Exists(BackupPath), "読めるようになったファイルを壊れたものとして退避した");
+        }
+
+        [TestCase("{\"version\":2,\"seen\":[\"end_future\"]}")]
+        [TestCase("{\"version\":3,\"seen\":{\"end_future\":true}}")]
+        public void NewerFile_IsReadAsNothingSeenAndNeverOverwritten(string newer)
+        {
+            File.WriteAllText(FilePath, newer);
+            LogAssert.Expect(LogType.Warning, new Regex("新しい版のゲームが書いた.*読めません"));
+
+            Assert.DoesNotThrow(EndingProgress.Reload);
+
+            Assert.IsEmpty(EndingProgress.SeenIds);
+            Assert.IsFalse(EndingProgress.Has("end_future"), "新しい版の中身を読んだことにしている");
+
+            // 上書きしないので、見たエンドはこのプレイの間だけ覚える。
+            LogAssert.Expect(LogType.Warning, new Regex("新しい版のゲームが書いた.*上書きしません"));
+            Assert.IsTrue(EndingProgress.Note(DormRoute.EndingId));
+
+            Assert.IsTrue(EndingProgress.Has(DormRoute.EndingId), "上書きしないとき、このプレイの記録まで失った");
+            Assert.AreEqual(newer, File.ReadAllText(FilePath), "新しい版のファイルが書き換わった");
+            Assert.IsFalse(File.Exists(BackupPath), "新しい版のファイルを壊れたものとして退避した");
+        }
+
+        [Test]
+        [Platform("Win")]
+        public void UnreadableFile_IsNotOverwrittenAndTheEndingStaysInMemory()
+        {
+            // 他のプロセスが開いていて読めない。壊れているかどうか分からないので、上書きしない。
+            const string content = "{\"version\":1,\"seen\":[\"end_other\"]}";
+            File.WriteAllText(FilePath, content);
+
+            using (new FileStream(FilePath, FileMode.Open, FileAccess.Read, FileShare.None))
+            {
+                LogAssert.Expect(LogType.Error, new Regex("見たエンドの記録を読み込めません"));
+                Assert.DoesNotThrow(EndingProgress.Reload);
+                Assert.IsEmpty(EndingProgress.SeenIds);
+
+                LogAssert.Expect(LogType.Error, new Regex("見たエンドの記録を読み込めません"));
+                bool added = false;
+                Assert.DoesNotThrow(() => added = EndingProgress.Note(DormRoute.EndingId));
+
+                Assert.IsTrue(added);
+                Assert.IsTrue(EndingProgress.Has(DormRoute.EndingId), "書けなかったとき、このプレイの記録まで失った");
+            }
+
+            Assert.AreEqual(content, File.ReadAllText(FilePath), "読めなかったファイルを上書きした");
+            Assert.IsFalse(File.Exists(BackupPath), "読めなかったファイルを壊れたものとして退避した");
+
+            // 読めるようになったら、次のエンドの記録で中身を取り込んで書く。
+            Assert.IsFalse(EndingProgress.Note(DormRoute.EndingId));
+            Assert.AreEqual("{\"version\":1,\"seen\":[\"end_other\",\"end_skip_school\"]}", File.ReadAllText(FilePath));
         }
 
         [Test]
@@ -181,6 +267,47 @@ namespace KCD.Tests
             Assert.IsTrue(added);
             Assert.IsTrue(EndingProgress.Has(DormRoute.EndingId), "書けなかったとき、このプレイの記録まで失った");
             Assert.AreEqual(before, File.ReadAllText(FilePath), "読み取り専用のファイルが書き換わった");
+        }
+
+        [Test]
+        public void WriteFailure_IsRetriedByTheNextNote()
+        {
+            // 書けなかったエンドは、次に同じエンドを見たときに書き直す。置き場が直れば、記録がファイルに残る。
+            string missing = Path.Combine(_folder, "missing");
+            string path = Path.Combine(missing, EndingProgress.FileName);
+            SaveSystem.DirectoryOverride = missing;
+            LogAssert.Expect(LogType.Error, new Regex("見たエンドを記録できませんでした"));
+            Assert.IsTrue(EndingProgress.Note(DormRoute.EndingId));
+
+            Directory.CreateDirectory(missing);
+            Assert.IsFalse(EndingProgress.Note(DormRoute.EndingId), "同じエンドをもう一度数えた");
+
+            Assert.AreEqual("{\"version\":1,\"seen\":[\"end_skip_school\"]}", File.ReadAllText(path));
+
+            // 書けたあとは書き直さない。
+            File.WriteAllText(path, "{\"version\":1,\"seen\":[]}");
+            Assert.IsFalse(EndingProgress.Note(DormRoute.EndingId));
+            Assert.AreEqual("{\"version\":1,\"seen\":[]}", File.ReadAllText(path), "書けているのに毎回書き直している");
+        }
+
+        [Test]
+        public void ResetStatics_MakesTheNextPlayReadTheFileAgain()
+        {
+            // ドメインを読み直さない再生では static が前の再生のまま残るので、再生を始めるときに戻す。
+            MethodInfo reset = typeof(EndingProgress).GetMethod("ResetStatics", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.IsNotNull(reset, "再生のたびに記録を戻す口が無い");
+            var attribute = (RuntimeInitializeOnLoadMethodAttribute)Attribute.GetCustomAttribute(
+                reset, typeof(RuntimeInitializeOnLoadMethodAttribute));
+            Assert.IsNotNull(attribute, "再生を始めるときに呼ばれない");
+            Assert.AreEqual(RuntimeInitializeLoadType.SubsystemRegistration, attribute.loadType);
+
+            Assert.IsFalse(EndingProgress.Has(DormRoute.EndingId));
+            File.WriteAllText(FilePath, "{\"version\":1,\"seen\":[\"end_skip_school\"]}");
+            Assert.IsFalse(EndingProgress.Has(DormRoute.EndingId), "毎回ファイルを読み直している");
+
+            reset.Invoke(null, null);
+
+            Assert.IsTrue(EndingProgress.Has(DormRoute.EndingId), "戻したあとに、外から書かれたファイルを読み直さない");
         }
 
         [TestCase(null)]
@@ -230,6 +357,10 @@ namespace KCD.Tests
 
             // Web 版は PlayerPrefs のこのキーに入る。ファイル名を変えると、記録が読めなくなる。
             Assert.AreEqual("kcd.save.kcd_endings.json", SaveStore.Key(SaveSystem.PathOf(EndingProgress.FileName)));
+
+            // 壊れていた記録の控えも、記録のすぐ隣に置く。Web 版では別のキーになる。
+            Assert.AreEqual(Path.Combine(_folder, "kcd_endings.json.bak"), SaveSystem.PathOf(EndingProgress.BackupFileName));
+            Assert.AreEqual("kcd.save.kcd_endings.json.bak", SaveStore.Key(SaveSystem.PathOf(EndingProgress.BackupFileName)));
         }
     }
 }

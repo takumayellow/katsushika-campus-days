@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace KCD.Tests
 {
@@ -389,6 +390,39 @@ namespace KCD.Tests
             List<CatalogAchievement> again = book.Refresh(catalog, AchievementRecord.FromDayStats(null));
             Assert.AreEqual(1, again.Count);
             Assert.AreEqual("ach_skip_school", again[0].Id);
+        }
+
+        [Test]
+        public void BeginNewGame_KeepsTheEndingRecordAndTheAchievementComesBack()
+        {
+            // 「はじめから」の道そのもの（GameManager.BeginNewGame）を通す。EditMode では Awake が走らない
+            // ので、NewGameTests と同じく、ログの取りこぼしを許す。
+            bool ignoring = LogAssert.ignoreFailingMessages;
+            LogAssert.ignoreFailingMessages = true;
+            var go = new GameObject("GameManagerForTest");
+
+            try
+            {
+                GameManager manager = go.AddComponent<GameManager>();
+                EndingProgress.Note(DormRoute.EndingId);
+                manager.SyncAchievementsQuietly();
+                Assert.IsTrue(manager.Achievements.IsUnlocked("ach_skip_school"), "記録したのに称号が取れていない");
+
+                manager.BeginNewGame();
+
+                Assert.IsFalse(manager.Achievements.IsUnlocked("ach_skip_school"), "称号が前の周回から残っている");
+                Assert.IsTrue(EndingProgress.Has(DormRoute.EndingId), "「はじめから」で見たエンドの記録が消えた");
+                Assert.IsTrue(File.Exists(SaveSystem.PathOf(EndingProgress.FileName)), "「はじめから」で記録のファイルが消えた");
+
+                manager.SyncAchievementsQuietly();
+
+                Assert.IsTrue(manager.Achievements.IsUnlocked("ach_skip_school"), "記録は残っているのに称号が戻らない");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(go);
+                LogAssert.ignoreFailingMessages = ignoring;
+            }
         }
 
         [Test]

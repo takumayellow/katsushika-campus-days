@@ -228,8 +228,9 @@ namespace KCD
         }
 
         /// <summary>
-        /// セーブを読んだあとに呼ぶ。読む前に取っていた称号は、トーストを出さずに獲得済みにする
-        /// （ロードのたびに「称号を獲得」が並ばないように）。
+        /// 称号を数え直し、いま取れているものをトーストを出さずに獲得済みにする。呼ぶのは、セーブを読んだあと
+        /// （ロードのたびに「称号を獲得」が並ばないように）と、見たエンドを記録した直後（エンド中は HUD が隠れていて、
+        /// トーストは音だけ鳴る）。
         /// </summary>
         public void SyncAchievementsQuietly()
         {
@@ -238,7 +239,8 @@ namespace KCD
         }
 
         /// <summary>
-        /// クエストか DayStats が動いたフレームだけ称号を数え直し、announce なら新しく取ったものをトーストで知らせる。
+        /// クエスト・DayStats・見たエンドの記録（<see cref="EndingProgress.Version"/>）のどれかが動いたフレームだけ称号を数え直し、
+        /// announce なら新しく取ったものをトーストで知らせる。
         /// クエストの報酬の収集物もここで記録する（QuestSystem.Restore のあとも追いつくように、達成済みを全部見る）。
         /// </summary>
         private void RefreshAchievements(bool announce)

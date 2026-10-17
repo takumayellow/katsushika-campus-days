@@ -84,6 +84,7 @@ Assets/Data/Ending       → Assets/Resources/KCD/Ending
 | `npc_count` | `value`, `npcs` | 話しかけた NPC のうち `npcs` に載った者の種類数 ≥ value。`npcs` を省くと全員を数える |
 | `quest_count` | `value`, `scope` | 達成クエスト数 ≥ value（メイン 7 + サブ 6 = 13）。`scope: "main"` なら `side: true` のクエストを数えない |
 | `quest_complete` | `value`(quest id) | そのクエストが達成済み |
+| `ending_seen` | `value`(ending id) | そのエンドを見た記録がある（`EndingProgress`。この端末の `kcd_endings.json` に残り、セーブには載らない） |
 
 `value` は 1 以上にする（0 以下は満たさない扱い）。数の条件は、集められる数（`Ending/result.json` の `totals`）を超えない（`ResultTotalsTests`）。
 
@@ -92,7 +93,7 @@ Assets/Data/Ending       → Assets/Resources/KCD/Ending
 - **`CollectibleCatalog`**（static / ScriptableObject 不要）: `Resources.Load<TextAsset>("KCD/Collectibles/collectibles")` を parse。`Get(id)`, `Hidden`, `PhotoSpots`, `Achievements`。
 - **`CollectibleStage`**（Editor、`SceneBuilder` が `InteriorStage` の後に呼ぶ）: シーンを組むときに置く。`source == "hidden"` の 20 個は `ActorFactory.CreateCollectable` でレア度の色の宝石（`gem_<rarity>`）として置き、`ItemId = id`。屋外は `(x, z)` の地面（Ground レイヤーの面から 1.2 m までの上向きの面に載せる）、屋内は `Interior_<building>` 配下の `poi_*` の床（2 階の poi は 2 階の床）。写真スポットは同じ場所に `VisitZone`（`PlaceId = ps_*`、5×3×5 m）と三脚（`PhotoSpot`、レンズを `look_dir` へ向ける）を置く。写真スポットから 1 m 以内の隠しアイテム（`c_mall_pin` と `c_dome_key`）は、三脚と E の対象を取り合わないよう横へ 0.9 m ずらす。拾った隠しアイテムは、同じ日のうちにシーンを読み直しても `CollectableItem` が消す。
 - **`PhotoSpot`**（三脚）: `E`（`ui.interact.photo`）でプレイヤーを `look_dir` へ向けてカメラを背後へ回し、`PhotoSystem.CaptureAt(ps_*)` で撮る → 撮影 SE → `ui.hud.photo_taken` トースト（スポットの名前）→ `DayStats.NotePhoto(ps_*)`。`ReportVisit(ps_*)` は `VisitZone` に入っただけで発火する（サブクエ用、`ui.hud.photo_spot` トースト）。
-- **`AchievementBook`**（`GameManager.Achievements`）: `DayStats`（`CollectableItem` / `EntranceTrigger` / `NPCTalker` / `PhotoSystem` が記録する）と `QuestSystem` の達成から `condition` を判定し、新しく満たしたものを `ui.hud.achievement_unlocked` トーストで知らせる。`GameManager` はクエストの `Changed` か `DayStats.Version` が変わったフレームだけ数え直す。報酬が収集物のクエスト（`rewardType: "collectible"`）の `rewardId` は、達成したときに `QuestRewards` が `DayStats` に拾った物として記録する。称号と `DayStats` はまだセーブに載らない（起動中のみ。ロード直後は読み込んだ進行で取れている称号をトーストを出さずに獲得済みにする）。
+- **`AchievementBook`**（`GameManager.Achievements`）: `DayStats`（`CollectableItem` / `EntranceTrigger` / `NPCTalker` / `PhotoSystem` が記録する）と `QuestSystem` の達成、見たエンドの記録（`EndingProgress`）から `condition` を判定し、新しく満たしたものを `ui.hud.achievement_unlocked` トーストで知らせる。`GameManager` はクエストの `Changed`、`DayStats.Version`、`EndingProgress.Version` のどれかが変わったフレームだけ数え直す。報酬が収集物のクエスト（`rewardType: "collectible"`）の `rewardId` は、達成したときに `QuestRewards` が `DayStats` に拾った物として記録する。称号と `DayStats` はまだセーブに載らない（起動中のみ。ロード直後は読み込んだ進行で取れている称号をトーストを出さずに獲得済みにする）。見たエンドの記録は別のファイル（`kcd_endings.json`）に残り、「はじめから」でも消えない（そのエンドの称号は、次の数え直しでまた獲得になる）。
 
 ---
 

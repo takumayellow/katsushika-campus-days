@@ -65,7 +65,8 @@ namespace KCD
     ///
     /// 数は結果画面と同じ数え方をする: 隠しアイテムは一覧の source = hidden だけ、写真は一覧の ps_ だけ。
     /// 獲得は取り消さない（条件を満たしたあとで記録が減ることは無いが、読み直しで消えないように覚えておく）。
-    /// セーブには載せない。「はじめから」で <see cref="Reset"/> する。
+    /// 称号そのものはセーブに載せず、「はじめから」で <see cref="Reset"/> する。ただし見たエンドの記録（<see cref="EndingProgress"/>）は
+    /// 「はじめから」でも残るので、自主休講は次の数え直しでまた獲得になる。
     /// </summary>
     public sealed class AchievementBook
     {
