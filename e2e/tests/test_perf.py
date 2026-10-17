@@ -4,10 +4,13 @@
 requestAnimationFrame の 1 回ごとに描画コールと三角形を数えられるかを確かめる（Unity のビルドは要らない）。
 スマホの画面では, テンプレートを偽のローダーで開き, 案内を叩いてからの読み込みの時刻を数えられるかを確かめる。
 run_webgl_perf.py の引数の組み合わせも確かめる。
+_session が CPU を遅くする命令を送る順と, スマホでの段の扱い（設定画面を開くか, ポーズ中の最初の段, タップの順）は,
+ブラウザの代わりに呼ばれた順を記録して確かめる。
 """
 
 from __future__ import annotations
 
+from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
@@ -193,6 +196,9 @@ class Recorder:
     def up(self, key):
         self.sent.append(("up", key))
 
+    def press(self, key):
+        self.sent.append(("press", key))
+
     def wait_for_timeout(self, ms):
         self.sent.append(("wait", ms))
 
@@ -253,6 +259,184 @@ def test_cli_rejects_bad_arguments(extra):
     with pytest.raises(SystemExit) as error:
         parse_args(["--serve", "build/WebGL", *extra])
     assert error.value.code == 2
+
+
+# ---- 計測の手順（ブラウザの代わりに, 呼ばれた順に記録する） ----
+
+URL = "http://127.0.0.1:8000/"
+
+
+def options_for(phone, **overrides):
+    return perf.PerfOptions(url=URL, out_dir=Path("perf-out"), launch=None,
+                            phone=None if phone is None else perf.PHONES[phone], **overrides)
+
+
+class FakeLocator:
+    def __init__(self, calls, selector):
+        self.calls = calls
+        self.selector = selector
+
+    def tap(self, **kwargs):
+        self.calls.append(("tap", self.selector))
+
+    def focus(self):
+        self.calls.append(("focus", self.selector))
+
+
+class FakeBrowser:
+    """Browser・BrowserContext・Page・CDPSession を 1 つで兼ねる。_session が呼んだ順に記録する。"""
+
+    def __init__(self):
+        self.calls = []
+
+    def new_context(self, **options):
+        self.calls.append(("new_context", options))
+        return self
+
+    def add_init_script(self, path):
+        self.calls.append(("init_script", Path(path).name))
+
+    def new_page(self):
+        self.calls.append(("new_page",))
+        return self
+
+    def on(self, event, handler):
+        self.calls.append(("on", event))
+
+    def new_cdp_session(self, page):
+        self.calls.append(("cdp",))
+        return self
+
+    def send(self, method, params):
+        self.calls.append(("send", method, params))
+
+    def goto(self, url, **kwargs):
+        self.calls.append(("goto", url))
+
+    def locator(self, selector):
+        return FakeLocator(self.calls, selector)
+
+    def wait_for_function(self, expression, **kwargs):
+        self.calls.append(("wait_for_function", expression))
+
+    def close(self):
+        self.calls.append(("close",))
+
+
+THROTTLE = ("send", "Emulation.setCPUThrottlingRate", {"rate": 4.0})
+NOTICE = ("tap", perf.DATA_NOTICE_BUTTON)
+READY = [("wait_for_function", perf.READY_JS), ("drawn",)]
+
+
+@pytest.mark.parametrize("phone, rate, throttle_load, expected", [
+    # 開く前に掛け, 読み込みの間も遅いままにする。
+    ("portrait", 4.0, True, [("cdp",), THROTTLE, ("goto", URL), NOTICE, *READY]),
+    # 既定では, タイトルが描かれてから掛ける。
+    (None, 4.0, False, [("cdp",), ("goto", URL), *READY, THROTTLE]),
+    # PC で遅くしないなら CDP はつながない。
+    (None, 1.0, False, [("goto", URL), *READY]),
+    # スマホはタッチを CDP で送るので, 遅くしなくてもつなぐ。
+    ("portrait", 1.0, False, [("cdp",), ("goto", URL), NOTICE, *READY]),
+])
+def test_session_connects_cdp_and_throttles_at_the_right_time(monkeypatch, phone, rate, throttle_load,
+                                                              expected):
+    browser = FakeBrowser()
+    monkeypatch.setattr(perf, "_wait_drawn", lambda page, timeout_s: browser.calls.append(("drawn",)))
+    options = options_for(phone, cpu_throttle=rate, throttle_load=throttle_load)
+    opened = [("new_context", perf.context_options(options.phone, options.viewport)),
+              ("init_script", perf.INSTRUMENT_JS.name), ("init_script", perf.PROBE_JS.name),
+              ("new_page",), ("on", "console")]
+    with perf._session(browser, options) as (page, console, cdp):
+        assert browser.calls == opened + expected + [("focus", "#unity-canvas")]
+        assert page is browser and console == []
+        assert cdp is (browser if ("cdp",) in expected else None)
+    assert browser.calls[-1] == ("close",)
+
+
+class StepRecorder:
+    """_measure_tier・_measure_frozen に渡す Page の代わり。差し替えた手順と待ちを, 呼ばれた順に記録する。"""
+
+    def __init__(self):
+        self.calls = []
+
+    def evaluate(self, expression):
+        return {perf.LOAD_JS: {}, perf.HEAP_JS: 322174976, perf.CANVAS_JS: [585, 1266]}[expression]
+
+    def wait_for_timeout(self, ms):
+        self.calls.append(("wait", ms))
+
+
+@pytest.fixture
+def steps(monkeypatch):
+    recorder = StepRecorder()
+    calls = recorder.calls
+
+    def record(page, seconds):
+        calls.append(("record", seconds))
+        return {}
+
+    @contextmanager
+    def walking(page, cdp, phone):
+        calls.append(("walk", "down"))
+        yield
+        calls.append(("walk", "up"))
+
+    monkeypatch.setattr(perf, "_press", lambda page, keys: calls.append(("press", keys)))
+    monkeypatch.setattr(perf, "_save_canvas", lambda page, path: calls.append(("save", path.name)))
+    monkeypatch.setattr(perf, "_record", record)
+    monkeypatch.setattr(perf, "_enter_campus", lambda page, console, cdp, options: calls.append(("enter",)))
+    monkeypatch.setattr(perf, "_walking", walking)
+    return recorder
+
+
+@pytest.mark.parametrize("phone, tier, keys", [
+    ("portrait", "low", None),  # スマホの保存が無いときの段なので, 設定画面を開かない
+    ("portrait", "medium", ["ArrowRight"]),
+    ("portrait", "high", ["ArrowLeft"]),
+    (None, "low", ["ArrowLeft"]),
+    (None, "medium", []),  # PC は段を変えなくても開く
+])
+def test_measure_tier_opens_the_settings_unless_a_phone_keeps_its_tier(steps, phone, tier, keys):
+    result = perf._measure_tier(steps, [], None, tier, options_for(phone))
+    opened = [] if keys is None else [("press", ["o"] + ["ArrowDown"] * perf.QUALITY_ROW + keys),
+                                      ("save", f"{tier}-settings.png"), ("press", ["Escape"])]
+    assert steps.calls == opened + [("enter",), ("record", 10.0), ("save", f"{tier}-stand.png"),
+                                    ("walk", "down"), ("record", 10.0), ("walk", "up"),
+                                    ("save", f"{tier}-walk.png")]
+    assert result.tier == tier and result.canvas == (585, 1266)
+
+
+@pytest.mark.parametrize("phone, first", [
+    ("portrait", []),  # スマホは Low で始まる
+    (None, ["ArrowLeft"]),  # PC は Medium で始まる
+])
+def test_measure_frozen_steps_from_the_tier_without_a_save(steps, phone, first):
+    options = options_for(phone, frozen_rounds=1)
+    records = perf._measure_frozen(steps, [], None, options)
+    menu = ["Escape"] + ["ArrowDown"] * 3 + ["Enter"] + ["ArrowDown"] * perf.QUALITY_ROW
+    expected = [("enter",), ("press", menu)]
+    for tier, keys in zip(perf.TIERS, [first, ["ArrowRight"], ["ArrowRight"]]):
+        expected += [("press", keys), ("wait", 1000), ("record", options.frozen_s),
+                     ("save", f"frozen-{tier}.png")]
+    assert steps.calls == expected
+    assert [(index, tier) for index, tier, _ in records] == [(1, "low"), (1, "medium"), (1, "high")]
+
+
+@pytest.mark.parametrize("phone", [None, "portrait", "landscape"])
+def test_enter_campus_starts_the_title_then_picks_the_character(monkeypatch, phone):
+    recorder = Recorder()
+    monkeypatch.setattr(perf, "_wait_console",
+                        lambda page, console, needle, timeout_s: recorder.sent.append(("console", needle)))
+    options = options_for(phone)
+    perf._enter_campus(recorder, [], recorder, options)
+    if phone is None:
+        title, select = [("press", "Enter")], [("press", "Enter")]
+    else:
+        def tap(point):
+            return [("touchStart", [point]), ("wait", perf.TAP_HOLD_MS), ("touchEnd", [])]
+        title, select = tap(options.phone.title_tap), tap(options.phone.select_tap)
+    assert recorder.sent == (title + [("wait", perf.SELECT_WAIT_MS)] + select
+                             + [("console", perf.CAMPUS_LOADED), ("wait", options.settle_s * 1000)])
 
 
 # ---- perf_probe.js をブラウザで動かす ----
