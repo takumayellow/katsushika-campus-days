@@ -1,6 +1,11 @@
 // Web 版で、ゲームが作ったファイルをブラウザにダウンロードさせる (#61)。C# 側は Scripts/Runtime/Core/WebDownload.cs。
 // Web 版の persistentDataPath は IndexedDB の中にあり、プレイヤーが取り出す手段が無いので、写真はここから渡す。
 mergeInto(LibraryManager.library, {
+  // ブラウザが全画面を許すか。iPhone の Safari は document.fullscreenEnabled も webkitFullscreenEnabled も false（iPad は true）。
+  // C# 側は Scripts/Runtime/Core/ScreenModeHotkey.cs。
+  KCD_FullscreenSupported: function () {
+    return (document.fullscreenEnabled || document.webkitFullscreenEnabled) ? 1 : 0;
+  },
   KCD_DownloadFile__deps: ['$UTF8ToString'],
   KCD_DownloadFile: function (fileNamePtr, dataPtr, length, mimeTypePtr) {
     try {
