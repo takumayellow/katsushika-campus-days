@@ -14,7 +14,8 @@ namespace KCD.Tests
     /// <summary>
     /// 知らせ（トースト）の置き場所と文字 (#187)。指で遊ぶ横長の画面では、下の真ん中に自分の人物が立ち、右上にミニマップと
     /// 時計、左上にクエストの追跡、右下と上の真ん中に指のボタンが出る。知らせはそのどれにもかからない人物の頭の上に置く。
-    /// 縦長の画面では「話す」の案内の上に置く。枠の高さは 60 で、長い知らせは 22 まで縮めて枠に収める。
+    /// 縦長の画面では「話す」の案内の上に置く。カメラを寄せて頭が上がったときは、枠の下端も頭の上まで上げる
+    /// （クエストの追跡の下までで止める）。枠の高さは 60 で、長い知らせは 22 まで縮めて枠に収める。
     /// 画面の大きさごとに、シーンの Canvas の設定から画面の px での四角を求めて比べる。
     /// </summary>
     public sealed class ToastLayoutTests
@@ -35,6 +36,17 @@ namespace KCD.Tests
         /// 画角は高さで決まるので、横長の画面なら縦横比が変わっても同じ高さに立つ。
         /// </summary>
         private const float HeadTop = 0.46f;
+
+        /// <summary>
+        /// カメラの寄りごとの頭の上端（画面の下から、画面の高さに対する割合）。遠いとき（4.2 m）に 0.533、室内でいちばん寄る
+        /// 2.8 m で 0.55〜0.56、最も寄る 1.43 m で 0.6 近く。
+        /// </summary>
+        private static readonly float[] HeadTops = { 0.533f, 0.55f, 0.575f, 0.595f };
+
+        /// <summary>
+        /// 四角が接しているだけと見なす重なり（画面の px）。上限まで上げた知らせの上端は、クエストの追跡の下端にぴったり接する。
+        /// </summary>
+        private const float Touching = 0.01f;
 
         /// <summary>1 行で出る知らせ（開始直後の地名）。</summary>
         private const string OneLine = "東京理科大学 葛飾キャンパス";
@@ -124,6 +136,86 @@ namespace KCD.Tests
             Assert.AreEqual(439.433f, ToastLayout.ColumnLeft(gameplay, new[] { minimap, caption }), 1e-3f);
         }
 
+        [TestCase(0.40f, 0.56f)]
+        [TestCase(0.533f, 0.56f)]
+        [TestCase(0.534f, 0.57f)]
+        [TestCase(0.55f, 0.58f)]
+        [TestCase(0.575f, 0.61f)]
+        [TestCase(0.595f, 0.63f)]
+        public void BottomFor_RaisesTheBottomInStepsAboveTheHead(float headTop, float expected)
+        {
+            // 画面の高さ 720（縦横比 16:9 の Canvas）では、追跡の下までの上限 0.653 に当たらない。
+            Assert.AreEqual(expected, ToastLayout.BottomFor(headTop, 720f), 1e-4f);
+        }
+
+        [Test]
+        public void BottomFor_NeverCoversTheHeadNorReachesPastTheTracker()
+        {
+            ToastLayout.Slot slot = ToastLayout.SlotFor(ToastLayout.Shape.LandscapeTouch);
+            float floor = slot.Anchor.y;
+
+            // Canvas の高さは縦横比で変わる（1.78・2.165・2.4・2.7 の画面と、追跡が下限を割る 500）。
+            foreach (float canvasHeight in new[] { 720f, 652.6f, 619.7f, 584f, 500f })
+            {
+                float ceiling = Mathf.Max(floor, 1f - (ToastLayout.TrackerBottom + slot.Size.y) / canvasHeight);
+                float previous = floor;
+                for (int i = 0; i <= 140; i++)
+                {
+                    float head = 0.5f + 0.001f * i;
+                    float bottom = ToastLayout.BottomFor(head, canvasHeight);
+                    string at = " (頭の上端 " + head + "、Canvas の高さ " + canvasHeight + ")";
+
+                    Assert.GreaterOrEqual(bottom, previous - 1e-6f, "頭が上がったのに枠の下端が下がる" + at);
+                    Assert.GreaterOrEqual(bottom, floor - 1e-6f, "枠の下端が下限を割る" + at);
+                    Assert.LessOrEqual(bottom, ceiling + 1e-6f, "枠の上端がクエストの追跡にかかる" + at);
+                    Assert.LessOrEqual(bottom, Mathf.Max(floor, head + ToastLayout.HeadGap + ToastLayout.Step) + 1e-4f,
+                        "枠の下端が頭から離れすぎる" + at);
+                    if (head + ToastLayout.HeadGap <= ceiling)
+                    {
+                        Assert.GreaterOrEqual(bottom, head + ToastLayout.HeadGap - 1e-4f, "枠の下端が頭の上に届かない" + at);
+                    }
+                    else
+                    {
+                        Assert.AreEqual(ceiling, bottom, 1e-4f, "頭が高いときは、追跡の下までで止まる" + at);
+                    }
+
+                    if (bottom > floor + 1e-6f && bottom < ceiling - 1e-4f)
+                    {
+                        float steps = (bottom - floor) / ToastLayout.Step;
+                        Assert.AreEqual(Mathf.Round(steps), steps, 1e-2f, "下限からの段数が整数でない" + at);
+                    }
+
+                    previous = bottom;
+                }
+            }
+        }
+
+        [Test]
+        public void BottomFor_StopsWhereTheToastMeetsTheTracker()
+        {
+            ToastLayout.Slot slot = ToastLayout.SlotFor(ToastLayout.Shape.LandscapeTouch);
+            foreach (float canvasHeight in new[] { 720f, 652.6f, 584f })
+            {
+                // 頭が画面の上端にあっても、枠の上端は追跡の下端（Canvas の上から TrackerBottom）まで。
+                float bottom = ToastLayout.BottomFor(1f, canvasHeight);
+                Assert.AreEqual(canvasHeight - ToastLayout.TrackerBottom, bottom * canvasHeight + slot.Size.y, 0.01f,
+                    "枠の上端が追跡の下端に合わない (Canvas の高さ " + canvasHeight + ")");
+            }
+
+            // 縦横比が大きく追跡の下端が下限より下に来る画面では、上限より下限を優先する。
+            Assert.AreEqual(slot.Anchor.y, ToastLayout.BottomFor(1f, 500f), 1e-6f);
+        }
+
+        [Test]
+        public void BottomFor_FallsBackToTheFloorWhenTheHeadOrTheCanvasIsUnknown()
+        {
+            float floor = ToastLayout.SlotFor(ToastLayout.Shape.LandscapeTouch).Anchor.y;
+            Assert.AreEqual(floor, ToastLayout.BottomFor(float.NaN, 720f), "頭が測れない（NaN）");
+            Assert.AreEqual(floor, ToastLayout.BottomFor(0.595f, 0f), "Canvas の高さが 0");
+            Assert.AreEqual(floor, ToastLayout.BottomFor(0.595f, -5f), "Canvas の高さが負");
+            Assert.AreEqual(floor, ToastLayout.BottomFor(0.595f, float.NaN), "Canvas の高さが NaN");
+        }
+
         [Test]
         public void CampusScene_BuildsTheToastForThePointer()
         {
@@ -148,6 +240,20 @@ namespace KCD.Tests
                 Assert.IsTrue(fit.FindProperty("_reflow").boolValue, "縦長の画面で知らせの幅を狭めない（KCD/シーンを組み直す）");
                 Assert.IsFalse(fit.FindProperty("_portraitOnly").boolValue, "横長の画面で知らせの幅を Canvas に合わせない");
                 Assert.Greater(hud.PortraitHeight, pointer.Size.y, "縦長の画面で、折り返した知らせの行が入る高さにしない");
+            });
+        }
+
+        [Test]
+        public void CampusScene_TrackerHangsFromTheTopLeftDownToWhereTheToastStops()
+        {
+            WithScene(hud =>
+            {
+                // BottomFor が知らせの上限にする追跡の下端（TrackerBottom）は、左上から吊るした追跡の枠の下端。
+                Assert.AreEqual(Vector2.up, hud.Tracker.anchorMin, "追跡のアンカーが左上でない（KCD/シーンを組み直す）");
+                Assert.AreEqual(Vector2.up, hud.Tracker.anchorMax, "追跡のアンカーが左上でない（KCD/シーンを組み直す）");
+                Assert.AreEqual(Vector2.up, hud.Tracker.pivot, "追跡のピボットが左上でない（KCD/シーンを組み直す）");
+                Assert.AreEqual(ToastLayout.TrackerBottom, -hud.Tracker.anchoredPosition.y + hud.Tracker.sizeDelta.y, 1e-3f,
+                    "追跡の下端が ToastLayout.TrackerBottom と違う");
             });
         }
 
@@ -255,21 +361,48 @@ namespace KCD.Tests
             });
         }
 
+        /// <summary>頭が測れないときと、カメラの寄りごとの頭の上端（<see cref="HeadTops"/>）のそれぞれで置いて確かめる。</summary>
         private void AssertLandscape(Hud hud, Vector2 screen)
         {
-            string at = " (" + screen.x + "x" + screen.y + ")";
-            Placed placed = LayOut(hud, screen);
+            AssertLandscape(hud, screen, float.NaN);
+            foreach (float head in HeadTops)
+            {
+                AssertLandscape(hud, screen, head);
+            }
+        }
+
+        private void AssertLandscape(Hud hud, Vector2 screen, float headTop)
+        {
+            string at = " (" + screen.x + "x" + screen.y + "、" + (float.IsNaN(headTop) ? "頭は測れない" : "頭の上端 " + headTop) + ")";
+            Placed placed = LayOut(hud, screen, headTop);
             CanvasScreen.AssertInside(screen, placed.Toast, "知らせが画面からはみ出す" + at);
             foreach (KeyValuePair<string, Rect> part in placed.Parts)
             {
-                Assert.IsFalse(placed.Toast.Overlaps(part.Value), "知らせが " + part.Key + " にかかる" + at);
+                Assert.IsFalse(OverlapsBeyond(placed.Toast, part.Value, Touching), "知らせが " + part.Key + " にかかる" + at);
             }
 
             // y は画面の下から。「話す」の案内の上に間を空け、人物の頭より上で止まる。
             Assert.GreaterOrEqual(placed.Toast.yMin - placed.Prompt.yMax, PromptGap * placed.Factor - 0.01f,
                 "知らせが「話す」の案内に詰まる" + at);
             Assert.GreaterOrEqual(placed.Toast.yMin, screen.y * (1f - HeadTop), "知らせが人物にかかる" + at);
+
+            // カメラを寄せて頭が上がっても、頭の上に出る。枠を上げる限度は、上端が追跡の下端（縮める前）に接する高さ。
+            // 頭がそれより高い画面では、頭にかかっても追跡を避けるので、ここでは確かめない。
+            ToastLayout.Slot slot = ToastLayout.SlotFor(ToastLayout.Shape.LandscapeTouch);
+            float room = screen.y - (slot.Size.y + ToastLayout.TrackerBottom) * placed.Factor;
+            if (!float.IsNaN(headTop) && headTop * screen.y <= room + Touching)
+            {
+                Assert.GreaterOrEqual(placed.Toast.yMin, headTop * screen.y - Touching, "知らせが人物の頭にかかる" + at);
+            }
+
             AssertClearOfButtons(hud, screen, placed.Toast, at);
+        }
+
+        /// <summary>a と b が、接しているだけ（touching 以内）を超えて重なっているか。</summary>
+        private static bool OverlapsBeyond(Rect a, Rect b, float touching)
+        {
+            return a.xMin + touching < b.xMax && a.xMax - touching > b.xMin
+                && a.yMin + touching < b.yMax && a.yMax - touching > b.yMin;
         }
 
         private static void AssertClearOfButtons(Hud hud, Vector2 screen, Rect toast, string at)
@@ -285,8 +418,18 @@ namespace KCD.Tests
         /// <summary>
         /// 横の指で screen の画面に出したときの HUD を、シーンの置き方から組み直す。ミニマップと時計は KeepPointerSize、
         /// クエストの追跡は KeepLeftOfCenter、「話す」の案内は TouchPosition と同じ倍率と位置にする。
+        /// 頭が測れない（NaN）ときの置き方で、枠の下端は下限。
         /// </summary>
         private Placed LayOut(Hud hud, Vector2 screen)
+        {
+            return LayOut(hud, screen, float.NaN);
+        }
+
+        /// <summary>
+        /// 人物の頭の上端が headTop（画面の下から、画面の高さに対する割合）のときの置き方。枠の下端は
+        /// <see cref="ToastLayout.BottomFor"/> が Canvas の高さと頭から決める。
+        /// </summary>
+        private Placed LayOut(Hud hud, Vector2 screen, float headTop)
         {
             float factor = CanvasScreen.Factor(hud.Scaler, screen, true);
             Vector2 canvas = screen / factor;
@@ -305,7 +448,8 @@ namespace KCD.Tests
             ToastLayout.Slot slot = ToastLayout.SlotFor(ToastLayout.Shape.LandscapeTouch);
             float width = ToastLayout.LandscapeWidth(ToastLayout.ColumnLeft(gameplay, new[] { minimap, caption, clock }));
             var size = new Vector2(FitInCanvas.WidthToFit(width, canvas.x, FitInCanvas.Margin), slot.Size.y);
-            RectTransform toast = Make(gameplay, "Toast", slot.Anchor, slot.Anchor, ToastLayout.Pivot, slot.Position, size,
+            var anchor = new Vector2(slot.Anchor.x, ToastLayout.BottomFor(headTop, canvas.y));
+            RectTransform toast = Make(gameplay, "Toast", anchor, anchor, ToastLayout.Pivot, slot.Position, size,
                 FitInCanvas.ScaleToFit(size, canvas, FitInCanvas.Margin));
 
             var parts = new Dictionary<string, Rect>
