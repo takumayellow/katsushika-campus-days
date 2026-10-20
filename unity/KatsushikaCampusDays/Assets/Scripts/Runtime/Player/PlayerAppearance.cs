@@ -116,13 +116,24 @@ namespace KCD
         /// </summary>
         public static void Framing(float height, out float aimY, out float radiusScale)
         {
-            if (!(height > 0.3f))
-            {
-                height = ReferenceHeight;
-            }
-
+            height = UsableHeight(height);
             aimY = height * AimRatio;
             radiusScale = Mathf.Clamp(1f - RadiusFollow * (1f - height / ReferenceHeight), 0.6f, 1.3f);
+        }
+
+        /// <summary>
+        /// 注視点から頭の上端までの高さ（m）。注視点は背丈の <see cref="AimRatio"/> の高さにある。
+        /// 背丈が測れないとき（0 以下・NaN）は <see cref="Framing"/> と同じく既定の背丈で数える。
+        /// </summary>
+        public static float HeadAboveAim(float height)
+        {
+            return UsableHeight(height) * (1f - AimRatio);
+        }
+
+        /// <summary>測れた背丈。測れていない（0 以下・NaN・極端に低い）ときは既定の背丈。</summary>
+        private static float UsableHeight(float height)
+        {
+            return height > 0.3f ? height : ReferenceHeight;
         }
 
         /// <summary>体の Renderer を合わせた高さ（足元 groundY から天辺まで）。Renderer が無ければ 0。</summary>

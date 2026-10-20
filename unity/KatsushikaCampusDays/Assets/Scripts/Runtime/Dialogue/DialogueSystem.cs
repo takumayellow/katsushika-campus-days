@@ -549,13 +549,7 @@ namespace KCD
             return ((index + step) % count + count) % count;
         }
 
-        /// <summary>TapChoice に渡すと、どの選択肢も選ばずに会話を閉じる（指の「やめる」）。</summary>
-        public const int CloseChoice = -1;
-
-        /// <summary>
-        /// 指で選択肢を叩いたとき。選択肢を出したあとに置いた指でなければ選ばない。
-        /// <see cref="CloseChoice"/> は選ばずに閉じる（キーの Esc と同じ。答えた話題にはならない）。
-        /// </summary>
+        /// <summary>指で選択肢を叩いたとき。選択肢を出したあとに置いた指でなければ選ばない。</summary>
         public bool TapChoice(int index)
         {
             if (!_tapArmed || !_choosing)
@@ -563,13 +557,22 @@ namespace KCD
                 return false;
             }
 
-            if (index == CloseChoice)
+            return Choose(index);
+        }
+
+        /// <summary>
+        /// 指で「やめる」を叩いたとき。どの選択肢も選ばずに会話を閉じる（キーの Esc と同じで、答えた話題にはならない）。
+        /// 選択肢を出したあとに置いた指でなければ閉じない。
+        /// </summary>
+        public bool TapClose()
+        {
+            if (!_tapArmed || !_choosing)
             {
-                Finish();
-                return true;
+                return false;
             }
 
-            return Choose(index);
+            Finish();
+            return true;
         }
 
         /// <summary>

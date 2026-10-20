@@ -1,0 +1,190 @@
+using System.Collections;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Text;
+using NUnit.Framework;
+using UnityEngine;
+using UnityEngine.TestTools;
+
+namespace KCD.Tests
+{
+    /// <summary>
+    /// 横持ち・指のときの知らせ（トースト）が、カメラをどこまで寄せても自分の人物の頭にかからないこと (#187)。
+    /// 頭の上端はカメラが寄るほど画面の上へ上がる。ピンチで寄せ、実カメラで写した頭の上端と
+    /// 実際に置かれたトーストの下端を、画面の高さに対する割合で比べる。
+    /// </summary>
+    public sealed class ToastPlacementPlayTests : SceneTestBase
+    {
+        /// <summary>カメラの軌道の半径の倍率（RadialAxis）の初期値と下限。ActorFactory の置き方と同じ。</summary>
+        private const float FarRadial = 1f;
+        private const float NearRadial = 0.34f;
+
+        /// <summary>元の置き方（下端が画面の高さのこの割合）。頭がこれより下にあるときは動かさない。</summary>
+        private const float RestingBottom = 0.56f;
+
+        private const float MinSettleSeconds = 1.5f;
+        private const float MaxSettleSeconds = 8f;
+
+        private static readonly Vector3[] Corners = new Vector3[4];
+
+        private float _settledDistance;
+
+        [TearDown]
+        public void ReleaseForcedMode()
+        {
+            InputMode.Force(null);
+            ScreenShape.Force(null);
+            TouchInput.Clear();
+        }
+
+        /// <summary>
+        /// 遠い・中くらい・最も寄ったの 3 つの距離で、トーストの下端が頭の上端より上にある。
+        /// 遠いときは元の置き場所（0.56）のまま、遠くへ戻せば戻る。
+        /// </summary>
+        [UnityTest]
+        [Timeout(SceneTestTimeoutMs)]
+        public IEnumerator Campus_ToastStaysAboveTheHeadAtEveryCameraDistance()
+        {
+            CollectErrorsInsteadOfLogAssert();
+            InputMode.Force(InputKind.Touch);
+            ScreenShape.Force(false);
+
+            yield return PlayModeScenes.LoadCampusAsNewGame(Capture);
+            AssertLoaded(GameManager.CampusSceneName);
+            yield return PlayModeScenes.Advance(3, 0f);
+            Assert.IsFalse(KCDInput.GameplayBlocked, "入場の直後なのに操作が止まっている");
+
+            var layout = Object.FindAnyObjectByType<ToastLayout>();
+            var player = Object.FindAnyObjectByType<PlayerAppearance>();
+            Camera camera = Camera.main;
+            Assert.IsNotNull(layout, "キャンパスにトーストの置き場が無い");
+            Assert.IsNotNull(player, "キャンパスに自分の人物が居ない");
+            Assert.IsNotNull(camera, "メインカメラが無い");
+            Transform aim = player.transform.Find(PlayerAppearance.AimName);
+            Assert.IsNotNull(aim, "カメラの注視点が無い");
+            var toast = (RectTransform)layout.transform;
+            HUD.Instance.ShowToast("トーストの置き場所を確かめる", false);
+
+            var readings = new List<Reading>();
+            float radial = FarRadial;
+            yield return Settle(camera.transform, aim, 0f);
+            readings.Add(Measure(radial, _settledDistance, camera, player, toast));
+
+            foreach (float next in new[] { 0.67f, NearRadial, FarRadial })
+            {
+                yield return Settle(camera.transform, aim, radial - next);
+                radial = next;
+                readings.Add(Measure(radial, _settledDistance, camera, player, toast));
+            }
+
+            string log = Describe(camera, player, readings);
+            Reading far = readings[0];
+            Reading nearest = readings[2];
+            Assert.Greater(nearest.HeadTop, RestingBottom + 0.01f,
+                "前提: 最も寄ったとき、頭が元のトーストの下端より上に来る。来ないと確かめられない" + log);
+            Assert.GreaterOrEqual(far.ToastRight, far.PlayerX, "前提: 人物がトーストの横の範囲の外に居る" + log);
+            Assert.LessOrEqual(far.ToastLeft, far.PlayerX, "前提: 人物がトーストの横の範囲の外に居る" + log);
+
+            var failures = new List<string>();
+            foreach (Reading r in readings)
+            {
+                if (r.ToastBottom < r.HeadTop)
+                {
+                    failures.Add("カメラの距離 " + Format(r.Distance) + " m: トーストの下端 " + Format(r.ToastBottom) +
+                                 " が頭の上端 " + Format(r.HeadTop) + " より下にあり、頭にかかる");
+                }
+            }
+
+            Assert.AreEqual(RestingBottom, far.ToastBottom, 0.002f, "遠いときのトーストが元の置き場所から動いた" + log);
+            Assert.AreEqual(RestingBottom, readings[3].ToastBottom, 0.002f, "遠くへ戻してもトーストが上がったまま" + log);
+            Assert.IsEmpty(failures, string.Join("\n", failures) + log);
+            AssertNoErrors("キャンパス");
+        }
+
+        /// <summary>
+        /// 半径の倍率を radial から radial - change にするピンチを入れ、カメラの距離が落ち着くまで待つ。
+        /// 2 本指の間隔を e^change 倍にすると、CinemachineInputBridge が半径の倍率を change だけ縮める。
+        /// 落ち着いた距離は <see cref="_settledDistance"/> に入れる。
+        /// </summary>
+        private IEnumerator Settle(Transform camera, Transform aim, float change)
+        {
+            float start = Time.realtimeSinceStartup;
+            if (!Mathf.Approximately(change, 0f))
+            {
+                TouchInput.AddPinch(1f, Mathf.Exp(change));
+            }
+
+            float last = Vector3.Distance(camera.position, aim.position);
+            int still = 0;
+            while (Time.realtimeSinceStartup - start < MaxSettleSeconds)
+            {
+                yield return null;
+                float now = Vector3.Distance(camera.position, aim.position);
+                still = Mathf.Abs(now - last) < 0.0005f ? still + 1 : 0;
+                last = now;
+                if (still >= 5 && Time.realtimeSinceStartup - start >= MinSettleSeconds)
+                {
+                    break;
+                }
+            }
+
+            _settledDistance = last;
+        }
+
+        private static Reading Measure(float radial, float distance, Camera camera, PlayerAppearance player, RectTransform toast)
+        {
+            float height = player.BodyHeight > 0.3f ? player.BodyHeight : PlayerAppearance.ReferenceHeight;
+            Vector3 foot = player.transform.position;
+            Vector3 top = camera.WorldToViewportPoint(foot + Vector3.up * height);
+
+            toast.GetWorldCorners(Corners);
+            Vector2 bottomLeft = RectTransformUtility.WorldToScreenPoint(null, Corners[0]);
+            Vector2 topRight = RectTransformUtility.WorldToScreenPoint(null, Corners[2]);
+            return new Reading
+            {
+                Radial = radial,
+                Distance = distance,
+                HeadTop = top.y,
+                PlayerX = top.x,
+                ToastBottom = bottomLeft.y / Screen.height,
+                ToastLeft = bottomLeft.x / Screen.width,
+                ToastRight = topRight.x / Screen.width
+            };
+        }
+
+        private static string Describe(Camera camera, PlayerAppearance player, List<Reading> readings)
+        {
+            var text = new StringBuilder();
+            text.Append("\n実測: 画面 ").Append(Screen.width).Append('x').Append(Screen.height)
+                .Append(" 縦の画角 ").Append(Format(camera.fieldOfView))
+                .Append("° 背丈 ").Append(Format(player.BodyHeight)).Append(" m");
+            foreach (Reading r in readings)
+            {
+                text.Append("\n  半径の倍率 ").Append(Format(r.Radial))
+                    .Append(" 距離 ").Append(Format(r.Distance))
+                    .Append(" m 頭の上端 ").Append(Format(r.HeadTop))
+                    .Append(" トーストの下端 ").Append(Format(r.ToastBottom))
+                    .Append(" 人物の横 ").Append(Format(r.PlayerX))
+                    .Append(" トーストの横 ").Append(Format(r.ToastLeft)).Append('-').Append(Format(r.ToastRight));
+            }
+
+            return text.ToString();
+        }
+
+        private static string Format(float value)
+        {
+            return value.ToString("0.000", CultureInfo.InvariantCulture);
+        }
+
+        private struct Reading
+        {
+            public float Radial;
+            public float Distance;
+            public float HeadTop;
+            public float PlayerX;
+            public float ToastBottom;
+            public float ToastLeft;
+            public float ToastRight;
+        }
+    }
+}
