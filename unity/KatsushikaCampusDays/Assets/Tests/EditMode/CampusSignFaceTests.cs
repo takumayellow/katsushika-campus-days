@@ -54,13 +54,17 @@ namespace KCD.Tests
 
         /// <summary>
         /// 遊ぶ人に見せない実在の店の名前（小文字で比べる）。共創棟 1F のカフェとコンビニの実在の店名と、
-        /// キャンパスの外の背景の建物の元の名前。ゲームの文では「カフェ」「コンビニ」と書く。
+        /// キャンパスの外の背景の建物の OSM 上の名前のうち店のもの（campus.json の osm_name）。
+        /// ゲームの文では「カフェ」「コンビニ」と書く。
         /// </summary>
         private static readonly string[] Brands =
         {
             "スターバックス", "スタバ", "starbucks",
             "ファミリーマート", "ファミマ", "familymart",
-            "ローソン", "lawson"
+            "ローソン", "lawson",
+            "マークイズ", "mark is 葛飾",
+            "いなげや", "inageya",
+            "ksc金町"
         };
 
         private Scene _scene;

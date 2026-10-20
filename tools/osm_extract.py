@@ -104,6 +104,12 @@ UNNAMED_BUILDINGS: dict[int, dict] = {
     },
 }
 
+# カタログに無い建物の display に使う総称 (OSM id → 語)。OSM の名前は周辺の店の名前そのままなので
+# display には入れず、osm_name にだけ残す。ここに無い建物の display は空 (#371)。
+GENERIC_LABELS: dict[int, str] = {
+    217515791: "コンビニ",
+}
+
 # 別の棟の一部になっている OSM の建物 (OSM id → 親の正準 ID)。親の "parts" に
 # {osm_id, height, footprint} で入れる。親の footprint は変えない（第1研究棟の長辺が
 # キャンパスのローカル軸になっていて、全棟の入口と屋内の座標がそれに乗っている）。
@@ -213,7 +219,7 @@ def extract() -> dict:
                     h = tags.get("height")
                     meta = {
                         "id": f"bg_{e['id']}",
-                        "display": name or "",
+                        "display": GENERIC_LABELS.get(e["id"], ""),
                         "levels": int(float(lv)) if lv else None,
                         "height": float(h) if h else (float(lv) * 3.2 if lv else 8.0),
                         "style": "background",
@@ -222,7 +228,7 @@ def extract() -> dict:
                 else:
                     meta = {
                         "id": f"dorm_{e['id']}" if tags.get("building") == "dormitory" else f"misc_{e['id']}",
-                        "display": name or "",
+                        "display": GENERIC_LABELS.get(e["id"], ""),
                         "levels": int(float(tags.get("building:levels", 0))) or None,
                         "height": float(tags["height"]) if "height" in tags else 10.0,
                         "style": "dormitory" if tags.get("building") == "dormitory" else "misc",

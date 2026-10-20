@@ -1003,7 +1003,7 @@
   },
   {
    "id": "bg_1428287077",
-   "display": "MARK IS 葛飾かなまち",
+   "display": "",
    "levels": 4,
    "height": 12.8,
    "style": "background",
@@ -7687,7 +7687,7 @@
   },
   {
    "id": "bg_556082281",
-   "display": "地球釜",
+   "display": "",
    "levels": null,
    "height": 8.0,
    "style": "background",
@@ -7716,7 +7716,7 @@
   },
   {
    "id": "bg_560557709",
-   "display": "いなげや",
+   "display": "",
    "levels": 2,
    "height": 14.1,
    "style": "background",
@@ -8636,7 +8636,7 @@
   },
   {
    "id": "bg_737435298",
-   "display": "ksc金町",
+   "display": "",
    "levels": 7,
    "height": 19.0,
    "style": "background",

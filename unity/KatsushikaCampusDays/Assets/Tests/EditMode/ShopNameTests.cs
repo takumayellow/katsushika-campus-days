@@ -80,7 +80,7 @@ namespace KCD.Tests
             }
 
             Assert.IsEmpty(problems, "campus.json の display / desc に実在の店の名前がある（「カフェ」「コンビニ」と書く。"
-                + "data/osm/campus.json と Assets/Data/campus.json の両方と tools/osm_extract.py を直す）:\n"
+                + "data/osm/campus.json と Assets/Data/campus.json の両方と tools/osm_extract.py（GENERIC_LABELS）を直す）:\n"
                 + string.Join("\n", problems));
         }
 

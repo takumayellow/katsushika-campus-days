@@ -78,7 +78,8 @@ Hips
 ```
 meta.origin           緯度経度の原点（敷地重心）
 campus_boundary       [[x,z],...]  敷地ポリゴン
-buildings[]           id/display/levels/height/style/desc/on_campus/footprint[[x,z],...]  (反時計回り)
+buildings[]           id/display/levels/height/style/desc/osm_id/osm_name/on_campus/footprint[[x,z],...]  (反時計回り)
+                      display は画面に出る名前（カタログの建物は名前、背景の建物は総称か空）。OSM の元の名前は osm_name で、画面には使わない
 paths[]               kind/name/width/points[[x,z],...]
 areas[]               kind(park/pitch/playground/parking/university)/polygon
 points[]              kind(shrine/toilets/...)/x/z
