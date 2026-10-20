@@ -53,8 +53,11 @@ python tools/check_unity_log.py unity/logs/import.log unity/logs/scene.log unity
 ```
 
 `error CS`・`warning CS`・例外・NavMesh の失敗・シェーダの欠け（`Shader ... not found`）・
-編集時のマテリアル複製（`Instantiating material ...`）の件数、`[KCD]` の進捗、保存したシーン、ビルド結果を並べる。
+編集時のマテリアル複製（`Instantiating material ...`）・ライセンス切れ（`[Licensing::...] Error: ...`）の件数、
+`[KCD]` の進捗、保存したシーン、ビルド結果を並べる。
 どれかが 1 件でもあるか、ビルド結果が Succeeded でなければ終了コード 1 を返すので、そのまま CI に置ける。
+ライセンス切れ（Unity がライセンスを取れない状態）では、Unity はコードに入る前に終了コード 198 で止まり、
+ビルドもテストも走らない。ログにコードの失敗は出ないので、`[Licensing::...] Error: ...` の行を失敗として拾う。
 `unity/logs/tests_editmode.xml` のようにテスト結果の XML を渡すと、失敗したテストを拾う。
 直せない理由が分かっている行は `KNOWN_LINES` に理由付きで載せてあり、`[KNOWN]` として件数だけ出す。
 
