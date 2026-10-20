@@ -416,7 +416,7 @@
    "levels": 11,
    "height": 45.0,
    "style": "kyoso",
-   "desc": "2024 年竣工。薬学部の拠点。1 階にラーニングスクエア、スターバックス、ファミリーマート。",
+   "desc": "2024 年竣工。薬学部の拠点。1 階にラーニングスクエア、カフェ、コンビニ。",
    "osm_id": null,
    "osm_name": null,
    "on_campus": true,
@@ -7650,7 +7650,7 @@
   },
   {
    "id": "bg_217515791",
-   "display": "ローソン",
+   "display": "コンビニ",
    "levels": null,
    "height": 8.0,
    "style": "background",
