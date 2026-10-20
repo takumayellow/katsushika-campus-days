@@ -1,8 +1,10 @@
 """tools/fetch_shrubs.py: Kenney の OBJ の読み方と、リポジトリに置いた変換済み JSON の整合 (#78)。
 
 ネットワークには出ない。OBJ は文字列で与え、整合はリポジトリの data/shrubs/kenney_shrubs.json で確かめる。
+ダウンロードは urlopen を差し替えて確かめる。
 """
 
+import hashlib
 import json
 import os
 import sys
@@ -110,3 +112,69 @@ class TestCommittedData:
                   for name, m in committed["models"].items()}
         with open(fs.OUTPUT, encoding="utf-8", newline="") as fp:
             assert fp.read() == fs.render(models)
+
+
+class _FakeResponse:
+    def __init__(self, data):
+        self._data = data
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+    def read(self, size=-1):
+        return self._data if size < 0 else self._data[:size]
+
+
+class TestFetchZip:
+    @staticmethod
+    def _serve(monkeypatch, data):
+        """urlopen を、data を返すものに差し替える。呼ばれた URL を返す。"""
+        urls = []
+
+        def fake_urlopen(request, timeout=None):
+            urls.append(request.full_url)
+            return _FakeResponse(data)
+
+        monkeypatch.setattr(fs.urllib.request, "urlopen", fake_urlopen)
+        return urls
+
+    def test_mismatching_download_leaves_no_file_behind(self, tmp_path, monkeypatch):
+        urls = self._serve(monkeypatch, b"not the zip")
+        target = tmp_path / "cache" / "kit.zip"
+
+        with pytest.raises(SystemExit):
+            fs.fetch_zip(target)
+
+        # 正式名に残ると、次回は取得を飛ばして毎回 SHA-256 の不一致で止まる。一時名にも残さない
+        assert not target.exists()
+        assert not target.with_name("kit.zip.part").exists()
+        assert urls == [fs.ZIP_URL]
+
+        with pytest.raises(SystemExit):
+            fs.fetch_zip(target)
+        assert urls == [fs.ZIP_URL, fs.ZIP_URL]  # 次の実行は取得をやり直す
+
+    def test_matching_download_is_put_under_its_name(self, tmp_path, monkeypatch):
+        data = b"pretend this is the zip"
+        monkeypatch.setattr(fs, "ZIP_SHA256", hashlib.sha256(data).hexdigest())
+        self._serve(monkeypatch, data)
+        target = tmp_path / "kit.zip"
+
+        assert fs.fetch_zip(target) == target
+
+        assert target.read_bytes() == data
+        assert not target.with_name("kit.zip.part").exists()
+
+    def test_existing_zip_is_not_downloaded_again(self, tmp_path, monkeypatch):
+        data = b"already here"
+        monkeypatch.setattr(fs, "ZIP_SHA256", hashlib.sha256(data).hexdigest())
+        urls = self._serve(monkeypatch, b"would be a different file")
+        target = tmp_path / "kit.zip"
+        target.write_bytes(data)
+
+        assert fs.fetch_zip(target) == target
+
+        assert urls == []

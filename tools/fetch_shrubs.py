@@ -15,6 +15,7 @@
     python tools/fetch_shrubs.py --zip PATH       # 落とさず、手元の zip を使う（SHA-256 は確かめる）
 
 zip は data/shrubs/.cache/ に残す（gitignore 済み）。2 回目からは落とし直さない。
+落としたものは <名前>.part に書き、SHA-256 が合ってから正式名に置く（壊れたものを正式名で残さない）。
 """
 
 from __future__ import annotations
@@ -22,6 +23,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import sys
 import urllib.request
 import zipfile
@@ -118,21 +120,30 @@ def sha256_of(path: Path) -> str:
     return digest.hexdigest()
 
 
-def download(url: str, destination: Path) -> None:
+def download(url: str, destination: Path) -> Path:
+    """url を destination と同じ場所の一時ファイル（<名前>.part）に落として、そのパスを返す。正式名には書かない。"""
     destination.parent.mkdir(parents=True, exist_ok=True)
     request = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
     with urllib.request.urlopen(request, timeout=120) as response:
         data = response.read(MAX_ZIP_BYTES + 1)
     if len(data) > MAX_ZIP_BYTES:
         raise SystemExit(f"{url} が {MAX_ZIP_BYTES} B を超える")
-    destination.write_bytes(data)
+    partial = destination.with_name(destination.name + ".part")
+    partial.write_bytes(data)
+    return partial
 
 
 def fetch_zip(explicit: Path | None) -> Path:
     path = explicit or CACHE / "kenney_nature-kit.zip"
     if not path.exists():
         print(f"取得: {ZIP_URL}")
-        download(ZIP_URL, path)
+        partial = download(ZIP_URL, path)
+        downloaded = sha256_of(partial)
+        if downloaded != ZIP_SHA256:
+            # 正式名で残すと、次回は取得を飛ばして毎回この不一致で止まる
+            partial.unlink()
+            raise SystemExit(f"{ZIP_URL} の SHA-256 が違う: {downloaded}（期待 {ZIP_SHA256}）")
+        os.replace(partial, path)
     actual = sha256_of(path)
     if actual != ZIP_SHA256:
         raise SystemExit(f"{path} の SHA-256 が違う: {actual}（期待 {ZIP_SHA256}）")
