@@ -7,6 +7,10 @@
       --out-dir unity/KatsushikaCampusDays/Assets/Models/Campus \
       --preview
 
+  低木と草むらだけを書き直すとき（shrubs.fbx と shrubs.json。campus.fbx と trees.fbx は触らない）:
+    ... --python blender/build_campus.py -- --json data/osm/campus.json --only-shrubs \
+      --out-dir unity/KatsushikaCampusDays/Assets/Models/Campus
+
 座標: campus.json の (x=東, z=北) を Blender の (x, y) に、z を上方向とする。
 FBX は axis_forward='-Z' / axis_up='Y' / bake_space_transform=True で書き出すので、
 Unity 側では (x, y=Blender z, z=Blender y) = (x, 上, 北) になる。
