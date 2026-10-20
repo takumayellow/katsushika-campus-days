@@ -122,10 +122,11 @@ P（ゲームパッドは Y）で入る。画面の表示が消えて時間が�
 2026-10-21 時点。見つかっている不具合と直したい点の一覧は https://github.com/takumayellow/katsushika-campus-days/issues にある。
 
 - 歩くと重心がぶれて、体がくねくねして見える（#43）。
+- 走ると、坊っちゃんとマドンナちゃんの袴の裾から脚が突き抜けて見えることがある。
 
 ## うまく動かないとき
 
-- 起動する前に Windows に止められる: Smart App Control が有効な PC では、署名のないアプリが止められることがあり、個別に許可する方法が無い。その PC ではブラウザ版で遊ぶか、Windows セキュリティの設定で Smart App Control をオフにする。
+- 起動する前に Windows に止められる: Smart App Control が有効な PC では、署名のないアプリが止められることがあり、個別に許可する方法が無い。その PC ではブラウザ版で遊ぶ。
 - 画面が真っ暗、または起動しない: `KatsushikaCampusDays.exe -force-d3d12` で起動して DirectX 12 に切り替える（既定は DirectX 11）。
 - ログ: `%USERPROFILE%\AppData\LocalLow\KCD\Katsushika Campus Days\Player.log`
 
