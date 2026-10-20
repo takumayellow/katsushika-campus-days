@@ -123,7 +123,7 @@ namespace KCD
 
         /// <summary>
         /// 注視点から頭の上端までの高さ（m）。注視点は背丈の <see cref="AimRatio"/> の高さにある。
-        /// 背丈が測れないとき（0 以下・NaN）は <see cref="Framing"/> と同じく既定の背丈で数える。
+        /// 背丈が測れないとき（0 以下・NaN・極端に低い）は <see cref="Framing"/> と同じく既定の背丈で数える。
         /// </summary>
         public static float HeadAboveAim(float height)
         {

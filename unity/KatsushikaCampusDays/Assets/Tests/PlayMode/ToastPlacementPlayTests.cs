@@ -39,7 +39,7 @@ namespace KCD.Tests
 
         /// <summary>
         /// 遠い・中くらい・最も寄ったの 3 つの距離で、トーストの下端が頭の上端より上にある。
-        /// 遠いときは元の置き場所（0.56）のまま、遠くへ戻せば戻る。
+        /// 遠いときは元の置き場所（0.56）に留まり、遠くへ戻せば戻る。
         /// </summary>
         [UnityTest]
         [Timeout(SceneTestTimeoutMs)]
@@ -80,8 +80,11 @@ namespace KCD.Tests
             string log = Describe(camera, player, readings);
             Reading far = readings[0];
             Reading nearest = readings[2];
+            float limit = LiftLimit((RectTransform)toast.parent);
             Assert.Greater(nearest.HeadTop, RestingBottom + 0.01f,
                 "前提: 最も寄ったとき、頭が元のトーストの下端より上に来る。来ないと確かめられない" + log);
+            Assert.LessOrEqual(nearest.HeadTop, limit,
+                "前提: 最も寄ったときの頭が、トーストを上げられる限度 " + Format(limit) + " より上に来る。来ると頭にかからないことを確かめられない" + log);
             Assert.GreaterOrEqual(far.ToastRight, far.PlayerX, "前提: 人物がトーストの横の範囲の外に居る" + log);
             Assert.LessOrEqual(far.ToastLeft, far.PlayerX, "前提: 人物がトーストの横の範囲の外に居る" + log);
 
@@ -95,10 +98,30 @@ namespace KCD.Tests
                 }
             }
 
-            Assert.AreEqual(RestingBottom, far.ToastBottom, 0.002f, "遠いときのトーストが元の置き場所から動いた" + log);
-            Assert.AreEqual(RestingBottom, readings[3].ToastBottom, 0.002f, "遠くへ戻してもトーストが上がったまま" + log);
+            AssertAtRest(far.ToastBottom, "遠いときのトーストが元の置き場所から動いた" + log);
+            AssertAtRest(readings[3].ToastBottom, "遠くへ戻してもトーストが上がったまま" + log);
             Assert.IsEmpty(failures, string.Join("\n", failures) + log);
             AssertNoErrors("キャンパス");
+        }
+
+        /// <summary>
+        /// トーストの下端が元の置き場所にある。頭の上端が刻みの境目に乗ると 1 刻みだけ上がるので、その分は許す。
+        /// 刻みの値そのものは EditMode の ToastLayoutTests が見る。
+        /// </summary>
+        private static void AssertAtRest(float bottom, string message)
+        {
+            Assert.GreaterOrEqual(bottom, RestingBottom - 0.002f, message);
+            Assert.LessOrEqual(bottom, RestingBottom + ToastLayout.Step + 0.002f, message);
+        }
+
+        /// <summary>
+        /// トーストを上げられる限度（画面の高さに対する割合）。上端がクエストの追跡の下端に接する高さで、
+        /// 画面が低くてそれが元の置き場所を割るときは元の置き場所。canvas は ToastLayout が置く先の枠。
+        /// </summary>
+        private static float LiftLimit(RectTransform canvas)
+        {
+            float occupied = ToastLayout.TrackerBottom + ToastLayout.SlotFor(ToastLayout.Shape.LandscapeTouch).Size.y;
+            return Mathf.Max(RestingBottom, 1f - occupied / canvas.rect.height);
         }
 
         /// <summary>

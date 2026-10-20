@@ -35,13 +35,13 @@ namespace KCD.Tests
         /// 横長の画面で知らせの下端を止める高さ（画面の上からの割合）。844×390 では人物の頭は上から 182 px（0.467）。
         /// 画角は高さで決まるので、横長の画面なら縦横比が変わっても同じ高さに立つ。
         /// </summary>
-        private const float HeadTop = 0.46f;
+        private const float HeadTopFromTop = 0.46f;
 
         /// <summary>
         /// カメラの寄りごとの頭の上端（画面の下から、画面の高さに対する割合）。遠いとき（4.2 m）に 0.533、室内でいちばん寄る
         /// 2.8 m で 0.55〜0.56、最も寄る 1.43 m で 0.6 近く。
         /// </summary>
-        private static readonly float[] HeadTops = { 0.533f, 0.55f, 0.575f, 0.595f };
+        private static readonly float[] HeadTopsFromBottom = { 0.533f, 0.55f, 0.575f, 0.595f };
 
         /// <summary>
         /// 四角が接しているだけと見なす重なり（画面の px）。上限まで上げた知らせの上端は、クエストの追跡の下端にぴったり接する。
@@ -361,11 +361,11 @@ namespace KCD.Tests
             });
         }
 
-        /// <summary>頭が測れないときと、カメラの寄りごとの頭の上端（<see cref="HeadTops"/>）のそれぞれで置いて確かめる。</summary>
+        /// <summary>頭が測れないときと、カメラの寄りごとの頭の上端（<see cref="HeadTopsFromBottom"/>）のそれぞれで置いて確かめる。</summary>
         private void AssertLandscape(Hud hud, Vector2 screen)
         {
             AssertLandscape(hud, screen, float.NaN);
-            foreach (float head in HeadTops)
+            foreach (float head in HeadTopsFromBottom)
             {
                 AssertLandscape(hud, screen, head);
             }
@@ -384,7 +384,7 @@ namespace KCD.Tests
             // y は画面の下から。「話す」の案内の上に間を空け、人物の頭より上で止まる。
             Assert.GreaterOrEqual(placed.Toast.yMin - placed.Prompt.yMax, PromptGap * placed.Factor - 0.01f,
                 "知らせが「話す」の案内に詰まる" + at);
-            Assert.GreaterOrEqual(placed.Toast.yMin, screen.y * (1f - HeadTop), "知らせが人物にかかる" + at);
+            Assert.GreaterOrEqual(placed.Toast.yMin, screen.y * (1f - HeadTopFromTop), "知らせが人物にかかる" + at);
 
             // カメラを寄せて頭が上がっても、頭の上に出る。枠を上げる限度は、上端が追跡の下端（縮める前）に接する高さ。
             // 頭がそれより高い画面では、頭にかかっても追跡を避けるので、ここでは確かめない。

@@ -182,13 +182,18 @@ namespace KCD
                                 != TouchHud.Layout.Hidden;
             Shape shape = ShapeFor(buttonsShown, ScreenShape.IsPortrait);
             Slot slot = SlotFor(shape);
-            var parent = (RectTransform)_rect.parent;
 
             // ミニマップと時計は KeepPointerSize が入力に合わせて縮めるので、毎フレーム置いた後の大きさから幅を出す。
             // 下端はカメラの寄りに合わせて頭の上に出す。横の指のときだけで、縦長と PC の置き方は動かさない。
-            bool landscape = shape == Shape.LandscapeTouch;
-            float width = landscape ? LandscapeWidth(ColumnLeft(parent, _rightColumn)) : slot.Size.x;
-            float bottom = landscape ? BottomFor(MeasureHeadTop(), parent.rect.height) : slot.Anchor.y;
+            float width = slot.Size.x;
+            float bottom = slot.Anchor.y;
+            if (shape == Shape.LandscapeTouch)
+            {
+                var parent = (RectTransform)_rect.parent;
+                width = LandscapeWidth(ColumnLeft(parent, _rightColumn));
+                bottom = BottomFor(MeasureHeadTop(), parent.rect.height);
+            }
+
             if (_placed && shape == _shape && Mathf.Approximately(width, _width) && Mathf.Approximately(bottom, _bottom))
             {
                 return;
