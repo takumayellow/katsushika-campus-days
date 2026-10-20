@@ -77,6 +77,14 @@ StreamingAssets はビルドにそのまま入るので、配布物にもフォ�
 
 > Created using PavingStones136, Asphalt033, Grass004, Ground048, Concrete034 and Bricks092 from ambientCG.com, licensed under the Creative Commons CC0 1.0 Universal License.
 
+低木と草むら（`Assets/Models/Campus/shrubs.fbx`、#78）の形は [Kenney](https://kenney.nl/) の Nature Kit 2.1 から借りた。
+`tools/fetch_shrubs.py` が zip から低木 6 点と草むら 4 点の頂点と三角形だけを `data/shrubs/kenney_shrubs.json` に写し、
+`blender/kcd_lib/shrubs.py` が CampusColors の色を付け直して地図の上に置く。Kenney の材質（単色）と元のファイルは入れていない。
+
+| 素材 | 使っている形 | 条件・表記 | 確認状況 |
+|---|---|---|---|
+| [Nature Kit 2.1](https://kenney.nl/assets/nature-kit)（Kenney） | 低木 `plant_bush`・`plant_bushDetailed`・`plant_bushLarge`・`plant_bushLargeTriangle`・`plant_bushSmall`・`plant_bushTriangle`、草むら `grass`・`grass_large`・`grass_leafs`・`grass_leafsLarge` | CC0 1.0（表記は義務ではない。同梱の License.txt と配布ページに記載。zip の SHA-256 は `tools/fetch_shrubs.py` に固定） | 確認済み（2026-10-21） |
+
 ## 参考資料（`docs/ref`、ゲームには入らない）
 
 | ファイル | 内容 | 権利者 | 確認状況 |
