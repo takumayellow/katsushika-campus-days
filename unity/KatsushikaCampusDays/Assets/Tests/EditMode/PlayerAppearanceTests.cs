@@ -198,10 +198,13 @@ namespace KCD.Tests
             Assert.AreEqual(1.472f, aim, 1e-3f, "1.6 m の人は焼いた注視点 (BodyHeight * 0.92) のまま");
             Assert.AreEqual(1f, scale, 1e-4f);
 
-            // 坊っちゃん・マドンナちゃん (1.15 m)。注視点は頭の高さへ下り、カメラは 0.8 倍まで寄る。
-            PlayerAppearance.Framing(1.15f, out aim, out scale);
-            Assert.AreEqual(1.058f, aim, 1e-3f);
-            Assert.AreEqual(0.803f, scale, 1e-3f);
+            // マドンナちゃん (1.22 m)・坊っちゃん (1.28 m)。注視点は頭の高さへ下り、カメラは 0.83〜0.86 倍まで寄る。
+            PlayerAppearance.Framing(1.22f, out aim, out scale);
+            Assert.AreEqual(1.122f, aim, 1e-3f);
+            Assert.AreEqual(0.834f, scale, 1e-3f);
+            PlayerAppearance.Framing(1.28f, out aim, out scale);
+            Assert.AreEqual(1.178f, aim, 1e-3f);
+            Assert.AreEqual(0.86f, scale, 1e-3f);
 
             // 測れなかったときは既定のまま。
             PlayerAppearance.Framing(0f, out aim, out scale);

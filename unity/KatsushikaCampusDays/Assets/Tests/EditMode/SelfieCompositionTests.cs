@@ -75,7 +75,7 @@ namespace KCD.Tests
             var tripod = Vector3.zero;
             var feet = new Vector3(0f, 0f, composition.Distance);
             float tanY = Mathf.Tan(composition.FieldOfView * 0.5f * Mathf.Deg2Rad);
-            foreach (float height in new[] { 1.15f, 1.6f })
+            foreach (float height in new[] { 1.22f, 1.28f, 1.6f })
             {
                 composition.CameraPose(tripod, feet, height, 0f, out Vector3 position, out Quaternion rotation);
                 Vector3 head = Quaternion.Inverse(rotation) * (feet + Vector3.up * height - position);
