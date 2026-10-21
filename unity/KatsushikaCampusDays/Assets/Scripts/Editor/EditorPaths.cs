@@ -12,6 +12,8 @@ namespace KCD.Editor
         public const string CampusFbx = "Assets/Models/Campus/campus.fbx";
         public const string TreesFbx = "Assets/Models/Campus/trees.fbx";
         public const string TreesJson = "Assets/Models/Campus/trees.json";
+        public const string ShrubsFbx = "Assets/Models/Campus/shrubs.fbx";
+        public const string ShrubsJson = "Assets/Models/Campus/shrubs.json";
         public const string CampusJson = "Assets/Data/campus.json";
         public const string CharactersFolder = "Assets/Models/Characters";
         public const string ScenesFolder = "Assets/Scenes";

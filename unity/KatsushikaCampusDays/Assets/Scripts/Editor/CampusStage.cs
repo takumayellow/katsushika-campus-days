@@ -43,6 +43,13 @@ namespace KCD.Editor
                 DressTrees(trees);
             }
 
+            // 低木と草むら (#78)。木の兄弟として木のあとに置く（CampusTreeChunkTests は先に見つかる Trees の結合を見る）。
+            GameObject shrubs = PlaceModel(EditorPaths.ShrubsFbx, "Shrubs", root);
+            if (shrubs != null)
+            {
+                DressShrubs(shrubs);
+            }
+
             BuildLighting(root);
         }
 
@@ -506,6 +513,84 @@ namespace KCD.Editor
             volume.center = new Vector3(0f, 1f, 0f);
             volume.size = new Vector3(half * 2f, 2f, half * 2f);
             volume.area = 1;   // 1 = Not Walkable
+        }
+
+        /// <summary>shrubs.fbx の原型メッシュの名前（原点にモデリングされた 1 つ, build_campus.py）。</summary>
+        public const string ShrubMeshPrefix = "shrub_mesh_";
+
+        /// <summary>shrubs.fbx のモデルごとのまとめ。子に位置だけの Empty（shrub_&lt;n&gt;）が並ぶ。</summary>
+        public const string ShrubGroupPrefix = "shrubs_";
+
+        /// <summary>Empty の下に作る、メッシュを描く子の名前。</summary>
+        public const string ShrubBodyName = "body";
+
+        /// <summary>
+        /// shrubs.fbx の shrub_&lt;n&gt; は位置・向き・大きさだけの Empty で、メッシュを持たない。
+        /// 木と同じく、原点にある shrub_mesh_&lt;モデル&gt; のメッシュを各 Empty に載せて植え、原型は隠す (#78)。
+        /// 低木と草むらは歩いて抜けられる高さなので、当たり判定も NavMesh の穴も付けず、NavMesh のベイクからは外す。
+        /// 描くときは TreeChunkCombiner が再生の始めにマスごとにまとめる。
+        /// </summary>
+        private static void DressShrubs(GameObject shrubs)
+        {
+            Ignore(shrubs);
+
+            var prototypes = new Dictionary<string, Transform>();
+            var groups = new List<Transform>();
+            foreach (Transform child in shrubs.transform)
+            {
+                if (child.name.StartsWith(ShrubMeshPrefix, System.StringComparison.Ordinal))
+                {
+                    prototypes[child.name.Substring(ShrubMeshPrefix.Length)] = child;
+                }
+                else if (child.name.StartsWith(ShrubGroupPrefix, System.StringComparison.Ordinal))
+                {
+                    groups.Add(child);
+                }
+            }
+
+            int count = 0;
+            foreach (Transform group in groups)
+            {
+                string model = group.name.Substring(ShrubGroupPrefix.Length);
+                if (!prototypes.TryGetValue(model, out Transform prototype)
+                    || !prototype.TryGetComponent(out MeshFilter filter)
+                    || !prototype.TryGetComponent(out MeshRenderer renderer))
+                {
+                    EditorPaths.Report("低木の原型が見つかりません: " + ShrubMeshPrefix + model);
+                    continue;
+                }
+
+                // 木と同じく、Empty から見た本体の変換は「shrubs_<モデル> から見た原型」と同じになる。
+                Matrix4x4 relative = group.worldToLocalMatrix * prototype.localToWorldMatrix;
+                foreach (Transform spot in group)
+                {
+                    PlantShrub(spot, relative, filter.sharedMesh, renderer.sharedMaterials);
+                    count++;
+                }
+            }
+
+            foreach (Transform prototype in prototypes.Values)
+            {
+                prototype.gameObject.SetActive(false);
+            }
+
+            shrubs.AddComponent<TreeChunkCombiner>();
+            EditorPaths.Report("低木と草むらを " + count + " 個植えました（原型 " + prototypes.Count + " 種）。");
+        }
+
+        /// <summary>Empty 1 つに本体のメッシュを付ける。当たり判定は付けない。</summary>
+        private static void PlantShrub(Transform spot, Matrix4x4 relative, Mesh mesh, Material[] materials)
+        {
+            var body = new GameObject(ShrubBodyName);
+            body.transform.SetParent(spot, false);
+            body.transform.localPosition = relative.GetPosition();
+            body.transform.localRotation = relative.rotation;
+            body.transform.localScale = relative.lossyScale;
+            body.AddComponent<MeshFilter>().sharedMesh = mesh;
+            body.AddComponent<MeshRenderer>().sharedMaterials = materials;
+
+            // 木と同じく静的バッチにはしない（まとめるのは TreeChunkCombiner に任せる）。
+            GameObjectUtility.SetStaticEditorFlags(body, StaticEditorFlags.OccludeeStatic);
         }
 
         public static void Ignore(GameObject go)

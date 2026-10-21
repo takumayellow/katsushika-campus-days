@@ -126,6 +126,12 @@ class Occupancy:
         k = self._idx(x, y)
         return True if k is None else bool(self.grid[k])
 
+    def copy(self):
+        """今の占有の写し。後から stamp しても元に影響しない。"""
+        other = Occupancy(self.lo, self.lo + (self.n - 1) * self.CELL)
+        other.grid = bytearray(self.grid)
+        return other
+
 
 def _clip_polyline(pts, limit):
     """±limit の外に出る点で折れ線を分割する。"""
