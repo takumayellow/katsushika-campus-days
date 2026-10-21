@@ -14,8 +14,10 @@
     python tools/fetch_shrubs.py --check          # zip から作り直した結果が、今の JSON と一致するか確かめる
     python tools/fetch_shrubs.py --zip PATH       # 落とさず、手元の zip を使う（SHA-256 は確かめる）
 
-zip は data/shrubs/.cache/ に残す（gitignore 済み）。2 回目からは落とし直さない。
+zip は data/shrubs/.cache/ に残す（gitignore 済み）。2 回目からは落とし直さない。キャッシュの zip の SHA-256 が
+ZIP_SHA256 と違うとき（ZIP_SHA256 を差し替えた後など）は、落とし直して置き換える。
 落としたものは <名前>.part に書き、SHA-256 が合ってから正式名に置く（壊れたものを正式名で残さない）。
+JSON も <名前>.part に書いてから置き換える（書きかけの JSON を正式名で残さない）。
 """
 
 from __future__ import annotations
@@ -23,6 +25,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 import sys
 import urllib.request
@@ -32,6 +35,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "data" / "shrubs" / "kenney_shrubs.json"
 CACHE = ROOT / "data" / "shrubs" / ".cache"
+CACHE_ZIP = CACHE / "kenney_nature-kit.zip"
 
 SOURCE = {
     "name": "Nature Kit",
@@ -73,7 +77,10 @@ def parse_obj(text: str) -> tuple[list[list[float]], list[list[int]]]:
         if fields[0] == "v":
             if len(fields) < 4:
                 raise ValueError(f"{number} 行目: v の座標が 3 つ無い")
-            vertices.append([round(float(value), VERTEX_DECIMALS) for value in fields[1:4]])
+            coords = [float(value) for value in fields[1:4]]
+            if not all(math.isfinite(value) for value in coords):
+                raise ValueError(f"{number} 行目: v の座標が有限の数でない")
+            vertices.append([round(value, VERTEX_DECIMALS) for value in coords])
         elif fields[0] == "f":
             if len(fields) < 4:
                 raise ValueError(f"{number} 行目: f の頂点が 3 つ無い")
@@ -134,19 +141,29 @@ def download(url: str, destination: Path) -> Path:
 
 
 def fetch_zip(explicit: Path | None) -> Path:
-    path = explicit or CACHE / "kenney_nature-kit.zip"
-    if not path.exists():
-        print(f"取得: {ZIP_URL}")
-        partial = download(ZIP_URL, path)
-        downloaded = sha256_of(partial)
-        if downloaded != ZIP_SHA256:
-            # 正式名で残すと、次回は取得を飛ばして毎回この不一致で止まる
-            partial.unlink()
-            raise SystemExit(f"{ZIP_URL} の SHA-256 が違う: {downloaded}（期待 {ZIP_SHA256}）")
-        os.replace(partial, path)
-    actual = sha256_of(path)
-    if actual != ZIP_SHA256:
-        raise SystemExit(f"{path} の SHA-256 が違う: {actual}（期待 {ZIP_SHA256}）")
+    """SHA-256 の合った zip のパスを返す。
+
+    explicit（--zip）は落とさずにそのまま使い、無いか SHA-256 が違えば止まる（手元の zip は消さない）。
+    explicit が無ければ CACHE_ZIP を使い、無いか SHA-256 が違えば落とし直して置き換える。
+    """
+    if explicit is not None:
+        if not explicit.exists():
+            raise SystemExit(f"{explicit} が無い")
+        actual = sha256_of(explicit)
+        if actual != ZIP_SHA256:
+            raise SystemExit(f"{explicit} の SHA-256 が違う: {actual}（期待 {ZIP_SHA256}）")
+        return explicit
+    path = CACHE_ZIP
+    if path.exists() and sha256_of(path) == ZIP_SHA256:
+        return path
+    print(f"取得: {ZIP_URL}")
+    partial = download(ZIP_URL, path)
+    downloaded = sha256_of(partial)
+    if downloaded != ZIP_SHA256:
+        # キャッシュには照合の済んだ zip だけを置く
+        partial.unlink()
+        raise SystemExit(f"{ZIP_URL} の SHA-256 が違う: {downloaded}（期待 {ZIP_SHA256}）")
+    os.replace(partial, path)
     return path
 
 
@@ -154,7 +171,8 @@ def _rows(items: list[list], width: int) -> str:
     """JSON の配列を width 個ずつ 1 行に並べる（頂点の数百行を縦に並べない）。"""
     chunks = []
     for start in range(0, len(items), width):
-        chunks.append(", ".join(json.dumps(item, separators=(",", ":")) for item in items[start:start + width]))
+        row = items[start:start + width]
+        chunks.append(", ".join(json.dumps(item, separators=(",", ":"), allow_nan=False) for item in row))
     return ",\n      ".join(chunks)
 
 
@@ -204,8 +222,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
-    with OUTPUT.open("w", encoding="utf-8", newline="\n") as fp:
+    partial = OUTPUT.with_name(OUTPUT.name + ".part")
+    with partial.open("w", encoding="utf-8", newline="\n") as fp:
         fp.write(text)
+    os.replace(partial, OUTPUT)
     print(f"書いた: {OUTPUT.relative_to(ROOT)}（{len(text)} B）")
     return 0
 

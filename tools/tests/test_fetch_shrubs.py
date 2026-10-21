@@ -1,13 +1,14 @@
 """tools/fetch_shrubs.py: Kenney の OBJ の読み方と、リポジトリに置いた変換済み JSON の整合 (#78)。
 
 ネットワークには出ない。OBJ は文字列で与え、整合はリポジトリの data/shrubs/kenney_shrubs.json で確かめる。
-ダウンロードは urlopen を差し替えて確かめる。
+ダウンロードは urlopen を差し替えて確かめる。zip の読み方は、テストの中で作る小さな zip で確かめる。
 """
 
 import hashlib
 import json
 import os
 import sys
+import zipfile
 
 import pytest
 
@@ -71,6 +72,18 @@ class TestParseObj:
     def test_short_face_is_rejected(self):
         with pytest.raises(ValueError):
             fs.parse_obj("v 0 0 0\nv 1 0 0\nf 1 2\n")
+
+    @pytest.mark.parametrize("value", ["nan", "inf", "-inf", "1e999"])
+    def test_non_finite_coordinate_is_rejected(self, value):
+        with pytest.raises(ValueError):
+            fs.parse_obj(f"v 0 {value} 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n")
+
+
+class TestRender:
+    def test_non_finite_number_is_not_written(self):
+        model = {"group": "bush", "vertices": [[float("nan"), 0.0, 0.0]], "triangles": [[0, 0, 0]]}
+        with pytest.raises(ValueError):
+            fs.render({"x": model})
 
 
 class TestCommittedData:
@@ -141,40 +154,166 @@ class TestFetchZip:
         monkeypatch.setattr(fs.urllib.request, "urlopen", fake_urlopen)
         return urls
 
-    def test_mismatching_download_leaves_no_file_behind(self, tmp_path, monkeypatch):
+    @pytest.fixture
+    def cache(self, tmp_path, monkeypatch):
+        """既定のキャッシュの zip を tmp_path の下に移す。"""
+        path = tmp_path / "cache" / "kit.zip"
+        monkeypatch.setattr(fs, "CACHE_ZIP", path)
+        return path
+
+    def test_mismatching_download_leaves_no_file_behind(self, cache, monkeypatch):
         urls = self._serve(monkeypatch, b"not the zip")
-        target = tmp_path / "cache" / "kit.zip"
 
         with pytest.raises(SystemExit):
-            fs.fetch_zip(target)
+            fs.fetch_zip(None)
 
-        # 正式名に残ると、次回は取得を飛ばして毎回 SHA-256 の不一致で止まる。一時名にも残さない
-        assert not target.exists()
-        assert not target.with_name("kit.zip.part").exists()
+        # キャッシュには照合の済んだ zip だけを置く。一時名にも残さない
+        assert not cache.exists()
+        assert not cache.with_name("kit.zip.part").exists()
         assert urls == [fs.ZIP_URL]
 
         with pytest.raises(SystemExit):
-            fs.fetch_zip(target)
+            fs.fetch_zip(None)
         assert urls == [fs.ZIP_URL, fs.ZIP_URL]  # 次の実行は取得をやり直す
 
-    def test_matching_download_is_put_under_its_name(self, tmp_path, monkeypatch):
+    def test_matching_download_is_put_under_its_name(self, cache, monkeypatch):
         data = b"pretend this is the zip"
         monkeypatch.setattr(fs, "ZIP_SHA256", hashlib.sha256(data).hexdigest())
         self._serve(monkeypatch, data)
-        target = tmp_path / "kit.zip"
 
-        assert fs.fetch_zip(target) == target
+        assert fs.fetch_zip(None) == cache
 
-        assert target.read_bytes() == data
-        assert not target.with_name("kit.zip.part").exists()
+        assert cache.read_bytes() == data
+        assert not cache.with_name("kit.zip.part").exists()
 
-    def test_existing_zip_is_not_downloaded_again(self, tmp_path, monkeypatch):
+    def test_cached_zip_is_not_downloaded_again(self, cache, monkeypatch):
         data = b"already here"
         monkeypatch.setattr(fs, "ZIP_SHA256", hashlib.sha256(data).hexdigest())
         urls = self._serve(monkeypatch, b"would be a different file")
-        target = tmp_path / "kit.zip"
-        target.write_bytes(data)
+        cache.parent.mkdir()
+        cache.write_bytes(data)
 
-        assert fs.fetch_zip(target) == target
+        assert fs.fetch_zip(None) == cache
 
         assert urls == []
+
+    def test_cached_zip_of_another_version_is_replaced(self, cache, monkeypatch):
+        """ZIP_SHA256 を差し替えた後は、キャッシュに残った前の版を落とし直した zip で置き換える。"""
+        data = b"the new version"
+        monkeypatch.setattr(fs, "ZIP_SHA256", hashlib.sha256(data).hexdigest())
+        urls = self._serve(monkeypatch, data)
+        cache.parent.mkdir()
+        cache.write_bytes(b"the old version")
+
+        assert fs.fetch_zip(None) == cache
+
+        assert cache.read_bytes() == data
+        assert urls == [fs.ZIP_URL]
+
+    def test_oversized_download_is_rejected(self, cache, monkeypatch):
+        monkeypatch.setattr(fs, "MAX_ZIP_BYTES", 4)
+        self._serve(monkeypatch, b"12345")
+
+        with pytest.raises(SystemExit):
+            fs.fetch_zip(None)
+
+        assert not cache.exists()
+        assert not cache.with_name("kit.zip.part").exists()
+
+    def test_given_zip_is_used_without_downloading(self, tmp_path, monkeypatch):
+        data = b"a local copy"
+        monkeypatch.setattr(fs, "ZIP_SHA256", hashlib.sha256(data).hexdigest())
+        urls = self._serve(monkeypatch, b"would be a different file")
+        given = tmp_path / "local.zip"
+        given.write_bytes(data)
+
+        assert fs.fetch_zip(given) == given
+
+        assert urls == []
+
+    def test_missing_given_zip_is_not_downloaded(self, tmp_path, monkeypatch):
+        urls = self._serve(monkeypatch, b"would be downloaded")
+        given = tmp_path / "typo" / "kit.zip"
+
+        with pytest.raises(SystemExit):
+            fs.fetch_zip(given)
+
+        assert urls == []
+        assert not given.parent.exists()
+
+    def test_given_zip_of_another_version_is_rejected_and_kept(self, tmp_path, monkeypatch):
+        urls = self._serve(monkeypatch, b"would be downloaded")
+        given = tmp_path / "local.zip"
+        given.write_bytes(b"not the zip")
+
+        with pytest.raises(SystemExit):
+            fs.fetch_zip(given)
+
+        assert urls == []
+        assert given.read_bytes() == b"not the zip"
+
+
+def _tiny_zip(path):
+    """欲しいモデル 10 点を、三角形 1 枚の OBJ として入れた zip を作る。"""
+    with zipfile.ZipFile(path, "w") as archive:
+        for name in fs.BUSHES + fs.GRASSES:
+            archive.writestr(f"{fs.OBJ_DIR}{name}.obj", "v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n")
+    return path
+
+
+class TestReadModels:
+    def test_reads_every_wanted_model(self, tmp_path):
+        with zipfile.ZipFile(_tiny_zip(tmp_path / "kit.zip")) as archive:
+            models = fs.read_models(archive)
+        assert sorted(models) == sorted(fs.BUSHES + fs.GRASSES)
+        assert models["grass"] == {"group": "grass", "vertices": [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]],
+                                   "triangles": [[0, 1, 2]]}
+
+    def test_oversized_obj_is_not_read(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(fs, "MAX_OBJ_BYTES", 10)
+        parsed = []
+        monkeypatch.setattr(fs, "parse_obj", lambda text: parsed.append(text))
+
+        with zipfile.ZipFile(_tiny_zip(tmp_path / "kit.zip")) as archive, pytest.raises(SystemExit):
+            fs.read_models(archive)
+        assert parsed == []
+
+    def test_too_many_vertices_are_rejected(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(fs, "MAX_VERTICES", 2)
+
+        with zipfile.ZipFile(_tiny_zip(tmp_path / "kit.zip")) as archive, pytest.raises(SystemExit):
+            fs.read_models(archive)
+
+
+class TestMain:
+    @pytest.fixture
+    def output(self, tmp_path, monkeypatch):
+        """書き出し先の JSON を tmp_path の下に移す。"""
+        path = tmp_path / "data" / "shrubs" / "kenney_shrubs.json"
+        monkeypatch.setattr(fs, "ROOT", tmp_path)
+        monkeypatch.setattr(fs, "OUTPUT", path)
+        return path
+
+    def test_writes_the_json_and_check_agrees(self, tmp_path, output, monkeypatch):
+        archive = _tiny_zip(tmp_path / "kit.zip")
+        monkeypatch.setattr(fs, "ZIP_SHA256", hashlib.sha256(archive.read_bytes()).hexdigest())
+
+        assert fs.main(["--zip", str(archive)]) == 0
+
+        with zipfile.ZipFile(archive) as opened:
+            expected = fs.render(fs.read_models(opened))
+        with open(output, encoding="utf-8", newline="") as fp:
+            assert fp.read() == expected
+        assert not output.with_name("kenney_shrubs.json.part").exists()
+        assert fs.main(["--zip", str(archive), "--check"]) == 0
+
+    def test_zip_is_not_opened_before_its_hash_matches(self, tmp_path, output, monkeypatch):
+        archive = _tiny_zip(tmp_path / "kit.zip")  # ZIP_SHA256 は本物の値のまま（合わない）
+        opened = []
+        monkeypatch.setattr(fs.zipfile, "ZipFile", lambda *args, **kwargs: opened.append(args))
+
+        with pytest.raises(SystemExit):
+            fs.main(["--zip", str(archive)])
+
+        assert opened == []
+        assert not output.exists()
