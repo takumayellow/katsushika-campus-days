@@ -84,30 +84,42 @@ def hung_hoop(mb, x, y, ang, rim_z=3.05):
     _ring(mb, t, 0.15, rim_z)
 
 
-def _ring(mb, t, dy0, rim_z):
-    """リング（8 本の管）と網（4 本）。dy0 はリングの付け根の T の dy。"""
+def _ring(mb, t, dy0, rim_z, mat="hoop_orange"):
+    """リング（8 本の管、材質 mat）と網（4 本）。dy0 はリングの付け根の T の dy。"""
     seg = 8
     ring = [t.p(0.225 * math.sin(2 * math.pi * k / seg),
                 dy0 + 0.225 * (1 - math.cos(2 * math.pi * k / seg)), rim_z)
             for k in range(seg)]
     for k in range(seg):
-        kit.tube(mb, ring[k], ring[(k + 1) % seg], 0.012, "hoop_orange", seg=4)
+        kit.tube(mb, ring[k], ring[(k + 1) % seg], 0.012, mat, seg=4)
     for k in range(0, seg, 2):
         bottom = t.p(0.1 * math.sin(2 * math.pi * k / seg), dy0 + 0.225, rim_z - 0.40)
         kit.tube(mb, ring[k], bottom, 0.006, "net_white", seg=3)
 
 
+def _glass_board(mb, t, dy0, dy1, z0, z1, hw=0.9, fw=0.05):
+    """幅 2*hw のガラスの板と、それを囲む幅 fw の白い金属の枠。dy0〜dy1 は枠の厚み。"""
+    t.box(mb, -hw, dy0, z0, hw, dy1, z0 + fw, "metal_white")
+    t.box(mb, -hw, dy0, z1 - fw, hw, dy1, z1, "metal_white")
+    for sx in (-1.0, 1.0):
+        t.box(mb, sx * (hw - fw), dy0, z0 + fw, sx * hw, dy1, z1 - fw, "metal_white")
+    t.box(mb, fw - hw, dy0 + 0.01, z0 + fw, hw - fw, dy1 - 0.01, z1 - fw, "glass_partition")
+
+
 def folded_hoop(mb, x, y, rim_z=1.5):
-    """壁に折り畳んだゴール。x は壁の面で、正面は -X（コート側）。"""
+    """壁に折り畳んだゴール。x は壁の面で、正面は -X（コート側）。
+
+    鋼の折り畳み枠の先に、白い金属の枠に入ったガラスの板が付く。リングと付け根は
+    床の赤線と同じ gym_line_red（spec §5）。
+    """
     t = kit.T(x, y, 0.0, math.pi / 2)
     for sx in (-0.55, 0.55):
         t.box(mb, sx - 0.04, 0.0, 0.0, sx + 0.04, 0.08, 2.8, "gym_truss_steel")
         for z in (0.7, 2.3):
             t.box(mb, sx - 0.03, 0.08, z, sx + 0.03, 0.42, z + 0.06, "gym_truss_steel")
-    t.box(mb, -0.9, 0.42, rim_z - 0.15, 0.9, 0.47, rim_z + 0.90, "backboard_white")
-    t.box(mb, -0.3, 0.47, rim_z - 0.02, 0.3, 0.475, rim_z + 0.45, "hoop_orange")
-    t.box(mb, -0.06, 0.475, rim_z - 0.10, 0.06, 0.62, rim_z + 0.01, "hoop_orange")
-    _ring(mb, t, 0.62, rim_z)
+    _glass_board(mb, t, 0.42, 0.47, rim_z - 0.15, rim_z + 0.90)
+    t.box(mb, -0.06, 0.46, rim_z - 0.10, 0.06, 0.62, rim_z + 0.01, "gym_line_red")
+    _ring(mb, t, 0.62, rim_z, "gym_line_red")
 
 
 def hoops(c):

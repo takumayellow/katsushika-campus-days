@@ -29,6 +29,8 @@ SPEC_COL_R = 0.30                      # φ0.6
 SPEC_VENT_R, SPEC_VENT_STEP, SPEC_VENT_Z = 0.25, 1.55, 4.3   # §1-4 ギャラリーの鼻先の丸い吹出口
 SPEC_RAIL_H = 1.10                     # §1-4 ギャラリーの手すり
 SPEC_FOLD_Y = (10.6, 34.5)             # §6 壁 B の床際の折り畳みゴール
+SPEC_BOARD_GLASS, SPEC_BOARD_FRAME = "glass_partition", "metal_white"   # §5 バックボードの板と枠
+SPEC_RING = "gym_line_red"             # §5 リング
 GALLERY_EDGE_X = -25.4                 # ギャラリーの西の辺（手すりの線）
 GALLERY_EDGE_Y = (6.7, 37.0)           # ギャラリーの南・北の辺
 
@@ -395,21 +397,55 @@ def test_gallery_nose_has_round_vents_on_each_side(built):
         assert all(abs(b - a - SPEC_VENT_STEP) < 0.01 for a, b in zip(s, s[1:])), (n, s)
 
 
+def _folded_goals(c):
+    """床から 2.85 m より下に収まるゴールの面（＝たたんだゴール）を、SPEC_FOLD_Y の近い方ごとにまとめる。"""
+    low = [(mat, pts) for name, mat, pts in _mfaces(c)
+           if name.endswith("_hoops") and max(p[2] for p in pts) < 2.85]
+    return {fy: [(mat, pts) for mat, pts in low
+                 if min(SPEC_FOLD_Y, key=lambda v: abs(v - _ctr(pts)[1])) == fy]
+            for fy in SPEC_FOLD_Y}
+
+
+def _yz_overlap(pts, rect):
+    """面 pts の (y, z) の外接矩形と rect = (y0, z0, y1, z1) が重なる面積。"""
+    b = _bbox(pts)
+    dy = min(b[4], rect[2]) - max(b[1], rect[0])
+    dz = min(b[5], rect[3]) - max(b[2], rect[1])
+    return max(0.0, dy) * max(0.0, dz)
+
+
 def test_folded_goals_stand_against_wall_b(built):
     """壁 B の床際に、たたんだゴールが 2 基ある（spec §6 ゴール）。"""
-    low = [(mat, pts) for name, mat, pts in _mfaces(built)
-           if name.endswith("_hoops") and max(p[2] for p in pts) < 2.85]
-    assert low
-    xs = [p[0] for _, pts in low for p in pts]
+    goals = _folded_goals(built)
+    xs = [p[0] for grp in goals.values() for _, pts in grp for p in pts]
+    assert xs
     assert D.WALL_B[0] - 1.2 <= min(xs) and max(xs) <= D.WALL_B[0] + 1e-6
-    for fy in SPEC_FOLD_Y:
-        grp = [(mat, pts) for mat, pts in low
-               if min(SPEC_FOLD_Y, key=lambda v: abs(v - _ctr(pts)[1])) == fy]
+    for fy, grp in goals.items():
         ys = [p[1] for _, pts in grp for p in pts]
         assert grp and min(ys) < fy < max(ys) and max(ys) - min(ys) < 2.5, fy
         assert min(p[2] for _, pts in grp for p in pts) < 0.1
         assert max(ys) < D.B_DOOR_S[0] or min(ys) > D.B_DOOR_S[1]
-        assert any(mat == "backboard_white" and _nrm(pts)[0] < -0.99 for mat, pts in grp)
+
+
+def test_folded_goal_board_is_framed_glass_and_the_ring_is_red(built):
+    """たたんだゴールの板は白い金属の枠に入ったガラスで、コートから向こうが透けて見える。
+    板の表より前に出るのは赤いリングと付け根、白い網だけ（spec §5）。"""
+    for fy, grp in _folded_goals(built).items():
+        court = [(mat, pts) for mat, pts in grp if _nrm(pts)[0] < -0.99]   # コート（-X）向きの面
+        glass = [pts for mat, pts in court if mat == SPEC_BOARD_GLASS]
+        frame = [pts for mat, pts in court if mat == SPEC_BOARD_FRAME]
+        assert glass and frame, fy
+        g = _bbox([p for pts in glass for p in pts])
+        f = _bbox([p for pts in frame for p in pts])
+        assert f[1] < g[1] < g[4] < f[4] and f[2] < g[2] < g[5] < f[5], (fy, g, f)
+        assert g[4] - g[1] > 1.5 and g[5] - g[2] > 0.8, (fy, g)
+        # コートから見てガラスの範囲を隠す不透明な面（前でも後ろでも）は 4 分の 1 未満
+        rect = (g[1], g[2], g[4], g[5])
+        hidden = sum(_yz_overlap(pts, rect) for mat, pts in court if mat != SPEC_BOARD_GLASS)
+        assert hidden < 0.25 * (rect[2] - rect[0]) * (rect[3] - rect[1]), (fy, hidden)
+        face_x = min(p[0] for pts in frame for p in pts)          # 板の表の面
+        ahead = {mat for mat, pts in grp if _ctr(pts)[0] < face_x - 1e-6}
+        assert ahead == {SPEC_RING, "net_white"}, (fy, ahead)
 
 
 def test_sub_arena_beams_cross_diagonally_with_downlights_between(built):
