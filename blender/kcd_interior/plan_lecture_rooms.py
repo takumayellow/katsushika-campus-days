@@ -3,8 +3,8 @@
 2F は南の 203・202・201、3F は南の 305〜301 と北の 306〜311、4F〜6F は 402・410・502・509・602・610。
 どの室も床・白い天井と照明の板・外周壁（南と北は窓の帯、西端の室は西の壁）・東の境の間仕切り・
 廊下の壁の室の側の白い面を持つ。西隣の室を作らない階では西の境の間仕切りも持つ。
-型 A は西の壁に緑の黒板・教卓・プロジェクター・東の壁に時計、机は西を向いた 3 人掛けの固定机。
-型 B（306 の PC ルーム）は白板・教員の机・2 人掛けの PC の机。型 C は白板とロの字の机（会議室）。
+型 A は東の壁（金町駅の側）に緑の黒板・教卓・プロジェクター・西の壁に時計、机は東を向いた 3 人掛けの固定机。
+型 B（306 の PC ルーム）は東の壁の白板・教員の机・2 人掛けの PC の机。型 C は東の壁の白板とロの字の机（会議室）。
 型 L（310・311 のラウンジ）はソファ・低い机・丸机と椅子、311 は弁当を売る長机と保温ケースも置く。
 廊下の壁と扉、中を作らない室の閉じた扉は plan_lecture_west。
 
@@ -31,15 +31,15 @@ CARPET = "lecture_carpet_corridor"
 CONCRETE = "lecture_concrete"
 WHITE = "wall_white"
 CEIL_WHITE = "ceiling_white"
-FACE_E = -math.pi * 0.5      # 正面 +X（西の壁から室の奥へ）
-FACE_W = math.pi * 0.5       # 正面 -X（西の壁の黒板へ）
+FACE_E = -math.pi * 0.5      # 正面 +X（東）
+FACE_W = math.pi * 0.5       # 正面 -X（西）
 LINING = 0.005               # 廊下の壁の室の側の面から白い板まで
 PANEL = (1.2, 0.6)           # 天井の照明の板（東西・南北）
 PANEL_PITCH = 3.0
 DESK_Y = {"S": (7.55, 10.55, 13.55, 16.55), "N": (38.1, 41.1, 44.1, 47.1)}   # 机の列の中心 Y
 DESK_W = 1.8
 DESK_DEPTH = 0.45            # furn_lecture.desk_bench の天板の奥行き
-FRONT0 = 2.7                 # 西の壁の面から最前列の机の前の縁まで
+FRONT0 = 2.7                 # 東の壁の面から最前列の机の前の縁まで
 ROW_PITCH = 1.0
 BACK_CLEAR = 5.15            # 列の数を決める: 室の幅からこれを引いた残りを 1.0 m ごとに 1 列
 PC_FRONT0, PC_PITCH, PC_ROWS, PC_W, PC_DEPTH = 2.2, 1.3, 5, 1.4, 0.6
@@ -182,36 +182,36 @@ def _west(walls, room):
 
 
 def _type_a(mb, room, z):
-    """一般の教室: 西の壁の黒板・教卓・プロジェクター・東の壁の時計・西を向いた固定机の列。"""
+    """一般の教室: 東の壁の黒板・教卓・プロジェクター・西の壁の時計・東を向いた固定机の列。"""
     xf0, xf1, yf0, yf1 = RD.room_faces(room)
     cy = (yf0 + yf1) * 0.5
-    FL.green_board(mb, kit.T(xf0, cy, z, FACE_E))
-    W.lifted(mb, z, F.podium, xf0 + 1.3, cy, ang=FACE_E)
-    F.projector(mb, xf0 + 0.4 * (xf1 - xf0), cy, z + RD.CEIL_H - 0.22, ang=FACE_W)
-    shell.clock(mb, xf1, cy, z + 2.4, ang=FACE_W)
+    FL.green_board(mb, kit.T(xf1, cy, z, FACE_W))
+    W.lifted(mb, z, F.podium, xf1 - 1.3, cy, ang=FACE_W)
+    F.projector(mb, xf1 - 0.4 * (xf1 - xf0), cy, z + RD.CEIL_H - 0.22, ang=FACE_E)
+    shell.clock(mb, xf0, cy, z + 2.4, ang=FACE_E)
     for k in range(rows(room)):
-        x = xf0 + FRONT0 + DESK_DEPTH + k * ROW_PITCH
+        x = xf1 - FRONT0 - DESK_DEPTH - k * ROW_PITCH
         for y in DESK_Y[room[2]]:
-            FL.desk_bench(mb, kit.T(x, y, z, FACE_W), w=DESK_W)
+            FL.desk_bench(mb, kit.T(x, y, z, FACE_E), w=DESK_W)
 
 
 def _type_b(mb, room, z):
-    """306 の PC ルーム: 西の壁の白板・教員の机・西を向いた PC の机の列（spec §1-11）。"""
-    xf0, _, yf0, yf1 = RD.room_faces(room)
+    """306 の PC ルーム: 東の壁の白板・教員の机・東を向いた PC の机の列（spec §1-11）。"""
+    _, xf1, yf0, yf1 = RD.room_faces(room)
     cy = (yf0 + yf1) * 0.5
-    F.whiteboard(mb, xf0, cy, z + 1.5, ang=FACE_E, w=3.6, h=1.2)
-    W.lifted(mb, z, F.desk, xf0 + 1.3, cy, ang=FACE_W, w=1.4, d=0.7, top="desk_white")
+    F.whiteboard(mb, xf1, cy, z + 1.5, ang=FACE_W, w=3.6, h=1.2)
+    W.lifted(mb, z, F.desk, xf1 - 1.3, cy, ang=FACE_E, w=1.4, d=0.7, top="desk_white")
     for k in range(PC_ROWS):
-        x = xf0 + PC_FRONT0 + PC_DEPTH + k * PC_PITCH
+        x = xf1 - PC_FRONT0 - PC_DEPTH - k * PC_PITCH
         for y in DESK_Y[room[2]]:
-            FL.pc_desk(mb, kit.T(x, y, z, FACE_W), w=PC_W)
+            FL.pc_desk(mb, kit.T(x, y, z, FACE_E), w=PC_W)
 
 
 def _type_c(mb, room, z):
-    """会議室: 西の壁の白板・ロの字に組んだ白い長机と、内を向いた灰色の椅子 14 脚（spec §1-11）。"""
+    """会議室: 東の壁の白板・ロの字に組んだ白い長机と、内を向いた灰色の椅子 14 脚（spec §1-11）。"""
     xf0, xf1, _, _ = RD.room_faces(room)
     cx, cy = (xf0 + xf1) * 0.5, C_RING_Y
-    F.whiteboard(mb, xf0, cy, z + 1.5, ang=FACE_E)
+    F.whiteboard(mb, xf1, cy, z + 1.5, ang=FACE_W)
     for sx in (-1.0, 1.0):
         for dy in C_LONG_Y:
             F.table(mb, cx + sx * C_LONG_X, cy + dy, ang=math.pi * 0.5, w=1.8, d=0.6,
