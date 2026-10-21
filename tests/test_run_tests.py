@@ -88,6 +88,71 @@ def test_exited_unity_left_in_tasklist_is_not_counted():
     assert run_tests.drop_exited([41236, 63316], alive=alive.__getitem__) == [41236]
 
 
+EDITOR_EXE = r"C:\Program Files\Unity\Hub\Editor\6000.6.2f1\Editor\Unity.exe"
+HUB_HELPER_EXE = (r"C:\Program Files\WindowsApps\UnityTechnologies.UnityHub_3.22.3.65535_x64__2vrhnee42bhxm"
+                  r"\app\resources\unity.exe")
+
+
+@pytest.mark.parametrize(
+    "path, helper",
+    [
+        (HUB_HELPER_EXE, True),
+        (r"C:\Program Files\Unity Hub\resources\unity.exe", True),
+        (EDITOR_EXE, False),
+        (r"D:\Unity\6000.0.58f2\editor\unity.exe", False),
+        # --unity や UNITY_EXE で指した、Editor フォルダの外の本体も数える
+        (r"C:\Tools\Unity.exe", False),
+        (r"D:\UnityHub\Editors\6000.6.2f1\Editor\Unity.exe", False),
+        (r"C:\Program Files\Unity Hub\resources\app.exe", False),
+        (None, False),
+    ],
+)
+def test_only_the_unity_hub_helper_is_not_counted(path, helper):
+    assert run_tests.is_hub_helper(path) is helper
+
+
+def test_tasklist_to_unity_pids_to_wait_for():
+    # 本体，Hub の常駐，終わったのに残っているもの，パスが分からないもの が並んだ tasklist
+    text = (
+        '"Unity.exe","41236","Console","1","2,345,678 K"\r\n'
+        '"unity.exe","4752","Console","1","45,000 K"\r\n'
+        '"Unity.exe","63316","Console","1","0 K"\r\n'
+        '"Unity.exe","900","Console","1","100 K"\r\n'
+    )
+    alive = {41236: True, 4752: True, 63316: False, 900: True}
+    # 終わったもの (63316) はパスを引く前に除くので，ここに無くてよい
+    paths = {41236: EDITOR_EXE, 4752: HUB_HELPER_EXE, 900: None}
+    pids = run_tests.unity_pids_from_tasklist(text, alive=alive.__getitem__, path_of=paths.__getitem__)
+    assert pids == [41236, 900]
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows のプロセス API を使う")
+def test_this_process_path_is_an_exe():
+    path = run_tests.windows_process_path(os.getpid())
+    assert path is not None and Path(path).is_absolute() and path.lower().endswith(".exe")
+
+
+class FakeKernel32:
+    """windows_process_path が呼ぶ 3 つの関数だけを持つ偽物。"""
+
+    def __init__(self, handle, query_ok):
+        self.closed = []
+        self.OpenProcess = lambda access, inherit, pid: handle
+        self.QueryFullProcessImageNameW = lambda process, flags, buffer, size: query_ok
+        self.CloseHandle = self.closed.append
+
+
+@pytest.mark.parametrize("handle, query_ok, closed", [(None, True, 0), (1234, False, 1)])
+def test_process_path_is_none_when_it_cannot_be_read(monkeypatch, handle, query_ok, closed):
+    # 開けない PID と，開けても名前を引けない PID は None（呼び出し側は数える側に倒す）
+    import ctypes
+
+    fake = FakeKernel32(handle, query_ok)
+    monkeypatch.setattr(ctypes, "WinDLL", lambda name, use_last_error=False: fake, raising=False)
+    assert run_tests.windows_process_path(4752) is None
+    assert len(fake.closed) == closed
+
+
 @pytest.mark.skipif(os.name != "nt", reason="Windows のプロセス API を使う")
 def test_this_process_is_alive_and_unknown_pid_is_not():
     assert run_tests.windows_process_alive(os.getpid())
