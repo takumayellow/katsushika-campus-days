@@ -10,7 +10,7 @@ namespace KCD.Tests
     /// <summary>
     /// キャンパスの木が、再生の始めにマスごとの少ないメッシュへまとめて描かれることを守る (#57, #70)。
     ///
-    /// 木 553 本を 1 本ずつ描くと、WebGL で描画コールが約 4,700 回（木のない版は 459 回）になり、
+    /// 木が 553 本だったころ、1 本ずつ描くと WebGL で描画コールが約 4,700 回（木のない版は 459 回）になり、
     /// CPU 側で 35〜45 fps まで落ちた。TreeChunkCombiner がまとめた結果を、エディタで同じ関数を呼んで確かめる。
     /// </summary>
     public sealed class CampusTreeChunkTests
