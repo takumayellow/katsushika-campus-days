@@ -2,7 +2,7 @@
   "id": "q_lunch",
   "title": "食堂のいちばん忙しい時間",
   "title_en": "The Cafeteria's Busiest Hour",
-  "summary": "昼の食堂は、席が足りなくなるほど混む。昼のピークに牛乳が切れたらしい。共創棟 1 階のファミリーマートで牛乳を買って、中川かなめのところへ持っていく。",
+  "summary": "昼の食堂は、席が足りなくなるほど混む。昼のピークに牛乳が切れたらしい。共創棟 1 階のコンビニで牛乳を買って、中川かなめのところへ持っていく。",
   "summary_en": "At lunchtime the cafeteria fills up and seats run short. At the lunch peak, they've run out of milk. Buy milk at the convenience store on the first floor of Kyoso Hall and bring it to Nakagawa Kaname.",
   "order": 3,
   "autoStart": false,
@@ -17,7 +17,7 @@
       "type": "collect",
       "target": "milk",
       "count": 1,
-      "text": "共創棟 1 階のファミリーマートで牛乳を買う",
+      "text": "共創棟 1 階のコンビニで牛乳を買う",
       "text_en": "Buy milk at the convenience store on the first floor of Kyoso Hall"
     },
     {

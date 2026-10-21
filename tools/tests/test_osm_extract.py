@@ -32,6 +32,14 @@ FAR_ROAD_ID = 9104
 PARK_ID = 9201
 NO_GEOM_ID = 9301
 
+# 名前付きの建物。SHOP_NAME は周辺の店の名前の代わり（実在の名前は書かない）。
+NAMED_BG_ID = 9010
+NAMED_DORM_ID = 9011
+NAMED_MISC_ID = 9012
+LABELED_BG_ID = 9013
+LABELED_MISC_ID = 9014
+SHOP_NAME = "テスト商店"
+
 
 def _box(lat, lon, dlat, dlon, closed=True, cw=False):
     ring = [(lat - dlat, lon - dlon), (lat - dlat, lon + dlon),
@@ -91,10 +99,31 @@ def _elements():
     ]
 
 
+def _named_elements():
+    """_elements() に、名前を持つ背景の建物・寮・敷地内のその他の建物と、総称の表に載せる 2 棟を足す。"""
+    south = LAT0 - DLAT - 0.0004
+    return _elements() + [
+        _way(NAMED_BG_ID, _box(south, LON0 - 0.0006, 0.00005, 0.00005), building="retail", name=SHOP_NAME),
+        _way(NAMED_DORM_ID, _box(south, LON0 + 0.0009, 0.00005, 0.00005), building="dormitory", name=SHOP_NAME),
+        _way(NAMED_MISC_ID, _box(LAT0 - 0.0006, LON0 + 0.0006, 0.00005, 0.00005), building="yes", name=SHOP_NAME),
+        _way(LABELED_BG_ID, _box(south, LON0 + 0.0012, 0.00005, 0.00005), building="yes", name=SHOP_NAME),
+        _way(LABELED_MISC_ID, _box(LAT0 - 0.0006, LON0 + 0.0009, 0.00005, 0.00005), building="yes", name=SHOP_NAME),
+    ]
+
+
 @pytest.fixture()
 def extracted(monkeypatch):
     elements = _elements()
     monkeypatch.setattr(osm_extract, "_load", lambda: elements)
+    return osm_extract.extract()
+
+
+@pytest.fixture()
+def named_extracted(monkeypatch):
+    elements = _named_elements()
+    monkeypatch.setattr(osm_extract, "_load", lambda: elements)
+    monkeypatch.setitem(osm_extract.GENERIC_LABELS, LABELED_BG_ID, "テスト総称")
+    monkeypatch.setitem(osm_extract.GENERIC_LABELS, LABELED_MISC_ID, "テスト総称その他")
     return osm_extract.extract()
 
 
@@ -177,6 +206,30 @@ def test_background_building_heights(extracted):
     assert dorm["id"] == f"dorm_{DORM_ID}" and dorm["style"] == "dormitory"
     assert dorm["height"] == 20.0 and not dorm["on_campus"]
     assert NO_GEOM_ID not in b
+
+
+def test_osm_name_stays_out_of_display(named_extracted):
+    """カタログに無い建物は、名前があっても display に使わない。OSM の名前は osm_name にだけ残る (#371)。"""
+    b = _by_osm_id(named_extracted)
+    assert b[NAMED_BG_ID]["style"] == "background"
+    assert b[NAMED_DORM_ID]["style"] == "dormitory"
+    assert b[NAMED_MISC_ID]["style"] == "misc" and b[NAMED_MISC_ID]["on_campus"]
+    for wid in (NAMED_BG_ID, NAMED_DORM_ID, NAMED_MISC_ID):
+        assert b[wid]["osm_name"] == SHOP_NAME
+        assert b[wid]["display"] == ""
+        assert SHOP_NAME not in b[wid]["desc"]
+
+
+@pytest.mark.parametrize("wid, style, label", [
+    (LABELED_BG_ID, "background", "テスト総称"),
+    (LABELED_MISC_ID, "misc", "テスト総称その他"),
+])
+def test_generic_label_replaces_the_osm_name(named_extracted, wid, style, label):
+    """総称の表にある建物は、OSM の名前に関わらず display がその総称になる (#371)。"""
+    labeled = _by_osm_id(named_extracted)[wid]
+    assert labeled["style"] == style
+    assert labeled["display"] == label
+    assert labeled["osm_name"] == SHOP_NAME
 
 
 def test_building_order_and_footprints(extracted):
@@ -271,3 +324,23 @@ def test_committed_kyoso_and_research1_parts(campus_json):
     for poly in r1:
         assert not any(oc.point_in_poly(x, y, poly) for x, y in fp)
         assert not any(oc.point_in_poly(x, y, fp) for x, y in poly)
+
+
+def test_committed_display_comes_only_from_hand_written_names(campus_json):
+    """カタログ・手入力の建物以外の display は、総称の表にある語か空。OSM の名前は osm_name にだけ入る (#371)。"""
+    hand_written = ({m["id"] for m in osm_extract.BUILDING_CATALOG.values()}
+                    | {m["id"] for m in osm_extract.UNNAMED_BUILDINGS.values()}
+                    | {m["id"] for m in osm_extract.MANUAL_BUILDINGS})
+    others = [b for b in campus_json["buildings"] if b["id"] not in hand_written]
+    assert others
+    for b in others:
+        assert b["display"] == osm_extract.GENERIC_LABELS.get(b["osm_id"], ""), b["id"]
+    # 総称の表の OSM id は campus.json の建物にある（取り違えや消えた建物に気付く）
+    assert set(osm_extract.GENERIC_LABELS) <= {b["osm_id"] for b in others}
+
+
+def test_unity_copy_of_campus_json_is_identical():
+    """Unity が読む Assets/Data/campus.json は data/osm/campus.json のコピー (docs/DESIGN.md)。"""
+    source = oc.ROOT / "data" / "osm" / "campus.json"
+    copy = oc.ROOT / "unity" / "KatsushikaCampusDays" / "Assets" / "Data" / "campus.json"
+    assert copy.read_bytes() == source.read_bytes()
