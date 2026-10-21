@@ -364,12 +364,18 @@ CHARACTERS: dict[str, dict] = {
         blush_color=_c("#FF98A2"), blush_strength=0.46,
         mouth_color=_c("#C8434B"), mouth_style="smile", mouth_w=0.034,
         eye_style="round", eye_tilt=6.0,
+        # 眉は前髪の歯の下に細く出す。鼻筋（face_keel）を通して眼鏡を鼻に乗せる。
+        brow_width=0.028, face_keel=0.085,
         hair="twintail", hair_accessory="glasses_red",
+        # 赤い縁の眼鏡。レンズは目を囲む丸みのある形にし、頬紅は中心をレンズの縁より下に置く。
+        glasses_tube=0.011, glasses_lens=(1.40, 1.08),
+        blush_layout=dict(dx=0.235, y=0.255, rx=0.075, ry=0.035),
         tail_ribbon=True,
         outfit="seifuku",
         face_layout=dict(eye_y=0.418, eye_dx=0.188, eye_rx=0.078, eye_ry=0.100),
+        # 結び目のリボン（ribbon_red の部品）は紫にする。
         mat_colors={"hair": "#49454F", "eye_l": "#8E5FC0", "eye_r": "#8E5FC0",
-                    "cloth_ribbon_green": "#2E6FBF"},
+                    "cloth_ribbon_green": "#2E6FBF", "ribbon_red": "#7B4FB4"},
         accessories=(),
         sign_items=("赤縁メガネ", "ツインテール", "結び目の紫リボン"),
         outward_faces=True,
