@@ -31,8 +31,8 @@
       "requiresActiveQuest": "q_lunch",
       "lines": [
         {
-          "text": "ファミマは共創棟の 1 階、ガラス張りのほう。青と緑と白の看板が見えたらそこ。",
-          "text_en": "The convenience store is on the first floor of Kyoso Hall, the glass side. Look for the blue, green and white sign."
+          "text": "コンビニは共創棟の 1 階、ガラス張りのほう。黒い字で「コンビニ」と書いた白い看板が見えたらそこ。",
+          "text_en": "The convenience store is on the first floor of Kyoso Hall, the glass side. Look for the white sign that says Convenience Store in black letters."
         },
         {
           "text": "牛乳ね。1 本でいいから。走らなくていいけど、急いで。",
@@ -54,7 +54,7 @@
           "text_en": "This cafeteria has 730 seats on the first floor and 665 on the second. And right now is when every one of them fills up."
         },
         {
-          "text": "なのに牛乳が切れた。共創棟 1 階のファミマで買ってきてくれない？ お金はこっち持ちで。",
+          "text": "なのに牛乳が切れた。共創棟 1 階のコンビニで買ってきてくれない？ お金はこっち持ちで。",
           "text_en": "And we're out of milk. Could you buy some at the convenience store on the first floor of Kyoso Hall? It's on us."
         },
         {

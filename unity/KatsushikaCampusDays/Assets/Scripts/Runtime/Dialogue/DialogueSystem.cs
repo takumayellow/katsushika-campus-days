@@ -331,7 +331,7 @@ namespace KCD
         /// talk を報告し、この話しかけで達成したクエストのお礼の話題があればそれを、無ければ chosen を返す（テストから呼ぶ）(#94)。
         /// chosen は報告の前に <see cref="SelectTopic(DialogueData, QuestSystem, ICollection{string})"/> で選んだもの。
         ///
-        /// 以前は話題を選んでから報告していたので、牛乳を届けた会話で要が「ファミマは共創棟の 1 階」と
+        /// 以前は話題を選んでから報告していたので、牛乳を届けた会話で要が「コンビニは共創棟の 1 階」と
         /// 受注中のヒント（requiresActiveQuest）を言い、お礼（requiresCompletedQuest）は次に話したときに出ていた。
         /// 報告のあとに選び直すだけだと、オリエンテーションを終えた会話で教授の最初のあいさつ（無条件の t_welcome）より
         /// 体育館の依頼（t_gym_start）が先に出てしまうので、差し替えるのはこの報告で達成になったクエストのお礼だけにする。
@@ -549,13 +549,7 @@ namespace KCD
             return ((index + step) % count + count) % count;
         }
 
-        /// <summary>TapChoice に渡すと、どの選択肢も選ばずに会話を閉じる（指の「やめる」）。</summary>
-        public const int CloseChoice = -1;
-
-        /// <summary>
-        /// 指で選択肢を叩いたとき。選択肢を出したあとに置いた指でなければ選ばない。
-        /// <see cref="CloseChoice"/> は選ばずに閉じる（キーの Esc と同じ。答えた話題にはならない）。
-        /// </summary>
+        /// <summary>指で選択肢を叩いたとき。選択肢を出したあとに置いた指でなければ選ばない。</summary>
         public bool TapChoice(int index)
         {
             if (!_tapArmed || !_choosing)
@@ -563,13 +557,22 @@ namespace KCD
                 return false;
             }
 
-            if (index == CloseChoice)
+            return Choose(index);
+        }
+
+        /// <summary>
+        /// 指で「やめる」を叩いたとき。どの選択肢も選ばずに会話を閉じる（キーの Esc と同じで、答えた話題にはならない）。
+        /// 選択肢を出したあとに置いた指でなければ閉じない。
+        /// </summary>
+        public bool TapClose()
+        {
+            if (!_tapArmed || !_choosing)
             {
-                Finish();
-                return true;
+                return false;
             }
 
-            return Choose(index);
+            Finish();
+            return true;
         }
 
         /// <summary>

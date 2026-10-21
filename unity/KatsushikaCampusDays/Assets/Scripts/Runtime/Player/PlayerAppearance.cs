@@ -108,21 +108,32 @@ namespace KCD
 
         /// <summary>
         /// 背丈に合わせてカメラの注視点の高さと距離を決める。
-        /// カメラは 1.6 m の人に合わせて焼いてあり、背丈 1.15 m の坊っちゃん・マドンナちゃん
-        /// （公式マスコットの 2.8〜3 頭身）では注視点が頭より 30 cm 以上も上に来て、
-        /// 画面の下に小さく映っていた。距離は背丈に比例させきらず RadiusFollow ぶんだけ寄せる
-        /// （寄せすぎると周りが見えなくなる。1.15 m で 0.80 倍、画面上の大きさは 1.6 m の 9 割）。
+        /// カメラは 1.6 m の人に合わせて焼いてあり、公式マスコットの 2.8〜3 頭身に合わせた坊っちゃん（1.28 m）・
+        /// マドンナちゃん（1.22 m）では、そのままだと注視点が頭より 19〜25 cm 上に来て、画面の下に小さく映る。
+        /// 距離は背丈に比例させきらず RadiusFollow ぶんだけ寄せる
+        /// （寄せすぎると周りが見えなくなる。1.22 m で 0.83 倍、画面上の大きさは 1.6 m の 9 割）。
         /// 背丈が測れないとき（0 以下・NaN）は既定のまま。
         /// </summary>
         public static void Framing(float height, out float aimY, out float radiusScale)
         {
-            if (!(height > 0.3f))
-            {
-                height = ReferenceHeight;
-            }
-
+            height = UsableHeight(height);
             aimY = height * AimRatio;
             radiusScale = Mathf.Clamp(1f - RadiusFollow * (1f - height / ReferenceHeight), 0.6f, 1.3f);
+        }
+
+        /// <summary>
+        /// 注視点から頭の上端までの高さ（m）。注視点は背丈の <see cref="AimRatio"/> の高さにある。
+        /// 背丈が測れないとき（0 以下・NaN・極端に低い）は <see cref="Framing"/> と同じく既定の背丈で数える。
+        /// </summary>
+        public static float HeadAboveAim(float height)
+        {
+            return UsableHeight(height) * (1f - AimRatio);
+        }
+
+        /// <summary>測れた背丈。測れていない（0 以下・NaN・極端に低い）ときは既定の背丈。</summary>
+        private static float UsableHeight(float height)
+        {
+            return height > 0.3f ? height : ReferenceHeight;
         }
 
         /// <summary>体の Renderer を合わせた高さ（足元 groundY から天辺まで）。Renderer が無ければ 0。</summary>

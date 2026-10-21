@@ -4,7 +4,7 @@ namespace KCD
 {
     /// <summary>
     /// 調べるとひとこと出してフラグを立てるだけのもの。
-    /// ファミマのレジ、図書館のカウンター、掲示板などに付ける。
+    /// コンビニのレジ、図書館のカウンター、掲示板などに付ける。
     /// </summary>
     public sealed class PropInteractable : Interactable
     {

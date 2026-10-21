@@ -16,6 +16,8 @@ WOOD_L = "gym_wall_wood_lower"
 WOOD_U = "gym_wall_wood_upper"
 GLASS = "glass_interior"
 BLACK = "gym_mullion_black"
+ORANGE = "gym_accent_orange"
+DARK = "gym_wall_darkgrey"
 CEIL = "gym_ceiling_offwhite"
 CAP_UP = 0.01
 HALF_PART = shell.PART * 0.5
@@ -122,7 +124,7 @@ def _north(c):
 
 
 def _west(c):
-    """辺 12（西壁 G）: 連続窓（床上 0.45〜2.55）・木の腰壁と上壁。"""
+    """辺 12（西壁 G）: 連続窓（床上 0.45〜2.55）・木の腰壁・打放しの上部。"""
     E = D.E_WEST
     y0, y1 = D.GLASS_Y
     a, b = D.edge_span(E, 1, 48.2, y1)
@@ -131,12 +133,21 @@ def _west(c):
     wall(c, (a, b), 0.0, 3.0, WOOD_L, glass=GLASS, sill=D.GLASS_Z[0], header=3.0 - D.GLASS_Z[1],
          seg=1.5, inner_mat=WOOD_L, mullion=0.08, mullion_mat=BLACK, top=False)
     a, b = D.edge_span(E, 1, y1, y0)
-    wall(c, (a, b), 3.0, D.C_HALL, WOOD_U, top=False)
+    wall(c, (a, b), 3.0, D.C_HALL, CONC, top=False)
     a, b = D.edge_span(E, 1, y0, 4.6)
     wall(c, (a, b), 0.0, 3.0, WOOD_L, top=False)
-    wall(c, (a, b), 3.0, D.C_HALL, WOOD_U, top=False)
+    wall(c, (a, b), 3.0, D.C_HALL, CONC, top=False)
     a, b = D.edge_span(E, 1, 48.2, y1)
-    wall(c, (a, b), D.C_STORE + 0.3, D.C_HALL, WOOD_U, top=False)
+    wall(c, (a, b), D.C_STORE + 0.3, D.C_HALL, CONC, top=False)
+
+
+def _train_east_runs(ya, yb):
+    """トレーニングルームの東壁を (y0, y1, 材質) に分ける。東の列の柱の後ろがダークグレーの帯。"""
+    out, y = [], ya
+    for s, e in sorted((v - D.TRAIN_DARK_HALF, v + D.TRAIN_DARK_HALF) for v in D.TRAIN_COL_Y):
+        out += [(y, s, ORANGE), (s, e, DARK)]
+        y = e
+    return out + [(y, yb, ORANGE)]
 
 
 def _east_side(c):
@@ -146,20 +157,26 @@ def _east_side(c):
     # 辺 0・8〜10: エントランスホールの東壁（2F の室まで）
     a, b = F[0], F[1]
     wall(c, (a, b), 0.0, D.C_2F, WHITE)
-    # 辺 8: 1F はガラス窓、2F は白壁に水平窓（トレーニングルーム）
+    # 辺 8: 1F はガラス窓、2F はトレーニングルームのオレンジの壁に水平窓（柱の後ろはダークグレー）
     a, b = F[8], F[9]
     wall(c, (a, b), 0.0, D.C_FOYER_E, WHITE, glass=GLASS, sill=0.9, header=0.7, seg=3.0,
          mullion=0.08, mullion_mat=BLACK)
-    ya, yb = 14.8, 29.6
-    a, b = D.edge_span(8, 1, ya, yb)
-    wall(c, (a, b), D.C_FOYER_E, D.C_2F, WHITE, glass=GLASS, sill=5.7 - D.C_FOYER_E,
-         header=D.C_2F - 7.0, seg=1e9, mullion_mat=BLACK)
+    ya, yb = 14.8, D.TRAIN[3]
+    for s, e, mat in _train_east_runs(ya, yb):
+        a, b = D.edge_span(8, 1, s, e)
+        if mat == DARK or e - s < 1.0:
+            wall(c, (a, b), D.C_FOYER_E, D.C_2F, mat)
+        else:
+            wall(c, (a, b), D.C_FOYER_E, D.C_2F, mat, glass=GLASS, sill=5.7 - D.C_FOYER_E,
+                 header=D.C_2F - 7.0, seg=1e9, mullion_mat=BLACK)
     a, b = D.edge_span(8, 1, yb, 38.6)
     wall(c, (a, b), D.C_FOYER_E, D.C_2F, WHITE)
     for i in (9, 10):
         wall(c, (F[i], F[(i + 1) % n]), 0.0, D.C_2F, WHITE)
-    # 連絡通路の 2F の壁（開口の上と、2F の室の東壁）
-    kit.box(c.wall, 8.6, 9.4, C_CONN_TOP, 8.9, 14.8, D.C_2F, WHITE)
+    # 連絡通路の 2F の壁（開口の上と、2F の室の東壁。トレーニングルームの側はオレンジ）
+    kit.box(c.wall, 8.6, 9.4, C_CONN_TOP, 8.9, 14.8, D.Z2, WHITE)
+    kit.box(c.wall, 8.6, 9.4, D.Z2, 8.9, D.TRAIN[1], D.C_2F, WHITE)
+    kit.box(c.wall, 8.6, D.TRAIN[1], D.Z2, 8.9, 14.8, D.C_2F, ORANGE)
     # 東棟（天井 C_EAST）
     for i in (1, 2, 3, 4, 7):
         wall(c, (F[i], F[(i + 1) % n]), 0.0, D.C_EAST, WHITE)
@@ -193,9 +210,9 @@ def floors(c):
 
     quad(s0, ya, "gym_floor_apron")
     quad(ya, yb, "gym_floor_wood")
-    # サブアリーナ（レジン床）
+    # サブアリーナ（木の床）
     x0, y0, x1s, y1 = D.SUB
-    _floor(c, x0, y0, x1s + 0.4, y1, z, "gym_floor_resin_yellow")
+    _floor(c, x0, y0, x1s + 0.4, y1, z, "gym_floor_wood")
     # 用具庫の床（ゴム）
     sx0, sy0, sx1, sy1 = D.STORE
     _floor(c, sx0 + 0.3, sy0, sx1, sy1, z, "gym_floor_grey")

@@ -157,13 +157,16 @@ def test_chibi_run_hand_stays_below_the_chest(name, side):
 @pytest.mark.parametrize("side", ["Left", "Right"])
 @pytest.mark.parametrize("name", params.ALL_IDS)
 def test_run_hand_stays_under_the_shoulder(name, side):
-    """手首は体の中心線を越えず、肩関節から横へ 6 cm 以上は離れない（腕を横に開かない）。"""
+    """手首は体の中心線を越えず、肩関節から横へ 6.5 cm 以上は離れない（腕を横に開かない）。
+
+    いちばん外に来るのは、振袖の袂を見せるために腕を開いているマドンナちゃん（6.2 cm）。
+    """
     out = 1.0 if side == "Left" else -1.0
     for f in PHASES:
         sh, upper, fore = _arm(name, f, side)
         x = (sh + upper + fore)[0] * out
         assert x > 0.03, (name, side, f, x)
-        assert x < sh[0] * out + 0.06, (name, side, f, x, sh[0] * out)
+        assert x < sh[0] * out + 0.065, (name, side, f, x, sh[0] * out)
 
 
 def test_elbow_override_is_only_for_run():
