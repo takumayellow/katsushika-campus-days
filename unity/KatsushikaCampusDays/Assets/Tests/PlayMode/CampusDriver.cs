@@ -67,7 +67,7 @@ namespace KCD.Tests
         }
 
         /// <summary>
-        /// 会話を最後まで送り、エンディングのページをめくり、暗転と封鎖が明けて静かになるまで待つ。
+        /// 会話を最後まで送り（選択肢は先頭を選ぶ）、エンディングのページをめくり、暗転と封鎖が明けて静かになるまで待つ。
         /// 落とし物の小さな手記や夕日のあとの話のように、少し遅れて始まるものもここで片付ける。
         /// </summary>
         public IEnumerator Settle()
@@ -80,7 +80,15 @@ namespace KCD.Tests
                 if (_dialogue != null && _dialogue.IsPlaying && lines < MaxLines)
                 {
                     lines++;
-                    _dialogue.Advance();
+                    if (_dialogue.IsChoosing)
+                    {
+                        _dialogue.Choose(0);
+                    }
+                    else
+                    {
+                        _dialogue.Advance();
+                    }
+
                     quietSince = -1f;
                 }
                 else if (FormalEnding.IsAnyShowing)
