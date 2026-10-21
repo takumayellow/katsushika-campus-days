@@ -22,6 +22,7 @@ namespace KCD.Tests
         {
             InputMode.Force(null);
             TouchInput.Clear();
+            KCDInput.PhotoMode = false;
         }
 
         [UnityTest]
