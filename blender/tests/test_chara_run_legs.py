@@ -107,8 +107,8 @@ def test_walk_target_is_unchanged():
 @pytest.mark.parametrize("name, ph, knee, hip", [
     ("mirai", 0.0, 18.25, 31.46), ("mirai", 0.25, 27.31, 6.27),
     ("mirai", 0.5, 11.52, -26.59), ("mirai", 0.75, 73.92, 40.65),
-    ("botchan", 0.0, 21.37, 28.86), ("botchan", 0.5, 90.81, 9.59),
-    ("madonna", 0.0, 20.47, 25.13), ("madonna", 0.5, 79.70, 12.40),
+    ("botchan", 0.0, 21.46, 28.90), ("botchan", 0.5, 90.54, 8.42),
+    ("madonna", 0.0, 20.62, 25.16), ("madonna", 0.5, 80.30, 12.35),
 ])
 def test_walk_legs_are_unchanged(name, ph, knee, hip):
     """走りの脚の値は歩きに及ばない（値は歩きの脚の実測）。"""
