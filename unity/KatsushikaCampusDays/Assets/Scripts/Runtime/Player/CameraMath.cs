@@ -106,5 +106,15 @@ namespace KCD
         {
             return Mathf.Max(0f, radius * maxRadialScale * Mathf.Sin(maxPitchDegrees * Mathf.Deg2Rad));
         }
+
+        /// <summary>
+        /// 軌道の半径の倍率 scale を、ズームの量 zoom（正で寄る）だけ寄せた倍率。scale を e^-zoom 倍にするので、
+        /// どの倍率からでも同じ量で同じ比だけ寄る。zoom は <see cref="KCDInput.Zoom"/> に CinemachineInputBridge の
+        /// ズームの感度を掛けた量で、2 本指の間隔を r 倍に広げると ln r になり、倍率は 1/r 倍になる。
+        /// </summary>
+        public static float ZoomedRadialScale(float scale, float zoom)
+        {
+            return scale * Mathf.Exp(-zoom);
+        }
     }
 }

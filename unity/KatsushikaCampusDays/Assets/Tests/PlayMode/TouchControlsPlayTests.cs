@@ -163,6 +163,53 @@ namespace KCD.Tests
         }
 
         /// <summary>
+        /// キャンパスの肩越しカメラは、1 本指で縦になぞっても距離を変えず、2 本指で間隔を広げると寄り、狭めると戻る。
+        /// Cinemachine は軌道の縦の軸と半径の軸に同じ縦の目安（Hint）を付けるので、目安で軸を選ぶと縦のなぞりで距離が変わる。
+        /// </summary>
+        [UnityTest]
+        [Timeout(SceneTestTimeoutMs)]
+        public IEnumerator Campus_VerticalDragKeepsTheCameraDistanceAndPinchingMovesIt()
+        {
+            CollectErrorsInsteadOfLogAssert();
+            InputMode.Force(InputKind.Touch);
+
+            yield return PlayModeScenes.LoadCampusAsNewGame(Capture);
+            AssertLoaded(GameManager.CampusSceneName);
+            yield return PlayModeScenes.Advance(3, 0f);
+            Assert.IsFalse(KCDInput.GameplayBlocked, "入場の直後なのに操作が止まっている");
+
+            var player = Object.FindAnyObjectByType<PlayerAppearance>();
+            Assert.IsNotNull(player, "キャンパスに自分の人物が居ない");
+            Transform aim = player.transform.Find(PlayerAppearance.AimName);
+            Assert.IsNotNull(aim, "カメラの注視点が無い");
+            Transform camera = Camera.main.transform;
+            var settle = new CameraSettle(camera, aim);
+            yield return settle.Wait();
+            float start = settle.Distance;
+            Vector3 startForward = camera.forward;
+
+            // 画面の高さの 2% を上へなぞると、既定の感度（倍率 1）で縦に約 2 度回る。
+            TouchInput.AddDrag(new Vector2(0f, Screen.height * 0.02f), Screen.height);
+            yield return settle.Wait();
+            Assert.Greater(Vector3.Angle(startForward, camera.forward), CameraPrefs.SensitivityScale,
+                "1 本指で上へなぞってもカメラが縦に回らない");
+            Assert.AreEqual(start, settle.Distance, start * 0.03f, "1 本指で上へなぞったらカメラの距離が変わった");
+
+            TouchInput.AddDrag(new Vector2(0f, -Screen.height * 0.02f), Screen.height);
+            yield return settle.Wait();
+            Assert.AreEqual(start, settle.Distance, start * 0.01f, "上下に同じだけなぞったのにカメラの距離が元に戻らない");
+
+            // 2 本指の間隔を 2 倍に広げると半径の倍率が半分になり、元の間隔に狭めると戻る。
+            TouchInput.AddPinch(1f, 2f);
+            yield return settle.Wait();
+            Assert.Less(settle.Distance, start * 0.8f, "2 本指で広げてもカメラが寄らない");
+            TouchInput.AddPinch(2f, 1f);
+            yield return settle.Wait();
+            Assert.AreEqual(start, settle.Distance, start * 0.01f, "2 本指で狭めてもカメラが元の距離に戻らない");
+            AssertNoErrors("キャンパス");
+        }
+
+        /// <summary>
         /// キャンパスの操作 UI は指のときだけ動く。マウスのときは仮想のゲームパッドも作らない
         /// （作ると <c>Gamepad.current</c> を取り、PC で本物のゲームパッドを使う人の入力を邪魔する）。
         /// </summary>

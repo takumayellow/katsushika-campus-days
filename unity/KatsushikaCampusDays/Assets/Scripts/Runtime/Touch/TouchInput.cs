@@ -20,7 +20,7 @@ namespace KCD
 
         /// <summary>
         /// 2 本指の間隔を e 倍に広げたときの拡大の量（<see cref="KCDInput.Zoom"/> の単位）。
-        /// ズームの感度（CinemachineInputBridge の 3.5）を掛けて、カメラの距離の倍率がおよそ指の間隔の逆数になる。
+        /// ズームの感度（CinemachineInputBridge の 3.5）を掛けて、軌道の半径の倍率が指の間隔の逆数倍になる。
         /// </summary>
         public const float ZoomPerPinchLog = 1f / 3.5f;
 

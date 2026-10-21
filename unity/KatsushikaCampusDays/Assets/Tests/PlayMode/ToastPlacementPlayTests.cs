@@ -19,15 +19,13 @@ namespace KCD.Tests
         private const float FarRadial = 1f;
         private const float NearRadial = 0.34f;
 
-        /// <summary>元の置き方（下端が画面の高さのこの割合）。頭がこれより下にあるときは動かさない。</summary>
+        /// <summary>元の置き方（下端が画面の高さのこの割合）。カメラが遠いときはここから動かない。</summary>
         private const float RestingBottom = 0.56f;
 
-        private const float MinSettleSeconds = 1.5f;
-        private const float MaxSettleSeconds = 8f;
+        /// <summary>頭にかからないとみなす、トーストの下端と頭の上端の最小の間（画面の高さに対する割合）。</summary>
+        private const float Clearance = 0.01f;
 
         private static readonly Vector3[] Corners = new Vector3[4];
-
-        private float _settledDistance;
 
         [TearDown]
         public void ReleaseForcedMode()
@@ -38,7 +36,7 @@ namespace KCD.Tests
         }
 
         /// <summary>
-        /// 遠い・中くらい・最も寄ったの 3 つの距離で、トーストの下端が頭の上端より上にある。
+        /// 遠い・中くらい・最も寄ったの 3 つの距離で、トーストの下端が頭の上端より <see cref="Clearance"/> 以上上にある。
         /// 遠いときは元の置き場所（0.56）に留まり、遠くへ戻せば戻る。
         /// </summary>
         [UnityTest]
@@ -66,35 +64,38 @@ namespace KCD.Tests
             HUD.Instance.ShowToast("トーストの置き場所を確かめる", false);
 
             var readings = new List<Reading>();
+            var settle = new CameraSettle(camera.transform, aim);
             float radial = FarRadial;
-            yield return Settle(camera.transform, aim, 0f);
-            readings.Add(Measure(radial, _settledDistance, camera, player, toast));
+            yield return settle.Wait();
+            readings.Add(Measure(radial, settle.Distance, camera, player, toast));
 
             foreach (float next in new[] { 0.67f, NearRadial, FarRadial })
             {
-                yield return Settle(camera.transform, aim, radial - next);
+                // 2 本指の間隔を radial / next 倍にすると、CinemachineInputBridge が半径の倍率を next / radial 倍にする。
+                TouchInput.AddPinch(1f, radial / next);
+                yield return settle.Wait();
                 radial = next;
-                readings.Add(Measure(radial, _settledDistance, camera, player, toast));
+                readings.Add(Measure(radial, settle.Distance, camera, player, toast));
             }
 
             string log = Describe(camera, player, readings);
             Reading far = readings[0];
             Reading nearest = readings[2];
             float limit = LiftLimit((RectTransform)toast.parent);
-            Assert.Greater(nearest.HeadTop, RestingBottom + 0.01f,
-                "前提: 最も寄ったとき、頭が元のトーストの下端より上に来る。来ないと確かめられない" + log);
-            Assert.LessOrEqual(nearest.HeadTop, limit,
-                "前提: 最も寄ったときの頭が、トーストを上げられる限度 " + Format(limit) + " より上に来る。来ると頭にかからないことを確かめられない" + log);
+            Assert.Greater(nearest.HeadTop + Clearance, RestingBottom,
+                "前提: 最も寄ったとき、元の置き場所のままでは頭との間が " + Format(Clearance) + " に足りない。足りないと、上げる働きを確かめられない" + log);
+            Assert.LessOrEqual(nearest.HeadTop + Clearance, limit,
+                "前提: 最も寄ったときの頭の上に、トーストを上げられる限度 " + Format(limit) + " までで間を空けられる。空けられないと、頭にかからないことを確かめられない" + log);
             Assert.GreaterOrEqual(far.ToastRight, far.PlayerX, "前提: 人物がトーストの横の範囲の外に居る" + log);
             Assert.LessOrEqual(far.ToastLeft, far.PlayerX, "前提: 人物がトーストの横の範囲の外に居る" + log);
 
             var failures = new List<string>();
             foreach (Reading r in readings)
             {
-                if (r.ToastBottom < r.HeadTop)
+                if (r.ToastBottom < r.HeadTop + Clearance)
                 {
                     failures.Add("カメラの距離 " + Format(r.Distance) + " m: トーストの下端 " + Format(r.ToastBottom) +
-                                 " が頭の上端 " + Format(r.HeadTop) + " より下にあり、頭にかかる");
+                                 " が頭の上端 " + Format(r.HeadTop) + " から " + Format(Clearance) + " 上に届かず、頭にかかる");
                 }
             }
 
@@ -122,36 +123,6 @@ namespace KCD.Tests
         {
             float occupied = ToastLayout.TrackerBottom + ToastLayout.SlotFor(ToastLayout.Shape.LandscapeTouch).Size.y;
             return Mathf.Max(RestingBottom, 1f - occupied / canvas.rect.height);
-        }
-
-        /// <summary>
-        /// 半径の倍率を radial から radial - change にするピンチを入れ、カメラの距離が落ち着くまで待つ。
-        /// 2 本指の間隔を e^change 倍にすると、CinemachineInputBridge が半径の倍率を change だけ縮める。
-        /// 落ち着いた距離は <see cref="_settledDistance"/> に入れる。
-        /// </summary>
-        private IEnumerator Settle(Transform camera, Transform aim, float change)
-        {
-            float start = Time.realtimeSinceStartup;
-            if (!Mathf.Approximately(change, 0f))
-            {
-                TouchInput.AddPinch(1f, Mathf.Exp(change));
-            }
-
-            float last = Vector3.Distance(camera.position, aim.position);
-            int still = 0;
-            while (Time.realtimeSinceStartup - start < MaxSettleSeconds)
-            {
-                yield return null;
-                float now = Vector3.Distance(camera.position, aim.position);
-                still = Mathf.Abs(now - last) < 0.0005f ? still + 1 : 0;
-                last = now;
-                if (still >= 5 && Time.realtimeSinceStartup - start >= MinSettleSeconds)
-                {
-                    break;
-                }
-            }
-
-            _settledDistance = last;
         }
 
         private static Reading Measure(float radial, float distance, Camera camera, PlayerAppearance player, RectTransform toast)

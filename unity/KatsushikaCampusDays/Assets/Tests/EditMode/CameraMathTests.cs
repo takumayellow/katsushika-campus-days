@@ -4,12 +4,15 @@ using UnityEngine;
 namespace KCD.Tests
 {
     /// <summary>
-    /// 肩越しカメラの寄せる距離と天井の下に収める高さ (#12)。
+    /// 肩越しカメラの寄せる距離と天井の下に収める高さ (#12)、ズームで寄る比 (#187)。
     /// </summary>
     public sealed class CameraMathTests
     {
         private const float Skin = 0.05f;
         private const float MinDistance = 0.1f;
+
+        /// <summary>CinemachineInputBridge のズームの感度（3.5）。TouchInput.ZoomPerPinchLog はその逆数に合わせてある。</summary>
+        private const float ZoomSensitivity = 1f / TouchInput.ZoomPerPinchLog;
 
         [Test]
         public void AllowedDistance_NoHitKeepsTheDesiredDistance()
@@ -147,6 +150,25 @@ namespace KCD.Tests
             Assert.LessOrEqual(aimHeight + indoor.MaxHeightAboveTarget(radius), 3.2f - 0.3f);
             Assert.LessOrEqual(indoor.PitchRange.y, 30f);
             Assert.GreaterOrEqual(indoor.PitchRange.x, -28f, "屋外より下にも回り込まない");
+        }
+
+        [Test]
+        public void ZoomedRadialScale_SpreadingTheFingersDividesTheScale()
+        {
+            // 2 本指の間隔を 2 倍に広げると、どの倍率からでも半分に寄る。狭めると同じ比で離れる。
+            float spread = TouchInput.PinchToZoom(1f, 2f) * ZoomSensitivity;
+            Assert.AreEqual(0.5f, CameraMath.ZoomedRadialScale(1f, spread), 1e-5f);
+            Assert.AreEqual(0.4f, CameraMath.ZoomedRadialScale(0.8f, spread), 1e-5f);
+            Assert.AreEqual(0.8f, CameraMath.ZoomedRadialScale(0.4f, -spread), 1e-5f);
+            Assert.AreEqual(0.7f, CameraMath.ZoomedRadialScale(0.7f, 0f), 1e-6f, "ズームの量が 0 なら動かない");
+        }
+
+        [Test]
+        public void ZoomedRadialScale_OneWheelNotchShrinksTheScaleByATenth()
+        {
+            float notch = KCDInput.ZoomPerWheelNotch * ZoomSensitivity;
+            Assert.AreEqual(0.9f, CameraMath.ZoomedRadialScale(1f, notch), 1e-5f);
+            Assert.AreEqual(1f, CameraMath.ZoomedRadialScale(0.9f, -notch), 1e-5f, "逆に回すと戻る");
         }
     }
 }
