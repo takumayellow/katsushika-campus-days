@@ -81,15 +81,33 @@ def hung_hoop(mb, x, y, ang, rim_z=3.05):
     for sx in (-0.7, 0.7):
         a = t.p(sx, -0.03, rim_z + 0.9)
         kit.tube(mb, a, (a[0], a[1], Z_HANG), 0.03, "gym_truss_steel", seg=4)
+    _ring(mb, t, 0.15, rim_z)
+
+
+def _ring(mb, t, dy0, rim_z):
+    """リング（8 本の管）と網（4 本）。dy0 はリングの付け根の T の dy。"""
     seg = 8
     ring = [t.p(0.225 * math.sin(2 * math.pi * k / seg),
-                0.15 + 0.225 * (1 - math.cos(2 * math.pi * k / seg)), rim_z)
+                dy0 + 0.225 * (1 - math.cos(2 * math.pi * k / seg)), rim_z)
             for k in range(seg)]
     for k in range(seg):
         kit.tube(mb, ring[k], ring[(k + 1) % seg], 0.012, "hoop_orange", seg=4)
     for k in range(0, seg, 2):
-        bottom = t.p(0.1 * math.sin(2 * math.pi * k / seg), 0.375, rim_z - 0.40)
+        bottom = t.p(0.1 * math.sin(2 * math.pi * k / seg), dy0 + 0.225, rim_z - 0.40)
         kit.tube(mb, ring[k], bottom, 0.006, "net_white", seg=3)
+
+
+def folded_hoop(mb, x, y, rim_z=1.5):
+    """壁に折り畳んだゴール。x は壁の面で、正面は -X（コート側）。"""
+    t = kit.T(x, y, 0.0, math.pi / 2)
+    for sx in (-0.55, 0.55):
+        t.box(mb, sx - 0.04, 0.0, 0.0, sx + 0.04, 0.08, 2.8, "gym_truss_steel")
+        for z in (0.7, 2.3):
+            t.box(mb, sx - 0.03, 0.08, z, sx + 0.03, 0.42, z + 0.06, "gym_truss_steel")
+    t.box(mb, -0.9, 0.42, rim_z - 0.15, 0.9, 0.47, rim_z + 0.90, "backboard_white")
+    t.box(mb, -0.3, 0.47, rim_z - 0.02, 0.3, 0.475, rim_z + 0.45, "hoop_orange")
+    t.box(mb, -0.06, 0.475, rim_z - 0.10, 0.06, 0.62, rim_z + 0.01, "hoop_orange")
+    _ring(mb, t, 0.62, rim_z)
 
 
 def hoops(c):
@@ -102,6 +120,8 @@ def hoops(c):
         hung_hoop(mb, D.HOOP_B_X, y, math.pi / 2)
     hung_hoop(mb, D.HOOP_B_X - 0.1, 14.5, math.pi / 2, rim_z=6.8)
     hung_hoop(mb, D.HOOP_B_X - 0.1, 29.0, math.pi / 2, rim_z=6.8)
+    for y in D.FOLD_Y:
+        folded_hoop(mb, D.WALL_B[0], y)
 
 
 # ---- 壁 B・北の仕切り・南壁の付属 ----
@@ -112,9 +132,12 @@ def walls(c):
     S.ywall(mb, x0, x1, 6.9, 37.0, 0.0, D.Z_FRONT, gaps=[D.B_DOOR_S], lintel=D.DOOR_H)
     S.ywall(mb, x0, x1, 37.0, 38.85, 0.0, 4.8)
     S.ywall(mb, x0, x1, 38.85, 47.6, 0.0, 3.0, gaps=[D.B_DOOR_N], lintel=D.DOOR_H)
-    # 北の仕切り（アリーナと用具庫の間）
+    # 北の仕切り（アリーナと用具庫の間）: アリーナ側は木の下部と上部、用具庫側は打放し
     gaps = [D.N_STORE_CLOSED, D.N_STORE_OPEN, D.N_OPEN]
-    S.xwall(mb, -27.8, -4.0, 38.85, 39.3, 0.0, D.C_HALL, S.CONC, gaps=gaps, lintel=D.DOOR_H)
+    yn, yw = D.ARENA[3], D.ARENA[3] + 0.10
+    S.xwall(mb, -27.8, -4.0, yn, yw, 0.0, 3.0, S.WOOD_L, gaps=gaps, lintel=D.DOOR_H)
+    S.xwall(mb, -27.8, -4.0, yn, yw, 3.0, D.C_HALL, S.WOOD_U)
+    S.xwall(mb, -27.8, -4.0, yw, 39.3, 0.0, D.C_HALL, S.CONC, gaps=gaps, lintel=D.DOOR_H)
     kit.box(mb, D.N_STORE_CLOSED[0], 38.80, 0.0, D.N_STORE_CLOSED[1], 38.85, 2.2, "gym_door_dark")
     for a, b in D.S_DOORS:
         y = D.south_y((a + b) / 2)
