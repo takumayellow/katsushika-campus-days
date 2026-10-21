@@ -187,6 +187,21 @@ def test_committed_shrubs_keep_clear_of_buildings_paths_doors_signs_and_trees(co
     assert not bad, bad[:10]
 
 
+def test_keepout_avoids_the_water_occupancy(committed, world, tree_items):
+    """水盤の縁石・公園の池と橋の占有（hard_pre）に掛かる所には置かない。
+
+    実際の占有は Blender の中で作るので、コミット済みの低木 1 つの周りだけを塞いだ占有で確かめる。
+    """
+    data, frame, ctx = world
+    s = committed["shrubs"][0]
+    water = site.Occupancy()
+    water.stamp_disc(s["x"], s["y"], 0.5)
+    keep = shrubs.Keepout(data, frame, ctx, water, tree_items)
+    assert keep.reason(s["x"], s["y"], s["kind"]) == "water"
+    far = max(committed["shrubs"], key=lambda t: math.dist((t["x"], t["y"]), (s["x"], s["y"])))
+    assert keep.reason(far["x"], far["y"], far["kind"]) is None
+
+
 def test_committed_shrubs_of_a_kind_are_not_crowded(committed):
     for kind in ("bush", "grass"):
         pts = [(s["x"], s["y"]) for s in committed["shrubs"] if s["kind"] == kind]

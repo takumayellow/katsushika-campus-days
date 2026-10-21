@@ -22,6 +22,9 @@ namespace KCD.Tests
         private const string ShrubsJson = "Assets/Models/Campus/shrubs.json";
         private const string LeafMaterial = "Assets/Materials/Campus/leaf.mat";
 
+        /// <summary>原点にある原型の名前の頭（shrub_mesh_&lt;モデル&gt;）。</summary>
+        private const string MeshPrefix = "shrub_mesh_";
+
         /// <summary>Empty の位置と shrubs.json の位置のずれの許容 [m]。</summary>
         private const float PositionTolerance = 0.05f;
 
@@ -105,7 +108,7 @@ namespace KCD.Tests
             Assert.IsNotNull(_shrubs, ScenePath + " に Shrubs が無い");
             foreach (Transform t in _shrubs.GetComponentsInChildren<Transform>(true))
             {
-                if (t.name.StartsWith("shrub_mesh_", System.StringComparison.Ordinal))
+                if (t.name.StartsWith(MeshPrefix, System.StringComparison.Ordinal))
                 {
                     Assert.IsFalse(t.gameObject.activeInHierarchy, t.name + " が表示されたまま（原点に低木が重なる）");
                 }
@@ -117,9 +120,14 @@ namespace KCD.Tests
         {
             Assert.IsNotNull(_shrubs, ScenePath + " に Shrubs が無い");
             var spots = new Dictionary<string, Transform>();
+            var prototypes = new Dictionary<string, Mesh>();
             foreach (Transform t in _shrubs.GetComponentsInChildren<Transform>(true))
             {
                 spots[t.name] = t;
+                if (t.name.StartsWith(MeshPrefix, System.StringComparison.Ordinal) && t.TryGetComponent(out MeshFilter prototype))
+                {
+                    prototypes[t.name.Substring(MeshPrefix.Length)] = prototype.sharedMesh;
+                }
             }
 
             var bad = new List<string>();
@@ -153,7 +161,8 @@ namespace KCD.Tests
                     continue;
                 }
 
-                if (!filter.sharedMesh.name.Contains(model))
+                // plant_bush と plant_bushLarge のように名前が入れ子のモデルもあるので、原型のメッシュそのものと比べる。
+                if (!prototypes.TryGetValue(model, out Mesh expectedMesh) || filter.sharedMesh != expectedMesh)
                 {
                     bad.Add(string.Format("{0}: モデルが {1} なのにメッシュが {2}", name, model, filter.sharedMesh.name));
                 }
@@ -197,6 +206,17 @@ namespace KCD.Tests
             TreeChunkCombiner combiner = _shrubs.GetComponent<TreeChunkCombiner>();
             Assert.IsNotNull(combiner, "Shrubs に TreeChunkCombiner が付いていない");
 
+            // Combine は元の MeshRenderer を止め、まとめたメッシュを子に足す。終わったら元に戻し、
+            // ほかのテストが実行の順によらず、まとめる前のシーンを見るようにする。
+            var bodies = new List<MeshRenderer>();
+            foreach (MeshRenderer renderer in _shrubs.GetComponentsInChildren<MeshRenderer>(false))
+            {
+                if (renderer.enabled)
+                {
+                    bodies.Add(renderer);
+                }
+            }
+
             try
             {
                 Assert.Greater(combiner.Combine(), 0, "まとめたメッシュが無い");
@@ -228,7 +248,13 @@ namespace KCD.Tests
                     if (chunk != null)
                     {
                         Object.DestroyImmediate(chunk.GetComponent<MeshFilter>().sharedMesh);
+                        Object.DestroyImmediate(chunk);
                     }
+                }
+
+                foreach (MeshRenderer body in bodies)
+                {
+                    body.enabled = true;
                 }
             }
         }

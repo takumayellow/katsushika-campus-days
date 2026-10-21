@@ -149,7 +149,8 @@ def model_mesh(name, model, scale):
 
 def build_prototypes(models=None, collection=None):
     """原型を Blender のオブジェクトにする。[(モデル名, オブジェクト)]（名前順）。"""
-    models = models or load()["models"]
+    if models is None:
+        models = load()["models"]
     out = []
     for name in sorted(models):
         model = models[name]
@@ -396,7 +397,8 @@ def plan(data, frame, ctx, trees, hard_pre, rng, models=None,
 
     stats に dict を渡すと、避けた理由ごとの数を入れる（"rejected"）。
     """
-    models = models or load()["models"]
+    if models is None:
+        models = load()["models"]
     pools = {"bush": _Pool(models, BUSH_WEIGHTS), "grass": _Pool(models, GRASS_WEIGHTS)}
     keep = Keepout(data, frame, ctx, hard_pre, trees)
     placed = _Placed()
