@@ -21,11 +21,14 @@ namespace KCD.Tests
         private const string CharactersFolder = "Assets/Models/Characters";
         private const string ScenesFolder = "Assets/Scenes";
 
-        /// <summary>骨の位置と境界の、許すずれ（m）。骨の拡大率の差にも使う。</summary>
+        /// <summary>骨の位置と境界の、許すずれ（m）。</summary>
         private const float Tolerance = 0.001f;
 
         /// <summary>骨の向きの、許すずれ（度）。CharacterImporter.SkeletonMatches と同じ。</summary>
         private const float AngleTolerance = 0.05f;
+
+        /// <summary>骨の拡大率の、許すずれ（拡大率の差の大きさ）。</summary>
+        private const float ScaleTolerance = 0.001f;
 
         /// <summary>ポーズの組み立てに効く骨。髪の揺れの骨も、無いと揺れが止まるので見る。</summary>
         private static readonly string[] Watched =
@@ -161,13 +164,15 @@ namespace KCD.Tests
                 }
             }
 
-            // 主人公の 3 人の体は、どれもシーンに置いてある。見つからない人がいれば、メッシュの場所の読み取りが
-            // 壊れていて、比べないまま通っている。
+            // 主人公の 3 人の体は、どれもシーンに置いてある。見つからない人がいれば、その体は比べないまま通ってしまう。
             foreach (string id in GameManager.PlayableCharacterIds)
             {
+                string fbx = CharactersFolder + "/" + id + "/" + id + ".fbx";
                 Assert.IsTrue(
-                    models.ContainsKey(CharactersFolder + "/" + id + "/" + id + ".fbx"),
-                    "シーンに " + id + " の体が見つからない。読み取りが壊れている");
+                    models.ContainsKey(fbx),
+                    ScenesFolder + " のどのシーンにも、" + fbx + " のメッシュを使う体が無い。シーンに体を置かなくなったのなら、"
+                    + "このテストの前提を見直す。置いてあるなら、体のメッシュの参照が切れているか、メッシュから FBX を引く "
+                    + "ModelOf が壊れている");
             }
 
             Assert.IsEmpty(
@@ -320,7 +325,7 @@ namespace KCD.Tests
                 float gap = Vector3.Distance(here.localPosition, there.localPosition);
                 float angle = Quaternion.Angle(here.localRotation, there.localRotation);
                 float scale = Vector3.Distance(here.localScale, there.localScale);
-                if (gap > Tolerance || angle > AngleTolerance || scale > Tolerance)
+                if (gap > Tolerance || angle > AngleTolerance || scale > ScaleTolerance)
                 {
                     stale.Add(string.Format(
                         "{0} {1}: 位置 シーン {2} / FBX {3}（差 {4:F3} m）、向きの差 {5:F2} 度、拡大率 シーン {6} / FBX {7}",
