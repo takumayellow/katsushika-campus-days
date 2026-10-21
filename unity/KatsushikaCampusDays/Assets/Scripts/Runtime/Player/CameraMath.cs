@@ -3,11 +3,23 @@ using UnityEngine;
 namespace KCD
 {
     /// <summary>
-    /// 肩越しカメラとフォトモードの自由カメラで使う、距離と高さの計算 (#12)。
-    /// 物理にも Cinemachine にも触らない純粋関数だけを置き、EditMode テストで確かめる。
+    /// 肩越しカメラとフォトモードの自由カメラで使う、距離と高さの計算 (#12) と、ズームで寄せる倍率の計算 (#187)。
+    /// 物理にも Cinemachine にも触らない純粋関数と既定の値だけを置き、EditMode テストで確かめる。
     /// </summary>
     public static class CameraMath
     {
+        /// <summary>
+        /// 肩越しカメラの視点の感度の既定。CinemachineInputBridge の既定で、<see cref="KCDInput.Look"/> に掛けて軌道の角度（度）にする。
+        /// シーンには組んだときの値が保存され、それが効く。変えたら SceneBuilder で組み直す（CameraMathTests が照らし合わせる）。
+        /// </summary>
+        public const float LookSensitivity = 2.2f;
+
+        /// <summary>
+        /// 肩越しカメラのズームの感度の既定。CinemachineInputBridge の既定で、<see cref="KCDInput.Zoom"/> に掛けて
+        /// <see cref="ZoomedRadialScale"/> に渡す。シーンとの関係は <see cref="LookSensitivity"/> と同じ。
+        /// </summary>
+        public const float ZoomSensitivity = 3.5f;
+
         /// <summary>
         /// 見る点からカメラまでに置いてよい距離。
         /// hitDistance は見る点からカメラの向きへ球を飛ばして、最初に当たった所までの距離（当たらなければ負）。

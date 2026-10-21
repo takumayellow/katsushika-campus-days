@@ -163,7 +163,7 @@ namespace KCD.Tests
         }
 
         /// <summary>
-        /// キャンパスの肩越しカメラは、1 本指で縦になぞっても距離を変えず、2 本指で間隔を広げると寄り、狭めると戻る。
+        /// キャンパスの肩越しカメラは、1 本指で縦になぞると縦にだけ回って距離を変えず、2 本指で間隔を広げると寄り、狭めると戻る。
         /// Cinemachine は軌道の縦の軸と半径の軸に同じ縦の目安（Hint）を付けるので、目安で軸を選ぶと縦のなぞりで距離が変わる。
         /// </summary>
         [UnityTest]
@@ -185,26 +185,46 @@ namespace KCD.Tests
             Transform camera = Camera.main.transform;
             var settle = new CameraSettle(camera, aim);
             yield return settle.Wait();
+            Assert.IsFalse(settle.TimedOut, "入場の直後のカメラが落ち着かない");
             float start = settle.Distance;
             Vector3 startForward = camera.forward;
 
-            // 画面の高さの 2% を上へなぞると、既定の感度（倍率 1）で縦に約 2 度回る。
+            // 画面の高さの 2% を上へなぞると、縦の軸が 0.02 × 45 × 2.2 × 感度の倍率 度だけ回る（倍率 1 で約 2 度）。
+            // シーンのブリッジは _invertVertical を立ててある。設定画面で上下を反転していなければ（CameraPrefs.VerticalSign が 1）、
+            // 上へなぞると縦の軸の値が下がり、カメラが下がって見上げる（仰角が増える）。マウスを上へ動かしたときと同じ向き。
+            // 軌道の中心は注視点から横へずらしてあり、カメラは注視点を見るので、向きは軸と同じ角度だけは回らない。
+            // 縦の向きは、符号と見込みの半分を超えることだけを見る。
+            float expected = 0.02f * TouchInput.LookPerScreenHeight * CameraMath.LookSensitivity *
+                             CameraPrefs.SensitivityScale * CameraPrefs.VerticalSign;
             TouchInput.AddDrag(new Vector2(0f, Screen.height * 0.02f), Screen.height);
             yield return settle.Wait();
-            Assert.Greater(Vector3.Angle(startForward, camera.forward), CameraPrefs.SensitivityScale,
-                "1 本指で上へなぞってもカメラが縦に回らない");
-            Assert.AreEqual(start, settle.Distance, start * 0.03f, "1 本指で上へなぞったらカメラの距離が変わった");
+            Assert.IsFalse(settle.TimedOut, "1 本指で上へなぞったあと、カメラが落ち着かない");
+            float pitch = Mathf.DeltaAngle(Pitch(startForward), Pitch(camera.forward));
+            float yaw = Mathf.DeltaAngle(Yaw(startForward), Yaw(camera.forward));
+            string turned = "（仰角の変化 " + pitch.ToString("F2") + " 度、方位の変化 " + yaw.ToString("F2") +
+                            " 度、見込み " + expected.ToString("F2") + " 度）";
+            Assert.Greater(pitch * Mathf.Sign(expected), Mathf.Abs(expected) * 0.5f,
+                "1 本指で上へなぞっても、カメラが見込みの向きに縦に回らない" + turned);
+            Assert.Less(Mathf.Abs(yaw), Mathf.Abs(expected) * 0.25f, "1 本指で縦になぞったのに、カメラが横に回った" + turned);
+
+            // 軌道の中心が横へずれている分、縦に回すと注視点との距離もわずかに変わる（1% に届かない）。
+            // 縦のなぞりで半径の倍率まで動くと距離は何割も変わるので、1% まで許せば見分けられる。
+            Assert.AreEqual(start, settle.Distance, start * 0.01f, "1 本指で上へなぞったらカメラの距離が変わった");
 
             TouchInput.AddDrag(new Vector2(0f, -Screen.height * 0.02f), Screen.height);
             yield return settle.Wait();
+            Assert.IsFalse(settle.TimedOut, "1 本指で下へなぞったあと、カメラが落ち着かない");
             Assert.AreEqual(start, settle.Distance, start * 0.01f, "上下に同じだけなぞったのにカメラの距離が元に戻らない");
 
             // 2 本指の間隔を 2 倍に広げると半径の倍率が半分になり、元の間隔に狭めると戻る。
+            // 注視点との距離は、軌道の中心が横へずれている分だけ半径の倍率どおりには縮まない。8 割を切れば寄ったとみなす。
             TouchInput.AddPinch(1f, 2f);
             yield return settle.Wait();
+            Assert.IsFalse(settle.TimedOut, "2 本指で広げたあと、カメラが落ち着かない");
             Assert.Less(settle.Distance, start * 0.8f, "2 本指で広げてもカメラが寄らない");
             TouchInput.AddPinch(2f, 1f);
             yield return settle.Wait();
+            Assert.IsFalse(settle.TimedOut, "2 本指で狭めたあと、カメラが落ち着かない");
             Assert.AreEqual(start, settle.Distance, start * 0.01f, "2 本指で狭めてもカメラが元の距離に戻らない");
             AssertNoErrors("キャンパス");
         }
@@ -397,6 +417,18 @@ namespace KCD.Tests
             yield return null;
             button.OnPointerUp(finger);
             yield return PlayModeScenes.Advance(2, 0f);
+        }
+
+        /// <summary>向き forward の仰角（度。上を向くと正）。</summary>
+        private static float Pitch(Vector3 forward)
+        {
+            return Mathf.Asin(Mathf.Clamp(forward.normalized.y, -1f, 1f)) * Mathf.Rad2Deg;
+        }
+
+        /// <summary>向き forward の方位（度。+Z が 0、+X が 90）。</summary>
+        private static float Yaw(Vector3 forward)
+        {
+            return Mathf.Atan2(forward.x, forward.z) * Mathf.Rad2Deg;
         }
 
         private static PointerEventData Finger(int id, Vector2 position)

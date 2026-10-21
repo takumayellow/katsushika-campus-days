@@ -1,18 +1,51 @@
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEngine;
 
 namespace KCD.Tests
 {
     /// <summary>
     /// 肩越しカメラの寄せる距離と天井の下に収める高さ (#12)、ズームで寄る比 (#187)。
+    /// ズームの比は、キャンパスのシーンに保存された CinemachineInputBridge の感度で確かめる。
     /// </summary>
     public sealed class CameraMathTests
     {
         private const float Skin = 0.05f;
         private const float MinDistance = 0.1f;
+        private const string ScenePath = "Assets/Scenes/Campus.unity";
 
-        /// <summary>CinemachineInputBridge のズームの感度（3.5）。TouchInput.ZoomPerPinchLog はその逆数に合わせてある。</summary>
-        private const float ZoomSensitivity = 1f / TouchInput.ZoomPerPinchLog;
+        private string _bridgeBlock;
+
+        /// <summary>
+        /// キャンパスのシーンに保存された CinemachineInputBridge の値の並び。部品はスクリプトの guid で探す
+        /// （名前空間やアセンブリを変えても guid は変わらない）。シーンは大きいので、テストの実行ごとに一度だけ読む。
+        /// </summary>
+        private string BridgeBlock
+        {
+            get
+            {
+                if (_bridgeBlock == null)
+                {
+                    string path = Path.Combine(Application.dataPath, "Scenes", "Campus.unity");
+                    Assert.IsTrue(File.Exists(path), path + " が無い");
+                    string guid = ScriptGuid(typeof(CinemachineInputBridge));
+                    MatchCollection matches = Regex.Matches(File.ReadAllText(path),
+                        @"^\s*m_Script:\s*\{fileID:\s*11500000,\s*guid:\s*" + guid + @",\s*type:\s*3\}\s*$(.*?)(?=^---|\z)",
+                        RegexOptions.Multiline | RegexOptions.Singleline);
+                    Assert.AreEqual(1, matches.Count, ScenePath + " で guid " + guid + " のスクリプトを使う部品の数");
+                    _bridgeBlock = matches[0].Groups[1].Value;
+                }
+
+                return _bridgeBlock;
+            }
+        }
+
+        /// <summary>シーンに保存されたズームの感度。ゲームで効くのはこの値。</summary>
+        private float SceneZoomSensitivity => ReadBridgeFloat("_zoomSensitivity");
 
         [Test]
         public void AllowedDistance_NoHitKeepsTheDesiredDistance()
@@ -153,10 +186,20 @@ namespace KCD.Tests
         }
 
         [Test]
+        public void CampusScene_BridgeSensitivitiesMatchTheDefaults()
+        {
+            // シーンには組んだときの CinemachineInputBridge の既定が保存される。既定だけ変えても、組み直すまでゲームは変わらない。
+            Assert.AreEqual(CameraMath.LookSensitivity, ReadBridgeFloat("_lookSensitivity"), 1e-6f,
+                ScenePath + " の視点の感度が CameraMath の既定と違う（SceneBuilder で組み直す）");
+            Assert.AreEqual(CameraMath.ZoomSensitivity, SceneZoomSensitivity, 1e-6f,
+                ScenePath + " のズームの感度が CameraMath の既定と違う（SceneBuilder で組み直す）");
+        }
+
+        [Test]
         public void ZoomedRadialScale_SpreadingTheFingersDividesTheScale()
         {
             // 2 本指の間隔を 2 倍に広げると、どの倍率からでも半分に寄る。狭めると同じ比で離れる。
-            float spread = TouchInput.PinchToZoom(1f, 2f) * ZoomSensitivity;
+            float spread = TouchInput.PinchToZoom(1f, 2f) * SceneZoomSensitivity;
             Assert.AreEqual(0.5f, CameraMath.ZoomedRadialScale(1f, spread), 1e-5f);
             Assert.AreEqual(0.4f, CameraMath.ZoomedRadialScale(0.8f, spread), 1e-5f);
             Assert.AreEqual(0.8f, CameraMath.ZoomedRadialScale(0.4f, -spread), 1e-5f);
@@ -166,9 +209,44 @@ namespace KCD.Tests
         [Test]
         public void ZoomedRadialScale_OneWheelNotchShrinksTheScaleByATenth()
         {
-            float notch = KCDInput.ZoomPerWheelNotch * ZoomSensitivity;
-            Assert.AreEqual(0.9f, CameraMath.ZoomedRadialScale(1f, notch), 1e-5f);
-            Assert.AreEqual(1f, CameraMath.ZoomedRadialScale(0.9f, -notch), 1e-5f, "逆に回すと戻る");
+            Assert.AreEqual(0.9f, CameraMath.ZoomedRadialScale(1f, KCDInput.WheelZoom(1f) * SceneZoomSensitivity), 1e-5f);
+            Assert.AreEqual(1f, CameraMath.ZoomedRadialScale(0.9f, KCDInput.WheelZoom(-1f) * SceneZoomSensitivity), 1e-5f,
+                "逆に回すと戻る");
+        }
+
+        [Test]
+        public void WheelZoom_CountsTheNotchesUpToThreeAFrame()
+        {
+            float notch = KCDInput.ZoomPerWheelNotch;
+            Assert.AreEqual(notch, KCDInput.WheelZoom(1f), 1e-7f);
+            Assert.AreEqual(-2f * notch, KCDInput.WheelZoom(-2f), 1e-7f);
+            Assert.AreEqual(3f * notch, KCDInput.WheelZoom(10f), 1e-7f, "1 フレームで大きく回しても 3 目盛りまで");
+            Assert.AreEqual(-3f * notch, KCDInput.WheelZoom(-10f), 1e-7f, "逆に大きく回しても 3 目盛りまで");
+            Assert.AreEqual(0f, KCDInput.WheelZoom(0f), 1e-7f, "回さなければ動かない");
+        }
+
+        private float ReadBridgeFloat(string key)
+        {
+            Match match = Regex.Match(BridgeBlock, @"^\s*" + Regex.Escape(key) + @":\s*(\S+)\s*$", RegexOptions.Multiline);
+            Assert.IsTrue(match.Success, ScenePath + " の CinemachineInputBridge に " + key + " が無い");
+            string text = match.Groups[1].Value;
+            Assert.IsTrue(float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out float value),
+                ScenePath + " の CinemachineInputBridge の " + key + " の値 " + text + " が数として読めない");
+            return value;
+        }
+
+        /// <summary>type を定義するスクリプトの guid。名前が同じ別のスクリプトと取り違えないよう、定義する型で確かめる。</summary>
+        private static string ScriptGuid(System.Type type)
+        {
+            string[] guids = AssetDatabase.FindAssets("t:MonoScript " + type.Name).Where(g => Defines(g, type)).ToArray();
+            Assert.AreEqual(1, guids.Length, type.Name + " を定義するスクリプトの数");
+            return guids[0];
+        }
+
+        private static bool Defines(string guid, System.Type type)
+        {
+            MonoScript script = AssetDatabase.LoadAssetAtPath<MonoScript>(AssetDatabase.GUIDToAssetPath(guid));
+            return script != null && script.GetClass() == type;
         }
     }
 }

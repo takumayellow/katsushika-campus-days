@@ -180,7 +180,7 @@ namespace KCD
 
         /// <summary>
         /// カメラのズーム操作（ホイールと 2 本指のつまみ, #187）。前方向・広げる向きが正。
-        /// ホイールは 1 フレームで大きく回しても ±3 目盛りまでにする（<see cref="PhotoZoom"/> と同じ）。
+        /// ホイールの分は、回した目盛りの数から <see cref="WheelZoom"/> で量にする。
         /// </summary>
         public static float Zoom
         {
@@ -190,11 +190,20 @@ namespace KCD
                 Mouse mouse = Mouse.current;
                 if (mouse != null && !InputMode.IsTouch)
                 {
-                    zoom += Mathf.Clamp(mouse.scroll.ReadValue().y, -3f, 3f) * ZoomPerWheelNotch;
+                    zoom += WheelZoom(mouse.scroll.ReadValue().y);
                 }
 
                 return zoom;
             }
+        }
+
+        /// <summary>
+        /// ホイールを notches 目盛り回したときのズームの量（<see cref="Zoom"/> の単位）。前方向が正。
+        /// 1 フレームで大きく回しても ±3 目盛りまでにする（<see cref="PhotoZoom"/> と同じ）。
+        /// </summary>
+        public static float WheelZoom(float notches)
+        {
+            return Mathf.Clamp(notches, -3f, 3f) * ZoomPerWheelNotch;
         }
 
         /// <summary>

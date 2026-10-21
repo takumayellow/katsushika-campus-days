@@ -67,6 +67,7 @@ namespace KCD.Tests
             var settle = new CameraSettle(camera.transform, aim);
             float radial = FarRadial;
             yield return settle.Wait();
+            Assert.IsFalse(settle.TimedOut, "入場の直後のカメラが落ち着かない");
             readings.Add(Measure(radial, settle.Distance, camera, player, toast));
 
             foreach (float next in new[] { 0.67f, NearRadial, FarRadial })
@@ -74,6 +75,7 @@ namespace KCD.Tests
                 // 2 本指の間隔を radial / next 倍にすると、CinemachineInputBridge が半径の倍率を next / radial 倍にする。
                 TouchInput.AddPinch(1f, radial / next);
                 yield return settle.Wait();
+                Assert.IsFalse(settle.TimedOut, "半径の倍率を " + Format(next) + " に向けて動かしたあと、カメラが落ち着かない");
                 radial = next;
                 readings.Add(Measure(radial, settle.Distance, camera, player, toast));
             }
@@ -83,11 +85,11 @@ namespace KCD.Tests
             Reading nearest = readings[2];
             float limit = LiftLimit((RectTransform)toast.parent);
             Assert.Greater(nearest.HeadTop + Clearance, RestingBottom,
-                "前提: 最も寄ったとき、元の置き場所のままでは頭との間が " + Format(Clearance) + " に足りない。足りないと、上げる働きを確かめられない" + log);
+                "前提: 最も寄ったとき、元の置き場所のままでは頭との間が " + Format(Clearance) + " に足りない。足りていると、上げる働きを確かめられない" + log);
             Assert.LessOrEqual(nearest.HeadTop + Clearance, limit,
                 "前提: 最も寄ったときの頭の上に、トーストを上げられる限度 " + Format(limit) + " までで間を空けられる。空けられないと、頭にかからないことを確かめられない" + log);
-            Assert.GreaterOrEqual(far.ToastRight, far.PlayerX, "前提: 人物がトーストの横の範囲の外に居る" + log);
-            Assert.LessOrEqual(far.ToastLeft, far.PlayerX, "前提: 人物がトーストの横の範囲の外に居る" + log);
+            Assert.GreaterOrEqual(far.ToastRight, far.PlayerX, "前提: 人物がトーストの横の範囲の中に居る。外に居ると、頭にかかるかを確かめられない" + log);
+            Assert.LessOrEqual(far.ToastLeft, far.PlayerX, "前提: 人物がトーストの横の範囲の中に居る。外に居ると、頭にかかるかを確かめられない" + log);
 
             var failures = new List<string>();
             foreach (Reading r in readings)
@@ -154,7 +156,7 @@ namespace KCD.Tests
                 .Append("° 背丈 ").Append(Format(player.BodyHeight)).Append(" m");
             foreach (Reading r in readings)
             {
-                text.Append("\n  半径の倍率 ").Append(Format(r.Radial))
+                text.Append("\n  狙った半径の倍率 ").Append(Format(r.Radial))
                     .Append(" 距離 ").Append(Format(r.Distance))
                     .Append(" m 頭の上端 ").Append(Format(r.HeadTop))
                     .Append(" トーストの下端 ").Append(Format(r.ToastBottom))

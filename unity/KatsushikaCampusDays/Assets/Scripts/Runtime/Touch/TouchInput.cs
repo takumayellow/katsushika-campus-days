@@ -14,15 +14,15 @@ namespace KCD
     {
         /// <summary>
         /// 画面の高さ 1 つ分なぞったときの視点の量（<see cref="KCDInput.Look"/> の単位）。
-        /// 視点の感度（CinemachineInputBridge の 2.2）を掛けて約 100 度になる。
+        /// 視点の感度（<see cref="CameraMath.LookSensitivity"/>）を掛けて約 100 度になる。
         /// </summary>
         public const float LookPerScreenHeight = 45f;
 
         /// <summary>
         /// 2 本指の間隔を e 倍に広げたときの拡大の量（<see cref="KCDInput.Zoom"/> の単位）。
-        /// ズームの感度（CinemachineInputBridge の 3.5）を掛けて、軌道の半径の倍率が指の間隔の逆数倍になる。
+        /// ズームの感度（<see cref="CameraMath.ZoomSensitivity"/>）を掛けて、軌道の半径の倍率が指の間隔の逆数倍になる。
         /// </summary>
-        public const float ZoomPerPinchLog = 1f / 3.5f;
+        public const float ZoomPerPinchLog = 1f / CameraMath.ZoomSensitivity;
 
         private static Vector2 _pendingLook;
         private static float _pendingZoom;

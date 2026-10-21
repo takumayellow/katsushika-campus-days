@@ -14,13 +14,13 @@ namespace KCD
     /// </summary>
     public sealed class CinemachineInputBridge : MonoBehaviour
     {
-        [SerializeField] private float _lookSensitivity = 2.2f;
+        [SerializeField] private float _lookSensitivity = CameraMath.LookSensitivity;
 
         /// <summary>
         /// ズームの量（<see cref="KCDInput.Zoom"/>）に掛ける感度。掛けた量 z で、軌道の半径の倍率を e^-z 倍にする
         /// （<see cref="CameraMath.ZoomedRadialScale"/>）。
         /// </summary>
-        [SerializeField] private float _zoomSensitivity = 3.5f;
+        [SerializeField] private float _zoomSensitivity = CameraMath.ZoomSensitivity;
 
         [SerializeField] private bool _invertVertical = true;
 
