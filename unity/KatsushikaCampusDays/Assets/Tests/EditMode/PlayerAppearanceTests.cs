@@ -211,6 +211,25 @@ namespace KCD.Tests
         }
 
         [Test]
+        public void HeadAboveAim_IsWhatIsLeftOfTheHeightAboveTheAimPoint()
+        {
+            // 注視点は背丈の 0.92 の高さにあるので、頭の上端はその上、背丈の残り 0.08。
+            Assert.AreEqual(0.128f, PlayerAppearance.HeadAboveAim(PlayerAppearance.ReferenceHeight), 1e-4f, "1.6 m の人は 0.128 m");
+            Assert.AreEqual(0.092f, PlayerAppearance.HeadAboveAim(1.15f), 1e-4f, "坊っちゃん・マドンナちゃん (1.15 m) は 0.092 m");
+
+            // 注視点（Framing）と合わせて背丈になる。
+            foreach (float height in new[] { PlayerAppearance.ReferenceHeight, 1.15f })
+            {
+                PlayerAppearance.Framing(height, out float aim, out float _);
+                Assert.AreEqual(height, aim + PlayerAppearance.HeadAboveAim(height), 1e-4f, "注視点と頭の上端の間が背丈と合わない");
+            }
+
+            // 測れなかったときは、Framing と同じく既定の背丈で数える。
+            Assert.AreEqual(0.128f, PlayerAppearance.HeadAboveAim(0f), 1e-4f);
+            Assert.AreEqual(0.128f, PlayerAppearance.HeadAboveAim(float.NaN), 1e-4f);
+        }
+
+        [Test]
         public void MeasureHeight_MatchesTheMeshTopOfEveryPlayableModel()
         {
             // 実行時は Renderer.bounds で背丈を測る。スキンメッシュの箱が実際のメッシュの

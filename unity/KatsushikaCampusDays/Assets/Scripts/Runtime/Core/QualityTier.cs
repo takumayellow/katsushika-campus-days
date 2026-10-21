@@ -123,8 +123,8 @@ namespace KCD
                 case QualityTier.Low:
                     // 描く画素を Medium の 0.8² = 64% から 0.7² = 49% に減らす。0.5 にしないのは, URP の拡大が
                     // ちょうど半分のときに最近傍（Point）を選び, その変種がビルドから削られているため。
-                    // 木は霧で 8 割見えている 300 m で切る。trees.json の 553 本から見積もると, まとまりは 37 個で,
-                    // 木のある範囲を歩く位置の平均で約 3 個（最大 16 個）を省く。
+                    // 木は霧で 8 割見えている 300 m で切る。遠くの木のまとまりを描かないぶん描画コールが減る
+                    // （メインストリートでの実測は docs/WEBGL_BUDGET.md）。
                     return new QualityTierSettings(
                         new PipelineQuality(renderScale: 0.7f, shadowDistance: 30f, shadowCascades: 1,
                                             shadowResolution: 512, msaaSamples: 1),

@@ -53,14 +53,18 @@ namespace KCD.Tests
         private const float BackToBackHeight = 0.05f;
 
         /// <summary>
-        /// 建物の外に出さない店の名前（小文字で比べる）。共創棟 1F のスターバックスとファミリーマート、
-        /// キャンパスの外の背景のローソン。店の名前は会話とクエストの文にだけ出る。
+        /// 遊ぶ人に見せない実在の店の名前（小文字で比べる）。共創棟 1F のカフェとコンビニの実在の店名と、
+        /// キャンパスの外の背景の建物の OSM 上の名前のうち店のもの（campus.json の osm_name）。
+        /// ゲームの文では「カフェ」「コンビニ」と書く。
         /// </summary>
         private static readonly string[] Brands =
         {
             "スターバックス", "スタバ", "starbucks",
             "ファミリーマート", "ファミマ", "familymart",
-            "ローソン", "lawson"
+            "ローソン", "lawson",
+            "マークイズ", "mark is 葛飾",
+            "いなげや", "inageya",
+            "ksc金町"
         };
 
         private Scene _scene;
@@ -491,8 +495,8 @@ namespace KCD.Tests
                 && Vector3.Dot(a.forward, b.forward) < -Aligned;
         }
 
-        /// <summary>text に含まれる店の名前。無ければ null。</summary>
-        private static string BrandIn(string text)
+        /// <summary>text に含まれる店の名前。無ければ null。ShopNameTests も使う。</summary>
+        internal static string BrandIn(string text)
         {
             string lower = text.ToLowerInvariant();
             foreach (string brand in Brands)
