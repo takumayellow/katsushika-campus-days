@@ -112,7 +112,7 @@ def test_only_the_unity_hub_helper_is_not_counted(path, helper):
 
 
 def test_tasklist_to_unity_pids_to_wait_for():
-    # 本体，Hub の常駐，終わったのに残っているもの，パスが分からないもの が並んだ tasklist
+    # 本体、Hub の常駐、終わったのに残っているもの、パスが分からないものが並んだ tasklist
     text = (
         '"Unity.exe","41236","Console","1","2,345,678 K"\r\n'
         '"unity.exe","4752","Console","1","45,000 K"\r\n'
@@ -120,7 +120,7 @@ def test_tasklist_to_unity_pids_to_wait_for():
         '"Unity.exe","900","Console","1","100 K"\r\n'
     )
     alive = {41236: True, 4752: True, 63316: False, 900: True}
-    # 終わったもの (63316) はパスを引く前に除くので，ここに無くてよい
+    # 終わったもの (63316) はパスを引く前に除くので、ここに無くてよい
     paths = {41236: EDITOR_EXE, 4752: HUB_HELPER_EXE, 900: None}
     pids = run_tests.unity_pids_from_tasklist(text, alive=alive.__getitem__, path_of=paths.__getitem__)
     assert pids == [41236, 900]
@@ -144,7 +144,7 @@ class FakeKernel32:
 
 @pytest.mark.parametrize("handle, query_ok, closed", [(None, True, 0), (1234, False, 1)])
 def test_process_path_is_none_when_it_cannot_be_read(monkeypatch, handle, query_ok, closed):
-    # 開けない PID と，開けても名前を引けない PID は None（呼び出し側は数える側に倒す）
+    # 開けない PID と、開けても名前を引けない PID は None（呼び出し側は数える側に倒す）
     import ctypes
 
     fake = FakeKernel32(handle, query_ok)
