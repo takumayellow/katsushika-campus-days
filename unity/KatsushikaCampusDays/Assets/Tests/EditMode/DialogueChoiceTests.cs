@@ -200,7 +200,7 @@ namespace KCD.Tests
 
             string touch = DialogueView.ComposeChoices(choices, 0, true);
             StringAssert.StartsWith("<size=", touch);
-            StringAssert.Contains("choice:-1", touch, "指のときは選ばずに閉じるリンクを最後に置く");
+            StringAssert.Contains(DialogueView.CloseLinkId(choices.Count), touch, "指のときは選ばずに閉じるリンクを最後に置く");
             StringAssert.DoesNotContain("Enter", touch);
         }
 
