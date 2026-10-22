@@ -368,7 +368,10 @@ CHARACTERS: dict[str, dict] = {
         brow_width=0.028, face_keel=0.085,
         hair="twintail", hair_accessory="glasses_red",
         # 赤い縁の眼鏡。レンズは目を囲む丸みのある形にし、頬紅は中心をレンズの縁より下に置く。
+        # レンズが縦に長く、縁を外側ほど奥へ回すと横から縦長の輪に見えるので、縁は目より
+        # 手前のほぼ平らな面に置き、横からは目の前の 1 本の線に見せる。
         glasses_tube=0.011, glasses_lens=(1.40, 1.08),
+        glasses_front=0.066, glasses_wrap=0.08,
         blush_layout=dict(dx=0.235, y=0.255, rx=0.075, ry=0.035),
         tail_ribbon=True,
         outfit="seifuku",
