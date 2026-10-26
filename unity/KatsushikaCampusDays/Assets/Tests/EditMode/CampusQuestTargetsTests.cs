@@ -8,7 +8,7 @@ using UnityEngine.SceneManagement;
 namespace KCD.Tests
 {
     /// <summary>
-    /// Campus シーンに、14 クエスト（隠しクエストを含む）のどのステップの対象も、隠しアイテム 20 個も、写真スポット 6 箇所も
+    /// Campus シーンに、全クエスト（隠しクエストを含む）のどのステップの対象も、隠しアイテム 20 個も、写真スポット 6 箇所も
     /// 置かれていることを守る (#65)。
     ///
     /// 以前は collectibles.json の一覧だけがあってシーンに何も無く、サブクエ「写真散歩」の ps_* と
@@ -121,6 +121,15 @@ namespace KCD.Tests
                     if (!string.IsNullOrEmpty(topic.SetsFlag))
                     {
                         flags.Add(topic.SetsFlag);
+                    }
+
+                    // 7F の白板（board_7F）のように、選択肢で立つフラグもある (#389)。
+                    foreach (DialogueChoice choice in topic.Choices)
+                    {
+                        if (!string.IsNullOrEmpty(choice.SetsFlag))
+                        {
+                            flags.Add(choice.SetsFlag);
+                        }
                     }
                 }
             }

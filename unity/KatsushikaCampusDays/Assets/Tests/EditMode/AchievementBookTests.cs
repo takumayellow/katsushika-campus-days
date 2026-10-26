@@ -8,7 +8,7 @@ using UnityEngine.TestTools;
 namespace KCD.Tests
 {
     /// <summary>
-    /// 称号 15 件の判定 (#65, #175, #41)。以前は collectibles.json の achievements を読むコードが無く、
+    /// 称号 16 件の判定 (#65, #175, #41, #389)。以前は collectibles.json の achievements を読むコードが無く、
     /// クエストの報酬の 4 件がトーストに名前を出すだけで、残りの 9 件は取る手段が無かった。
     /// 判定は実データの条件で見る。数え方は結果画面と同じ（一覧に載った hidden と ps_ だけ）。
     /// 見たエンド（ending_seen）は EndingProgress が持つので、ゲームの記録から作る道は空のフォルダに向けて通す。
@@ -214,12 +214,12 @@ namespace KCD.Tests
             }
 
             Assert.AreEqual(8, main.Count, "本編のクエストが 8 本ではない: " + string.Join(", ", main));
-            Assert.AreEqual(7, side.Count, "サブクエストが 7 本ではない: " + string.Join(", ", side));
+            Assert.AreEqual(8, side.Count, "サブクエストが 8 本ではない: " + string.Join(", ", side));
             Assert.AreEqual(main.Count, Find(catalog, "ach_main_story").Count);
             Assert.AreEqual(AchievementBook.ScopeMain, Find(catalog, "ach_main_story").Scope);
             Assert.AreEqual(main.Count + side.Count, Find(catalog, "ach_all_quests").Count);
 
-            // サブクエストを 7 本と本編を 7 本では「はじめての一日」にならない（本編とサブを区別しなければ 14 本で届く）。
+            // サブクエストを 8 本と本編を 7 本では「はじめての一日」にならない（本編とサブを区別しなければ 15 本で届く）。
             var mainButOne = new HashSet<string>(side);
             mainButOne.UnionWith(main.GetRange(0, main.Count - 1));
             Assert.IsFalse(Met(catalog, "ach_main_story", Record(quests: quests, completed: mainButOne)));
@@ -304,7 +304,7 @@ namespace KCD.Tests
             }
 
             Assert.IsEmpty(missing, "取れない称号: " + string.Join(", ", missing));
-            Assert.AreEqual(15, unlocked.Count);
+            Assert.AreEqual(16, unlocked.Count);
         }
 
         [Test]

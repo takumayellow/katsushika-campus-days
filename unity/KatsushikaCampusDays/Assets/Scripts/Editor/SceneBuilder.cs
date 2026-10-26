@@ -142,6 +142,8 @@ namespace KCD.Editor
             CollectibleStage.Build(root);
             // 隠しストーリーの「ドームの扉」（図書館 2F の西の壁）(#175)。
             SecretStoryStage.Build(root);
+            // サブクエスト「黒板の 1 バイト」の板書と、板を調べる判定（講義棟 203〜602 の黒板と 7F の白板, #389）。
+            LectureBoardStage.Build(root);
             if (route != null)
             {
                 // 寮の屋内と玄関。本編の 9 棟とは別枠で、探索率にも「入った建物」にも数えない。

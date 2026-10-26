@@ -547,11 +547,11 @@
       "id": "ach_all_quests",
       "name_ja": "頼まれごとの達人",
       "name_en": "Errand Master",
-      "desc_ja": "サブクエストを含む 15 本すべてを達成する。",
-      "desc_en": "Complete all fifteen quests, side quests included.",
+      "desc_ja": "サブクエストを含む 16 本すべてを達成する。",
+      "desc_en": "Complete all sixteen quests, side quests included.",
       "condition": {
         "type": "quest_count",
-        "value": 15
+        "value": 16
       }
     },
     {
@@ -585,6 +585,17 @@
       "condition": {
         "type": "quest_complete",
         "value": "q_sq_photo_walk"
+      }
+    },
+    {
+      "id": "ach_hello_world",
+      "name_ja": "Hello, World",
+      "name_en": "Hello, World",
+      "desc_ja": "黒板の 1 バイトを 5 つ読み、7F の白板に続きを書く。",
+      "desc_en": "Read five bytes on the blackboards and write what comes next on the 7F whiteboard.",
+      "condition": {
+        "type": "quest_complete",
+        "value": "q_sq_hello_world"
       }
     },
     {

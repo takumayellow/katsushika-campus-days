@@ -1,0 +1,68 @@
+{
+  "id": "board_203",
+  "speaker": "黒板",
+  "topics": [
+    {
+      "id": "t_read",
+      "requiresStep": "q_sq_hello_world/s1",
+      "lines": [
+        {
+          "speaker": "黒板",
+          "text": "01001000",
+          "text_en": "01001000",
+          "written": true
+        },
+        {
+          "speaker": "黒板",
+          "text": "※ A = 01000001",
+          "text_en": "* A = 01000001",
+          "written": true
+        },
+        {
+          "speaker": "黒板",
+          "text": "（1/5）　つづき → 3F の 302",
+          "text_en": "(1/5)   continued -> 302 on 3F",
+          "written": true
+        },
+        {
+          "speaker": "自分",
+          "text": "0 と 1 が 8 つ。教授の言っていた 1 バイトだ。",
+          "text_en": "Eight 0s and 1s. The one byte the professor talked about."
+        },
+        {
+          "speaker": "自分",
+          "text": "隅の A と見比べると、違うのは右の 4 けただけ。A から 7 つ先……H だ。",
+          "text_en": "Compared with the A in the corner, only the last four digits differ. Seven after A... it's H."
+        }
+      ]
+    },
+    {
+      "id": "t_idle",
+      "lines": [
+        {
+          "speaker": "黒板",
+          "text": "01001000",
+          "text_en": "01001000",
+          "written": true
+        },
+        {
+          "speaker": "黒板",
+          "text": "※ A = 01000001",
+          "text_en": "* A = 01000001",
+          "written": true
+        },
+        {
+          "speaker": "黒板",
+          "text": "（1/5）　つづき → 3F の 302",
+          "text_en": "(1/5)   continued -> 302 on 3F",
+          "written": true
+        },
+        {
+          "speaker": "自分",
+          "text": "0 と 1 が 8 つ並んでいる。誰も消さずに残しているらしい。",
+          "text_en": "Eight 0s and 1s in a row. Nobody seems to have wiped them off."
+        }
+      ]
+    }
+  ]
+}

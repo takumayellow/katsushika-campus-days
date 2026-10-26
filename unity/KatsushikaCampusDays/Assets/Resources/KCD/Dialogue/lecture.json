@@ -53,6 +53,82 @@
       ]
     },
     {
+      "id": "t_hello_done",
+      "requiresCompletedQuest": "q_sq_hello_world",
+      "once": true,
+      "lines": [
+        {
+          "text": "読めたかね。",
+          "text_en": "Did you read it?"
+        },
+        {
+          "speaker": "自分",
+          "text": "H、E、L、L、O。7 階の白板に、WORLD と書いてきました。",
+          "text_en": "H, E, L, L, O. I wrote WORLD on the whiteboard on 7F."
+        },
+        {
+          "text": "最初に書くプログラムは、たいてい画面に Hello, World と出すだけのものだ。",
+          "text_en": "The first program anyone writes usually does nothing but print Hello, World on the screen."
+        },
+        {
+          "text": "何の役にも立たない。だが、それが動いた日のことは、なぜか誰も忘れない。",
+          "text_en": "It is good for nothing. And yet, for some reason, nobody forgets the day it first ran."
+        },
+        {
+          "text": "毎年、新入生が来る前に黒板に書いておく。気づくのは 10 人に 1 人くらいだがね。",
+          "text_en": "I write them on the boards every year before the new students arrive. About one in ten notices."
+        },
+        {
+          "speaker": "自分",
+          "text": "白板、ずいぶん埋まっていました。",
+          "text_en": "The whiteboard was pretty full."
+        },
+        {
+          "text": "そうか。……今年は、もう 1 行増えたわけだ。",
+          "text_en": "I see... So this year, it has grown by one more line."
+        }
+      ]
+    },
+    {
+      "id": "t_hello_active",
+      "requiresActiveQuest": "q_sq_hello_world",
+      "lines": [
+        {
+          "text": "黒板は消さないように頼んである。2F の 203 から、上の階へ順に。",
+          "text_en": "I have asked that the boards not be wiped. Start at 203 on 2F and work your way up."
+        },
+        {
+          "text": "8 つ並んだ 0 と 1 で 1 バイト、1 バイトで 1 文字だ。A は 01000001。あとは数えなさい。",
+          "text_en": "Eight 0s and 1s make one byte, and one byte makes one letter. A is 01000001. The rest is counting."
+        }
+      ]
+    },
+    {
+      "id": "t_hello_start",
+      "requiresCompletedQuest": "q_lecture",
+      "once": true,
+      "startsQuest": "q_sq_hello_world",
+      "lines": [
+        {
+          "text": "そうだ、席の話のついでに。この建物の黒板には、毎年 1 バイトずつ書いておくことにしている。",
+          "text_en": "Ah, while we are on seats. Every year, I leave one byte on each of a few blackboards in this building."
+        },
+        {
+          "speaker": "自分",
+          "text": "1 バイトずつ、ですか。",
+          "text_en": "One byte each?"
+        },
+        {
+          "text": "0 と 1 を 8 つ。2F の 203 から、上の階へ順に読んでいくといい。",
+          "text_en": "Eight 0s and 1s. Read them in order, from 203 on 2F upward."
+        },
+        {
+          "text": "全部読めたら、最後にどこで何を書けばいいかは、たぶん分かる。",
+          "text_en": "Once you have read them all, you will probably know where to go and what to write."
+        }
+      ]
+    },
+    {
       "id": "t_lecture_wait",
       "requiresActiveQuest": "q_lecture",
       "lines": [
