@@ -1,0 +1,68 @@
+{
+  "id": "q_sq_hello_world",
+  "title": "黒板の 1 バイト",
+  "title_en": "One Byte on the Blackboard",
+  "summary": "講義棟の黒板には、教授が毎年 0 と 1 を 8 つずつ書き残しているらしい。2F の 203 から上の階へ順に読み、8 つで 1 文字に直していこう。A は 01000001。",
+  "summary_en": "Every year, the professor leaves eight 0s and 1s on the blackboards of the lecture building. Read them in order, from 203 on 2F upward, and turn each set of eight into one letter. A is 01000001.",
+  "order": 18,
+  "autoStart": false,
+  "prerequisites": [
+    "q_lecture"
+  ],
+  "rewardText": "7F の白板に、自分の WORLD を書き足した",
+  "rewardText_en": "You added your own WORLD to the 7F whiteboard",
+  "rewardType": "achievement",
+  "rewardId": "ach_hello_world",
+  "side": true,
+  "steps": [
+    {
+      "id": "s1",
+      "type": "talk",
+      "target": "board_203",
+      "text": "203 の黒板の 1 バイトを読む（1/5）",
+      "text_en": "Read the byte on the blackboard in 203 (1/5)"
+    },
+    {
+      "id": "s2",
+      "type": "talk",
+      "target": "board_302",
+      "text": "302 の黒板の 1 バイトを読む（2/5）",
+      "text_en": "Read the byte on the blackboard in 302 (2/5)"
+    },
+    {
+      "id": "s3",
+      "type": "talk",
+      "target": "board_402",
+      "text": "402 の黒板の 1 バイトを読む（3/5）",
+      "text_en": "Read the byte on the blackboard in 402 (3/5)"
+    },
+    {
+      "id": "s4",
+      "type": "talk",
+      "target": "board_502",
+      "text": "502 の黒板の 1 バイトを読む（4/5）",
+      "text_en": "Read the byte on the blackboard in 502 (4/5)"
+    },
+    {
+      "id": "s5",
+      "type": "talk",
+      "target": "board_602",
+      "text": "602 の黒板の 1 バイトを読む（5/5）",
+      "text_en": "Read the byte on the blackboard in 602 (5/5)"
+    },
+    {
+      "id": "s6",
+      "type": "flag",
+      "target": "hello_world_reply",
+      "text": "7F の廊下の白板に、続きを書く",
+      "text_en": "Write what comes next on the 7F corridor whiteboard"
+    },
+    {
+      "id": "s7",
+      "type": "talk",
+      "target": "lecture",
+      "text": "大教室の教授に、読めたと伝える",
+      "text_en": "Tell the professor in the big classroom that you read it"
+    }
+  ]
+}

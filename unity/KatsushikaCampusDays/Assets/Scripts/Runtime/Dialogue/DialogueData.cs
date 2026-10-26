@@ -53,6 +53,11 @@ namespace KCD
         /// <summary>選んだときに立てるフラグ。</summary>
         public string SetsFlag = string.Empty;
 
+        /// <summary>
+        /// 選んでも話題を答えた話題にしない（JSON の retry）。外れの答えに付けると、次に話しかけたときにまた聞く (#389)。
+        /// </summary>
+        public bool Retry;
+
         /// <summary>選んだあとに続く行。空なら選んだところで会話を閉じる。</summary>
         public readonly List<DialogueLine> Lines = new List<DialogueLine>();
 
@@ -70,6 +75,12 @@ namespace KCD
 
         /// <summary>このクエストが完了済みのときだけ出す。空なら無条件。</summary>
         public string RequiresCompletedQuest = string.Empty;
+
+        /// <summary>
+        /// 「クエスト id/段の id」。そのクエストを受注中で、いまの段がこれのときだけ出す。空なら無条件 (#389)。
+        /// 段より先に答えさせると、立てたフラグはその段で数えられないので、問いはこの条件で段に合わせて出す。
+        /// </summary>
+        public string RequiresStep = string.Empty;
 
         /// <summary>隠しアイテムをこの数以上拾っているときだけ出す。0 なら無条件。</summary>
         public int RequiresHiddenCount;
@@ -166,6 +177,7 @@ namespace KCD
                 Id = MiniJson.GetString(node, "id", "t" + index),
                 RequiresActiveQuest = MiniJson.GetString(node, "requiresActiveQuest"),
                 RequiresCompletedQuest = MiniJson.GetString(node, "requiresCompletedQuest"),
+                RequiresStep = MiniJson.GetString(node, "requiresStep"),
                 RequiresHiddenCount = MiniJson.GetInt(node, "requiresHiddenCount"),
                 RequiresItem = MiniJson.GetString(node, "requiresItem"),
                 RequiresAffinity = MiniJson.GetInt(node, "requiresAffinity"),
@@ -186,7 +198,8 @@ namespace KCD
                         Text = MiniJson.GetString(choiceNode, "text"),
                         TextEn = MiniJson.GetString(choiceNode, "text_en"),
                         Affinity = MiniJson.GetInt(choiceNode, "affinity"),
-                        SetsFlag = MiniJson.GetString(choiceNode, "setsFlag")
+                        SetsFlag = MiniJson.GetString(choiceNode, "setsFlag"),
+                        Retry = MiniJson.GetBool(choiceNode, "retry")
                     };
                     ParseLines(MiniJson.GetArray(choiceNode, "lines"), data, choice.Lines);
                     topic.Choices.Add(choice);

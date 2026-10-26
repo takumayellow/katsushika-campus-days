@@ -213,6 +213,18 @@ namespace KCD
         /// <summary>完了済みか。</summary>
         public bool IsCompleted(string questId) => _completed.Contains(questId);
 
+        /// <summary>受注中のクエストの、いまの段の id。受注していない・段が残っていないときは空 (#389)。</summary>
+        public string CurrentStepId(string questId)
+        {
+            if (!IsActive(questId))
+            {
+                return string.Empty;
+            }
+
+            QuestStep step = Find(questId)?.CurrentStep;
+            return step != null ? step.Id : string.Empty;
+        }
+
         /// <summary>前提クエストをすべて終えているか。</summary>
         public bool PrerequisitesMet(QuestData quest)
         {

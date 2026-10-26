@@ -292,6 +292,16 @@ namespace KCD
                     conditional = true;
                 }
 
+                if (!string.IsNullOrEmpty(topic.RequiresStep))
+                {
+                    if (!StepConditionMet(topic.RequiresStep, quests))
+                    {
+                        continue;
+                    }
+
+                    conditional = true;
+                }
+
                 if (topic.HasItemCondition)
                 {
                     if (!ItemConditionMet(topic, hiddenCount, hasItem))
@@ -391,6 +401,11 @@ namespace KCD
                     continue;
                 }
 
+                if (!string.IsNullOrEmpty(topic.RequiresStep) && !StepConditionMet(topic.RequiresStep, quests))
+                {
+                    continue;
+                }
+
                 if (topic.HasItemCondition && !ItemConditionMet(topic, hiddenCount, hasItem))
                 {
                     continue;
@@ -410,6 +425,28 @@ namespace KCD
             }
 
             return chosen;
+        }
+
+        /// <summary>
+        /// 「クエスト id/段の id」の条件を満たしているか（テストから呼ぶ）。そのクエストを受注中で、いまの段がその id のとき true。
+        /// 区切りの無い値や、どちらかが空の値は満たさない (#389)。
+        /// </summary>
+        public static bool StepConditionMet(string requiresStep, QuestSystem quests)
+        {
+            if (quests == null || string.IsNullOrEmpty(requiresStep))
+            {
+                return false;
+            }
+
+            int slash = requiresStep.IndexOf('/');
+            if (slash <= 0 || slash >= requiresStep.Length - 1)
+            {
+                return false;
+            }
+
+            string questId = requiresStep.Substring(0, slash);
+            string stepId = requiresStep.Substring(slash + 1);
+            return quests.CurrentStepId(questId) == stepId;
         }
 
         /// <summary>話題の、隠しアイテムの数と持ち物の条件を満たしているか。条件が無ければ true。</summary>
@@ -612,7 +649,10 @@ namespace KCD
             return true;
         }
 
-        /// <summary>選んだ選択肢の好感度を NPC に足し、話題を答えた話題として覚える（テストから呼ぶ）。</summary>
+        /// <summary>
+        /// 選んだ選択肢の好感度を NPC に足し、話題を答えた話題として覚える（テストから呼ぶ）。
+        /// 答え直せる選択肢（retry）は覚えないので、次に話しかけたときにもう一度聞く (#389)。
+        /// </summary>
         public static void ApplyChoice(string dialogueId, string topicKey, DialogueChoice choice)
         {
             if (choice == null)
@@ -621,7 +661,10 @@ namespace KCD
             }
 
             NpcAffinity.Add(dialogueId, choice.Affinity);
-            NpcAffinity.NoteAnswered(topicKey);
+            if (!choice.Retry)
+            {
+                NpcAffinity.NoteAnswered(topicKey);
+            }
         }
 
         /// <summary>

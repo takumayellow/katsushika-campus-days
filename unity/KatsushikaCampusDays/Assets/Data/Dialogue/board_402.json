@@ -1,0 +1,51 @@
+{
+  "id": "board_402",
+  "speaker": "黒板",
+  "topics": [
+    {
+      "id": "t_read",
+      "requiresStep": "q_sq_hello_world/s3",
+      "lines": [
+        {
+          "speaker": "黒板",
+          "text": "01001100",
+          "text_en": "01001100",
+          "written": true
+        },
+        {
+          "speaker": "黒板",
+          "text": "（3/5）　つづき → 5F の 502",
+          "text_en": "(3/5)   continued -> 502 on 5F",
+          "written": true
+        },
+        {
+          "speaker": "自分",
+          "text": "A から 11 先。……L だ。",
+          "text_en": "Eleven after A... it's L."
+        }
+      ]
+    },
+    {
+      "id": "t_idle",
+      "lines": [
+        {
+          "speaker": "黒板",
+          "text": "01001100",
+          "text_en": "01001100",
+          "written": true
+        },
+        {
+          "speaker": "黒板",
+          "text": "（3/5）　つづき → 5F の 502",
+          "text_en": "(3/5)   continued -> 502 on 5F",
+          "written": true
+        },
+        {
+          "speaker": "自分",
+          "text": "0 と 1 が 8 つ並んでいる。誰も消さずに残しているらしい。",
+          "text_en": "Eight 0s and 1s in a row. Nobody seems to have wiped them off."
+        }
+      ]
+    }
+  ]
+}

@@ -235,6 +235,60 @@ def test_boards_hang_on_the_east_wall(upper):
         assert xf1 - 0.2 <= min(xs) and max(xs) <= xf1, room[0]
 
 
+
+def _board_empties(c):
+    return dict((n, p) for n, p in c.empties if n.startswith("board_lecture_"))
+
+
+def _front(boards, name):
+    """板の面から _f への水平のベクトル。"""
+    p, f = boards[name], boards[name + "_f"]
+    assert f[2] == pytest.approx(p[2])
+    return f[0] - p[0], f[1] - p[1]
+
+
+def test_every_board_has_an_empty_on_its_face(upper):
+    """黒板・白板のある室には、板の面の中央に board_lecture_<室> の Empty がある（Unity が板書を貼る）。"""
+    c, _ = upper
+    boards = _board_empties(c)
+    for room in RD.ROOMS:
+        name = "board_lecture_" + room[0]
+        if room[6] not in BOARDS:
+            assert name not in boards, room[0]
+            continue
+        _, xf1, yf0, yf1 = RD.room_faces(room)
+        x, y, z = boards[name]
+        cy = R.C_RING_Y if room[6] == "C" else (yf0 + yf1) * 0.5
+        assert xf1 - 0.1 < x < xf1, room[0]
+        assert y == pytest.approx(cy), room[0]
+        assert z == pytest.approx(RD.FLOOR_Z[room[1]] + R.BOARD_Z), room[0]
+        assert _front(boards, name) == pytest.approx((-1.0, 0.0)), room[0]   # 室の中（西）を向く
+
+
+def test_hall_board_hangs_on_the_7f_corridor_wall(upper):
+    """7F の廊下の南の壁に白板と board_lecture_7F がある。705 の扉と室名札に重ならない。"""
+    c, _ = upper
+    boards = _board_empties(c)
+    x, y, z = boards["board_lecture_7F"]
+    assert _front(boards, "board_lecture_7F") == pytest.approx((0.0, 1.0))   # 廊下（北）を向く
+    assert x == pytest.approx(R.HALL_BOARD_X)
+    assert D.Y_ROOM_S1 < y < D.Y_ROOM_S1 + 0.1
+    assert z == pytest.approx(RD.FLOOR_Z["7F"] + R.BOARD_Z)
+    hw = R.HALL_BOARD_W * 0.5 + 0.04
+    room = next(r for r in RD.CLOSED if r[0] == "705")
+    plate = RD.upper_plate_x(room + (None,))
+    for lo, hi in [(d - 0.87, d + 0.87) for d in room[5]] + [(plate - 0.21, plate + 0.21)]:
+        assert hi < x - hw or x + hw < lo, (lo, hi)
+    zf = RD.FLOOR_Z["7F"]
+    assert _faces_in(c, (x - 0.5, x + 0.5, D.Y_ROOM_S1 + 0.06, D.Y_ROOM_S1 + 0.08,
+                         zf + 1.0, zf + 2.0))
+
+
+def test_hall_board_leaves_the_corridor_walkable(upper):
+    c, _ = upper
+    x = R.HALL_BOARD_X
+    assert _faces_in(c, _walk("7F", x - 1.5, x + 1.5, D.Y_ROOM_S1 + 0.3, D.Y_ROOM_S1 + 1.3)) == 0
+
 def test_type_a_desks_face_the_east_board(upper):
     """型 A の最前列の天板の前の縁は東の壁から FRONT0 にあり、長椅子は机の西の側にある（席は東を向く）。"""
     c, _ = upper
