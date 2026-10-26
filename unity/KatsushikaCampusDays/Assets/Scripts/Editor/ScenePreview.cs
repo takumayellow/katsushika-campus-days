@@ -528,6 +528,47 @@ namespace KCD.Editor
                 Fov = 0f,
                 Note = "図書館大ホールの舞台のピアノ",
             },
+            // 講義棟 3F の廊下と教室の小物（#279）。床は 8.8 m
+            new Shot
+            {
+                Name = "shot_lec279_corr3f_s",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(12.0f, 10.4f, 22.0f),
+                Look = new Vector3(-14.0f, 9.9f, 19.9f),
+                Fov = 0f,
+                Note = "講義棟 3F の廊下、南の壁（掲示板・消火器・扉の窓・巾木）",
+            },
+            new Shot
+            {
+                Name = "shot_lec279_corr3f_n",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-16.0f, 10.4f, 33.0f),
+                Look = new Vector3(12.0f, 9.9f, 35.1f),
+                Fov = 0f,
+                Note = "講義棟 3F の廊下、北の壁（消火栓・掲示板）",
+            },
+            new Shot
+            {
+                Name = "shot_lec279_room304_back",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-5.0f, 10.6f, 17.0f),
+                Look = new Vector3(-17.7f, 9.8f, 9.0f),
+                Fov = 0f,
+                Note = "講義棟 304、黒板の側から後ろの壁と窓（掲示板・ブラインド）",
+            },
+            new Shot
+            {
+                Name = "shot_lec279_room304_front",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-16.5f, 10.6f, 6.0f),
+                Look = new Vector3(-3.6f, 9.8f, 13.0f),
+                Fov = 0f,
+                Note = "講義棟 304、後ろから黒板と教卓",
+            },
             new Shot
             {
                 Name = "shot_kyoso_entrance",

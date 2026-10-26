@@ -4,7 +4,8 @@
 躯体（plan_lecture_shell）→ 1F の中廊下・コア・入口ロビー・吹き抜けの穴（plan_lecture_core）→
 2F〜7F の西側の廊下・コア・西ロビー・南東の EV ホール（plan_lecture_west）→
 2F〜7F の東側の廊下とエスカレータの穴（plan_lecture_upper）→ 吹き抜けの縁と頂部（plan_lecture_atrium）→
-教室（plan_lecture_rooms）→ エスカレータ 2 列 10 区間（plan_lecture_esc）→ EV の乗り場 →
+教室（plan_lecture_rooms。室の小物は plan_lecture_props）→ 廊下の小物（plan_lecture_props）→
+エスカレータ 2 列 10 区間（plan_lecture_esc）→ EV の乗り場 →
 101 の段床と 270 席（plan_lecture_hall）・黒板と木の壁（plan_lecture_101）→ 看板（plan_lecture_signs）→ POI・NPC・カメラ。
 寸法・POI・NPC・カメラ・看板の表は plan_lecture_dims が持つ。
 """
@@ -19,6 +20,7 @@ from . import plan_lecture_esc as ESC
 from . import plan_lecture_hall as HALL
 from . import plan_lecture_lounge as LOUNGE
 from . import plan_lecture_north as NORTH
+from . import plan_lecture_props as PROPS
 from . import plan_lecture_rooms as ROOMS
 from . import plan_lecture_shell as SHELL
 from . import plan_lecture_signs as SIGNS
@@ -37,6 +39,7 @@ def build(c):
     UPPER.build(c, SIGNS.hang_roots())
     ATRIUM.build(c)
     ROOMS.build(c, lamps)
+    PROPS.corridors(c)
     ESC.build(c)
     WEST.ev_empties(c)
     EAST.build(c)

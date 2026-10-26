@@ -8,6 +8,7 @@ import pytest
 from kcd_interior import plan_lecture_atrium as AT
 from kcd_interior import plan_lecture_dims as D
 from kcd_interior import plan_lecture_esc as ESC
+from kcd_interior import plan_lecture_props as P
 from kcd_interior import plan_lecture_rooms as R
 from kcd_interior import plan_lecture_rooms_dims as RD
 from kcd_interior import plan_lecture_shell as SH
@@ -46,6 +47,7 @@ def _build(c):
     UP.build(c, SG.hang_roots())
     AT.build(c)
     counts = R.build(c, lamps)
+    P.corridors(c)
     ESC.build(c)
     W.ev_empties(c)
     return counts
