@@ -619,6 +619,26 @@ namespace KCD.Editor
                 Fov = 0f,
                 Note = "共創棟 1F の売店",
             },
+            new Shot
+            {
+                Name = "shot_lecture_board_203",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-16.2f, 6.2f, 10.6f),
+                Look = new Vector3(-11.0f, 6.0f, 10.4f),
+                Fov = 0f,
+                Note = "講義棟 203 の黒板。右の端の板書（q_sq_hello_world の 1/5, #389）",
+            },
+            new Shot
+            {
+                Name = "shot_lecture_board_7F",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-22.4f, 27.2f, 23.6f),
+                Look = new Vector3(-22.4f, 27.0f, 19.87f),
+                Fov = 0f,
+                Note = "講義棟 7F の廊下の白板（q_sq_hello_world の答える所, #389）",
+            },
         };
 
         /// <summary>

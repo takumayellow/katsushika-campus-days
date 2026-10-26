@@ -14,6 +14,9 @@
 r<室>_<k>（k は西から数えた格子の間の番号）:
     floor_lecture_r<室>[_<k>] / wall_lecture_r<室>[_<k>] / furn_lecture_<nn>_r<室>[_<k>]
     lamp_lecture_<階>_<n>   室の天井の点光源（番号は廊下の点光源の続き）
+    board_lecture_<室>      黒板・白板の面の中央（Unity が板書の文字と調べる対象を置く）
+    board_lecture_7F       7F の廊下の南の壁の白板の面の中央（705 の 2 つの扉の間）
+    board_lecture_<…>_f    板の面から 1 m 手前（板の正面の向きを Unity に渡す）
 """
 
 import math
@@ -59,6 +62,9 @@ LOW_TABLE_DX = 2.0           # 西の壁の面からソファの前の低い机�
 ROUND_Y = (41.5, 46.0)       # 型 L の丸机の中心 Y
 ROUND_X0, ROUND_PITCH, ROUND_EAST = 3.6, 3.5, 1.2   # 西の壁の面から最初の丸机・間隔・東の壁から空ける幅
 BENTO_ROOM = "311"           # 昼に弁当を売る長机と保温ケースを置くラウンジ（spec §1-11）
+BOARD_Z = 1.5                # 黒板・白板の中心の高さ（床から）
+BOARD_FACE = {"A": 0.031, "B": 0.07, "C": 0.07}   # 壁の面から板の面まで（green_board / whiteboard）
+HALL_BOARD_X, HALL_BOARD_W = -22.4, 2.4             # 7F の廊下の白板の中心 X と幅
 BENTO_X, BENTO_Y, BENTO_W, BENTO_D = 27.8, 38.25, 3.6, 0.7   # 長机の中心・幅（東西）・奥行き
 
 
@@ -312,6 +318,29 @@ def _route(c, room, role, mb):
         dst.seats.append(dict(seat, vi=len(dst.verts)))   # 頂点はもう移したので、後の kit.lift で動かさない
 
 
+def _board(c, key, p, front):
+    """board_lecture_<key> と、板の正面 front（水平の単位ベクトル）へ 1 m の board_lecture_<key>_f。"""
+    name = "board_lecture_" + key
+    c._put(name, *p)
+    c._put(name + "_f", p[0] + front[0], p[1] + front[1], p[2])
+
+
+def _board_empty(c, room):
+    """黒板・白板の面の中央の Empty。型 C の白板はロの字の机の正面。"""
+    _, xf1, yf0, yf1 = RD.room_faces(room)
+    cy = C_RING_Y if room[6] == "C" else (yf0 + yf1) * 0.5
+    _board(c, room[0], (xf1 - BOARD_FACE[room[6]], cy, RD.FLOOR_Z[room[1]] + BOARD_Z), (-1.0, 0.0))
+
+
+def _hall_board(c):
+    """7F の廊下の南の壁（705 の扉の間）の白板。過去の学生が書き足していく板（#389）。"""
+    z = RD.FLOOR_Z[RD.TOP_FLOOR] + BOARD_Z
+    y = D.Y_ROOM_S1
+    F.whiteboard(W.bands(c, "wall", RD.TOP_FLOOR).at(HALL_BOARD_X, y), HALL_BOARD_X, y, z,
+                 w=HALL_BOARD_W)
+    _board(c, RD.TOP_FLOOR, (HALL_BOARD_X, y + BOARD_FACE["B"], z), (0.0, 1.0))
+
+
 def build(c, lamp_count):
     """lamp_count は階 -> すでに置いた点光源の数。戻り値は教室の点光源を足した数。"""
     count = dict(lamp_count)
@@ -329,4 +358,7 @@ def build(c, lamp_count):
         for role, mb in (("floor", floor), ("wall", walls), ("furn", furn)):
             _route(c, room, role, mb)
         count[fl] += _lamps(c, room, count[fl])
+        if room[6] in BOARD_FACE:
+            _board_empty(c, room)
+    _hall_board(c)
     return count

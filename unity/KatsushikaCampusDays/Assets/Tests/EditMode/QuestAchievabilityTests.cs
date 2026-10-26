@@ -245,9 +245,9 @@ namespace KCD.Tests
         /// 隠しクエストはいなり先輩が隠しアイテム 5 個から話すので、どのクエストの対象でもない隠しアイテムを 5 個拾ってから始める。
         /// 鍵（c_dome_key）は拾わずにおき、隠しクエストの 1 つ目のステップで拾う。
         /// </summary>
-        [TestCase(true, TestName = "AllSixteenQuests_CanBeCompleted_TalkingToEveryoneFirst")]
-        [TestCase(false, TestName = "AllSixteenQuests_CanBeCompleted_DoingStepsFirst")]
-        public void AllSixteenQuests_CanBeCompleted(bool talkFirst)
+        [TestCase(true, TestName = "AllQuests_CanBeCompleted_TalkingToEveryoneFirst")]
+        [TestCase(false, TestName = "AllQuests_CanBeCompleted_DoingStepsFirst")]
+        public void AllQuests_CanBeCompleted(bool talkFirst)
         {
             CollectibleCatalog catalog = LoadCatalog();
             List<string> spare = SpareHiddenIds(catalog, HiddenNote.HintThreshold);
@@ -260,7 +260,7 @@ namespace KCD.Tests
         /// 鍵は拾い直せないので、受注したときに持っている分で進む（QuestSystem の追いつき）必要がある。
         /// </summary>
         [Test]
-        public void AllSixteenQuests_CanBeCompleted_AfterPickingUpEveryHiddenItemFirst()
+        public void AllQuests_CanBeCompleted_AfterPickingUpEveryHiddenItemFirst()
         {
             CollectibleCatalog catalog = LoadCatalog();
             List<string> all = AllHiddenIds(catalog);
@@ -272,7 +272,7 @@ namespace KCD.Tests
         {
             QuestSystem quests = NewGame(EveningHour);
             var player = new Player(quests, LoadDialogues(), LoadCatalog());
-            Assert.AreEqual(16, quests.All.Count, "クエストの数が 16 ではない");
+            Assert.AreEqual(17, quests.All.Count, "クエストの数が 17 ではない");
             foreach (string itemId in pickedUpFirst)
             {
                 player.PickUp(itemId);

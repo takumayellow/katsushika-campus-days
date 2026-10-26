@@ -174,6 +174,43 @@
       ]
     },
     {
+      "id": "t_sq_hello_world_done",
+      "requiresCompletedQuest": "q_sq_hello_world",
+      "once": true,
+      "lines": [
+        {
+          "text": "ねえ。講義棟の 7 階、行った？",
+          "text_en": "Hey. Did you go up to 7F in the lecture building?"
+        },
+        {
+          "speaker": "自分",
+          "text": "白板に WORLD って書いてきました。下のほうに、そらさんの字もありました。",
+          "text_en": "I wrote WORLD on the whiteboard. Your handwriting was there too, near the bottom."
+        },
+        {
+          "text": "……見つかっちゃった。先週、ゼミのことで迷って、ひとりで上まで登ったの。",
+          "text_en": "...You found it. Last week I couldn't decide on a seminar, so I climbed all the way up there alone."
+        },
+        {
+          "text": "知らない人の WORLD がずっと並んでるの見てたら、ひとりで決めてもいいんだって思えた。",
+          "text_en": "Looking at all those WORLDs from people I'd never met, I felt like it was fine to decide on my own."
+        },
+        {
+          "text": "……で、決めた。条件を変えて、何回も試すほうのゼミ。",
+          "text_en": "...So I decided. The seminar where you change one condition and try again, over and over."
+        },
+        {
+          "speaker": "自分",
+          "text": "そらさんらしいですね。",
+          "text_en": "That sounds like you."
+        },
+        {
+          "text": "でしょ。あなたの字、今度見に行く。",
+          "text_en": "Right? I'll go and look at your handwriting sometime."
+        }
+      ]
+    },
+    {
       "id": "t_friend",
       "requiresAffinity": 2,
       "once": true,
