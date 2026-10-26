@@ -162,6 +162,11 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: lecture_blind
+    second: {fileID: 2100000, guid: d934ccbdc2de042489e55e3231aebe71, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: lecture_board_bluegreen
     second: {fileID: 2100000, guid: ac17b48309523fd4788b4f69ea5a48a0, type: 2}
   - first:
@@ -222,8 +227,23 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: lecture_cork
+    second: {fileID: 2100000, guid: c0e80695b47d3004288e9725007c6174, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: lecture_desk_ivory
     second: {fileID: 2100000, guid: 84e80b18c83b39e4ebc360c62f70f84b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lecture_diffuser
+    second: {fileID: 2100000, guid: 8e851ff1d44c2ed468d0084e36c7a173, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lecture_door_glass
+    second: {fileID: 2100000, guid: 24e99417acf12bd47af727112e654844, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
@@ -272,6 +292,26 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: lecture_poster_blue
+    second: {fileID: 2100000, guid: faedcddb58311a64cac838fd08794868, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lecture_poster_green
+    second: {fileID: 2100000, guid: 7fd0d20db6cd1bb4384e306f3cbbabe1, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lecture_poster_red
+    second: {fileID: 2100000, guid: 02a3f9293fadc204a92fb7796f8f9698, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lecture_poster_yellow
+    second: {fileID: 2100000, guid: 1e0aaa114be3d204e91edc30c8e9e090, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: lecture_rail_white
     second: {fileID: 2100000, guid: 01398867f72916b4598178bc09565a4f, type: 2}
   - first:
@@ -297,6 +337,11 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: lecture_skirting
+    second: {fileID: 2100000, guid: cf2cccce3531429469d219f7aac462b2, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: lecture_stone_dark
     second: {fileID: 2100000, guid: 5cd9156258f8b894f8ac7291890eb253, type: 2}
   - first:
@@ -314,6 +359,11 @@ ModelImporter:
       assembly: UnityEngine.CoreModule
       name: lecture_tactile_yellow
     second: {fileID: 2100000, guid: 54b9178b51c3fd0478cc4532af34c3fa, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lecture_vent_dark
+    second: {fileID: 2100000, guid: e1962876a1501e344b4e06d0608af748, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
