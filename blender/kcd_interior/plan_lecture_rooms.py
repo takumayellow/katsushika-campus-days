@@ -6,7 +6,8 @@
 型 A は東の壁（金町駅の側）に緑の黒板・教卓・プロジェクター・西の壁に時計、机は東を向いた 3 人掛けの固定机。
 型 B（306 の PC ルーム）は東の壁の白板・教員の机・2 人掛けの PC の机。型 C は東の壁の白板とロの字の机（会議室）。
 型 L（310・311 のラウンジ）はソファ・低い机・丸机と椅子、311 は弁当を売る長机と保温ケースも置く。
-廊下の壁と扉、中を作らない室の閉じた扉は plan_lecture_west。
+廊下の壁と扉、中を作らない室の閉じた扉は plan_lecture_west。ブラインド・後ろの掲示板・教卓の小物・
+天井の吹き出し口は plan_lecture_props.room。
 
 メッシュは室ごとに、さらに灯りの届く範囲ごとに分ける（URP は 1 つのメッシュに効く点光源の数に
 上限がある）。奥行きの RD.ROOM_SPLIT_Y より奥の帯が r<室>、手前を明かりの格子の X で切った片が
@@ -26,6 +27,7 @@ from . import furniture as F
 from . import furn_lecture as FL
 from . import kit, shell
 from . import plan_lecture_dims as D
+from . import plan_lecture_props as PROPS
 from . import plan_lecture_rooms_dims as RD
 from . import plan_lecture_shell as SH
 from . import plan_lecture_west as W
@@ -352,6 +354,7 @@ def build(c, lamp_count):
         _east(walls, room)
         _west(walls, room)
         FURNISH[room[6]](furn, room, RD.FLOOR_Z[fl])
+        PROPS.room(furn, walls, room, RD.FLOOR_Z[fl])
         for role, mb in (("floor", floor), ("wall", walls), ("furn", furn)):
             _route(c, room, role, mb)
         count[fl] += _lamps(c, room, count[fl])
