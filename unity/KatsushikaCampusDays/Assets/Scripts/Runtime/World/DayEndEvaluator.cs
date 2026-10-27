@@ -57,7 +57,7 @@ namespace KCD
         private float _wPhotos = 0.15f;
         private float _wBuildings = 0.10f;
         /// <summary>result.json が読めないときの分母。result.json の totals と同じ値にしておく（ResultTotalsTests）。</summary>
-        public const int DefaultQuestTotal = 16;
+        public const int DefaultQuestTotal = 17;
         public const int DefaultCollectibleTotal = 20;
         public const int DefaultPhotoTotal = 6;
         public const int DefaultBuildingTotal = 10;

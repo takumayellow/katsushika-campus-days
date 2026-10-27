@@ -1,0 +1,47 @@
+{
+  "id": "q_sq_first_program",
+  "title": "306 の居残り",
+  "title_en": "Staying Late in 306",
+  "summary": "黒板の HELLO, WORLD を読めたなら、次は自分で動かす番だと教授は言う。3F の 306 PC ルームでは、TA が夕方まで自習を見ているらしい。",
+  "summary_en": "Now that you can read HELLO, WORLD on the blackboards, the professor says it is your turn to make it run. In the 3F PC room, 306, a TA keeps an eye on self-study until evening.",
+  "order": 19,
+  "autoStart": false,
+  "prerequisites": [
+    "q_sq_hello_world"
+  ],
+  "rewardText": "306 の画面に、自分の HELLO, WORLD が出た",
+  "rewardText_en": "Your own HELLO, WORLD appeared on a screen in 306",
+  "rewardType": "achievement",
+  "rewardId": "ach_first_program",
+  "side": true,
+  "steps": [
+    {
+      "id": "s1",
+      "type": "talk",
+      "target": "ta_306",
+      "text": "3F の 306 PC ルームで、TA に声をかける",
+      "text_en": "Talk to the TA in 306, the PC room on 3F"
+    },
+    {
+      "id": "s2",
+      "type": "flag",
+      "target": "first_program_ran",
+      "text": "306 の PC で、HELLO, WORLD を動かす",
+      "text_en": "Get HELLO, WORLD running on a PC in 306"
+    },
+    {
+      "id": "s3",
+      "type": "talk",
+      "target": "ta_306",
+      "text": "動いた画面を TA に見せる",
+      "text_en": "Show the TA the screen that ran"
+    },
+    {
+      "id": "s4",
+      "type": "talk",
+      "target": "lecture",
+      "text": "大教室の教授に、動いたと伝える",
+      "text_en": "Tell the professor in the big classroom that it ran"
+    }
+  ]
+}

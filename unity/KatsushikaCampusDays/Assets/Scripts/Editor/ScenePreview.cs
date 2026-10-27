@@ -639,6 +639,16 @@ namespace KCD.Editor
                 Fov = 0f,
                 Note = "講義棟 7F の廊下の白板（q_sq_hello_world の答える所, #389）",
             },
+            new Shot
+            {
+                Name = "shot_lecture_306_ta",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-23.0f, 10.45f, 42.6f),
+                Look = new Vector3(-18.6f, 9.9f, 42.9f),
+                Fov = 0f,
+                Note = "講義棟 306 の PC ルーム。白板の前の TA と最前列の PC（q_sq_first_program, #392）",
+            },
         };
 
         /// <summary>
