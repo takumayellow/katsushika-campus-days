@@ -18,6 +18,7 @@ GLASS_RAIL = "lecture_glass_rail"
 COL = "lecture_lounge_column"
 CEIL = "lecture_lounge_ceiling"
 CARPET = "lecture_lounge_carpet"
+UPPER_CARPET = "lecture_carpet_upper"
 TABLE = "lecture_table_white"
 WALL = "lecture_rail_white"
 CONCRETE = "lecture_concrete"
@@ -42,7 +43,8 @@ def _arc_pts():
 # ------------------------------------------------------------------ 2F
 def _bridge_and_lounge(c):
     x0, y0, x1, y1 = D.BRIDGE_2F[0], D.BRIDGE_2F[1], X_E_IN, D.Y_ROOM_N0 + 0.08
-    shell.floor(c.floor, x0, y0, x1, y1, D.F2, "lecture_carpet_corridor", thickness=D.SLAB,
+    # 渡りは 2F の北廊下が東へ延びた所なので、西でつながる 2F の床と同じカーペットにする
+    shell.floor(c.floor, x0, y0, x1, y1, D.F2, UPPER_CARPET, thickness=D.SLAB,
                 side_mat=CONCRETE)
     for (ax, ay, bx, by) in LOUNGE_L:
         shell.floor(c.floor, ax, ay, bx, by, D.F2, CARPET, thickness=D.SLAB, side_mat=CONCRETE)
