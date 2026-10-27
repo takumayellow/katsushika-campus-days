@@ -177,6 +177,11 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: lecture_board_room
+    second: {fileID: 2100000, guid: cb712d3bbe790c24ab332c62fdfe34aa, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: lecture_brick
     second: {fileID: 2100000, guid: 0596be4f4c7dd9b42b8604f3e65e071b, type: 2}
   - first:
@@ -192,6 +197,11 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: lecture_carpet_upper
+    second: {fileID: 2100000, guid: dd40df0ff06134644a308dfda5bb52da, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: lecture_ceiling_dark
     second: {fileID: 2100000, guid: 38c72e22472ecfb41b3fd042ace23af1, type: 2}
   - first:
@@ -204,6 +214,11 @@ ModelImporter:
       assembly: UnityEngine.CoreModule
       name: lecture_concrete
     second: {fileID: 2100000, guid: 98249a1ec954bbb43b5957da42ec63d4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lecture_concrete_light
+    second: {fileID: 2100000, guid: 80a0176fb3e4d7e4cbba99b0a6231bf0, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
@@ -247,6 +262,11 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: lecture_door_white
+    second: {fileID: 2100000, guid: f688dfb2950658b4dad1e5261dac53bd, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: lecture_door_wood
     second: {fileID: 2100000, guid: 209767df4913fb246b6adcc3a5e0931c, type: 2}
   - first:
@@ -259,6 +279,11 @@ ModelImporter:
       assembly: UnityEngine.CoreModule
       name: lecture_glass_rail
     second: {fileID: 2100000, guid: bf0478a25959a714e8706f27a677b299, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lecture_lectern_walnut
+    second: {fileID: 2100000, guid: 3db41a11368b55e49812d6124306860c, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
