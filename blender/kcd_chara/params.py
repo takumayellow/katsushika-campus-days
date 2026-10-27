@@ -249,6 +249,9 @@ CHARACTERS: dict[str, dict] = {
         # 高下駄（head_h の 0.257 倍 = 12 cm）を履くため。
         height=1.28, heads=2.83, silhouette_pad=(0.183, 0.257),
         build="chibi_m", chibi=True, levels=BODY_LEVELS_BOTCHAN,
+        # 脚が短く走りのピッチが下限の 8 フレームに張り付くので、1 歩が脚長の 3 倍を超える。
+        # 既定の歩幅では遊脚の足首が股関節の脚長の 58 % 下まで蹴り上がり、腰へ近づいて見えた。
+        gait={"Run": dict(reach=0.80, clear=0.08)},
         skin=_c("#EBBE9C"),
         # 黒髪の地の色は、色味をわずかに残した明度 L* 30 の灰にする（Homura の黒髪は
         # #4E494B で L* 31.6）。暗くすると陰も輪郭線（L* 10）と同じ暗さになり、髪の房も

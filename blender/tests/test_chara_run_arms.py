@@ -1,9 +1,9 @@
 """走りの腕の振り (#232)。
 
-軽い小走り（ジョグ）の腕: 上腕は脇に下ろしたまま肩から前後に片振幅 10〜15 度だけ振り、
-肘は 40〜60 度だけ軽く曲げて開閉は小さい（前で 10 度ほど深く、後ろで浅く曲がる）。
-前腕はいつも斜め下を向き、前へ振っても水平まで上がらない（前腕が前へ突き出ると、はさみを
-構えたように見える）。胸の回旋もごく小さい。
+ふつうのランニングの腕: 上腕は脇に下ろしたまま肩から前後に片振幅 12〜20 度振り、
+肘は 50〜70 度曲げて開閉は小さい（前で 10 度ほど深く、後ろで浅く曲がる）。人の肘は 70〜90 度だが、
+前傾した胴の前でそこまで曲げると前腕が水平より上へ突き出し、はさみを構えたように見えるので、
+前腕がいつも水平より下を向く深さにとどめる。胸の回旋もごく小さい。
 手はバストより下、肩関節のほぼ真下を通る（横に開かず、体の中心線も越えない）。
 歩きの腕は #43 で見直し中なので変えない。
 
@@ -90,9 +90,9 @@ def test_walk_arms_are_unchanged():
 @pytest.mark.parametrize("side", ["Left", "Right"])
 @pytest.mark.parametrize("name", params.ALL_IDS)
 def test_run_upper_arm_swings_fore_and_aft_evenly(name, side):
-    """画面上の上腕は前後とも 10〜16 度だけ振り、前傾した胴に引かれて後ろへ偏らない。"""
+    """画面上の上腕は前後とも 12〜20 度振り、前傾した胴に引かれて後ろへ偏らない。"""
     sw = [a["swing"] for a in _world(name, side)]
-    assert -16.0 < min(sw) < -10.0 and 10.0 < max(sw) < 16.0, (name, side, min(sw), max(sw))
+    assert -20.0 < min(sw) < -12.0 and 12.0 < max(sw) < 20.0, (name, side, min(sw), max(sw))
     assert abs(max(sw) + min(sw)) < 6.0, (name, side, min(sw), max(sw))
 
 
@@ -116,7 +116,7 @@ def test_chibi_run_upper_arm_stays_down(name, side):
 @pytest.mark.parametrize("name", params.ALL_IDS)
 def test_run_elbow_opens_and_closes_with_the_swing(name, side):
     bends = [_bend(*_arm(name, f, side)[1:]) for f in PHASES]
-    assert 36.0 < min(bends) < 50.0 and 48.0 < max(bends) < 62.0, (name, side, min(bends), max(bends))
+    assert 50.0 < min(bends) < 60.0 and 60.0 < max(bends) < 70.0, (name, side, min(bends), max(bends))
     # 開閉は小さい（10 度前後）。振りの間ずっと固まってもいない
     assert 6.0 < max(bends) - min(bends) < 16.0, (name, side, bends)
     # 前へ振ったとき（f=-1 は左腕が前）に深く、後ろへ振ったときに浅く曲がる
@@ -127,9 +127,12 @@ def test_run_elbow_opens_and_closes_with_the_swing(name, side):
 @pytest.mark.parametrize("side", ["Left", "Right"])
 @pytest.mark.parametrize("name", params.ALL_IDS)
 def test_run_forearm_points_down(name, side):
-    """画面上の前腕は 1 周期を通して水平より 15 度以上下を向き、後ろへ振ると 45 度より下がる。"""
+    """画面上の前腕は 1 周期を通して水平より 5 度以上下を向き、後ろへ振ると 45 度より下がる。
+
+    背の高いキャラは前へ振りきっても水平より 11 度下。2 頭身のキャラは胴が短く 7 度下。
+    """
     rise = [a["fore_rise"] for a in _world(name, side)]
-    assert max(rise) < -15.0, (name, side, max(rise))
+    assert max(rise) < -5.0, (name, side, max(rise))
     assert min(rise) < -45.0, (name, side, min(rise))
 
 
