@@ -15,7 +15,6 @@ namespace KCD
         private static DialogueSystem _instance;
 
         private readonly Dictionary<string, DialogueData> _data = new Dictionary<string, DialogueData>();
-        private readonly HashSet<string> _spentTopics = new HashSet<string>();
         private readonly HashSet<string> _flags = new HashSet<string>();
 
         private DialogueTopic _topic;
@@ -198,7 +197,7 @@ namespace KCD
             KCDInput.Block(this);
 
             // talk の報告は封鎖のあと。「〜と話す」で達成したときに PlayerAnimatorDriver が会話中だと分かって手を振らない。
-            _topic = ReportTalkAndSelect(data, GameManager.Instance.Quests, _spentTopics, chosen);
+            _topic = ReportTalkAndSelect(data, GameManager.Instance.Quests, OnceTopics.Keys, chosen);
             _lines = _topic.Lines;
             _topicKey = data.Id + "/" + _topic.Id;
             _dialogueId = data.Id;
@@ -208,7 +207,7 @@ namespace KCD
 
         private DialogueTopic SelectTopic(DialogueData data)
         {
-            return SelectTopic(data, GameManager.Instance.Quests, _spentTopics);
+            return SelectTopic(data, GameManager.Instance.Quests, OnceTopics.Keys);
         }
 
         /// <summary>
@@ -251,7 +250,7 @@ namespace KCD
                 }
 
                 // クエストを頼む話題は、そのクエストを受注中・完了済みなら出さない。
-                // 使い終えた話題（_spentTopics）はセーブに載らないので、ロード直後に同じ依頼をもう一度されるのを防ぐ。
+                // 使い終えた話題の記録（OnceTopics）を持たない古いセーブを読んだあとにも、同じ依頼をもう一度されないようにする。
                 if (!string.IsNullOrEmpty(topic.StartsQuest) && quests != null &&
                     (quests.IsActive(topic.StartsQuest) || quests.IsCompleted(topic.StartsQuest)))
                 {
@@ -701,7 +700,7 @@ namespace KCD
             {
                 if (SpendsOnFinish(finished, finishedKey))
                 {
-                    _spentTopics.Add(finishedKey);
+                    OnceTopics.Note(finishedKey);
                 }
 
                 QuestSystem quests = GameManager.Instance.Quests;
