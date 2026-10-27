@@ -22,9 +22,9 @@ namespace KCD.Tests
         [Test]
         public void SolveGait_AboveWalkSpeed_PassesSpeedThrough()
         {
-            PlayerAnimatorDriver.SolveGait(5.4f, out float blend, out float rate);
+            PlayerAnimatorDriver.SolveGait(4.0f, out float blend, out float rate);
 
-            Assert.AreEqual(5.4f, blend, 1e-5f);
+            Assert.AreEqual(4.0f, blend, 1e-5f);
             Assert.AreEqual(1f, rate, 1e-5f);
         }
 

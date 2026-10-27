@@ -9,7 +9,7 @@ namespace KCD.Tests
 {
     /// <summary>
     /// 走り・歩きで接地した足が地面に対して滑っていないこと (#232)。
-    /// 走りの歩幅を詰めて脚を上げないようにしても、クリップの前進速度が移動速度（走り 5.4 m/s、歩き 2.6 m/s）と
+    /// 走りの歩幅を詰めて脚を上げないようにしても、クリップの前進速度が移動速度（走り 4.0 m/s、歩き 2.6 m/s）と
     /// 合っていないと、接地した足が地面を滑る。実際にプレイヤーを自動で走らせ、毎フレーム足の接地点を
     /// 世界座標で追う。接地している間、その点は動かないはずなので、動いた分が滑り。
     /// 接地点は、かかとが着く間は足首の真下、母指球が着く間はつま先ボーンの位置（ロッカー）。
@@ -40,7 +40,7 @@ namespace KCD.Tests
         [Timeout(SceneTestTimeoutMs)]
         public IEnumerator Run_PlantedFeetDoNotSlide()
         {
-            yield return Measure("run", 5.4f, RunMeanSlipLimit);
+            yield return Measure("run", PlayerController.DefaultRunSpeed, RunMeanSlipLimit);
         }
 
         [UnityTest]

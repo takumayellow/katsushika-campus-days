@@ -252,11 +252,12 @@ y=230）に対して頭が 79 px（髪の先 y=20〜顎 y=99）で **2.80 頭身
   対象頂点を引いて動かす。
 - Action は `Idle`(60f ループ) / `Walk` / `Run`(どちらもループ) / `Jump`(18f) /
   `Wave`(28f) / `Talk`(60f) の 6 本。`Walk` と `Run` の長さはキャラの脚長から
-  決まるので人によって違う（実測: 低頭身の botchan・madonna が `Walk` 10f /
-  `Run` 8f、mirai ら 4 人が 14f / 10f、いちばん脚の長い prof が 15f / 11f。
+  決まるので人によって違う（実測: `Walk` は低頭身の botchan・madonna が 10f、
+  mirai ら 4 人が 14f、いちばん脚の長い prof が 15f。`Run` は botchan・madonna が 8f、
+  inari が 11f、mirai・kaname・sora が 12f、prof・student_m が 13f。
   ループ用に同じ姿勢の最終キーがもう 1 枚付く）。
   クリップの前進速度をゲーム側のブレンドツリーの閾値（`Walk` 2.6 m/s、
-  `Run` 5.4 m/s）に合わせるためで、`anim.GAIT_TARGET` で決まる。
+  `Run` 4.0 m/s）に合わせるためで、`anim.GAIT_TARGET` で決まる。
   `Idle` は呼吸と髪の揺れ、`Walk` は腰のひねりと腕振り、`Wave` は手を振りながら
   `smile` を同時にキーフレームする。
 - 手を振る腕は、上腕を肩の高さまで上げ、前腕を約 80 度立てて（肘 65〜100 度）、手を
@@ -276,28 +277,36 @@ y=230）に対して頭が 79 px（髪の先 y=20〜顎 y=99）で **2.80 頭身
   |---|---|---|
   | 接地の膝 | 屈曲 13〜20 度でほぼ伸びる。すねは鉛直から 5〜8 度以内、足は体の少し前 | [Souza 2016](https://escholarship.org/content/qt5v48m34m/qt5v48m34m.pdf)、[IJSPT の 2D 走動作チェック](https://ijspt.scholasticahq.com/article/74726.pdf) |
   | 立脚中期の膝 | 屈曲 40〜45 度 | [Souza 2016](https://escholarship.org/content/qt5v48m34m/qt5v48m34m.pdf)、[JOSPT 2016](https://www.jospt.org/doi/10.2519/jospt.2016.6280) |
-  | 遊脚 | 膝 90〜125 度に畳む。腿は遊脚の後半に前へ 50〜55 度 | Novacheck 1998（[Physiopedia の要約](https://www.physio-pedia.com/Running_Biomechanics)） |
+  | 遊脚 | 膝 90〜125 度に畳む。腿は遊脚の後半に前へ 40〜55 度 | Novacheck 1998（[Physiopedia の要約](https://www.physio-pedia.com/Running_Biomechanics)） |
+  | ピッチと歩幅 | 毎秒 4.5 m 前後で毎分 170〜180 歩、1 歩は脚長の 1.6 倍前後。歩数は脚長の平方根に反比例する（フルード数をそろえる） | [Physiopedia の要約](https://www.physio-pedia.com/Running_Biomechanics) |
   | 腕 | 肩から前後に振る。肘の屈曲 70〜90 度前後、手は腰の横を通る | [Intermountain Health](https://intermountainhealthcare.org/blogs/efficient-running-mechanics)、[Biomechanics of sprint running](https://en.wikipedia.org/wiki/Biomechanics_of_sprint_running) |
   | キーポーズ | 接地 → 沈み込み → 通過 → 伸び上がり（滞空） | [Rusty Animator](https://rustyanimator.com/run-cycle/)、[AnimSchool](https://blog.animschool.edu/2024/04/10/the-key-poses-of-a-run-cycle/) |
 
-  脚は `anim.GAIT_TARGET["Run"]`（接地率 0.27、接地中に足が進む距離 = 脚長の 0.60 倍。速さはピッチで出す）と
-  `anim.Gait` の走りの値（立脚中期の脚の縮み `k_mid` 0.95、前傾 `lean` 7 度、遊脚の
-  `clear` 0.09）で決まる。腕は `anim.GAIT_ARMS["Run"]`（肩の片振幅 13 度・
-  振りの中心を前へ 5.5 度・肘の屈曲 43〜55 度（前腕は水平より 21〜59 度下）・前腕を内へ 18 度・胸の逆回旋 0.2。肘は資料より開き、前腕を斜め下へ向けて軽い小走りに見せる。
-  値の根拠はその上のコメント）。gait_fk（`blender/tests/gait_fk.py`）で組み立てた
+  脚は `anim.GAIT_TARGET["Run"]`（速さ 4.0 m/s、接地率 0.35、接地中に足が進む距離 = 脚長の 0.96 倍）と
+  `anim.Gait` の走りの値（立脚中期の脚の縮み `k_mid` 0.94、前傾 `lean` 7 度、遊脚の
+  `clear` 0.12）で決まる。5.4 m/s では毎分 360 歩になり小走りに見えたので、速さを落として
+  歩幅でピッチを下げた。腕は `anim.GAIT_ARMS["Run"]`（肩の片振幅 16 度・
+  振りの中心を前へ 4 度・肘の屈曲 50〜64 度・前腕を内へ 18 度・胸の逆回旋 0.2）。
+  人の肘は 70〜90 度だが、前傾した胴の前でそこまで曲げると前腕が水平より上へ出て
+  はさみを構えたように見えるので、前腕がいつも水平より下を向く深さにとどめる。
+  2 頭身の botchan は脚が短くピッチが下限の 8f に張り付くので、`params` の `gait` で
+  歩幅（`reach` 0.80）と足の持ち上げ（`clear` 0.08）を小さくする。
+  値の根拠はその上のコメント。gait_fk（`blender/tests/gait_fk.py`）で組み立てた
   mirai の実測:
 
   | 項目 | 値 |
   |---|---|
-  | 接地の膝の屈曲 / すねの傾き | 18.7 度 / 5.8 度（足首が膝の前） |
-  | 接地の足の位置 | 腰より脚長の 0.25 倍前 |
-  | 立脚中の膝の屈曲の最大 | 36 度 |
-  | 遊脚の膝の屈曲の最大 / 腿の前の最大 | 68 度 / 32.6 度 |
+  | ピッチ / 1 歩 | 毎分 240 歩（12f）/ 1.00 m（脚長の 1.40 倍） |
+  | 接地の膝の屈曲 / すねの傾き | 20 度 / 6 度 |
+  | 接地の足の位置 | 腰より脚長の 0.27 倍前 |
+  | 立脚中の膝の屈曲の最大 | 40 度 |
+  | 遊脚の膝の屈曲の最大 / 腿の前後 | 73 度 / -31〜+47.5 度 |
+  | 足首の持ち上げ / 腰の上下動 | 脚長の 0.17 倍 / 7.0 cm |
   | 接地直前の膝 | 20 度以上（伸ばし切らない） |
-  | 上腕の前後（画面） / 鉛直からの開き | 約 -13〜+13 度 / 最大 約 13 度 |
-  | 肘の屈曲 | 43（後ろ）〜55 度（前） |
-  | 前腕の向き | 水平より 21（前）〜59 度（後ろ）下 |
-  | 手首 | 画面上の前後動 22.4 cm、胸より下、体の中心線の手前 |
+  | 上腕の前後（画面） / 鉛直からの開き | 約 -17〜+15 度 / 最大 約 18 度 |
+  | 肘の屈曲 | 53（後ろ）〜64 度（前） |
+  | 前腕の向き | 水平より 11（前）〜53 度（後ろ）下 |
+  | 手首 | 画面上の前後動 24.3 cm、胸より下、体の中心線の手前 |
 
   2 頭身のキャラは歩幅に対して脚が短く、接地は周期の 1 割前後しかない。
   遊脚の後半は膝が伸びたまま前へ運ぶ。手が胸を越えないことと、

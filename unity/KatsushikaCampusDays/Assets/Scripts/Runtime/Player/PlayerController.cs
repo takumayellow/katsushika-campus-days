@@ -13,6 +13,9 @@ namespace KCD
         /// <summary>歩く速さの既定値（m/s）。Locomotion ブレンドツリーで歩きのクリップを置く Speed もこの値（AnimatorFactory）。</summary>
         public const float DefaultWalkSpeed = 2.6f;
 
+        /// <summary>走る速さ。Blender の走りのクリップ（anim.GAIT_TARGET["Run"]）の前進速度と同じ値（#232）。</summary>
+        public const float DefaultRunSpeed = 4.0f;
+
         /// <summary>
         /// 接地中に 1 フレームで下りられる段差（m）。地面の層の段（最大 2.1 cm）も入口の石張り（11.4 cm）も
         /// これで吸い付く。重力だけだと 1 フレームの落下量は 60 fps で 4.8 cm、240 fps で 1.2 cm しかなく、
@@ -29,7 +32,7 @@ namespace KCD
 
         [Header("移動")]
         [SerializeField] private float _walkSpeed = DefaultWalkSpeed;
-        [SerializeField] private float _runSpeed = 5.4f;
+        [SerializeField] private float _runSpeed = DefaultRunSpeed;
         [SerializeField] private float _acceleration = 14f;
         [SerializeField] private float _turnSmoothTime = 0.09f;
 

@@ -98748,7 +98748,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: KCD.Runtime::KCD.PlayerController
   _walkSpeed: 2.6
-  _runSpeed: 5.4
+  _runSpeed: 4
   _acceleration: 14
   _turnSmoothTime: 0.09
   _jumpHeight: 1.1
