@@ -32,10 +32,12 @@ from . import plan_lecture_rooms_dims as RD
 from . import plan_lecture_shell as SH
 from . import plan_lecture_west as W
 
-CARPET = "lecture_carpet_corridor"
+CARPET = "lecture_carpet_upper"
 CONCRETE = "lecture_concrete"
 WHITE = "wall_white"
 CEIL_WHITE = "ceiling_white"
+BOARD = "lecture_board_room"           # 型 A の黒板（408 の写真で測った色。101・104 の黒板とは別）
+LECTERN = "lecture_lectern_walnut"     # 型 A の教卓の胴（濃い木）
 FACE_E = -math.pi * 0.5      # 正面 +X（東）
 FACE_W = math.pi * 0.5       # 正面 -X（西）
 LINING = 0.005               # 廊下の壁の室の側の面から白い板まで
@@ -193,8 +195,8 @@ def _type_a(mb, room, z):
     """一般の教室: 東の壁の黒板・教卓・プロジェクター・西の壁の時計・東を向いた固定机の列。"""
     xf0, xf1, yf0, yf1 = RD.room_faces(room)
     cy = (yf0 + yf1) * 0.5
-    FL.green_board(mb, kit.T(xf1, cy, z, FACE_W))
-    W.lifted(mb, z, F.podium, xf1 - 1.3, cy, ang=FACE_W)
+    FL.green_board(mb, kit.T(xf1, cy, z, FACE_W), board=BOARD)
+    W.lifted(mb, z, F.podium, xf1 - 1.3, cy, ang=FACE_W, body=LECTERN)
     F.projector(mb, xf1 - 0.4 * (xf1 - xf0), cy, z + RD.CEIL_H - 0.22, ang=FACE_E)
     shell.clock(mb, xf0, cy, z + 2.4, ang=FACE_E)
     for k in range(rows(room)):

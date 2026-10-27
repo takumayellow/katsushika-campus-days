@@ -221,7 +221,7 @@ def _row_fronts(xs, gap=0.5):
     return [a for a, b in zip(xs, xs[1:] + [math.inf]) if b - a > gap][::-1]
 
 
-BOARDS = {"A": "lecture_board_green", "B": "board_white", "C": "board_white"}
+BOARDS = {"A": "lecture_board_room", "B": "board_white", "C": "board_white"}
 
 
 def test_boards_hang_on_the_east_wall(upper):
@@ -324,9 +324,9 @@ def test_type_a_podium_projector_and_clock_follow_the_east_board(upper):
         no, z = room[0], RD.FLOOR_Z[room[1]]
         xf0, _, yf0, yf1 = RD.room_faces(room)
         mbs = _room_furn(c, no)
-        podium = _mat_verts(mbs, "counter_wood")
+        podium = _mat_verts(mbs, "lecture_lectern_walnut")
         assert max(_mat_xs(mbs, "lecture_desk_ivory")) < min(v[0] for v in podium), no
-        assert max(v[0] for v in podium) < min(_mat_xs(mbs, "lecture_board_green")), no
+        assert max(v[0] for v in podium) < min(_mat_xs(mbs, "lecture_board_room")), no
         assert _mid(podium, 1) == pytest.approx((yf0 + yf1) * 0.5), no
         west = xf0 + 0.5                     # これより西は西の壁の時計
         whites, blacks = _mat_verts(mbs, "plastic_white"), _mat_verts(mbs, "plastic_black")
@@ -362,7 +362,7 @@ def test_lounges_have_sofas_to_sit_on_and_311_sells_bento(upper):
     for no in ("310", "311"):
         mbs = _room_furn(c, no)
         assert sum(len(getattr(mb, "seats", ())) for mb in mbs) == len(R.SOFA_Y), no
-        assert _mat_faces(mbs, "lecture_board_green") == 0, no
+        assert _mat_faces(mbs, "lecture_board_room") == 0, no
     assert _mat_faces(_room_furn(c, "311"), "stainless") > 0
     assert _mat_faces(_room_furn(c, "310"), "stainless") == 0
 
