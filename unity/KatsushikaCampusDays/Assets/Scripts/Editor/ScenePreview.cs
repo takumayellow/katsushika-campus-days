@@ -630,6 +630,127 @@ namespace KCD.Editor
                 Fov = 0f,
                 Note = "講義棟 7F の廊下、南の壁（閉じた扉・カーペット）",
             },
+            // 講義棟の作り込みの後の見回り（#279）。床は 2F 4.6・3F 8.8・4F 13.0・5F 17.2・6F 21.4 m
+            new Shot
+            {
+                Name = "shot_lec279v_coop_left",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(37.5f, 1.6f, 26.0f),
+                Look = new Vector3(32.5f, 1.6f, 35.1f),
+                Fov = 0f,
+                Note = "講義棟 1F の東端ホールから生協の前の左（受付窓の面と北の出口の通路）",
+            },
+            new Shot
+            {
+                Name = "shot_lec279v_bridge",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(38.6f, 6.3f, 33.4f),
+                Look = new Vector3(49.0f, 5.0f, 31.6f),
+                Fov = 0f,
+                Note = "講義棟 2F の渡り（床・ガラスの手すり・直通階段の上り口）",
+            },
+            new Shot
+            {
+                Name = "shot_lec279v_corr2f_n",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-16.0f, 6.3f, 33.4f),
+                Look = new Vector3(38.0f, 5.8f, 33.0f),
+                Fov = 0f,
+                Note = "講義棟 2F の北の廊下を東へ。奥が渡り",
+            },
+            new Shot
+            {
+                Name = "shot_lec279v_corr2f_s",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-26.5f, 6.3f, 21.6f),
+                Look = new Vector3(16.0f, 6.0f, 21.0f),
+                Fov = 0f,
+                Note = "講義棟 2F の南の廊下を西の端から東へ",
+            },
+            new Shot
+            {
+                Name = "shot_lec279v_room201",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(8.3f, 6.2f, 6.0f),
+                Look = new Vector3(28.2f, 5.4f, 13.0f),
+                Fov = 0f,
+                Note = "講義棟 201、後ろから黒板と教卓",
+            },
+            new Shot
+            {
+                Name = "shot_lec279v_room203",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-27.0f, 6.2f, 6.0f),
+                Look = new Vector3(-11.2f, 5.4f, 13.0f),
+                Fov = 0f,
+                Note = "講義棟 203、後ろから黒板と教卓",
+            },
+            new Shot
+            {
+                Name = "shot_lec279v_room306_back",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-27.6f, 10.6f, 37.0f),
+                Look = new Vector3(-18.2f, 9.8f, 45.5f),
+                Fov = 0f,
+                Note = "講義棟 306 の PC ルームを後ろの角から（PC の机の列・白板）",
+            },
+            new Shot
+            {
+                Name = "shot_lec279v_room307",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-16.4f, 10.6f, 48.0f),
+                Look = new Vector3(-3.8f, 9.8f, 40.0f),
+                Fov = 0f,
+                Note = "講義棟 307、後ろから黒板と教卓",
+            },
+            new Shot
+            {
+                Name = "shot_lec279v_room402",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(8.7f, 14.6f, 6.0f),
+                Look = new Vector3(21.7f, 13.8f, 13.0f),
+                Fov = 0f,
+                Note = "講義棟 402、後ろから黒板と教卓",
+            },
+            new Shot
+            {
+                Name = "shot_lec279v_corr4f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-27.0f, 14.7f, 21.6f),
+                Look = new Vector3(30.0f, 14.4f, 21.6f),
+                Fov = 0f,
+                Note = "講義棟 4F の南の廊下を西の端から東へ",
+            },
+            new Shot
+            {
+                Name = "shot_lec279v_corr5f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(12.0f, 18.8f, 22.0f),
+                Look = new Vector3(-14.0f, 18.3f, 19.9f),
+                Fov = 0f,
+                Note = "講義棟 5F の廊下、南の壁",
+            },
+            new Shot
+            {
+                Name = "shot_lec279v_corr6f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-16.0f, 23.0f, 33.0f),
+                Look = new Vector3(12.0f, 22.5f, 35.1f),
+                Fov = 0f,
+                Note = "講義棟 6F の廊下、北の壁",
+            },
             new Shot
             {
                 Name = "shot_kyoso_entrance",

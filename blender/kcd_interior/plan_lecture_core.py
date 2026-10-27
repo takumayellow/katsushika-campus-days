@@ -25,6 +25,7 @@ ESC_HALL = (X_GLASS, D.Y_CORE0, X_CORR_E, D.Y_CORE1)   # エスカレータの�
 Z_SLAB2_UNDER = D.F2 - D.SLAB         # 2F の床スラブの下面（エスカレータのホールの天井）
 
 CORR = "lecture_concrete"
+HALL = "lecture_concrete_light"       # 東端ホールに面する北の壁（生協の前と同じ面）
 DOOR_WOOD = "lecture_door_wood"
 FRAME = "metal_dark"
 FRAME_W = "metal_white"
@@ -70,19 +71,22 @@ def _south_wall(c):
 
 def _north_wall(c):
     """北の室の壁 Y 35.18: 104 の開いた扉、北の出口の通路、キオスクの窓、閉じた扉。"""
-    x0, x1 = X_IN_W - 0.1, D.COOP_KIOSK_X[1]
+    x0, xm, x1 = X_IN_W - 0.1, X_CORR_E, D.COOP_KIOSK_X[1]
     hw = D.DOOR2_W * 0.5
     nx0, nx1 = D.N_EXIT_X
     k0, k1 = D.COOP_KIOSK_X[0] + 1.0, D.COOP_KIOSK_X[1] - 0.8
-    gaps = _gaps(x0, D.R104_DOORS, hw) + [(nx0 - x0, nx1 - x0), (k0 - x0, k1 - x0)]
-    SH.part(c, (x0, Y_CN), (x1, Y_CN), 0.0, Z_SLAB2_UNDER, mat=CORR, gaps=gaps, top=False)
+    # 中廊下の区間は暗い打放し、東端ホールに面する区間（生協の前の左）は生協の前と同じ明るい打放し
+    SH.part(c, (x0, Y_CN), (xm, Y_CN), 0.0, Z_SLAB2_UNDER, mat=CORR,
+            gaps=_gaps(x0, D.R104_DOORS, hw), top=False)
+    SH.part(c, (xm, Y_CN), (x1, Y_CN), 0.0, Z_SLAB2_UNDER, mat=HALL,
+            gaps=[(nx0 - xm, nx1 - xm), (k0 - xm, k1 - xm)], top=False)
     for x in D.R104_DOORS:
         _header(c.wall, x - hw, x + hw, Y_CN, D.DOOR2_H, Z_SLAB2_UNDER)
         _door(c.wall, x, Y_CN, math.pi, open_=0.86)
-    _header(c.wall, nx0, nx1, Y_CN, D.CEIL_CORR, Z_SLAB2_UNDER)
+    _header(c.wall, nx0, nx1, Y_CN, D.CEIL_CORR, Z_SLAB2_UNDER, mat=HALL)
     # キオスクの窓: 下はカウンターの腰、上は垂れ壁
     _header(c.wall, k0, k1, Y_CN, 0.0, 1.0, thick=0.5, mat="lecture_coop_counter")
-    _header(c.wall, k0, k1, Y_CN, 2.2, Z_SLAB2_UNDER)
+    _header(c.wall, k0, k1, Y_CN, 2.2, Z_SLAB2_UNDER, mat=HALL)
     y_face = D.Y_ROOM_N0
     for x, w in ((-25.2, 1.0), (D.HEALTH_DOOR_X, 1.0), (-12.4, 1.6), (-4.8, 1.6),
                  (23.3, 1.0)):
