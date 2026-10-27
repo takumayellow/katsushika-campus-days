@@ -39,9 +39,9 @@ DOWN = 0.30                         # ダウンライトの一辺
 DOWN_CLEAR = 0.8                    # 吊り看板の吊り元からダウンライトまでの最小距離
 HOLE_LIGHT_GAP = 1.5                # 穴の縁からこの範囲の天井には点光源を置かない（エスカレータの段に近すぎる）
 
-CORR = "lecture_concrete"
+CORR = "lecture_concrete_light"
 CEIL = "lecture_ceiling_upper"
-CARPET = "lecture_carpet_corridor"
+CARPET = "lecture_carpet_upper"
 WHITE = "lecture_rail_white"
 GLASS_RAIL = "lecture_glass_rail"
 

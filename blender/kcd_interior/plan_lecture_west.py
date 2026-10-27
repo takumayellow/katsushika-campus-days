@@ -47,12 +47,12 @@ EV_POINT = (D.CORE_EV[0] - 1.4, sum(D.EV_DOORS_Y) * 0.5)  # EV の乗り場（�
 LOCKERS = (7.0, 12.8, D.Y_CORE0 - 0.23, 1.8)   # 男子トイレの南の面のロッカー（3F〜6F）: x0, x1, 中心 y, 高さ
 LOCKER_FLOORS = RD.FLOORS[1:-1]
 
-CORR = "lecture_concrete"
+CORR = "lecture_concrete_light"
 CORE = "lecture_core_black"
 CEIL = "lecture_ceiling_upper"
-CARPET = "lecture_carpet_corridor"
+CARPET = "lecture_carpet_upper"
 COOL = "lecture_light_cool"
-DOOR_WOOD = "lecture_door_wood"
+DOOR = "lecture_door_white"
 FRAME = "metal_dark"
 WHITE = "lecture_sign_white"
 
@@ -116,7 +116,7 @@ def pieces(x0, x1, doors, extra=()):
 
 
 def _door(mb, x, y, z, ang, w=RD.DOOR_W, h=RD.DOOR_H, open_=0.0):
-    lifted(mb, z, shell.door, x, y, ang=ang, w=w, h=h, leaf=DOOR_WOOD, frame=FRAME,
+    lifted(mb, z, shell.door, x, y, ang=ang, w=w, h=h, leaf=DOOR, frame=FRAME,
            open_=open_)
 
 

@@ -10,7 +10,7 @@ from . import kit, shell
 from . import furn_lecture as FL
 from . import plan_lecture_dims as D
 
-WALL = "lecture_concrete"
+WALL = "lecture_concrete_light"
 BAND = "lecture_coop_band"
 COUNTER = "lecture_coop_counter"
 CEIL = "lecture_rail_white"

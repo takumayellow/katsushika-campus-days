@@ -473,10 +473,10 @@ def projector(mb, x, y, z, ang=0.0):
         t.box(mb, sx - 0.02, -0.02, 0.0, sx + 0.02, 0.02, 0.22, "metal_gray")
 
 
-def podium(mb, x, y, ang=0.0, w=1.1, d=0.62, h=1.12):
+def podium(mb, x, y, ang=0.0, w=1.1, d=0.62, h=1.12, body="counter_wood"):
     t = T(x, y, 0.0, ang)
     hw, hd = w * 0.5, d * 0.5
-    t.box(mb, -hw, -hd, 0.0, hw, hd, h - 0.05, "counter_wood")
+    t.box(mb, -hw, -hd, 0.0, hw, hd, h - 0.05, body)
     t.box(mb, -hw - 0.04, -hd - 0.04, h - 0.05, hw + 0.04, hd + 0.04, h,
           "desk_dark")
     t.box(mb, -0.22, -hd + 0.06, h, 0.22, hd - 0.20, h + 0.02, "paper_white")
