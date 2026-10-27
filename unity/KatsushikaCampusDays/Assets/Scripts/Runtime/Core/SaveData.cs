@@ -67,6 +67,9 @@ namespace KCD
         /// <summary>選択肢に答えた話題（NpcAffinity）。"会話データの id/話題 id" の形 (#9)。</summary>
         public List<string> AnsweredChoices = new List<string>();
 
+        /// <summary>使い終えた一度きりの話題（OnceTopics）。"会話データの id/話題 id" の形 (#395)。</summary>
+        public List<string> SpentTopics = new List<string>();
+
         public Vector3 PlayerPosition => new Vector3(PlayerX, PlayerY, PlayerZ);
 
         public Vector3 ReturnPosition => new Vector3(ReturnX, ReturnY, ReturnZ);
@@ -156,7 +159,10 @@ namespace KCD
                 Buildings = CleanIds(source.Buildings),
                 Collected = CleanIds(source.Collected),
                 PhotoSpots = CleanIds(source.PhotoSpots),
-                Talked = CleanIds(source.Talked)
+                Talked = CleanIds(source.Talked),
+                Affinity = CleanIds(source.Affinity),
+                AnsweredChoices = CleanIds(source.AnsweredChoices),
+                SpentTopics = CleanIds(source.SpentTopics)
             };
 
             bool finitePosition = IsFinite(source.PlayerX) && IsFinite(source.PlayerY) && IsFinite(source.PlayerZ);
