@@ -53,6 +53,43 @@
       ]
     },
     {
+      "id": "t_program_done",
+      "requiresCompletedQuest": "q_sq_first_program",
+      "once": true,
+      "lines": [
+        {
+          "text": "動いたかね。",
+          "text_en": "Did it run?"
+        },
+        {
+          "speaker": "自分",
+          "text": "動きました。セミコロンを 1 個忘れていて、そこで止まってました。",
+          "text_en": "It did. I was missing one semicolon, and it stopped right there."
+        },
+        {
+          "text": "計算機は、書いたとおりにしか動かない。思ったとおりには動いてくれない。",
+          "text_en": "A computer does exactly what you write. Not what you meant."
+        },
+        {
+          "text": "その差を埋めていくのが、これからの 4 年間だよ。",
+          "text_en": "Closing that gap is what the next four years are for."
+        },
+        {
+          "speaker": "自分",
+          "text": "TA の人が、7 階の白板の WORLD. は自分の字だって言ってました。",
+          "text_en": "The TA said the WORLD. on the 7F whiteboard is in his handwriting."
+        },
+        {
+          "text": "ああ、彼か。あそこにピリオドを付けたのは、後にも先にも彼だけだ。",
+          "text_en": "Ah, him. He is the only one, before or since, who put a period there."
+        },
+        {
+          "text": "今は私の講義の TA をやってくれている。……数年後には、君が 306 にいるかもしれんね。",
+          "text_en": "These days he is a TA for my course... In a few years, it may be you sitting in 306."
+        }
+      ]
+    },
+    {
       "id": "t_hello_done",
       "requiresCompletedQuest": "q_sq_hello_world",
       "once": true,
@@ -86,6 +123,45 @@
         {
           "text": "そうか。……今年は、もう 1 行増えたわけだ。",
           "text_en": "I see... So this year, it has grown by one more line."
+        }
+      ]
+    },
+    {
+      "id": "t_program_start",
+      "requiresCompletedQuest": "q_sq_hello_world",
+      "once": true,
+      "startsQuest": "q_sq_first_program",
+      "lines": [
+        {
+          "text": "読めたなら、次は動かす番だ。",
+          "text_en": "Now that you can read it, it is your turn to make it run."
+        },
+        {
+          "speaker": "自分",
+          "text": "動かす、ですか。",
+          "text_en": "Make it run?"
+        },
+        {
+          "text": "Hello, World を、自分の手で画面に出す。3F の 306 が PC ルームだ。",
+          "text_en": "Put Hello, World on a screen with your own hands. The PC room is 306, on 3F."
+        },
+        {
+          "text": "TA が自習を見ている。困ったら彼に聞きなさい。",
+          "text_en": "A TA keeps an eye on self-study there. If you get stuck, ask him."
+        }
+      ]
+    },
+    {
+      "id": "t_program_active",
+      "requiresActiveQuest": "q_sq_first_program",
+      "lines": [
+        {
+          "text": "306 は 3F の西の端の部屋だ。TA には、学生が行くかもしれないと言ってある。",
+          "text_en": "306 is the room at the west end of 3F. I told the TA a student might come by."
+        },
+        {
+          "text": "書いてあるとおりに打てば動く。……はずだ。",
+          "text_en": "If you type it exactly as written, it will run... In theory."
         }
       ]
     },

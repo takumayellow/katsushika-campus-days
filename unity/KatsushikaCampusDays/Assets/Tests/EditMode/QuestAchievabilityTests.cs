@@ -6,7 +6,7 @@ using UnityEngine;
 namespace KCD.Tests
 {
     /// <summary>
-    /// 実データの 16 クエスト（隠しクエストを含む）を、プレイヤーにできる操作（会話・入館・到着・拾得）だけで
+    /// 実データの 18 クエスト（隠しクエストを含む）を、プレイヤーにできる操作（会話・入館・到着・拾得）だけで
     /// 全部達成できるか (#65, #175)。
     ///
     /// クエストの JSON と会話の JSON は別々に書かれていて、組み合わせたときにしか分からない詰みがあった。
@@ -272,7 +272,7 @@ namespace KCD.Tests
         {
             QuestSystem quests = NewGame(EveningHour);
             var player = new Player(quests, LoadDialogues(), LoadCatalog());
-            Assert.AreEqual(17, quests.All.Count, "クエストの数が 17 ではない");
+            Assert.AreEqual(18, quests.All.Count, "クエストの数が 18 ではない");
             foreach (string itemId in pickedUpFirst)
             {
                 player.PickUp(itemId);

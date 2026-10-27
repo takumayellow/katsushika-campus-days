@@ -547,11 +547,11 @@
       "id": "ach_all_quests",
       "name_ja": "頼まれごとの達人",
       "name_en": "Errand Master",
-      "desc_ja": "サブクエストを含む 16 本すべてを達成する。",
-      "desc_en": "Complete all sixteen quests, side quests included.",
+      "desc_ja": "サブクエストを含む 17 本すべてを達成する。",
+      "desc_en": "Complete all seventeen quests, side quests included.",
       "condition": {
         "type": "quest_count",
-        "value": 16
+        "value": 17
       }
     },
     {
@@ -596,6 +596,17 @@
       "condition": {
         "type": "quest_complete",
         "value": "q_sq_hello_world"
+      }
+    },
+    {
+      "id": "ach_first_program",
+      "name_ja": "コンパイルが通った",
+      "name_en": "It Compiles",
+      "desc_ja": "306 の PC で、セミコロンを 1 つ足して HELLO, WORLD を動かす。",
+      "desc_en": "Add one semicolon on a PC in 306 and get HELLO, WORLD to run.",
+      "condition": {
+        "type": "quest_complete",
+        "value": "q_sq_first_program"
       }
     },
     {

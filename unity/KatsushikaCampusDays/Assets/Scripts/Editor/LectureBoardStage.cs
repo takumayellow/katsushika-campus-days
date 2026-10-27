@@ -113,7 +113,7 @@ namespace KCD.Editor
         }
 
         /// <summary>板の面の中心と、板が向く向き（水平）。empty が無ければ false。</summary>
-        private static bool TryFrame(Transform interior, string key, out Vector3 face, out Vector3 facing)
+        internal static bool TryFrame(Transform interior, string key, out Vector3 face, out Vector3 facing)
         {
             face = Vector3.zero;
             facing = Vector3.forward;

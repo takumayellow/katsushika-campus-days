@@ -63,7 +63,7 @@ namespace KCD.Tests
             Assert.AreEqual(4, rewards);
             Assert.AreEqual(catalog.Items.Count, catalog.HiddenCount + rewards, "source が hidden でも quest でもない物がある");
             Assert.AreEqual(6, catalog.PhotoSpotCount);
-            Assert.AreEqual(16, catalog.Achievements.Count);
+            Assert.AreEqual(17, catalog.Achievements.Count);
         }
 
         [Test]
