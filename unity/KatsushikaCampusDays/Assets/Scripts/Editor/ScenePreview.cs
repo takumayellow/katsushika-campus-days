@@ -20,6 +20,7 @@ namespace KCD.Editor
     /// 足せる引数:
     ///   -previewShots shot_dorm_hall,shot_dorm_interior  撮る画を絞る（部分一致・既定は全部）
     ///   -previewInteriorFill 1.2                         屋内が暗すぎたときだけ補助光を足す（既定 0 = 足さない）
+    ///   -previewScale 2                                  書き出す大きさを Width x Height の何倍にするか（既定 1、スライド用は 2）
     ///
     /// シーンは開くだけで **保存しない**。撮影のために作った GameObject には HideFlags.DontSave を付け、
     /// 撮り終わったら必ず捨てる（finally）。一時的に点け直したライトも元の状態へ戻す。
@@ -99,6 +100,12 @@ namespace KCD.Editor
 
             /// <summary>ログに出すひとこと。</summary>
             public string Note;
+
+            /// <summary>
+            /// この 1 枚だけ霧を切る。霧は 220 m から掛かるので、上空から全体を撮ると白くかすむ。
+            /// 紹介用の俯瞰（README・スライド）だけで使う。
+            /// </summary>
+            public bool NoFog;
         }
 
         /// <summary>
@@ -308,6 +315,50 @@ namespace KCD.Editor
                 Fov = 0f,
                 Sun = OutdoorSun,
                 Note = "キャンパス全体を南の上空から（木の並び、#57）",
+            },
+            new Shot
+            {
+                Name = "shot_aerial_southwest",
+                Space = Frame.World,
+                Eye = new Vector3(-200f, 330f, -290f),
+                Look = new Vector3(15f, 0f, -30f),
+                Fov = 40f,
+                Sun = OutdoorSun,
+                NoFog = true,
+                Note = "南西の上空から全体（紹介用。図書館・公園・研究棟と周りの街）",
+            },
+            new Shot
+            {
+                Name = "shot_aerial_southeast",
+                Space = Frame.World,
+                Eye = new Vector3(250f, 320f, -300f),
+                Look = new Vector3(0f, 0f, -30f),
+                Fov = 40f,
+                Sun = OutdoorSun,
+                NoFog = true,
+                Note = "南東の上空から全体（紹介用。研究棟の並びと公園の小川）",
+            },
+            new Shot
+            {
+                Name = "shot_aerial_north",
+                Space = Frame.World,
+                Eye = new Vector3(-40f, 300f, 230f),
+                Look = new Vector3(20f, 0f, -60f),
+                Fov = 42f,
+                Sun = OutdoorSun,
+                NoFog = true,
+                Note = "北の上空から全体（紹介用。講義棟のまわりとメインストリート）",
+            },
+            new Shot
+            {
+                Name = "shot_aerial_park",
+                Space = Frame.World,
+                Eye = new Vector3(-190f, 110f, -220f),
+                Look = new Vector3(-70f, 5f, -50f),
+                Fov = 38f,
+                Sun = OutdoorSun,
+                NoFog = true,
+                Note = "公園の上から図書館と研究棟（紹介用）",
             },
             new Shot
             {
@@ -961,6 +1012,9 @@ namespace KCD.Editor
 
             string filter = EditorPaths.ReadArgument("-previewShots", string.Empty);
             float fill = ParseFloat(EditorPaths.ReadArgument("-previewInteriorFill", "0"), 0f);
+            int scale = Mathf.Clamp(Mathf.RoundToInt(ParseFloat(EditorPaths.ReadArgument("-previewScale", "1"), 1f)), 1, 3);
+            int width = Width * scale;
+            int height = Height * scale;
 
             Scene scene = EditorSceneManager.OpenScene(EditorPaths.CampusScene, OpenSceneMode.Single);
             if (!scene.IsValid())
@@ -975,7 +1029,7 @@ namespace KCD.Editor
             // 地面探りのために当たり判定の位置を確定させ、環境光（Trilight）の球面調和を焼き直す。
             Physics.SyncTransforms();
             DynamicGI.UpdateEnvironment();
-            ReportEnvironment(folder);
+            ReportEnvironment(folder, width, height);
 
             Transform interior = FindByName("Interior_" + DormRoute.Id);
             Vector3 dormOrigin = ResolveDormOrigin(interior);
@@ -990,6 +1044,7 @@ namespace KCD.Editor
             // 別の処理をされても困らないよう、撮り終わったら元の姿勢へ必ず戻す（finally）。
             Transform sun = FindByName("Sun");
             Quaternion sunWas = sun != null ? sun.rotation : Quaternion.identity;
+            bool fogWas = RenderSettings.fog;
 
             var restore = new Restore();
             GameObject rig = null;
@@ -1014,14 +1069,14 @@ namespace KCD.Editor
 
                 // URP は Linear 色空間なので、RenderTexture は必ず sRGB で作る。
                 // linear のまま ReadPixels すると白っぽい（ガンマの掛かっていない）PNG になる。
-                target = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
+                target = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
                 target.antiAliasing = 1;   // アンチエイリアスは URP 側の FXAA に任せる
                 target.useMipMap = false;
                 target.Create();
                 camera.targetTexture = target;
 
                 // 読み戻し先。linear: false なので、RenderTexture のバイト列がそのまま PNG になる。
-                buffer = new Texture2D(Width, Height, TextureFormat.RGB24, false, false);
+                buffer = new Texture2D(width, height, TextureFormat.RGB24, false, false);
 
                 // 「描けたか」を見分ける目印が、この RenderTexture でいくつの輝度になるかを実測しておく。
                 MeasureMarker(target, buffer);
@@ -1045,6 +1100,8 @@ namespace KCD.Editor
                     {
                         sun.rotation = shot.Sun.HasValue ? Quaternion.Euler(shot.Sun.Value) : sunWas;
                     }
+
+                    RenderSettings.fog = fogWas && !shot.NoFog;
 
                     if (!TryOrigin(shot, dormOrigin, out Vector3 offset))
                     {
@@ -1106,6 +1163,8 @@ namespace KCD.Editor
                 {
                     sun.rotation = sunWas;
                 }
+
+                RenderSettings.fog = fogWas;
 
                 restore.Undo();
                 ShaderUtil.allowAsyncCompilation = wasAsync;
@@ -1381,7 +1440,7 @@ namespace KCD.Editor
         /// （SkyFactory が置くゲーム開始 8:30 の向き。空のマテリアルも同じ時刻の色）のままになる。
         /// 画が想像と違ったときは、まずここの値を疑う。
         /// </summary>
-        private static void ReportEnvironment(string folder)
+        private static void ReportEnvironment(string folder, int width, int height)
         {
             int level = QualitySettings.GetQualityLevel();
             string[] names = QualitySettings.names;
@@ -1389,7 +1448,7 @@ namespace KCD.Editor
                 UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline;
 
             EditorPaths.Report("プレビュー: シーン " + EditorPaths.CampusScene
-                + " / " + Width + "x" + Height + " → " + folder);
+                + " / " + width + "x" + height + " → " + folder);
             EditorPaths.Report("  品質 " + (level >= 0 && level < names.Length ? names[level] : level.ToString())
                 + " / パイプライン " + (pipeline != null ? pipeline.name : "(なし = ビルトイン)")
                 + " / 色空間 " + QualitySettings.activeColorSpace);
