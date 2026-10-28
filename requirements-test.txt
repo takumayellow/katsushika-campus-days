@@ -1,4 +1,4 @@
 # python -m pytest に要るもの (#68)。Blender (bpy) と Unity は要らない。
-pytest>=8
+pytest>=8,<9.2  # 9.2 は入れ子の pytest.approx を TypeError にする（test_geom ほか 6 件）
 numpy>=1.24
 fonttools>=4.40
