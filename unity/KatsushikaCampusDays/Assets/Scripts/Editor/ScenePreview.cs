@@ -362,6 +362,17 @@ namespace KCD.Editor
             },
             new Shot
             {
+                Name = "shot_aerial_east",
+                Space = Frame.World,
+                Eye = new Vector3(290f, 130f, 80f),
+                Look = new Vector3(12f, 0f, -72f),
+                Fov = 40f,
+                Sun = OutdoorSun,
+                NoFog = true,
+                Note = "東の上空から全体（紹介用。講義棟・研究棟・図書館のドームと外周の道路）",
+            },
+            new Shot
+            {
                 Name = "shot_item_leaf",
                 Space = Frame.World,
                 Eye = new Vector3(-82.9f, 1.25f, -113.1f),

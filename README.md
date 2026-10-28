@@ -4,7 +4,7 @@
 アニメ調の女の子（と公式マスコットのオマージュ）で歩き回る三人称探索アドベンチャー。
 建物 9 棟は内部まで入れて、学生 NPC との会話でクエストが進み、1 日の終わりにリザルトが出る。
 
-![南西の上空から見たキャンパス（図書館・公園・研究棟）](docs/screenshots/aerial_southwest.jpg)
+![東の上空から見たキャンパス（講義棟・研究棟・図書館）](docs/screenshots/aerial_east.jpg)
 
 ![タイトル](docs/screenshots/title.png)
 
