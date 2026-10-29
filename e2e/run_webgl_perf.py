@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """ブラウザ版の画質の段（Low / Medium / High）ごとの fps・1% low・描画コール・三角形 (#70)。
+そのうち影のマップに描いた描画コールと三角形も出す (#15)。
 
     python e2e/run_webgl_perf.py --serve build/WebGL                 # ローカルのビルド, 60 fps の上限あり
     python e2e/run_webgl_perf.py --serve build/WebGL --uncapped      # 上限なし
@@ -73,14 +74,16 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
 
 
 def format_table(result) -> str:
-    lines = ["| 段 | 場面 | fps | 1% low | 1 フレームの処理（平均 / p99） | 描画コール（平均 / 最大） | 三角形（平均） |",
-             "|---|---|---|---|---|---|---|"]
+    lines = ["| 段 | 場面 | fps | 1% low | 1 フレームの処理（平均 / p99） | 描画コール（平均 / 最大） | 三角形（平均） "
+             "| 影のマップ（コール / 三角形） |",
+             "|---|---|---|---|---|---|---|---|"]
     rows = [(session.tier, scene, s) for session in result.sessions for scene, s in session.scenes.items()]
     rows += [(tier, f"frozen {round_index}", s) for round_index, tier, s in result.frozen]
     for tier, scene, s in rows:
         lines.append(f"| {tier} | {scene} | {s['fps']:.1f} | {s['one_percent_low']:.1f} | "
                      f"{s['work_ms']:.2f} / {s['work_p99_ms']:.2f} ms | "
-                     f"{s['draws']:.0f} / {s['draws_max']} | {s['triangles'] / 1000:.0f}k |")
+                     f"{s['draws']:.0f} / {s['draws_max']} | {s['triangles'] / 1000:.0f}k | "
+                     f"{s['shadow_draws']:.1f} / {s['shadow_triangles'] / 1000:.0f}k |")
     return "\n".join(lines)
 
 

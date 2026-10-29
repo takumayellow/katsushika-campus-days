@@ -31,7 +31,7 @@ namespace KCD.Editor
         public const string MobMaterialFolder = "Assets/Materials/Mobs";
 
         /// <summary>KCD_Toon の輪郭（反転ハル）のパスの LightMode。</summary>
-        public const string OutlinePass = "SRPDefaultUnlit";
+        public const string OutlinePass = ToonPasses.OutlinePass;
 
         private const float BodyHeight = 1.6f;
         private const float TriggerRadius = 0.34f;
@@ -402,6 +402,7 @@ namespace KCD.Editor
         /// <summary>
         /// .mat を作るか、あれば中身を元に合わせ直す（GUID を変えないため、消して作り直さない）。
         /// color が null なら色は元のまま。outline が false なら輪郭のパスを切る。
+        /// 元で切ってあるパス（幅 0 の顔の細部の輪郭と影, <see cref="ToonPasses"/>）は、近くの段でも切ったままにする (#15)。
         /// </summary>
         private static Material Ensure(
             string path, Material source, Color? color, bool outline, Dictionary<string, Material> cache)
@@ -432,7 +433,8 @@ namespace KCD.Editor
                 material.SetColor("_ShadeColor2", Color.Lerp(c, new Color(0.30f, 0.28f, 0.44f), 0.55f));
             }
 
-            material.SetShaderPassEnabled(OutlinePass, outline);
+            material.SetShaderPassEnabled(OutlinePass, outline && source.GetShaderPassEnabled(OutlinePass));
+            material.SetShaderPassEnabled(ToonPasses.ShadowPass, source.GetShaderPassEnabled(ToonPasses.ShadowPass));
 
             if (created)
             {
