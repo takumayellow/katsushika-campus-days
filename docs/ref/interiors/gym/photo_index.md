@@ -22,3 +22,17 @@
 | HbHY | 動画「東京理科大学葛飾キャンパスツアー2023」9:02〜9:31 `vid/HbHY_*.jpg` | https://www.youtube.com/watch?v=HbHY3z88Qq4 |
 | KVPQ | 動画「公園一体型キャンパスの謎⁉ 東京理科大 葛飾キャンパス編」`vid/KVPQ_*.jpg` | https://www.youtube.com/watch?v=KVPQPdmfBTg |
 | REPO | リポジトリの現状（`plan_gym.py`、`entrances.py:62`、`campus.json`、`buildings.py:305`、Assets/Data）。`research_repo.md` | — |
+
+## 写真の取得状況（2026-10-30）
+
+写真そのものは置かない。直接 URL と大きさ、取得できたかだけを残す。上の表の `img/tus_*` は調べたときの手元のファイル名で、実際の URL には `tus_` が付かない。
+
+| 写真 | 直接 URL | 大きさ | 取得 |
+|---|---|---|---|
+| P1 | https://www.tus.ac.jp/tuslife/campus/katsushika/img/katsushika_09.jpg | 713 × 445 | できた |
+| P2 | https://www.tus.ac.jp/tuslife/campus/facility/img/katsu_phy01.jpg | 706 × 417 | できた |
+| P3 | https://www.tus.ac.jp/tuslife/campus/facility/img/katsu_phy02.jpg | 706 × 417 | できた |
+| P4〜P7 | ACT の施設一覧（image013〜016） | — | 503 が返り、見られなかった |
+
+- P1・P2・P3 は、同じ並びの Unity の画面と並べて床の明るさを比べた（spec.md §5）。
+- P4〜P7 に依る記述（spec.md の「根拠」の P4〜P7）は、2026-10-30 には見直せていない。

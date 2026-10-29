@@ -21,6 +21,11 @@ namespace KCD.Editor
     ///   -previewShots shot_dorm_hall,shot_dorm_interior  撮る画を絞る（部分一致・既定は全部）
     ///   -previewInteriorFill 1.2                         屋内が暗すぎたときだけ補助光を足す（既定 0 = 足さない）
     ///   -previewScale 2                                  書き出す大きさを Width x Height の何倍にするか（既定 1、スライド用は 2）
+    ///   -previewQuality 0                                品質レベルを切り替えて撮る（0 = Mobile = WebGL 版、1 = PC）。
+    ///                                                    ファイル名に _q0 のように添える。付けなければ保存された品質のまま
+    ///   -previewIndoorScale 1.34                         屋内の環境光（_indoorAmbient）の明るさを何倍にして撮るか（既定 1）。
+    ///                                                    床の明るさを写真と比べるための what-if で、ゲームの値は変わらない。
+    ///                                                    ファイル名に _a134 のように倍率（%）を添える
     ///
     /// シーンは開くだけで **保存しない**。撮影のために作った GameObject には HideFlags.DontSave を付け、
     /// 撮り終わったら必ず捨てる（finally）。一時的に点け直したライトも元の状態へ戻す。
@@ -106,6 +111,14 @@ namespace KCD.Editor
             /// 紹介用の俯瞰（README・スライド）だけで使う。
             /// </summary>
             public bool NoFog;
+
+            /// <summary>
+            /// この 1 枚だけ、ゲームの屋内と同じ光にする。太陽を消し、霧を止め、環境光を DayNightCycle の
+            /// 屋内の色（_indoorAmbient）にそろえる（DayNightCycle.ApplyIndoor と同じ値）。
+            /// 保存されたままの Sun と環境光は屋外の昼のもので、屋内の床や壁の明るさが本番と食い違うので、
+            /// 実際に遊ぶ画面と見比べる 1 枚（体育館など）だけが立てる。
+            /// </summary>
+            public bool Indoor;
         }
 
         /// <summary>
@@ -501,6 +514,30 @@ namespace KCD.Editor
                 Fov = 0f,
                 Sun = OutdoorSun,
                 Note = "遊び場の砂（sand）",
+            },
+
+            // テニスのハードコート（#59）。OSM の way 771657619 の区画で、中心は (173.0, 70.2)、
+            // 長手の向きは (0.335, 0.942)（北北東）。どちらも南のベースラインの 9 m 後ろから北北東を向く。
+            // 低い方は目の高さから長手に沿って、高い方は長手の軸の上 9 m から見下ろす
+            new Shot
+            {
+                Name = "shot_surface_tennis_hardcourt",
+                Space = Frame.World,
+                Eye = new Vector3(164.58f, 1.6f, 50.94f),
+                Look = new Vector3(171.68f, 0f, 66.46f),
+                Fov = 0f,
+                Sun = OutdoorSun,
+                Note = "テニスのハードコート（hardcourt_inner / hardcourt_outer と白線）",
+            },
+            new Shot
+            {
+                Name = "shot_surface_tennis_hardcourt_high",
+                Space = Frame.World,
+                Eye = new Vector3(165.99f, 9f, 50.44f),
+                Look = new Vector3(172.02f, 0f, 67.40f),
+                Fov = 0f,
+                Sun = OutdoorSun,
+                Note = "テニスのハードコートを斜め上から（線の配置）",
             },
 
             // 屋内の正面（#120・#169）。座標は Models/Interiors/<id>.json の empties と同じ屋内のローカル座標
@@ -917,6 +954,109 @@ namespace KCD.Editor
                 Fov = 0f,
                 Note = "講義棟 306 の PC ルーム。白板の前の TA と最前列の PC（q_sq_first_program, #392）",
             },
+
+            // 体育館（#115）。公式の写真と同じ向きで撮って並べる。Eye / Look は blender の (x, y, z) を
+            // Unity の (x, z, y) に読み替えたもの。Indoor でゲームの屋内と同じ光にする。
+            // 向きの根拠: アリーナは西が G（ガラスの窓の辺）・東が B（トレーニングルームのガラス帯の側）・北が木の壁。
+            new Shot
+            {
+                Name = "shot_gym_arena_p2",
+                Space = Frame.Interior,
+                Building = "gym",
+                Eye = new Vector3(-5.2f, 6.2f, 35.6f),
+                Look = new Vector3(-17.0f, 1.5f, 13.0f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "体育館のアリーナ。北東の高みから南南西へ。右に G のガラス、床の明るさを写真と比べる（#115）",
+            },
+            new Shot
+            {
+                Name = "shot_gym_arena_p1",
+                Space = Frame.Interior,
+                Building = "gym",
+                Eye = new Vector3(-26.4f, 6.2f, 35.0f),
+                Look = new Vector3(-6.0f, 3.0f, 22.0f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "体育館のアリーナ。北西の高みから東南東へ。左に北の木の壁、奥にトレーニングルームのガラス帯（#115）",
+            },
+            new Shot
+            {
+                Name = "shot_gym_arena_p1_match",
+                Space = Frame.Interior,
+                Building = "gym",
+                Eye = new Vector3(-25.2f, 6.3f, 14.0f),
+                Look = new Vector3(-2.2f, 2.0f, 33.3f),
+                Fov = 60f,
+                Indoor = true,
+                Note = "体育館のアリーナ。南西の高みから北東へ（P1 と同じ並び）。左に北の木の壁（時計、丸穴の鼻先、吊りゴール）、正面に観覧席とトレーニングルームのガラス帯（#115）",
+            },
+            new Shot
+            {
+                Name = "shot_gym_hoop_g",
+                Space = Frame.Interior,
+                Building = "gym",
+                Eye = new Vector3(-17.0f, 3.6f, 24.5f),
+                Look = new Vector3(-25.2f, 3.9f, 21.85f),
+                Fov = 40f,
+                Indoor = true,
+                Note = "体育館の吊りゴール（G の鼻先、y 21.85）。ガラスの板・白い枠・赤いリング（#115）",
+            },
+            new Shot
+            {
+                Name = "shot_gym_north_wall",
+                Space = Frame.Interior,
+                Building = "gym",
+                Eye = new Vector3(-15.9f, 3.0f, 24.5f),
+                Look = new Vector3(-15.9f, 6.0f, 38.85f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "体育館のアリーナの北の木の壁。金属の目地・スピーカー・時計（#115）",
+            },
+            new Shot
+            {
+                Name = "shot_gym_north_open",
+                Space = Frame.Interior,
+                Building = "gym",
+                Eye = new Vector3(-11.0f, 1.8f, 24.0f),
+                Look = new Vector3(-5.7f, 1.3f, 38.85f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "体育館のアリーナの北壁の東端の開口（spec は暗い開口、#115 の確認事項 c）",
+            },
+            new Shot
+            {
+                Name = "shot_gym_g_wall",
+                Space = Frame.Interior,
+                Building = "gym",
+                Eye = new Vector3(-6.0f, 2.0f, 26.0f),
+                Look = new Vector3(-27.4f, 6.0f, 18.0f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "体育館のアリーナの G の壁。ガラスの上のルーバー天井の帯（#115 の確認事項 a）",
+            },
+            new Shot
+            {
+                Name = "shot_gym_training_p3",
+                Space = Frame.Interior,
+                Building = "gym",
+                Eye = new Vector3(5.4f, 6.4f, 12.6f),
+                Look = new Vector3(5.6f, 5.6f, 29.0f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "体育館のトレーニングルーム。南端から北へ。左にマシンとガラス、右にオレンジの壁（P3 と同じ並び、#115）",
+            },
+            new Shot
+            {
+                Name = "shot_gym_subarena_p7",
+                Space = Frame.Interior,
+                Building = "gym",
+                Eye = new Vector3(16.4f, 1.6f, 22.0f),
+                Look = new Vector3(26.0f, 1.4f, 37.0f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "体育館のサブアリーナ。南西の隅から北東へ（P7 と同じ並び、#115）",
+            },
         };
 
         /// <summary>
@@ -1034,6 +1174,68 @@ namespace KCD.Editor
             }
         }
 
+        /// <summary>
+        /// <see cref="Shot.Indoor"/> の 1 枚だけ、ゲームの屋内（DayNightCycle.ApplyIndoor）と同じ光にする。
+        /// 元の太陽と環境光を覚えておき、屋外の 1 枚へ戻るときと撮り終わったときに返す。
+        /// </summary>
+        private sealed class IndoorLight
+        {
+            /// <summary>シーンに屋内の色が見つからないときの値。DayNightCycle の既定と同じ。</summary>
+            private static readonly Color FallbackAmbient = new Color(0.56f, 0.57f, 0.60f);
+
+            private readonly Light _sun;
+            private readonly bool _sunEnabled;
+            private readonly Color _sky = RenderSettings.ambientSkyColor;
+            private readonly Color _equator = RenderSettings.ambientEquatorColor;
+            private readonly Color _ground = RenderSettings.ambientGroundColor;
+            private readonly Color _indoor;
+            private bool _applied;
+
+            public IndoorLight(Transform sun, float scale)
+            {
+                _sun = sun != null ? sun.GetComponent<Light>() : null;
+                _sunEnabled = _sun != null && _sun.enabled;
+                Color ambient = ReadIndoorAmbient();
+                _indoor = new Color(ambient.r * scale, ambient.g * scale, ambient.b * scale, ambient.a);
+            }
+
+            /// <summary>屋内なら太陽を消して環境光を屋内の色にし、そうでなければ覚えておいた元へ戻す。</summary>
+            public void Apply(bool indoor)
+            {
+                if (indoor == _applied)
+                {
+                    return;
+                }
+
+                _applied = indoor;
+                if (_sun != null)
+                {
+                    _sun.enabled = _sunEnabled && !indoor;
+                }
+
+                // DayNightCycle.ApplyIndoor と同じ。ambientLight は Trilight の空の色と同じ値。
+                RenderSettings.ambientSkyColor = indoor ? _indoor : _sky;
+                RenderSettings.ambientEquatorColor = indoor ? _indoor * 0.92f : _equator;
+                RenderSettings.ambientGroundColor = indoor ? _indoor * 0.7f : _ground;
+
+                // Trilight の環境光は球面調和に焼いてあるので、色を変えたら焼き直す。
+                DynamicGI.UpdateEnvironment();
+            }
+
+            /// <summary>シーンの DayNightCycle に保存された屋内の環境光（_indoorAmbient）。無ければ既定。</summary>
+            private static Color ReadIndoorAmbient()
+            {
+                DayNightCycle cycle = UnityEngine.Object.FindFirstObjectByType<DayNightCycle>(FindObjectsInactive.Include);
+                if (cycle == null)
+                {
+                    return FallbackAmbient;
+                }
+
+                SerializedProperty property = new SerializedObject(cycle).FindProperty("_indoorAmbient");
+                return property != null ? property.colorValue : FallbackAmbient;
+            }
+        }
+
         /// <summary>バッチの入口。Campus.unity を開いて表のぶんだけ撮る。</summary>
         [MenuItem("KCD/プレビューを撮る")]
         public static void Capture()
@@ -1047,9 +1249,27 @@ namespace KCD.Editor
 
             string filter = EditorPaths.ReadArgument("-previewShots", string.Empty);
             float fill = ParseFloat(EditorPaths.ReadArgument("-previewInteriorFill", "0"), 0f);
+            float indoorScale = Mathf.Max(0f, ParseFloat(EditorPaths.ReadArgument("-previewIndoorScale", "1"), 1f));
             int scale = Mathf.Clamp(Mathf.RoundToInt(ParseFloat(EditorPaths.ReadArgument("-previewScale", "1"), 1f)), 1, 3);
             int width = Width * scale;
             int height = Height * scale;
+
+            // 品質レベルの指定。WebGL 版は Mobile（Forward・1 つの物に当たる追加光は 4 つまで）で、
+            // Editor の既定の PC（Forward+）とは明るさが違いうる。指定したときだけ切り替え、撮り終えたら戻す。
+            int qualityWas = QualitySettings.GetQualityLevel();
+            int quality = Mathf.RoundToInt(ParseFloat(EditorPaths.ReadArgument("-previewQuality", "-1"), -1f));
+            if (quality >= QualitySettings.names.Length)
+            {
+                EditorPaths.Report("-previewQuality " + quality + " は品質レベルの数（" + QualitySettings.names.Length
+                    + "）を超えているので切り替えません。");
+                quality = -1;
+            }
+
+            string suffix = quality >= 0 ? "_q" + quality : string.Empty;
+            if (!Mathf.Approximately(indoorScale, 1f))
+            {
+                suffix += "_a" + Mathf.RoundToInt(indoorScale * 100f);
+            }
 
             Scene scene = EditorSceneManager.OpenScene(EditorPaths.CampusScene, OpenSceneMode.Single);
             if (!scene.IsValid())
@@ -1080,6 +1300,7 @@ namespace KCD.Editor
             Transform sun = FindByName("Sun");
             Quaternion sunWas = sun != null ? sun.rotation : Quaternion.identity;
             bool fogWas = RenderSettings.fog;
+            var indoorLight = new IndoorLight(sun, indoorScale);
 
             var restore = new Restore();
             GameObject rig = null;
@@ -1090,6 +1311,16 @@ namespace KCD.Editor
 
             try
             {
+                if (quality >= 0)
+                {
+                    QualitySettings.SetQualityLevel(quality, true);
+                    EditorPaths.Report("品質レベルを " + QualitySettings.names[quality] + "（" + quality + "）に切り替えました。"
+                        + " レンダーパイプライン: "
+                        + (UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline != null
+                            ? UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline.name
+                            : "(なし)"));
+                }
+
                 // 屋内の明かり。DormStage.AddLights は有効な状態で置くので普段は何も起きないが、
                 // 誰かが切っていた・親ごと非アクティブだったときのために点け直す。
                 WakeInteriorLights(interior, restore);
@@ -1136,7 +1367,8 @@ namespace KCD.Editor
                         sun.rotation = shot.Sun.HasValue ? Quaternion.Euler(shot.Sun.Value) : sunWas;
                     }
 
-                    RenderSettings.fog = fogWas && !shot.NoFog;
+                    RenderSettings.fog = fogWas && !shot.NoFog && !shot.Indoor;
+                    indoorLight.Apply(shot.Indoor);
 
                     if (!TryOrigin(shot, dormOrigin, out Vector3 offset))
                     {
@@ -1144,7 +1376,7 @@ namespace KCD.Editor
                         continue;
                     }
 
-                    if (Shoot(camera, target, buffer, shot, offset, folder, ref path))
+                    if (Shoot(camera, target, buffer, shot, offset, folder, suffix, ref path))
                     {
                         taken++;
                     }
@@ -1200,6 +1432,12 @@ namespace KCD.Editor
                 }
 
                 RenderSettings.fog = fogWas;
+                indoorLight.Apply(false);
+
+                if (quality >= 0)
+                {
+                    QualitySettings.SetQualityLevel(qualityWas, true);
+                }
 
                 restore.Undo();
                 ShaderUtil.allowAsyncCompilation = wasAsync;
@@ -1264,7 +1502,7 @@ namespace KCD.Editor
         /// </summary>
         private static bool Shoot(
             Camera camera, RenderTexture target, Texture2D buffer, Shot shot, Vector3 offset, string folder,
-            ref DrawPath path)
+            string suffix, ref DrawPath path)
         {
             Vector3 eye = shot.Eye + offset;
             Vector3 look = shot.Look + offset;
@@ -1280,7 +1518,7 @@ namespace KCD.Editor
             Levels levels = Draw(camera, target, buffer, ref path);
             bool undrawn = Undrawn(levels);
 
-            string file = Path.Combine(folder, shot.Name + ".png");
+            string file = Path.Combine(folder, shot.Name + suffix + ".png");
             if (!undrawn)
             {
                 File.WriteAllBytes(file, buffer.EncodeToPNG());

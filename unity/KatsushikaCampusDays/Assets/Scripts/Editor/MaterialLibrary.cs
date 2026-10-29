@@ -152,6 +152,9 @@ namespace KCD.Editor
             // ここに無かったので、どれも B0B0AC の灰色で .mat が作られていた。
             { "line_white", "F3F3F1" },
             { "soil", "AA957C" },
+            // テニスのハードコート（#59）。内側の青と外周の緑
+            { "hardcourt_inner", "5F93AD" },
+            { "hardcourt_outer", "518C78" },
             { "bg_wall_0", "C7C1B3" },
             { "bg_wall_1", "B2B0A9" },
             { "bg_wall_2", "A3A3A1" },

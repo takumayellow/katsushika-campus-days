@@ -484,20 +484,24 @@ WASM のメモリ（縦は上と同じ条件、PC の画面（1280×900）は CP
 | キャラの顔（Models/Characters/*/face.png） | WebGL では 1024²（`CharacterFaceImportRules`）、mip あり、8 枚 | 5.3〜10.7 MiB |
 | ミニマップ（Textures/minimap.png） | 2048²、mip なし、1 枚 | 2〜4 MiB |
 | 屋内の背景（Generated/Backdrops、dev/game） | 2048×512、mip あり、11 枚（透明なし） | 全部で 7.3 MiB |
-| 面のテクスチャ（Textures/surfaces） | 512² が 9 枚、外壁の煉瓦 1024² が 1 枚、mip あり | 全部で約 2.2 MiB |
+| 面のテクスチャ（Textures/surfaces） | 512² が 11 枚、外壁の煉瓦 1024² が 1 枚、mip あり | 全部で約 2.5 MiB |
 | TMP のフォントのアトラス（KCD_JP） | 1024² の Alpha8、Dynamic で足りなくなると 1 枚ずつ増える | 1 枚 1 MiB |
 | 小物（着物の柄、ハート、水面、ミニマップの記号） | 256² 以下 | 0.5 MiB 未満 |
 | 合計（全部が同時に載ったとき） | | 18〜26 MiB |
 
 - 顔の画像には、FBX の横の *.fbm/ にも同じ画像の写しがある。マテリアルが参照しているのは外の face.png だけで、*.fbm/ の写しはどのマテリアルからも参照されていない（GUID を grep して確かめた）。そのため、ビルドに入るのは 1 枚ずつと見なした。
-- 面のテクスチャ（Textures/surfaces）は 512² が 9 枚と外壁の煉瓦 1024² が 1 枚。.meta の既定（DefaultTexturePlatform）を圧縮（textureCompression 1）にしてあり、
-  BC1 に mip を付けて 512² が 1 枚 0.17 MiB、煉瓦が約 0.67 MiB、全部で約 2.2 MiB。
+- 面のテクスチャ（Textures/surfaces）は 512² が 11 枚と外壁の煉瓦 1024² が 1 枚。.meta の既定（DefaultTexturePlatform）を圧縮（textureCompression 1）にしてあり、
+  BC1 に mip を付けて 512² が 1 枚 0.17 MiB、煉瓦が約 0.67 MiB、全部で約 2.5 MiB。
   .meta は tools/fetch_textures.py が data/textures/TextureImporter.meta.template から書く。圧縮の設定は tools/tests/test_fetch_textures.py が見張る。
+  - 運動場の土（soil）と遊び場の砂（sand）の 2 枚は #59（#404）で足した。ローカルのビルド（2026-10-29、dev/game c3d7679c、作業ツリーはきれい）のビルドレポートでは、
+    1 枚が DXT で 170.8 KiB、ASTC（6×6）で 154.8 KiB（gzip の前）。2 枚で DXT が 0.33 MiB、ASTC が 0.30 MiB。
+    data（gzip の後）の増分は、前と後を同じ手順でビルドしていないので測っていない。このビルドの data は、ASTC が 60,107,320 B（57.32 MiB）、DXT が 54,849,442 B（52.31 MiB）。
+  - テニスのハードコート（#59）では、テクスチャを足していない。足したのはマテリアル 2 つ（hardcourt_inner・hardcourt_outer）と、地面のメッシュの頂点 60・三角形 40（campus.fbx で 2,992 B）。data の増分は数 KB と見積もった（測っていない）。
 - DXT を扱えず ASTC を扱える GPU（iPhone と多くの Android）では、ページが ASTC の data を読むので、テクスチャは圧縮したまま GPU に載る。
 - DXT も ASTC も扱えない GPU では、Unity がソフトウェアで展開する。そのときは RGBA32 になり、2048² に mip を付けて 1 枚 21.3 MiB に増える。
 - 圧縮しない設定（textureCompression 0）のテクスチャは、どちらのビルドでもそのまま載る。512² の RGB に mip を付けると 1 枚 1.0 MB になる。
 - 公開版の実測（1.13、2026-10-21、Medium の立ち）との比べ:
-  - 数と大きさが合ったのは、2048×512 の背景 11 枚（7.33 MiB）、2048² のミニマップ 1 枚（BC1 で 2.00 MiB）、512² の面のテクスチャ 9 枚（1.50 MiB）、1024² の Alpha8 1 枚（TMP のアトラスと同じ形式と大きさ、1.00 MiB）。
+  - 数と大きさが合ったのは、2048×512 の背景 11 枚（7.33 MiB）、2048² のミニマップ 1 枚（BC1 で 2.00 MiB）、512² の面のテクスチャ 9 枚（1.50 MiB。soil と sand の 2 枚は、この公開版の後に入った）、1024² の Alpha8 1 枚（TMP のアトラスと同じ形式と大きさ、1.00 MiB）。
   - 1024² の BC1 は 9 枚で 6.00 MiB。顔 8 枚（5.33 MiB）と煉瓦 1 枚（0.67 MiB）の見積もりの合計と同じ。
   - この表に無かったのは、キューブマップ 128² の 1 枚（0.50 MiB）と RGB8 160×560 の 1 枚（0.26 MiB）。何のテクスチャかは確かめていない。
 - 描画に使う面（シャドウマップ・色・深度）は画質の段（3 章）ごとに変わるので、この表にも見積もりにも入れていない。測った量は 1.13（立ちで Low 12.43 MiB、Medium 22.41 MiB、High 64.33 MiB）。
