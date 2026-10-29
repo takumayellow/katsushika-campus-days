@@ -13886,6 +13886,9 @@
    "kind": "pitch",
    "name": null,
    "on_campus": false,
+   "osm_id": 771657617,
+   "sport": "tennis",
+   "surface": "artificial_turf",
    "polygon": [
     [
      190.244,
@@ -13909,6 +13912,9 @@
    "kind": "pitch",
    "name": null,
    "on_campus": false,
+   "osm_id": 771657619,
+   "sport": "tennis",
+   "surface": "acrylic",
    "polygon": [
     [
      171.165,
@@ -13932,6 +13938,9 @@
    "kind": "pitch",
    "name": null,
    "on_campus": false,
+   "osm_id": 771657620,
+   "sport": "soccer",
+   "surface": "artificial_turf",
    "polygon": [
     [
      55.93,

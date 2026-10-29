@@ -132,6 +132,16 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: hardcourt_inner
+    second: {fileID: 2100000, guid: aa4c79b8bd4800a47a0cd08b00b340eb, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: hardcourt_outer
+    second: {fileID: 2100000, guid: 56f22e73bdfcc33409fea301ed10f712, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: line_white
     second: {fileID: 2100000, guid: 73ab1b53af6439246adc19200255c246, type: 2}
   - first:

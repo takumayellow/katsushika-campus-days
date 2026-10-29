@@ -76,7 +76,7 @@
         "soil",
         "sand"
       ],
-      "note": "メインストリート北側の花壇の土 (#56)、テニスコート（OSM の leisure=pitch のうち小さい 2 区画 → soil。いちばん大きいサッカー場は人工芝なので grass）と遊び場（leisure=playground → sand）の地面 (#59)。平均色はマテリアルごとに CampusColors へ合わせるので、同じ素材から 3 色を焼く。tile_cm は API の dimensionX。"
+      "note": "メインストリート北側の花壇の土 (#56)、砂入り人工芝のテニスコート 2 面（OSM の leisure=pitch のうち sport=tennis・surface=artificial_turf の区画 → soil。サッカー場の人工芝は grass、ハードコートの 1 面は模様の無い hardcourt_inner / hardcourt_outer）と遊び場（leisure=playground → sand）の地面 (#59)。平均色はマテリアルごとに CampusColors へ合わせるので、同じ素材から 3 色を焼く。tile_cm は API の dimensionX。"
     },
     {
       "asset": "Concrete034",
