@@ -250,14 +250,16 @@ y=230）に対して頭が 79 px（髪の先 y=20〜顎 y=99）で **2.80 頭身
 - シェイプキーは `blink_L` / `blink_R` / `smile` / `mouth_open` / `mouth_a` /
   `mouth_i` / `angry_brow` の 7 種。メッシュのパーツ名（`mb.part_indices`）で
   対象頂点を引いて動かす。
-- Action は `Idle`(60f ループ) / `Walk` / `Run`(どちらもループ) / `Jump`(18f) /
-  `Wave`(28f) / `Talk`(60f) の 6 本。`Walk` と `Run` の長さはキャラの脚長から
+- Action は `Idle`(60f ループ) / `Walk` / `Jog` / `Run`(この 3 本はループ) / `Jump`(18f) /
+  `Wave`(28f) / `Talk`(60f) の 7 本。`Walk` と `Jog` と `Run` の長さはキャラの脚長から
   決まるので人によって違う（実測: `Walk` は低頭身の botchan・madonna が 10f、
-  mirai ら 4 人が 14f、いちばん脚の長い prof が 15f。`Run` は botchan・madonna が 8f、
-  inari が 11f、mirai・kaname・sora が 12f、prof・student_m が 13f。
-  ループ用に同じ姿勢の最終キーがもう 1 枚付く）。
-  クリップの前進速度をゲーム側のブレンドツリーの閾値（`Walk` 2.6 m/s、
-  `Run` 4.0 m/s）に合わせるためで、`anim.GAIT_TARGET` で決まる。
+  inari・sora が 21f、mirai・kaname が 22f、prof・student_m が 24f。`Jog` は
+  botchan・madonna が 8f、mirai・inari・sora が 14f、kaname が 15f、prof・student_m が 16f。
+  `Run` は botchan・madonna が 8f、inari が 11f、mirai・kaname・sora が 12f、
+  prof・student_m が 13f。ループ用に同じ姿勢の最終キーがもう 1 枚付く）。
+  クリップの前進速度をゲーム側のブレンドツリーの閾値（`Walk` 1.3 m/s、`Jog` 2.6 m/s、
+  `Run` 4.0 m/s）に合わせるためで、`anim.GAIT_TARGET` で決まる。`Walk` は NPC が
+  ぶらぶら歩く速さ、`Jog` はプレイヤーの既定の移動の速さに当たる。
   `Idle` は呼吸と髪の揺れ、`Walk` は腰のひねりと腕振り、`Wave` は手を振りながら
   `smile` を同時にキーフレームする。
 - 手を振る腕は、上腕を肩の高さまで上げ、前腕を約 80 度立てて（肘 65〜100 度）、手を

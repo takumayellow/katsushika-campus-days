@@ -16,8 +16,10 @@ namespace KCD.Editor
         /// <summary>Locomotion の再生速度を掛けるパラメータ。PlayerAnimatorDriver / NPCWander が渡す（#43）。</summary>
         public const string GaitRateParameter = "GaitRate";
 
-        // NPCWander もこの値を基準に Speed を決めるので、PlayerController の定数を共有する（#13）。
-        public const float WalkSpeed = PlayerController.DefaultWalkSpeed;
+        // ブレンドツリーで各クリップを置く Speed。クリップ自体の前進速度（Blender の anim.GAIT_TARGET）と
+        // 同じ値なので、その速さで動くあいだ足が滑らない。プレイヤーの既定の移動 2.6 m/s は小走り（#43）。
+        public const float WalkSpeed = PlayerAnimatorDriver.WalkClipSpeed;
+        public const float JogSpeed = PlayerController.DefaultWalkSpeed;
         public const float RunSpeed = PlayerController.DefaultRunSpeed;
 
         /// <summary>FBX からコントローラを作る。クリップが 1 つも無ければ null。</summary>
@@ -27,7 +29,7 @@ namespace KCD.Editor
             AnimatorController existing = AssetDatabase.LoadAssetAtPath<AnimatorController>(path);
             if (existing != null)
             {
-                Upgrade(existing);
+                Upgrade(existing, CollectClips(fbxPath));
                 return existing;
             }
 
@@ -73,23 +75,9 @@ namespace KCD.Editor
             tree.blendParameter = "Speed";
             tree.useAutomaticThresholds = false;
 
-            AnimationClip idle = Pick(clips, "idle");
-            AnimationClip walk = Pick(clips, "walk");
-            AnimationClip run = Pick(clips, "run");
-
-            if (idle != null)
+            foreach (ChildMotion child in LocomotionChildren(clips))
             {
-                tree.AddChild(idle, 0f);
-            }
-
-            if (walk != null)
-            {
-                tree.AddChild(walk, WalkSpeed);
-            }
-
-            if (run != null)
-            {
-                tree.AddChild(run, RunSpeed);
+                tree.AddChild(child.motion, child.threshold);
             }
 
             if (tree.children.Length == 0 && clips.Count > 0)
@@ -102,6 +90,64 @@ namespace KCD.Editor
             }
 
             return state;
+        }
+
+        /// <summary>Locomotion のブレンドツリーに置くクリップと Speed の閾値（FBX にあるものだけ）。</summary>
+        private static List<ChildMotion> LocomotionChildren(Dictionary<string, AnimationClip> clips)
+        {
+            var children = new List<ChildMotion>();
+            (string key, float threshold)[] slots =
+            {
+                ("idle", 0f), ("walk", WalkSpeed), ("jog", JogSpeed), ("run", RunSpeed),
+            };
+            foreach ((string key, float threshold) in slots)
+            {
+                AnimationClip clip = Pick(clips, key);
+                if (clip != null)
+                {
+                    // AddChild と同じ既定値（directBlendParameter も入れないと既存のコントローラとの差分が出る）。
+                    children.Add(new ChildMotion
+                    {
+                        motion = clip, threshold = threshold, timeScale = 1f, directBlendParameter = "Blend",
+                    });
+                }
+            }
+
+            return children;
+        }
+
+        /// <summary>
+        /// 既存のブレンドツリーの子を、いまの FBX のクリップと閾値に合わせて置き直す。
+        /// Jog を足して歩きの閾値を 1.3 m/s に下げたとき（#43）、git 管理のコントローラを作り直さずに済ませる。
+        /// </summary>
+        private static bool SyncLocomotion(AnimatorState state, Dictionary<string, AnimationClip> clips)
+        {
+            if (state.motion is not BlendTree tree)
+            {
+                return false;
+            }
+
+            List<ChildMotion> want = LocomotionChildren(clips);
+            if (want.Count == 0)
+            {
+                return false;
+            }
+
+            ChildMotion[] have = tree.children;
+            bool same = have.Length == want.Count;
+            for (int i = 0; same && i < want.Count; i++)
+            {
+                same = have[i].motion == want[i].motion && Mathf.Approximately(have[i].threshold, want[i].threshold);
+            }
+
+            if (same)
+            {
+                return false;
+            }
+
+            tree.children = want.ToArray();
+            EditorUtility.SetDirty(tree);
+            return true;
         }
 
         /// <summary>
@@ -174,8 +220,8 @@ namespace KCD.Editor
             exit.AddCondition(AnimatorConditionMode.IfNot, 0f, "Talk");
         }
 
-        /// <summary>既存のコントローラに、後から増えたパラメータと IK パスを足す。</summary>
-        private static void Upgrade(AnimatorController controller)
+        /// <summary>既存のコントローラに、後から増えたパラメータと IK パス、クリップを足す。</summary>
+        private static void Upgrade(AnimatorController controller, Dictionary<string, AnimationClip> clips)
         {
             bool changed = false;
             if (!HasParameter(controller, "Sit"))
@@ -196,7 +242,7 @@ namespace KCD.Editor
                 changed = true;
             }
 
-            if (UpgradeStates(controller))
+            if (UpgradeStates(controller, clips))
             {
                 changed = true;
             }
@@ -214,7 +260,7 @@ namespace KCD.Editor
         }
 
         /// <summary>既存のコントローラの Locomotion / Jump を、いまの組み方に合わせて直す。</summary>
-        private static bool UpgradeStates(AnimatorController controller)
+        private static bool UpgradeStates(AnimatorController controller, Dictionary<string, AnimationClip> clips)
         {
             if (controller.layers.Length == 0)
             {
@@ -239,6 +285,11 @@ namespace KCD.Editor
                 if (state.name == "Locomotion" && !state.cycleOffsetParameterActive)
                 {
                     ApplyCycleOffset(state);
+                    changed = true;
+                }
+
+                if (state.name == "Locomotion" && SyncLocomotion(state, clips))
+                {
                     changed = true;
                 }
 

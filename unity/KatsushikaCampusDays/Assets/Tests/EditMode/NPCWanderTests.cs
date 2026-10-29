@@ -5,7 +5,7 @@ namespace KCD.Tests
 {
     /// <summary>
     /// NPC / プレイヤーの Animator に渡す Speed と GaitRate（#13 脚が半分しか振れない、#43 足が滑る）。
-    /// 歩きのクリップは 2.6 m/s ぶんの歩幅と歩調で作ってあるので、
+    /// 歩きのクリップは 1.3 m/s ぶんの歩幅と歩調で作ってあるので、
     /// 「ブレンド値 × 再生速度 = 実際の速さ」になっていれば足は滑らない。
     /// </summary>
     public sealed class NPCWanderTests
@@ -13,6 +13,16 @@ namespace KCD.Tests
         [Test]
         public void SolveGait_AtWalkSpeed_PlaysWalkClipAtFullRate()
         {
+            PlayerAnimatorDriver.SolveGait(PlayerAnimatorDriver.WalkClipSpeed, out float blend, out float rate);
+
+            Assert.AreEqual(1.3f, blend, 1e-5f);
+            Assert.AreEqual(1f, rate, 1e-5f);
+        }
+
+        [Test]
+        public void SolveGait_AtPlayerSpeed_PlaysJogClipAtFullRate()
+        {
+            // プレイヤーの既定の 2.6 m/s は小走りのクリップの閾値（#43）。
             PlayerAnimatorDriver.SolveGait(PlayerController.DefaultWalkSpeed, out float blend, out float rate);
 
             Assert.AreEqual(2.6f, blend, 1e-5f);
@@ -33,11 +43,11 @@ namespace KCD.Tests
         {
             PlayerAnimatorDriver.SolveGait(1.1f, out float blend, out float rate);
 
-            // 歩幅も歩調も sqrt(1.1 / 2.6) = 0.65 倍。待機との中間（0.42 倍の歩幅）にはしない。
-            Assert.AreEqual(Mathf.Sqrt(1.1f * 2.6f), blend, 1e-4f);
-            Assert.AreEqual(Mathf.Sqrt(1.1f / 2.6f), rate, 1e-4f);
+            // 歩幅も歩調も sqrt(1.1 / 1.3) = 0.92 倍。待機との中間（0.85 倍の歩幅）にはしない。
+            Assert.AreEqual(Mathf.Sqrt(1.1f * 1.3f), blend, 1e-4f);
+            Assert.AreEqual(Mathf.Sqrt(1.1f / 1.3f), rate, 1e-4f);
             Assert.Greater(blend, 1.1f);
-            Assert.Less(blend, PlayerController.DefaultWalkSpeed);
+            Assert.Less(blend, PlayerAnimatorDriver.WalkClipSpeed);
         }
 
         [Test]
@@ -46,7 +56,7 @@ namespace KCD.Tests
             for (float speed = 0.1f; speed <= 6f; speed += 0.1f)
             {
                 PlayerAnimatorDriver.SolveGait(speed, out float blend, out float rate);
-                float ground = speed <= PlayerController.DefaultWalkSpeed
+                float ground = speed <= PlayerAnimatorDriver.WalkClipSpeed
                     ? blend * rate            // 歩き以下はクリップの歩幅 × 再生速度
                     : blend;                  // 歩き以上はしきい値どおり
                 Assert.AreEqual(speed, ground, 1e-3f, "speed=" + speed);

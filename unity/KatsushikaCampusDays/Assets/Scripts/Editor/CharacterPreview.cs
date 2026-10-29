@@ -20,7 +20,7 @@ namespace KCD.Editor
     /// 足せる引数:
     ///   -charaIds mirai,botchan   撮るキャラ（既定は Assets/Models/Characters にいる全員）
     ///   -charaOut &lt;dir&gt;          出力先（既定は docs/previews/characters）
-    ///   -charaPose run            動きの途中を撮る（idle / walk / run / jump。既定は idle）(#49)
+    ///   -charaPose run            動きの途中を撮る（idle / walk / jog / run / jump。既定は idle）(#49)
     ///   -charaPoseTimes 0.1,0.3   動き出してから何秒後を撮るか（既定は 0.1,0.2,0.3,0.4）
     ///
     /// 動きを撮るときは顔を撮らず、全身を正面・35 度・真横から撮る。スカートや袴から脚が
@@ -431,7 +431,7 @@ namespace KCD.Editor
         private static IEnumerable<Frame> Frames()
         {
             string pose = EditorPaths.ReadArgument("-charaPose", "idle").Trim().ToLowerInvariant();
-            if (pose != "walk" && pose != "run" && pose != "jump")
+            if (pose != "walk" && pose != "jog" && pose != "run" && pose != "jump")
             {
                 yield return new Frame { Pose = "idle", Time = 0f };
                 yield break;
@@ -481,7 +481,7 @@ namespace KCD.Editor
 
             // ゲームと同じパラメータ名で動かす。ただし GaitRate は既定の 1 のままなので、クリップは
             // 本来の速さで進む（ゲームでは PlayerAnimatorDriver が移動速度に合わせて変える）。
-            // 歩き・走りは Locomotion ブレンドツリーの中の切り替えなので遷移は無い。Speed を入れてから
+            // 歩き・小走り・走りは Locomotion ブレンドツリーの中の切り替えなので遷移は無い。Speed を入れてから
             // 十分に回して周期の頭をそろえ、そこから Time 秒進める。
             if (frame.Pose == "jump")
             {
@@ -492,7 +492,10 @@ namespace KCD.Editor
             }
             else
             {
-                animator.SetFloat("Speed", frame.Pose == "run" ? AnimatorFactory.RunSpeed : AnimatorFactory.WalkSpeed);
+                float speed = frame.Pose == "run" ? AnimatorFactory.RunSpeed
+                    : frame.Pose == "jog" ? AnimatorFactory.JogSpeed
+                    : AnimatorFactory.WalkSpeed;
+                animator.SetFloat("Speed", speed);
                 for (int i = 0; i < 30; i++)
                 {
                     animator.Update(1f / 30f);

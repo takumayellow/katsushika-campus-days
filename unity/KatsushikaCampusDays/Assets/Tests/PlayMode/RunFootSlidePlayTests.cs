@@ -8,8 +8,9 @@ using UnityEngine.TestTools;
 namespace KCD.Tests
 {
     /// <summary>
-    /// 走り・歩きで接地した足が地面に対して滑っていないこと (#232)。
-    /// 走りの歩幅を詰めて脚を上げないようにしても、クリップの前進速度が移動速度（走り 4.0 m/s、歩き 2.6 m/s）と
+    /// 走り・小走り・歩きで接地した足が地面に対して滑っていないこと (#232, #43)。
+    /// 走りの歩幅を詰めて脚を上げないようにしても、クリップの前進速度が移動速度
+    /// （走り 4.0 m/s、小走り 2.6 m/s、歩き 1.3 m/s）と
     /// 合っていないと、接地した足が地面を滑る。実際にプレイヤーを自動で走らせ、毎フレーム足の接地点を
     /// 世界座標で追う。接地している間、その点は動かないはずなので、動いた分が滑り。
     /// 接地点は、かかとが着く間は足首の真下、母指球が着く間はつま先ボーンの位置（ロッカー）。
@@ -30,11 +31,13 @@ namespace KCD.Tests
 
         /// <summary>
         /// 平均の滑り（m/s）の上限。走りは接地の瞬間と離れる瞬間（足が地面から 1.5 cm 以内で動いている間）も
-        /// 数えるので、歩きより大きく出る。実測（#232、5 回走って平均）は走りが 0.9〜1.0 m/s、歩きが 0.3 m/s で、
+        /// 数えるので、歩きより大きく出る。実測（#232、5 回走って平均）は走りが 0.9〜1.0 m/s で、
         /// 上限はその 1.2 倍ほどに置いて、歩幅やクリップの速さの食い違いで悪化したときに落とす。
+        /// 小走りと歩きも同じく実測（#43）の 1.2 倍ほど: 小走り 0.33 m/s、歩き 0.08 m/s。
         /// </summary>
         private const float RunMeanSlipLimit = 1.2f;
-        private const float WalkMeanSlipLimit = 0.36f;
+        private const float JogMeanSlipLimit = 0.40f;
+        private const float WalkMeanSlipLimit = 0.10f;
 
         [UnityTest]
         [Timeout(SceneTestTimeoutMs)]
@@ -45,9 +48,16 @@ namespace KCD.Tests
 
         [UnityTest]
         [Timeout(SceneTestTimeoutMs)]
+        public IEnumerator Jog_PlantedFeetDoNotSlide()
+        {
+            yield return Measure("jog", PlayerController.DefaultWalkSpeed, JogMeanSlipLimit);
+        }
+
+        [UnityTest]
+        [Timeout(SceneTestTimeoutMs)]
         public IEnumerator Walk_PlantedFeetDoNotSlide()
         {
-            yield return Measure("walk", PlayerController.DefaultWalkSpeed, WalkMeanSlipLimit);
+            yield return Measure("walk", PlayerAnimatorDriver.WalkClipSpeed, WalkMeanSlipLimit);
         }
 
         private IEnumerator Measure(string label, float speed, float limit)
