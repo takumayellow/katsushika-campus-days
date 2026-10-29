@@ -1,7 +1,8 @@
 """画質の段ごとの計測 (#70) の集計と, ページに入れる計測スクリプト (perf_probe.js)。
 
 集計は数値だけで確かめる。perf_probe.js は SwiftShader のブラウザで小さな WebGL 2 のページを動かし,
-requestAnimationFrame の 1 回ごとに描画コールと三角形を数えられるかを確かめる（Unity のビルドは要らない）。
+requestAnimationFrame の 1 回ごとに描画コールと三角形を数えられるか, そのうち影のマップ（16 ビットの深度のテクスチャ）に
+描いた分を分けられるかを確かめる（Unity のビルドは要らない）。
 スマホの画面では, テンプレートを偽のローダーで開き, 案内を叩いてからの読み込みの時刻を数えられるかを確かめる。
 run_webgl_perf.py の引数の組み合わせも確かめる。
 _session が CPU を遅くする命令を送る順と, スマホでの段の扱い（設定画面を開くか, ポーズ中の最初の段, タップの順）は,
@@ -20,7 +21,8 @@ from run_webgl_perf import parse_args
 
 
 def frames_at(times, work=1.0, draws=10, triangles=300):
-    return [{"t": t, "work": work, "draws": draws, "triangles": triangles} for t in times]
+    return [{"t": t, "work": work, "draws": draws, "triangles": triangles, "shadow_draws": 2, "shadow_triangles": 60}
+            for t in times]
 
 
 def test_summarize_uses_intervals_between_frames():
@@ -49,9 +51,9 @@ def test_one_percent_low_takes_at_least_one_interval():
 
 def test_summarize_work_draws_and_triangles():
     frames = [
-        {"t": 0.0, "work": 2.0, "draws": 500, "triangles": 700_000},
-        {"t": 16.0, "work": 4.0, "draws": 560, "triangles": 720_000},
-        {"t": 32.0, "work": 6.0, "draws": 540, "triangles": 740_000},
+        {"t": 0.0, "work": 2.0, "draws": 500, "triangles": 700_000, "shadow_draws": 90, "shadow_triangles": 200_000},
+        {"t": 16.0, "work": 4.0, "draws": 560, "triangles": 720_000, "shadow_draws": 110, "shadow_triangles": 230_000},
+        {"t": 32.0, "work": 6.0, "draws": 540, "triangles": 740_000, "shadow_draws": 100, "shadow_triangles": 260_000},
     ]
     summary = perf.summarize(frames)
     assert summary["work_ms"] == pytest.approx(4.0)
@@ -60,6 +62,8 @@ def test_summarize_work_draws_and_triangles():
     assert summary["draws_max"] == 560
     assert summary["triangles"] == pytest.approx(720_000)
     assert summary["triangles_max"] == 740_000
+    assert summary["shadow_draws"] == pytest.approx(100.0)
+    assert summary["shadow_triangles"] == pytest.approx(230_000)
 
 
 def test_p99_is_nearest_rank():
@@ -458,8 +462,43 @@ gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 
 const idx = gl.createBuffer();
 gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, idx);
 gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array([0, 1, 2, 3, 4, 5]), gl.STATIC_DRAW);
-// 1 フレームに: 三角形 2 枚（6 頂点）, ストリップ 3 枚（5 頂点）, 索引で 2 枚, 4 インスタンス × 1 枚, 線（数えない）。
+function texture(allocate) {
+  const made = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, made);
+  allocate();
+  return made;
+}
+function withDepth(depth) {
+  const made = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, made);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, depth, 0);
+  return made;
+}
+// 影のマップ: 16 ビットの深度のテクスチャ（texStorage2D と texImage2D の両方で確保する）。
+const shadowA = withDepth(texture(() => gl.texStorage2D(gl.TEXTURE_2D, 1, gl.DEPTH_COMPONENT16, 64, 64)));
+const shadowB = withDepth(texture(() => gl.texImage2D(
+  gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT16, 64, 64, 0, gl.DEPTH_COMPONENT, gl.UNSIGNED_SHORT, null)));
+// 影のマップではないもの: 色と 24 ビットの深度のカメラ, 16 ビットの深度のテクスチャを renderbuffer に付け替えたもの。
+const camera = withDepth(texture(() => gl.texStorage2D(gl.TEXTURE_2D, 1, gl.DEPTH_COMPONENT24, 64, 64)));
+gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D,
+  texture(() => gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA8, 64, 64)), 0);
+const swapped = withDepth(texture(() => gl.texStorage2D(gl.TEXTURE_2D, 1, gl.DEPTH_COMPONENT16, 64, 64)));
+const depthBuffer = gl.createRenderbuffer();
+gl.bindRenderbuffer(gl.RENDERBUFFER, depthBuffer);
+gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, 64, 64);
+gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, depthBuffer);
+// 1 フレームに: 影のマップへ 2 回（三角形 2 枚と, 索引で 1 枚）, カメラと付け替えたものへ 1 枚ずつ,
+// 画面へ 三角形 2 枚（6 頂点）, ストリップ 3 枚（5 頂点）, 索引で 2 枚, 4 インスタンス × 1 枚, 線（数えない）。
 function frame() {
+  gl.bindFramebuffer(gl.FRAMEBUFFER, shadowA);
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+  gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, shadowB);
+  gl.drawElements(gl.TRIANGLES, 3, gl.UNSIGNED_SHORT, 0);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, camera);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, swapped);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   gl.drawArrays(gl.TRIANGLES, 0, 6);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 5);
   gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
@@ -508,11 +547,21 @@ def test_probe_counts_draws_and_triangles_per_frame(page):
     assert len(frames) >= 5
     # 最後のフレームは描き終わる前に止めたかもしれないので除く。
     for frame in frames[:-1]:
-        assert frame["draws"] == 5
-        assert frame["triangles"] == 2 + 3 + 2 + 4
+        assert frame["draws"] == 2 + 2 + 5
+        assert frame["triangles"] == (2 + 1) + (1 + 1) + (2 + 3 + 2 + 4)
         assert frame["work"] >= 0.0
     times = [frame["t"] for frame in frames]
     assert times == sorted(times) and len(set(times)) == len(times)
+
+
+def test_probe_counts_only_draws_into_16_bit_depth_textures_as_shadow_map(page):
+    page.evaluate(perf.START_JS)
+    page.wait_for_timeout(500)
+    frames = page.evaluate(perf.STOP_JS)
+    assert len(frames) >= 5
+    for frame in frames[:-1]:
+        assert frame["shadow_draws"] == 2
+        assert frame["shadow_triangles"] == 2 + 1
 
 
 def test_probe_stops_recording(page):
