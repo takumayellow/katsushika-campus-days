@@ -503,6 +503,30 @@ namespace KCD.Editor
                 Note = "遊び場の砂（sand）",
             },
 
+            // テニスのハードコート（#59）。OSM の way 771657619 の区画で、中心は (173.0, 70.2)、
+            // 長手の向きは (0.335, 0.942)（北北東）。どちらも南のベースラインの 9 m 後ろから北北東を向く。
+            // 低い方は目の高さから長手に沿って、高い方は長手の軸の上 9 m から見下ろす
+            new Shot
+            {
+                Name = "shot_surface_tennis_hardcourt",
+                Space = Frame.World,
+                Eye = new Vector3(164.58f, 1.6f, 50.94f),
+                Look = new Vector3(171.68f, 0f, 66.46f),
+                Fov = 0f,
+                Sun = OutdoorSun,
+                Note = "テニスのハードコート（hardcourt_inner / hardcourt_outer と白線）",
+            },
+            new Shot
+            {
+                Name = "shot_surface_tennis_hardcourt_high",
+                Space = Frame.World,
+                Eye = new Vector3(165.99f, 9f, 50.44f),
+                Look = new Vector3(172.02f, 0f, 67.40f),
+                Fov = 0f,
+                Sun = OutdoorSun,
+                Note = "テニスのハードコートを斜め上から（線の配置）",
+            },
+
             // 屋内の正面（#120・#169）。座標は Models/Interiors/<id>.json の empties と同じ屋内のローカル座標
             new Shot
             {
