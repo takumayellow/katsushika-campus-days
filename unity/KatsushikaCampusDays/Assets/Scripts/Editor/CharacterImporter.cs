@@ -273,7 +273,7 @@ namespace KCD.Editor
             {
                 string name = clip.name.ToLowerInvariant();
                 clip.loopTime = name.Contains("idle") || name.Contains("walk")
-                    || name.Contains("run") || name.Contains("talk");
+                    || name.Contains("jog") || name.Contains("run") || name.Contains("talk");
                 clip.lockRootRotation = true;         // Root Transform Rotation: Bake Into Pose
                 clip.keepOriginalOrientation = true;  // Based Upon: Original
                 clip.lockRootHeightY = true;          // Root Transform Position (Y): Bake Into Pose

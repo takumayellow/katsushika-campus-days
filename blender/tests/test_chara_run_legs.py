@@ -11,7 +11,7 @@
 
 関節の角度は gait_fk で組み立てた位置から測る。位相 0 が左足の接地。
 2 頭身のキャラは歩幅に対して脚が短く接地がごく短いので、接地の形だけを見る。
-歩きの脚は変えない。
+歩きと小走りの脚は test_chara_walk_jog が見る。
 """
 
 import pytest
@@ -110,20 +110,3 @@ def test_run_leg_is_not_locked_straight_before_landing(name):
     g = gait_fk.gait(name, "Run")
     ahead = max(L["foot_ahead"] for ph, L in _cycle(name) if ph > 0.80) / g.leg
     assert ahead < 0.35, (name, ahead)
-
-
-def test_walk_target_is_unchanged():
-    assert anim.GAIT_TARGET["Walk"] == dict(v=2.6, duty=0.45, reach=0.95, nf=(10, 22))
-
-
-@pytest.mark.parametrize("name, ph, knee, hip", [
-    ("mirai", 0.0, 18.25, 31.46), ("mirai", 0.25, 27.31, 6.27),
-    ("mirai", 0.5, 11.52, -26.59), ("mirai", 0.75, 73.92, 40.65),
-    ("botchan", 0.0, 21.46, 28.90), ("botchan", 0.5, 90.54, 8.42),
-    ("madonna", 0.0, 20.62, 25.16), ("madonna", 0.5, 80.30, 12.35),
-])
-def test_walk_legs_are_unchanged(name, ph, knee, hip):
-    """走りの脚の値は歩きに及ばない（値は歩きの脚の実測）。"""
-    L = gait_fk.leg(gait_fk.joints(name, "Walk", ph), "Left")
-    assert L["knee"] == pytest.approx(knee, abs=0.01)
-    assert L["hip"] == pytest.approx(hip, abs=0.01)

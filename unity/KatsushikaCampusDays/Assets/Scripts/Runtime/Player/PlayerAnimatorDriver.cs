@@ -243,17 +243,24 @@ namespace KCD
         }
 
         /// <summary>
+        /// 歩きのクリップの前進速度（m/s）。Blender の anim.GAIT_TARGET["Walk"] と同じ値。
+        /// プレイヤーの既定の 2.6 m/s は小走りのクリップで、歩きは NPC とモブがぶらぶら歩く速さ（#43）。
+        /// </summary>
+        public const float WalkClipSpeed = 1.3f;
+
+        /// <summary>
         /// 移動の速さから、ブレンドツリーに渡す値（blend）とクリップの再生速度（rate）を出す。
         ///
-        /// 歩きのクリップは 2.6 m/s ぶんの歩幅と歩調で作ってある。1.1 m/s の NPC にそのまま
-        /// 2.6 を渡すと足が毎秒 1.5 m 滑り、逆に 1.1 を渡すと待機との中間になって歩幅だけ縮む。
+        /// 歩きのクリップは 1.3 m/s ぶんの歩幅と歩調で作ってある。0.8 m/s の NPC にそのまま
+        /// 1.3 を渡すと足が滑り、逆に 0.8 を渡すと待機との中間になって歩幅だけ縮む。
         /// 歩幅と歩調を同じ割合（速さの平方根）で落とすと、足が滑らないまま歩き方も自然になる。
-        /// blend = sqrt(speed * 2.6)、rate = speed / blend = sqrt(speed / 2.6)。
-        /// 歩き以上の速さでは歩き / 走りのクリップが両端で一致しているので、速さをそのまま渡す。
+        /// blend = sqrt(speed * 1.3)、rate = speed / blend = sqrt(speed / 1.3)。
+        /// 歩き以上の速さでは歩き / 小走り / 走りのクリップがそれぞれの閾値で前進速度と一致しているので、
+        /// 速さをそのまま渡す。
         /// </summary>
         public static void SolveGait(float speed, out float blend, out float rate)
         {
-            float walk = PlayerController.DefaultWalkSpeed;
+            float walk = WalkClipSpeed;
             speed = Mathf.Max(0f, speed);
             if (speed >= walk)
             {

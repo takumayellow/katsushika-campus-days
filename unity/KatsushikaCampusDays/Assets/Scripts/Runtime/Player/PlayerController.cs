@@ -10,7 +10,10 @@ namespace KCD
     [RequireComponent(typeof(CharacterController))]
     public sealed class PlayerController : MonoBehaviour
     {
-        /// <summary>歩く速さの既定値（m/s）。Locomotion ブレンドツリーで歩きのクリップを置く Speed もこの値（AnimatorFactory）。</summary>
+        /// <summary>
+        /// 移動の速さの既定値（m/s）。人なら走る速さなので、Locomotion ブレンドツリーではこの Speed に
+        /// 小走りのクリップを置く（AnimatorFactory.JogSpeed、#43）。
+        /// </summary>
         public const float DefaultWalkSpeed = 2.6f;
 
         /// <summary>走る速さ。Blender の走りのクリップ（anim.GAIT_TARGET["Run"]）の前進速度と同じ値（#232）。</summary>

@@ -16,7 +16,7 @@ import bpy
 
 from .body import ARM_DROP
 
-ACTION_NAMES = ("Idle", "Walk", "Run", "Jump", "Wave", "Talk")
+ACTION_NAMES = ("Idle", "Walk", "Jog", "Run", "Jump", "Wave", "Talk")
 
 #: Action 名 -> {Shape Key 名: [(フレーム比 0..1, 値), ...]}
 SHAPE_TRACKS: dict[str, dict[str, list[tuple[float, float]]]] = {
@@ -266,11 +266,45 @@ def _idle(t):
 #: Blender の既定 fps。クリップの長さと前進速度の対応に使う。
 FPS = 24.0
 
-#: ゲーム側のブレンドツリーの閾値（PlayerController.DefaultWalkSpeed / AnimatorFactory.RunSpeed）。
-#: クリップ自体の前進速度をここへ合わせておくと、その速さで動くあいだ足が滑らない。
+#: クリップ自体の前進速度。ゲーム側のブレンドツリーの閾値（AnimatorFactory の WalkSpeed / JogSpeed /
+#: RunSpeed）と同じ値にしておくと、その速さで動くあいだ足が滑らない。Jog はプレイヤーの既定の
+#: 移動（PlayerController.DefaultWalkSpeed）、Walk は NPC とモブのぶらぶら歩きに当たる。
 #: duty = 接地している割合、reach = 接地中に足が進む距離 / 脚長、nf = フレーム数の下限と上限。
+#:
+#: 速さに合う歩容を選ぶ目安はフルード数 v^2 / (g * 脚長)。人がふつうに歩くのは 0.25 前後で、
+#: 0.5 を超えると走るほうが楽になる。2.6 m/s はみらい（脚長 0.72 m）で 0.96 に当たり、
+#: これを歩きの形で動かすと毎分 206 歩・接地 45 % の競歩に見えた（#43）。そこで 2.6 m/s は
+#: 滞空のある小走り（Jog）にし、歩きは 1.3 m/s（同 0.24）に置く。
+#: 歩数は脚長の平方根に反比例する（フルード数をそろえる）ので、人の目安は脚長で縮めて当てる。
+#: 脚の値（tests/gait_fk.py で組み立てた関節の位置からの実測、みらい）:
+#:   Walk（人の目安: 毎分 105〜120 歩、接地 60 %、上下動 3〜5 cm、遊脚の膝 60 度、
+#:   腿は前 30 度・後ろ 10〜15 度、蹴り出しの膝 35〜40 度）
+#:   - v 1.3, reach 1.0, duty 0.61: 22 フレーム = 毎分 131 歩、1 歩 0.60 m。背の高い 6 人は
+#:     毎分 120〜137 歩
+#:   - clear 0.06, clear_peak 0.30, k_mid 0.97: 遊脚の膝 60 度、腿は後ろ 16 度〜前 38 度、
+#:     上下動 2.9 cm。既定（clear 0.12）では遊脚の膝が 75 度、腿が前 48 度まで上がり、
+#:     脚を持ち上げて歩いて見えた
+#:   - p_toe 45: かかとを早めに上げて蹴り出す。膝 26 度・腿 -15 度で離れ、脚を後ろへ
+#:     伸ばし切らない（既定の 30 度では膝 12 度・腿 -25 度）
+#:   Jog（人の目安: 毎分 160〜170 歩、接地 0.25〜0.3 秒、上下動 6〜8 cm、立脚中期の膝 40 度）
+#:   - v 2.6, reach 0.96, duty 0.44: 14 フレーム = 毎分 206 歩、1 歩 0.76 m（脚長の 1.05 倍）
+#:   - k_mid 0.93: 立脚中期の膝 43 度。膝を沈めて滞空を短くし、上下動を 5.5 cm に抑える
+#:   - clear 0.10, clear_peak 0.35: 遊脚の膝 75 度、腿は後ろ 29 度〜前 45 度
+#:   Run（人の目安: 毎秒 4.5 m で毎分 170〜180 歩、接地 0.2 秒前後、立脚中期の膝 40〜45 度、
+#:   腿は前 40〜50 度・後ろ 20〜30 度、上下動 6〜8 cm。#232）
+#:   - v 4.0, reach 0.96, duty 0.35: 12 フレーム = 毎分 240 歩、1 歩 1.00 m
+#:     （脚長の 1.4 倍）。背の高い 6 人は毎分 222〜262 歩。人並みの 1 歩（脚長の 1.6 倍）
+#:     まで広げると腿が前へ 55 度まで上がり、脚を振り上げて見えるので、そこまでは広げない
+#:   - k_mid 0.94: 立脚中期の膝 40 度
+#:   - clear 0.12, clear_peak 0.25, swing_tan 0.15: 蹴り出した脚をすぐ持ち上げて畳み
+#:     （膝 73 度）、前へは振り出しすぎずに降ろす。腿は後ろ 31 度〜前 48 度、上下動 7 cm。
+#:     遊脚の膝は人（85〜100 度）より浅くとどめ、脚を高く上げて見えないようにする
+#:   - land 0.30: 足は腰より脚長の 0.27 倍前に降り、すねは鉛直から 6 度
 GAIT_TARGET = {
-    "Walk": dict(v=2.6, duty=0.45, reach=0.95, nf=(10, 22)),
+    "Walk": dict(v=1.3, duty=0.61, reach=1.0, nf=(10, 34), clear=0.06, clear_peak=0.30,
+                 k_mid=0.97, p_toe=45.0),
+    "Jog": dict(v=2.6, duty=0.44, reach=0.96, nf=(8, 20), lean=4.0, yaw=4.0, obl=3.0,
+                k_mid=0.93, clear=0.10, p_toe=28.0, land=0.32, swing_tan=0.20, clear_peak=0.35),
     "Run": dict(v=4.0, duty=0.35, reach=0.96, nf=(8, 18), lean=7.0, yaw=4.0, obl=3.0,
                 k_mid=0.94, clear=0.12, p_toe=28.0, land=0.30, swing_tan=0.15, clear_peak=0.25),
 }
@@ -284,23 +318,13 @@ GAIT_TARGET = {
 #:   thx    胸郭の逆回旋の比（胸は骨盤と逆向きに骨盤の回旋の thx 倍だけ回る）
 #:   fwd    上腕の振りの中心を前へずらす角度
 #:
-#: 走りは人のふつうのランニング（毎秒 4.5 m 前後）を脚長で縮めたものに合わせる（#232）。
-#: ゲームの走る速さを 5.4 から 4.0 m/s に下げたうえで、歩幅を広げてピッチを落とす。
-#: 5.4 m/s のまま歩幅を詰めると毎分 360 歩になり、ちょこちょこした小走りに見えた。
-#: 人の目安（脚長 0.9 m 前後、毎秒 4.5 m）: 毎分 170〜180 歩、接地 0.2 秒前後、立脚中期の
-#: 膝 40〜45 度、腿は前 40〜50 度・後ろ 20〜30 度、上下動 6〜8 cm、肘 70〜90 度。
-#: 歩数は脚長の平方根に反比例する（フルード数をそろえる）ので、脚長 0.72 m のみらいでは
-#: 毎分 200 歩前後になる。
-#: 脚の値（tests/gait_fk.py で組み立てた関節の位置からの実測）:
-#:   - v 4.0, reach 0.96, duty 0.35: みらいで 12 フレーム = 毎分 240 歩、1 歩 1.00 m
-#:     （脚長の 1.4 倍）。背の高い 6 人は毎分 222〜262 歩。人並みの 1 歩（脚長の 1.6 倍）
-#:     まで広げると腿が前へ 55 度まで上がり、脚を振り上げて見えるので、そこまでは広げない
-#:   - k_mid 0.94: 立脚中期の膝 40 度
-#:   - clear 0.12, clear_peak 0.25, swing_tan 0.15: 蹴り出した脚をすぐ持ち上げて畳み
-#:     （膝 73 度）、前へは振り出しすぎずに降ろす。腿は後ろ 31 度〜前 48 度、上下動 7 cm。
-#:     遊脚の膝は人（85〜100 度）より浅くとどめ、脚を高く上げて見えないようにする
-#:   - land 0.30: 足は腰より脚長の 0.27 倍前に降り、すねは鉛直から 6 度
-#: 腕の値（同じく gait_fk での実測。画面での見え方は tools_view/gait_arms.py で確かめる）:
+#: 腕の値（gait_fk での実測、みらい。画面での見え方は tools_view/gait_arms.py で確かめる）:
+#:   Walk
+#:   - arm 20, elbow (16, 18): 上腕は画面で -23〜+18 度、肘は 20〜34 度。歩きの腕は脇から
+#:     軽く下ろして振るだけで、肘はほとんど曲げない
+#:   Jog
+#:   - arm 18, elbow (50, 12): 上腕 -17〜+19 度、肘 53〜63 度。前腕は水平より 8 度以上下を向く
+#:   Run
 #:   - arm 16, fwd 4: 上腕の前後は画面でみらいが約 -17〜+15 度
 #:   - elbow (50, 12): 曲がりはみらいで 53（後ろ）〜64 度（前）。人の 70〜90 度まで曲げると、
 #:     前傾した胴の前で前腕が水平より上へ突き出し、はさみを構えたように見える。
@@ -310,9 +334,9 @@ GAIT_TARGET = {
 #:   - thx 0.2: 胸の逆回旋はごく小さくする。胸が大きく回ると肩の線ごと手が前後に動き、
 #:     腕の振りが大きく見える
 #:   画面上の手首の前後動（胸の回旋と前傾を含む）はみらいで 24.3 cm。
-#: 歩きの値は #43 で見直し中なので変えない。
 GAIT_ARMS = {
-    "Walk": dict(arm=26.0, elbow=(14.0, 24.0), arm_in=0.0, abd=4.0, thx=0.70, fwd=0.0),
+    "Walk": dict(arm=20.0, elbow=(16.0, 18.0), arm_in=0.0, abd=4.0, thx=0.70, fwd=0.0),
+    "Jog": dict(arm=18.0, elbow=(50.0, 12.0), arm_in=16.0, abd=0.0, thx=0.25, fwd=3.0),
     "Run": dict(arm=16.0, elbow=(50.0, 12.0), arm_in=18.0, abd=0.0, thx=0.20, fwd=4.0),
 }
 
@@ -451,12 +475,12 @@ class Gait(_Legs):
 
     def __init__(self, arm, kind: str = "Walk", **over):
         super().__init__(arm)
-        allowed = set(GAIT_TARGET[kind]) | ({"elbow"} if kind == "Run" else set())
+        allowed = set(GAIT_TARGET[kind]) | ({"elbow"} if kind != "Walk" else set())
         unknown = set(over) - allowed
         if unknown:
             raise KeyError("%s の歩容に無い項目: %s" % (kind, ", ".join(sorted(unknown))))
         g = {**GAIT_TARGET[kind], **{k: v for k, v in over.items() if k != "elbow"}}
-        run = kind == "Run"
+        run = kind != "Walk"        # 滞空のある歩容（Jog / Run）
         self.kind = kind
 
         # --- 周期・歩幅・接地率 -------------------------------------------
@@ -808,17 +832,19 @@ def action_specs(arm, arm_drop=ARM_DROP, gait=None, elbow_open=0.0, arm_lift=WAV
     arm_drop は A ポーズから上腕を下ろす角度、elbow_open は前腕を外へ開く角度
     （body.arm_drop / body.elbow_open）。arm_lift は A ポーズの上腕が水平から下がる角度
     （body.arm_angles の 1 つめ）で、手を振る腕を水平に上げるのに使う。
-    gait は {"Walk": {...}, "Run": {...}} で GAIT_TARGET をキャラごとに上書きする
+    gait は {"Walk": {...}, "Jog": {...}, "Run": {...}} で GAIT_TARGET をキャラごとに上書きする
     （params の "gait"。v はゲーム側の閾値なので変えないこと）。
     """
     d, e = arm_drop, elbow_open
     gait = gait or {}
     walk = Gait(arm, "Walk", **gait.get("Walk", {}))
+    jog = Gait(arm, "Jog", **gait.get("Jog", {}))
     run = Gait(arm, "Run", **gait.get("Run", {}))
     jump = Jump(arm)
     return (
         ("Idle", 60, _posed(_idle, d, e), True, 9),
         ("Walk", walk.nframes, _posed(walk.pose, d, e), True, walk.nframes + 1),
+        ("Jog", jog.nframes, _posed(jog.pose, d, e), True, jog.nframes + 1),
         ("Run", run.nframes, _posed(run.pose, d, e), True, run.nframes + 1),
         ("Jump", jump.nframes, _posed(jump.pose, d, e), False, jump.nframes),
         # 振りのサイン波が丸まらないよう、全フレームにキーを打つ。

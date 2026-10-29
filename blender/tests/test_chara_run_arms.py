@@ -5,7 +5,7 @@
 前傾した胴の前でそこまで曲げると前腕が水平より上へ突き出し、はさみを構えたように見えるので、
 前腕がいつも水平より下を向く深さにとどめる。胸の回旋もごく小さい。
 手はバストより下、肩関節のほぼ真下を通る（横に開かず、体の中心線も越えない）。
-歩きの腕は #43 で見直し中なので変えない。
+歩きと小走りの腕は test_chara_walk_jog が見る。
 
 肘の曲がりと手の位置は胸から見たもの（胴のひねりと前傾は含めない）。ボーンの向きに
 腕下ろしを合成したモーションの回転を当てて求める（test_chara_arms と同じ方法）。
@@ -72,19 +72,6 @@ def _bend(upper, fore):
 def _world(name, side):
     """1 周期の画面上の腕の角度（gait_fk.arm）。"""
     return [gait_fk.arm(gait_fk.joints(name, "Run", ph), side) for ph in CYCLE]
-
-
-def test_walk_arms_are_unchanged():
-    """歩きの腕は #43 で保留中なので、値も回転も元のまま。"""
-    assert anim.GAIT_ARMS["Walk"] == dict(arm=26.0, elbow=(14.0, 24.0), arm_in=0.0,
-                                          abd=4.0, thx=0.70, fwd=0.0)
-    D = math.radians
-    for f in PHASES:
-        spec = _swing("Walk", f)
-        for side, sgn in (("Left", 1.0), ("Right", -1.0)):
-            fs = f * sgn
-            assert spec[side + "UpperArm"] == [("Y", D(-4.0) * sgn), ("X", D(26.0) * fs)]
-            assert spec[side + "LowerArm"] == [("X", -(D(14.0) + D(24.0) * (0.5 - 0.5 * fs)))]
 
 
 @pytest.mark.parametrize("side", ["Left", "Right"])
@@ -172,9 +159,10 @@ def test_run_hand_stays_under_the_shoulder(name, side):
         assert x < sh[0] * out + 0.065, (name, side, f, x, sh[0] * out)
 
 
-def test_elbow_override_is_only_for_run():
-    """肘の上書きは Run だけ。Walk に渡すと黙って捨てずに弾く（歩きは #43 まで変えない）。"""
+def test_elbow_override_is_only_for_running_gaits():
+    """肘の上書きは滞空のある歩容（Jog / Run）だけ。Walk に渡すと黙って捨てずに弾く。"""
     arm = gait_fk.mathutils_np.FakeArmature(gait_fk.rest("mirai"))
     gait_fk.ANIM.Gait(arm, "Run", elbow=(70.0, 10.0))
+    gait_fk.ANIM.Gait(arm, "Jog", elbow=(70.0, 10.0))
     with pytest.raises(KeyError, match="elbow"):
         gait_fk.ANIM.Gait(arm, "Walk", elbow=(70.0, 10.0))
