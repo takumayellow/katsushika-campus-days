@@ -37,6 +37,8 @@ def _court_st(c, u, pts):
     ("tennis", "artificial_turf", "soil"),
     ("tennis", None, "soil"),
     (None, None, "soil"),
+    ("soccer", "acrylic", "soil"),
+    (None, "acrylic", "soil"),
 ])
 def test_pitch_material_follows_sport_and_surface(sport, surface, want):
     area = {"kind": "pitch", "sport": sport, "surface": surface, "polygon": _sq(0, 10)}
@@ -91,10 +93,11 @@ def test_court_lines_are_symmetric_and_on_the_itf_marks():
     assert flip_s == lines and flip_t == lines
     outer_t = {round(t1, 6) for _s0, _t0, _s1, t1 in lines}
     outer_s = {round(s1, 6) for _s0, _t0, s1, _t1 in lines}
-    assert round(site.COURT_WIDTH / 2, 6) in outer_t       # ダブルスのサイドライン
-    assert round(site.COURT_SINGLES / 2, 6) in outer_t     # シングルスのサイドライン
-    assert round(site.COURT_LEN / 2, 6) in outer_s         # ベースライン
-    assert round(site.COURT_SERVICE, 6) in outer_s         # サービスライン（ネットから 6.40 m）
+    # 寸法は ITF のルールの値をそのまま書く（site.COURT_* と比べると、定数を変えても通ってしまう）
+    assert round(10.97 / 2, 6) in outer_t     # ダブルスのサイドライン（幅 10.97 m）
+    assert round(8.23 / 2, 6) in outer_t      # シングルスのサイドライン（幅 8.23 m）
+    assert round(23.77 / 2, 6) in outer_s     # ベースライン（長さ 23.77 m）
+    assert round(6.40, 6) in outer_s          # サービスライン（ネットから 6.40 m）
 
 
 def test_court_layers_sit_on_the_pitch():
