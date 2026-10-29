@@ -34,8 +34,8 @@ Unity 側のファイルは `unity/KatsushikaCampusDays/Assets/` からのパス
 
 一日の流れ:
 
-- **時計**: `Scripts/Runtime/World/DayNightCycle.cs` で、一日は実時間 720 秒（18 行目）、始まりは 8:30（20 行目）。実時間 1 秒がゲームの 2 分にあたり、8:30 から 20:00 までは約 345 秒（6 分弱）しかない。時計を止める `Paused`（122 行目）を立てるのはスモーク用の `SmokeDirector` だけなので、会話中も時計は進む（20 秒の会話でゲームの 40 分）。会話中に止まるのは、制限時間つきクエストのタイマーだけ（`QuestSystem.Tick` は `KCDInput.GameplayBlocked` の間は数えない）。
-- **区切り**: 学校のチャイムは 12:00 と 17:00 に鳴る（`AudioManager.Scene.cs:196`）。
+- **時計**: `Scripts/Runtime/World/DayNightCycle.cs` で、一日は実時間 720 秒（18 行目）、始まりは 8:30（`DayRestart.cs:26` の `DayStartHour` を 20 行目で使う）。実時間 1 秒がゲームの 2 分にあたり、8:30 から 20:00 までは約 345 秒（6 分弱）しかない。時計を止める `Paused`（122 行目）を立てるのはスモーク用の `SmokeDirector` だけなので、会話中も時計は進む（20 秒の会話でゲームの 40 分）。会話中に止まるのは、制限時間つきクエストのタイマーだけ（`QuestSystem.Tick` は `KCDInput.GameplayBlocked` の間は数えない）。
+- **区切り**: 学校のチャイムは 12:00 と 17:00 に鳴る（`Scripts/Runtime/Audio/AudioManager.Scene.cs:21`）。
 - **終わり**: 20:00 に `Data/Ending/result.json` のリザルトが出る。クエスト 0.45・収集物 0.3・写真 0.15・建物 0.1 の重みで達成率を出し、S（90 以上）「葛飾を歩ききった」から C「はじめての登校」までのランクを付ける。寮で寝る裏エンド（`Scripts/Runtime/World/DormEnding.cs`、#41）はランクも達成率も出さない。
 - **目的**: 一日の目的はどこにも示されない。`q_orientation` は教授への挨拶で終わり、`q_sunset` の summary が「今日の用事をすべて済ませたら、その時間に水盤の前へ。」と言うだけ。
 - **選択**: 選択肢（`t_choice`）は inari・kaname・prof・sora にある。選ぶと好感度が 0〜2 上がり、2 になると話題が一つ増える（`requiresAffinity`）。ただし選んだ結果は、18 時の夕日にも 20 時のリザルトにも見える形では出てこない（リザルトの重みにも好感度は入っていない）。
@@ -47,7 +47,7 @@ Unity 側のファイルは `unity/KatsushikaCampusDays/Assets/` からのパス
 - s2・s3・s4 は、場所に着けば済む visit。判定は 3D の箱（`Scripts/Runtime/World/VisitZone.cs`、既定の大きさ 10×6×10）。探す本はゲームの中に物として無く、拾う場面も無い。s4 も司書とは話さない。
 - s2 の (30.0, 5.0, 46.6) と s3 の (−1.0, 5.0, 56.5) は 2F、s4 の (−11.6, 0, 25.0) は 1F にある。「2F」はクエスト文にも台詞にも出てこない。
 - ミニマップ（`Minimap.cs`）は、目的地が外なら出口を指し（13 行目）、見出しに今いる建物と階を出す（76 行目）。目的地の階との差を扱う処理は、grep した範囲では見つからなかった。
-- 言葉の食い違いがある。クエスト文の「個人閲覧ブース」に対し、館内の吊り看板 `sign_library_2` は「閲覧席」/「Study Carrels」。図書館の仕様（`docs/ref/interiors/library/spec.md`）は、実物の 1F にある書架 14 連と個人閲覧ブース 66 席を作らず、14 連を 2F に移すと決めている（403 行目）。2F の閲覧席はキャレル 9 本で 68 席と、窓際のカウンター 12 席（128 行目）。看板の文言は「2F 開架書架・閲覧席・黙考書院」（260 行目）。
+- 言葉の食い違いがある。クエスト文の「個人閲覧ブース」に対し、館内の吊り看板 `sign_library_2` は「閲覧席」/「Study Carrels」。図書館の仕様（`docs/ref/interiors/library/spec.md`）は、1F の書架 14 連と個人閲覧ブース 66 席を作らず、14 連を 2F に移すと決めている（403 行目）。2F の閲覧席はキャレル 9 本で 68 席と、窓際のカウンター 12 席（128 行目）。看板の文言は「2F 開架書架・閲覧席・黙考書院」（260 行目）。
 - 収集物 `c_library_bookmark`「閉架の栞」は s2 と同じ `poi_library_stacks` にあり、ヒントは「開架書架、14 連のいちばん奥」。本を物として置くなら、この栞と見分けがつくようにする。
 - 1F の司書 `npc_library_1`（−15.5, 0, 25.5）はカウンターの近くに立っているが、`Data/Dialogue/` に図書館の NPC の会話ファイルは無い。
 
@@ -55,7 +55,7 @@ Unity 側のファイルは `unity/KatsushikaCampusDays/Assets/` からのパス
 
 - `ja.json` の `quest.q_library.summary`（257 行目）と `dialogue.inari.t_active.1`（341 行目）は、大ホール（600 席）が屋上にあるように書いている。公式の説明では、600 席の大ホールは図書館棟の 3・4 階にある（3.1 節）。空中写真では図書館の屋根に八角形の金属ドームが見える（`docs/ref/aerial/README.md:44`）が、「八角形」は公式の文では確かめられなかった。`item.c_dome_key.hint` も「屋上のホールに続く鍵」と書いている。仕様の側は 3〜4F を大ホールにする案を出している（`spec.md:435`）。
 - `docs/DESIGN.md:29` では主人公のみらいが「工学部情報工学科 2 年」だが、ゲームの中では新入生として扱われている（`prof.json:56` の「設備は入学式でしか見られん」、`prof.json:77` の「新入生向けに短い講義をする」、`lecture.json:115` の「毎年、新入生が来る前に黒板に書いておく」）。
-- `docs/HOW_TO_PLAY.md:80` は「サブクエスト 6 本」と書いているが、今のサブは 10 本ある。
+- `docs/HOW_TO_PLAY.md:80` は「メインクエスト 7 本とサブクエスト 6 本」と書いているが、今はメイン 8 本・サブ 10 本ある。
 - 宝探しには「21 枚目のメモ（白紙）」がある（`ja.json` の「21 枚目は、あなたが持っていて。来年の春は、あなたが隠す番。」）。毎年受け継ぐ伝統は、すでにゲームの中にある。
 
 ## 1. 導線: 何をどこで探すかを伝える
@@ -147,7 +147,7 @@ Unity 側のファイルは `unity/KatsushikaCampusDays/Assets/` からのパス
 
 **案 B: 黒板の 1 バイトと 21 枚目の白紙**
 
-2F〜6F の黒板を、その階の人の頼みを解くと読めるようにする。17:00 に 7F の黒板に WORLD を書き足し、宝探しの 21 枚目の白紙（0.3 節）を「来年の春は、あなたが隠す番」という後日談にする。
+2F〜6F の黒板を、その階の人の頼みを解くと読めるようにする。17:00 に 7F の白板に WORLD を書き足し、宝探しの 21 枚目の白紙（0.3 節）を「来年の春は、あなたが隠す番」という後日談にする。
 
 A と B は両立する。A を一日の筋にし、B を理科大らしさの柱か後日談にする。
 
@@ -168,7 +168,7 @@ A と B は両立する。A を一日の筋にし、B を理科大らしさの�
 | 物理学校と神楽坂 | 1883 年に東京物理学校と改称。1906 年 9 月に神楽坂の校舎が落成した。1923 年からの二部制で、第二部は 17:20〜21:10 | 同上 |
 | 建学の精神 | 「理学の普及を以て国運発展の基礎とする」 | [建学の精神](https://www.tus.ac.jp/about/university/vision/philosophy/) |
 | 実力主義 | 真に実力を身に付けた学生だけを卒業させる伝統を守り、最終学年に卒業研究を置く | [教育の方針](https://www.tus.ac.jp/about/faculty/policy/) |
-| 小説の物理学校 | 『坊っちゃん』の主人公は物理学校を 3 年で出た数学教師。兄にもらった六百円を三年に割って学資にし、席順は下から数える方だった。初出は 1906 年 4 月で、神楽坂の校舎の落成と同じ年 | [青空文庫『坊っちゃん』](https://www.aozora.gr.jp/cards/000148/card752.html) |
+| 小説の物理学校 | 『坊っちゃん』の主人公は物理学校を出た数学教師。兄にもらった六百円を三年に割って学資にし、席順は下から数える方だった。初出は 1906 年 4 月で、神楽坂の校舎の落成と同じ年 | [青空文庫『坊っちゃん』](https://www.aozora.gr.jp/cards/000148/card752.html) |
 | 大学の説明 | 三代目校長が漱石と親交があり、主人公が物理学校出なのも「その関係と思われます」と、断定せずに紹介している | [大学の歴史](https://www.tus.ac.jp/about/university/history/) |
 | 近代科学資料館 | 1991 年に 1906 年の校舎の正面を再現した | [近代科学資料館](https://www.tus.ac.jp/info/setubi/museum/) |
 | 公式キャラクター | 坊っちゃんは創立 125 周年の記念に生まれた（125 周年は 2006 年にあたる）。マドンナちゃんは女子中高生向けの「科学のマドンナ」の広報役。作られた年・作者・人物設定・使用条件の記載は無い | [大学のシンボル](https://www.tus.ac.jp/about/university/symbol/)、[学報 191 号（PDF）](https://www.tus.ac.jp/about/information/publication/magazine/file/no191.pdf) |
@@ -187,7 +187,7 @@ A と B は両立する。A を一日の筋にし、B を理科大らしさの�
 
 ### 3.2 ゲームとの重なり
 
-- **合っている点**: 大教室 270 席、食堂 1,400 席、主人公の「新宿 みらい」とにいじゅくみらい公園、情報工学科、宝探しのメモの「キャンパスが開いた春」（2013 年 4 月の開設と矛盾しない）。
+- **合っている点**: 大教室 270 席、食堂（ゲームは 730 席と 665 席で計 1,395 席、公式は全 1,400 席）、主人公の「新宿 みらい」とにいじゅくみらい公園、情報工学科、宝探しのメモの「キャンパスが開いた春」（2013 年 4 月の開設と矛盾しない）。
 - **食い違い**: 大ホールの位置（0.3 節）。公式では図書館棟の 3・4 階で、屋上ではない。
 
 ### 3.3 公式キャラクターの扱い
@@ -196,7 +196,7 @@ A と B は両立する。A を一日の筋にし、B を理科大らしさの�
 
 ### 3.4 筋の案
 
-1. **夜の講習所**（17:00 以降、教授）: 1881 年の「夕方に器具を運び込み、夜更けに返す」を再現する。実験棟から大教室へ器具を運び、返し終えたら教授の一言で締める。時刻の目安は物理学校第二部の 17:20〜21:10。
+1. **夜の講習所**（17:00 以降、教授）: 1881 年の「夕方に器具を運び込み、夜更けに返す」を再現する。実験棟から大教室へ器具を運び、返し終えたら教授の一言で締める。時刻の目安は物理学校第二部の始まりの 17:20 とし、一日が終わる 20:00 までに収める。
 2. **20 枚のメモの由来**（いなり、`q_secret_spring_hunt`）: 宝探しを始めた「最初の学生」を、生徒が 1 人でも教室を開き続けた講習所の話に重ねる。創立者 21 名と、21 枚目の白紙（0.3 節）を重ねて終わる。
 3. **紙の工場から本へ**（`q_library` / `q_sq_stray_book`）: 頼まれる本を、この土地が製紙工場だった頃の郷土の本にする。「紙」を手がかりに、公園 → 図書館 1F のカウンター → 2F の棚と順に案内する。
 4. **塀の無いキャンパス**（公園から図書館棟、午後）: 未来わくわく館に来た地域の子どもが迷っていて、プレイヤーが案内する。探す物と行き先を、子どもの台詞で具体的に言わせられる。
@@ -211,12 +211,12 @@ A と B は両立する。A を一日の筋にし、B を理科大らしさの�
 
 | 道具 | 合うところ | 問題 | ライセンス・費用 | 出典 |
 |---|---|---|---|---|
-| Yarn Spinner for Unity | .yarn は普通のテキストで AI も書ける。`when:` 付きのノードグループは「条件に合う話題を一つ選ぶ」今の仕組みに近い。VS Code 拡張で図・エラー表示・プレビューが出る | クエストを持たない。話題 88 個を移し、日英の文は行 ID と CSV に変わる。Unity 6.5 以降で IL2CPP のビルドが失敗する不具合が v3.2.8 で直ったばかりで、WebGL で動くという記載は公式の文書に無い。2.x では WebGL で起動時に落ちる報告があった（YarnSpinner-Unity の issue 163。KCD の #163 とは別） | MIT。Git URL / OpenUPM での導入は無料 | [Yarn Spinner Help](https://yarnspinner.dev/help/)、[Node groups](https://docs.yarnspinner.dev/write-yarn-scripts/advanced-scripting/node-groups)、[YarnSpinner-Unity](https://github.com/YarnSpinnerTool/YarnSpinner-Unity)、[YarnSpinner-Unity issue 163](https://github.com/YarnSpinnerTool/YarnSpinner-Unity/issues/163) |
-| ink + ink-unity-integration | .ink はテキストで AI も書け、Inky でその場で遊べる | NPC ごとの話題選びとクエストは自前で作る。統合の README にローカライズの記載が無い | MIT、無料 | [ink](https://github.com/inkle/ink)、[ink-unity-integration](https://github.com/inkle/ink-unity-integration) |
+| Yarn Spinner for Unity | .yarn は普通のテキストで AI も書ける。`when:` 付きのノードグループは「条件に合う話題を一つ選ぶ」今の仕組みに近い。VS Code 拡張で図・エラー表示・プレビューが出る | クエストを持たない。話題 88 個を移し、日英の文は行 ID と CSV に変わる。Unity 6.5 以降で IL2CPP のビルドが失敗する不具合が v3.2.8 で直ったばかりで、WebGL で動くという記載は公式の文書に見つからなかった。2.x では WebGL で起動時に落ちる報告があった（YarnSpinner-Unity の issue 163。KCD の #163 とは別） | MIT。Git URL / OpenUPM での導入は無料 | [Yarn Spinner Help](https://yarnspinner.dev/help/)、[Node groups](https://docs.yarnspinner.dev/write-yarn-scripts/advanced-scripting/node-groups)、[YarnSpinner-Unity](https://github.com/YarnSpinnerTool/YarnSpinner-Unity)、[YarnSpinner-Unity issue 163](https://github.com/YarnSpinnerTool/YarnSpinner-Unity/issues/163)、[VS Code 拡張](https://marketplace.visualstudio.com/items?itemName=SecretLab.yarn-spinner) |
+| ink + ink-unity-integration | .ink はテキストで AI も書け、Inky でその場で遊べる | NPC ごとの話題選びとクエストは自前で作る。統合の README にローカライズの記載が無い | MIT、無料 | [ink](https://github.com/inkle/ink)、[Inky](https://github.com/inkle/inky)、[ink-unity-integration](https://github.com/inkle/ink-unity-integration) |
 | Twine（Twine 2 / Tweego / Cradle） | ブラウザで遊べる下書きには使える | Unity への持ち込み役の Cradle は 2021 年 8 月から更新が無い | Twine 2 は GPL-3.0、Tweego は BSD-2-Clause、Cradle は MIT | [Twine](https://github.com/klembot/twinejs)、[Tweego](https://github.com/tmedwards/tweego)、[Cradle](https://github.com/daterre/Cradle) |
 | articy:draft X | 図で書けて、importer にローカライズがある | データが専用ソフトの中にあり、AI がテキストで書けない。importer は Asset Store の EULA なので公開リポジトリに置けない | 無料版は 1 プロジェクト 700 オブジェクトまで | [articy:draft X FREE](https://www.articy.com/en/articydraft/free/) |
 | Arcweave | ブラウザで図を書き、JSON を出せる | クラウドの画面で書くので AI が直接書けない | Basic は無料だが 200 items まで・商用不可 | [Arcweave pricing](https://arcweave.com/pricing) |
-| Dialogue System for Unity | 会話とクエストの両方を持つ | Lua とデータベースに移し、クエストの仕組みも置き換える。Asset Store の EULA は製品に組み込んだ形でしか配布を認めないので、本体を公開リポジトリに置けない | $95 | [Asset Store Terms](https://unity.com/legal/as-terms) |
+| Dialogue System for Unity | 会話とクエストの両方を持つ | Lua とデータベースに移し、クエストの仕組みも置き換える。Asset Store の EULA は製品に組み込んだ形でしか配布を認めないので、本体を公開リポジトリに置けない | $95 | [Asset Store](https://assetstore.unity.com/packages/tools/behavior-ai/dialogue-system-for-unity-11672)、[Quests の説明](https://www.pixelcrushers.com/dialogue_system/manual2x/html/quests.html)、[Asset Store Terms](https://unity.com/legal/as-terms) |
 
 どの道具もクエストのステップ（talk / visit / enter / collect / flag）を持たない。今の不満（どこで何を探すか、何がしたいか）は書く道具ではなく案内の中身の問題なので、会話 16 本・話題 88 個・日英の文・会話のテスト・フォントの道具（`tools/make_ui_font.py`）を作り直す手間に見合わない。入れる場合も、`make_ui_font.py` の `TEXT_SUFFIXES` は .yarn / .ink を見ないので、フォントから文字が欠ける。
 
