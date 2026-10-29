@@ -207,6 +207,113 @@ namespace KCD.Tests
             Assert.IsFalse(panel.GoTo(4), "建物の出入り係が無いのに移ろうとした");
         }
 
+        // ---- 別の建物の階へ続く階段（第2研究棟の西の端の階段と食堂, #303）----
+
+        /// <summary>西の端の階段の行き先の一部。食堂の 1F・2F と研究棟の 3F。</summary>
+        private ElevatorPanel.Stop[] MakeCrossStops()
+        {
+            return new[]
+            {
+                CrossStop("cafeteria", "1F", "食堂", "Dining Hall", 0f),
+                CrossStop("cafeteria", "2F", "カフェテリア", "Cafeteria", 4.8f),
+                CrossStop("research2", "3F", "事務室", "Office", 9.6f),
+            };
+        }
+
+        private ElevatorPanel.Stop CrossStop(string building, string floor, string ja, string en, float y)
+        {
+            Transform landing = Make("StairLanding_west_" + building + "_" + floor).transform;
+            landing.position = new Vector3(-40.6f, y, 31.35f);
+            return new ElevatorPanel.Stop
+            {
+                Floor = floor,
+                CaptionJa = ja,
+                CaptionEn = en,
+                Landing = landing,
+                BuildingId = building
+            };
+        }
+
+        /// <summary>言語を切り替えて body を走らせ、PlayerPrefs の言語設定を元に戻す。</summary>
+        private static void InLocale(string locale, System.Action body)
+        {
+            using (new PlayerPrefsKeyScope(L.PrefKey))
+            {
+                string before = L.Locale;
+                try
+                {
+                    L.SetLocale(locale);
+                    Assert.AreEqual(locale, L.Locale, "Resources/KCD/Localization/" + locale + ".json を読めていない");
+                    body();
+                }
+                finally
+                {
+                    L.SetLocale(before);
+                }
+            }
+        }
+
+        [Test]
+        public void Caption_NamesTheOtherBuilding_OnlyForItsFloors()
+        {
+            ElevatorPanel.Stop[] stops = MakeCrossStops();
+            ElevatorPanel.Stop own = MakeStops()[0];
+            InLocale("ja", () =>
+            {
+                Assert.AreEqual("食堂", ElevatorMenu.Caption(stops[0], "research2"), "説明が建物の名前と同じなら名前だけ");
+                Assert.AreEqual("食堂・カフェテリア", ElevatorMenu.Caption(stops[1], "research2"));
+                Assert.AreEqual("事務室", ElevatorMenu.Caption(stops[2], "research2"), "乗り場と同じ建物の階に建物の名前を付けた");
+                Assert.AreEqual("第2研究棟・事務室", ElevatorMenu.Caption(stops[2], "cafeteria"));
+                Assert.AreEqual("カフェテリア", ElevatorMenu.Caption(stops[1], "cafeteria"));
+                Assert.AreEqual("カフェテリア", ElevatorMenu.Caption(stops[1], null), "建物を渡していないのに名前を付けた");
+                Assert.AreEqual("階0", ElevatorMenu.Caption(own, "research2"), "建物の無い階は乗り場と同じ建物");
+            });
+            InLocale("en", () =>
+            {
+                Assert.AreEqual("Cafeteria · Dining Hall", ElevatorMenu.Caption(stops[0], "research2"));
+                Assert.AreEqual("Cafeteria", ElevatorMenu.Caption(stops[1], "research2"));
+                Assert.AreEqual("Research Building 2 · Office", ElevatorMenu.Caption(stops[2], "cafeteria"));
+            });
+        }
+
+        [Test]
+        public void Compose_NamesOnlyTheOtherBuildingsFloors()
+        {
+            ElevatorPanel.Stop[] stops = MakeCrossStops();
+            InLocale("ja", () =>
+            {
+                string fromResearch = ElevatorMenu.Compose(stops, 2, 2, false, true, false, "research2");
+                StringAssert.Contains("1F  食堂", fromResearch);
+                StringAssert.Contains("2F  食堂・カフェテリア", fromResearch);
+                StringAssert.Contains("3F  事務室（いまの階）", fromResearch);
+
+                string fromCafeteria = ElevatorMenu.Compose(stops, 1, 1, false, true, false, "cafeteria");
+                StringAssert.Contains("1F  食堂", fromCafeteria);
+                StringAssert.Contains("2F  カフェテリア（いまの階）", fromCafeteria);
+                StringAssert.Contains("3F  第2研究棟・事務室", fromCafeteria);
+                StringAssert.DoesNotContain("食堂・", fromCafeteria, "乗り場と同じ建物の階に建物の名前を付けた");
+            });
+        }
+
+        [Test]
+        public void CurrentIndex_TellsTheBuildingsApart_OnTheSameFloorName()
+        {
+            ElevatorPanel.Stop[] stops =
+            {
+                CrossStop("cafeteria", "1F", "食堂", "Dining Hall", 0f),
+                CrossStop("research2", "1F", "ロビー", "Lobby", 0.4f),
+                CrossStop("research2", "3F", "事務室", "Office", 9.6f),
+            };
+            ElevatorPanel panel = MakePanel("1F", stops);
+
+            panel.BuildingId = "research2";
+            Assert.AreEqual(1, panel.CurrentIndex, "研究棟の 1F の乗り場が食堂の 1F を今の階にした");
+
+            panel.BuildingId = "cafeteria";
+            Assert.AreEqual(0, panel.CurrentIndex);
+            Assert.IsFalse(panel.GoTo(0), "今の階へ移ろうとした");
+        }
+
         [Test]
         public void FloorOf_UsesTheLastBottomBelowTheHeight()
         {

@@ -293,7 +293,7 @@ namespace KCD
             _drawnPortrait = ScreenShape.IsPortrait;
             ((RectTransform)_root.transform).sizeDelta = FrameSize(_drawnForTouch, _drawnPortrait);
             _body.text = Compose(_panel.Stops, _panel.CurrentIndex, _index, _drawnForTouch, _panel.Stairs,
-                _drawnPortrait);
+                _drawnPortrait, _panel.BuildingId);
         }
 
         /// <summary>
@@ -313,9 +313,10 @@ namespace KCD
         /// 指のときは行の間隔を指の幅まで広げ、間隔だけで区切れるので空行を挟まない。
         /// 縦持ちは <see cref="PortraitRowEm"/> 固定（9 行で 832 が入る枠の高さ 870）。横持ちは枠の高さに入る範囲で最大 <see cref="LandscapeMaxRowEm"/> とし、
         /// 階が <see cref="MergedCancelFloors"/> 以上なら「やめる」を見出しの行に入れる（<see cref="RowEm"/>）。
+        /// building は乗り場の建物で、別の建物の階には建物の名前を添える（<see cref="Caption"/>）。
         /// </summary>
         public static string Compose(ElevatorPanel.Stop[] stops, int current, int selected, bool links,
-            bool stairs = false, bool portrait = false)
+            bool stairs = false, bool portrait = false, string building = null)
         {
             var builder = new StringBuilder(256);
             bool merged = MergesCancel(stops.Length, links, portrait);
@@ -342,7 +343,7 @@ namespace KCD
             for (int i = stops.Length - 1; i >= 0; i--)
             {
                 string label = stops[i].Floor;
-                string caption = L.Pick(stops[i].CaptionJa, stops[i].CaptionEn);
+                string caption = Caption(stops[i], building);
                 if (!string.IsNullOrEmpty(caption))
                 {
                     label += "  " + caption;
@@ -373,6 +374,22 @@ namespace KCD
             }
 
             return builder.ToString();
+        }
+
+        /// <summary>
+        /// 階の名前の横に出す説明（その階にあるもの）。別の建物の階（第2研究棟の西の端の階段から下りる食堂の階, #303）には
+        /// 建物の名前を前に付け、説明が建物の名前と同じなら名前だけにする。building が null なら建物を比べない。
+        /// </summary>
+        public static string Caption(ElevatorPanel.Stop stop, string building)
+        {
+            string caption = L.Pick(stop.CaptionJa, stop.CaptionEn);
+            if (building == null || string.IsNullOrEmpty(stop.BuildingId) || stop.BuildingId == building)
+            {
+                return caption;
+            }
+
+            string name = L.Get("ui.building." + stop.BuildingId, stop.BuildingId);
+            return string.IsNullOrEmpty(caption) || caption == name ? name : name + L.Pick("・", " · ") + caption;
         }
 
         /// <summary>指のとき、横持ちで見出しと「やめる」を同じ行に入れるか。</summary>
