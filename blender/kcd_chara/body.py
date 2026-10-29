@@ -33,7 +33,7 @@ JAW_CHEEK_CUT = 0.70
 
 
 def _jaw_width(z: np.ndarray, r_ball: np.ndarray, w: np.ndarray) -> np.ndarray:
-    """大人の男の輪郭の幅の倍率。頭蓋（z >= -0.45）は w のままにする。"""
+    """大人の男の輪郭の幅の倍率。z >= -0.30 は w のまま、z <= -0.50 で輪郭の幅に入れ替わる。"""
     target = np.interp(z, _JAW_Z, _JAW_W) / r_ball
     k = M.smoothstep(-0.30, -0.50, z)
     return w * (1.0 - k) + np.minimum(target, 1.85) * k
@@ -67,13 +67,13 @@ def _head_deform(d: np.ndarray, square: float = 0.0, jaw: float = 0.0) -> np.nda
     w_box = np.minimum(w_box, 1.85)
     s = float(np.clip(square, 0.0, 1.0))
     w = w_egg * (1.0 - s) + w_box * s
-    w_round = w
+    w_depth = w
     j = float(np.clip(jaw, 0.0, 1.0))
     if j > 0.0:
         w = w * (1.0 - j) + _jaw_width(z, r_ball, w) * j
     X = x * w
     # 奥行きには顎の張りを入れない。入れると横顔の下顔が箱になり、首の後ろまで太る。
-    Y = y * w_round
+    Y = y * w_depth
     Z = np.where(z >= 0.0, z, z * 0.94)
     # 正面は平らめ、後頭部はふっくら
     Y = np.where(Y < 0.0, Y * 0.870, Y * 1.070)
@@ -82,7 +82,7 @@ def _head_deform(d: np.ndarray, square: float = 0.0, jaw: float = 0.0) -> np.nda
     cheek = (np.exp(-((z + 0.26) / 0.46) ** 2)
              * np.exp(-((np.abs(x) - 0.52) / 0.52) ** 2))
     if j > 0.0:
-        # 目より上（眼鏡と髪が乗る所）は変えない
+        # 目の高さ（z >= -0.05）から上、眼鏡と髪が乗る所は変えない
         cheek = cheek * (1.0 - JAW_CHEEK_CUT * j * M.smoothstep(-0.05, -0.40, z))
     front = np.clip(-y, 0.0, 1.0)
     Y -= 0.135 * cheek * front
