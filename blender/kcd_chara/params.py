@@ -448,14 +448,15 @@ CHARACTERS: dict[str, dict] = {
         lash_color=_c("#3A3A44"),
         brow_color=_c("#2E2C30"),
         blush_color=_c("#D89080"), blush_strength=0.0,
-        mouth_color=_c("#8E4038"), mouth_style="line", mouth_w=0.028,
+        mouth_color=_c("#8E4038"), mouth_style="line", mouth_w=0.034,
         # 大人の男の顔 (#172): 目は横長の細い目にし、虹彩は小さな濃い茶の円、光は 1 点だけ。
-        # まぶたは上の線 1 本で、目尻の跳ねと下まつ毛は付けない。眉は目に近い直線寄りの眉。
-        # 鼻筋（face_keel）を通して眼鏡を鼻に乗せる。輪郭は顎を張らせる。
+        # まぶたは上の線 1 本で、目尻の跳ねと下まつ毛は付けない。眉は目に近い、太く直線寄りの眉。
+        # 鼻筋（face_keel）を通して眼鏡を鼻に乗せる。輪郭は頬のふくらみを抑え、エラの角と
+        # 幅のある平らな顎先を作る（head_jaw、body._jaw_width）。卵形の細い顎は丸顔に見えた。
         eye_style="narrow", eye_tilt=0.0,
-        brow_width=0.0120, brow_arch=0.005, brow_lift=0.080,
+        brow_width=0.0220, brow_arch=0.005, brow_lift=0.080,
         lash_scale=0.95, lash_lower=False, lash_flick=0.0, crease_lift=0.85,
-        eye_shine=0.55, head_square=0.50, face_keel=0.080,
+        eye_shine=0.55, head_square=0.50, head_jaw=1.0, face_keel=0.080,
         hair="business", hair_accessory="glasses_gray",
         # 細い金属の縁の眼鏡。レンズは目の横幅に対する倍率と、縦横比で決める。
         glasses_tube=0.0060, glasses_lens=(1.50, 0.60),
