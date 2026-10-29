@@ -30,6 +30,9 @@ RESIDENTIAL_ID = 9102
 MOTORWAY_ID = 9103
 FAR_ROAD_ID = 9104
 PARK_ID = 9201
+PITCH_TAGGED_ID = 9202  # OSM に surface がある運動場
+PITCH_TABLE_ID = 9203   # surface が無く、PITCH_SURFACE で補う運動場
+PITCH_BARE_ID = 9204    # どちらにも無い運動場
 NO_GEOM_ID = 9301
 
 # 名前付きの建物。SHOP_NAME は周辺の店の名前の代わり（実在の名前は書かない）。
@@ -260,6 +263,26 @@ def test_areas(extracted):
     for a in extracted["areas"]:
         assert oc.ring_area(a["polygon"]) > 0
         assert a["polygon"][0] != a["polygon"][-1]
+        assert "surface" not in a and "osm_id" not in a     # 運動場だけが持つ
+
+
+def test_pitch_keeps_osm_id_sport_and_surface(monkeypatch):
+    """運動場は osm_id・sport・surface を持つ。surface は OSM のタグを優先し、無ければ表で補う (#59)。"""
+    elements = _elements() + [
+        _way(PITCH_TAGGED_ID, _box(LAT0 + 0.0006, LON0 - 0.0006, 0.0001, 0.0001),
+             leisure="pitch", sport="tennis", surface="clay"),
+        _way(PITCH_TABLE_ID, _box(LAT0 + 0.0006, LON0, 0.0001, 0.0001), leisure="pitch", sport="tennis"),
+        _way(PITCH_BARE_ID, _box(LAT0 + 0.0006, LON0 + 0.0006, 0.0001, 0.0001), leisure="pitch"),
+    ]
+    monkeypatch.setattr(osm_extract, "_load", lambda: elements)
+    monkeypatch.setitem(osm_extract.PITCH_SURFACE, PITCH_TAGGED_ID, "acrylic")
+    monkeypatch.setitem(osm_extract.PITCH_SURFACE, PITCH_TABLE_ID, "acrylic")
+    pitches = {a["osm_id"]: a for a in osm_extract.extract()["areas"] if a["kind"] == "pitch"}
+    assert set(pitches) == {PITCH_TAGGED_ID, PITCH_TABLE_ID, PITCH_BARE_ID}
+    assert pitches[PITCH_TAGGED_ID]["surface"] == "clay"
+    assert pitches[PITCH_TABLE_ID]["surface"] == "acrylic"
+    assert pitches[PITCH_TABLE_ID]["sport"] == "tennis"
+    assert pitches[PITCH_BARE_ID]["sport"] is None and pitches[PITCH_BARE_ID]["surface"] is None
 
 
 def test_points(extracted):
@@ -306,6 +329,14 @@ def test_committed_campus_json_invariants(campus_json):
     for b in buildings:
         if b["id"] in catalog | unnamed | manual:
             assert b["on_campus"], b["id"]
+
+
+def test_committed_pitches_have_sport_and_surface(campus_json):
+    """campus.json の運動場は 3 区画とも競技を持ち、表面は PITCH_SURFACE と一致する (#59)。"""
+    pitches = {a["osm_id"]: a for a in campus_json["areas"] if a["kind"] == "pitch"}
+    assert {k: a["surface"] for k, a in pitches.items()} == osm_extract.PITCH_SURFACE
+    assert {k: a["sport"] for k, a in pitches.items()} == {
+        771657617: "tennis", 771657619: "tennis", 771657620: "soccer"}
 
 
 def test_committed_kyoso_and_research1_parts(campus_json):

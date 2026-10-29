@@ -144,6 +144,24 @@ MANUAL_BUILDINGS: list[dict] = [
     },
 ]
 
+# 運動場 (leisure=pitch) の表面 (OSM way id → OSM の surface の値)。OSM の 3 区画には surface が
+# 無いので、航空写真 (docs/ref/aerial/crop_sports_north.jpg) で見て補う。OSM に surface が付いたら
+# そちらを使う。地面の材質は blender/kcd_lib/site.py の area_materials が sport と surface で決める (#59)。
+PITCH_SURFACE: dict[int, str] = {
+    771657620: "artificial_turf",  # サッカー場。白線の引かれた緑一色
+    771657617: "artificial_turf",  # テニス 2 面。砂入り人工芝（コートの中に緑が残り、まわりは砂の色）
+    771657619: "acrylic",          # テニス 1 面。ハードコート（ダブルスの線の内側が青、外周が緑）
+}
+
+
+def _pitch_info(way_id: int, tags: dict) -> dict:
+    """運動場の OSM id・競技・表面。表面は OSM のタグを優先し、無ければ PITCH_SURFACE で補う。"""
+    return {
+        "osm_id": way_id,
+        "sport": tags.get("sport"),
+        "surface": tags.get("surface") or PITCH_SURFACE.get(way_id),
+    }
+
 
 def _load() -> list[dict]:
     with RAW.open(encoding="utf-8") as f:
@@ -269,7 +287,9 @@ def extract() -> dict:
             )
         elif tags.get("leisure") in ("park", "pitch", "playground", "garden") or tags.get("landuse") in ("grass", "recreation_ground") or tags.get("natural") in ("water", "wood", "scrub") or tags.get("amenity") == "parking" or tags.get("amenity") == "university":
             kind = tags.get("leisure") or tags.get("landuse") or tags.get("natural") or tags.get("amenity")
-            areas.append({"kind": kind, "name": tags.get("name"), "on_campus": on_campus, "polygon": _ccw(xy)})
+            extra = _pitch_info(e["id"], tags) if kind == "pitch" else {}
+            areas.append({"kind": kind, "name": tags.get("name"), "on_campus": on_campus, **extra,
+                          "polygon": _ccw(xy)})
 
     for meta in MANUAL_BUILDINGS:
         info = {k: v for k, v in meta.items() if k != "outline"}

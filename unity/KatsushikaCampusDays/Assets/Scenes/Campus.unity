@@ -384805,6 +384805,8 @@ MeshRenderer:
   - {fileID: 2100000, guid: fb6c65e02411bb3459ec40fa3dab4250, type: 2}
   - {fileID: 2100000, guid: 101335a3b3abd2049966d0d74d2da99f, type: 2}
   - {fileID: 2100000, guid: 91e4c94fdce7fad43aa051a3c76203e7, type: 2}
+  - {fileID: 2100000, guid: 56f22e73bdfcc33409fea301ed10f712, type: 2}
+  - {fileID: 2100000, guid: aa4c79b8bd4800a47a0cd08b00b340eb, type: 2}
   - {fileID: 2100000, guid: 73ab1b53af6439246adc19200255c246, type: 2}
   - {fileID: 2100000, guid: 16283e62c85ee0a4594a611b34077988, type: 2}
   - {fileID: 2100000, guid: a9a501f4ad343754db8d7dd94353626c, type: 2}
