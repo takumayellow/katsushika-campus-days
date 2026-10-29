@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
@@ -22,6 +23,13 @@ namespace KCD.Tests
         /// このテストのセーブと写真の置き場。空のフォルダから始めるので、端末に残ったセーブで結果が変わらない。
         /// </summary>
         protected string SaveDirectory { get; private set; }
+
+        /// <summary>
+        /// 絵を描けるか。-nographics の batchmode では描画のデバイスが無い（GraphicsDeviceType.Null）。そのときにカメラを
+        /// 描かせると、URP が描くための RenderTexture を作れずにエラーのログを出すだけで何も写らず、ReadPixels も何も読まない。
+        /// 撮った絵の画素を見る確かめは、これが true のときだけ行う。
+        /// </summary>
+        protected static bool CanRender => SystemInfo.graphicsDeviceType != GraphicsDeviceType.Null;
 
         [SetUp]
         public void SetUpCapture()

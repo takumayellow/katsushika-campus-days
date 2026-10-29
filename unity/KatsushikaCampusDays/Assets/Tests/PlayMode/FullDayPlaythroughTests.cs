@@ -148,6 +148,7 @@ namespace KCD.Tests
             Assert.AreEqual("S", result.Rank, summary);
 
             // 三脚の記念写真は専用のカメラで描いて書く (#170) ので、batchmode でもスポットの数だけ PNG が残る。
+            // 描画のデバイスが無い（-nographics）ときは一色で塗った写真になるが、枚数は同じ。
             string photoFolder = Path.Combine(SaveDirectory, PhotoSystem.FolderName);
             Assert.IsTrue(Directory.Exists(photoFolder), "写真の保存先が " + photoFolder + " になっていない");
             Assert.AreEqual(result.PhotoTotal, Directory.GetFiles(photoFolder, "*.png").Length,

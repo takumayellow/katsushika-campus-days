@@ -126,6 +126,9 @@ python -m pytest e2e                               # スモークの部品の単
 `--skip-unity`（pytest だけ）が使える。batchmode が書き換える URP GlobalSettings・`ProjectSettings.asset`・
 `.mat` は、実行前に変更が無かったものだけ元に戻す。終了コードは 0 = 全部通った、1 = 失敗かスキップか
 ログのエラーがある、2 = 走らせられなかった、3 = 別の Unity が動いている。
+PlayMode は描画のデバイスがある状態で走る。`--nographics` を付けると PlayMode も描画のデバイス無しで走り（EditMode は
+いつもこちら）、撮った絵の画素を見る所と目で見るための絵を撮る所を飛ばす（飛ばしたテストはログに「描画のデバイスが無い」と
+出す）。骨の位置・写真の構図と枚数などは、どちらでも確かめる。
 PlayMode のテスト（`Assets/Tests/PlayMode`）は Title と Campus を読み込んで動かすので、
 `SceneBuilder.BuildAll` でシーンを作り直したあとに回す。
 
