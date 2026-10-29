@@ -221,6 +221,7 @@ namespace KCD.Editor
             if (material != null)
             {
                 Repaint(material, name, CampusSurfaces.LoadTiling());
+                ToonPasses.Apply(material, name);
                 return material;
             }
 
@@ -288,6 +289,7 @@ namespace KCD.Editor
                 material.SetColor(BaseColorId, Color.white);
             }
 
+            ToonPasses.Apply(material, name);
             Save(material, path);
             return material;
         }
@@ -482,6 +484,7 @@ namespace KCD.Editor
             if (material != null)
             {
                 RepaintCharacter(material, name, palette, patterns);
+                ToonPasses.Apply(material, characterId + "_" + name);
                 return material;
             }
 
@@ -526,6 +529,7 @@ namespace KCD.Editor
                 material.SetFloat("_SpecularIntensity", 0.8f);
             }
 
+            ToonPasses.Apply(material, characterId + "_" + name);
             Save(material, path);
             return material;
         }
