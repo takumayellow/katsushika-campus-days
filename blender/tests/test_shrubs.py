@@ -220,6 +220,7 @@ def test_pushing_apart_only_slides_each_face_along_its_own_normal(models, name):
         assert all(mv == pytest.approx(moved[0], abs=1e-9) for mv in moved)         # 3 点とも同じだけ動く
         along = sum(moved[0][k] * n[k] for k in range(3))
         assert moved[0] == pytest.approx(tuple(n[k] * along for k in range(3)), abs=1e-9)   # 動く向きは法線だけ
+        assert along == pytest.approx(shrubs.PAIR_GAP / 2, abs=1e-9)                        # どの面も同じ量だけ、自分の側へ
         h = sum(p[2] for p in src) / (3.0 * top)
         assert mb.face_col[f] == shrubs.face_color(m["group"], h, n[2])
     assert min(v[2] for v in mb.verts) > -MAX_GAP
