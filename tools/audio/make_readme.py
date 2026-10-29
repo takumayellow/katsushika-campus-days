@@ -16,7 +16,7 @@ NOTES = {
     "bgm_school_song": "タイトル画面. 東京理科大学校歌. 東北きりたん (NEUTRINO) 歌唱 1〜3 番 + ピアノ伴奏. 117 BPM / F major",
     "bgm_title": "旧タイトル曲 (未使用). 72 BPM / bgm_day のモチーフを遅く",
     "bgm_night": "夜. 校歌のピアノ伴奏を 0.8 倍のテンポにして 2.4 kHz 以上を落とす (school_song/make_variants.py). music.py の D minor 版に戻すには SCHOOL_SONG_BGM から外す (#28)",
-    "bgm_result": "リザルト画面. 128 BPM / C major / 明るく短い",
+    "bgm_result": "旧リザルト画面の曲 (未使用). 128 BPM / C major / 明るく短い",
     "bgm_anthem_original": "オリジナルの校歌風行進曲 (未使用). 108 BPM / Bb major / A-B 形式",
     "jingle_quest": "クエスト達成. F major のアルペジオ (木琴 soft_mallet + ピアノ)",
     "jingle_day_end": "1 日の終わり (リザルト画面). F major の IV-V-I (ピアノ)",
@@ -53,6 +53,15 @@ def note_for(name: str) -> str:
     return ""
 
 
+def loop_cell(e) -> str:
+    """ループ素材は継ぎ目の指標. 校歌の曲は録音から作るので指標が無いが, ゲームはループで鳴らす."""
+    if e.get("loop"):
+        return f"{e['seam_step_ratio']:.3f} / {e['seam_hf_ratio']:.3f}"
+    if e["category"] == "BGM" and not e["name"].startswith("jingle_"):
+        return "末尾の無音から先頭へ"
+    return "ループしない"
+
+
 def table(files, loop_cols: bool) -> list:
     head = ["| ファイル | 長さ | ピーク | RMS | 用途 |",
             "|---|---:|---:|---:|---|"]
@@ -64,8 +73,7 @@ def table(files, loop_cols: bool) -> list:
         cells = [f"`{e['name']}.wav`", f"{e['duration_sec']:.2f} s",
                  f"{e['peak_dbfs']:.1f} dBFS", f"{e['rms_dbfs']:.1f} dBFS"]
         if loop_cols:
-            cells.append(f"{e['seam_step_ratio']:.3f} / {e['seam_hf_ratio']:.3f}"
-                         if e.get("loop") else "ループしない")
+            cells.append(loop_cell(e))
         cells.append(note_for(e["name"]))
         rows.append("| " + " | ".join(cells) + " |")
     return head + rows
@@ -109,12 +117,28 @@ def main() -> int:
     A("")
     A("## Unity へ取り込むときの設定")
     A("")
-    A("| 項目 | 値 |")
-    A("|---|---|")
-    A("| Load Type | BGM / Ambient は Streaming, SE は Decompress On Load |")
-    A("| Compression Format | Vorbis (WAV のままだと 100 MiB 超) |")
-    A("| Quality | BGM 70 / Ambient 50 / SE 100 |")
-    A("| Loop | BGM と Ambient は `AudioSource.loop = true` |")
+    A("`Assets/Scripts/Editor/AudioImportRules.cs` (AssetPostprocessor) が取り込みのたびに次の表のとおりに設定し, "
+      "EditMode の `AudioImportRulesTests` が確かめる。`.meta` を手で直しても次の取り込みで戻る。"
+      "「曲」は `BGM/` のうち `jingle_` で始まらないもの。")
+    A("")
+    A("| 項目 | 既定 (Windows など) | WebGL |")
+    A("|---|---|---|")
+    A("| Load Type | 曲・ジングル・環境音は Streaming, SE は Decompress On Load "
+      "| 曲は Compressed In Memory, ジングル・環境音・SE は Decompress On Load |")
+    A("| Compression Format | Vorbis (WAV のままだと 100 MiB 超) | AAC (WebGL の既定。前のビルドと同じ) |")
+    A("| Sample Rate Setting | 規則では変えない (`.meta` のまま) "
+      "| 44.1 kHz に上書き (WebGL の既定と同じ。WebGL は Preserve Sample Rate を受け付けない) |")
+    A("| Quality | 曲とジングル 0.7 / 環境音 0.5 / SE 1.0 | 既定と同じ (AAC で 160 / 128 / 192 kbps) |")
+    A("| Preload Audio Data | SE だけ | ジングルと SE |")
+    A("| Load In Background | SE 以外 | (共通) |")
+    A("| Force To Mono | 使わない (1ch のクリップを 2D で鳴らすと, 左右が同じステレオより左右とも 3 dB 小さくなる。"
+      "#28 で計測) | (共通) |")
+    A("| Loop | 曲と環境音は `AudioSource.loop = true`, ジングルと SE は 1 回 | (共通) |")
+    A("")
+    A("WebGL で環境音を Decompress On Load にするのは, 圧縮のままだと Firefox と Safari が 128 KiB 以上のクリップを "
+      "`<audio>` 要素で鳴らし, ループのたびに間が空くため (Chrome と Edge はどの設定でも展開して鳴らす)。"
+      "ジングルと SE を先に読み込むのは, WebGL では読み終わるまで `AudioClip.length` が 0 で, "
+      "ジングル・チャイム・ピアノは長さを使って BGM を絞るため。")
     A("")
     A("`tools/audio/manifest.json` に 1 ファイルずつ長さ・ピーク・RMS・ループ可否・"
       "推奨音量が入っている。ミキサーの初期値はそこから読む。")
@@ -140,6 +164,13 @@ def main() -> int:
       "2 周目の波形は 1 周ぶんの出力と最大誤差 0.0 で一致した。"
       "指標が拾っているのは小節頭のピアノのアタックそのもので, 継ぎ目の欠陥ではない。")
     A("")
+    A("校歌の 5 曲 (下の「校歌について」) は録音から作るので上の 4 つを通っておらず, `manifest.json` の `loop` も false だが, "
+      "ゲームはほかの曲と同じくループで鳴らす。どれも終わりに約 1.5 秒の無音 (-60 dBFS 未満) があり, "
+      "それが次の周の頭までの間になる。先頭の無音は 5〜6 ms で, 継ぎ目の段差は 0 (#28 で計測)。")
+    A("")
+    A("WebGL では AAC で書き出すので, 先頭に数百サンプル (多くは 448) の無音が, 末尾に 280〜883 サンプルの埋め草が入る。"
+      "曲は終わりの無音に紛れるが, 環境音はループのたびに短く途切れる (Chrome で約 10 ms)。取り込み設定では消せない (#28)。")
+    A("")
     A(f"クリップしたサンプルは全 {s['file_count']} ファイルで {s['clipped_samples_total']} 個。")
     A("")
     for cat, title in (("BGM", "BGM"), ("SE", "SE (効果音)"), ("Ambient", "環境音 (ループ)")):
@@ -156,14 +187,16 @@ def main() -> int:
     A("")
     A("## 校歌について")
     A("")
-    A("東京理科大学校歌 (作曲 大和憲史) を 3 つの BGM で使っている。"
+    A("東京理科大学校歌 (作曲 大和憲史) を 5 つの BGM で使っている。"
       "タイトル画面の `bgm_school_song.wav` は東北きりたん (NEUTRINO) の歌唱 1〜3 番にピアノ伴奏を重ねたもの, "
       "昼の `bgm_day.wav` と夕方の `bgm_evening.wav` は歌なしのピアノ伴奏 (ヤマハの自動採譜を修正したもの)。"
-      "吹奏楽風アレンジ (`build_school_song.py`) は旋律・和音が公式譜とずれているので, 直すまでゲームに入れない (#28)。"
-      "3 つとも `tools/audio/school_song/install_game_bgm.py` が書き込むので, `build_audio.py` はこの 2 曲 "
-      "(`bgm_day`, `bgm_evening`, `bgm_night`, `bgm_indoor`) を生成しない。`music.py` の元の曲は `SCHOOL_SONG_BGM` から外すと戻る。"
       "夜の `bgm_night.wav` と屋内の `bgm_indoor.wav` も同じピアノ伴奏をテンポとフィルタで変えたもの (`school_song/make_variants.py`)。"
-      "作曲者の没年が確認できず保護期間の満了は立証できていないので, 公開配布の前に権利確認が要る。"
+      "吹奏楽風アレンジ (`build_school_song.py`) は旋律・和音が公式譜とずれているので, 直すまでゲームに入れない (#28)。"
+      "5 曲とも `tools/audio/school_song/install_game_bgm.py` (夜と屋内は同じフォルダの `make_variants.py`) が書き込み, "
+      "`build_audio.py` は生成しない "
+      "(`bgm_day`, `bgm_evening`, `bgm_night`, `bgm_indoor` は `SCHOOL_SONG_BGM` で飛ばす)。"
+      "`music.py` の元の曲は `SCHOOL_SONG_BGM` から外すと戻る。"
+      "作曲者の没年が確認できず保護期間の満了は立証できていないので, 公開配布の前に権利確認が要る (作詞者も同じ)。"
       "経緯と出典は `tools/audio/README_school_song.md`, ファイルの一覧は `tools/audio/school_song/README.md` を参照。"
       "`bgm_anthem_original.wav` は権利確認が取れなかった場合の差し替え用に残してある。")
     A("")

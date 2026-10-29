@@ -24,12 +24,20 @@ python tools/audio/build_audio.py bgm ambient  # カテゴリを絞る
 
 ## Unity へ取り込むときの設定
 
-| 項目 | 値 |
-|---|---|
-| Load Type | BGM / Ambient は Streaming, SE は Decompress On Load |
-| Compression Format | Vorbis (WAV のままだと 100 MiB 超) |
-| Quality | BGM 70 / Ambient 50 / SE 100 |
-| Loop | BGM と Ambient は `AudioSource.loop = true` |
+`Assets/Scripts/Editor/AudioImportRules.cs` (AssetPostprocessor) が取り込みのたびに次の表のとおりに設定し, EditMode の `AudioImportRulesTests` が確かめる。`.meta` を手で直しても次の取り込みで戻る。「曲」は `BGM/` のうち `jingle_` で始まらないもの。
+
+| 項目 | 既定 (Windows など) | WebGL |
+|---|---|---|
+| Load Type | 曲・ジングル・環境音は Streaming, SE は Decompress On Load | 曲は Compressed In Memory, ジングル・環境音・SE は Decompress On Load |
+| Compression Format | Vorbis (WAV のままだと 100 MiB 超) | AAC (WebGL の既定。前のビルドと同じ) |
+| Sample Rate Setting | 規則では変えない (`.meta` のまま) | 44.1 kHz に上書き (WebGL の既定と同じ。WebGL は Preserve Sample Rate を受け付けない) |
+| Quality | 曲とジングル 0.7 / 環境音 0.5 / SE 1.0 | 既定と同じ (AAC で 160 / 128 / 192 kbps) |
+| Preload Audio Data | SE だけ | ジングルと SE |
+| Load In Background | SE 以外 | (共通) |
+| Force To Mono | 使わない (1ch のクリップを 2D で鳴らすと, 左右が同じステレオより左右とも 3 dB 小さくなる。#28 で計測) | (共通) |
+| Loop | 曲と環境音は `AudioSource.loop = true`, ジングルと SE は 1 回 | (共通) |
+
+WebGL で環境音を Decompress On Load にするのは, 圧縮のままだと Firefox と Safari が 128 KiB 以上のクリップを `<audio>` 要素で鳴らし, ループのたびに間が空くため (Chrome と Edge はどの設定でも展開して鳴らす)。ジングルと SE を先に読み込むのは, WebGL では読み終わるまで `AudioClip.length` が 0 で, ジングル・チャイム・ピアノは長さを使って BGM を絞るため。
 
 `tools/audio/manifest.json` に 1 ファイルずつ長さ・ピーク・RMS・ループ可否・推奨音量が入っている。ミキサーの初期値はそこから読む。
 
@@ -48,6 +56,10 @@ README の表の「ループ継ぎ目」は `seam_step_ratio / seam_hf_ratio` �
 
 **`bgm_title` はこの 2 つが 1 前後になるが, 不連続ではない。** 同じ編曲を 2 周ぶん描画して内部の継ぎ目と比較したところ, 回り込みの段差 0.07121 と 2 周描画の内部の段差 0.07121 が完全に一致し, 2 周目の波形は 1 周ぶんの出力と最大誤差 0.0 で一致した。指標が拾っているのは小節頭のピアノのアタックそのもので, 継ぎ目の欠陥ではない。
 
+校歌の 5 曲 (下の「校歌について」) は録音から作るので上の 4 つを通っておらず, `manifest.json` の `loop` も false だが, ゲームはほかの曲と同じくループで鳴らす。どれも終わりに約 1.5 秒の無音 (-60 dBFS 未満) があり, それが次の周の頭までの間になる。先頭の無音は 5〜6 ms で, 継ぎ目の段差は 0 (#28 で計測)。
+
+WebGL では AAC で書き出すので, 先頭に数百サンプル (多くは 448) の無音が, 末尾に 280〜883 サンプルの埋め草が入る。曲は終わりの無音に紛れるが, 環境音はループのたびに短く途切れる (Chrome で約 10 ms)。取り込み設定では消せない (#28)。
+
 クリップしたサンプルは全 59 ファイルで 0 個。
 
 ## BGM (10 ファイル)
@@ -55,12 +67,12 @@ README の表の「ループ継ぎ目」は `seam_step_ratio / seam_hf_ratio` �
 | ファイル | 長さ | ピーク | RMS | ループ継ぎ目 | 用途 |
 |---|---:|---:|---:|---:|---|
 | `bgm_anthem_original.wav` | 71.11 s | -1.0 dBFS | -12.5 dBFS | 0.733 / 0.158 | オリジナルの校歌風行進曲 (未使用). 108 BPM / Bb major / A-B 形式 |
-| `bgm_day.wav` | 189.35 s | -1.0 dBFS | -16.7 dBFS | ループしない | 昼のキャンパス (ゲーム内の基本). 校歌のピアノ伴奏 (bgm_evening と同じ). 吹奏楽版が直ったら差し替える (#28) |
-| `bgm_evening.wav` | 189.35 s | -1.0 dBFS | -16.7 dBFS | ループしない | 夕方. 校歌のピアノ伴奏 (ヤマハ自動採譜, 歌なし). 117 BPM / F major / 1〜3 番 |
-| `bgm_indoor.wav` | 205.31 s | -1.0 dBFS | -21.4 dBFS | ループしない | 屋内. 校歌のピアノ伴奏を 0.92 倍のテンポにして 3.2 kHz 以上を落とし短い残響 (school_song/make_variants.py). music.py の lo-fi 版に戻すには SCHOOL_SONG_BGM から外す (#28) |
-| `bgm_night.wav` | 235.94 s | -1.0 dBFS | -20.1 dBFS | ループしない | 夜. 校歌のピアノ伴奏を 0.8 倍のテンポにして 2.4 kHz 以上を落とす (school_song/make_variants.py). music.py の D minor 版に戻すには SCHOOL_SONG_BGM から外す (#28) |
-| `bgm_result.wav` | 30.00 s | -1.0 dBFS | -11.0 dBFS | 0.299 / 0.620 | リザルト画面. 128 BPM / C major / 明るく短い |
-| `bgm_school_song.wav` | 189.06 s | -1.0 dBFS | -15.4 dBFS | ループしない | タイトル画面. 東京理科大学校歌. 東北きりたん (NEUTRINO) 歌唱 1〜3 番 + ピアノ伴奏. 117 BPM / F major |
+| `bgm_day.wav` | 189.35 s | -1.0 dBFS | -16.7 dBFS | 末尾の無音から先頭へ | 昼のキャンパス (ゲーム内の基本). 校歌のピアノ伴奏 (bgm_evening と同じ). 吹奏楽版が直ったら差し替える (#28) |
+| `bgm_evening.wav` | 189.35 s | -1.0 dBFS | -16.7 dBFS | 末尾の無音から先頭へ | 夕方. 校歌のピアノ伴奏 (ヤマハ自動採譜, 歌なし). 117 BPM / F major / 1〜3 番 |
+| `bgm_indoor.wav` | 205.31 s | -1.0 dBFS | -21.4 dBFS | 末尾の無音から先頭へ | 屋内. 校歌のピアノ伴奏を 0.92 倍のテンポにして 3.2 kHz 以上を落とし短い残響 (school_song/make_variants.py). music.py の lo-fi 版に戻すには SCHOOL_SONG_BGM から外す (#28) |
+| `bgm_night.wav` | 235.94 s | -1.0 dBFS | -20.1 dBFS | 末尾の無音から先頭へ | 夜. 校歌のピアノ伴奏を 0.8 倍のテンポにして 2.4 kHz 以上を落とす (school_song/make_variants.py). music.py の D minor 版に戻すには SCHOOL_SONG_BGM から外す (#28) |
+| `bgm_result.wav` | 30.00 s | -1.0 dBFS | -11.0 dBFS | 0.299 / 0.620 | 旧リザルト画面の曲 (未使用). 128 BPM / C major / 明るく短い |
+| `bgm_school_song.wav` | 189.06 s | -1.0 dBFS | -15.4 dBFS | 末尾の無音から先頭へ | タイトル画面. 東京理科大学校歌. 東北きりたん (NEUTRINO) 歌唱 1〜3 番 + ピアノ伴奏. 117 BPM / F major |
 | `bgm_title.wav` | 40.00 s | -1.0 dBFS | -13.7 dBFS | 0.999 / 1.484 | 旧タイトル曲 (未使用). 72 BPM / bgm_day のモチーフを遅く |
 | `jingle_day_end.wav` | 4.00 s | -1.0 dBFS | -11.7 dBFS | ループしない | 1 日の終わり (リザルト画面). F major の IV-V-I (ピアノ) |
 | `jingle_quest.wav` | 2.00 s | -1.0 dBFS | -13.5 dBFS | ループしない | クエスト達成. F major のアルペジオ (木琴 soft_mallet + ピアノ) |
@@ -130,7 +142,7 @@ README の表の「ループ継ぎ目」は `seam_step_ratio / seam_hf_ratio` �
 
 ## 校歌について
 
-東京理科大学校歌 (作曲 大和憲史) を 3 つの BGM で使っている。タイトル画面の `bgm_school_song.wav` は東北きりたん (NEUTRINO) の歌唱 1〜3 番にピアノ伴奏を重ねたもの, 昼の `bgm_day.wav` と夕方の `bgm_evening.wav` は歌なしのピアノ伴奏 (ヤマハの自動採譜を修正したもの)。吹奏楽風アレンジ (`build_school_song.py`) は旋律・和音が公式譜とずれているので, 直すまでゲームに入れない (#28)。3 つとも `tools/audio/school_song/install_game_bgm.py` が書き込むので, `build_audio.py` はこの 2 曲 (`bgm_day`, `bgm_evening`, `bgm_night`, `bgm_indoor`) を生成しない。`music.py` の元の曲は `SCHOOL_SONG_BGM` から外すと戻る。夜の `bgm_night.wav` と屋内の `bgm_indoor.wav` も同じピアノ伴奏をテンポとフィルタで変えたもの (`school_song/make_variants.py`)。作曲者の没年が確認できず保護期間の満了は立証できていないので, 公開配布の前に権利確認が要る。経緯と出典は `tools/audio/README_school_song.md`, ファイルの一覧は `tools/audio/school_song/README.md` を参照。`bgm_anthem_original.wav` は権利確認が取れなかった場合の差し替え用に残してある。
+東京理科大学校歌 (作曲 大和憲史) を 5 つの BGM で使っている。タイトル画面の `bgm_school_song.wav` は東北きりたん (NEUTRINO) の歌唱 1〜3 番にピアノ伴奏を重ねたもの, 昼の `bgm_day.wav` と夕方の `bgm_evening.wav` は歌なしのピアノ伴奏 (ヤマハの自動採譜を修正したもの)。夜の `bgm_night.wav` と屋内の `bgm_indoor.wav` も同じピアノ伴奏をテンポとフィルタで変えたもの (`school_song/make_variants.py`)。吹奏楽風アレンジ (`build_school_song.py`) は旋律・和音が公式譜とずれているので, 直すまでゲームに入れない (#28)。5 曲とも `tools/audio/school_song/install_game_bgm.py` (夜と屋内は同じフォルダの `make_variants.py`) が書き込み, `build_audio.py` は生成しない (`bgm_day`, `bgm_evening`, `bgm_night`, `bgm_indoor` は `SCHOOL_SONG_BGM` で飛ばす)。`music.py` の元の曲は `SCHOOL_SONG_BGM` から外すと戻る。作曲者の没年が確認できず保護期間の満了は立証できていないので, 公開配布の前に権利確認が要る (作詞者も同じ)。経緯と出典は `tools/audio/README_school_song.md`, ファイルの一覧は `tools/audio/school_song/README.md` を参照。`bgm_anthem_original.wav` は権利確認が取れなかった場合の差し替え用に残してある。
 
 時報チャイム `se_chime.wav` のウェストミンスターの鐘は 1793 年の伝承曲で, パブリックドメインであることを確認したうえで音高から合成している。音型は日本の学校のチャイムと同じ E major の 4 フレーズ 16 音 (ドミレソ / ソレミド / ミドレソ / ソレミド, ド = E) で, 移調も省略もしていない。校内放送のホーンスピーカー越しに聞こえるよう 240 Hz〜3.8 kHz に絞ってから校舎の残響を付けている。鳴らすのは 12:00 (昼休み) と 17:00 (下校) だけで, ゲーム側 (`AudioManager.PlayChime`) は鳴っている間 BGM を止め (校歌の BGM は F major なので重ねると濁る), 音量も SE の 0.45 倍で鳴らす。同時に HUD へ時刻のトーストを出す (#38)。
 
