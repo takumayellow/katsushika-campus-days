@@ -31,6 +31,10 @@ SPEC_RAIL_H = 1.10                     # §1-4 ギャラリーの手すり
 SPEC_FOLD_Y = (10.6, 34.5)             # §6 壁 B の床際の折り畳みゴール
 SPEC_BOARD_GLASS, SPEC_BOARD_FRAME = "glass_partition", "metal_white"   # §5 バックボードの板と枠
 SPEC_RING = "gym_line_red"             # §5 リング
+SPEC_RIM_Z = 3.05                      # §5 リングの高さ
+SPEC_END_BOARD_Y = (6.65, 37.05)       # §5 W_S・W_N の鼻先の吊りゴールのボード面
+SPEC_JOINT_PITCH = 2.4                 # §5 木の壁の金属の目地の間隔
+SPEC_SPEAKER_Z = 9.0                   # §5 壁付けスピーカー 3 台の中心の高さ
 GALLERY_EDGE_X = -25.4                 # ギャラリーの西の辺（手すりの線）
 GALLERY_EDGE_Y = (6.7, 37.0)           # ギャラリーの南・北の辺
 
@@ -319,6 +323,72 @@ def test_north_wall_is_wood_on_the_arena_side(built):
     assert store == {"gym_concrete_panel"}
 
 
+def test_north_passage_far_wall_is_dark_behind_the_opening(built):
+    """W_N の東の開口（北の通路へ）の先に見える奥の壁は暗い色。P1 では開口の中が暗く写る（spec §1-6）。"""
+    x0, _y0, x1, y1 = D.PASS
+    far = [(mat, pts) for mat, pts in _wall_faces(built)
+           if _nrm(pts)[1] < -0.99 and all(abs(p[1] - y1) < 0.005 for p in pts)
+           and all(x0 - 0.01 <= p[0] <= x1 + 0.01 for p in pts)]
+    assert far
+    assert {mat for mat, _ in far} == {"gym_wall_darkgrey"}
+    xs = [p[0] for _, pts in far for p in pts]
+    assert min(xs) <= D.N_OPEN[0] and max(xs) >= D.N_OPEN[1]
+
+
+def _north_wall_parts(c, mat):
+    """W_N のアリーナ側の面から手前（-Y）へ 0.5 m 以内に出ている mat の面。"""
+    yn = D.ARENA[3]
+    return [pts for m, pts in _wall_faces(c)
+            if m == mat and all(yn - 0.5 <= p[1] <= yn + 1e-6 for p in pts)]
+
+
+def _north_joints(c):
+    """W_N の金属の目地の、アリーナを向く面（-Y）。"""
+    return [pts for pts in _north_wall_parts(c, "gym_joint_metal") if _nrm(pts)[1] < -0.99]
+
+
+def test_north_wall_has_metal_joints_every_2_4_m(built):
+    """W_N の木の壁に、金属の目地が 2.4 m おきに縦に通る。上部は全幅、下部は扉の開口を避ける（spec §5）。"""
+    joints = _north_joints(built)
+    upper = sorted(min(p[0] for p in pts) for pts in joints if min(p[2] for p in pts) >= 3.0 - 1e-6)
+    lower = [pts for pts in joints if max(p[2] for p in pts) <= 3.0 + 1e-6]
+    assert len(upper) >= 8
+    assert all(abs(b - a - SPEC_JOINT_PITCH) < 0.01 for a, b in zip(upper, upper[1:])), upper
+    assert lower
+    gaps = [D.N_STORE_CLOSED, D.N_STORE_OPEN, D.N_OPEN]
+    for pts in lower:
+        x0, x1 = min(p[0] for p in pts), max(p[0] for p in pts)
+        assert any(abs(x0 - u) < 0.01 for u in upper), x0
+        assert not any(x1 > g0 and x0 < g1 for g0, g1 in gaps), (x0, x1)
+
+
+def test_north_wall_has_three_speakers_between_the_joints(built):
+    """W_N の木の壁の高い所に、壁付けスピーカーが 3 台、中心の高さ z 9.0 で並び、目地にかからない（spec §5）。"""
+    speakers = [pts for pts in _north_wall_parts(built, "gym_vent_dark")
+                if _nrm(pts)[1] < -0.99 and 8.0 < _ctr(pts)[2] < 10.0]
+    assert len(speakers) == 3
+    for pts in speakers:
+        assert _ctr(pts)[2] == pytest.approx(SPEC_SPEAKER_Z, abs=0.01)
+        assert not any(min(p[0] for p in j) < max(p[0] for p in pts)
+                       and max(p[0] for p in j) > min(p[0] for p in pts)
+                       for j in _north_joints(built)), _ctr(pts)
+
+
+def test_north_wall_has_a_round_clock_above_the_gallery(built):
+    """W_N の木の壁に、白い丸い時計がアリーナを向いて掛かる。P1 では観覧席の手すりよりずっと上に写る（spec §5）。
+    壁 B のホワイエ側へ向けて掛けていた時計は無い。"""
+    dials = [pts for pts in _north_wall_parts(built, "plastic_white")
+             if _nrm(pts)[1] < -0.99 and len(pts) >= 8]
+    assert len(dials) == 1
+    c = _ctr(dials[0])
+    assert all(abs(math.dist(p, c) - 0.3) < 0.01 for p in dials[0]), c
+    assert D.Z2 + SPEC_RAIL_H + 1.0 < c[2] < D.C_HALL - 1.0
+    assert -27.8 < c[0] < D.WALL_B[0]
+    assert not [1 for mat, pts in _wall_faces(built)      # 3 頂点の面は看板の文字
+                if mat == "plastic_white" and len(pts) >= 4
+                and all(abs(p[0] - D.WALL_B[1]) < 0.1 for p in pts)]
+
+
 def test_training_east_wall_is_orange_with_dark_bands_by_the_columns(built):
     """トレーニングルームの東壁はオレンジで、東の列の柱の後ろはダークグレー（spec §5・§6）。"""
     def x_in(y):
@@ -446,6 +516,79 @@ def test_folded_goal_board_is_framed_glass_and_the_ring_is_red(built):
         face_x = min(p[0] for pts in frame for p in pts)          # 板の表の面
         ahead = {mat for mat, pts in grp if _ctr(pts)[0] < face_x - 1e-6}
         assert ahead == {SPEC_RING, "net_white"}, (fy, ahead)
+
+
+def _hung_boards(c):
+    """吊りゴールのバックボードのガラスのうち、コートの中央を向く表の面（床から 2.85 m より上のもの）。"""
+    out = []
+    for name, mat, pts in _mfaces(c):
+        if not name.endswith("_hoops") or mat != SPEC_BOARD_GLASS:
+            continue
+        n, (cx, cy, cz), b = _nrm(pts), _ctr(pts), _bbox(pts)
+        wide = math.hypot(b[3] - b[0], b[4] - b[1]) > 1.5
+        toward_court = n[0] * (D.COURT_C[0] - cx) + n[1] * (D.COURT_C[1] - cy) > 0
+        if cz > 2.85 and abs(n[2]) < 0.01 and wide and toward_court:
+            out.append(pts)
+    return out
+
+
+def _on_board(pts, n, o):
+    """面 pts の頂点を、板の中心 o・向き n から測った (前, 幅, 高さ) にする。前はコート側が正。"""
+    return [((p[0] - o[0]) * n[0] + (p[1] - o[1]) * n[1],
+             (p[0] - o[0]) * -n[1] + (p[1] - o[1]) * n[0],
+             p[2]) for p in pts]
+
+
+def test_eight_goals_hang_at_both_ends_and_both_sides(built):
+    """吊りゴールは 8 基: コートの南北の端に 1 基ずつ、G 側と B 側の横向きに 3 基ずつ（spec §5 ゴール）。
+    spec のどれにも当たらない高さ 6.8 m のゴールは無い。南北の端は観覧席の前縁（y 6.7 / 37.0）に
+    ぶつからない分だけ、spec の板の面（6.65 / 37.05）より 0.3 m 以内でコート寄りに置く。"""
+    cx = D.COURT_C[0]
+    want = [(cx, SPEC_END_BOARD_Y[0], 0, 1), (cx, SPEC_END_BOARD_Y[1], 0, -1)]
+    want += [(D.HOOP_G_X, y, 1, 0) for y in D.CROSS_Y] + [(D.HOOP_B_X, y, -1, 0) for y in D.CROSS_Y]
+    boards = _hung_boards(built)
+    assert len(boards) == len(want) == 8
+    for x, y, nx, ny in want:
+        hits = [pts for pts in boards
+                if math.hypot(_ctr(pts)[0] - x, _ctr(pts)[1] - y) < 0.3
+                and nx * _nrm(pts)[0] + ny * _nrm(pts)[1] > 0.99]
+        assert len(hits) == 1, (x, y)
+
+
+def test_hung_goal_board_is_framed_glass_and_the_ring_is_red(built):
+    """吊りゴールの板は白い金属の枠に入ったガラスで、コートから向こうが透けて見える。
+    板の表より前に出るのは赤いリングと付け根、白い網だけで、リングは高さ 3.05 m（spec §5）。
+    不透明な白い板とオレンジのリングはどのゴールにも残らない。"""
+    mats = {mat for name, mat, _ in _mfaces(built) if name.endswith("_hoops")}
+    assert mats == {SPEC_BOARD_GLASS, SPEC_BOARD_FRAME, SPEC_RING, "net_white", "gym_truss_steel"}
+    hoops = [(mat, pts) for name, mat, pts in _mfaces(built)
+             if name.endswith("_hoops") and max(p[2] for p in pts) >= 2.85]
+    for glass in _hung_boards(built):
+        n, o = _nrm(glass), _ctr(glass)
+        g = _bbox(_on_board(glass, n, o))
+        assert g[4] - g[1] > 1.5 and g[5] - g[2] > 0.8, (o, g)
+        assert o[2] == pytest.approx(SPEC_RIM_Z + 0.375, abs=0.02), o      # リングは板の下端から 0.15 m 上
+        local = []
+        for mat, pts in hoops:
+            q = _on_board(pts, n, o)
+            cd, cu, cz = _ctr(q)
+            if abs(cu) <= 1.2 and -0.3 <= cd <= 1.0 and abs(cz - o[2]) <= 1.0:
+                local.append((mat, q, _dot(_nrm(pts), n)))
+        court = [(mat, q) for mat, q, d in local if d > 0.99]               # コート向きの面
+        frame = [q for mat, q in court if mat == SPEC_BOARD_FRAME and abs(_ctr(q)[0] - 0.01) < 0.005]
+        assert len(frame) == 4, o
+        f = _bbox([p for q in frame for p in q])
+        assert f[1] < g[1] < g[4] < f[4] and f[2] < g[2] < g[5] < f[5], (o, g, f)
+        # コートから見てガラスの範囲を隠す不透明な面（前でも後ろでも）は 4 分の 1 未満
+        rect = (g[1], g[2], g[4], g[5])
+        hidden = sum(_yz_overlap(q, rect) for mat, q in court if mat != SPEC_BOARD_GLASS)
+        assert hidden < 0.25 * (rect[2] - rect[0]) * (rect[3] - rect[1]), (o, hidden)
+        face_d = max(p[0] for q in frame for p in q)                        # 板の表の面
+        ahead = [(mat, q) for mat, q, _d in local if _ctr(q)[0] > face_d + 1e-6]
+        assert {mat for mat, _ in ahead} == {SPEC_RING, "net_white"}, (o, ahead)
+        ring = [p for mat, q in ahead if mat == SPEC_RING for p in q]
+        assert max(p[0] for p in ring) - face_d > 0.4, o                    # リングは板から張り出す
+        assert all(abs(p[2] - SPEC_RIM_Z) < 0.12 for p in ring), o
 
 
 def test_sub_arena_beams_cross_diagonally_with_downlights_between(built):
