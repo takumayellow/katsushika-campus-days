@@ -44,6 +44,13 @@ BUSH_T_UP = 0.25         # 上を向いた面ほど明るく
 BUSH_T_MAX = 0.85        # ただし leaf_top には届かせない
 GRASS_RAMP = ("grass_dark", "grass", "leaf_top")
 
+# ---- 形 ----
+# Kenney の板は、同じ位置に巻きが逆の三角形を重ねた両面。重なったままだと、アウトラインのパス（裏向きの面を
+# 暗い色で描く）が表と同じ深さで描いてしまい、面ごとに暗い色が混ざる。表と裏をこの幅だけ離して、
+# 手前の面が深さで勝つようにする。0.1 mm の溶接（MeshBuilder.to_object）に潰されず、24 bit の深度でも
+# 100 m 先まで分かれる幅。
+PAIR_GAP = 0.006
+
 # ---- 置き場所 ----
 WALL_OFFSET = 1.35       # 壁から低木の中心まで [m]
 WALL_JITTER = 0.15
@@ -135,15 +142,20 @@ def to_z_up(vertices, scale):
 
 
 def model_mesh(name, model, scale):
-    """Kenney のモデル 1 点を MeshBuilder にする。足元は z = 0、面の色は材質 `leaf` に焼く。"""
+    """Kenney のモデル 1 点を MeshBuilder にする。足元は z = 0、面の色は材質 `leaf` に焼く。
+
+    面は自分の法線の側へ PAIR_GAP / 2 だけ動かす。重なった表と裏は PAIR_GAP だけ離れ、どちらの側から
+    見ても手前の面が深さで勝つ。色は、動かす前の高さと向きで決める。"""
     verts = to_z_up(model["vertices"], scale)
     top = max(v[2] for v in verts)
+    half = PAIR_GAP / 2.0
     mb = MeshBuilder(name)
     for tri in model["triangles"]:
         pts = [verts[k] for k in tri]
         n = _normal(pts)
         h = sum(p[2] for p in pts) / (3.0 * top)
-        mb.add_face(pts, "leaf", face_color(model["group"], h, n[2]))
+        front = [(p[0] + n[0] * half, p[1] + n[1] * half, p[2] + n[2] * half) for p in pts]
+        mb.add_face(front, "leaf", face_color(model["group"], h, n[2]))
     return mb
 
 
