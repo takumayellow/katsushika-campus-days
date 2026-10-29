@@ -149,16 +149,30 @@ def _clip_polyline(pts, limit):
     return out
 
 
+_KIND_MAT = {"park": "grass", "pitch": "soil", "playground": "sand",
+             "parking": "asphalt", "university": None}
+
+
+def area_materials(areas):
+    """areas の各区画の地面のマテリアル（None は張らない）。
+
+    leisure=pitch はいちばん大きい区画だけを芝（grass）にする。航空写真では
+    サッカーのラインが引かれた人工芝の緑で、土ではない（#59、
+    docs/ref/aerial/README.md の crop_sports_north）。残りの 2 区画は
+    テニスコートなので soil のまま。
+    """
+    pitches = [a for a in areas if a["kind"] == "pitch"]
+    largest = max(pitches, key=lambda a: abs(geom.poly_area(a["polygon"])), default=None)
+    return ["grass" if a is largest else _KIND_MAT.get(a["kind"], "grass") for a in areas]
+
+
 def build_ground(mb, data, frame, occ=None):
     # 全体を覆う地面
     E = 350.0
     mb.add_ngon_flat([(-E, -E), (E, -E), (E, E), (-E, E)], Z_GROUND, "grass_dark")
     # キャンパス敷地
     mb.add_ngon_flat(geom.ensure_ccw(geom.dedup(data["campus_boundary"])), Z_CAMPUS, "grass")
-    kind_mat = {"park": "grass", "pitch": "soil", "playground": "sand",
-                "parking": "asphalt", "university": None}
-    for a in data["areas"]:
-        mat = kind_mat.get(a["kind"], "grass")
+    for a, mat in zip(data["areas"], area_materials(data["areas"])):
         if mat is None:
             continue
         poly = geom.ensure_ccw(geom.dedup(a["polygon"]))
