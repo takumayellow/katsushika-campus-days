@@ -11410,10 +11410,16 @@
         </note>
       <note default-x="99.43" default-y="-122.37" print-object="no">
         <rest/>
-        <duration>10</duration>
+        <duration>8</duration>
         <voice>1</voice>
         <type>half</type>
-        <dot default-x="113.43" default-y="-117.37"/>
+        <staff>1</staff>
+        </note>
+      <note print-object="no">
+        <rest/>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>eighth</type>
         <staff>1</staff>
         </note>
       <backup>

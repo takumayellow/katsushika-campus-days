@@ -10,8 +10,10 @@ xml の体裁が壊れていないことを確かめる。music21 は要らな�
 
 import difflib
 import os
+import re
 import sys
 import xml.etree.ElementTree as ET
+from fractions import Fraction
 
 import pytest
 
@@ -51,6 +53,15 @@ def note_xml(name, dur, typ, staff, voice, x="10", y="-20", chord=False, beam=No
     if tie:
         lines.append(f'        <notations><tied type="{tie}"/></notations>')
     lines.append("        </note>")
+    return "\n".join(lines)
+
+
+def rest_xml(dur, typ, dots=0, staff=1, voice=1, invisible=True, x="99.43", y="-122.37"):
+    attrs = f' default-x="{x}" default-y="{y}"' + (' print-object="no"' if invisible else "")
+    lines = [f"      <note{attrs}>", "        <rest/>", f"        <duration>{dur}</duration>",
+             f"        <voice>{voice}</voice>", f"        <type>{typ}</type>"]
+    lines += ['        <dot default-x="113.43" default-y="-117.37"/>'] * dots
+    lines += [f"        <staff>{staff}</staff>", "        </note>"]
     return "\n".join(lines)
 
 
@@ -310,6 +321,102 @@ def test_main_refuses_a_crlf_score(tmp_path):
 
 
 # --------------------------------------------------------------------------
+# 休符の長さ (MuseScore は休符を <type> / <dot> から読む)
+# --------------------------------------------------------------------------
+def bar_with_bad_rest():
+    """小節 51 と同じ形. 右手は 8 分 3 つ (1.5 拍) + duration 10 (2.5 拍) の休符で, 休符は 2 分音符 + 付点 (3 拍) と書かれている."""
+    rh = [note_xml("C5", 2, "eighth", 1, 1, beam="begin"), note_xml("A4", 2, "eighth", 1, 1, beam="continue"),
+          note_xml("C5", 2, "eighth", 1, 1, beam="end"), rest_xml(10, "half", dots=1)]
+    return measure(rh, [note_xml("F2", 16, "whole", 2, 5)])
+
+
+def test_notated_divisions_reads_type_dots_and_tuplets():
+    assert fc.notated_divisions(rest_xml(4, "quarter")) == 4
+    assert fc.notated_divisions(rest_xml(12, "half", dots=1)) == 12
+    assert fc.notated_divisions(rest_xml(14, "half", dots=2)) == 14
+    assert fc.notated_divisions(rest_xml(1, "16th")) == 1
+    assert fc.notated_divisions('<note><rest measure="yes"/><duration>16</duration></note>') is None
+    triplet = rest_xml(4, "eighth").replace("        <staff>", "        <time-modification><actual-notes>3</actual-notes>"
+                                            "<normal-notes>2</normal-notes></time-modification>\n        <staff>")
+    assert fc.notated_divisions(triplet) == Fraction(4, 3)
+    with pytest.raises(ValueError):
+        fc.notated_divisions(rest_xml(1, "32nd"))
+
+
+def test_rest_pieces_splits_into_plain_values():
+    assert [fc.rest_pieces(n) for n in (10, 6, 3, 16, 15, 1)] == [[8, 2], [4, 2], [2, 1], [16], [8, 4, 2, 1], [1]]
+
+
+def test_inconsistent_rests_finds_only_the_rests_whose_length_disagrees():
+    bad = fc.inconsistent_rests(bar_text(score(bar_with_bad_rest())))
+    assert [(n.staff, n.onset, n.dur) for n in bad] == [(1, 6, 10)]
+    ok = measure([note_xml("C5", 2, "eighth", 1, 1), rest_xml(14, "half", dots=2)], [note_xml("F2", 16, "whole", 2, 5)])
+    assert fc.inconsistent_rests(ok) == []
+
+
+def test_normalize_rests_splits_the_rest_and_keeps_the_bar_length():
+    text = score(bar_with_bad_rest())
+    assert [d for _, d in fc.length_mismatches(text)] == ["書かれた長さ 12 / duration 10"]
+    fixed, found = fc.normalize_rests(text)
+    assert len(found) == 1 and "拍 2.5 右手" in found[0] and "2 拍 + 0.5 拍" in found[0]
+    assert fc.length_mismatches(fixed) == []
+    assert fc.bar_problems(bar_text(fixed)) == []
+    assert rows(fixed) == [(1, 1, 0, 2, "C5", False), (1, 1, 2, 2, "A4", False), (1, 1, 4, 2, "C5", False),
+                           (1, 1, 6, 8, "", False), (1, 1, 14, 2, "", False), (2, 5, 0, 16, "F2", False)]
+    pieces = [n for n in fc.NOTE_RE.findall(fixed) if "<rest/>" in n]
+    assert [re.search(r"<type>(\w+)</type>", p).group(1) for p in pieces] == ["half", "eighth"]
+    assert all('print-object="no"' in p and "<dot" not in p for p in pieces)  # 見えない休符のまま, 付点は外す
+    assert 'default-x="99.43"' in pieces[0] and "default-x" not in pieces[1] and "default-y" not in pieces[1]
+    assert ET.fromstring(fixed.encode("utf-8")) is not None
+    assert fc.normalize_rests(fixed) == (fixed, [])  # 2 回目は何もしない
+
+
+def test_normalize_rests_leaves_consistent_and_whole_measure_rests_alone():
+    whole = ('      <note>\n        <rest measure="yes"/>\n        <duration>16</duration>\n        <voice>1</voice>\n'
+             '        <staff>1</staff>\n        </note>')
+    text = score(measure([whole], [note_xml("F2", 16, "whole", 2, 5)]),
+                 measure([note_xml("C5", 2, "eighth", 1, 1), rest_xml(14, "half", dots=2)],
+                         [note_xml("F2", 16, "whole", 2, 5)]))
+    assert fc.normalize_rests(text) == (text, [])
+
+
+def test_normalize_rests_handles_several_bars_and_both_staves():
+    text = score(bar_with_bad_rest(), eighths_bar_lh(), bar_with_bad_rest())
+    fixed, found = fc.normalize_rests(text)
+    assert len(found) == 2 and found[0].startswith("正本の小節 5 ") and found[1].startswith("正本の小節 7 ")
+    assert fc.length_mismatches(fixed) == []
+    assert bar_text(fixed, 2) == bar_text(text, 2)  # 食い違いの無い小節は 1 字も変わらない
+    both = score(measure([note_xml("C5", 2, "eighth", 1, 1), rest_xml(14, "half", dots=1)],
+                         [note_xml("F2", 2, "eighth", 2, 5), rest_xml(14, "half", dots=1, staff=2, voice=5)]))
+    fixed, found = fc.normalize_rests(both)
+    assert len(found) == 2 and "右手" in found[0] and "左手" in found[1] and "8 拍" not in found[0]
+    assert rows(fixed) == [(1, 1, 0, 2, "C5", False), (1, 1, 2, 8, "", False), (1, 1, 10, 4, "", False),
+                           (1, 1, 14, 2, "", False), (2, 5, 0, 2, "F2", False), (2, 5, 2, 8, "", False),
+                           (2, 5, 10, 4, "", False), (2, 5, 14, 2, "", False)]
+    assert fc.length_mismatches(fixed) == [] and fc.bar_problems(bar_text(fixed)) == []
+
+
+def test_split_rest_refuses_a_tied_or_tuplet_rest():
+    with pytest.raises(ValueError):
+        fc.split_rest(rest_xml(10, "half", dots=1).replace("        <staff>", '        <tie type="start"/>\n        <staff>'), [8, 2])
+
+
+def test_main_fixes_the_rest_lengths_too_and_check_reports_them(tmp_path, monkeypatch, capsys):
+    path = tmp_path / "score.musicxml"
+    original = score(bar_with_bad_rest()).encode("utf-8")
+    path.write_bytes(original)
+    monkeypatch.setattr(fc, "FIXES", ())
+    assert fc.main(["fix", "--score", str(path), "--check"]) == 1
+    assert path.read_bytes() == original
+    assert "休符の長さの食い違い 1 個" in capsys.readouterr().out
+    assert fc.main(["fix", "--score", str(path)]) == 0
+    fixed = path.read_bytes()
+    assert fixed != original and b"\r" not in fixed
+    assert fc.main(["fix", "--score", str(path), "--check"]) == 0
+    assert "休符の長さの食い違い 0 個" in capsys.readouterr().out
+
+
+# --------------------------------------------------------------------------
 # 編集表そのもの
 # --------------------------------------------------------------------------
 def test_table_targets_and_new_pitches():
@@ -351,6 +458,17 @@ def test_real_score_bars_keep_their_length_and_beams(real_text):
     assert len(spans) == 91  # 91 小節 = 364 拍
     bad = {i: fc.bar_problems(real_text[s:e]) for i, (s, e) in enumerate(spans, 1)}
     assert {i: p for i, p in bad.items() if p} == {}
+
+
+def test_real_score_notated_lengths_agree_with_durations(real_text):
+    # MuseScore は休符を <type> / <dot> から読む. 食い違いが 1 つあると小節が長く読まれ, 以降が半拍ずれる (小節 51)
+    assert fc.length_mismatches(real_text) == []
+    assert fc.normalize_rests(real_text) == (real_text, [])
+
+
+def test_real_score_bar_51_right_hand_ends_with_a_half_and_an_eighth_rest(real_text):
+    right = [r[3:5] for r in rows(real_text, 51) if r[0] == RH]
+    assert right == [(2, "C5"), (2, "A4"), (2, "C5"), (8, ""), (2, "")]
 
 
 def test_real_score_is_well_formed_xml_with_two_parts(real_text):

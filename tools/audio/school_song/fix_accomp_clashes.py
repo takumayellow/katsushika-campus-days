@@ -10,6 +10,9 @@ count_clashes.py が見つけた「重い」ぶつかり (歌の 1 音に 1 拍�
 
 - 編集は music21 で書き出し直さず, xml のテキストの該当する <note> だけを書き換える.
   (ヤマハの変換結果を MuseScore で出し直した体裁・和音記号・レイアウトをそのまま保つ)
+- 休符の長さも直す. MuseScore は休符を <type> / <dot> から読むので, <duration> と食い違う休符
+  (小節 51 の見えない休符) があるとその小節が長く読まれ, 以降の音が全部ずれて鳴る.
+  食い違う休符は <duration> に合わせ, 付点なしの休符の列に割る (normalize_rests).
 - 各行は「小節・段・拍・直す前の音と長さ」を指定する. 一致しなければ止まり, 直し済みなら飛ばす.
 - 小節は伴奏譜のピアノのパート内の順番 (1 始まり). 正本の小節 = 伴奏の小節 + 4.
 - 音は music21 の表記 ("B-3" = B♭3, "F#4" = F♯4). 拍は小節内で 0 始まり (拍 1 = 0).
@@ -21,6 +24,7 @@ import os
 import re
 import sys
 from dataclasses import dataclass
+from fractions import Fraction
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ACCOMP_XML = os.path.join(HERE, "score", "bgm_yamaha.musicxml")
@@ -86,7 +90,7 @@ FIXES = (
     retune(69, LH, 3.5, "F3", 0.5, "E3", "音符 35", READ_E + ". F3 を E3 に"),
     # 音符 39 (正本の小節 45 = 伴奏の 41 の拍 1): 歌 A4 に右手の和音の B♭3 が長 7 度
     drop(41, RH, 0.0, "B-3", 1.5, "音符 39", READ_GM),
-    # 音符 5 (正本の小節 10 = 伴奏の 6 の拍 4): 歌 F4 に右手の B♭4 が 0.25 拍. 消してから F4 を伸ばす (順序に意味がある)
+    # 音符 5 (正本の小節 10 = 伴奏の 6 の拍 4): 歌 A4 に右手の B♭4 が短 2 度で 0.25 拍. 消してから F4 を伸ばす (順序に意味がある)
     drop(6, RH, 3.5, "B-4", 0.5, "音符 5", READ_SHORT),
     Fix(6, RH, 3.0, ("F4", 0.5), (("F4", 1.0),), "音符 5", READ_SHORT),
 )
@@ -342,6 +346,106 @@ def apply_all(text: str, fixes: tuple = FIXES) -> tuple:
     return text, states
 
 
+# --------------------------------------------------------------------------
+# 休符の長さ: <type> / <dot> が <duration> と食い違う休符を, 付点なしの休符の列に割る
+# --------------------------------------------------------------------------
+DIVISIONS_BY_TYPE = {name: size for size, name in TYPE_BY_DIVISIONS.items()}
+NOTE_RE = re.compile(r"<note\b.*?</note>", re.S)
+
+
+def notated_divisions(note: str) -> Fraction | None:
+    """<type> / <dot> / <time-modification> から出る長さ (divisions). <type> が無ければ None (小節まるごとの休符など)."""
+    m = re.search(r"<type>(\w+)</type>", note)
+    if not m:
+        return None
+    if m.group(1) not in DIVISIONS_BY_TYPE:
+        raise ValueError(f"扱わない音価: {m.group(1)}")
+    dots = len(re.findall(r"<dot\b", note))
+    value = Fraction(DIVISIONS_BY_TYPE[m.group(1)]) * (2 - Fraction(1, 2 ** dots))
+    tm = re.search(r"<actual-notes>(\d+)</actual-notes>\s*<normal-notes>(\d+)</normal-notes>", note)
+    return value * Fraction(int(tm.group(2)), int(tm.group(1))) if tm else value
+
+
+def length_mismatches(text: str) -> list:
+    """譜面全体の <note> のうち, 書かれた長さ (type / dot) が <duration> と合わないものの (行, 説明)."""
+    out = []
+    for m in NOTE_RE.finditer(text):
+        xml = m.group()
+        if "<grace" in xml:
+            continue
+        shown, dur = notated_divisions(xml), _int_tag(xml, "duration")
+        if shown is not None and shown != dur:
+            out.append((text.count("\n", 0, m.start()) + 1, f"書かれた長さ {shown} / duration {dur}"))
+    return out
+
+
+def inconsistent_rests(bar: str) -> list:
+    """小節の中の, 書かれた長さが <duration> と合わない休符."""
+    out = []
+    for n in scan_notes(bar):
+        xml = bar[n.start:n.end]
+        shown = notated_divisions(xml) if "<rest/>" in xml else None
+        if shown is not None and shown != n.dur:
+            out.append(n)
+    return out
+
+
+def rest_pieces(duration: int) -> list:
+    """付点なしの音価に割る (10 -> [8, 2])."""
+    pieces = []
+    for size in sorted(TYPE_BY_DIVISIONS, reverse=True):
+        while duration >= size:
+            pieces.append(size)
+            duration -= size
+    return pieces
+
+
+def split_rest(xml: str, sizes: list) -> list:
+    """休符の <note> を sizes の長さの休符の列にする. <dot> は外し, 2 つ目以降は位置 (default-x / default-y) を持たない."""
+    if "<tie" in xml or "<time-modification" in xml:
+        raise ValueError("tie・連符の付いた休符は割らない")
+    base = re.sub(r"\n[ \t]*<dot\b[^>]*/>", "", xml)
+    out = []
+    for k, size in enumerate(sizes):
+        piece = re.sub(r"<duration>\d+</duration>", f"<duration>{size}</duration>", base, count=1)
+        piece = re.sub(r"<type>\w+</type>", f"<type>{TYPE_BY_DIVISIONS[size]}</type>", piece, count=1)
+        if k:
+            head = piece.index(">") + 1
+            piece = re.sub(r' default-[xy]="[^"]*"', "", piece[:head]) + piece[head:]
+        out.append(piece)
+    return out
+
+
+def describe_rest(bar: int, rest: Elem, sizes: list) -> str:
+    pieces = " + ".join(f"{s / DIVISIONS:g} 拍" for s in sizes)
+    return (f"正本の小節 {bar + BAR_OFFSET} / 伴奏の小節 {bar} 拍 {rest.onset / DIVISIONS + 1:g} {STAFF_NAME[rest.staff]} "
+            f"の休符 (duration は {rest.dur / DIVISIONS:g} 拍) を {pieces} の休符に割る")
+
+
+def normalize_rests(text: str) -> tuple:
+    """(直した xml のテキスト, 割った休符の説明のリスト). 書かれた長さが <duration> と合わない休符を割る.
+
+    MuseScore は休符を <type> / <dot> から読むので, 食い違う休符のある小節は <duration> と違う長さで読まれ,
+    それ以降が全部ずれて鳴る (小節 51 の見えない休符は duration 10 (2.5 拍) なのに 2 分音符 + 付点 = 3 拍と
+    書かれていて, 以降が半拍遅れた). 正しいのは <duration> (声ごとに 4 拍になる) なので, それに合わせる.
+    直した小節の長さ・beam が崩れていれば ValueError. 直し済みなら何もしない."""
+    found = []
+    for bar_no, (start, end) in reversed(list(enumerate(measure_spans(text), 1))):  # 後ろから書き換えると前の位置が動かない
+        bar = text[start:end]
+        bad = inconsistent_rests(bar)
+        for rest in reversed(bad):
+            sizes = rest_pieces(rest.dur)
+            sep = bar[_leading_blank(bar, rest.start):rest.start]
+            bar = bar[:rest.start] + sep.join(split_rest(bar[rest.start:rest.end], sizes)) + bar[rest.end:]
+            found.append(describe_rest(bar_no, rest, sizes))
+        if bad:
+            problems = bar_problems(bar)
+            if problems:
+                raise ValueError(f"小節 {bar_no}: 休符を割った後の小節が崩れている ({'; '.join(problems)})")
+            text = text[:start] + bar + text[end:]
+    return text, found[::-1]
+
+
 def pretty(name: str) -> str:
     return name.replace("-", "♭")
 
@@ -366,8 +470,12 @@ def main(argv: list) -> int:
     text, states = apply_all(raw.decode("utf-8"), FIXES)
     for fix, state in zip(FIXES, states):
         print(("修正済み " if state == "new" else "未修正   ") + describe(fix))
-    pending = states.count("old")
-    print(f"{len(FIXES)} 行のうち 未修正 {pending} / 修正済み {len(FIXES) - pending}")
+    text, rests = normalize_rests(text)
+    for line in rests:
+        print("未修正   " + line)
+    pending = states.count("old") + len(rests)
+    print(f"{len(FIXES)} 行のうち 未修正 {states.count('old')} / 修正済み {len(FIXES) - states.count('old')}"
+          f", 休符の長さの食い違い {len(rests)} 個")
     if args.check:
         return 1 if pending else 0
     if pending:
