@@ -2,8 +2,8 @@
   "id": "q_sq_stray_book",
   "title": "迷子の本",
   "title_en": "The Stray Book",
-  "summary": "いなりが借りた本が、返却したはずなのに書架に戻っていないらしい。開架書架のいちばん奥から個人閲覧ブースまで探して、カウンター係に伝える。",
-  "summary_en": "A book Inari returned never made it back to the shelf. Search from the far end of the open stacks to the study carrels, then tell the counter.",
+  "summary": "いなりが返した本が、書架に戻っていないらしい。誰かが 2 階の閲覧席の机に置いていったかもしれない。見つけて 1 階のカウンターの司書に返し、いなりに知らせる。",
+  "summary_en": "A book Inari returned never made it back to the shelf. Someone may have left it on a desk in the second-floor study carrels. Find it, return it to the librarian at the first-floor counter, and let Inari know.",
   "order": 14,
   "autoStart": false,
   "prerequisites": [
@@ -24,27 +24,36 @@
     },
     {
       "id": "s2",
-      "type": "visit",
-      "target": "poi_library_stacks",
-      "text": "開架書架のいちばん奥を探す",
-      "text_en": "Search the far end of the open stacks"
+      "type": "collect",
+      "target": "stray_book",
+      "text": "2 階の閲覧席の机で本を探す",
+      "text_en": "Look for the book on the desks in the second-floor study carrels",
+      "place": {
+        "building": "library",
+        "at": "seat_library_04",
+        "toward": "seat_library_06",
+        "shift": -1.75,
+        "name": "迷子の本"
+      }
     },
     {
       "id": "s3",
-      "type": "visit",
-      "target": "poi_library_desk",
-      "text": "個人閲覧ブースを探す",
-      "text_en": "Search the study carrels"
+      "type": "talk",
+      "target": "librarian",
+      "text": "1 階のカウンターの司書に本を返す",
+      "text_en": "Return the book to the librarian at the first-floor counter",
+      "place": {
+        "building": "library",
+        "at": "npc_library_1",
+        "toward": "poi_library_counter",
+        "shift": 0.4,
+        "body": "student_m",
+        "name": "司書",
+        "range": 3.0
+      }
     },
     {
       "id": "s4",
-      "type": "visit",
-      "target": "poi_library_counter",
-      "text": "カウンターに本の場所を伝える",
-      "text_en": "Tell the counter where the book is"
-    },
-    {
-      "id": "s5",
       "type": "talk",
       "target": "inari",
       "text": "水盤のほとりのいなりに報告する",

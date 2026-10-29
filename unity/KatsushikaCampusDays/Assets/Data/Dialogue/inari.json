@@ -120,17 +120,17 @@
           "text_en": "You pressed the leaves. ...Say, could I ask one more thing?"
         },
         {
-          "text": "先週返した本が、書架に戻ってないんだって。誰かが借りたまま、館内のどこかに置いてるらしくて。",
-          "text_en": "A book I returned last week never made it back to the shelf. Apparently someone's left it somewhere in the building."
+          "text": "先週返した本が、書架に戻ってないんだって。誰かが読んだまま、どこかの机に置いていったらしくて。",
+          "text_en": "A book I returned last week never made it back to the shelf. Someone must have read it and left it on a desk somewhere."
         },
         {
           "speaker": "自分",
-          "text": "館内のどこか、って広いですよね。",
-          "text_en": "Somewhere in the building is a lot of ground."
+          "text": "どこの机か、見当はつきますか。",
+          "text_en": "Any idea which desk?"
         },
         {
-          "text": "開架書架の奥から、個人閲覧ブースまで。見つけたら場所をカウンターに伝えて。",
-          "text_en": "From the back of the open stacks to the study carrels. When you find it, tell the counter where."
+          "text": "2 階の閲覧席だと思う。吊り看板に「閲覧席」って出てるところ。見つけたら、1 階のカウンターの司書さんに返しておいて。",
+          "text_en": "Probably the study carrels on the second floor, under the hanging sign. When you find it, hand it to the librarian at the first-floor counter."
         }
       ]
     },
@@ -163,12 +163,12 @@
       "requiresActiveQuest": "q_sq_stray_book",
       "lines": [
         {
-          "text": "書架は 14 連。いちばん奥から見て。それでなければ、個人閲覧ブースの 66 席のどこか。",
-          "text_en": "Fourteen rows of shelves. Start from the very back. Failing that, one of the 66 study carrels."
+          "text": "2 階の閲覧席、吊り看板の下の机。紺の表紙の本よ。",
+          "text_en": "The study carrels on the second floor, the desks under the hanging sign. It has a navy cover."
         },
         {
-          "text": "見つけたら、カウンターに伝えて。それから、ここに戻ってきて。",
-          "text_en": "When you find it, tell the counter. Then come back here."
+          "text": "見つけたら、1 階のカウンターの司書さんに返して。それから、ここに戻ってきて。",
+          "text_en": "When you find it, return it to the librarian at the first-floor counter. Then come back here."
         }
       ]
     },
