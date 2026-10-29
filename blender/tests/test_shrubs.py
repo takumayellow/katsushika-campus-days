@@ -159,6 +159,72 @@ def test_grass_runs_from_dark_grass_to_leaf_top():
     assert shrubs.face_color("grass", 1.0, 0.0) == pytest.approx(ramp[2])
 
 
+# ---- 表と裏が重なる板 ----
+
+# Kenney の低木と草むらは、同じ位置に巻きが逆の三角形を重ねた両面の板でできている。対にならないのはこの 3 つだけ
+UNPAIRED = {"plant_bushLargeTriangle": 3}
+
+# 重なった対を離す深さの範囲 [m]。0.1 mm の溶接（MeshBuilder.to_object）より十分に大きく、板が厚く見えるほどではない
+MIN_GAP, MAX_GAP = 0.004, 0.02
+
+
+def _face_points(mb, f):
+    return [mb.verts[k] for k in mb.faces[f]]
+
+
+def _partner_gap(mb, f):
+    """面 f の真後ろに重なる逆向きの面までの、f の法線に沿った距離 [m]。f の後ろにあれば負。無ければ None。
+
+    真後ろ = 法線が逆で、3 点が f の平面から同じ高さにあり、その 3 点を f の平面へ落とすと f の 3 点に重なる。"""
+    pts = _face_points(mb, f)
+    n = shrubs._normal(pts)
+    for g in range(len(mb.faces)):
+        if g == f:
+            continue
+        other = _face_points(mb, g)
+        if sum(a * b for a, b in zip(n, shrubs._normal(other))) > -0.999:
+            continue
+        heights = [sum((o[k] - pts[0][k]) * n[k] for k in range(3)) for o in other]
+        if max(heights) - min(heights) > 1e-6:
+            continue
+        flat = [tuple(o[k] - heights[0] * n[k] for k in range(3)) for o in other]
+        if all(any(math.dist(q, p) < 1e-4 for p in pts) for q in flat):
+            return heights[0]
+    return None
+
+
+@pytest.mark.parametrize("name", sorted(TRIANGLES))
+def test_back_to_back_faces_are_pushed_apart_so_the_front_one_wins_the_depth_test(models, name):
+    """重なった表と裏が同じ深さのままだと、アウトラインのパスが描く裏の暗い色が、面ごとに表と入れ替わる。
+    それぞれの面を自分の側へずらして、どちらの側から見ても手前の面が深さで勝つようにする。"""
+    m = models[name]
+    mb = shrubs.model_mesh("shrub_mesh_" + name, m, shrubs.base_scale(name, m["group"]))
+    gaps = [_partner_gap(mb, f) for f in range(len(mb.faces))]
+    paired = [g for g in gaps if g is not None]
+    assert len(paired) == len(m["triangles"]) - UNPAIRED.get(name, 0)
+    assert all(-MAX_GAP <= g <= -MIN_GAP for g in paired), sorted(paired)[:4]     # 相手は自分の後ろ
+
+
+@pytest.mark.parametrize("name", sorted(TRIANGLES))
+def test_pushing_apart_only_slides_each_face_along_its_own_normal(models, name):
+    """面の大きさ・向きは変えない。色は、ずらす前の位置の高さと向きで決める。足元は地面から沈みすぎない。"""
+    m = models[name]
+    scale = shrubs.base_scale(name, m["group"])
+    mb = shrubs.model_mesh("shrub_mesh_" + name, m, scale)
+    verts = shrubs.to_z_up(m["vertices"], scale)
+    top = max(v[2] for v in verts)
+    for f, tri in enumerate(m["triangles"]):
+        src = [verts[k] for k in tri]
+        n = shrubs._normal(src)
+        moved = [tuple(o[k] - s[k] for k in range(3)) for o, s in zip(_face_points(mb, f), src)]
+        assert all(mv == pytest.approx(moved[0], abs=1e-9) for mv in moved)         # 3 点とも同じだけ動く
+        along = sum(moved[0][k] * n[k] for k in range(3))
+        assert moved[0] == pytest.approx(tuple(n[k] * along for k in range(3)), abs=1e-9)   # 動く向きは法線だけ
+        h = sum(p[2] for p in src) / (3.0 * top)
+        assert mb.face_col[f] == shrubs.face_color(m["group"], h, n[2])
+    assert min(v[2] for v in mb.verts) > -MAX_GAP
+
+
 # ---- コミット済みの shrubs.json ----
 
 def test_committed_shrubs_json_is_consistent(committed, models):
