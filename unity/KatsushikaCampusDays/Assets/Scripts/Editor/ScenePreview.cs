@@ -484,13 +484,13 @@ namespace KCD.Editor
             // 遊び場は leisure=playground の北の端（(209,-63) (198,-92) (234,-103) (242,-77) のあたり）から南へ
             new Shot
             {
-                Name = "shot_surface_pitch_soil",
+                Name = "shot_surface_pitch_grass",
                 Space = Frame.World,
                 Eye = new Vector3(68f, 1.6f, 110f),
                 Look = new Vector3(100f, 0f, 112f),
                 Fov = 0f,
                 Sun = OutdoorSun,
-                Note = "運動場の土（soil）",
+                Note = "運動場の芝（grass。航空写真では人工芝のサッカー場）",
             },
             new Shot
             {

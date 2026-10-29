@@ -71,7 +71,7 @@ StreamingAssets はビルドにそのまま入るので、配布物にもフォ�
 | [PavingStones136](https://ambientcg.com/a/PavingStones136) | stone_light・stone_dark（舗装） | CC0 1.0（表記は義務ではない） | 確認済み（2026-09-24） |
 | [Asphalt033](https://ambientcg.com/a/Asphalt033) | asphalt（車道・駐車場） | 同上 | 確認済み（2026-09-24） |
 | [Grass004](https://ambientcg.com/a/Grass004) | grass・grass_dark（芝地） | 同上 | 確認済み（2026-09-24） |
-| [Ground048](https://ambientcg.com/a/Ground048) | bed_soil（花壇の土）・soil（運動場）・sand（遊び場） | 同上 | 確認済み（2026-09-24） |
+| [Ground048](https://ambientcg.com/a/Ground048) | bed_soil（花壇の土）・soil（テニスコート）・sand（遊び場） | 同上 | 確認済み（2026-09-24） |
 | [Concrete034](https://ambientcg.com/a/Concrete034) | concrete_light・concrete_grey・concrete_dark（外壁） | 同上 | 確認済み（2026-09-24） |
 | [Bricks092](https://ambientcg.com/a/Bricks092) | brick_red（外壁の煉瓦） | 同上 | 確認済み |
 
