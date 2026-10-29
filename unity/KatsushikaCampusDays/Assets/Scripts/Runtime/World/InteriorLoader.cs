@@ -50,7 +50,10 @@ namespace KCD
             /// <summary>玄関から入った直後に立つ所。扉ごとの立ち位置が無いときもここに立つ。</summary>
             public Transform Spawn;
 
-            /// <summary>扉ごとの立ち位置と外の所（玄関を含む）。扉が 1 つの建物では空でもよい。</summary>
+            /// <summary>
+            /// 扉ごとの立ち位置と外の所（玄関を含む）。階段で別の建物から移ってきたときは、玄関の外の所を戻り先にする（<see cref="MoveAcross"/>）。
+            /// 空でもよく、そのときは入ったときに覚えた戻り先へ出る。
+            /// </summary>
             public List<Door> Doors = new List<Door>();
 
             /// <summary>
@@ -233,6 +236,49 @@ namespace KCD
             }
 
             StartCoroutine(Travel(player, position + Vector3.up * 0.15f, yaw, AutoSave.Request));
+            return true;
+        }
+
+        /// <summary>
+        /// 階段で別の建物の屋内へ移る（第2研究棟の西の端の階段と食堂の 1F・2F, #303）。着いたらその建物の中にいることにし、
+        /// 出たときの戻り先をその建物の玄関の外にする（玄関の外の所が分からなければ戻り先はそのまま）。
+        /// 玄関から入ったときと同じく、入ったことをクエストと 1 日の記録（DayStats）に知らせる。
+        /// 同じ建物なら <see cref="MoveWithin"/> と同じ。外にいるとき・屋内の無い建物・暗転の途中は何もせず false。
+        /// </summary>
+        public bool MoveAcross(string buildingId, Vector3 position, float yaw)
+        {
+            if (buildingId == CurrentId)
+            {
+                return MoveWithin(position, yaw);
+            }
+
+            Entry to = Find(buildingId);
+            if (Find(CurrentId) == null || to == null || _busy)
+            {
+                return false;
+            }
+
+            PlayerController player = FindAnyObjectByType<PlayerController>();
+            if (player == null)
+            {
+                return false;
+            }
+
+            // 玄関から入ったとき（EntranceTrigger）と同じく、その建物に入ったことをクエストと 1 日の記録に知らせる。
+            GameManager.Instance.Quests?.ReportEnter(to.Id);
+            DayStats.NoteEnter(to.Id);
+            StartCoroutine(Travel(player, position + Vector3.up * 0.15f, yaw, () =>
+            {
+                Door main = FindDoor(to, to.Id);
+                if (main != null && main.HasOutside)
+                {
+                    _returnPosition = main.OutsidePosition;
+                    _returnYaw = main.OutsideYaw;
+                }
+
+                MarkInside(to);
+                AutoSave.Request();
+            }));
             return true;
         }
 
