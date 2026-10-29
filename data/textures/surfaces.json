@@ -72,9 +72,11 @@
       "contrast": 0.7,
       "depth": 0.3,
       "materials": [
-        "bed_soil"
+        "bed_soil",
+        "soil",
+        "sand"
       ],
-      "note": "メインストリート北側の花壇の土 (#56)。tile_cm は API の dimensionX。"
+      "note": "メインストリート北側の花壇の土 (#56)、運動場（OSM の leisure=pitch → soil）と遊び場（leisure=playground → sand）の地面 (#59)。平均色はマテリアルごとに CampusColors へ合わせるので、同じ素材から 3 色を焼く。tile_cm は API の dimensionX。"
     },
     {
       "asset": "Concrete034",

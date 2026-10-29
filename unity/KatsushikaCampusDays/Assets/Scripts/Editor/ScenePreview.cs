@@ -479,6 +479,30 @@ namespace KCD.Editor
                 Note = "車道のアスファルトと芝生",
             },
 
+            // 運動場と遊び場の地面（#59）。座標は data/osm/campus.json の areas（x = 東, z = 北）をそのまま使う。
+            // 運動場は leisure=pitch の一番大きい区画（四隅 (56,110) (144,52) (181,113) (96,169)）の西の隅から中へ、
+            // 遊び場は leisure=playground の北の端（(209,-63) (198,-92) (234,-103) (242,-77) のあたり）から南へ
+            new Shot
+            {
+                Name = "shot_surface_pitch_soil",
+                Space = Frame.World,
+                Eye = new Vector3(68f, 1.6f, 110f),
+                Look = new Vector3(100f, 0f, 112f),
+                Fov = 0f,
+                Sun = OutdoorSun,
+                Note = "運動場の土（soil）",
+            },
+            new Shot
+            {
+                Name = "shot_surface_playground_sand",
+                Space = Frame.World,
+                Eye = new Vector3(214f, 1.6f, -72f),
+                Look = new Vector3(228f, 0f, -96f),
+                Fov = 0f,
+                Sun = OutdoorSun,
+                Note = "遊び場の砂（sand）",
+            },
+
             // 屋内の正面（#120・#169）。座標は Models/Interiors/<id>.json の empties と同じ屋内のローカル座標
             new Shot
             {

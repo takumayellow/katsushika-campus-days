@@ -33,6 +33,14 @@
       "tile_cm": 140
     },
     {
+      "material": "sand",
+      "tile_cm": 140
+    },
+    {
+      "material": "soil",
+      "tile_cm": 140
+    },
+    {
       "material": "stone_dark",
       "tile_cm": 200
     },
