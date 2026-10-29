@@ -19,8 +19,11 @@ namespace KCD.Tests
     /// </summary>
     public sealed class FullDayPlaythroughTests : SceneTestBase
     {
-        /// <summary>依頼主（話しかけるとクエストが始まる人）。データの giver と、話題で始まるクエストの持ち主。</summary>
-        private static readonly string[] Givers = { "prof", "inari", "kaname", "sora" };
+        /// <summary>
+        /// 依頼主（話しかけるとクエストが始まる人）。データの giver と、話題で始まるクエストの持ち主。
+        /// lecture は大教室の教授で、講義のあとに黒板と 306 のサブクエストを頼む (#390, #394, #406)。
+        /// </summary>
+        private static readonly string[] Givers = { "prof", "inari", "kaname", "sora", "lecture" };
 
         /// <summary>解き手の周回の上限。クエスト 16 件 × ステップ数より十分に多い。</summary>
         private const int MaxRounds = 80;
@@ -186,6 +189,9 @@ namespace KCD.Tests
                         break;
                     case QuestStepKind.Collect:
                         yield return _driver.Collect(step.Target, Mathf.Max(1, step.Count - step.Progress));
+                        break;
+                    case QuestStepKind.Flag:
+                        yield return _driver.RaiseFlag(step.Target);
                         break;
                 }
             }
