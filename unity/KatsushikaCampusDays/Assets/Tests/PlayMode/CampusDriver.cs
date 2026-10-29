@@ -67,10 +67,11 @@ namespace KCD.Tests
         }
 
         /// <summary>
-        /// 会話を最後まで送り（選択肢は先頭を選ぶ）、エンディングのページをめくり、暗転と封鎖が明けて静かになるまで待つ。
+        /// 会話を最後まで送り、エンディングのページをめくり、暗転と封鎖が明けて静かになるまで待つ。
+        /// 選択肢は、wantedFlag を立てるものがあればそれを、無ければ先頭を選ぶ。
         /// 落とし物の小さな手記や夕日のあとの話のように、少し遅れて始まるものもここで片付ける。
         /// </summary>
-        public IEnumerator Settle()
+        public IEnumerator Settle(string wantedFlag = null)
         {
             float deadline = Time.realtimeSinceStartup + StepTimeoutSeconds * 2f;
             float quietSince = -1f;
@@ -82,7 +83,7 @@ namespace KCD.Tests
                     lines++;
                     if (_dialogue.IsChoosing)
                     {
-                        _dialogue.Choose(0);
+                        _dialogue.Choose(ChoiceSetting(_dialogue.Choices, wantedFlag));
                     }
                     else
                     {
@@ -277,8 +278,8 @@ namespace KCD.Tests
             yield return Settle();
         }
 
-        /// <summary>NPC の前に立って話しかけ、会話を最後まで送る。</summary>
-        public IEnumerator Talk(string npcId)
+        /// <summary>NPC の前に立って話しかけ、会話を最後まで送る。選択肢は wantedFlag を立てるものを選ぶ（<see cref="Settle"/>）。</summary>
+        public IEnumerator Talk(string npcId, string wantedFlag = null)
         {
             NPCTalker npc = FindNpc(npcId);
             if (npc == null)
@@ -296,7 +297,39 @@ namespace KCD.Tests
             }
 
             npc.Interact(_player.gameObject);
-            yield return Settle();
+            yield return Settle(wantedFlag);
+        }
+
+        /// <summary>
+        /// フラグ flagId を立てる。そのフラグを持つ置き物（PropInteractable）があれば E で調べ、
+        /// 無ければ、会話（話題か選択肢）でそのフラグを立てる相手に話しかけて、立てる選択肢を選ぶ (#406)。
+        /// </summary>
+        public IEnumerator RaiseFlag(string flagId)
+        {
+            PropInteractable prop = FindFlagProp(flagId);
+            if (prop != null)
+            {
+                yield return GoTo(BuildingOf(prop.transform));
+                yield return StandBefore(prop.transform);
+                if (!prop.CanInteract)
+                {
+                    _problems.Add(flagId + " の置き物 " + Path(prop.transform) + " を調べられない（使い終えたか無効）");
+                    yield break;
+                }
+
+                prop.Interact(_player.gameObject);
+                yield return Settle(flagId);
+                yield break;
+            }
+
+            string speaker = DialogueSettingFlag(flagId);
+            if (string.IsNullOrEmpty(speaker))
+            {
+                _problems.Add("フラグ " + flagId + " を立てる置き物も会話も無い");
+                yield break;
+            }
+
+            yield return Talk(speaker, flagId);
         }
 
         /// <summary>まだ拾っていない itemId を count 個まで拾う。</summary>
@@ -385,6 +418,15 @@ namespace KCD.Tests
                             found = item.transform;
                             break;
                         }
+                    }
+
+                    break;
+                case QuestStepKind.Flag:
+                    found = FindFlagProp(target)?.transform;
+                    if (found == null)
+                    {
+                        string speaker = DialogueSettingFlag(target);
+                        found = string.IsNullOrEmpty(speaker) ? null : FindNpc(speaker)?.transform;
                     }
 
                     break;
@@ -508,6 +550,67 @@ namespace KCD.Tests
             }
 
             return null;
+        }
+
+        /// <summary>選択肢のうち flagId を立てるものの番号。無い（flagId が空を含む）なら先頭の 0。</summary>
+        private static int ChoiceSetting(IReadOnlyList<DialogueChoice> choices, string flagId)
+        {
+            if (!string.IsNullOrEmpty(flagId))
+            {
+                for (int i = 0; i < choices.Count; i++)
+                {
+                    if (choices[i].SetsFlag == flagId)
+                    {
+                        return i;
+                    }
+                }
+            }
+
+            return 0;
+        }
+
+        private static PropInteractable FindFlagProp(string flagId)
+        {
+            foreach (PropInteractable each in Object.FindObjectsByType<PropInteractable>(FindObjectsInactive.Include))
+            {
+                if (each.FlagId == flagId)
+                {
+                    return each;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>話題か選択肢で flagId を立てる会話の id（話しかける相手の NpcId と同じ）。無ければ空文字。</summary>
+        private static string DialogueSettingFlag(string flagId)
+        {
+            foreach (TextAsset asset in Resources.LoadAll<TextAsset>(DialogueSystem.ResourceFolder))
+            {
+                DialogueData data = DialogueData.FromJson(MiniJson.Deserialize(asset.text) as Dictionary<string, object>);
+                if (data == null)
+                {
+                    continue;
+                }
+
+                foreach (DialogueTopic topic in data.Topics)
+                {
+                    if (topic.SetsFlag == flagId)
+                    {
+                        return data.Id;
+                    }
+
+                    foreach (DialogueChoice choice in topic.Choices)
+                    {
+                        if (choice.SetsFlag == flagId)
+                        {
+                            return data.Id;
+                        }
+                    }
+                }
+            }
+
+            return string.Empty;
         }
 
         private static PhotoSpot FindPhotoSpot(string spotId)
