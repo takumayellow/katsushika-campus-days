@@ -274,3 +274,38 @@ def test_real_accomp_reads_only_the_piano_hands_within_the_song_length():
     assert {t.voice for t in accomp} == {"右手", "左手"}
     assert max(t.end for t in accomp) <= 91 * cc.BEATS_PER_BAR + cc.EPS  # 91 小節 = 364 拍
     assert all(t.end > t.start for t in accomp)
+
+
+# --------------------------------------------------------------------------
+# 直した後の本物の伴奏譜 (fix_accomp_clashes.py で直した状態の基準)
+# --------------------------------------------------------------------------
+# 直した後にも残る軽いぶつかり {(番, 音符): ぶつかる拍}. 歌の経過音が和音に当たるだけの短いもので,
+# 直していない (PR の「残り」に位置を記録した). 新しいぶつかりを入れたときに気付くための基準。
+REMAINING_LIGHT = {
+    (1, 21): 0.25, (1, 51): 0.25, (1, 65): 0.25, (1, 89): 0.5,
+    (2, 10): 0.75, (2, 21): 0.25, (2, 52): 0.25, (2, 59): 0.5, (2, 72): 0.25, (2, 73): 0.25, (2, 89): 0.5,
+    (3, 21): 0.25, (3, 52): 0.25, (3, 89): 0.5,
+}
+
+
+def test_real_accomp_has_no_heavy_clash_and_only_the_known_light_ones():
+    pytest.importorskip("music21")
+    _, _, _, notes = cc.analyze()
+    assert [(n.verse, n.note) for n in notes if n.heavy()] == []
+    assert {(n.verse, n.note): round(n.beats, 3) for n in notes} == REMAINING_LIGHT
+
+
+def test_main_strict_passes_on_the_real_accomp():
+    pytest.importorskip("music21")
+    assert cc.main(["count_clashes.py", "--strict"]) == 0
+
+
+def test_main_strict_exit_code_follows_the_heavy_threshold(monkeypatch, capsys):
+    vocal = [tone("A4", 76.0, 78.0, "歌")]
+    accomp = [tone("B-2", 76.0, 76.5, "左手"), tone("B-3", 76.5, 77.0, "左手")]  # 合わせて 1 拍ぶつかる
+    notes = note_clashes(vocal, accomp)
+    monkeypatch.setattr(cc, "analyze", lambda vocal_path, accomp_path: (vocal, accomp, 5, notes))
+    assert cc.main(["count_clashes.py"]) == 0  # --strict が無ければ数えるだけ
+    assert cc.main(["count_clashes.py", "--strict"]) == 1
+    assert cc.main(["count_clashes.py", "--strict", "--heavy-beats", "1.5"]) == 0
+    assert "[重い]" in capsys.readouterr().out
