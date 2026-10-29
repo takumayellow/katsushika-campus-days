@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
@@ -35,6 +36,12 @@ namespace KCD
         /// <summary>計時を始めたクエスト。会話を閉じてからスタートの案内を出す。</summary>
         private QuestData _pendingStart;
 
+        /// <summary>
+        /// 会話の最中に受けたクエスト (#410)。会話の間は HUD ごと隠れていてトーストが見えないので、閉じてから知らせる。
+        /// お礼の会話で達成して、続けて自動で受けたときにここへ溜まる。
+        /// </summary>
+        private readonly List<QuestData> _pendingAccepted = new List<QuestData>();
+
         /// <summary>SceneBuilder から差し込む。</summary>
         public void Bind(GameObject root, TMP_Text title, TMP_Text step)
         {
@@ -64,6 +71,7 @@ namespace KCD
 
             _quests = quests;
             _quests.Changed += Refresh;
+            _quests.QuestStarted += OnQuestStarted;
             _quests.QuestCompleted += OnQuestCompleted;
             _quests.StepTimedOut += OnStepTimedOut;
             _quests.TimerStarted += OnTimerStarted;
@@ -79,6 +87,7 @@ namespace KCD
             if (_quests != null)
             {
                 _quests.Changed -= Refresh;
+                _quests.QuestStarted -= OnQuestStarted;
                 _quests.QuestCompleted -= OnQuestCompleted;
                 _quests.StepTimedOut -= OnStepTimedOut;
                 _quests.TimerStarted -= OnTimerStarted;
@@ -92,6 +101,17 @@ namespace KCD
             if (_quests == null)
             {
                 return;
+            }
+
+            // 受注は「スタート」より先に出す（受けてから数え始めるので、その順に見せる）。
+            if (_pendingAccepted.Count > 0 && !KCDInput.GameplayBlocked)
+            {
+                for (int i = 0; i < _pendingAccepted.Count; i++)
+                {
+                    ShowStartedToast(_pendingAccepted[i]);
+                }
+
+                _pendingAccepted.Clear();
             }
 
             // 再挑戦を依頼主に話しかけて始めたときは会話中なので、会話を閉じてから「スタート」を出す。
@@ -170,6 +190,41 @@ namespace KCD
             }
 
             return _quests.TrackedQuest;
+        }
+
+        /// <summary>
+        /// 受注をトーストで知らせる (#410)。受注の音（quest_start）は AudioManager が鳴らすので、トーストの音は重ねない。
+        /// 会話などで操作が止まっている間は溜めておき、閉じてから出す。
+        /// </summary>
+        private void OnQuestStarted(QuestData quest)
+        {
+            if (quest == null)
+            {
+                return;
+            }
+
+            if (KCDInput.GameplayBlocked)
+            {
+                if (!_pendingAccepted.Contains(quest))
+                {
+                    _pendingAccepted.Add(quest);
+                }
+            }
+            else
+            {
+                ShowStartedToast(quest);
+            }
+        }
+
+        private static void ShowStartedToast(QuestData quest)
+        {
+            HUD.Instance?.ShowToast(StartedMessage(quest), false);
+        }
+
+        /// <summary>受注のトースト（ui.hud.quest_started）。題名はいまの言語で出す。</summary>
+        public static string StartedMessage(QuestData quest)
+        {
+            return L.Format("ui.hud.quest_started", quest.DisplayTitle);
         }
 
         private void OnTimerStarted(QuestData quest)

@@ -49,6 +49,7 @@ namespace KCD
             _active.Clear();
             _completed.Clear();
             ForgetTooEarlyNotices();
+            _chosenId = null;
 
             // 前の状態を残さない。セーブに無いクエストのステップが済みのまま残ると、未受注なのに途中から始まる。
             for (int i = 0; i < _all.Count; i++)

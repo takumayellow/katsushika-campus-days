@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text;
 using TMPro;
 using UnityEngine;
@@ -6,10 +7,19 @@ namespace KCD
 {
     /// <summary>
     /// Tab で開く一覧。受注中・完了済みをまとめて 1 枚のテキストに流し込む。
-    /// 指で遊んでいるときは、HUD のボタンで開き、どこを叩いても閉じる (#187)。
+    /// 指で遊んでいるときは、HUD のボタンで開き、題名の外を叩くと閉じる (#187)。
+    /// 受注中が 2 本以上なら、↑↓ か題名を叩いて追うクエストを選び直せる (#410)。
     /// </summary>
     public sealed class QuestLogView : MonoBehaviour
     {
+        /// <summary>受注中の題名に付けるリンクの接頭辞。続く数字は <see cref="QuestSystem.All"/> の番号。</summary>
+        public const string TrackLinkPrefix = "track:";
+
+        /// <summary>追っているクエストの題名の色。ミニマップの目標の輪（Minimap._objectiveColor）と同じ水色。</summary>
+        private const string TrackedColor = "#4FD1D9";
+
+        private const string ActiveColor = "#FFE6A8";
+
         [SerializeField] private GameObject _root;
         [SerializeField] private TMP_Text _bodyLabel;
         [SerializeField] private TmpLinkTap _tap;
@@ -47,10 +57,20 @@ namespace KCD
             }
         }
 
-        /// <summary>マウスのクリックは TmpLinkTap が捨て、ここでは指で遊んでいるときだけ受ける。</summary>
+        /// <summary>
+        /// マウスのクリックは TmpLinkTap が捨て、ここでは指で遊んでいるときだけ受ける。
+        /// 受注中が 2 本以上なら、題名を叩いたクエストを追い、開いたままにする。
+        /// ほかの場所と、いま選んでいる題名を叩いたら閉じる（選び直すものが無い）。
+        /// </summary>
         private void OnTapped(string linkId)
         {
-            if (IsOpen && InputMode.IsTouch)
+            if (!IsOpen || !InputMode.IsTouch)
+            {
+                return;
+            }
+
+            QuestData quest = TrackLinkTarget(_quests, linkId);
+            if (quest == null || !Select(quest, "ui_confirm"))
             {
                 SetOpen(false);
             }
@@ -62,6 +82,12 @@ namespace KCD
             if (_root != null)
             {
                 _root.SetActive(false);
+            }
+
+            // 叩く板は画面全体に広げてあり、文字を知らないとリンクを探せない。題名のリンクを読めるよう本文を指す。
+            if (_tap != null)
+            {
+                _tap.Bind(_bodyLabel);
             }
 
             L.LocaleChanged += OnLocaleChanged;
@@ -114,6 +140,82 @@ namespace KCD
                 SetOpen(false);
                 ClosedByMenuFrame = Time.frameCount;
             }
+            else if (IsOpen && _quests != null)
+            {
+                QuestData next = NextTracked(_quests, KCDInput.MenuVertical);
+                if (next != null)
+                {
+                    Select(next, "ui_move");
+                }
+            }
+        }
+
+        /// <summary>
+        /// 追うクエストを選び、一覧を描き直す（ミニマップの輪と追跡表示は Changed で切り替わる）。
+        /// もう選んであれば（選んでいないときは、いま追っているものなら）何もせず false。
+        /// </summary>
+        private bool Select(QuestData quest, string sound)
+        {
+            if (quest == (_quests.ChosenQuest ?? _quests.TrackedQuest) || !_quests.Track(quest.Id))
+            {
+                return false;
+            }
+
+            AudioManager.Instance?.PlayUi(sound);
+            Rebuild();
+            return true;
+        }
+
+        /// <summary>
+        /// ↑↓ で次に追うクエスト。一覧と同じ順に受注中のものを巡り、端からは反対の端へ戻る。
+        /// 起点は選んだもの（無ければいま追っているもの）。制限時間を数えている間も、選んだものから進める。
+        /// 受注中が 2 本未満か、向きが 0 なら null。
+        /// </summary>
+        public static QuestData NextTracked(QuestSystem quests, int direction)
+        {
+            if (quests == null || direction == 0)
+            {
+                return null;
+            }
+
+            var active = new List<QuestData>();
+            for (int i = 0; i < quests.All.Count; i++)
+            {
+                if (quests.IsActive(quests.All[i].Id))
+                {
+                    active.Add(quests.All[i]);
+                }
+            }
+
+            if (active.Count < 2)
+            {
+                return null;
+            }
+
+            int step = direction > 0 ? 1 : -1;
+            int at = active.IndexOf(quests.ChosenQuest ?? quests.TrackedQuest);
+            if (at < 0)
+            {
+                return active[step > 0 ? 0 : active.Count - 1];
+            }
+
+            return active[(at + step + active.Count) % active.Count];
+        }
+
+        /// <summary>
+        /// 題名のリンク（"track:" と All の番号）が指す受注中のクエスト。形が違うか受注中でなければ null。
+        /// 受注中が 1 本だけなら選ぶものが無いので null（叩けば、ほかの場所と同じく閉じる）。
+        /// </summary>
+        public static QuestData TrackLinkTarget(QuestSystem quests, string linkId)
+        {
+            if (quests == null || !TmpLinkTap.TryParse(linkId, TrackLinkPrefix, out int index) ||
+                index >= quests.All.Count || ActiveCount(quests) < 2)
+            {
+                return null;
+            }
+
+            QuestData quest = quests.All[index];
+            return quests.IsActive(quest.Id) ? quest : null;
         }
 
         /// <summary>
@@ -181,6 +283,7 @@ namespace KCD
             AppendProgress(_builder);
             Compose(_builder, _quests);
             _drawnForTouch = InputMode.IsTouch;
+            _builder.Append(TrackHint(_quests, _drawnForTouch));
             if (_drawnForTouch)
             {
                 _builder.Append(CloseHint());
@@ -196,6 +299,37 @@ namespace KCD
         public static string CloseHint()
         {
             return "\n<alpha=#99>" + L.Pick("タップで閉じる", "Tap to close") + "<alpha=#FF>";
+        }
+
+        /// <summary>
+        /// 受注中が 2 本以上のとき、一覧の末尾へ足す追うクエストの選び方。1 本なら選ぶものが無いので出さない。
+        /// 閉じ方の案内（<see cref="CloseHint"/>）と同じく、本文と同じ大きさで薄くする。
+        /// </summary>
+        public static string TrackHint(QuestSystem quests, bool touch)
+        {
+            if (quests == null || ActiveCount(quests) < 2)
+            {
+                return string.Empty;
+            }
+
+            string hint = touch
+                ? L.Get("ui.questlog.track_hint_touch", "題名をタップで追跡するクエストを選ぶ")
+                : L.Get("ui.questlog.track_hint", "↑↓ で追跡するクエストを選ぶ");
+            return "\n<alpha=#99>" + hint + "<alpha=#FF>";
+        }
+
+        private static int ActiveCount(QuestSystem quests)
+        {
+            int count = 0;
+            for (int i = 0; i < quests.All.Count; i++)
+            {
+                if (quests.IsActive(quests.All[i].Id))
+                {
+                    count++;
+                }
+            }
+
+            return count;
         }
 
         /// <summary>この周回で集めた数を、一覧の先頭に足す (#10)。</summary>
@@ -264,9 +398,12 @@ namespace KCD
         /// 受注中・完了済みのクエストを一覧の文面にして足す。題名・あらすじ・目標はいまの言語で出す。
         /// 受注中のものを目標まで書き、達成したものは題名だけを 1 段落にまとめて後ろに置く。
         /// 達成したものまで目標を書くと、全部を終えるころには 90 行近くになり枠に収まらない。
+        /// 受注中の題名には、いま追っているもの（[追跡中]）と、制限時間が終われば追うもの（[次に追跡]）の印を付ける (#410)。
         /// </summary>
         public static void Compose(StringBuilder into, QuestSystem quests)
         {
+            QuestData tracked = quests.TrackedQuest;
+            QuestData chosen = quests.ChosenQuest;
             int shown = 0;
             int completed = 0;
             for (int i = 0; i < quests.All.Count; i++)
@@ -278,7 +415,7 @@ namespace KCD
                 }
                 else if (quests.IsActive(quest.Id))
                 {
-                    AppendActive(into, quest);
+                    AppendActive(into, quest, i, tracked, chosen);
                     shown++;
                 }
             }
@@ -295,10 +432,16 @@ namespace KCD
             }
         }
 
-        private static void AppendActive(StringBuilder into, QuestData quest)
+        /// <summary>受注中の 1 本。題名は <see cref="TrackLinkPrefix"/> のリンクにして、指で叩いて選べるようにする。</summary>
+        private static void AppendActive(StringBuilder into, QuestData quest, int index, QuestData tracked, QuestData chosen)
         {
-            into.Append("<color=#FFE6A8>").Append(L.Get("ui.questlog.active", "[受注中] ")).Append(quest.DisplayTitle)
-                .Append("</color>\n");
+            bool tracking = quest == tracked;
+            string label = tracking ? L.Get("ui.questlog.tracking", "[追跡中] ")
+                : quest == chosen ? L.Get("ui.questlog.track_next", "[次に追跡] ")
+                : L.Get("ui.questlog.active", "[受注中] ");
+            into.Append("<link=\"").Append(TrackLinkPrefix).Append(index).Append("\"><color=")
+                .Append(tracking ? TrackedColor : ActiveColor).Append('>').Append(label).Append(quest.DisplayTitle)
+                .Append("</color></link>\n");
 
             string summary = quest.DisplaySummary;
             if (!string.IsNullOrEmpty(summary))

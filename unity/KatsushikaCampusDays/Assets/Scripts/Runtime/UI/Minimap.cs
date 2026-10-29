@@ -8,6 +8,7 @@ namespace KCD
     /// <summary>
     /// 右上の北固定ミニマップ。Blender で描いた俯瞰図（minimap.png）を円形マスクの中で
     /// プレイヤー中心にずらして見せる。矢印がプレイヤー、点が NPC、輪が追跡中クエストの目的地。
+    /// いま話しかけると依頼を受けられる人の点は、桃色で少し大きく出す (#410)。
     /// 目的地の案内はここだけに出す（画面の上には出さない。#163）。
     /// 建物の中にいるあいだはキャンパスの絵を隠して建物名を出し、屋内の目的地と NPC をプレイヤーからの向きどおりに出す。
     /// 目的地が外にあるときは、その建物の出口を指す。
@@ -30,10 +31,15 @@ namespace KCD
         [SerializeField] private float _viewRadiusPixels = 142f;
         [SerializeField] private Color _npcColor = new Color(1f, 0.74f, 0.25f, 1f);
         [SerializeField] private Color _objectiveColor = new Color(0.31f, 0.82f, 0.85f, 1f);
+        [SerializeField] private Color _questGiverColor = new Color(1f, 0.42f, 0.78f, 1f);
 
         private readonly List<Image> _dots = new List<Image>();
         private NPCTalker[] _npcs = new NPCTalker[0];
+
+        /// <summary>_npcs と同じ並びで、いま話しかけると依頼を受けられるか (#410)。</summary>
+        private bool[] _offers = new bool[0];
         private float _npcRefreshedAt = -10f;
+        private bool _wasTalking;
         private Image _objective;
         private bool _indoor;
 
@@ -281,12 +287,28 @@ namespace KCD
             UpdateObjective(focus);
         }
 
+        private void OnEnable()
+        {
+            // 会話の間は HUD ごと隠れる。戻ったら NPC を取り直し、受けた依頼の色をすぐ戻す。
+            _npcRefreshedAt = -10f;
+        }
+
         private void UpdateNpcDots(Vector3 focus)
         {
+            // 会話を閉じたときも取り直す（依頼を受けた人の色を、1.5 秒の取り直しを待たずに戻す）。
+            bool talking = DialogueSystem.Instance != null && DialogueSystem.Instance.IsPlaying;
+            if (_wasTalking && !talking)
+            {
+                _npcRefreshedAt = -10f;
+            }
+
+            _wasTalking = talking;
+
             if (Time.unscaledTime - _npcRefreshedAt > 1.5f)
             {
                 _npcRefreshedAt = Time.unscaledTime;
                 _npcs = FindObjectsByType<NPCTalker>(FindObjectsInactive.Exclude);
+                RefreshOffers();
             }
 
             // 地図の範囲では絞らない。屋内では屋内の NPC を出したいので、プレイヤーからの距離だけで決める。
@@ -313,12 +335,41 @@ namespace KCD
 
                 Image dot = _dots[used++];
                 dot.rectTransform.anchoredPosition = offset;
+                Paint(dot, i < _offers.Length && _offers[i]);
                 dot.gameObject.SetActive(true);
             }
 
             for (int i = used; i < _dots.Count; i++)
             {
                 _dots[i].gameObject.SetActive(false);
+            }
+        }
+
+        /// <summary>いま話しかけると依頼を受けられる人か、NPC ごとに調べ直す (#410)。</summary>
+        private void RefreshOffers()
+        {
+            if (_offers.Length != _npcs.Length)
+            {
+                _offers = new bool[_npcs.Length];
+            }
+
+            DialogueSystem dialogue = DialogueSystem.Instance;
+            for (int i = 0; i < _npcs.Length; i++)
+            {
+                _offers[i] = dialogue != null && _npcs[i] != null && dialogue.OffersQuest(_npcs[i].NpcId);
+            }
+        }
+
+        /// <summary>
+        /// 点は NPC の並びで使い回すので、毎回その人に合わせて塗る。依頼を受けられる人は色を変え、少し大きくする（色だけに頼らない）。
+        /// </summary>
+        private void Paint(Image dot, bool offersQuest)
+        {
+            dot.color = offersQuest ? _questGiverColor : _npcColor;
+            float size = offersQuest ? 16f : 12f;
+            if (dot.rectTransform.sizeDelta.x != size)
+            {
+                dot.rectTransform.sizeDelta = new Vector2(size, size);
             }
         }
 

@@ -136,7 +136,7 @@ namespace KCD.Tests
                 AssertEnglish(completed);
 
                 string log = Log(quests);
-                StringAssert.Contains(L.Get("ui.questlog.active") + "First Experiment", log);
+                StringAssert.Contains(L.Get("ui.questlog.tracking") + "First Experiment", log);
                 StringAssert.Contains("Go and see the lab building.", log);
                 StringAssert.Contains("・Enter Experiment Building 1", log);
                 StringAssert.DoesNotContain("はじめての実験", log);
