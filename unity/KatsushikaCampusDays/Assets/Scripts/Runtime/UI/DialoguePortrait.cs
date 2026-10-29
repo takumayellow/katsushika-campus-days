@@ -7,7 +7,8 @@ namespace KCD
     /// <summary>
     /// 会話ウィンドウの左上に話し手の顔を出す (#11)。会話のあいだだけ小さなカメラで頭のまわりを RenderTexture に描く。
     /// 話し手はプレイヤー（「自分」の行）か、話しかけた NPC。ほかの名前の行・紙に書かれた文・人の形をしていない相手
-    /// （掲示板など）では枠を隠す。
+    /// （掲示板など）では枠を隠す。描画のデバイスが無いとき（-nographics の batchmode）は、枠は同じように出し入れするが、
+    /// カメラを作らず顔は描かない。
     /// </summary>
     public sealed class DialoguePortrait : MonoBehaviour
     {
@@ -217,9 +218,13 @@ namespace KCD
             }
 
             Show(true);
-            Pose pose = CameraPose(_head.position, _body.forward, Distance, Yaw, _lift);
-            _camera.transform.SetPositionAndRotation(pose.position, pose.rotation);
-            _camera.enabled = _aimed || Time.frameCount % FrameInterval == 0;
+            if (_camera != null)
+            {
+                Pose pose = CameraPose(_head.position, _body.forward, Distance, Yaw, _lift);
+                _camera.transform.SetPositionAndRotation(pose.position, pose.rotation);
+                _camera.enabled = _aimed || Time.frameCount % FrameInterval == 0;
+            }
+
             _aimed = false;
         }
 
@@ -271,7 +276,11 @@ namespace KCD
             {
                 EnsureCamera();
                 Framing(MeasureEyeHeight(animator.gameObject, _head), out _lift, out float fieldOfView);
-                _camera.fieldOfView = fieldOfView;
+                if (_camera != null)
+                {
+                    _camera.fieldOfView = fieldOfView;
+                }
+
                 _aimed = true;
             }
         }
@@ -313,10 +322,14 @@ namespace KCD
             }
         }
 
-        /// <summary>顔を撮るカメラ。影・ポストプロセス・AA を切り、3 m より先は背景色で塗る。</summary>
+        /// <summary>
+        /// 顔を撮るカメラ。影・ポストプロセス・AA を切り、3 m より先は背景色で塗る。描画のデバイスが無いとき（-nographics の
+        /// batchmode）は作らない。そのときにカメラを描かせると、URP が描くための RenderTexture を作れずにエラーのログを出すだけで、
+        /// 何も写らない。
+        /// </summary>
         private void EnsureCamera()
         {
-            if (_camera != null)
+            if (_camera != null || SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
             {
                 return;
             }

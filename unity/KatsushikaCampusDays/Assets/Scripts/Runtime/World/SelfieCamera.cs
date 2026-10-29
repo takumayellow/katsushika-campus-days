@@ -18,13 +18,22 @@ namespace KCD
         /// <summary>描けたかを見分けるために、描く前に塗っておく色（この色のままなら描けていない）。</summary>
         private static readonly Color32 Marker = new Color32(255, 0, 255, 255);
 
+        /// <summary>描画のデバイスが無いときに返す写真の色。</summary>
+        private static readonly Color32 Unrendered = new Color32(128, 128, 128, 255);
+
         /// <summary>
         /// position から rotation の向きに fieldOfView（縦、度）で撮る。描けなければ null。
         /// hidden（三脚）の下の Renderer は撮る間だけ消す（カメラを三脚の後ろへ引いたとき脚が写らないように）。
+        /// 描画のデバイスが無いとき（-nographics の batchmode）は、カメラを作らずに一色で塗った写真を返す。
         /// 返した Texture2D は呼んだ側が Destroy する。
         /// </summary>
         public static Texture2D Shoot(Vector3 position, Quaternion rotation, float fieldOfView, Transform hidden = null)
         {
+            if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)
+            {
+                return UnrenderedShot();
+            }
+
             GameObject rig = null;
             RenderTexture target = null;
             Texture2D shot = null;
@@ -76,6 +85,21 @@ namespace KCD
                     Object.Destroy(rig);
                 }
             }
+        }
+
+        /// <summary>
+        /// 描画のデバイスが無いときの写真。そのときにカメラを描かせると、URP が描くための RenderTexture を作れずにエラーのログを
+        /// 出すだけで何も写らない（読み戻しても画素は変わらない）。描かずに一色で塗った絵を返し、撮ったあとの保存と数え上げは
+        /// いつもどおり進める。
+        /// </summary>
+        private static Texture2D UnrenderedShot()
+        {
+            var shot = new Texture2D(Width, Height, TextureFormat.RGB24, false);
+            var pixels = new Color32[Width * Height];
+            System.Array.Fill(pixels, Unrendered);
+            shot.SetPixels32(pixels);
+            shot.Apply(false);
+            return shot;
         }
 
         /// <summary>root の下で描かれている Renderer を消し、消したものを返す（もとから消えているものは触らない）。</summary>

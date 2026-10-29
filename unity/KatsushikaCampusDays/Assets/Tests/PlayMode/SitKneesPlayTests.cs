@@ -10,7 +10,8 @@ namespace KCD.Tests
     /// <summary>
     /// 座ったときに膝が外へ開かない（がに股にならない）。選べる体ごとに座面の箱へ座らせ、
     /// 体の左右の向きで測った膝の間隔が足の間隔と脚の付け根の間隔を大きく超えないこと、
-    /// 腿が前へ向いていることを見る。前と斜め上から撮った絵を unity/logs/sit/ に置く。
+    /// 腿が前へ向いていることを見る。判定は骨の位置だけで行う。目で確かめる絵（前と斜め上）は、
+    /// 描画のデバイスがあるときだけ撮って unity/logs/sit/ に置く。
     /// </summary>
     public sealed class SitKneesPlayTests : SceneTestBase
     {
@@ -54,7 +55,16 @@ namespace KCD.Tests
             seat.transform.localScale = new Vector3(0.9f, SeatHeight, 0.45f);
 
             string folder = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "..", "logs", "sit"));
-            Directory.CreateDirectory(folder);
+            if (CanRender)
+            {
+                Directory.CreateDirectory(folder);
+            }
+            else
+            {
+                // 描けないカメラを描かせるとエラーのログが出るうえ、絵も一色になって見る意味が無い。
+                Debug.Log("[sit] 描画のデバイスが無い（-nographics）ので絵は撮らない。膝は骨の位置で測る");
+            }
+
             var bad = new List<string>();
             try
             {
@@ -70,8 +80,11 @@ namespace KCD.Tests
                     yield return PlayModeScenes.Advance(30, 1.0f);
 
                     Measure(id, animator, player.transform, bad);
-                    yield return Shoot(Path.Combine(folder, "front-" + id + ".png"), anchor, 0f, 1.5f, 0.75f);
-                    yield return Shoot(Path.Combine(folder, "above-" + id + ".png"), anchor, 1.0f, 1.3f, 1.9f);
+                    if (CanRender)
+                    {
+                        yield return Shoot(Path.Combine(folder, "front-" + id + ".png"), anchor, 0f, 1.5f, 0.75f);
+                        yield return Shoot(Path.Combine(folder, "above-" + id + ".png"), anchor, 1.0f, 1.3f, 1.9f);
+                    }
 
                     player.StandUp();
                     yield return PlayModeScenes.Advance(10, 0.5f);
