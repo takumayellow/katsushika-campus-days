@@ -547,3 +547,33 @@ def test_every_upper_part_sees_at_most_four_lamps(upper):
     over = [(mb.name, _lamps_near(mb, lamps)) for mb in parts]
     assert max(o[1] for o in over) > 0, "どの部品にも点光源が数えられていない"
     assert [o for o in over if o[1] > LAMPS_PER_PART] == []
+
+
+def test_door_plates_sit_inside_their_rooms_clear_of_doors_and_big_plates():
+    """扉の横の小さい札は自分の室の壁の中にあり、同じ並びのどの扉の開口・室名札にも重ならない。"""
+    rooms = {r[0]: r for r in RD._named_rooms()}
+    big = RD._big_plate_x()
+    hw = RD.DOOR_PLATE[0] * 0.5
+    assert len(RD.DOOR_PLATES) == 41
+    for no, x, side in RD.DOOR_PLATES:
+        _no, fl, rside, x0, x1, _doors, _kind = rooms[no]
+        assert side == rside and fl in RD.FLOORS[:-1], no
+        assert x0 + hw < x < x1 - hw, (no, x)
+        for r in rooms.values():
+            if r[1] != fl or r[2] != side:
+                continue
+            for d in r[5]:
+                assert abs(x - d) > 0.87 + hw, (no, x, r[0], d)
+            assert abs(x - big[r[0]]) > 0.21 + hw, (no, x, r[0])
+
+
+def test_every_door_of_a_named_room_has_a_plate_beside_it():
+    """番号のある室の扉は、どれも横（DOOR_PLATE_OFF の所）に室名札か小さい札がある。"""
+    big = RD._big_plate_x()
+    small = {}
+    for no, x, _side in RD.DOOR_PLATES:
+        small.setdefault(no, []).append(x)
+    for no, _fl, _side, x0, x1, doors, _kind in RD._named_rooms():
+        for d in doors:
+            xs = [big[no]] + small.get(no, [])
+            assert any(abs(abs(x - d) - RD.DOOR_PLATE_OFF) < 0.01 for x in xs), (no, d, xs)

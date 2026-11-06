@@ -19,7 +19,7 @@ from kcd_lib import signtext
 from conftest import CAMPUS_JSON
 
 SEED = 1709
-INT_CAP = 51000       # build_interiors.INT_BUDGET_ONE["kyoso"]
+INT_CAP = 45000       # build_interiors.INT_BUDGET_ONE["kyoso"]
 N_SIGNS = 27
 CAMS = ["", "_ls", "_sbback", "_2f", "_lounge2f", "_top", "_store"]
 MARGIN = ishell.WALL          # 外周壁の厚み
@@ -40,7 +40,7 @@ SOLIDS = (
 )
 # 区画ごとの三角形の上限（現在の値に 1 割強の余裕）。wall は看板の文字を含む。
 SECTION_CAPS = {
-    "floor": 100, "wall": 16000, "entry": 200, "lobby": 500, "cafe": 900, "store": 10700,
+    "floor": 100, "wall": 16000, "entry": 200, "lobby": 500, "cafe": 900, "store": 8800,
     "lounge": 2400, "ls": 1100, "studio": 1100, "ls2": 2000, "core": 900, "hall": 1600,
     "escsteps_kyoso_1f": 200,
 }
@@ -50,7 +50,7 @@ for _room in ("c201", "c202", "c203", "c204"):
                          "wall_kyoso_2f_" + _room: 360})
 # 3F は 2 室と廊下で床・壁・家具を分ける
 for _room in ("east", "west"):
-    SECTION_CAPS.update({"3f_" + _room: 1450, "floor_kyoso_3f_" + _room: 20,
+    SECTION_CAPS.update({"3f_" + _room: 1000, "floor_kyoso_3f_" + _room: 20,
                          "wall_kyoso_3f_" + _room: 380})
 SECTION_CAPS.update({"floor_kyoso_3f_corr": 20, "wall_kyoso_3f_corr": 280})
 

@@ -223,3 +223,44 @@ def test_rack_sits_on_the_lobby_wall_clear_of_the_signs_and_the_stair():
         for a, b in P.WS.halves(fl):
             assert hi < a, fl
 
+
+
+def _case_faces():
+    from kcd_interior.kit import T
+    mb = MeshBuilder("case")
+    P.case(mb, T())
+    return [(mb.mat_names[m], [mb.verts[i] for i in f]) for f, m in zip(mb.faces, mb.face_mat)]
+
+
+def test_case_posters_sit_behind_the_frame():
+    """掲示ケースのコルクとポスターは枠の前の面より奥（壁の側）にある。"""
+    faces = _case_faces()
+    inner = [pts for mat, pts in faces if mat in (P.CORK, P.PAPER) + P.POSTERS]
+    assert inner
+    for pts in inner:
+        assert all(0.0 < y < P.CASE_DEPTH * 0.5 for _x, y, _z in pts), pts
+    metal_y = [y for mat, pts in faces if mat == P.METAL for _x, y, _z in pts]
+    assert max(metal_y) == pytest.approx(P.CASE_DEPTH)
+    assert {mat for mat, _pts in faces} <= {P.METAL, P.CORK, P.PAPER} | set(P.POSTERS)
+
+
+def test_box_open_drops_only_the_named_faces():
+    from kcd_interior.kit import T
+    for skip, n in (((), 5), (("top",), 4), (("-x", "+x"), 3), (("-y",), 4)):
+        mb = MeshBuilder("b")
+        T(1.0, 2.0, 0.5, 0.3).box_open(mb, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, "m", skip=skip)
+        assert len(mb.faces) == n, skip
+    with pytest.raises(ValueError):
+        T().box_open(MeshBuilder("b"), 0, 0, 0, 1, 1, 1, "m", skip=("bottom",))
+
+
+def test_box_open_matches_box_nb_without_skips():
+    """skip が無ければ box_nb と同じ頂点の並び（面の向きも同じ）。"""
+    from kcd_interior.kit import T
+    t = T(1.0, 2.0, 0.5, 0.7)
+    a, b = MeshBuilder("a"), MeshBuilder("b")
+    t.box_open(a, -0.2, -0.1, 0.0, 0.3, 0.4, 0.5, "m")
+    t.box_nb(b, -0.2, -0.1, 0.0, 0.3, 0.4, 0.5, "m")
+    fa = sorted(tuple(tuple(round(c, 9) for c in a.verts[i]) for i in f) for f in a.faces)
+    fb = sorted(tuple(tuple(round(c, 9) for c in b.verts[i]) for i in f) for f in b.faces)
+    assert fa == fb
