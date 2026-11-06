@@ -328,6 +328,11 @@ namespace KCD.Editor
 
             if (!CampusColors.TryGetValue(name, out string hex))
             {
+                if (PaintFallbackGlass(material, name))
+                {
+                    return true;
+                }
+
                 if (!InteriorPalette.TryGetSurface(name, out InteriorPalette.Surface surface))
                 {
                     return false;
@@ -370,6 +375,40 @@ namespace KCD.Editor
             }
 
             ApplySurface(material, name, surface);
+            EditorUtility.SetDirty(material);
+            return true;
+        }
+
+        /// <summary>
+        /// 屋内のパレットのガラス（<see cref="InteriorPalette"/> の Glass）で、仮の灰色の不透明のままの .mat を
+        /// パレットの色とアルファの半透明にする。塗ったら true。
+        /// ガラスを半透明にするのは <see cref="EnsureCampus"/> が新しく作るときだけなので、Glass に載る前に
+        /// できた .mat（講義棟の手すりのガラスなど、#435）は不透明の灰色のまま残り、奥が隠れていた。
+        /// 仮の灰色でない .mat は手で調整した値なので触らない。
+        /// </summary>
+        private static bool PaintFallbackGlass(Material material, string name)
+        {
+            if (!InteriorPalette.TryGetGlass(name, out string glassHex, out float glassAlpha)
+                || !material.HasProperty(BaseColorId)
+                || !Same(material.GetColor(BaseColorId), Parse(FallbackHex)))
+            {
+                return false;
+            }
+
+            MakeTransparent(material, glassAlpha, Parse(glassHex));
+            material.SetFloat("_Smoothness", 0.95f);
+
+            // 新しく作った .mat は取り込みのときに URP が半透明の設定（RenderType のタグ・乗算済みアルファの
+            // ブレンド・影と深度のパスを切る）を足すが、既にある .mat には足さない。新しく作ったガラス
+            // （glass_interior.mat など）と同じ値にそろえる。
+            material.SetOverrideTag("RenderType", "Transparent");
+            material.SetFloat("_SrcBlend", (float)BlendMode.One);
+            material.SetFloat("_SrcBlendAlpha", (float)BlendMode.One);
+            material.SetFloat("_DstBlendAlpha", (float)BlendMode.OneMinusSrcAlpha);
+            material.EnableKeyword("_ALPHAPREMULTIPLY_ON");
+            material.SetShaderPassEnabled("DepthOnly", false);
+            material.SetShaderPassEnabled("SHADOWCASTER", false);
+            material.SetShaderPassEnabled("MOTIONVECTORS", false);
             EditorUtility.SetDirty(material);
             return true;
         }

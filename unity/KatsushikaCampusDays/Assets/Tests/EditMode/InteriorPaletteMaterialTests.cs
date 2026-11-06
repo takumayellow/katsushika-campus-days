@@ -81,5 +81,53 @@ namespace KCD.Tests
             Assert.Greater(seen, 100, "Materials/Campus の .mat の _BaseColor を読めていない");
             Assert.IsEmpty(grey, "仮の灰色 " + Fallback + " のままの面: " + string.Join(", ", grey));
         }
+
+        /// <summary>
+        /// 屋内のパレットのガラス（InteriorPalette の Glass）の .mat が、すべて半透明として作られていることを守る (#435)。
+        /// Glass に載る前にできた .mat は不透明の灰色のまま残り、講義棟の手すりのガラスの奥が隠れていた。
+        /// </summary>
+        [Test]
+        public void EveryPaletteGlassMaterialIsTransparent()
+        {
+            string palette = Path.Combine(Application.dataPath, "Scripts", "Editor", "InteriorPalette.cs");
+            var names = new List<string>();
+            foreach (Match m in Regex.Matches(
+                File.ReadAllText(palette), @"\{\s*""(?<n>[a-z0-9_]+)"",\s*new KeyValuePair<string, float>\(""[0-9A-Fa-f]{6}"""))
+            {
+                names.Add(m.Groups["n"].Value);
+            }
+
+            Assert.Contains("lecture_glass_rail", names, "InteriorPalette の Glass を読めていない");
+
+            string folder = Path.Combine(Application.dataPath, "Materials", "Campus");
+            var opaque = new List<string>();
+            int seen = 0;
+            foreach (string name in names)
+            {
+                string path = Path.Combine(folder, name + ".mat");
+                if (!File.Exists(path))
+                {
+                    continue;
+                }
+
+                seen++;
+                string mat = File.ReadAllText(path);
+                Match alpha = Regex.Match(mat, @"_BaseColor: \{r: [-+\d.eE]+, g: [-+\d.eE]+, b: [-+\d.eE]+, a: (?<a>[-+\d.eE]+)");
+                bool transparent = Regex.IsMatch(mat, @"- _Surface: 1\b")
+                    && Regex.IsMatch(mat, @"- _ZWrite: 0\b")
+                    && Regex.IsMatch(mat, @"m_CustomRenderQueue: 3000\b")
+                    && Regex.IsMatch(mat, @"RenderType: Transparent\b")
+                    && mat.Contains("- _SURFACE_TYPE_TRANSPARENT")
+                    && alpha.Success
+                    && float.Parse(alpha.Groups["a"].Value, CultureInfo.InvariantCulture) < 1f;
+                if (!transparent)
+                {
+                    opaque.Add(name);
+                }
+            }
+
+            Assert.Greater(seen, 5, "Materials/Campus のガラスの .mat を読めていない");
+            Assert.IsEmpty(opaque, "半透明になっていないガラス: " + string.Join(", ", opaque));
+        }
     }
 }
