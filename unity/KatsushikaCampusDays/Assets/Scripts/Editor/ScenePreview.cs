@@ -946,6 +946,36 @@ namespace KCD.Editor
             },
             new Shot
             {
+                Name = "shot_kyoso_3f_room",
+                Space = Frame.Interior,
+                Building = "kyoso",
+                Eye = new Vector3(1.9f, 11.2f, 22.2f),
+                Look = new Vector3(-6.2f, 10.6f, 25.6f),
+                Fov = 0f,
+                Note = "共創棟 3F の東の教室（後ろから黒板と吹き抜けのガラス）",
+            },
+            new Shot
+            {
+                Name = "shot_kyoso_3f_corr",
+                Space = Frame.Interior,
+                Building = "kyoso",
+                Eye = new Vector3(10.6f, 11.2f, 19.9f),
+                Look = new Vector3(-7.1f, 10.6f, 20.0f),
+                Fov = 0f,
+                Note = "共創棟 3F の廊下と、東の端の階段室の扉",
+            },
+            new Shot
+            {
+                Name = "shot_kyoso_stairdoor2f",
+                Space = Frame.Interior,
+                Building = "kyoso",
+                Eye = new Vector3(-2.6f, 7.0f, 24.6f),
+                Look = new Vector3(-7.1f, 6.4f, 27.8f),
+                Fov = 0f,
+                Note = "共創棟 2F の階段の上端と、東のコアの階段室の扉",
+            },
+            new Shot
+            {
                 Name = "shot_kyoso_esc",
                 Space = Frame.Interior,
                 Building = "kyoso",

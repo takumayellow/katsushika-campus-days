@@ -98,7 +98,7 @@ def east_face(xa, first):
     return xa if first else xa + shell.PART * 0.5
 
 
-def _board(mb, xf, yc):
+def board(mb, xf, yc):
     """東の壁の面 xf に付く緑の黒板と枠・チョークの受け（z=0 で組む）。"""
     t = kit.T(xf, yc, 0.0, D.FACE_WEST)       # ローカルの +Y が室の側（西）
     hw = BOARD_W * 0.5
@@ -109,20 +109,20 @@ def _board(mb, xf, yc):
     t.box_nb(mb, -hw, 0.03, z0 - f, hw, 0.12, z0 - f + 0.04, "metal_gray")
 
 
-def _furniture(c, key, xa, first):
-    mb = c.furn(key)
+def classroom_furniture(mb, xa, first, desk_ys, z):
+    """東の壁の黒板と教卓、西を向いた長机と椅子を組んで高さ z へ持ち上げる（2F・3F の教室で共有）。"""
     base = len(mb.verts)
-    yc = (DESK_Y[0] + DESK_Y[-1]) * 0.5
-    _board(mb, east_face(xa, first), yc)
+    yc = (desk_ys[0] + desk_ys[-1]) * 0.5
+    board(mb, east_face(xa, first), yc)
     F.podium(mb, xa + 1.4, yc, D.FACE_WEST)
     for dx in ROW_DX:
         x = xa + dx
-        for y in DESK_Y:
+        for y in desk_ys:
             F.long_desk(mb, x, y, D.FACE_EAST, w=DESK_W, d=DESK_D, top=DESK_TOP)
             for sy in (-CHAIR_DY, CHAIR_DY):
                 F.chair_canteen(mb, kit.T(x + CHAIR_DX, y + sy, 0.0, D.FACE_EAST),
                                 mat="chair_grey")
-    kit.lift(mb, base, D.Z2)
+    kit.lift(mb, base, z)
 
 
 def lamp_points(xa, xb):
@@ -139,6 +139,6 @@ def build(c):
         key = "2f_" + name.lower()
         _floor(c, key, xa, xb)
         _shell(c, key, xa, xb, first=i == 0, last=i == len(rs) - 1)
-        _furniture(c, name.lower(), xa, first=i == 0)
+        classroom_furniture(c.furn(name.lower()), xa, i == 0, DESK_Y, D.Z2)
         pts.extend(lamp_points(xa, xb))
     return pts

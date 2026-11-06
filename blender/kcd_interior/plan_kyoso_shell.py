@@ -148,7 +148,7 @@ def columns(c):
 
 
 # ---- コア -------------------------------------------------------------- #
-def _door(mb, x, y, ang, w=1.0, h=2.1):
+def door(mb, x, y, ang, w=1.0, h=2.1):
     """閉じた鉄の扉（階段・トイレ・機械室）。(x, y) は壁の面、ang の正面へ出す。"""
     t = kit.T(x, y, 0.0, ang)
     t.box(mb, -w * 0.5, 0.0, 0.0, w * 0.5, 0.06, h, "kyoso_wall_bluegrey")
@@ -175,7 +175,7 @@ def core_east(c, mb):
     for y in (20.6, 23.0):
         shell.elevator_bank(mb, e0, y, count=1, ang=D.FACE_EAST, w=0.65, h=2.3)
     for x in (-15.2, -12.6):
-        _door(mb, x, y0, D.FACE_MALL)
+        door(mb, x, y0, D.FACE_MALL)
 
 
 def core_west(c, mb):
@@ -194,7 +194,7 @@ def core_west(c, mb):
         shell.elevator_bank(mb, e2, y, count=1, ang=D.FACE_WEST, w=0.65, h=2.3)
     sx = (D.EV_SINGLE_X[0] + D.EV_SINGLE_X[1]) * 0.5
     shell.elevator_bank(mb, sx, y1, count=1, ang=D.FACE_MALL, w=0.65, h=2.3)
-    _door(mb, 22.0, y1, D.FACE_PARK)
+    door(mb, 22.0, y1, D.FACE_PARK)
     for y in D.VENDING_Y:
         shell.vending(mb, D.VENDING_X, y, ang=D.FACE_EAST)
 
@@ -210,10 +210,10 @@ def park_band(c, mb):
     for x in (D.FM[0], D.STAIRWELL_E[0], D.STAIRWELL_E[2], D.STAIRWELL_W[0],
               D.STAIRWELL_W[2]):
         kit.box(mb, x - t * 0.5, y, 0.0, x + t * 0.5, D.Y_PARK, D.Z_SLAB, WALL)
-    _door(mb, -25.6, y, D.FACE_MALL, w=1.6)
-    _door(mb, D.STAIRWELL_E[0] + 0.8, y, D.FACE_MALL)
-    _door(mb, D.STAIRWELL_W[0] + 0.8, y, D.FACE_MALL)
-    _door(mb, 30.0, y, D.FACE_MALL, w=1.6)
+    door(mb, -25.6, y, D.FACE_MALL, w=1.6)
+    door(mb, D.STAIRWELL_E[0] + 0.8, y, D.FACE_MALL)
+    door(mb, D.STAIRWELL_W[0] + 0.8, y, D.FACE_MALL)
+    door(mb, 30.0, y, D.FACE_MALL, w=1.6)
     shell.exit_sign(mb, D.STAIRWELL_E[0] + 0.8, y - 0.06, 2.45, ang=D.FACE_MALL)
     shell.exit_sign(mb, D.STAIRWELL_W[0] + 0.8, y - 0.06, 2.45, ang=D.FACE_MALL)
     # コンビニの正面（自動扉の上まで）と白い帯
