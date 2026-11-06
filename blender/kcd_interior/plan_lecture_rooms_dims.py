@@ -190,6 +190,31 @@ def _partition_sign(fl):
              NO_ANCHOR),)
 
 
+# 西ロビーの西の外周壁（EV を降りると正面。西の階段の口より南）の大きな階表示と、その下の室番号の案内板（#423）。
+# 階表示は 1F の黒いコアの白抜きの「1F」（YT 00:33）、案内板は 1F の案内板（YT 00:34）の型。上の階に
+# あるかは写真で未確認。7F は用途がどの資料にも無いので案内板を置かない（spec §1-10）。
+LOBBY_SIGN_Y = 26.0                   # 板の中心の Y（階段の口 29.03 と南の廊下の面 19.8 の間）
+LOBBY_FLOOR_SIGN = (1.1, 1.0, 2.0)    # 階表示の幅・高さ・中心の高さ（床から）
+LOBBY_DIRECTORY = (1.6, 0.42, 1.15)   # 案内板の幅・高さ・中心の高さ（床から）
+LOBBY_ROOMS = {"2F": ("201–203・ラウンジ", "Rooms 201–203 / Lounge"),
+               "3F": ("301–311・自習室", "Rooms 301–311 / Study Room"),
+               "4F": ("401–411", "Rooms 401–411"),
+               "5F": ("501–511", "Rooms 501–511"),
+               "6F": ("601–611", "Rooms 601–611")}
+
+
+def _lobby_signs(fl):
+    x, z = X_IN_W + 0.01, FLOOR_Z[fl]
+    w, h, dz = LOBBY_FLOOR_SIGN
+    rows = [("wall", fl, FLOOR_NAMES[fl], w, h, x, LOBBY_SIGN_Y, z + dz, E, BLACK, NO_ANCHOR)]
+    if fl in LOBBY_ROOMS:
+        ja, en = LOBBY_ROOMS[fl]
+        w, h, dz = LOBBY_DIRECTORY
+        rows.append(("wall", ja, en, w, h, x, LOBBY_SIGN_Y, z + dz, E, WHITE, NO_ANCHOR))
+    return tuple(rows)
+
+
 SIGNS = (sum((_floor_signs(f, FLOOR_NAMES[f], FLOOR_Z[f]) for f in FLOORS), ())
          + sum((_partition_sign(f) for f in FLOORS[2:-1]), ())
+         + sum((_lobby_signs(f) for f in FLOORS), ())
          + tuple(_plate(no, x, side) for no, x, side in ROOM_PLATES))
