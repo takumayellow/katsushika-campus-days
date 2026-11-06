@@ -24,8 +24,8 @@ X_GLASS = 17.65                       # 仕切りのガラスの線
 ESC_HALL = (X_GLASS, D.Y_CORE0, X_CORR_E, D.Y_CORE1)   # エスカレータのホール（上は 2F の床）
 Z_SLAB2_UNDER = D.F2 - D.SLAB         # 2F の床スラブの下面（エスカレータのホールの天井）
 
-CORR = "lecture_concrete"
-HALL = "lecture_concrete_light"       # 東端ホールに面する北の壁（生協の前と同じ面）
+CORR = "lecture_concrete_wall"
+HALL = "lecture_concrete_light_wall"       # 東端ホールに面する北の壁（生協の前と同じ面）
 DOOR_WOOD = "lecture_door_wood"
 FRAME = "metal_dark"
 FRAME_W = "metal_white"

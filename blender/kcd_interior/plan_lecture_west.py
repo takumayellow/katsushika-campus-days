@@ -47,7 +47,8 @@ EV_POINT = (D.CORE_EV[0] - 1.4, sum(D.EV_DOORS_Y) * 0.5)  # EV の乗り場（�
 LOCKERS = (7.0, 12.8, D.Y_CORE0 - 0.23, 1.8)   # 男子トイレの南の面のロッカー（3F〜6F）: x0, x1, 中心 y, 高さ
 LOCKER_FLOORS = RD.FLOORS[1:-1]
 
-CORR = "lecture_concrete_light"
+CORR = "lecture_concrete_light"            # 床の小口（平らなまま）
+CORR_WALL = "lecture_concrete_light_wall"  # 廊下の打放しの壁・垂れ壁（型枠の跡、#423）
 CORE = "lecture_core_black"
 CEIL = "lecture_ceiling_upper"
 CARPET = "lecture_carpet_upper"
@@ -169,13 +170,13 @@ def corridor_wall(bs, floor, yc, doors, z1, top, x1=X_WALL1, extra=()):
         mb = bs.get(band(yc), k)
         mine = [d for d in doors if a <= d < b]
         gaps = [(lo, hi) for lo, hi in extra if a <= lo < b]
-        SH.part(_Walls(mb), (a, yc), (b, yc), z0, z1, mat=CORR, top=top,
+        SH.part(_Walls(mb), (a, yc), (b, yc), z0, z1, mat=CORR_WALL, top=top,
                 gaps=[(d - hw - a, d + hw - a) for d in mine] + [(lo - a, hi - a) for lo, hi in gaps])
         for d in mine:
-            kit.box(mb, d - hw, yc - t, z0 + RD.DOOR_H, d + hw, yc + t, z1, CORR)
+            kit.box(mb, d - hw, yc - t, z0 + RD.DOOR_H, d + hw, yc + t, z1, CORR_WALL)
             _door(mb, d, yc, z0, slide_ang(d, doors, x1), open_=RD.DOOR_OPEN)
         for lo, hi in gaps:
-            kit.box(mb, lo, yc - t, z0 + SEEV_GAP_H, hi, yc + t, z1, CORR)
+            kit.box(mb, lo, yc - t, z0 + SEEV_GAP_H, hi, yc + t, z1, CORR_WALL)
 
 
 def _closed_rooms(bs, floor):
@@ -213,7 +214,7 @@ def _east_end(bs, floor):
     """4F〜7F: 廊下の東の外壁（X 35.8）と南東の階段の閉じた扉。"""
     z0, z1 = RD.FLOOR_Z[floor], RD.wall_top(floor)
     x = RD.X_UPPER_E
-    SH.part(_Walls(bs.get("c", segment(x))), (x, RD.Y_CS), (x, RD.Y_CN), z0, z1, mat=CORR,
+    SH.part(_Walls(bs.get("c", segment(x))), (x, RD.Y_CS), (x, RD.Y_CN), z0, z1, mat=CORR_WALL,
             top=floor == RD.TOP_FLOOR)
     y = D.Y_ROOM_S1
     _door(bs.at(STAIR_DOOR_X, y), STAIR_DOOR_X, y, z0, 0.0, w=1.0, h=2.1)
@@ -229,9 +230,9 @@ def _seev(c, floor):
     mb = c.part("wall", tag)
     w = _Walls(mb)
     t = RD.T * 0.5
-    SH.part(w, (x0, y0 - t), (x0, RD.Y_CS), z0, z1, mat=CORR, top=top)
-    SH.part(w, (x1, y0 - t), (x1, RD.Y_CS), z0, z1, mat=CORR, top=top)
-    SH.part(w, (x0 + t, y0), (x1 - t, y0), z0, z1, mat=CORR, top=top)
+    SH.part(w, (x0, y0 - t), (x0, RD.Y_CS), z0, z1, mat=CORR_WALL, top=top)
+    SH.part(w, (x1, y0 - t), (x1, RD.Y_CS), z0, z1, mat=CORR_WALL, top=top)
+    SH.part(w, (x0 + t, y0), (x1 - t, y0), z0, z1, mat=CORR_WALL, top=top)
     zc = z0 + RD.CEIL_H
     shell.ceiling(mb, x0 + t, y0 + t, x1 - t, y1, zc, CEIL)
     cx = (x0 + x1) * 0.5

@@ -328,8 +328,13 @@ namespace KCD.Editor
 
             if (!CampusColors.TryGetValue(name, out string hex))
             {
-                return InteriorPalette.TryGetSurface(name, out InteriorPalette.Surface surface)
-                    && PaintFallback(material, name, surface);
+                if (!InteriorPalette.TryGetSurface(name, out InteriorPalette.Surface surface))
+                {
+                    return false;
+                }
+
+                bool painted = PaintFallback(material, name, surface);
+                return RepaintInteriorMap(material, name, surface, tiling) || painted;
             }
 
             Color declared = Parse(hex);
@@ -367,6 +372,40 @@ namespace KCD.Editor
             ApplySurface(material, name, surface);
             EditorUtility.SetDirty(material);
             return true;
+        }
+
+        /// <summary>
+        /// 屋内のパレットの面の画像（講義棟の打放しの壁の型枠の跡など、#423）を tiling.json に合わせる。
+        /// 画像を貼ったら _BaseColor は白、このフォルダの画像を外したらパレットの色に戻す。直したら true。
+        /// tiling.json に無く画像も貼っていない面は何もしない（手で調整した色を上書きしない）。
+        /// </summary>
+        private static bool RepaintInteriorMap(
+            Material material, string name, InteriorPalette.Surface surface, Dictionary<string, float> tiling)
+        {
+            bool changed = CampusSurfaces.Apply(material, name, tiling, out bool textured);
+            if (!material.HasProperty(BaseColorId) || (!textured && !changed))
+            {
+                if (changed)
+                {
+                    EditorUtility.SetDirty(material);
+                }
+
+                return changed;
+            }
+
+            Color target = textured ? Color.white : Parse(surface.Hex);
+            if (!Same(material.GetColor(BaseColorId), target))
+            {
+                material.SetColor(BaseColorId, target);
+                changed = true;
+            }
+
+            if (changed)
+            {
+                EditorUtility.SetDirty(material);
+            }
+
+            return changed;
         }
 
         private static void ApplySurface(Material material, string name, InteriorPalette.Surface surface)
