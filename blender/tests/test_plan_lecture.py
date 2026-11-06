@@ -159,6 +159,23 @@ def test_signs_are_all_placed_with_text(signed):
     assert len([r for r in signed.signs if r["empty"]]) == len(anchored)
 
 
+def test_every_upper_floor_shows_its_floor_on_the_lobby_wall():
+    """#423: 2F〜7F の EV を降りた正面（西ロビーの西の外周壁）に、その階の大きな階表示がある。
+    板は西の階段の口より南で、案内板（7F は無し）はその下に重ならずに並ぶ。"""
+    from kcd_interior import plan_lecture_wstair as WS
+    for fl in RD.FLOORS:
+        rows = [r for r in RD.SIGNS if abs(r[5] - RD.X_IN_W) < 0.05
+                and RD.FLOOR_Z[fl] <= r[7] < RD.FLOOR_Z[fl] + RD.CEIL_H]
+        assert rows and rows[0][1] == fl and rows[0][8] == RD.E, fl
+        assert len(rows) == (2 if fl in RD.LOBBY_ROOMS else 1), fl
+        stair = min(a for a, _ in WS.halves(fl))
+        for r in rows:
+            assert r[6] + r[3] * 0.5 < stair and r[6] - r[3] * 0.5 > D.Y_ROOM_S1, (fl, r[1])
+            assert r[7] + r[4] * 0.5 < RD.FLOOR_Z[fl] + RD.CEIL_H, (fl, r[1])
+        if len(rows) == 2:
+            assert rows[1][7] + rows[1][4] * 0.5 < rows[0][7] - rows[0][4] * 0.5, fl
+
+
 def test_register_plates_go_where_the_coop_puts_them(signed):
     regs = [r for r in signed.signs if r["ja"] in ("1", "2", "3", "4")]
     assert [(r["pos"]["x"], r["pos"]["z"]) for r in regs] == list(REGISTERS)

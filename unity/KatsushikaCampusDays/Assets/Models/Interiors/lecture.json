@@ -1261,7 +1261,7 @@
    "z": 46.07
   }
  },
- "triangles": 124964,
+ "triangles": 128766,
  "seats": 270,
  "notes": [
   "中廊下・黒いコア・入口ロビー・6 層の吹き抜け・101 の 270 席の段床・2F〜7F の廊下と教室 20 室・1F→6F のエスカレータ・1F〜7F の EV"
@@ -3252,6 +3252,259 @@
   {
    "empty": null,
    "kind": "wall",
+   "ja": "2F",
+   "en": "2nd Floor",
+   "tris": 204,
+   "pos": {
+    "x": -28.29,
+    "y": 6.6,
+    "z": 26.0
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.1,
+   "h": 1.0,
+   "faces": 1,
+   "plate": "lecture_sign_black",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "201–203・ラウンジ",
+   "en": "Rooms 201–203 / Lounge",
+   "tris": 571,
+   "pos": {
+    "x": -28.29,
+    "y": 5.75,
+    "z": 26.0
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.6,
+   "h": 0.42,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "3F",
+   "en": "3rd Floor",
+   "tris": 230,
+   "pos": {
+    "x": -28.29,
+    "y": 10.8,
+    "z": 26.0
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.1,
+   "h": 1.0,
+   "faces": 1,
+   "plate": "lecture_sign_black",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "301–311・自習室",
+   "en": "Rooms 301–311 / Study Room",
+   "tris": 663,
+   "pos": {
+    "x": -28.29,
+    "y": 9.95,
+    "z": 26.0
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.6,
+   "h": 0.42,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "4F",
+   "en": "4th Floor",
+   "tris": 167,
+   "pos": {
+    "x": -28.29,
+    "y": 15.0,
+    "z": 26.0
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.1,
+   "h": 1.0,
+   "faces": 1,
+   "plate": "lecture_sign_black",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "401–411",
+   "en": "Rooms 401–411",
+   "tris": 282,
+   "pos": {
+    "x": -28.29,
+    "y": 14.15,
+    "z": 26.0
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.6,
+   "h": 0.42,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "5F",
+   "en": "5th Floor",
+   "tris": 204,
+   "pos": {
+    "x": -28.29,
+    "y": 19.2,
+    "z": 26.0
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.1,
+   "h": 1.0,
+   "faces": 1,
+   "plate": "lecture_sign_black",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "501–511",
+   "en": "Rooms 501–511",
+   "tris": 320,
+   "pos": {
+    "x": -28.29,
+    "y": 18.35,
+    "z": 26.0
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.6,
+   "h": 0.42,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "6F",
+   "en": "6th Floor",
+   "tris": 239,
+   "pos": {
+    "x": -28.29,
+    "y": 23.4,
+    "z": 26.0
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.1,
+   "h": 1.0,
+   "faces": 1,
+   "plate": "lecture_sign_black",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "601–611",
+   "en": "Rooms 601–611",
+   "tris": 354,
+   "pos": {
+    "x": -28.29,
+    "y": 22.55,
+    "z": 26.0
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.6,
+   "h": 0.42,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "7F",
+   "en": "7th Floor",
+   "tris": 160,
+   "pos": {
+    "x": -28.29,
+    "y": 27.6,
+    "z": 26.0
+   },
+   "facing": {
+    "x": 1.0,
+    "y": 0.0,
+    "z": 0.0
+   },
+   "w": 1.1,
+   "h": 1.0,
+   "faces": 1,
+   "plate": "lecture_sign_black",
+   "text": "plastic_white",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
    "ja": "203",
    "en": "Room 203",
    "tris": 233,
@@ -4239,7 +4492,7 @@
    "align": "center"
   }
  ],
- "text_triangles": 25816,
+ "text_triangles": 29210,
  "ext": {
   "objects": [
    "ext_lecture",
