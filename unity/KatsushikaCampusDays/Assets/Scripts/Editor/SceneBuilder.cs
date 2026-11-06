@@ -146,6 +146,8 @@ namespace KCD.Editor
             LectureBoardStage.Build(root);
             // サブクエスト「306 の居残り」の TA と、最前列の PC を調べる判定（講義棟 3F の 306, #392）。
             LectureTaStage.Build(root);
+            // サブクエスト「出席は小テストで」の隣の席の学生と、101 の黒板の板書（講義棟 1F の 101, #424）。
+            LectureSeatmateStage.Build(root);
             if (route != null)
             {
                 // 寮の屋内と玄関。本編の 9 棟とは別枠で、探索率にも「入った建物」にも数えない。

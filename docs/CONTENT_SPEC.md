@@ -120,6 +120,7 @@ Assets/Data/Ending       → Assets/Resources/KCD/Ending
 | `q_sq_night_walk` | 16 | autoStart | q_sunset | visit `gate_main` (minHour 19) | `ach_full_day` |
 | `q_sq_hello_world` | 18 | lecture `t_hello_start` | q_lecture | talk `board_203` → `board_302` → `board_402` → `board_502` → `board_602` → flag `hello_world_reply`（7F の白板 `board_7F` の選択肢）→ talk lecture | `ach_hello_world` |
 | `q_sq_first_program` | 19 | lecture `t_program_start` | q_sq_hello_world | talk `ta_306`（306 の TA）→ flag `first_program_ran`（最前列の PC `pc_306` の選択肢）→ talk `ta_306` → talk lecture | `ach_first_program` |
+| `q_sq_pop_quiz` | 21 | tateishi `t_start`（101 の隣の席の学生） | q_lecture | talk `board_lecture_101`（101 の黒板）→ flag `pop_quiz_answered`（tateishi `t_quiz` の選択肢。外れは答え直せる。正解で好感度 +1） | なし |
 
 **屋内 `visit` を動かすために必要なもの**: 屋内 `poi_*` を対象にする `visit` ステップは、その Empty の位置に `VisitZone(PlaceId = poi 名)` が要る。
 `InteriorStage.AddPoiZones` が、全 Interiors の `poi_*` Empty に 4×3×4 m の VisitZone を自動生成する。

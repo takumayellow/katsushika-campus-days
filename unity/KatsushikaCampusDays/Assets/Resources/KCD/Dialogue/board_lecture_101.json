@@ -1,0 +1,51 @@
+{
+  "id": "board_lecture_101",
+  "speaker": "黒板",
+  "topics": [
+    {
+      "id": "t_read",
+      "requiresStep": "q_sq_pop_quiz/s1",
+      "lines": [
+        {
+          "speaker": "黒板",
+          "text": "次回　小テスト（出席を兼ねます）",
+          "text_en": "Next time: pop quiz (counts as attendance)",
+          "written": true
+        },
+        {
+          "speaker": "黒板",
+          "text": "練習：4 席の空き(0)・埋まり(1)の並び方は何通り？",
+          "text_en": "Practice: how many ways can 4 seats be empty (0) or taken (1)?",
+          "written": true
+        },
+        {
+          "speaker": "自分",
+          "text": "隅に小さく「答えは次回」とある。みなとに伝えよう。",
+          "text_en": "In the corner, in small letters: \"Answer next time.\" Better tell Minato."
+        }
+      ]
+    },
+    {
+      "id": "t_idle",
+      "lines": [
+        {
+          "speaker": "黒板",
+          "text": "次回　小テスト（出席を兼ねます）",
+          "text_en": "Next time: pop quiz (counts as attendance)",
+          "written": true
+        },
+        {
+          "speaker": "黒板",
+          "text": "練習：4 席の空き(0)・埋まり(1)の並び方は何通り？",
+          "text_en": "Practice: how many ways can 4 seats be empty (0) or taken (1)?",
+          "written": true
+        },
+        {
+          "speaker": "自分",
+          "text": "消されずに残っている。次の講義まで、このままらしい。",
+          "text_en": "Nobody has erased it. It seems it will stay up until the next lecture."
+        }
+      ]
+    }
+  ]
+}
