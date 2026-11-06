@@ -26,6 +26,12 @@ Z_VOID = D.CEIL_EAST_VOID         # 吹き抜けの天井 8.5
 Z_LOW = D.CEIL_EAST_LOW           # 2F の床の下の天井 4.0
 CORE_X = (D.X_STEP, D.EAST_VOID_B[0])        # 南東コアの箱 28.6〜37.8
 
+# 生協の入口（X 37.4〜39.8）の両脇の鉢。西の鉢は「店舗入口はこちら→」の札（X 36.0〜37.2）の
+# 前を空けるため札より西に置く。生協の南の壁の面（Y 35.1）からは葉の半径（鉢の 1.5 倍）ぶん離す
+PLANTER_R = 0.24
+PLANTER_X = (35.5, 40.4)
+PLANTER_Y = Y_FOYER_N - PLANTER_R * 1.5 - 0.05
+
 # 直線階段（1F → 2F の渡り）
 ST_X = (D.DIRECT_STAIR_X[0], X_E_IN)
 ST_Y0, ST_Y1 = D.DIRECT_STAIR_Y            # 20.6 → 30.4
@@ -126,5 +132,6 @@ def build(c):
     _tactile(c)
     _stair(c)
     _edges(c)
-    shell.planter(c.wall, 41.5, 14.0)
-    shell.planter(c.wall, 41.5, 18.0)
+    # 生協の入口の両脇の小さな鉢植え（生協の紹介の写真では窓口の脇に高さ 1.5 m ほどの鉢がある）
+    for x in PLANTER_X:
+        shell.planter(c.wall, x, PLANTER_Y, r=PLANTER_R, h=0.5, leaf_h=1.0)
