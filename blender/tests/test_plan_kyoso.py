@@ -293,6 +293,17 @@ def test_2f_classrooms(built):
     assert D.ROOMS2_Y[1] < D.SLAB_A[1]
 
 
+def test_2f_boards_stand_out_of_east_walls(built):
+    """各室の黒板の面は東の壁の室内の側の面より室の側にあり、壁に埋もれない。"""
+    furns = dict(built.furns)
+    for i, (name, xa, xb) in enumerate(R2.rooms()):
+        mb = next(m for n, m in furns.items() if n.endswith("_" + name.lower()))
+        xs = [mb.verts[k][0] for f, m in zip(mb.faces, mb.face_mat)
+              if mb.mat_names[m] == "board_green" for k in f]
+        assert xs, name
+        assert min(xs) > R2.east_face(xa, i == 0) + 1e-3, name
+        assert max(xs) < xb, name
+
 
 def test_upper_floors_lit_by_lamps(built):
     """Unity（InteriorStage）は lamp_ がある建物では、いちばん低い lamp_ の階（床の高さ − 0.5）より上の

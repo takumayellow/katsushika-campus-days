@@ -93,9 +93,14 @@ def _shell(c, key, xa, xb, first, last):
         shell.partition(mb, (xb, y0), (xb, yw), D.Z2, D.Z_CEIL2, WALL)
 
 
-def _board(mb, xa, yc):
-    """東の壁の緑の黒板と枠・チョークの受け（z=0 で組む）。"""
-    t = kit.T(xa, yc, 0.0, D.FACE_WEST)       # ローカルの +Y が室の側（西）
+def east_face(xa, first):
+    """室の東の壁の室内の側の面の X。端の壁は xa で終わり、室の境の壁は xa を中心に厚みを持つ。"""
+    return xa if first else xa + shell.PART * 0.5
+
+
+def _board(mb, xf, yc):
+    """東の壁の面 xf に付く緑の黒板と枠・チョークの受け（z=0 で組む）。"""
+    t = kit.T(xf, yc, 0.0, D.FACE_WEST)       # ローカルの +Y が室の側（西）
     hw = BOARD_W * 0.5
     z0, z1 = BOARD_Z
     f = 0.06
@@ -104,11 +109,11 @@ def _board(mb, xa, yc):
     t.box_nb(mb, -hw, 0.03, z0 - f, hw, 0.12, z0 - f + 0.04, "metal_gray")
 
 
-def _furniture(c, key, xa):
+def _furniture(c, key, xa, first):
     mb = c.furn(key)
     base = len(mb.verts)
     yc = (DESK_Y[0] + DESK_Y[-1]) * 0.5
-    _board(mb, xa, yc)
+    _board(mb, east_face(xa, first), yc)
     F.podium(mb, xa + 1.4, yc, D.FACE_WEST)
     for dx in ROW_DX:
         x = xa + dx
@@ -134,6 +139,6 @@ def build(c):
         key = "2f_" + name.lower()
         _floor(c, key, xa, xb)
         _shell(c, key, xa, xb, first=i == 0, last=i == len(rs) - 1)
-        _furniture(c, name.lower(), xa)
+        _furniture(c, name.lower(), xa, first=i == 0)
         pts.extend(lamp_points(xa, xb))
     return pts
