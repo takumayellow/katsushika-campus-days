@@ -155,6 +155,111 @@
    "y": 2.4,
    "z": 36.57
   },
+  "sign_kyoso_24": {
+   "x": -10.523,
+   "y": 7.8,
+   "z": 14.33
+  },
+  "sign_kyoso_25": {
+   "x": -3.4,
+   "y": 7.8,
+   "z": 14.33
+  },
+  "sign_kyoso_26": {
+   "x": 3.7,
+   "y": 7.8,
+   "z": 14.33
+  },
+  "sign_kyoso_27": {
+   "x": 10.8,
+   "y": 7.8,
+   "z": 14.33
+  },
+  "lamp_kyoso_2F_1": {
+   "x": -1.0,
+   "y": 8.0,
+   "z": 16.8
+  },
+  "lamp_kyoso_2F_2": {
+   "x": -1.0,
+   "y": 8.0,
+   "z": 23.4
+  },
+  "lamp_kyoso_2F_3": {
+   "x": 6.0,
+   "y": 8.0,
+   "z": 16.8
+  },
+  "lamp_kyoso_2F_4": {
+   "x": 6.0,
+   "y": 8.0,
+   "z": 23.4
+  },
+  "lamp_kyoso_2F_5": {
+   "x": 13.0,
+   "y": 8.0,
+   "z": 16.8
+  },
+  "lamp_kyoso_2F_6": {
+   "x": 13.0,
+   "y": 8.0,
+   "z": 23.4
+  },
+  "lamp_kyoso_2F_7": {
+   "x": -8.162,
+   "y": 8.0,
+   "z": 7.0
+  },
+  "lamp_kyoso_2F_8": {
+   "x": -8.162,
+   "y": 8.0,
+   "z": 11.5
+  },
+  "lamp_kyoso_2F_9": {
+   "x": -1.05,
+   "y": 8.0,
+   "z": 7.0
+  },
+  "lamp_kyoso_2F_10": {
+   "x": -1.05,
+   "y": 8.0,
+   "z": 11.5
+  },
+  "lamp_kyoso_2F_11": {
+   "x": 6.05,
+   "y": 8.0,
+   "z": 7.0
+  },
+  "lamp_kyoso_2F_12": {
+   "x": 6.05,
+   "y": 8.0,
+   "z": 11.5
+  },
+  "lamp_kyoso_2F_13": {
+   "x": 13.15,
+   "y": 8.0,
+   "z": 7.0
+  },
+  "lamp_kyoso_2F_14": {
+   "x": 13.15,
+   "y": 8.0,
+   "z": 11.5
+  },
+  "lamp_kyoso_3F_1": {
+   "x": -1.85,
+   "y": 12.2,
+   "z": 25.2
+  },
+  "lamp_kyoso_3F_2": {
+   "x": 6.85,
+   "y": 12.2,
+   "z": 25.2
+  },
+  "lamp_kyoso_3F_3": {
+   "x": -3.2,
+   "y": 12.2,
+   "z": 34.0
+  },
   "poi_kyoso_store": {
    "x": -14.8,
    "y": 0.0,
@@ -2781,15 +2886,23 @@
    "z": 20.7
   }
  },
- "triangles": 35579,
+ "triangles": 43861,
  "seats": 163,
  "notes": [
-  "1F=エントランスホール・スタジオ・ラーニングスクエア1/2・ホール・スターバックス・ファミリーマート、2F=ラウンジ、3F=ガラスの教室（見るだけ）。q_coffee の舞台"
+  "1F=エントランスホール・スタジオ・ラーニングスクエア1/2・ホール・スターバックス・ファミリーマート、2F=ラウンジ・教室 C201〜C204、3F=ガラスの教室（見るだけ）。q_coffee の舞台"
  ],
  "objects": [
   "floor_kyoso",
   "wall_kyoso",
   "escsteps_kyoso_1f",
+  "floor_kyoso_2f_c201",
+  "wall_kyoso_2f_c201",
+  "floor_kyoso_2f_c202",
+  "wall_kyoso_2f_c202",
+  "floor_kyoso_2f_c203",
+  "wall_kyoso_2f_c203",
+  "floor_kyoso_2f_c204",
+  "wall_kyoso_2f_c204",
   "furn_kyoso_01_entry",
   "furn_kyoso_02_lobby",
   "furn_kyoso_03_cafe",
@@ -2799,7 +2912,11 @@
   "furn_kyoso_07_studio",
   "furn_kyoso_08_ls2",
   "furn_kyoso_09_core",
-  "furn_kyoso_10_hall"
+  "furn_kyoso_10_hall",
+  "furn_kyoso_11_c201",
+  "furn_kyoso_12_c202",
+  "furn_kyoso_13_c203",
+  "furn_kyoso_14_c204"
  ],
  "signs": [
   {
@@ -3335,9 +3452,101 @@
    "plate": "kyoso_chalkboard",
    "text": "plastic_white",
    "align": "center"
+  },
+  {
+   "empty": "sign_kyoso_24",
+   "kind": "wall",
+   "ja": "教室 C201",
+   "en": "Classroom C201",
+   "tris": 423,
+   "pos": {
+    "x": -10.523,
+    "y": 7.8,
+    "z": 14.33
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 1.0,
+   "h": 0.32,
+   "faces": 1,
+   "plate": "plastic_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": "sign_kyoso_25",
+   "kind": "wall",
+   "ja": "教室 C202",
+   "en": "Classroom C202",
+   "tris": 439,
+   "pos": {
+    "x": -3.4,
+    "y": 7.8,
+    "z": 14.33
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 1.0,
+   "h": 0.32,
+   "faces": 1,
+   "plate": "plastic_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": "sign_kyoso_26",
+   "kind": "wall",
+   "ja": "教室 C203",
+   "en": "Classroom C203",
+   "tris": 463,
+   "pos": {
+    "x": 3.7,
+    "y": 7.8,
+    "z": 14.33
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 1.0,
+   "h": 0.32,
+   "faces": 1,
+   "plate": "plastic_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": "sign_kyoso_27",
+   "kind": "wall",
+   "ja": "教室 C204",
+   "en": "Classroom C204",
+   "tris": 433,
+   "pos": {
+    "x": 10.8,
+    "y": 7.8,
+    "z": 14.33
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 1.0,
+   "h": 0.32,
+   "faces": 1,
+   "plate": "plastic_white",
+   "text": "plastic_black",
+   "align": "center"
   }
  ],
- "text_triangles": 8849,
+ "text_triangles": 10607,
  "ext": {
   "objects": [
    "ext_kyoso",
