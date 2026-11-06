@@ -9,6 +9,7 @@ from . import kit, shell
 from . import plan_lecture_dims as D
 
 CONCRETE = "lecture_concrete"
+CONCRETE_WALL = "lecture_concrete_wall"   # コアの壁の面（型枠の跡、#423）。天面と踊り場は CONCRETE
 CEIL = "lecture_ceiling_dark"
 WHITE = "lecture_rail_white"
 GLASS = "lecture_glass_rail"
@@ -35,7 +36,7 @@ RAIL_H = 1.0
 
 def _core_box(c):
     x0, x1 = CORE_X
-    kit.box(c.wall, x0, Y_HALL_S, 0.0, x1, Y_MID, D.F3, CONCRETE, top=CONCRETE)
+    kit.box(c.wall, x0, Y_HALL_S, 0.0, x1, Y_MID, D.F3, CONCRETE_WALL, top=CONCRETE)
     # エレベーターの扉は北の面（ホールの側）。階段室の扉は東の面
     shell.elevator_bank(c.wall, 30.0, Y_MID, count=2, ang=3.141592653589793, pitch=2.6)
     shell.door(c.wall, x1, 12.0, ang=-1.5707963267948966, w=1.2, h=2.2, leaf=WOOD,

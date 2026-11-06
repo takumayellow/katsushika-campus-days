@@ -33,6 +33,14 @@
       "tile_cm": 140
     },
     {
+      "material": "lecture_concrete_light_wall",
+      "tile_cm": 182
+    },
+    {
+      "material": "lecture_concrete_wall",
+      "tile_cm": 182
+    },
+    {
       "material": "sand",
       "tile_cm": 140
     },
