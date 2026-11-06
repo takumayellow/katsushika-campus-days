@@ -22,8 +22,9 @@ namespace KCD.Tests
         /// <summary>
         /// 依頼主（話しかけるとクエストが始まる人）。データの giver と、話題で始まるクエストの持ち主。
         /// lecture は大教室の教授で、講義のあとに黒板と 306 のサブクエストを頼む (#390, #394, #406)。
+        /// tateishi は 101 の隣の席の学生で、講義のあとに小テストのサブクエストを頼む (#424)。
         /// </summary>
-        private static readonly string[] Givers = { "prof", "inari", "kaname", "sora", "lecture" };
+        private static readonly string[] Givers = { "prof", "inari", "kaname", "sora", "lecture", "tateishi" };
 
         /// <summary>解き手の周回の上限。クエスト 16 件 × ステップ数より十分に多い。</summary>
         private const int MaxRounds = 80;

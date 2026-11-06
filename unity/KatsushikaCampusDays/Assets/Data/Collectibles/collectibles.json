@@ -547,11 +547,11 @@
       "id": "ach_all_quests",
       "name_ja": "頼まれごとの達人",
       "name_en": "Errand Master",
-      "desc_ja": "サブクエストを含む 17 本すべてを達成する。",
-      "desc_en": "Complete all seventeen quests, side quests included.",
+      "desc_ja": "サブクエストを含む 18 本すべてを達成する。",
+      "desc_en": "Complete all eighteen quests, side quests included.",
       "condition": {
         "type": "quest_count",
-        "value": 17
+        "value": 18
       }
     },
     {
