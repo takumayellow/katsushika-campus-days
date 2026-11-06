@@ -954,6 +954,40 @@ namespace KCD.Editor
                 Fov = 0f,
                 Note = "講義棟 306 の PC ルーム。白板の前の TA と最前列の PC（q_sq_first_program, #392）",
             },
+            // 101 の隣の席の学生と板書（q_sq_pop_quiz, #424）。客席の POI は (14.0, -0.6, 11.55)、板書は (14.65, 0.3, 4.4)
+            new Shot
+            {
+                Name = "shot_lec424_seatmate",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(14.0f, 1.35f, 14.6f),
+                Look = new Vector3(12.2f, -0.5f, 10.0f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 101 の西と中央のブロックの間の通路から: 客席の POI の隣の席の学生（#424）",
+            },
+            new Shot
+            {
+                Name = "shot_lec424_board_seat",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(14.0f, 0.95f, 11.55f),
+                Look = new Vector3(14.65f, 0.3f, 4.4f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 101 の客席の POI に立った目の高さから、前の黒板の板書（#424）",
+            },
+            new Shot
+            {
+                Name = "shot_lec424_board_near",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(14.65f, 0.35f, 6.6f),
+                Look = new Vector3(14.65f, 0.3f, 4.4f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 101 の板書を、調べられる距離（約 2.2 m）から（#424）",
+            },
             // 講義棟の内装の 2 巡目（#423）。Eye / Look は spec §8 の blender の (x, y, z) を Unity の (x, z, y) に読み替えたもの。
             new Shot
             {

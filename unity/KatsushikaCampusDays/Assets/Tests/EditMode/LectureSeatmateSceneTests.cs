@@ -15,15 +15,17 @@ namespace KCD.Tests
     {
         private const string ScenePath = "Assets/Scenes/Campus.unity";
 
-        /// <summary>学生は客席の empty から、黒板は教卓からこの距離の中（m、水平）。</summary>
-        private const float NearSpot = 1f;
+        /// <summary>学生は客席の POI からこの範囲（m、水平）。隣の席で、通路の POI に重ならない。</summary>
+        private const float SeatmateMin = 0.6f;
 
+        private const float SeatmateMax = 1.2f;
+
+        /// <summary>黒板は教卓からこの距離の中（m、水平）。</summary>
         private const float NearStage = 5f;
 
         private Scene _scene;
         private NPCTalker _seatmate;
         private NPCTalker _board;
-        private Transform _seatSpot;
         private Transform _stage;
         private Transform _seats;
 
@@ -47,11 +49,7 @@ namespace KCD.Tests
 
                 foreach (Transform each in root.GetComponentsInChildren<Transform>(true))
                 {
-                    if (each.name == LectureSeatmateStage.SeatmateEmpty)
-                    {
-                        _seatSpot = each;
-                    }
-                    else if (each.name == LectureSeatmateStage.StageEmpty)
+                    if (each.name == LectureSeatmateStage.StageEmpty)
                     {
                         _stage = each;
                     }
@@ -80,8 +78,39 @@ namespace KCD.Tests
             Assert.AreEqual(LectureSeatmateStage.SeatmateName, _seatmate.DisplayName);
             Assert.IsNull(_seatmate.GetComponent<NPCWander>(), "屋内に NavMesh は無いので歩かせない");
             Assert.IsNull(_seatmate.GetComponent<UnityEngine.AI.NavMeshAgent>());
-            Assert.IsNotNull(_seatSpot, LectureSeatmateStage.SeatmateEmpty + " が無い");
-            Assert.Less(Flat(_seatmate.transform.position - _seatSpot.position), NearSpot);
+            Assert.IsNotNull(_seats, LectureSeatmateStage.SeatsEmpty + " が無い");
+
+            // 客席の POI（プレイヤーが立つ通路）の隣、同じ列の高さに立ち、列に沿って POI の側を向く。
+            Vector3 toSeats = _seats.position - _seatmate.transform.position;
+            float apart = Flat(toSeats);
+            Assert.Greater(apart, SeatmateMin, "客席の POI に近すぎる（通路に重なる）");
+            Assert.Less(apart, SeatmateMax, "隣の席にいない");
+            Assert.Less(Mathf.Abs(toSeats.y), 0.15f, "客席の POI と別の列の高さにいる");
+            toSeats.y = 0f;
+            Assert.Greater(Vector3.Dot(_seatmate.transform.forward, toSeats.normalized), 0.9f,
+                "客席の POI の側を向いていない");
+        }
+
+        [Test]
+        public void 隣の席の学生の立つ所は_通路と前の机に重ならない()
+        {
+            // 101 の 5 列目（plan_lecture_hall.rows: 踏面 Y 11.05〜12.05）。西のブロックは X 8.7〜13.5、
+            // その東の通路は X 13.5〜14.5、前の机は Y 11.07〜11.47。当たり判定の半径は 0.34 で、体の半径は 0.28。
+            // 前後は 0.58 m しかなく当たり判定は入らないので、前後は体の幅で見る（学生は動かない）。
+            const float radius = 0.34f;
+            const float body = 0.28f;
+            Vector2 at = LectureSeatmateStage.SeatmatePlan;
+            Assert.LessOrEqual(at.x + radius, 13.5f, "通路に重なる");
+            Assert.GreaterOrEqual(at.x - radius, 8.7f);
+            Assert.GreaterOrEqual(at.y - body, 11.47f, "体が前の机に重なる");
+            Assert.LessOrEqual(at.y + body, 12.05f, "体が後ろの列の段に重なる");
+
+            // 平面と Unity が同じ向き（屋内の (x, z) = 平面の (x, y)）なら、POI からの差分のまま置き、+X を向く。
+            var identity = new LectureSeatmateStage.Matrix2(1f, 0f, 0f, 1f);
+            var seats = new Vector3(14.0f, -0.6f, 11.55f);
+            Assert.IsTrue(LectureSeatmateStage.TrySeatmatePose(identity, seats, -0.6f, out Vector3 pos, out float yaw));
+            Assert.Less((pos - new Vector3(at.x, -0.6f, at.y)).magnitude, 1e-4f);
+            Assert.AreEqual(90f, yaw, 1e-3f);
         }
 
         [Test]

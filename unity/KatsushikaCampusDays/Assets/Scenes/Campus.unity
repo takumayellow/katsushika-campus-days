@@ -85985,8 +85985,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 693883416}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.86804885, z: -0, w: 0.4964789}
-  m_LocalPosition: {x: -10.599975, y: -0.37, z: -9.55}
+  m_LocalRotation: {x: -0, y: -0.7071068, z: -0, w: 0.7071068}
+  m_LocalPosition: {x: -13.150023, y: -0.6, z: -11.77}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -154748,7 +154748,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 2.1, y: 0.9}
+  m_SizeDelta: {x: 2.2, y: 1}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1314875640
 MonoBehaviour:
@@ -154770,7 +154770,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\u6B21\u56DE\u3000\u5C0F\u30C6\u30B9\u30C8\uFF08\u51FA\u5E2D\u3092\u517C\u306D\u307E\u3059\uFF09\n\u7DF4\u7FD2\uFF1A4 \u5E2D\u306E\u7A7A\u304D(0)\u30FB\u57CB\u307E\u308A(1)\u306E\u4E26\u3073\u65B9\u306F\u4F55\u901A\u308A\uFF1F"
+  m_text: "\u6B21\u56DE\u3000\u5C0F\u30C6\u30B9\u30C8\n\uFF08\u51FA\u5E2D\u3092\u517C\u306D\u307E\u3059\uFF09\n\u7DF4\u7FD2\uFF1A4 \u5E2D\u306E\u7A7A\u304D(0)\u30FB\n\u57CB\u307E\u308A(1)\u306E\u4E26\u3073\u65B9\u306F\u4F55\u901A\u308A\uFF1F"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 16a634beab9d7ac4d8410bef6508b9d1, type: 2}
   m_sharedMaterial: {fileID: -1099266451346527259, guid: 16a634beab9d7ac4d8410bef6508b9d1, type: 2}
