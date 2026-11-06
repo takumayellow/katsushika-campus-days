@@ -7,6 +7,7 @@ import pytest
 
 import raycast
 import stubs
+from kcd_interior import plan_kyoso_2f_rooms as R2
 from kcd_interior import plan_kyoso_dims as D
 from kcd_interior import registry, signs
 from kcd_interior import shell as ishell
@@ -18,7 +19,7 @@ from conftest import CAMPUS_JSON
 
 SEED = 1709
 INT_CAP = 45000
-N_SIGNS = 23
+N_SIGNS = 27
 CAMS = ["", "_ls", "_sbback", "_2f", "_lounge2f", "_top", "_store"]
 MARGIN = ishell.WALL          # 外周壁の厚み
 EYE_MIN = 1.2                 # 人の目の高さの下限（床からの高さ）
@@ -38,9 +39,14 @@ SOLIDS = (
 )
 # 区画ごとの三角形の上限（現在の値に 1 割強の余裕）。wall は看板の文字を含む。
 SECTION_CAPS = {
-    "floor": 100, "wall": 15600, "entry": 200, "lobby": 500, "cafe": 900, "store": 10700,
+    "floor": 100, "wall": 16000, "entry": 200, "lobby": 500, "cafe": 900, "store": 10700,
     "lounge": 2400, "ls": 1100, "studio": 1100, "ls2": 2000, "core": 900, "hall": 1600,
+    "escsteps_kyoso_1f": 200,
 }
+# 2F の教室は室ごとに床・壁・家具を分ける（1 つの物に届く光源を 4 つまでに抑えるため）
+for _room in ("c201", "c202", "c203", "c204"):
+    SECTION_CAPS.update({_room: 1400, "floor_kyoso_2f_" + _room: 20,
+                         "wall_kyoso_2f_" + _room: 360})
 
 
 def _ear_candidates(contours):
@@ -138,6 +144,7 @@ def test_triangles_fit_the_cap(built):
 def _sections(c):
     out = {"floor": c.floor, "wall": c.wall}
     out.update({name.split("_", 3)[3]: mb for name, mb in c.furns})
+    out.update({mb.name: mb for mb in c.parts})
     return out
 
 
@@ -209,7 +216,7 @@ def test_escalator_contract(built):
     lo, hi = names["esc_kyoso_1f_lo"], names["esc_kyoso_1f_hi"]
     assert lo == pytest.approx((D.ESC_X_LO, D.ESC_YC, 0.0))
     assert hi == pytest.approx((D.ESC_X_HI, D.ESC_YC, D.Z2))
-    assert [p.name for p in built.parts] == ["escsteps_kyoso_1f"]
+    assert [p.name for p in built.parts if p.name.startswith("escsteps_")] == ["escsteps_kyoso_1f"]
     assert D.ESC_N == round(D.Z2 / D.ESC_RISE) == 27
     # 2F の降り口の床がスラブ A の縁になっている
     assert D.SLAB_A[0] == pytest.approx(D.ESC_LAND_X)
@@ -264,3 +271,52 @@ def test_3f_classrooms_show_above_the_atrium_rim(built, eye, tx):
     t = raycast.first_hit(eye, n, _tris(built.wall, skip=("glass_clear",)))
     assert np.linalg.norm(d) - 0.05 < t < np.linalg.norm(d) + 0.5     # 最初に当たるのが教室の天井
     assert raycast.first_hit(eye, n, _tris(built.wall)) < np.linalg.norm(d) - 1.0   # 手前でガラスを通る
+
+
+def test_2f_classrooms(built):
+    """C201〜C204: 室ごとの床・壁・家具、廊下の側の室名札、天井の点光源 2 つずつ。"""
+    names = {mb.name for mb in built.parts} | {n for n, _ in built.furns}
+    for room in R2.rooms():
+        key = room[0].lower()
+        assert {"floor_kyoso_2f_" + key, "wall_kyoso_2f_" + key} <= names
+        assert any(n.endswith("_" + key) for n, _ in built.furns)
+        assert "教室 " + room[0] in [r["ja"] for r in built.signs]
+    lamps = _empties(built, "lamp_kyoso_2F_")
+    assert [n for n, _ in lamps] == ["lamp_kyoso_2F_%d" % k for k in range(1, len(lamps) + 1)]
+    assert all(p[2] == pytest.approx(D.Z2 + D.LAMP_DZ) for _, p in lamps)
+    for _, xa, xb in R2.rooms():
+        inside = [p for _, p in lamps if xa < p[0] < xb and D.ROOMS2_Y[0] < p[1] < D.ROOMS2_Y[1]]
+        assert len(inside) == 2
+    # 教室は 2F の廊下（スラブ A）の手前に収まり、東と西の端は 2F の床の東の端と西のコアにそろう
+    xs = D.ROOMS2_X
+    assert xs[0] == pytest.approx(D.SLAB_A[0]) and xs[-1] == pytest.approx(D.CORE_W[0])
+    assert D.ROOMS2_Y[1] < D.SLAB_A[1]
+
+
+def test_2f_boards_stand_out_of_east_walls(built):
+    """各室の黒板の面は東の壁の室内の側の面より室の側にあり、壁に埋もれない。"""
+    furns = dict(built.furns)
+    for i, (name, xa, xb) in enumerate(R2.rooms()):
+        mb = next(m for n, m in furns.items() if n.endswith("_" + name.lower()))
+        xs = [mb.verts[k][0] for f, m in zip(mb.faces, mb.face_mat)
+              if mb.mat_names[m] == "board_green" for k in f]
+        assert xs, name
+        assert min(xs) > R2.east_face(xa, i == 0) + 1e-3, name
+        assert max(xs) < xb, name
+
+
+def test_upper_floors_lit_by_lamps(built):
+    """Unity（InteriorStage）は lamp_ がある建物では、いちばん低い lamp_ の階（床の高さ − 0.5）より上の
+    看板・poi に明かりを足さない。そこにある看板・poi は、どれも lamp_ の届く範囲（9 m）に入る。"""
+    lamps = [np.array(p) for _, p in _empties(built, "lamp_kyoso_")]
+    assert lamps
+    floor = min(p[2] for p in lamps) - 2.6 - 0.5
+    anchors = [(r["empty"], np.array([r["pos"]["x"], r["pos"]["z"], r["pos"]["y"]]))
+               for r in built.signs]
+    anchors += [(n, np.array(p)) for n, p in _empties(built, "poi_kyoso_")]
+    for name, a in anchors:
+        if a[2] >= floor:
+            near = min(np.linalg.norm(a - p) for p in lamps)
+            assert near < 9.0, (name, round(float(near), 2))
+    names = [n for n, _ in _empties(built, "lamp_kyoso_3F_")]
+    assert names == ["lamp_kyoso_3F_%d" % k for k in range(1, len(names) + 1)] and len(names) == 3

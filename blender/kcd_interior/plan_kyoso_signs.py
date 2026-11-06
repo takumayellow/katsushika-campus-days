@@ -1,5 +1,6 @@
-"""共創棟の看板 23 枚（spec §2 の表の順。sign_kyoso_1..23 は呼ぶ順に付く）。座標は建物のローカル。"""
+"""共創棟の看板 27 枚（spec §2 の表の順。sign_kyoso_1..27 は呼ぶ順に付く）。座標は建物のローカル。"""
 
+from . import plan_kyoso_2f_rooms as R2
 from . import plan_kyoso_dims as D
 from . import signs
 
@@ -57,3 +58,9 @@ def build(c, mb):
                       (15.4, "ティー", "TEA"),
                       (17.2, "冷たいドリンク", "COLD DRINKS")):
         w(c, mb, x, 36.57, 2.4, M, ja=ja, en=en, w=1.0, h=0.7, plate=BOARD, frame=WOOD)
+    # 2F の教室の室名札（廊下の側の前の扉の上）
+    y = R2.CORRIDOR_FACE
+    for name, xa, xb in R2.rooms():
+        x = R2.door_xs(xa, xb)[0]
+        w(c, mb, x, y, D.Z2 + 2.4, D.FACE_PARK, ja="教室 " + name, en="Classroom " + name,
+          w=1.0, h=0.32, plate="plastic_white")

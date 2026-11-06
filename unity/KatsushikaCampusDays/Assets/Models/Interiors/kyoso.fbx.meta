@@ -7,6 +7,11 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: board_green
+    second: {fileID: 2100000, guid: bce100d288ccea746b2eb078379d80fe, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: book_a
     second: {fileID: 2100000, guid: 7eff757ddd4c7e84bbc4a48bd868140f, type: 2}
   - first:
