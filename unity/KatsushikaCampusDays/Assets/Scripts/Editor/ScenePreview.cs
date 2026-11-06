@@ -974,6 +974,117 @@ namespace KCD.Editor
                 Fov = 0f,
                 Note = "講義棟 306 の PC ルーム。白板の前の TA と最前列の PC（q_sq_first_program, #392）",
             },
+            // 講義棟の内装の 2 巡目（#423）。Eye / Look は spec §8 の blender の (x, y, z) を Unity の (x, z, y) に読み替えたもの。
+            new Shot
+            {
+                Name = "shot_lec423_lobby",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(1.5f, 1.70f, 7.80f),
+                Look = new Vector3(2.0f, 5.00f, 27.50f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 1F の南の入口ロビー: レンガと掲示ケース、奥の南廊下（#423 の内装の 2 巡目の前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_hall101",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(17.8f, 1.60f, 18.45f),
+                Look = new Vector3(17.8f, 0.40f, 4.55f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 1F の 101 の最後列の後ろから前壁: 段床・席・黒板・ルーバー（#423 の内装の 2 巡目の前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_corr1f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-27.0f, 1.70f, 21.60f),
+                Look = new Vector3(30.0f, 1.70f, 21.60f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 1F の南廊下を西端から東へ: 打放しの壁、アルコーブ、コア（#423 の内装の 2 巡目の前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_atrium",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(1.9f, 1.50f, 24.20f),
+                Look = new Vector3(1.9f, 20.00f, 27.50f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 1F の吹き抜けの下から見上げる: 白い手すり壁（#423 の内装の 2 巡目の前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_coop",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(40.5f, 1.70f, 14.00f),
+                Look = new Vector3(40.5f, 2.20f, 35.10f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 1F の東端ホールから生協の店頭（#423 の内装の 2 巡目の前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_east",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(39.0f, 1.70f, 10.20f),
+                Look = new Vector3(45.5f, 2.40f, 19.00f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 1F の東端ホールの南から北東へ: 吹き抜けと直通階段（#423 の内装の 2 巡目の前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_room104",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(9.0f, 1.70f, 36.40f),
+                Look = new Vector3(15.5f, 1.30f, 46.00f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 1F の 104 の南西の隅から北東へ: 机の列と黒板（#423 の内装の 2 巡目の前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_arc3f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(37.6f, 10.40f, 23.60f),
+                Look = new Vector3(41.0f, 9.70f, 38.00f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 3F の弧の自習室: 湾曲したガラス、丸柱、丸テーブル（#423 の内装の 2 巡目の前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_esc2f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(19.4f, 6.30f, 27.50f),
+                Look = new Vector3(30.6f, 6.00f, 27.50f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 2F の西の乗り口から東へ: エスカレータと穴の手すり（#423 の内装の 2 巡目の前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_room402",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(8.6f, 14.70f, 12.00f),
+                Look = new Vector3(21.6f, 14.20f, 12.00f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 4F の 402 の西の壁際から東の黒板（#423 の内装の 2 巡目の前後）",
+            },
 
             // 体育館（#115）。公式の写真と同じ向きで撮って並べる。Eye / Look は blender の (x, y, z) を
             // Unity の (x, z, y) に読み替えたもの。Indoor でゲームの屋内と同じ光にする。
@@ -1210,6 +1321,7 @@ namespace KCD.Editor
             private readonly Color _ground = RenderSettings.ambientGroundColor;
             private readonly Color _indoor;
             private bool _applied;
+            private string _building = string.Empty;
 
             public IndoorLight(Transform sun, float scale)
             {
@@ -1219,24 +1331,27 @@ namespace KCD.Editor
                 _indoor = new Color(ambient.r * scale, ambient.g * scale, ambient.b * scale, ambient.a);
             }
 
-            /// <summary>屋内なら太陽を消して環境光を屋内の色にし、そうでなければ覚えておいた元へ戻す。</summary>
-            public void Apply(bool indoor)
+            /// <summary>屋内なら太陽を消して環境光を建物の屋内の色にし、そうでなければ覚えておいた元へ戻す。</summary>
+            public void Apply(bool indoor, string building)
             {
-                if (indoor == _applied)
+                string key = indoor ? building ?? string.Empty : string.Empty;
+                if (indoor == _applied && key == _building)
                 {
                     return;
                 }
 
                 _applied = indoor;
+                _building = key;
                 if (_sun != null)
                 {
                     _sun.enabled = _sunEnabled && !indoor;
                 }
 
                 // DayNightCycle.ApplyIndoor と同じ。ambientLight は Trilight の空の色と同じ値。
-                RenderSettings.ambientSkyColor = indoor ? _indoor : _sky;
-                RenderSettings.ambientEquatorColor = indoor ? _indoor * 0.92f : _equator;
-                RenderSettings.ambientGroundColor = indoor ? _indoor * 0.7f : _ground;
+                IndoorAmbientProfile.Resolve(key, _indoor, out Color sky, out Color equator, out Color ground);
+                RenderSettings.ambientSkyColor = indoor ? sky : _sky;
+                RenderSettings.ambientEquatorColor = indoor ? equator : _equator;
+                RenderSettings.ambientGroundColor = indoor ? ground : _ground;
 
                 // Trilight の環境光は球面調和に焼いてあるので、色を変えたら焼き直す。
                 DynamicGI.UpdateEnvironment();
@@ -1388,7 +1503,7 @@ namespace KCD.Editor
                     }
 
                     RenderSettings.fog = fogWas && !shot.NoFog && !shot.Indoor;
-                    indoorLight.Apply(shot.Indoor);
+                    indoorLight.Apply(shot.Indoor, shot.Building);
 
                     if (!TryOrigin(shot, dormOrigin, out Vector3 offset))
                     {
@@ -1452,7 +1567,7 @@ namespace KCD.Editor
                 }
 
                 RenderSettings.fog = fogWas;
-                indoorLight.Apply(false);
+                indoorLight.Apply(false, null);
 
                 if (quality >= 0)
                 {
