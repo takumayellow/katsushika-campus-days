@@ -1261,7 +1261,7 @@
    "z": 46.07
   }
  },
- "triangles": 128766,
+ "triangles": 135395,
  "seats": 270,
  "notes": [
   "中廊下・黒いコア・入口ロビー・6 層の吹き抜け・101 の 270 席の段床・2F〜7F の廊下と教室 20 室・1F→6F のエスカレータ・1F〜7F の EV"
@@ -4490,9 +4490,952 @@
    "plate": "lecture_sign_white",
    "text": "plastic_black",
    "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "203",
+   "en": "Room 203",
+   "tris": 215,
+   "pos": {
+    "x": -13.7,
+    "y": 6.4,
+    "z": 19.81
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "202",
+   "en": "Room 202",
+   "tris": 191,
+   "pos": {
+    "x": 4.6,
+    "y": 6.4,
+    "z": 19.81
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "201",
+   "en": "Room 201",
+   "tris": 179,
+   "pos": {
+    "x": 9.4,
+    "y": 6.4,
+    "z": 19.81
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "305",
+   "en": "Room 305",
+   "tris": 225,
+   "pos": {
+    "x": -20.2,
+    "y": 10.6,
+    "z": 19.81
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "304",
+   "en": "Room 304",
+   "tris": 213,
+   "pos": {
+    "x": -5.8,
+    "y": 10.6,
+    "z": 19.81
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "303",
+   "en": "Room 303",
+   "tris": 239,
+   "pos": {
+    "x": 5.0,
+    "y": 10.6,
+    "z": 19.81
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "302",
+   "en": "Room 302",
+   "tris": 215,
+   "pos": {
+    "x": 19.4,
+    "y": 10.6,
+    "z": 19.81
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "306",
+   "en": "Room 306",
+   "tris": 243,
+   "pos": {
+    "x": -20.2,
+    "y": 10.6,
+    "z": 35.09
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "307",
+   "en": "Room 307",
+   "tris": 199,
+   "pos": {
+    "x": -5.8,
+    "y": 10.6,
+    "z": 35.09
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "308",
+   "en": "Room 308",
+   "tris": 255,
+   "pos": {
+    "x": 5.0,
+    "y": 10.6,
+    "z": 35.09
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "309",
+   "en": "Room 309",
+   "tris": 243,
+   "pos": {
+    "x": 12.0,
+    "y": 10.6,
+    "z": 35.09
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "405",
+   "en": "Room 405",
+   "tris": 199,
+   "pos": {
+    "x": -20.2,
+    "y": 14.8,
+    "z": 19.81
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "404",
+   "en": "Room 404",
+   "tris": 187,
+   "pos": {
+    "x": -5.8,
+    "y": 14.8,
+    "z": 19.81
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "403",
+   "en": "Room 403",
+   "tris": 213,
+   "pos": {
+    "x": 5.0,
+    "y": 14.8,
+    "z": 19.81
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "402",
+   "en": "Room 402",
+   "tris": 189,
+   "pos": {
+    "x": 19.4,
+    "y": 14.8,
+    "z": 19.81
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "406",
+   "en": "Room 406",
+   "tris": 217,
+   "pos": {
+    "x": -20.2,
+    "y": 14.8,
+    "z": 35.09
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "407",
+   "en": "Room 407",
+   "tris": 173,
+   "pos": {
+    "x": -5.8,
+    "y": 14.8,
+    "z": 35.09
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "408",
+   "en": "Room 408",
+   "tris": 229,
+   "pos": {
+    "x": 5.0,
+    "y": 14.8,
+    "z": 35.09
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "409",
+   "en": "Room 409",
+   "tris": 217,
+   "pos": {
+    "x": 12.0,
+    "y": 14.8,
+    "z": 35.09
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "410",
+   "en": "Room 410",
+   "tris": 177,
+   "pos": {
+    "x": 19.0,
+    "y": 14.8,
+    "z": 35.09
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "411",
+   "en": "Room 411",
+   "tris": 147,
+   "pos": {
+    "x": 30.1,
+    "y": 14.8,
+    "z": 35.09
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "505",
+   "en": "Room 505",
+   "tris": 211,
+   "pos": {
+    "x": -20.2,
+    "y": 19.0,
+    "z": 19.81
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "504",
+   "en": "Room 504",
+   "tris": 199,
+   "pos": {
+    "x": -5.8,
+    "y": 19.0,
+    "z": 19.81
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "503",
+   "en": "Room 503",
+   "tris": 225,
+   "pos": {
+    "x": 5.0,
+    "y": 19.0,
+    "z": 19.81
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "502",
+   "en": "Room 502",
+   "tris": 201,
+   "pos": {
+    "x": 19.4,
+    "y": 19.0,
+    "z": 19.81
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "506",
+   "en": "Room 506",
+   "tris": 229,
+   "pos": {
+    "x": -20.2,
+    "y": 19.0,
+    "z": 35.09
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "507",
+   "en": "Room 507",
+   "tris": 185,
+   "pos": {
+    "x": -5.8,
+    "y": 19.0,
+    "z": 35.09
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "508",
+   "en": "Room 508",
+   "tris": 241,
+   "pos": {
+    "x": 5.0,
+    "y": 19.0,
+    "z": 35.09
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "509",
+   "en": "Room 509",
+   "tris": 229,
+   "pos": {
+    "x": 12.0,
+    "y": 19.0,
+    "z": 35.09
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "510",
+   "en": "Room 510",
+   "tris": 189,
+   "pos": {
+    "x": 19.0,
+    "y": 19.0,
+    "z": 35.09
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "511",
+   "en": "Room 511",
+   "tris": 159,
+   "pos": {
+    "x": 30.1,
+    "y": 19.0,
+    "z": 35.09
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "605",
+   "en": "Room 605",
+   "tris": 229,
+   "pos": {
+    "x": -20.2,
+    "y": 23.2,
+    "z": 19.81
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "604",
+   "en": "Room 604",
+   "tris": 217,
+   "pos": {
+    "x": -5.8,
+    "y": 23.2,
+    "z": 19.81
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "603",
+   "en": "Room 603",
+   "tris": 243,
+   "pos": {
+    "x": 5.0,
+    "y": 23.2,
+    "z": 19.81
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "602",
+   "en": "Room 602",
+   "tris": 219,
+   "pos": {
+    "x": 19.4,
+    "y": 23.2,
+    "z": 19.81
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": 1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "606",
+   "en": "Room 606",
+   "tris": 247,
+   "pos": {
+    "x": -20.2,
+    "y": 23.2,
+    "z": 35.09
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "607",
+   "en": "Room 607",
+   "tris": 203,
+   "pos": {
+    "x": -5.8,
+    "y": 23.2,
+    "z": 35.09
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "608",
+   "en": "Room 608",
+   "tris": 259,
+   "pos": {
+    "x": 5.0,
+    "y": 23.2,
+    "z": 35.09
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "609",
+   "en": "Room 609",
+   "tris": 247,
+   "pos": {
+    "x": 12.0,
+    "y": 23.2,
+    "z": 35.09
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "610",
+   "en": "Room 610",
+   "tris": 207,
+   "pos": {
+    "x": 19.0,
+    "y": 23.2,
+    "z": 35.09
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
+  },
+  {
+   "empty": null,
+   "kind": "wall",
+   "ja": "611",
+   "en": "Room 611",
+   "tris": 177,
+   "pos": {
+    "x": 30.1,
+    "y": 23.2,
+    "z": 35.09
+   },
+   "facing": {
+    "x": -0.0,
+    "y": 0.0,
+    "z": -1.0
+   },
+   "w": 0.3,
+   "h": 0.18,
+   "faces": 1,
+   "plate": "lecture_sign_white",
+   "text": "plastic_black",
+   "align": "center"
   }
  ],
- "text_triangles": 29210,
+ "text_triangles": 37891,
  "ext": {
   "objects": [
    "ext_lecture",

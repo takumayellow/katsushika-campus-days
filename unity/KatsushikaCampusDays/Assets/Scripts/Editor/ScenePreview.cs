@@ -1251,6 +1251,73 @@ namespace KCD.Editor
                 Indoor = true,
                 Note = "講義棟 7F の北の廊下を西の端から東へ（ベンチ・掲示板。#423 の階ごとの違いの前後）",
             },
+            // #423 の 3 巡目: 扉の横の室番号の札と掲示ケース。Eye / Look は blender の (x, y, z) を Unity の (x, z, y) に読み替えたもの。
+            new Shot
+            {
+                Name = "shot_lec423d_plate2f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-17.0f, 6.20f, 21.90f),
+                Look = new Vector3(-13.7f, 6.40f, 19.81f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 2F の南の廊下から 203 の東の扉の横の室番号の札（#423）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423d_plate3f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-9.0f, 10.40f, 21.90f),
+                Look = new Vector3(-5.8f, 10.60f, 19.81f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 3F の南の廊下から 304 の扉の横の室番号の札（#423）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423d_plate4f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-9.0f, 14.60f, 33.00f),
+                Look = new Vector3(-5.8f, 14.80f, 35.09f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 4F の北の廊下から 407 の扉の横の室番号の札（#423）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423d_plate5f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(1.8f, 18.80f, 21.90f),
+                Look = new Vector3(5.0f, 19.00f, 19.81f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 5F の南の廊下から 503 の扉の横の室番号の札（#423）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423d_plate6f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(27.0f, 23.00f, 33.00f),
+                Look = new Vector3(30.1f, 23.20f, 35.09f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 6F の北の廊下から 611 の扉の横の室番号の札（#423）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423d_case5f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-6.0f, 18.60f, 22.60f),
+                Look = new Vector3(-6.0f, 18.60f, 19.81f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 5F の南の廊下の掲示ケース（ポスターが枠とガラスの奥に収まる）（#423）",
+            },
 
             // 体育館（#115）。公式の写真と同じ向きで撮って並べる。Eye / Look は blender の (x, y, z) を
             // Unity の (x, z, y) に読み替えたもの。Indoor でゲームの屋内と同じ光にする。
@@ -1526,7 +1593,7 @@ namespace KCD.Editor
             /// <summary>シーンの DayNightCycle に保存された屋内の環境光（_indoorAmbient）。無ければ既定。</summary>
             private static Color ReadIndoorAmbient()
             {
-                DayNightCycle cycle = UnityEngine.Object.FindFirstObjectByType<DayNightCycle>(FindObjectsInactive.Include);
+                DayNightCycle cycle = UnityEngine.Object.FindAnyObjectByType<DayNightCycle>(FindObjectsInactive.Include);
                 if (cycle == null)
                 {
                     return FallbackAmbient;

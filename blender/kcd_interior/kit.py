@@ -214,6 +214,31 @@ class T:
         poly = [self.p2(x0, y0), self.p2(x1, y0), self.p2(x1, y1), self.p2(x0, y1)]
         mb.add_prism(poly, self.z + z0, self.z + z1, mat, mat, None)
 
+    def box_open(self, mb, x0, y0, z0, x1, y1, z1, mat, skip=()):
+        """底面なしの直方体から、さらに skip に挙げた面を省く（他の箱に埋まって見えない面用）。
+
+        skip の名前はローカルの向き: "top"・"-x"・"+x"・"-y"・"+y"。面 1 つで 2 三角形減る。
+        """
+        unknown = set(skip) - {"top", "-x", "+x", "-y", "+y"}
+        if unknown:
+            raise ValueError("box_open: 不明な面 %s" % sorted(unknown))
+        if x1 < x0:
+            x0, x1 = x1, x0
+        if y1 < y0:
+            y0, y1 = y1, y0
+        if z1 < z0:
+            z0, z1 = z1, z0
+        za, zb = self.z + z0, self.z + z1
+        poly = [self.p2(x0, y0), self.p2(x1, y0), self.p2(x1, y1), self.p2(x0, y1)]
+        for name, i in (("-y", 0), ("+x", 1), ("+y", 2), ("-x", 3)):
+            if name in skip:
+                continue
+            a, b = poly[i], poly[(i + 1) % 4]
+            mb.add_quad((a[0], a[1], za), (b[0], b[1], za),
+                        (b[0], b[1], zb), (a[0], a[1], zb), mat)
+        if "top" not in skip:
+            mb.add_face([(p[0], p[1], zb) for p in poly], mat)
+
     def box_c(self, mb, cx, cy, z0, sx, sy, z1, mat, top=None):
         self.box(mb, cx - sx * 0.5, cy - sy * 0.5, z0,
                  cx + sx * 0.5, cy + sy * 0.5, z1, mat, top)

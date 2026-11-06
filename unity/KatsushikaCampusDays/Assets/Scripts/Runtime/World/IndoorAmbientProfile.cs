@@ -24,6 +24,9 @@ namespace KCD
             }
         }
 
+        /// <summary>講義棟の建物 ID（Interior_&lt;ID&gt; と BuildingDoors の値）。</summary>
+        public const string LectureId = "lecture";
+
         public static readonly Ratios Default = new Ratios(1f, 0.92f, 0.7f);
 
         /// <summary>
@@ -34,7 +37,7 @@ namespace KCD
 
         public static Ratios For(string buildingId)
         {
-            return buildingId == "lecture" ? Lecture : Default;
+            return buildingId == LectureId ? Lecture : Default;
         }
 
         /// <summary>基準の屋内の色と建物から、空・赤道・地面の色を返す。</summary>
