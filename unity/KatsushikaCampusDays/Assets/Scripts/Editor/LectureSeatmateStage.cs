@@ -7,10 +7,12 @@ namespace KCD.Editor
     /// <summary>
     /// サブクエスト「出席は小テストで」（q_sq_pop_quiz）の、101 の隣の席の学生と、前の黒板の板書を置く (#424)。
     ///
-    /// 学生（立石 みなと）は客席の NPC の empty（npc_lecture_2、客席の西のブロック）に立ち、通路の
-    /// hall_seats を向く。101 の黒板には他の教室のような empty が無いので、教卓・客席・音響卓の 3 つの POI から
+    /// 101 の席と黒板には他の教室のような empty が無いので、教卓・客席・音響卓の 3 つの POI から
     /// 屋内モデルの平面の座標（blender/kcd_interior/plan_lecture_dims.py）を Unity の水平面へ写す変換を解き、
-    /// 教卓の正面の黒板の面（Y 4.4）の位置と向きを出す。板書は見る人の右の板（中央から 3.1 m）に貼る。
+    /// 平面の座標で決めた位置を Unity へ写す。
+    /// 学生（立石 みなと）は、客席の POI（hall_seats、西と中央のブロックの間の通路の 5 列目）の隣の席、
+    /// 西のブロックの通路側の端の席に立ち、列に沿って通路の側（平面の +X）を向く。
+    /// 板書は教卓の正面の黒板の面（Y 4.4）の、見る人の右の板（中央から 3.1 m）に貼る。
     /// 屋内の当たり判定を使うので <see cref="InteriorStage.Build"/> のあとに呼ぶ。
     /// </summary>
     public static class LectureSeatmateStage
@@ -22,7 +24,6 @@ namespace KCD.Editor
 
         public const string SeatmateBodyId = "student_m";
         public const string SeatmateName = "立石 みなと";
-        public const string SeatmateEmpty = "npc_lecture_2";
 
         /// <summary>板書の会話 id（Dialogue/board_lecture_101.json）と判定の名前。</summary>
         public const string BoardDialogueId = "board_lecture_101";
@@ -39,6 +40,15 @@ namespace KCD.Editor
         private static readonly Vector2 SeatsPlan = new Vector2(14.0f, 11.55f);
         private static readonly Vector2 BoothPlan = new Vector2(20.3f, 6.05f);
 
+        /// <summary>
+        /// 学生が立つ平面の座標。客席の POI（14.0, 11.55）と同じ 5 列目（踏面 Y 11.05〜12.05）の、
+        /// 西のブロック（X 8.7〜13.5）の通路側の端の席。席の中心は X 13.2・Y 11.77（plan_lecture_hall.seat_points）。
+        /// 体の当たり判定（半径 0.34）が通路（X 13.5〜14.5）へはみ出さないよう X を 13.15 にし、
+        /// Y は席の中心。前の机（Y 11.07〜11.47）と後ろの段（Y 12.05）の間は 0.58 m で、当たり判定の直径（0.68 m）は
+        /// 入らないが、体の幅（半径 0.28）は収まる。学生は動かないので、当たり判定が机に少し掛かっても困らない。
+        /// </summary>
+        public static readonly Vector2 SeatmatePlan = new Vector2(13.15f, 11.77f);
+
         /// <summary>黒板の面の中心（中央の板、教卓の正面）。板は壁の面 Y 4.3 から 0.04〜0.09 手前に出ている。</summary>
         private static readonly Vector2 BoardPlan = new Vector2(17.75f, 4.39f);
 
@@ -48,7 +58,11 @@ namespace KCD.Editor
         /// <summary>中央の板から見る人の右の板の中心まで（板 13.5〜15.8 / 19.7〜22.0 の中心と 17.75 の差）。</summary>
         private const float ChalkSideOffset = 3.1f;
 
-        private static readonly Vector2 ChalkFrame = new Vector2(2.1f, 0.9f);
+        /// <summary>
+        /// 板書の枠（板 2.3 x 1.2 m の内側）。文字の大きさは自動で、いちばん長い行が枠の幅に収まる大きさになるので、
+        /// 2 行をそれぞれ途中で折って 4 行にし、客席の POI（約 7 m）から読める大きさにする。
+        /// </summary>
+        private static readonly Vector2 ChalkFrame = new Vector2(2.2f, 1.0f);
         private static readonly Color32 Chalk = new Color32(236, 238, 228, 255);
         private const float FaceGap = 0.01f;
 
@@ -57,8 +71,8 @@ namespace KCD.Editor
 
         private const float InspectRange = 2.5f;
 
-        /// <summary>板書の 2 行。会話 board_lecture_101.json の板の行（written）と同じにしておく。</summary>
-        public const string ChalkText = "次回　小テスト（出席を兼ねます）\n練習：4 席の空き(0)・埋まり(1)の並び方は何通り？";
+        /// <summary>板書。会話 board_lecture_101.json の板の 2 行（written）と同じ文で、どちらの行も途中で折る。</summary>
+        public const string ChalkText = "次回　小テスト\n（出席を兼ねます）\n練習：4 席の空き(0)・\n埋まり(1)の並び方は何通り？";
 
         public static void Build(Transform root)
         {
@@ -70,35 +84,26 @@ namespace KCD.Editor
             }
 
             Physics.SyncTransforms();
-            PlaceSeatmate(interior);
+            if (!TryPlanMap(interior, out Matrix2 map, out Transform stage, out Transform seats))
+            {
+                return;
+            }
 
-            if (TryBoardFrame(interior, out Vector3 floor, out Vector3 facing))
+            PlaceSeatmate(interior, map, seats);
+            if (TryBoardFrame(map, stage, out Vector3 floor, out Vector3 facing))
             {
                 PlaceBoard(interior, floor, facing);
             }
         }
 
-        /// <summary>隣の席の学生。通路（hall_seats）を向いて立ち、動かない（屋内に NavMesh は無い）。</summary>
-        private static void PlaceSeatmate(Transform interior)
+        /// <summary>隣の席の学生。席に立って列に沿って通路の側を向き、動かない（屋内に NavMesh は無い）。</summary>
+        private static void PlaceSeatmate(Transform interior, Matrix2 map, Transform seats)
         {
-            Transform spot = Find(interior, SeatmateEmpty);
-            if (spot == null)
+            if (!TrySeatmatePose(map, seats.position, CollectibleStage.IndoorFloor(seats.position).y,
+                    out Vector3 position, out float yaw))
             {
-                EditorPaths.Report(SeatmateEmpty + " が無いので、101 の隣の席の学生は置きませんでした。");
+                EditorPaths.Report("101 の席の並びの向きが解けないので、101 の隣の席の学生は置きませんでした。");
                 return;
-            }
-
-            Vector3 position = CollectibleStage.IndoorFloor(spot.position);
-            float yaw = spot.eulerAngles.y;
-            Transform seats = Find(interior, SeatsEmpty);
-            if (seats != null)
-            {
-                Vector3 toSeats = seats.position - position;
-                toSeats.y = 0f;
-                if (toSeats.sqrMagnitude > 0.01f)
-                {
-                    yaw = Mathf.Atan2(toSeats.x, toSeats.z) * Mathf.Rad2Deg;
-                }
             }
 
             GameObject npc = ActorFactory.CreateNpc(interior, SeatmateBodyId, SeatmateName, position, yaw, 0f);
@@ -124,34 +129,60 @@ namespace KCD.Editor
             }
 
             CampusStage.Ignore(npc);
-            EditorPaths.Report("101 の客席に隣の席の学生を置きました: " + position.ToString("F1")
+            EditorPaths.Report("101 の客席の POI の隣の席に学生を置きました: " + position.ToString("F1")
                 + " 向き " + yaw.ToString("F0") + "°");
         }
 
         /// <summary>
-        /// 中央の黒板の真下の床の点と、板が向く向き（部屋の側、水平）。3 つの POI から平面の座標を写す変換を解く。
+        /// 教卓・客席・音響卓の 3 つの POI から、平面の座標の差分を Unity の水平面の差分へ写す変換を解く。
         /// POI が足りないか、3 点が一直線に並んで解けなければ false。
         /// </summary>
-        internal static bool TryBoardFrame(Transform interior, out Vector3 floor, out Vector3 facing)
+        internal static bool TryPlanMap(Transform interior, out Matrix2 map, out Transform stage, out Transform seats)
         {
-            floor = Vector3.zero;
-            facing = Vector3.forward;
-            Transform stage = Find(interior, StageEmpty);
-            Transform seats = Find(interior, SeatsEmpty);
+            map = default;
+            stage = Find(interior, StageEmpty);
+            seats = Find(interior, SeatsEmpty);
             Transform booth = Find(interior, BoothEmpty);
             if (stage == null || seats == null || booth == null)
             {
-                EditorPaths.Report("101 の POI（教卓・客席・音響卓）が揃わないので、101 の板書は置きませんでした。");
+                EditorPaths.Report("101 の POI（教卓・客席・音響卓）が揃わないので、101 の隣の席の学生と板書は置きませんでした。");
                 return false;
             }
 
             if (!TrySolvePlan(StagePlan, SeatsPlan, BoothPlan,
-                    Flat(stage.position), Flat(seats.position), Flat(booth.position), out Matrix2 map))
+                    Flat(stage.position), Flat(seats.position), Flat(booth.position), out map))
             {
-                EditorPaths.Report("101 の POI が一直線に並んでいるので、101 の板書は置きませんでした。");
+                EditorPaths.Report("101 の POI が一直線に並んでいるので、101 の隣の席の学生と板書は置きませんでした。");
                 return false;
             }
 
+            return true;
+        }
+
+        /// <summary>
+        /// 学生の立つ点（客席の POI の床の高さ）と向き（列に沿って通路の側 = 平面の +X）。
+        /// 客席の POI の位置から <see cref="SeatmatePlan"/> までの平面の差分を写す。向きが解けなければ false。テストから呼ぶ。
+        /// </summary>
+        public static bool TrySeatmatePose(Matrix2 map, Vector3 seats, float floorY, out Vector3 position, out float yaw)
+        {
+            Vector2 offset = map.Apply(SeatmatePlan - SeatsPlan);
+            position = new Vector3(seats.x + offset.x, floorY, seats.z + offset.y);
+            yaw = 0f;
+            Vector2 alongRow = map.Apply(Vector2.right);
+            if (alongRow.sqrMagnitude < 1e-6f)
+            {
+                return false;
+            }
+
+            yaw = Mathf.Atan2(alongRow.x, alongRow.y) * Mathf.Rad2Deg;
+            return true;
+        }
+
+        /// <summary>中央の黒板の真下の床の点と、板が向く向き（部屋の側、水平）。向きが解けなければ false。</summary>
+        internal static bool TryBoardFrame(Matrix2 map, Transform stage, out Vector3 floor, out Vector3 facing)
+        {
+            floor = Vector3.zero;
+            facing = Vector3.forward;
             Vector3 stageFloor = CollectibleStage.IndoorFloor(stage.position);
             Vector2 offset = map.Apply(BoardPlan - StagePlan);
             floor = new Vector3(stage.position.x + offset.x, stageFloor.y, stage.position.z + offset.y);
