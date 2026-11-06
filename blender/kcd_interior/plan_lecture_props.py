@@ -188,15 +188,27 @@ def board(mb, t, seed=0):
                  color)
 
 
+CASE_DEPTH = 0.08                     # 掲示ケースの枠の出（壁の面から）
+CASE_BACK = 0.004                     # 壁の面から奥のコルクの面まで（ポスターはこの 1〜2 mm 手前）
+
+
 def case(mb, t, seed=0):
-    """ガラス扉付きの掲示ケース: 金属の枠の箱と、奥のコルクの面のポスター 2 枚。"""
-    t.box_nb(mb, -0.6, 0.0, 1.0, 0.6, 0.08, 1.9, METAL)
-    t.vplate(mb, 0.55, 0.081, -0.55, 0.081, 1.05, 1.85, CORK)
-    for k, (cx, w, z0, z1) in enumerate(((-0.25, 0.42, 1.15, 1.75), (0.27, 0.36, 1.25, 1.70))):
+    """掲示ケース: 金属の枠と、枠の奥のコルクの面のポスター 2 枚。
+
+    ポスターは枠の前の面（y CASE_DEPTH）より奥に収まる。上下の枠の端は左右の枠に埋まるので描かない。
+    """
+    x0, x1, z0, z1, f = -0.6, 0.6, 1.0, 1.9, 0.05
+    t.box_nb(mb, x0, 0.0, z0, x0 + f, CASE_DEPTH, z1, METAL)
+    t.box_nb(mb, x1 - f, 0.0, z0, x1, CASE_DEPTH, z1, METAL)
+    t.box_open(mb, x0 + f, 0.0, z0, x1 - f, CASE_DEPTH, z0 + f, METAL, skip=("-x", "+x"))
+    t.box_open(mb, x0 + f, 0.0, z1 - f, x1 - f, CASE_DEPTH, z1, METAL, skip=("-x", "+x"))
+    t.vplate(mb, x1 - f, CASE_BACK, x0 + f, CASE_BACK, z0 + f, z1 - f, CORK)
+    for k, (cx, w, pz0, pz1) in enumerate(((-0.25, 0.42, 1.15, 1.75), (0.27, 0.36, 1.25, 1.70))):
         color = POSTERS[(seed + k) % len(POSTERS)]
-        t.vplate(mb, cx + w * 0.5, 0.082, cx - w * 0.5, 0.082, z0, z1, PAPER)
-        t.vplate(mb, cx + w * 0.5, 0.083, cx - w * 0.5, 0.083, z1 - (z1 - z0) * 0.3, z1 - 0.02,
-                 color)
+        t.vplate(mb, cx + w * 0.5, CASE_BACK + 0.001, cx - w * 0.5, CASE_BACK + 0.001, pz0, pz1,
+                 PAPER)
+        t.vplate(mb, cx + w * 0.5, CASE_BACK + 0.002, cx - w * 0.5, CASE_BACK + 0.002,
+                 pz1 - (pz1 - pz0) * 0.3, pz1 - 0.02, color)
 
 
 def rack(mb, t):

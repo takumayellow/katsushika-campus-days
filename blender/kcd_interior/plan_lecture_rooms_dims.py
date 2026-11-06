@@ -180,6 +180,48 @@ ROOM_PLATES = (("203", -25.2, "S"), ("202", -8.6, "S"), ("305", -24.6, "S"), ("3
                ("308", -1.2, "N"), ("309", 9.6, "N")) + tuple(
     (r[0], upper_plate_x(r), r[2]) for r in _upper_rooms() if r[1] != TOP_FLOOR)
 
+# 扉の横の小さい室番号の札（#423）。室名札（大きい白い板）が横に無い扉の、室の内側へ 1.3 m の所に貼る。
+# 教室（型 A・B・C と中を作らない室）だけで、ラウンジ（型 L の 310・311）、番号の分からない 7F と 2F の北の室には付けない。
+DOOR_PLATE = (0.30, 0.18)             # 幅・高さ（文字は番号と「Room 番号」の 2 行。札を小さくして字の三角形を減らす）
+DOOR_PLATE_OFF = 1.3                  # 扉の中心から札の中心まで（室名札と同じ）
+DOOR_PLATE_NEAR = 1.5                 # この距離より近くに室名札がある扉には付けない
+
+
+def _named_rooms():
+    """番号のある室 (室番号, 階, 並び, 西の境, 東の境, 扉, 型)。7F を除き、ラウンジを除く。"""
+    low = tuple(r for r in ROOMS if r[1] in FLOORS[:2])
+    upper = tuple(r for r in _upper_rooms() if r[1] != TOP_FLOOR)
+    return tuple(r for r in low + upper if r[6] != "L")
+
+
+def _big_plate_x():
+    """室番号 -> 室名札（大きい白い板）の X。plan_lecture_dims にある 201・302 も含む。"""
+    out = {no: x for no, x, _ in ROOM_PLATES}
+    out.update({r[1]: r[5] for r in D.SIGNS if r[0] == "wall" and r[2] == "Room " + r[1]})
+    return out
+
+
+def door_plates():
+    """扉の横の小さい札 (室番号, X, 並び)。室名札が横に無い扉ごとに 1 枚。"""
+    big = _big_plate_x()
+    out = []
+    for no, _fl, side, x0, x1, doors, _kind in _named_rooms():
+        mid = (x0 + x1) * 0.5
+        for d in doors:
+            if abs(big[no] - d) < DOOR_PLATE_NEAR:
+                continue
+            out.append((no, round(d + (DOOR_PLATE_OFF if d < mid else -DOOR_PLATE_OFF), 3), side))
+    return tuple(out)
+
+
+def _door_plate(no, x, side):
+    x, y, z, ang = plate_at(no, x, side)
+    w, h = DOOR_PLATE
+    return ("wall", no, "Room " + no, w, h, x, y, z, ang, WHITE, NO_ANCHOR)
+
+
+DOOR_PLATES = door_plates()
+
 FLOOR_NAMES = {"2F": "2nd Floor", "3F": "3rd Floor", "4F": "4th Floor", "5F": "5th Floor",
                "6F": "6th Floor", "7F": "7th Floor"}
 
@@ -217,4 +259,5 @@ def _lobby_signs(fl):
 SIGNS = (sum((_floor_signs(f, FLOOR_NAMES[f], FLOOR_Z[f]) for f in FLOORS), ())
          + sum((_partition_sign(f) for f in FLOORS[2:-1]), ())
          + sum((_lobby_signs(f) for f in FLOORS), ())
-         + tuple(_plate(no, x, side) for no, x, side in ROOM_PLATES))
+         + tuple(_plate(no, x, side) for no, x, side in ROOM_PLATES)
+         + tuple(_door_plate(no, x, side) for no, x, side in DOOR_PLATES))
