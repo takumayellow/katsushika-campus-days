@@ -1,37 +1,57 @@
-"""共創棟 3F: 吹き抜けに面したガラス張りの教室 2 室（歩けない。1F・2F から見上げて見える所だけ作る）。
+"""共創棟 3F: 吹き抜けに面したガラス張りの教室 2 室と、その奥の廊下（床 FL 9.6）。
 
-3F の吹き抜けの側がガラスの教室の列であることは写真で確定（spec §1-5）。室の奥行きと 2 室の境は推定。
-吹き抜けの奥行きでは、1F から見上げても室の床と机は縁の立ち上がりに隠れるので、天井・照明・壁だけを置く。
+3F の吹き抜けの側がガラスの教室の列であることは写真で確定（spec §1-5）。室の奥行き・2 室の境・廊下の幅、
+モール側を閉じた扉の並ぶ壁にしたこと、机の数と並べ方は推定。東のコアの西の面にある階段室の扉
+（1F・2F・3F。stair_doors）で上り下りする。
+
+1 つの物に届く光源は 4 つまでなので（Unity の per-object light の上限）、室と廊下で床・壁・家具を分ける:
+
+    floor_kyoso_3f_<室> / wall_kyoso_3f_<室> / furn_kyoso_NN_3f_<室>   室は east・west（東から）
+    floor_kyoso_3f_corr / wall_kyoso_3f_corr                       廊下
+    st_kyoso_core_<階> / _f                                        階段室の扉の前と、そこから 1 m 正面
+
 座標は建物のローカル。
 """
 
-from . import kit, shell
+from . import furniture as F, kit, shell
+from . import plan_kyoso_2f_rooms as R2
 from . import plan_kyoso_dims as D
+from . import plan_kyoso_shell as SH
 
 WALL = "wall_white"
 GLASS = "glass_clear"
 FRAME = "metal_dark"
+FLOOR = "kyoso_floor_carpet_grey"
 MULLION = 1.8           # ガラスの面の方立ての間隔の目安（幅を等分する）
 GLASS_Y = 0.115         # 吹き抜けの縁の線から見たガラスの面の Y（2F の縁のガラスと同じ線）
+T = 0.3                 # 3F の外周の壁の厚み（閉じの検査の wall_thickness と同じ）
+SPLIT_T = 0.12          # 2 室の境の壁の厚み
+
+CORR = (D.CORE_E[2], D.SLAB_B[1], D.ROOMS3[2], D.ROOMS3[1] - T)   # 廊下の内側（東・モール側・西・室の側）
+CORR_YC = (CORR[1] + CORR[3]) * 0.5
+MALL_DOORS = (-3.4, 3.0, 9.2)           # モール側の壁の閉じた扉の X（入れない部屋）
+STAIR_DOOR_Y = {"1F": 27.8, "2F": 27.8, "3F": CORR_YC}    # 階段室の扉の中心の Y（東のコアの西の面）
+STAIR_OUT = 1.0         # 扉の面から着いた所まで（Unity の InteriorStairStage.StairOut）
+SIGN_OUT = 0.3          # 避難誘導灯を壁の面から出す距離
+SIGN_DROP = 0.26        # 天井から避難誘導灯の上端まで
+
+DESK_Y = (22.9, 24.9, 26.9)     # 机の中心の Y（窓の側の柱の前で止める）
 
 
-def shell_3f(c, mb):
-    """床・天井・奥と両脇の壁・2 室の境の壁・柱・吹き抜けに面したガラスの面・照明。"""
-    x0, y0, x1, y1 = D.ROOMS3
-    shell.floor(mb, x0, y0, x1, y1, D.Z3, "kyoso_floor_carpet_grey", thickness=0.0)
-    shell.ceiling(mb, x0, y0, x1, y1, D.Z_CEIL3, "ceiling_white")
-    kit.box(mb, x0, y0 - 0.3, D.Z3, x1, y0, D.Z_CEIL3, WALL)
-    for xa, xb in ((x0 - 0.3, x0), (x1, x1 + 0.3)):
-        kit.box(mb, xa, y0 - 0.3, D.Z_SLAB3, xb, y1, D.Z_TOP, WALL)
-    sx = D.ROOMS3_SPLIT
-    kit.box(mb, sx - 0.06, y0, D.Z3, sx + 0.06, y1, D.Z_CEIL3, WALL)
-    h = D.COLUMN_SIZE * 0.5
-    for x, y in D.COLUMNS3:
-        kit.box(mb, x - h, y - h, D.Z3, x + h, y + h, D.Z_CEIL3, "kyoso_column_pale")
-    _glass_face(mb, x0, x1, y1 + GLASS_Y)
-    for y in (y0 + 2.0, y0 + 4.2, y1 - 1.2):
-        for a, b in ((x0, sx), (sx, x1)):
-            shell.light_strip(mb, a + 0.8, y, b - 0.8, y, D.Z_CEIL3, "light_strip", w=0.2)
+def rooms():
+    """(名前, 東の X, 西の X) を東から順に。"""
+    x0, _, x1, _ = D.ROOMS3
+    return [("east", x0, D.ROOMS3_SPLIT), ("west", D.ROOMS3_SPLIT, x1)]
+
+
+def door_xs(xa, xb):
+    """室の廊下の側の 2 つの引き戸の中心の X（前 = 黒板の側、後ろ）。"""
+    return (xa + R2.DOOR_IN, xb - R2.DOOR_IN)
+
+
+def east_face(xa, first):
+    """室の東の壁の室内の側の面の X。東の室は外周の壁の面、西の室は境の壁の面。"""
+    return xa if first else xa + SPLIT_T * 0.5
 
 
 def _glass_face(mb, x0, x1, y):
@@ -39,7 +59,120 @@ def _glass_face(mb, x0, x1, y):
     z0, z1 = D.RIM3_TOP, D.Z_CEIL3
     kit.box(mb, x0, y - 0.015, z0, x1, y + 0.015, z1, GLASS)
     kit.box(mb, x0, y - 0.04, z1 - 0.08, x1, y + 0.04, z1, FRAME)
-    n = int(round((x1 - x0) / MULLION))
+    n = max(1, int(round((x1 - x0) / MULLION)))
     for k in range(1, n):
         x = x0 + (x1 - x0) * k / n
         kit.box_nb(mb, x - 0.025, y - 0.04, z0, x + 0.025, y + 0.04, z1, FRAME)
+
+
+def _room_shell(c, key, xa, xb, first, last):
+    """天井・照明・吹き抜けに面したガラス・廊下の側の壁と引き戸・境と両脇の壁・柱。"""
+    mb = c.part("wall", "3f_" + key)
+    _, y0, _, y1 = D.ROOMS3
+    shell.ceiling(mb, xa, y0, xb, y1, D.Z_CEIL3, "ceiling_white")
+    if first:
+        kit.box(mb, xa - T, y0 - T, D.Z_SLAB3, xa, y1, D.Z_TOP, WALL)
+    if last:
+        kit.box(mb, xb, y0 - T, D.Z_SLAB3, xb + T, y1, D.Z_TOP, WALL)
+    else:
+        kit.box(mb, xb - SPLIT_T * 0.5, y0, D.Z3, xb + SPLIT_T * 0.5, y1, D.Z_CEIL3, WALL)
+    # 廊下の側の壁と引き戸。口は上まで開くので、扉の上をふさぐ
+    yw = y0 - T * 0.5
+    gaps = [(x - xa - R2.DOOR_W * 0.5, x - xa + R2.DOOR_W * 0.5) for x in door_xs(xa, xb)]
+    shell.partition(mb, (xa, yw), (xb, yw), D.Z3, D.Z_CEIL3, WALL, thick=T, gaps=gaps)
+    base = len(mb.verts)
+    for x in door_xs(xa, xb):
+        kit.box(mb, x - R2.DOOR_W * 0.5, y0 - T, R2.DOOR_H, x + R2.DOOR_W * 0.5, y0,
+                D.Z_CEIL3 - D.Z3, WALL)
+        shell.door(mb, x, yw, 0.0, w=R2.DOOR_W, h=R2.DOOR_H, leaf=R2.WOOD, frame=R2.FRAME)
+    kit.lift(mb, base, D.Z3)
+    h = D.COLUMN_SIZE * 0.5
+    for x, y in D.COLUMNS3:
+        if xa < x < xb:
+            kit.box(mb, x - h, y - h, D.Z3, x + h, y + h, D.Z_CEIL3, "kyoso_column_pale")
+    _glass_face(mb, xa, xb, y1 + GLASS_Y)
+    for y in (y0 + 2.0, y0 + 4.2, y1 - 1.2):
+        shell.light_strip(mb, xa + 0.8, y, xb - 0.8, y, D.Z_CEIL3, "light_strip", w=0.2)
+
+
+def _room_furniture(c, key, xa, first):
+    """東の壁の黒板と教卓、西を向いた長机と椅子（2F の教室と同じ並べ方）。"""
+    mb = c.furn("3f_" + key)
+    base = len(mb.verts)
+    yc = (DESK_Y[0] + DESK_Y[-1]) * 0.5
+    R2.board(mb, east_face(xa, first), yc)
+    F.podium(mb, xa + 1.4, yc, D.FACE_WEST)
+    for dx in R2.ROW_DX:
+        x = xa + dx
+        for y in DESK_Y:
+            F.long_desk(mb, x, y, D.FACE_EAST, w=R2.DESK_W, d=R2.DESK_D, top=R2.DESK_TOP)
+            for sy in (-R2.CHAIR_DY, R2.CHAIR_DY):
+                F.chair_canteen(mb, kit.T(x + R2.CHAIR_DX, y + sy, 0.0, D.FACE_EAST),
+                                mat="chair_grey")
+    kit.lift(mb, base, D.Z3)
+
+
+def _corridor(c):
+    """廊下の床・天井・照明、モール側の壁と閉じた扉、両端の壁。戻り値は廊下の壁の部品。"""
+    cx0, cy0, cx1, cy1 = CORR
+    shell.floor(c.part("floor", "3f_corr"), cx0, cy0, cx1, cy1, D.Z3, FLOOR, thickness=0.0)
+    mb = c.part("wall", "3f_corr")
+    shell.ceiling(mb, cx0, cy0, cx1, cy1, D.Z_CEIL3, "ceiling_white")
+    shell.light_strip(mb, cx0 + 0.8, CORR_YC, cx1 - 0.8, CORR_YC, D.Z_CEIL3, "light_strip", w=0.2)
+    kit.box(mb, cx0 - T, cy0 - T, D.Z3, cx1 + T, cy0, D.Z_CEIL3, WALL)       # モール側
+    kit.box(mb, cx0 - T, cy0, D.Z3, cx0, cy1 + T, D.Z_CEIL3, WALL)           # 東の端
+    kit.box(mb, cx1, cy0, D.Z3, cx1 + T, cy1, D.Z_CEIL3, WALL)               # 西の端
+    # 東の室の東の壁より東の、室の側の壁
+    kit.box(mb, cx0, cy1, D.Z3, D.ROOMS3[0] - T, cy1 + T, D.Z_CEIL3, WALL)
+    base = len(mb.verts)
+    for x in MALL_DOORS:
+        SH._door(mb, x, cy0, D.FACE_PARK)
+    kit.lift(mb, base, D.Z3)
+    return mb
+
+
+def corridor_lamps():
+    """廊下の天井の点光源の位置（X, Y）。"""
+    return tuple((x, CORR_YC) for x in (-3.4, 3.0, 9.2))
+
+
+def stair_doors(c, corr):
+    """東のコアの西の面の階段室の閉じた扉と避難誘導灯、扉の前の Empty を 1F・2F・3F に置く。"""
+    x = D.CORE_E[2]
+    floors = (("1F", 0.0, D.Z_CEIL), ("2F", D.Z2, D.Z_CEIL2), ("3F", D.Z3, D.Z_CEIL3))
+    for floor, z, ceil in floors:
+        y = STAIR_DOOR_Y[floor]
+        mb = corr if floor == "3F" else c.wall
+        base = len(mb.verts)
+        SH._door(mb, x, y, D.FACE_WEST)
+        kit.lift(mb, base, z)
+        shell.exit_sign(mb, x + SIGN_OUT, y, ceil - SIGN_DROP, D.FACE_WEST)
+        name = "st_%s_core_%s" % (c.spec.id, floor)
+        c._put(name, x + STAIR_OUT, y, z)
+        c._put(name + "_f", x + STAIR_OUT + 1.0, y, z)
+
+
+def zone():
+    """閉じの検査（closure）に渡す 3F の外周。東の室の東の壁より東の、室の側の角を欠いた L 字。"""
+    cx0, cy0, cx1, _ = CORR
+    y_back = D.ROOMS3[3] + T
+    return {"x0": round(cx0 - T, 3), "x1": round(cx1 + T, 3), "y_face": round(cy0 - T, 3),
+            "y_back": round(y_back, 3),
+            "notch": [round(cx0 - T, 3), round(D.ROOMS3[1], 3), round(D.ROOMS3[0] - T, 3),
+                      round(y_back, 3)],
+            "z_min": round(D.Z3 - 0.5, 3), "z_max": round(D.Z3 + 0.5, 3)}
+
+
+def build(c):
+    """2 室と廊下、1F〜3F の階段室の扉を組む。戻り値は室の点光源の位置（Z を含まない）。"""
+    pts = []
+    rs = rooms()
+    for i, (key, xa, xb) in enumerate(rs):
+        shell.floor(c.part("floor", "3f_" + key), xa, D.ROOMS3[1], xb, D.ROOMS3[3], D.Z3, FLOOR,
+                    thickness=0.0)
+        _room_shell(c, key, xa, xb, first=i == 0, last=i == len(rs) - 1)
+        _room_furniture(c, key, xa, first=i == 0)
+        pts.append(((xa + xb) * 0.5, (D.ROOMS3[1] + D.ROOMS3[3]) * 0.5))
+    stair_doors(c, _corridor(c))
+    c.closure_zones.append(zone())
+    return pts

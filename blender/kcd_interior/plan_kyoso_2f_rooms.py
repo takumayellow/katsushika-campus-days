@@ -98,7 +98,7 @@ def east_face(xa, first):
     return xa if first else xa + shell.PART * 0.5
 
 
-def _board(mb, xf, yc):
+def board(mb, xf, yc):
     """東の壁の面 xf に付く緑の黒板と枠・チョークの受け（z=0 で組む）。"""
     t = kit.T(xf, yc, 0.0, D.FACE_WEST)       # ローカルの +Y が室の側（西）
     hw = BOARD_W * 0.5
@@ -113,7 +113,7 @@ def _furniture(c, key, xa, first):
     mb = c.furn(key)
     base = len(mb.verts)
     yc = (DESK_Y[0] + DESK_Y[-1]) * 0.5
-    _board(mb, east_face(xa, first), yc)
+    board(mb, east_face(xa, first), yc)
     F.podium(mb, xa + 1.4, yc, D.FACE_WEST)
     for dx in ROW_DX:
         x = xa + dx

@@ -61,10 +61,10 @@ INT_BUDGET = 450000       # 屋内の合計
 INT_BUDGET_ONE = {        # 屋内 1 棟
     "library": 80000,
     "cafeteria": 62000,
-    "research2": 20000,
+    "research2": 14000,
     "lecture": 130000,
     "research1": 50000,
-    "kyoso": 45000,
+    "kyoso": 51000,
     "gym": 21000,
     "lab1": 24500,
     "lab2": 12500,
