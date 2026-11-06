@@ -144,6 +144,28 @@
         ]
       },
       "note": "葛飾キャンパスの外壁は二丁掛の割肌タイル（227×60 mm）の芋張りで、目地は細く暗い。素材からは肌の粒だけを借り、1 枚ずつの色（曇天の写真で色順応をそろえた 6 色と割合）と暗い目地で組み直す。平均は #654F44。測定は docs/ref/brick/ (#109)。"
+    },
+    {
+      "procedural": "formwork",
+      "name": "formwork182",
+      "tile_cm": 182,
+      "size_px": 1024,
+      "materials": ["lecture_concrete_light_wall", "lecture_concrete_wall"],
+      "formwork": {
+        "panel_mm": [1820, 910],
+        "joint_mm": 3,
+        "joint_ratio": 0.55,
+        "pcon_mm": 30,
+        "pcon_ratio": 0.35,
+        "pcon_pitch_mm": 455,
+        "mottle": [{"scale_mm": 250, "amount": 0.05}, {"scale_mm": 40, "amount": 0.025}],
+        "panel_tone": 0.03,
+        "grain": 0.02,
+        "pores_per_m2": 120,
+        "pore_mm": 2.5,
+        "pore_ratio": 0.55
+      },
+      "note": "講義棟の打放しの壁。素材を落とさず tools/formwork.py が型枠の割付けから描く。横使いの合板パネル 1820×910 mm の目地（幅 3 mm）と、パネル 1 枚に 2 段 × 4 列の P コンの穴（直径 30 mm、455 mm 間隔）、控えめなムラと気泡。平均色は InteriorPalette の宣言 hex に合わせる。床・スラブの小口は lecture_concrete / lecture_concrete_light のまま平らに残す (#423)。"
     }
   ]
 }

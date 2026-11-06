@@ -214,7 +214,7 @@ def test_finish_material_check_mode_flags_what_is_missing(tmp_path, monkeypatch,
     assert not ft.finish_material("grass", path, "6FA84A", None, 92, in_unity=True)
 
     out = capsys.readouterr().out
-    assert "CampusColors に無い" in out and "まだ焼かれていない" in out and ".meta が無い" in out
+    assert "CampusColors にも InteriorPalette の Surface にも無い" in out and "まだ焼かれていない" in out and ".meta が無い" in out
 
 
 def test_finish_material_check_mode_rejects_a_guid_only_meta(tmp_path, monkeypatch, capsys):
@@ -380,28 +380,45 @@ def manifest():
 def test_manifest_surfaces_are_well_formed(manifest):
     seen = set()
     for surface in manifest["surfaces"]:
-        assert re.fullmatch(r"[A-Za-z]+\d+", surface["asset"]), surface
+        label = ft.surface_label(surface)
+        if "procedural" in surface:
+            # 手続きで描く面は素材を落とさないので、ambientCG の素材名と写真の加工の指定は持たない
+            assert surface["procedural"] == "formwork", surface
+            assert "asset" not in surface, surface
+            assert re.fullmatch(r"[a-z]+\d*", surface["name"]), surface
+            assert isinstance(surface["formwork"], dict), surface
+        else:
+            assert re.fullmatch(r"[A-Za-z]+\d+", surface["asset"]), surface
+            for key in ("saturation", "contrast", "depth"):
+                assert 0 <= surface[key] <= 1, (label, key)
         assert surface["tile_cm"] > 0
         assert surface["size_px"] in (128, 256, 512, 1024)
-        for key in ("saturation", "contrast", "depth"):
-            assert 0 <= surface[key] <= 1, (surface["asset"], key)
         assert surface.get("highpass_px", 0) >= 0
-        assert surface["materials"], surface["asset"]
+        assert surface["materials"], label
         for material in surface["materials"]:
             assert material not in seen, f"{material} が 2 つの素材に割り当てられている"
             seen.add(material)
 
 
 def test_manifest_materials_exist_in_campus_colors(manifest):
-    colors = ft.load_campus_colors()
+    colors = ft.load_target_colors()
     missing = [m for s in manifest["surfaces"] for m in s["materials"] if m not in colors]
-    assert not missing, f"MaterialLibrary.cs の CampusColors に無い: {missing}"
+    assert not missing, f"CampusColors にも InteriorPalette の Surface にも無い: {missing}"
+
+
+def test_target_colors_read_interior_surfaces():
+    """屋内の面の狙いは InteriorPalette.cs から読み、CampusColors と同じ名前なら CampusColors を採る。"""
+    colors = ft.load_target_colors()
+    assert colors["lecture_concrete_wall"] == "8F8675"
+    assert colors["lecture_concrete_light_wall"] == "C2BDBA"
+    for name, hex_text in ft.load_campus_colors().items():
+        assert colors[name] == hex_text
 
 
 def test_every_asset_is_credited(manifest):
     """CC0 なので表記は義務ではないが、どの素材を使ったかは CREDITS.md から辿れるようにしておく。"""
     credits = (ft.ROOT / "docs" / "CREDITS.md").read_text(encoding="utf-8")
-    missing = [s["asset"] for s in manifest["surfaces"] if s["asset"] not in credits]
+    missing = [s["asset"] for s in manifest["surfaces"] if "asset" in s and s["asset"] not in credits]
     assert not missing, f"docs/CREDITS.md に載っていない ambientCG の素材: {missing}"
 
 

@@ -10,7 +10,8 @@ import math
 from . import kit, shell
 from . import plan_lecture_dims as D
 
-CONCRETE = "lecture_concrete"
+CONCRETE = "lecture_concrete"          # 床の小口・壁の天面の蓋（平らなまま）
+CONCRETE_WALL = "lecture_concrete_wall"  # 打放しの壁の面（型枠の跡の画像を貼る、#423）
 GLASS = "lecture_glass_curtain"
 CAP_UP = 0.01        # 壁の天面に貼る蓋の高さ
 Z_1F_TOP = D.F2      # 1F だけの壁の上端（2F の床の高さ）
@@ -47,7 +48,7 @@ def cap(mb, a, b, z, off0, off1, mat=CONCRETE):
     mb.add_face([(p[0], p[1], zc) for p in reversed(pts)], mat)
 
 
-def wall(c, line, z0, z1, mat=CONCRETE, glass=None, sill=0.95, header=0.45, gaps=(),
+def wall(c, line, z0, z1, mat=CONCRETE_WALL, glass=None, sill=0.95, header=0.45, gaps=(),
          gap_top=None, top=True):
     """外周壁の 1 帯。top=True なら上端に蓋を貼る。"""
     a, b = line
@@ -57,7 +58,7 @@ def wall(c, line, z0, z1, mat=CONCRETE, glass=None, sill=0.95, header=0.45, gaps
         cap(c.wall, a, b, z1, 0.0, shell.WALL)
 
 
-def part(c, a, b, z0, z1, mat=CONCRETE, thick=shell.PART, gaps=(), top=True):
+def part(c, a, b, z0, z1, mat=CONCRETE_WALL, thick=shell.PART, gaps=(), top=True):
     """間仕切り（線の中心に厚み）と天面の蓋。"""
     shell.partition(c.wall, a, b, z0, z1, mat, thick=thick, gaps=gaps)
     if top:

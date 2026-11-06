@@ -34,6 +34,10 @@ CampusSurfaces.cs がそれを読んで、タイリングを 100 / tile_cm に�
 TextureImporter（Default / Repeat / sRGB / ミップマップ有り）を丸ごと書く。Unity 6.6 は
 取り込み設定の無い .meta を読まず、画像が無いものとして面を単色で塗る。
 tiling.json の .meta は、短い TextScriptImporter の既定まで書く。
+
+manifest の項目に "procedural" があるものは、素材を落とさずに手続きで描く（"formwork" は
+tools/formwork.py の打放しの型枠、#423）。屋内の面は InteriorPalette.cs の Surface にある名前で、
+平均色の狙いもそこから読む。
 """
 
 from __future__ import annotations
@@ -51,6 +55,7 @@ import zipfile
 from pathlib import Path
 
 import brick_bond
+import formwork
 from PIL import Image, ImageChops, ImageFilter, ImageOps, ImageStat
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -58,6 +63,7 @@ MANIFEST = ROOT / "data" / "textures" / "surfaces.json"
 CACHE = ROOT / "data" / "textures" / ".cache"
 UNITY_PROJECT = ROOT / "unity" / "KatsushikaCampusDays"
 MATERIAL_LIBRARY = UNITY_PROJECT / "Assets" / "Scripts" / "Editor" / "MaterialLibrary.cs"
+INTERIOR_PALETTE = UNITY_PROJECT / "Assets" / "Scripts" / "Editor" / "InteriorPalette.cs"
 
 # .meta の GUID はこの文字列と Unity プロジェクトからの相対パスで決める（uuid5）。
 # 同じパスなら誰が何度作っても同じ GUID になる。
@@ -155,6 +161,28 @@ def load_campus_colors() -> dict[str, str]:
         raise SystemExit("CampusColors を読めなかった。MaterialLibrary.cs の書き方が変わっている")
 
     return colors
+
+
+INTERIOR_SURFACE_LINE = re.compile(r'\{\s*"([a-z0-9_]+)"\s*,\s*new\s+Surface\(\s*"([0-9A-Fa-f]{6})"')
+
+
+def load_target_colors() -> dict[str, str]:
+    """平均色の狙い。CampusColors に、InteriorPalette.cs の屋内の面（Surface）を足したもの。
+
+    InteriorPalette.cs は tools/interior_palette.py が Blender の mats から書いたもの。
+    同じ名前が両方にあれば CampusColors を採る（MaterialLibrary もそちらを先に引く）。
+    """
+    text = INTERIOR_PALETTE.read_text(encoding="utf-8")
+    interior = {name: hex_text.upper() for name, hex_text in INTERIOR_SURFACE_LINE.findall(text)}
+    if not interior:
+        raise SystemExit(f"InteriorPalette の Surface を読めなかった。書き方が変わっている: {INTERIOR_PALETTE}")
+
+    return {**interior, **load_campus_colors()}
+
+
+def surface_label(surface: dict) -> str:
+    """報告に出す名前。ambientCG の素材名か、手続きの面の名前。"""
+    return surface.get("asset") or surface["name"]
 
 
 # ---------------------------------------------------------------------------
@@ -539,6 +567,12 @@ def bake_surface(surface: dict, variant: str) -> Image.Image:
     retint の狙いだけを変える。
     """
     size = surface["size_px"]
+    if surface.get("procedural") == "formwork":
+        # 打放しの型枠の跡は割付けの寸法から描く。素材は落とさない (#423)
+        return formwork.compose(surface["formwork"], size, surface["tile_cm"], surface["name"])
+    if "procedural" in surface:
+        raise SystemExit(f"知らない procedural: {surface['procedural']}")
+
     maps = download_maps(surface["asset"], variant, ["Color", *DETAIL_MAPS])
     if "bricks" in surface:
         # 煉瓦は素材の張り方・目地をそのまま使わず、実物の芋張りに組み直す (#109)
@@ -565,7 +599,7 @@ def finish_material(
     shaped が None（--check）のときは書かずに、今ある画像と .meta を確かめて測るだけ。
     """
     if target_hex is None:
-        print(f"  NG {material:<16} MaterialLibrary.cs の CampusColors に無い")
+        print(f"  NG {material:<16} CampusColors にも InteriorPalette の Surface にも無い")
         return False
 
     if shaped is not None:
@@ -639,7 +673,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
-    colors = load_campus_colors()
+    colors = load_target_colors()
     output = ROOT / manifest["output"]["folder"]
     suffix = manifest["output"]["format"]
     quality = manifest["output"]["quality"]
@@ -668,7 +702,7 @@ def main(argv: list[str] | None = None) -> int:
         if not wanted:
             continue
 
-        print(f"{surface['asset']}  ({surface['tile_cm']} cm)")
+        print(f"{surface_label(surface)}  ({surface['tile_cm']} cm)")
         shaped = None if args.check else bake_surface(surface, manifest["download"]["variant"])
         for material in wanted:
             path = output / f"{material}.{suffix}"

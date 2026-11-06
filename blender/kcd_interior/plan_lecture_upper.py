@@ -39,7 +39,8 @@ DOWN = 0.30                         # ダウンライトの一辺
 DOWN_CLEAR = 0.8                    # 吊り看板の吊り元からダウンライトまでの最小距離
 HOLE_LIGHT_GAP = 1.5                # 穴の縁からこの範囲の天井には点光源を置かない（エスカレータの段に近すぎる）
 
-CORR = "lecture_concrete_light"
+CORR = "lecture_concrete_light"            # 床の小口（平らなまま）
+CORR_WALL = "lecture_concrete_light_wall"  # 廊下の打放しの壁（型枠の跡、#423）
 CEIL = "lecture_ceiling_upper"
 CARPET = "lecture_carpet_upper"
 WHITE = "lecture_rail_white"
@@ -102,10 +103,10 @@ def _ceilings(walls, floor):
 def _walls_2f(walls):
     """2F の 311 の東の壁の線（X 35.7）より東: 南北の室の壁、北の吹き抜けに面した壁、南の吹き抜けのガラス手すり。"""
     z0, z1 = D.F2, D.F3
-    SH.part(W._Walls(walls.get("s", 5)), (X_3F_E, Y_CS), (X_2F_E, Y_CS), z0, z1, mat=CORR)
-    SH.part(W._Walls(walls.get("n", 5)), (X_3F_E, Y_CN), (X_LOUNGE0, Y_CN), z0, z1, mat=CORR)
+    SH.part(W._Walls(walls.get("s", 5)), (X_3F_E, Y_CS), (X_2F_E, Y_CS), z0, z1, mat=CORR_WALL)
+    SH.part(W._Walls(walls.get("n", 5)), (X_3F_E, Y_CN), (X_LOUNGE0, Y_CN), z0, z1, mat=CORR_WALL)
     mb = walls.get("c", 5)
-    SH.part(W._Walls(mb), (X_2F_WALL, Y_2F_STRIP), (X_2F_WALL, D.BRIDGE_2F[1]), z0, z1, mat=CORR)
+    SH.part(W._Walls(mb), (X_2F_WALL, Y_2F_STRIP), (X_2F_WALL, D.BRIDGE_2F[1]), z0, z1, mat=CORR_WALL)
     shell.railing(mb, [(X_2F_E, D.Y_ROOM_S1), (X_2F_E, Y_2F_STRIP), (X_2F_WALL - T * 0.5, Y_2F_STRIP)],
                   z0, h=RAIL_H, mat="stainless", glass=GLASS_RAIL)
 
