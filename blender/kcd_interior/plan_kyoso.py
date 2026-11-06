@@ -1,5 +1,5 @@
 """共創棟 1F: エントランスホール・スタジオ・エスカレーター・ラーニングスクエア1/2・曲線テーブルのホール・
-スターバックス・ファミリーマート、2F: ラウンジと教室 C201〜C204、3F: 吹き抜けから見えるガラスの教室。
+スターバックス・ファミリーマート、2F: ラウンジと教室 C201〜C204、3F: 吹き抜けに面したガラスの教室 2 室と廊下。
 
 寸法は plan_kyoso_dims、躯体は plan_kyoso_shell、エスカレーターは plan_kyoso_esc、
 区画は plan_kyoso_zones / _shops / _2f / _3f、看板は plan_kyoso_signs に分ける。座標はすべて建物のローカル。
@@ -30,11 +30,11 @@ LAMPS_2F = tuple((x, y) for x in (-1.0, 6.0, 13.0) for y in (16.8, 23.4))
 
 
 def lamps_3f():
-    """3F の 2 室の中央と、吹き抜けの投影壁の前（X, Y）。"""
+    """3F の 2 室の中央、吹き抜けの投影壁の前、廊下（X, Y）。"""
     x0, y0, x1, y1 = D.ROOMS3
     yc = (y0 + y1) * 0.5
     return ((0.5 * (x0 + D.ROOMS3_SPLIT), yc), (0.5 * (D.ROOMS3_SPLIT + x1), yc),
-            (D.ATRIUM[0] + 3.0, 34.0))
+            (D.ATRIUM[0] + 3.0, 34.0)) + P3.corridor_lamps()
 
 
 def _lamps(c, rooms2):
@@ -64,7 +64,7 @@ def _lights(c, rooms2):
     c.lights_from(rooms2, D.Z_CEIL2, energy=170.0, radius=1.4)
     c.lights_from([(x, y) for x in (-2.0, 2.5, 7.0) for y in (32.0, 36.5)],
                   D.Z_ATRIUM - 0.1, energy=900.0, radius=2.0)
-    c.lights_from([(x, y) for x in (-2.0, 7.0) for y in (23.5, 27.8)],
+    c.lights_from([(x, y) for x in (-2.0, 7.0) for y in (23.5, 27.8)] + list(P3.corridor_lamps()),
                   D.Z_CEIL3 - 0.1, energy=170.0, radius=1.4)
 
 
@@ -79,7 +79,7 @@ def build(c):
     SH.park_band(c, c.wall)
     SH.slabs_2f(c, c.wall)
     SH.atrium(c, c.wall)
-    P3.shell_3f(c, c.wall)
+    P3.build(c)
     SH.stair(c, c.wall)
     ESC.build(c)
 
@@ -102,5 +102,5 @@ def build(c):
     for suffix, loc, target, lens in D.CAMS:
         c.cam(suffix, loc, target, lens=lens)
     c.note("1F=エントランスホール・スタジオ・ラーニングスクエア1/2・ホール・スターバックス・"
-           "ファミリーマート、2F=ラウンジ・教室 C201〜C204、3F=ガラスの教室（見るだけ）。q_coffee の舞台")
+           "ファミリーマート、2F=ラウンジ・教室 C201〜C204、3F=ガラスの教室 2 室と廊下（東のコアの階段室の扉で 1F〜3F）。q_coffee の舞台")
     c.seats = sum(len(s["anchors"]) for s in c.seat_list())

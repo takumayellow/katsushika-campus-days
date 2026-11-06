@@ -30,6 +30,36 @@
    "y": 0.0,
    "z": 4.55
   },
+  "st_kyoso_core_1F": {
+   "x": -6.1,
+   "y": 0.0,
+   "z": 27.8
+  },
+  "st_kyoso_core_1F_f": {
+   "x": -5.1,
+   "y": 0.0,
+   "z": 27.8
+  },
+  "st_kyoso_core_2F": {
+   "x": -6.1,
+   "y": 5.4,
+   "z": 27.8
+  },
+  "st_kyoso_core_2F_f": {
+   "x": -5.1,
+   "y": 5.4,
+   "z": 27.8
+  },
+  "st_kyoso_core_3F": {
+   "x": -6.1,
+   "y": 9.6,
+   "z": 19.95
+  },
+  "st_kyoso_core_3F_f": {
+   "x": -5.1,
+   "y": 9.6,
+   "z": 19.95
+  },
   "esc_kyoso_1f_lo": {
    "x": -20.9,
    "y": 0.0,
@@ -259,6 +289,21 @@
    "x": -3.2,
    "y": 12.2,
    "z": 34.0
+  },
+  "lamp_kyoso_3F_4": {
+   "x": -3.4,
+   "y": 12.2,
+   "z": 19.95
+  },
+  "lamp_kyoso_3F_5": {
+   "x": 3.0,
+   "y": 12.2,
+   "z": 19.95
+  },
+  "lamp_kyoso_3F_6": {
+   "x": 9.2,
+   "y": 12.2,
+   "z": 19.95
   },
   "poi_kyoso_store": {
    "x": -14.8,
@@ -2886,14 +2931,20 @@
    "z": 20.7
   }
  },
- "triangles": 43861,
+ "triangles": 44509,
  "seats": 163,
  "notes": [
-  "1F=エントランスホール・スタジオ・ラーニングスクエア1/2・ホール・スターバックス・ファミリーマート、2F=ラウンジ・教室 C201〜C204、3F=ガラスの教室（見るだけ）。q_coffee の舞台"
+  "1F=エントランスホール・スタジオ・ラーニングスクエア1/2・ホール・スターバックス・ファミリーマート、2F=ラウンジ・教室 C201〜C204、3F=ガラスの教室 2 室と廊下（東のコアの階段室の扉で 1F〜3F）。q_coffee の舞台"
  ],
  "objects": [
   "floor_kyoso",
   "wall_kyoso",
+  "floor_kyoso_3f_east",
+  "wall_kyoso_3f_east",
+  "floor_kyoso_3f_west",
+  "wall_kyoso_3f_west",
+  "floor_kyoso_3f_corr",
+  "wall_kyoso_3f_corr",
   "escsteps_kyoso_1f",
   "floor_kyoso_2f_c201",
   "wall_kyoso_2f_c201",
@@ -2913,10 +2964,12 @@
   "furn_kyoso_08_ls2",
   "furn_kyoso_09_core",
   "furn_kyoso_10_hall",
-  "furn_kyoso_11_c201",
-  "furn_kyoso_12_c202",
-  "furn_kyoso_13_c203",
-  "furn_kyoso_14_c204"
+  "furn_kyoso_11_3f_east",
+  "furn_kyoso_12_3f_west",
+  "furn_kyoso_13_c201",
+  "furn_kyoso_14_c202",
+  "furn_kyoso_15_c203",
+  "furn_kyoso_16_c204"
  ],
  "signs": [
   {
@@ -3547,6 +3600,22 @@
   }
  ],
  "text_triangles": 10607,
+ "closure_zones": [
+  {
+   "x0": -7.4,
+   "x1": 11.5,
+   "y_face": 18.3,
+   "y_back": 29.1,
+   "notch": [
+    -7.4,
+    21.6,
+    -6.5,
+    29.1
+   ],
+   "z_min": 9.1,
+   "z_max": 10.1
+  }
+ ],
  "ext": {
   "objects": [
    "ext_kyoso",
