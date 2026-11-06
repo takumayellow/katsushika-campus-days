@@ -65,7 +65,10 @@ def envelope(c):
 
     # モール側（東 -> 西）
     _edge(mb, (x0, ya), (x1, ya), ((0.0, x1 - x0, ONE, False),), door_gaps)
-    _edge(mb, (x0, ya), (x1, ya), ((0.0, x1 - x0, LIFT, True),))
+    # 2F の教室の前（窓の帯は plan_kyoso_2f_rooms が室ごとに立てる）を抜く
+    r0 = D.ROOMS2_X[0] - D.ROOMS2_END - x0
+    r1 = D.ROOMS2_X[-1] + D.ROOMS2_END - x0
+    _edge(mb, (x0, ya), (x1, ya), ((0.0, r0, LIFT, True), (r1, x1 - x0, LIFT, True)))
     shell.glass_entrance(mb, d0, d1, 0.0, 3.2, ya + shell.WALL * 0.5)
 
     # 公園側（西 -> 東）。距離は x1 から
@@ -237,7 +240,10 @@ def slabs_2f(c, mb):
     z0, z1 = D.Z_CEIL, D.Z_CEIL2
     ya = D.SLAB_A[1]
     lx = D.ESC_LAND_X
-    kit.box(mb, D.ESC_VOID[0] - 0.3, ya - 0.3, z0, D.CORE_W[0], ya, z1, WALL)   # モール側
+    # モール側（教室の前は 2F の床の下まで。上は plan_kyoso_2f_rooms の廊下の壁）
+    rx = D.ROOMS2_X[0] - D.ROOMS2_END
+    kit.box(mb, D.ESC_VOID[0] - 0.3, ya - 0.3, z0, rx, ya, z1, WALL)
+    kit.box(mb, rx, ya - 0.3, z0, D.CORE_W[0], ya, D.Z_SLAB, WALL)
     kit.box(mb, D.ESC_VOID[0] - 0.3, ya, z0, D.ESC_VOID[0], D.ESC_VOID[3] + 0.3, z1, WALL)
     kit.box(mb, D.ESC_VOID[0], D.ESC_VOID[3], z0, lx, D.ESC_VOID[3] + 0.3, z1, WALL)
     kit.box(mb, lx - 0.3, D.ESC_VOID[3] + 0.3, z0, lx, D.CORE_E[1], z1, WALL)    # 降り口の東

@@ -926,6 +926,26 @@ namespace KCD.Editor
             },
             new Shot
             {
+                Name = "shot_kyoso_c202",
+                Space = Frame.Interior,
+                Building = "kyoso",
+                Eye = new Vector3(2.1f, 7.0f, 13.2f),
+                Look = new Vector3(-4.6f, 6.4f, 7.6f),
+                Fov = 0f,
+                Note = "共創棟 2F の教室 C202（後ろから黒板）",
+            },
+            new Shot
+            {
+                Name = "shot_kyoso_corridor2f",
+                Space = Frame.Interior,
+                Building = "kyoso",
+                Eye = new Vector3(-10.0f, 7.0f, 16.4f),
+                Look = new Vector3(14.0f, 6.2f, 14.6f),
+                Fov = 0f,
+                Note = "共創棟 2F の廊下と教室の扉",
+            },
+            new Shot
+            {
                 Name = "shot_lecture_board_203",
                 Space = Frame.Interior,
                 Building = "lecture",
