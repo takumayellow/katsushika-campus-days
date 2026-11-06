@@ -43,14 +43,14 @@ def starbucks(c, mb):
 
 
 def familymart(c, mb):
-    """東の壁沿いの冷蔵ケース、ゴンドラ 3 本、レジ、西の壁沿いのコーヒーマシン。"""
+    """東の壁沿いの冷蔵ケース、ゴンドラ 2 本、レジ、西の壁沿いのコーヒーマシン。"""
     rng = c.rng
     x0, y0, x1, y1 = D.FM
     kit.plate(mb, x0, y0, x1, y1, 0.012, "floor_tile_white")
     for fy in (33.0, 37.0):
         F.fridge_case(mb, x0 + 0.46, fy, D.FACE_WEST, length=4.0, rng=rng)
-    F.fridge_case(mb, -16.0, y1 - 0.46, D.FACE_MALL, length=7.2, rng=rng)
-    for gx in (-18.5, -16.3, -14.1):
+    F.fridge_case(mb, -16.0, y1 - 0.46, D.FACE_MALL, length=6.0, rng=rng)
+    for gx in (-17.8, -14.8):
         F.gondola(mb, gx, 36.2, D.FACE_EAST, length=2.4, rng=rng)
     F.counter(mb, -16.6, 33.0, -13.0, 33.6, h=1.0, body="counter_wood", top="counter_wood")
     for rx in (-15.8, -13.8):
