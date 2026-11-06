@@ -1099,6 +1099,138 @@ namespace KCD.Editor
                 Indoor = true,
                 Note = "講義棟 4F の 402 の西の壁際から東の黒板（#423 の内装の 2 巡目の前後）",
             },
+            new Shot
+            {
+                Name = "shot_lec423_ev2f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-21.6f, 6.20f, 27.50f),
+                Look = new Vector3(-28.3f, 6.30f, 25.20f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 2F の EV を降りて西ロビーの西の壁（階表示・案内板。#423 の階ごとの違いの前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_corrn2f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-27.5f, 6.30f, 33.00f),
+                Look = new Vector3(10.0f, 5.60f, 32.00f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 2F の北の廊下を西の端から東へ（ベンチ・掲示板。#423 の階ごとの違いの前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_ev3f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-21.6f, 10.40f, 27.50f),
+                Look = new Vector3(-28.3f, 10.50f, 25.20f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 3F の EV を降りて西ロビーの西の壁（階表示・案内板。#423 の階ごとの違いの前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_corrn3f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-27.5f, 10.50f, 33.00f),
+                Look = new Vector3(10.0f, 9.80f, 32.00f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 3F の北の廊下を西の端から東へ（ベンチ・掲示板。#423 の階ごとの違いの前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_ev4f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-21.6f, 14.60f, 27.50f),
+                Look = new Vector3(-28.3f, 14.70f, 25.20f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 4F の EV を降りて西ロビーの西の壁（階表示・案内板。#423 の階ごとの違いの前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_corrn4f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-27.5f, 14.70f, 33.00f),
+                Look = new Vector3(10.0f, 14.00f, 32.00f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 4F の北の廊下を西の端から東へ（ベンチ・掲示板。#423 の階ごとの違いの前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_ev5f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-21.6f, 18.80f, 27.50f),
+                Look = new Vector3(-28.3f, 18.90f, 25.20f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 5F の EV を降りて西ロビーの西の壁（階表示・案内板。#423 の階ごとの違いの前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_corrn5f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-27.5f, 18.90f, 33.00f),
+                Look = new Vector3(10.0f, 18.20f, 32.00f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 5F の北の廊下を西の端から東へ（ベンチ・掲示板。#423 の階ごとの違いの前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_ev6f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-21.6f, 23.00f, 27.50f),
+                Look = new Vector3(-28.3f, 23.10f, 25.20f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 6F の EV を降りて西ロビーの西の壁（階表示・案内板。#423 の階ごとの違いの前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_corrn6f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-27.5f, 23.10f, 33.00f),
+                Look = new Vector3(10.0f, 22.40f, 32.00f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 6F の北の廊下を西の端から東へ（ベンチ・掲示板。#423 の階ごとの違いの前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_ev7f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-21.6f, 27.20f, 27.50f),
+                Look = new Vector3(-28.3f, 27.30f, 25.20f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 7F の EV を降りて西ロビーの西の壁（階表示・案内板。#423 の階ごとの違いの前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_corrn7f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-27.5f, 27.30f, 33.00f),
+                Look = new Vector3(10.0f, 26.60f, 32.00f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 7F の北の廊下を西の端から東へ（ベンチ・掲示板。#423 の階ごとの違いの前後）",
+            },
 
             // 体育館（#115）。公式の写真と同じ向きで撮って並べる。Eye / Look は blender の (x, y, z) を
             // Unity の (x, z, y) に読み替えたもの。Indoor でゲームの屋内と同じ光にする。

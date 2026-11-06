@@ -1,9 +1,11 @@
 """講義棟 2F〜7F の小物（#279）: 人が使っている建物に見せるための掲示・防災設備・仕上げ。
 
 廊下（corridors）:
-    南北の廊下の壁の掲示板（コルクとポスター）・消火器・消火栓、壁の足元の巾木、
-    中を作らない室の閉じた扉の窓、コアの南の面のゴミ箱・北の面のベンチ、西ロビーと南東の階段の誘導灯、
-    天井の空調の吹き出し口。plan_lecture_west の廊下の部品（帯 s / n と区画 k）へ積む。
+    南北の廊下の壁の掲示板（コルクとポスター）・掲示ケース・消火器・消火栓、壁の足元の巾木、
+    中を作らない室の閉じた扉の窓、コアの南の面のゴミ箱・北の面のベンチ、西ロビーのパンフレットラック、
+    西ロビーと南東の階段の誘導灯、天井の空調の吹き出し口。plan_lecture_west の廊下の部品（帯 s / n と区画 k）へ積む。
+    消火器・消火栓は全階同じ位置を狙う（7F は予約の区間を避けてずれる）。掲示・ベンチ・ゴミ箱・ラックは階ごとの表（FLOOR_*）で数と位置を変え、
+    どの階も同じに見えないようにする（#423。写真は 1F と 3F・4F の一部だけなので、上の階の数は推定）。
 教室（room）:
     窓のブラインド、型 A・B の西の壁（後ろ）の掲示板、型 A の教卓のチョーク箱と黒板消し・
     黒板の上の巻き上げスクリーンの箱、天井の空調の吹き出し口。
@@ -38,17 +40,33 @@ BENCH_TOP = "desk_wood"
 ERASER = "lecture_seat_navy"
 
 RESERVED_7F = (-24.1, -20.7)          # 7F の廊下の南の壁（ストーリー担当の場面。-23.6〜-21.2 に 0.5 m の余白を足す）
-WIDTH = {"board": 1.5, "ext": 0.35, "hydrant": 0.8}
-WANT = {"S": (("board", -12.0), ("ext", -24.0), ("board", 4.0), ("ext", 20.0)),
-        "N": (("board", -10.0), ("hydrant", -24.0), ("ext", 2.0), ("board", 12.0))}
+WIDTH = {"board": 1.5, "case": 1.2, "ext": 0.35, "hydrant": 0.8}
+SAFETY = {"S": (("ext", -24.0), ("ext", 20.0)),          # 防災設備（全階同じ X を狙う。先に置く）
+          "N": (("hydrant", -24.0), ("ext", 2.0))}
+# 階ごとの掲示（種類, 置きたい X）。board はコルクの掲示板、case はガラス扉付きの掲示ケース（YT 00:39 の 1F の型）。
+# 学生の多い 2F・3F は多め、研究室の階の 7F は少なめ（推定）。
+FLOOR_NOTICES = {
+    "2F": {"S": (("board", -12.0), ("board", 4.0)), "N": (("board", -10.0), ("board", 12.0))},
+    "3F": {"S": (("board", -12.0), ("board", 4.0), ("board", 26.0)),
+           "N": (("board", -10.0), ("board", 12.0), ("board", 28.0))},
+    "4F": {"S": (("board", -12.0), ("board", 4.0)), "N": (("board", -10.0), ("board", 12.0))},
+    "5F": {"S": (("case", -6.0), ("board", 10.0)), "N": (("board", -14.0), ("board", 6.0))},
+    "6F": {"S": (("board", 4.0),), "N": (("case", -10.0), ("board", 12.0))},
+    "7F": {"S": (("board", -12.0),), "N": (("board", 12.0),)},
+}
 CLEAR = 0.3                           # 扉の枠・札・他の小物から空ける幅
 SKIRT_H = 0.08
 SKIRT_OUT = 0.003                     # 壁の面から巾木の板まで
 DIFFUSER_X = (-22.5, -10.5, 1.5, 13.5)   # 廊下の吹き出し口（ダウンライトの間）
 DIFFUSER_Y = (21.65, 33.3)
-BINS_X = (-19.9, -19.5, -19.1)        # コアの南の面のゴミ箱（缶・ペットボトル・燃えるごみ）
+BIN_X0, BIN_STEP = -19.9, 0.4         # コアの南の面のゴミ箱の西端の中心と間隔（缶・ペットボトル・燃えるごみ・紙）
+FLOOR_BINS = {"2F": 4, "3F": 4, "4F": 3, "5F": 3, "6F": 2, "7F": 2}
 BIN_Y = (D.Y_CORE0 - 0.32, D.Y_CORE0 - 0.02)
-BENCH_X, BENCH_W = -11.0, 1.8         # コアの北の面のベンチ
+BENCH_W = 1.8                         # コアの北の面のベンチの長さ
+FLOOR_BENCHES = {"2F": (-11.0, -6.0, 10.5), "3F": (-11.0, 10.5), "4F": (-11.0,),
+                 "5F": (-13.5, -8.5), "6F": (-11.0,), "7F": ()}   # ベンチの中心の X
+RACK_FLOORS = ("2F", "3F")            # 西ロビーの西の壁のパンフレットラック（YT 00:35 の 1F の型）
+RACK = (22.6, 0.6, 1.3)               # 中心の Y・幅・高さ（案内板 RD.LOBBY_SIGN_Y の南）
 BENCH_Y = (D.Y_CORE1 + 0.05, D.Y_CORE1 + 0.45)
 SILL = 0.95                           # 窓の下端（床から。plan_lecture_rooms._outer の SH.wall と同じ）
 BLIND_W = 2.2                         # ブラインド 1 枚の幅の目安
@@ -129,11 +147,20 @@ def free_spans(floor, side):
     return _subtract([(x0 + CLEAR, x1 - CLEAR)], blocked(floor, side))
 
 
+def wants(floor, side):
+    """floor の side の壁に置きたい (種類, X) の並び（防災設備が先）。"""
+    return SAFETY[side] + FLOOR_NOTICES[floor][side]
+
+
+def bins_x(floor):
+    return tuple(BIN_X0 + BIN_STEP * k for k in range(FLOOR_BINS[floor]))
+
+
 def wall_items(floor, side):
-    """廊下の壁に置く (種類, 中心 X)。WANT の X に一番近い空きへ順に置く。"""
+    """廊下の壁に置く (種類, 中心 X)。wants の X に一番近い空きへ順に置く。"""
     spans = free_spans(floor, side)
     out = []
-    for kind, want in WANT[side]:
+    for kind, want in wants(floor, side):
         hw = WIDTH[kind] * 0.5
         best = None
         for a, b in spans:
@@ -161,6 +188,26 @@ def board(mb, t, seed=0):
                  color)
 
 
+def case(mb, t, seed=0):
+    """ガラス扉付きの掲示ケース: 金属の枠の箱と、奥のコルクの面のポスター 2 枚。"""
+    t.box_nb(mb, -0.6, 0.0, 1.0, 0.6, 0.08, 1.9, METAL)
+    t.vplate(mb, 0.55, 0.081, -0.55, 0.081, 1.05, 1.85, CORK)
+    for k, (cx, w, z0, z1) in enumerate(((-0.25, 0.42, 1.15, 1.75), (0.27, 0.36, 1.25, 1.70))):
+        color = POSTERS[(seed + k) % len(POSTERS)]
+        t.vplate(mb, cx + w * 0.5, 0.082, cx - w * 0.5, 0.082, z0, z1, PAPER)
+        t.vplate(mb, cx + w * 0.5, 0.083, cx - w * 0.5, 0.083, z1 - (z1 - z0) * 0.3, z1 - 0.02,
+                 color)
+
+
+def rack(mb, t):
+    """床置きのパンフレットラック: 灰色の金属の箱と、前面の 3 段の色の冊子。"""
+    _, w, h = RACK
+    hw = w * 0.5
+    t.box_nb(mb, -hw, 0.0, 0.0, hw, 0.25, h, METAL)
+    for k, z in enumerate((0.55, 0.85, 1.15)):
+        t.box_nb(mb, -hw + 0.05, 0.25, z - 0.25, hw - 0.05, 0.27, z, POSTERS[k % len(POSTERS)])
+
+
 def extinguisher(mb, t):
     """床に置いた消火器と、壁の赤い表示の板。"""
     t.box_nb(mb, -0.08, 0.02, 0.0, 0.08, 0.17, 0.55, RED)
@@ -175,7 +222,7 @@ def hydrant(mb, t):
     t.box_nb(mb, -0.05, 0.0, 1.55, 0.05, 0.05, 1.65, RED)
 
 
-SHAPES = {"board": board, "ext": extinguisher, "hydrant": hydrant}
+SHAPES = {"board": board, "case": case, "ext": extinguisher, "hydrant": hydrant}
 
 
 def _wall_props(bs, floor):
@@ -185,8 +232,8 @@ def _wall_props(bs, floor):
         for k, (kind, x) in enumerate(wall_items(floor, side)):
             t = kit.T(x, y, z, ang)
             mb = bs.at(x, y)
-            if kind == "board":
-                board(mb, t, RD.FLOORS.index(floor) + n * 2 + k)
+            if kind in ("board", "case"):
+                SHAPES[kind](mb, t, RD.FLOORS.index(floor) + n * 2 + k)
             else:
                 SHAPES[kind](mb, t)
 
@@ -220,20 +267,29 @@ def _door_windows(bs, floor):
 
 
 def _core_props(bs, floor):
-    """コアの南の面のゴミ箱 3 つと、北の面のベンチ。"""
+    """コアの南の面のゴミ箱と、北の面のベンチ（数と位置は階ごと）。"""
     z = RD.FLOOR_Z[floor]
     y0, y1 = BIN_Y
-    for k, x in enumerate(BINS_X):
+    for k, x in enumerate(bins_x(floor)):
         mb = bs.at(x, y0)
         kit.box_nb(mb, x - 0.15, y0, z, x + 0.15, y1, z + 0.7, METAL)
         kit.plate(mb, x - 0.12, y0 + 0.03, x + 0.12, y1 - 0.03, z + 0.701, POSTERS[(k + 1) % 4])
     b0, b1 = BENCH_Y
-    mb = bs.at(BENCH_X, b0)
     hw = BENCH_W * 0.5
-    kit.box_nb(mb, BENCH_X - hw, b0, z + 0.40, BENCH_X + hw, b1, z + 0.44, BENCH_TOP)
-    for dx in (-hw + 0.15, hw - 0.15):
-        kit.box_nb(mb, BENCH_X + dx - 0.03, b0 + 0.05, z, BENCH_X + dx + 0.03, b1 - 0.05, z + 0.40,
-                   METAL)
+    for bx in FLOOR_BENCHES[floor]:
+        mb = bs.at(bx, b0)
+        kit.box_nb(mb, bx - hw, b0, z + 0.40, bx + hw, b1, z + 0.44, BENCH_TOP)
+        for dx in (-hw + 0.15, hw - 0.15):
+            kit.box_nb(mb, bx + dx - 0.03, b0 + 0.05, z, bx + dx + 0.03, b1 - 0.05, z + 0.40, METAL)
+
+
+def _rack(bs, floor):
+    """西ロビーの西の壁のパンフレットラック（RACK_FLOORS の階だけ）。"""
+    if floor not in RACK_FLOORS:
+        return
+    y = RACK[0]
+    x = RD.X_IN_W
+    rack(bs.at(x, y), kit.T(x, y, RD.FLOOR_Z[floor], FACE_E))
 
 
 def _exit_signs(bs, floor):
@@ -263,6 +319,7 @@ def corridors(c):
         _skirting(bs, floor)
         _door_windows(bs, floor)
         _core_props(bs, floor)
+        _rack(bs, floor)
         _exit_signs(bs, floor)
         zc = RD.FLOOR_Z[floor] + RD.CEIL_H
         for x in DIFFUSER_X:
