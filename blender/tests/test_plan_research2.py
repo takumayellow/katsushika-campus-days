@@ -15,7 +15,7 @@ from kcd_lib import entrances, research2_exterior, signtext
 from conftest import CAMPUS_JSON
 
 SEED = 1709
-INT_CAP = 20000
+INT_CAP = 14000         # build_interiors.INT_BUDGET_ONE["research2"]
 
 
 def _ear_candidates(contours):

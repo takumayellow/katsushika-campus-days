@@ -348,6 +348,15 @@ def test_3f_rooms_and_corridor(built):
     assert zones[0]["x0"] < D.ROOMS3[0] and zones[0]["x1"] > D.ROOMS3[2]
 
 
+def test_3f_floor_continues_under_sliding_doors(built):
+    """3F: 室の床は廊下の床の縁から始まり、廊下の側の壁の引き戸の下で床が切れない。"""
+    parts = {mb.name: mb for mb in built.parts}
+    corr_back = max(v[1] for v in parts["floor_kyoso_3f_corr"].verts)
+    for key, _, _ in P3.rooms():
+        room_front = min(v[1] for v in parts["floor_kyoso_3f_" + key].verts)
+        assert room_front <= corr_back + 1e-6, key
+
+
 @pytest.mark.parametrize("floor,z", [("1F", 0.0), ("2F", D.Z2), ("3F", D.Z3)])
 def test_stair_doors_stop_on_every_floor(built, floor, z):
     """東のコアの西の面の階段室の扉: 扉の前（1 m）と着いた向き（さらに 1 m 西）の Empty が各階にある。"""
