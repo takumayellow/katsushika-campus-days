@@ -238,11 +238,11 @@ OC の 1F 案内図は、モール側の西半分にスタジオ、東半分に�
 
 | 材質 | HEX | 使う所 | 根拠 |
 |---|---|---|---|
-| `kyoso_floor_terrazzo_pale` / `_mid` / `_dark` | E9DDC6 / A9A69F / 5C5D5F | エントランスホールとホールのテラゾー（淡い地に中間色と濃い色の小片） | テラゾーは FOOD・KOYO で確定 |
-| `kyoso_floor_wood_oak` | D9B98E | ラーニングスクエア2 の床 | 推定 |
+| `kyoso_floor_terrazzo_pale` / `_mid` / `_dark` | EDD8BA / BDB6AA / 7A7976 | エントランスホールとホールのテラゾー（淡い地に中間色と濃い色の小片） | テラゾーは FOOD・KOYO で確定 |
+| `kyoso_floor_wood_oak` | E6B47F | ラーニングスクエア2 の床 | 写真と実機の画の比で調整 |
 | `kyoso_floor_carpet_grey` | 4E5052 | スタジオ・2F の床 | 推定 |
 | `kyoso_wood_oak` | C9A57A | デッキ、ベンチ、カウンター、階段の踏板 | オークの段床と踏板は写真で確定 |
-| `kyoso_louver_wood` | D2B48A | 1F の木ルーバー | 写真で確定 |
+| `kyoso_louver_wood` | EBB88C | 1F の木ルーバー | 写真で確定 |
 | `kyoso_ceiling_void` | 1E1E1E | ルーバーの上の黒い天井 | 写真で確定 |
 | `kyoso_column_pale` | C9CCCB | 柱 | 写真で確定 |
 | `kyoso_column_base` | 4B4D50 | 柱の台座、カフェの箱の台座 | 写真で確定 |
@@ -257,7 +257,7 @@ OC の 1F 案内図は、モール側の西半分にスタジオ、東半分に�
 | `kyoso_tile_hex_white` | F2F2EE | カフェの箱の南面の六角タイル | FOOD で確定 |
 | `kyoso_chalkboard` | 262826 | 黒板の看板 | ES で確定 |
 | `kyoso_fm_white` | F4F5F2 | コンビニの間口の上の帯 | FOOD で確定 |
-| `kyoso_sofa_grey` / `_charcoal` / `_beige` | B8B5AE / 3C3C3E / CDBFA8 | ソファ、プーフ、ラウンジチェア | RY・YT2 で確定 |
+| `kyoso_sofa_grey` / `_charcoal` / `_beige` | B8B5AE / 5A5550 / CDBFA8 | ソファ、プーフ、ラウンジチェア | RY・YT2 で確定 |
 | `kyoso_steel_black` | 2A2A2A（metallic 0.7） | ガラス壁の方立て、階段の側桁、丸テーブル | 写真で確定 |
 | `kyoso_concrete_exposed` / `kyoso_column_bluegrey` / `kyoso_sage_grey` / `kyoso_wall_terracotta` / `kyoso_glass_frosted` | B9B7B2 / A9BBC2 / 9DB0AA / B98478 / E9EDED（alpha 0.55） | パレットにあり、今の配置では使わない | 推定 |
 
