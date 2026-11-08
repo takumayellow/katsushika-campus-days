@@ -121,6 +121,7 @@ namespace KCD
         private ClassTimetable.Session _session;
         private bool _hasTalk;
         private bool _hasSit;
+        private bool _sameFloor = true;
 
         public string RoomId => _roomId;
         public float FloorY => _floorY;
@@ -153,6 +154,14 @@ namespace KCD
             _boardFrame = boardFrame;
             _boardTextWidth = boardTextWidth;
             _audience = audience;
+        }
+
+        /// <summary>PlayMode を続けて回しても、前の回に読んだ時間割を使い回さない。</summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetTimetable()
+        {
+            _timetable = null;
+            _timetableLoaded = false;
         }
 
         /// <summary>時間割。Resources から 1 回だけ読む。</summary>
@@ -232,8 +241,8 @@ namespace KCD
                 _player = player != null ? player.transform : null;
             }
 
-            bool sameFloor = _player == null || Mathf.Abs(_player.position.y - _floorY) <= OtherFloorHeight;
-            ShowPeople(_session.IsInClass && sameFloor);
+            _sameFloor = _player == null || Mathf.Abs(_player.position.y - _floorY) <= OtherFloorHeight;
+            ShowPeople(_session.IsInClass && _sameFloor);
             if (_session.IsInClass)
             {
                 ApplyLook(_session.Subject.Field);
@@ -395,7 +404,8 @@ namespace KCD
         /// </summary>
         private void CheckEntry(GameManager game)
         {
-            if (!_session.IsInClass || game == null || _player == null || !_room.Contains(_player.position))
+            if (!_session.IsInClass || game == null || _player == null || !_sameFloor
+                || !_room.Contains(_player.position))
             {
                 return;
             }
@@ -413,10 +423,13 @@ namespace KCD
             }
         }
 
-        /// <summary>分野ごとの、入ったときの話題 id。</summary>
+        /// <summary>入ったときの話題がある分野。</summary>
+        private static readonly string[] EntryFields = { "math", "physics", "info" };
+
+        /// <summary>分野ごとの、入ったときの話題 id。話題の無い分野は情報の話題にする。</summary>
         public static string EntryTopicFor(string field)
         {
-            return "t_" + (string.IsNullOrEmpty(field) ? "info" : field);
+            return "t_" + (System.Array.IndexOf(EntryFields, field) >= 0 ? field : "info");
         }
 
         /// <summary>学生は右手でノートに書き、ときどき手を止める。左手はノートを押さえる。</summary>

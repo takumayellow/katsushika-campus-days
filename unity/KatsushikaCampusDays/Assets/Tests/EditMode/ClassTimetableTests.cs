@@ -178,6 +178,7 @@ namespace KCD.Tests
             Assert.AreEqual("t_math", Classroom.EntryTopicFor("math"));
             Assert.AreEqual("t_physics", Classroom.EntryTopicFor("physics"));
             Assert.AreEqual("t_info", Classroom.EntryTopicFor(string.Empty));
+            Assert.AreEqual("t_info", Classroom.EntryTopicFor("chemistry"), "話題の無い分野");
         }
 
         [Test]
