@@ -287,14 +287,49 @@ namespace KCD.Editor
             body.transform.localScale = body.transform.localScale * scale;
         }
 
-        private static MobWalker.RendererLod[] BuildLods(
-            GameObject body, MobSchedule.Variant variant, Dictionary<string, Material> cache)
+        /// <summary>
+        /// 体の高さを合わせる（講義棟の教室の学生と講師, #439）。<see cref="FitHeight"/> と同じ。
+        /// </summary>
+        internal static void FitBodyHeight(Transform owner, GameObject body, float height)
+        {
+            FitHeight(owner, body, height);
+        }
+
+        /// <summary>
+        /// 近くの段の材質だけで体を塗る（講義棟の教室の学生と講師は近くでしか見ないので、遠くの段は作らない, #439）。
+        /// 戻り値は塗った renderer（止めてある輪郭のハルを除く、子の順）ごとの材質。
+        /// </summary>
+        internal static Material[][] PaintNear(GameObject body, MobSchedule.Variant variant, Dictionary<string, Material> cache)
+        {
+            List<Renderer> renderers = PaintedRenderers(body, variant, out bool hasOuter);
+            var result = new Material[renderers.Count][];
+            for (int r = 0; r < renderers.Count; r++)
+            {
+                Material[] sources = renderers[r].sharedMaterials;
+                var near = new Material[sources.Length];
+                for (int i = 0; i < sources.Length; i++)
+                {
+                    Material source = sources[i];
+                    string slot = source != null ? SlotOf(variant.BodyId, source.name) : string.Empty;
+                    near[i] = source != null && TryVariantColor(variant, slot, hasOuter, out Color color)
+                        ? Ensure(MobMaterialFolder + "/" + variant.Id + "_" + slot + ".mat", source, color, true, cache)
+                        : source;
+                }
+
+                renderers[r].sharedMaterials = near;
+                result[r] = near;
+            }
+
+            return result;
+        }
+
+        /// <summary>塗る renderer（輪郭の反転ハル <c>&lt;id&gt;_outline</c> は取り込み時に止めてあるので除く）と、上着があるか。</summary>
+        private static List<Renderer> PaintedRenderers(GameObject body, MobSchedule.Variant variant, out bool hasOuter)
         {
             var renderers = new List<Renderer>();
-            bool hasOuter = false;
+            hasOuter = false;
             foreach (Renderer renderer in body.GetComponentsInChildren<Renderer>(true))
             {
-                // 輪郭の反転ハル（<id>_outline）は取り込み時に止めてある。止めてあるものは触らない。
                 if (!renderer.enabled)
                 {
                     continue;
@@ -310,6 +345,13 @@ namespace KCD.Editor
                 }
             }
 
+            return renderers;
+        }
+
+        private static MobWalker.RendererLod[] BuildLods(
+            GameObject body, MobSchedule.Variant variant, Dictionary<string, Material> cache)
+        {
+            List<Renderer> renderers = PaintedRenderers(body, variant, out bool hasOuter);
             var lods = new MobWalker.RendererLod[renderers.Count];
             for (int r = 0; r < renderers.Count; r++)
             {

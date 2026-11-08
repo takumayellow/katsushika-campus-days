@@ -1,0 +1,20 @@
+{
+  "id": "class_prof",
+  "speaker": "講師",
+  "topics": [
+    {
+      "id": "t_busy",
+      "lines": [
+        {
+          "text": "見学ですか。後ろで静かに見ていってください。",
+          "text_en": "Just observing? You are welcome to watch quietly from the back."
+        },
+        {
+          "speaker": "自分",
+          "text": "（今日は見るだけにしておこう。）",
+          "text_en": "(I'll just watch today.)"
+        }
+      ]
+    }
+  ]
+}
