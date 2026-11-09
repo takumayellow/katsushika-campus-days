@@ -35,6 +35,17 @@ namespace KCD.Tests
         }
 
         [Test]
+        public void Kyoso_BrightensAndWarms()
+        {
+            IndoorAmbientProfile.Resolve(IndoorAmbientProfile.KyosoId, Base, out Color sky, out Color equator, out Color ground);
+            Color scaled = new Color(Base.r * 1.9f * 1.03f, Base.g * 1.9f, Base.b * 1.9f * 0.94f, 1f);
+            AssertColor(scaled, sky);
+            AssertColor(scaled * 0.7f, equator);
+            AssertColor(scaled * 0.8f, ground);
+            Assert.Greater(sky.r / sky.b, Base.r / Base.b);
+        }
+
+        [Test]
         public void Resolve_KeepsAlpha()
         {
             Color baseAmbient = new Color(0.5f, 0.5f, 0.5f, 1f);

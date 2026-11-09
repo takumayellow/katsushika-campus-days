@@ -882,6 +882,7 @@ namespace KCD.Editor
                 Eye = new Vector3(1.5f, 1.65f, 4.8f),
                 Look = new Vector3(-1.5f, 3.0f, 30.0f),
                 Fov = 0f,
+                Indoor = true,
                 Note = "共創棟 1F の入口から奥",
             },
             new Shot
@@ -892,6 +893,7 @@ namespace KCD.Editor
                 Eye = new Vector3(2.4f, 1.7f, 15.4f),
                 Look = new Vector3(12.0f, 0.8f, 26.0f),
                 Fov = 0f,
+                Indoor = true,
                 Note = "共創棟 1F のラーニングスクエア1（段床とソファ）",
             },
             new Shot
@@ -902,6 +904,7 @@ namespace KCD.Editor
                 Eye = new Vector3(1.0f, 1.7f, 32.0f),
                 Look = new Vector3(16.0f, 2.0f, 35.0f),
                 Fov = 0f,
+                Indoor = true,
                 Note = "共創棟 1F のカフェとラーニングスクエア2",
             },
             new Shot
@@ -912,6 +915,7 @@ namespace KCD.Editor
                 Eye = new Vector3(15.4f, 7.0f, 27.6f),
                 Look = new Vector3(-3.0f, 6.1f, 20.5f),
                 Fov = 0f,
+                Indoor = true,
                 Note = "共創棟 2F のラウンジ",
             },
             new Shot
@@ -922,6 +926,7 @@ namespace KCD.Editor
                 Eye = new Vector3(-8.6f, 1.65f, 31.2f),
                 Look = new Vector3(-18.0f, 1.2f, 37.2f),
                 Fov = 0f,
+                Indoor = true,
                 Note = "共創棟 1F の売店",
             },
             new Shot
@@ -932,6 +937,7 @@ namespace KCD.Editor
                 Eye = new Vector3(2.1f, 7.0f, 13.2f),
                 Look = new Vector3(-4.6f, 6.4f, 7.6f),
                 Fov = 0f,
+                Indoor = true,
                 Note = "共創棟 2F の教室 C202（後ろから黒板）",
             },
             new Shot
@@ -942,6 +948,7 @@ namespace KCD.Editor
                 Eye = new Vector3(-10.0f, 7.0f, 16.4f),
                 Look = new Vector3(14.0f, 6.2f, 14.6f),
                 Fov = 0f,
+                Indoor = true,
                 Note = "共創棟 2F の廊下と教室の扉",
             },
             new Shot
@@ -952,6 +959,7 @@ namespace KCD.Editor
                 Eye = new Vector3(1.9f, 11.2f, 22.2f),
                 Look = new Vector3(-6.2f, 10.6f, 25.6f),
                 Fov = 0f,
+                Indoor = true,
                 Note = "共創棟 3F の東の教室（後ろから黒板と吹き抜けのガラス）",
             },
             new Shot
@@ -962,6 +970,7 @@ namespace KCD.Editor
                 Eye = new Vector3(10.6f, 11.2f, 19.9f),
                 Look = new Vector3(-7.1f, 10.6f, 20.0f),
                 Fov = 0f,
+                Indoor = true,
                 Note = "共創棟 3F の廊下と、東の端の階段室の扉",
             },
             new Shot
@@ -972,6 +981,7 @@ namespace KCD.Editor
                 Eye = new Vector3(-2.6f, 7.0f, 24.6f),
                 Look = new Vector3(-7.1f, 6.4f, 27.8f),
                 Fov = 0f,
+                Indoor = true,
                 Note = "共創棟 2F の階段の上端と、東のコアの階段室の扉",
             },
             new Shot
@@ -982,6 +992,7 @@ namespace KCD.Editor
                 Eye = new Vector3(-26.0f, 1.65f, 11.5f),
                 Look = new Vector3(-14.0f, 3.0f, 15.5f),
                 Fov = 0f,
+                Indoor = true,
                 Note = "共創棟 1F のエスカレーターの乗り口から: 欄干のガラス（lecture_glass_rail, #435）",
             },
             new Shot
