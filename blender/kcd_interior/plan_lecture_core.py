@@ -21,6 +21,7 @@ X_LOBBY_E = D.LOBBY_X[1] + T * 0.5    # ロビーの東の壁の中心（面 7.2
 X_101_E, T_101_E = 28.425, 0.35       # 101 と東端ホールの間の壁（面 28.25 / 28.60）
 X_CORR_E = D.X_STEP                   # 中廊下の東端（ここから東端ホール）
 X_GLASS = 17.65                       # 仕切りのガラスの線
+LOBBY_STRIP_Y = (D.Y_S + 0.4, D.Y_ROOM_S1 - 0.2)   # ロビーの壁の光の帯の両端
 ESC_HALL = (X_GLASS, D.Y_CORE0, X_CORR_E, D.Y_CORE1)   # エスカレータのホール（上は 2F の床）
 Z_SLAB2_UNDER = D.F2 - D.SLAB         # 2F の床スラブの下面（エスカレータのホールの天井）
 
@@ -192,8 +193,12 @@ def _lobby(c, mb):
             t.box(mb, -w * 0.5 - 0.05, 0.0, -0.05, w * 0.5 + 0.05, 0.14, 0.0, FRAME)
             t.box(mb, -w * 0.5 - 0.05, 0.0, h, w * 0.5 + 0.05, 0.14, h + 0.05, FRAME)
             t.box(mb, -w * 0.5, 0.12, 0.0, w * 0.5, 0.13, h, "lecture_glass_rail")
-            t.box(mb, -w * 0.5, 0.02, h + 0.05, w * 0.5, 0.10, h + 0.09, "light_strip")
             c.light(*t.p(0.0, 0.5, h + 0.3), energy=15.0, radius=0.6)
+        # ケースの上の光の帯は、ケースごとに切らずに壁の全長に 1 本で通す（YT 00:39〜00:40）
+        ym = (LOBBY_STRIP_Y[0] + LOBBY_STRIP_Y[1]) * 0.5
+        half = (LOBBY_STRIP_Y[1] - LOBBY_STRIP_Y[0]) * 0.5
+        t = kit.T(x, ym, 1.0, ang)
+        t.box(mb, -half, 0.02, h + 0.05, half, 0.10, h + 0.09, "light_strip")
     _vestibule(c)
 
 

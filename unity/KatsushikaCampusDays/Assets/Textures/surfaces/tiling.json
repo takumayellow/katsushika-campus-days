@@ -33,6 +33,10 @@
       "tile_cm": 140
     },
     {
+      "material": "lecture_brick",
+      "tile_cm": 230
+    },
+    {
       "material": "lecture_concrete_light_wall",
       "tile_cm": 182
     },
