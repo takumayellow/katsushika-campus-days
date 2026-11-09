@@ -48,10 +48,11 @@ namespace KCD
         public const string KyosoId = "kyoso";
 
         /// <summary>
-        /// 共創棟は 1F のラーニングスクエアの写真に合わせる（#425）。写真は窓と照明で
-        /// 床も木ルーバーの天井も明るく、電球色に寄っているので、全体を明るくして青みを抜く。
+        /// 共創棟は 1F のラーニングスクエアの写真に合わせる（#425）。写真はダウンライトで
+        /// 床と木ルーバーの天井が明るく、柱と壁はそれより暗く、電球色に寄っている。
+        /// 全体を明るくして青みを抜き、縦の面が受ける赤道の色を下げる。
         /// </summary>
-        public static readonly Ratios Kyoso = new Ratios(1.6f, 0.95f, 0.8f, new Color(1.05f, 1f, 0.9f, 1f));
+        public static readonly Ratios Kyoso = new Ratios(1.9f, 0.7f, 0.8f, new Color(1.03f, 1f, 0.94f, 1f));
 
         public static Ratios For(string buildingId)
         {
