@@ -31,10 +31,10 @@ namespace KCD
         private const float OtherFloorHeight = 3f;
 
         /// <summary>講師の 1 周期（秒）と、そのうち書いている時間・指している時間。残りは振り返って話す。</summary>
-        private const float GestureCycle = 9f;
+        public const float GestureCycle = 9f;
 
-        private const float WriteSeconds = 5f;
-        private const float PointSeconds = 1.5f;
+        public const float WriteSeconds = 5f;
+        public const float PointSeconds = 1.5f;
 
         /// <summary>講師が向きを変える速さ（度/秒）。</summary>
         private const float TurnDegreesPerSecond = 200f;

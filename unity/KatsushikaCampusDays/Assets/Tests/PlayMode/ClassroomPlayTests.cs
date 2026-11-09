@@ -27,7 +27,8 @@ namespace KCD.Tests
         private const float BehindLastSeat = 1.2f;
 
         [UnityTest]
-        [Timeout(SceneTestTimeoutMs)]
+        // 絵を撮るときは時限ごとの板書と講師の 3 つの動きも撮るので、ほかのシーンのテストより長く待つ。
+        [Timeout(SceneTestTimeoutMs * 2)]
         public IEnumerator ClassesFollowTheTimetableAndEmptyAtLunch()
         {
             CollectErrorsInsteadOfLogAssert();
@@ -86,6 +87,11 @@ namespace KCD.Tests
                 }
             }
 
+            if (CanRender)
+            {
+                yield return ShootPeriods(rooms, player, cycle, folder, bad);
+            }
+
             cycle.SetHours(LunchHour);
             yield return PlayModeScenes.Advance(10, 1.0f);
             foreach (Classroom room in rooms)
@@ -114,6 +120,80 @@ namespace KCD.Tests
 
             Assert.IsEmpty(bad, string.Join("\n", bad));
             AssertNoErrors("時間割どおりの授業");
+        }
+
+        /// <summary>目で確かめる時刻（月曜）。1 限の途中、2 限の始まり、2 限の終わり際、4 限の途中。</summary>
+        private static readonly float[] ShotHours = { 9.5f, 10.7f, 11.9f, 15f };
+
+        /// <summary>
+        /// 時限ごとの板書と、講師の 3 つの動き（書く・指す・振り返る）を撮る。
+        /// 板書は時刻ごとに後ろから、講師の動きは 2 限の終わり際に黒板の脇から、周期の中の 3 つの時点で撮る。
+        /// </summary>
+        private static IEnumerator ShootPeriods(List<Classroom> rooms, PlayerController player, DayNightCycle cycle,
+            string folder, List<string> bad)
+        {
+            int day = GameManager.Instance.DayNumber;
+            DialogueSystem dialogue = DialogueSystem.Instance;
+            foreach (Classroom room in rooms)
+            {
+                Vector3 back = BackOf(room, out Vector3 boardFacing);
+                Transform frame = room.Board.transform.parent;
+                foreach (float hour in ShotHours)
+                {
+                    cycle.SetHours(hour);
+                    player.Teleport(back, Quaternion.LookRotation(-boardFacing).eulerAngles.y);
+                    yield return PlayModeScenes.Advance(5, 0.5f);
+                    yield return CloseDialogue();
+                    ClassTimetable.Session expected = Classroom.Timetable.SessionAt(room.RoomId, day, hour);
+                    string text = room.Board.text;
+                    int lines = string.IsNullOrEmpty(text) ? 0 : text.Split('\n').Length;
+                    if (lines != expected.BoardLines)
+                    {
+                        bad.Add(room.RoomId + " " + hour + " 時: 板書が " + lines + " 行（時間割では " + expected.BoardLines + " 行）");
+                    }
+
+                    string name = room.RoomId + "-" + Mathf.RoundToInt(hour * 60f).ToString("0000") + "-"
+                        + (expected.IsInClass ? expected.PeriodNumber + "-" + expected.SubjectId : "free") + ".png";
+                    Vector3 near = frame.position + boardFacing * 3.2f + Vector3.up * 0.1f;
+                    yield return Shoot(Path.Combine(folder, name), near, frame.position);
+                    Debug.Log("[classroom] " + name + " 板書 " + lines + " 行");
+                }
+
+                cycle.SetHours(11.9f);
+                player.Teleport(back, Quaternion.LookRotation(-boardFacing).eulerAngles.y);
+                yield return PlayModeScenes.Advance(5, 0.5f);
+                yield return CloseDialogue();
+                Vector3 side = frame.position + boardFacing * 2.4f + Vector3.Cross(Vector3.up, boardFacing) * 2.6f;
+                side.y = room.FloorY + 1.7f;
+                Vector3 focus = room.Lecturer.position + Vector3.up * 1.3f;
+                string[] poses = { "write", "point", "turn" };
+                float[] at =
+                {
+                    Classroom.WriteSeconds * 0.7f,
+                    Classroom.WriteSeconds + Classroom.PointSeconds * 0.8f,
+                    Classroom.GestureCycle - 0.3f,
+                };
+                for (int i = 0; i < poses.Length; i++)
+                {
+                    yield return WaitForPhase(room.RoomId, at[i]);
+                    yield return Shoot(Path.Combine(folder, room.RoomId + "-lecturer-" + poses[i] + ".png"), side, focus);
+                }
+            }
+        }
+
+        /// <summary>講師の動きの周期がその時点に来るまで待つ（実時間）。</summary>
+        private static IEnumerator WaitForPhase(string roomId, float phase)
+        {
+            for (int i = 0; i < 2000; i++)
+            {
+                float now = Mathf.Repeat(Time.time + Classroom.PhaseOffset(roomId), Classroom.GestureCycle);
+                if (now >= phase && now < phase + 0.25f)
+                {
+                    yield break;
+                }
+
+                yield return null;
+            }
         }
 
         /// <summary>授業中の人と板書が時間割どおりか。</summary>
