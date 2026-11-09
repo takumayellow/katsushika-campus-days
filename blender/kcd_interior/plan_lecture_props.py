@@ -190,12 +190,15 @@ def board(mb, t, seed=0):
 
 CASE_DEPTH = 0.08                     # 掲示ケースの枠の出（壁の面から）
 CASE_BACK = 0.004                     # 壁の面から奥のコルクの面まで（ポスターはこの 1〜2 mm 手前）
+CASE_GLASS = CASE_DEPTH - 0.01        # ガラス扉の面（枠の前の面の 1 cm 奥。枠が縁取って見える）
+GLASS = "lecture_glass_rail"          # 1F のロビーの掲示ケースと同じ半透明のガラス
 
 
 def case(mb, t, seed=0):
-    """掲示ケース: 金属の枠と、枠の奥のコルクの面のポスター 2 枚。
+    """ガラス扉付きの掲示ケース: 金属の枠、枠の奥のコルクの面のポスター 2 枚、枠の内側のガラス。
 
     ポスターは枠の前の面（y CASE_DEPTH）より奥に収まる。上下の枠の端は左右の枠に埋まるので描かない。
+    ガラスは半透明（lecture_glass_rail）の 1 枚の板で、廊下の側（+y）からポスターが透けて見える。
     """
     x0, x1, z0, z1, f = -0.6, 0.6, 1.0, 1.9, 0.05
     t.box_nb(mb, x0, 0.0, z0, x0 + f, CASE_DEPTH, z1, METAL)
@@ -209,6 +212,7 @@ def case(mb, t, seed=0):
                  PAPER)
         t.vplate(mb, cx + w * 0.5, CASE_BACK + 0.002, cx - w * 0.5, CASE_BACK + 0.002,
                  pz1 - (pz1 - pz0) * 0.3, pz1 - 0.02, color)
+    t.vplate(mb, x1 - f, CASE_GLASS, x0 + f, CASE_GLASS, z0 + f, z1 - f, GLASS)
 
 
 def rack(mb, t):

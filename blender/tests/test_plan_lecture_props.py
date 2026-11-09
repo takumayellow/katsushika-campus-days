@@ -241,7 +241,25 @@ def test_case_posters_sit_behind_the_frame():
         assert all(0.0 < y < P.CASE_DEPTH * 0.5 for _x, y, _z in pts), pts
     metal_y = [y for mat, pts in faces if mat == P.METAL for _x, y, _z in pts]
     assert max(metal_y) == pytest.approx(P.CASE_DEPTH)
-    assert {mat for mat, _pts in faces} <= {P.METAL, P.CORK, P.PAPER} | set(P.POSTERS)
+    assert {mat for mat, _pts in faces} <= {P.METAL, P.CORK, P.PAPER, P.GLASS} | set(P.POSTERS)
+
+
+def test_case_glass_covers_the_posters_inside_the_frame():
+    """ガラスは 1 枚で、ポスターより手前・枠の前の面より奥にあり、ポスターを全部覆う。"""
+    faces = _case_faces()
+    glass = [pts for mat, pts in faces if mat == P.GLASS]
+    assert len(glass) == 1
+    gx = [x for x, _y, _z in glass[0]]
+    gz = [z for _x, _y, z in glass[0]]
+    assert all(y == pytest.approx(P.CASE_GLASS) for _x, y, _z in glass[0])
+    inner = [pts for mat, pts in faces if mat in (P.PAPER,) + P.POSTERS]
+    for pts in inner:
+        assert all(y < P.CASE_GLASS < P.CASE_DEPTH for _x, y, _z in pts)
+        assert all(min(gx) <= x <= max(gx) and min(gz) <= z <= max(gz) for x, _y, z in pts)
+    # 廊下の側（+y）を向く: 面の法線の y が正
+    (ax, ay, az), (bx, by, bz), (cx, cy, cz) = glass[0][:3]
+    ny = (bz - az) * (cx - ax) - (bx - ax) * (cz - az)
+    assert ny > 0
 
 
 def test_box_open_drops_only_the_named_faces():

@@ -101,7 +101,8 @@
       "contrast": 1.0,
       "depth": 0,
       "materials": [
-        "brick_red"
+        "brick_red",
+        "lecture_brick"
       ],
       "bricks": {
         "source_grid": [
