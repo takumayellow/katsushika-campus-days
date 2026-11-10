@@ -217,6 +217,21 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: kyoso_fabric_navy
+    second: {fileID: 2100000, guid: 085fdb184c7952847b7f1143be7e59e1, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: kyoso_fabric_white
+    second: {fileID: 2100000, guid: d41f63260c9b42a419acaa917a1588c9, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: kyoso_floor_carpet_bluegrey
+    second: {fileID: 2100000, guid: 3c2d4f715da34bb43ae69f46c6a35b99, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: kyoso_floor_carpet_grey
     second: {fileID: 2100000, guid: bd08cc748b5812f47b9172b72e4bd99c, type: 2}
   - first:

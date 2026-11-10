@@ -47,6 +47,10 @@ SKIRT_T = 0.012         # 巾木の厚み
 SKIRT = "plastic_black"
 BOARD2_W, BOARD2_H, BOARD2_Z = 2.4, 1.1, 1.0    # 扉の間の掲示板（幅・高さ・下端の床からの高さ）
 CORRIDOR_SEED = 425     # 掲示の紙の揺れ（ctx の乱数を使うと他の部品の配置が変わる）
+CLOCK_W, CLOCK_Z = 0.32, 2.3    # 黒板の上の時計（幅と下端の床からの高さ）
+SHEET_DY = 0.45         # 黒板の端から時間割の紙の中心まで
+SHEET_W, SHEET_Z = 0.30, (1.3, 1.72)    # 時間割の紙の幅と、下端・上端の床からの高さ
+SHEET_MARGIN = 0.05      # 時間割の紙の下に敷くコルクの板の、紙からのはみ出し（白い壁と見分けるため）
 
 
 def rooms():
@@ -192,6 +196,22 @@ def board(mb, xf, yc):
     t.box_nb(mb, -hw - f, 0.0, z0 - f, hw + f, 0.03, z1 + f, "metal_gray")
     t.vplate(mb, hw, 0.031, -hw, 0.031, z0, z1, "board_green")
     t.box_nb(mb, -hw, 0.03, z0 - f, hw, 0.12, z0 - f + 0.04, "metal_gray")
+    board_extras(mb, t)
+
+
+def board_extras(mb, t):
+    """黒板の上の壁の時計と、黒板の脇の時間割の紙。壁に付く面は作らない（屋内の三角形の予算）。"""
+    h = CLOCK_W * 0.5
+    z0, z1 = CLOCK_Z, CLOCK_Z + CLOCK_W
+    zc = (z0 + z1) * 0.5
+    t.box_open(mb, -h, 0.0, z0, h, 0.04, z1, "plastic_black", skip=("-y",))
+    t.vplate(mb, h - 0.025, 0.041, -h + 0.025, 0.041, z0 + 0.025, z1 - 0.025, "plastic_white")
+    t.vplate(mb, 0.008, 0.043, -0.008, 0.043, zc, zc + 0.11, "plastic_black")     # 長針
+    t.vplate(mb, 0.0, 0.044, -0.08, 0.044, zc - 0.006, zc + 0.006, "plastic_black")  # 短針
+    x = -BOARD_W * 0.5 - SHEET_DY
+    w, m = SHEET_W * 0.5, SHEET_MARGIN
+    t.vplate(mb, x + w + m, 0.003, x - w - m, 0.003, SHEET_Z[0] - m, SHEET_Z[1] + m, "fabric_beige")
+    t.vplate(mb, x + w, 0.006, x - w, 0.006, SHEET_Z[0], SHEET_Z[1], "paper_white")
 
 
 def classroom_furniture(mb, xa, first, desk_ys, z):
