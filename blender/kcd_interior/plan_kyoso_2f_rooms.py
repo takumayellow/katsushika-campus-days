@@ -9,10 +9,13 @@
     floor_kyoso_2f_c20N     床
     wall_kyoso_2f_c20N      天井・窓の帯・廊下の壁と扉・室の境の壁
     furn_kyoso_NN_c20N      黒板・教卓・机・椅子
+    furn_kyoso_NN_corr_c20N 室の前の廊下のベンチ・ごみ箱・消火器（廊下の光を受ける）
     lamp_kyoso_2F_<n>       室の天井の点光源（2 つずつ）
 
 家具は z=0 で組んで最後に Z2 へ持ち上げる。座標は建物のローカル。
 """
+
+import random
 
 from . import furniture as F, kit, shell
 from . import plan_kyoso_dims as D
@@ -38,6 +41,12 @@ CHAIR_DX = 0.5                       # 机の中心から椅子の中心まで�
 CHAIR_DY = 0.45                      # 机の中心から 2 脚の椅子の中心まで
 END_UNDER = 0.02        # 両端の壁の天端を天井の面から下げる量
 CORRIDOR_FACE = D.ROOMS2_Y[1] + shell.PART * 0.5      # 廊下の壁の廊下の側の面の Y
+FRAME_W = 0.07          # 扉の枠の見付け（shell.door）
+SKIRT_H = 0.08          # 廊下の壁の足元の巾木の高さ
+SKIRT_T = 0.012         # 巾木の厚み
+SKIRT = "plastic_black"
+BOARD2_W, BOARD2_H, BOARD2_Z = 2.4, 1.1, 1.0    # 扉の間の掲示板（幅・高さ・下端の床からの高さ）
+CORRIDOR_SEED = 425     # 掲示の紙の揺れ（ctx の乱数を使うと他の部品の配置が変わる）
 
 
 def rooms():
@@ -91,6 +100,82 @@ def _shell(c, key, xa, xb, first, last):
         kit.box(mb, xb, yf, D.Z_SLAB, xb + D.ROOMS2_END, D.SLAB_A[1], zt, WALL)
     else:
         shell.partition(mb, (xb, y0), (xb, yw), D.Z2, D.Z_CEIL2, WALL)
+    return mb
+
+
+def skirt_runs(xa, xb):
+    """廊下の壁の巾木の (西端, 東端) の X。扉の口と枠を抜く。"""
+    cuts = sorted((x - DOOR_W * 0.5 - FRAME_W, x + DOOR_W * 0.5 + FRAME_W) for x in door_xs(xa, xb))
+    runs, x0 = [], xa
+    for a, b in cuts:
+        runs.append((x0, a))
+        x0 = b
+    runs.append((x0, xb))
+    return runs
+
+
+def _side(ang):
+    """廊下の側の向き ang（FACE_PARK = +Y、FACE_MALL = -Y）を Y の符号にする。"""
+    return 1.0 if ang == D.FACE_PARK else -1.0
+
+
+def _wall_t(x, y, z, ang):
+    """壁の面 (x, y) に付く小物の座標。ローカルの +Y が廊下の側。"""
+    return kit.T(x, y, z, ang)
+
+
+def wall_notice_board(mb, t, rng, sheets=4):
+    """コルクの掲示板と貼り紙。壁に付く面と裏は作らない（屋内の三角形の予算）。"""
+    hw, h = BOARD2_W * 0.5, BOARD2_H
+    t.box_open(mb, -hw, 0.0, 0.0, hw, 0.05, h, WOOD, skip=("-y",))
+    t.vplate(mb, hw - 0.06, 0.051, -hw + 0.06, 0.051, 0.06, h - 0.06, "fabric_beige")
+    for i in range(sheets):
+        cx = -hw + 0.35 + (BOARD2_W - 0.7) * i / max(1, sheets - 1) + rng.uniform(-0.04, 0.04)
+        cz = h * 0.5 + rng.uniform(-0.12, 0.12)
+        t.vplate(mb, cx + 0.15, 0.053, cx - 0.15, 0.053, cz - 0.21, cz + 0.21, "paper_white")
+
+
+def corridor_wall(mb, xa, xb, z, rng, y=CORRIDOR_FACE, ang=D.FACE_PARK):
+    """廊下の側の壁の面 y の巾木と、2 つの扉の間の掲示板（室の壁の部品 mb に入れる。2F・3F で共有）。"""
+    xc = (xa + xb) * 0.5
+    s = _side(ang)
+    t = _wall_t(xc, y, 0.0, ang)
+    base = len(mb.verts)
+    for a, b in skirt_runs(xa, xb):
+        la, lb = sorted((s * (a - xc), s * (b - xc)))
+        t.vplate(mb, lb, SKIRT_T, la, SKIRT_T, 0.0, SKIRT_H, SKIRT)
+    wall_notice_board(mb, _wall_t(xc, y, BOARD2_Z, ang), rng)
+    kit.lift(mb, base, z)
+
+
+def wall_extinguisher(mb, t):
+    """壁際の床の消火器と、上の赤い表示の板。"""
+    t.box_open(mb, -0.08, 0.0, 0.0, 0.08, 0.16, 0.62, "fire_red", skip=("-y",))
+    t.vplate(mb, 0.12, 0.003, -0.12, 0.003, 1.55, 1.75, "fire_red")
+
+
+def wall_trash_bins(mb, t, n=3, mats=("plastic_white", "fm_blue", "chair_green")):
+    """壁に寄せた分別のごみ箱。上に黒い投入口の帯。"""
+    for i in range(n):
+        cx = (i - (n - 1) * 0.5) * 0.46
+        t.box_open(mb, cx - 0.21, 0.0, 0.0, cx + 0.21, 0.42, 0.90, mats[i % len(mats)], skip=("-y",))
+        t.vplate(mb, cx + 0.15, 0.421, cx - 0.15, 0.421, 0.78, 0.86, "plastic_black")
+
+
+def corridor_props(mb, kind, xa, xb, z, y=CORRIDOR_FACE, ang=D.FACE_PARK):
+    """室の前の廊下の小物。掲示板の下にベンチ（kind="bench"）かごみ箱（"bins"）、前の扉の脇に消火器。"""
+    s = _side(ang)
+    base = len(mb.verts)
+    xc = (xa + xb) * 0.5
+    if kind == "bench":
+        F.bench(mb, xc, y + s * 0.3, ang, w=1.8, mat="kyoso_wood_oak")
+    elif kind == "bins":
+        wall_trash_bins(mb, _wall_t(xc, y, 0.0, ang))
+    wall_extinguisher(mb, _wall_t(xa + 0.4, y, 0.0, ang))
+    kit.lift(mb, base, z)
+
+
+CORRIDOR_KINDS = (None, "bench", "bins", "bench")    # C201〜C204 の前の廊下の小物
 
 
 def east_face(xa, first):
@@ -134,11 +219,14 @@ def lamp_points(xa, xb):
 def build(c):
     """4 室を組む。戻り値は室の点光源の位置（Z を含まない）。"""
     pts = []
+    rng = random.Random(CORRIDOR_SEED)
     rs = rooms()
     for i, (name, xa, xb) in enumerate(rs):
         key = "2f_" + name.lower()
         _floor(c, key, xa, xb)
-        _shell(c, key, xa, xb, first=i == 0, last=i == len(rs) - 1)
+        wall = _shell(c, key, xa, xb, first=i == 0, last=i == len(rs) - 1)
+        corridor_wall(wall, xa, xb, D.Z2, rng)
         classroom_furniture(c.furn(name.lower()), xa, i == 0, DESK_Y, D.Z2)
+        corridor_props(c.furn("corr_" + name.lower()), CORRIDOR_KINDS[i], xa, xb, D.Z2)
         pts.extend(lamp_points(xa, xb))
     return pts
