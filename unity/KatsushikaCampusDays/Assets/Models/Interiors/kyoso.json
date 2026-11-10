@@ -2929,10 +2929,100 @@
    "x": 3.0,
    "y": 0.0,
    "z": 20.7
+  },
+  "seat_kyoso_118": {
+   "x": 6.85,
+   "y": 9.6,
+   "z": 21.0
+  },
+  "seat_kyoso_118_f": {
+   "x": 6.85,
+   "y": 9.6,
+   "z": 20.78
+  },
+  "seat_kyoso_118_s": {
+   "x": 5.95,
+   "y": 9.6,
+   "z": 21.0
+  },
+  "seat_kyoso_118_a0": {
+   "x": 7.45,
+   "y": 9.6,
+   "z": 20.98
+  },
+  "seat_kyoso_118_a1": {
+   "x": 6.85,
+   "y": 9.6,
+   "z": 20.98
+  },
+  "seat_kyoso_118_a2": {
+   "x": 6.25,
+   "y": 9.6,
+   "z": 20.98
+  },
+  "seat_kyoso_119": {
+   "x": -1.05,
+   "y": 5.4,
+   "z": 14.63
+  },
+  "seat_kyoso_119_f": {
+   "x": -1.05,
+   "y": 5.4,
+   "z": 14.85
+  },
+  "seat_kyoso_119_s": {
+   "x": -0.15,
+   "y": 5.4,
+   "z": 14.63
+  },
+  "seat_kyoso_119_a0": {
+   "x": -1.65,
+   "y": 5.4,
+   "z": 14.65
+  },
+  "seat_kyoso_119_a1": {
+   "x": -1.05,
+   "y": 5.4,
+   "z": 14.65
+  },
+  "seat_kyoso_119_a2": {
+   "x": -0.45,
+   "y": 5.4,
+   "z": 14.65
+  },
+  "seat_kyoso_120": {
+   "x": 13.15,
+   "y": 5.4,
+   "z": 14.63
+  },
+  "seat_kyoso_120_f": {
+   "x": 13.15,
+   "y": 5.4,
+   "z": 14.85
+  },
+  "seat_kyoso_120_s": {
+   "x": 14.05,
+   "y": 5.4,
+   "z": 14.63
+  },
+  "seat_kyoso_120_a0": {
+   "x": 12.55,
+   "y": 5.4,
+   "z": 14.65
+  },
+  "seat_kyoso_120_a1": {
+   "x": 13.15,
+   "y": 5.4,
+   "z": 14.65
+  },
+  "seat_kyoso_120_a2": {
+   "x": 13.75,
+   "y": 5.4,
+   "z": 14.65
   }
  },
- "triangles": 44509,
- "seats": 163,
+ "triangles": 44869,
+ "seats": 172,
  "notes": [
   "1F=エントランスホール・スタジオ・ラーニングスクエア1/2・ホール・スターバックス・ファミリーマート、2F=ラウンジ・教室 C201〜C204、3F=ガラスの教室 2 室と廊下（東のコアの階段室の扉で 1F〜3F）。q_coffee の舞台"
  ],
@@ -2965,11 +3055,17 @@
   "furn_kyoso_09_core",
   "furn_kyoso_10_hall",
   "furn_kyoso_11_3f_east",
-  "furn_kyoso_12_3f_west",
-  "furn_kyoso_13_c201",
-  "furn_kyoso_14_c202",
-  "furn_kyoso_15_c203",
-  "furn_kyoso_16_c204"
+  "furn_kyoso_12_3f_corr_east",
+  "furn_kyoso_13_3f_west",
+  "furn_kyoso_14_3f_corr_west",
+  "furn_kyoso_15_c201",
+  "furn_kyoso_16_corr_c201",
+  "furn_kyoso_17_c202",
+  "furn_kyoso_18_corr_c202",
+  "furn_kyoso_19_c203",
+  "furn_kyoso_20_corr_c203",
+  "furn_kyoso_21_c204",
+  "furn_kyoso_22_corr_c204"
  ],
  "signs": [
   {
