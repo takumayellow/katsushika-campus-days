@@ -15,9 +15,9 @@ Unity の InteriorPalette.cs には、統合ブランチで python tools/interio
 
 PALETTE = {
     # 床
-    "kyoso_floor_terrazzo_pale":      ((0.847, 0.687, 0.491), 0.35, 0.0, 1.0),   # EDD8BA
-    "kyoso_floor_terrazzo_mid":       ((0.509, 0.468, 0.402), 0.38, 0.0, 1.0),   # BDB6AA
-    "kyoso_floor_terrazzo_dark":      ((0.195, 0.191, 0.181), 0.40, 0.0, 1.0),   # 7A7976
+    "kyoso_floor_terrazzo_pale":      ((0.896, 0.831, 0.738), 0.35, 0.0, 1.0),   # F3EBDF
+    "kyoso_floor_terrazzo_mid":       ((0.624, 0.578, 0.503), 0.38, 0.0, 1.0),   # CFC8BC
+    "kyoso_floor_terrazzo_dark":      ((0.332, 0.323, 0.301), 0.40, 0.0, 1.0),   # 9C9A95
     "kyoso_floor_wood_oak":           ((0.791, 0.456, 0.212), 0.45, 0.0, 1.0),   # E6B47F
     "kyoso_floor_carpet_grey":        ((0.076, 0.080, 0.084), 0.90, 0.0, 1.0),   # 4E5052
     # 木・天井
@@ -26,7 +26,7 @@ PALETTE = {
     "kyoso_ceiling_void":             ((0.013, 0.013, 0.013), 0.90, 0.0, 1.0),   # 1E1E1E
     # 柱・壁
     "kyoso_concrete_exposed":         ((0.485, 0.474, 0.445), 0.85, 0.0, 1.0),   # B9B7B2
-    "kyoso_column_pale":              ((0.584, 0.604, 0.597), 0.60, 0.0, 1.0),   # C9CCCB
+    "kyoso_column_pale":              ((0.366, 0.386, 0.397), 0.60, 0.0, 1.0),   # A3A7A9
     "kyoso_column_bluegrey":          ((0.397, 0.497, 0.539), 0.60, 0.0, 1.0),   # A9BBC2
     "kyoso_column_base":              ((0.070, 0.074, 0.080), 0.60, 0.0, 1.0),   # 4B4D50
     "kyoso_wall_bluegrey":            ((0.068, 0.091, 0.117), 0.70, 0.0, 1.0),   # 4A5560

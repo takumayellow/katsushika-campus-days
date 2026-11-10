@@ -9,18 +9,27 @@ namespace KCD
     /// </summary>
     public static class IndoorAmbientProfile
     {
-        /// <summary>空・赤道・地面の倍率。既定は元の DayNightCycle の値。</summary>
+        /// <summary>空・赤道・地面の倍率と色味。既定は元の DayNightCycle の値。</summary>
         public readonly struct Ratios
         {
             public readonly float Scale;
             public readonly float Equator;
             public readonly float Ground;
 
+            /// <summary>RGB ごとに掛ける色味。白なら基準の色のまま。</summary>
+            public readonly Color Tint;
+
             public Ratios(float scale, float equator, float ground)
+                : this(scale, equator, ground, Color.white)
+            {
+            }
+
+            public Ratios(float scale, float equator, float ground, Color tint)
             {
                 Scale = scale;
                 Equator = equator;
                 Ground = ground;
+                Tint = tint;
             }
         }
 
@@ -35,9 +44,27 @@ namespace KCD
         /// </summary>
         public static readonly Ratios Lecture = new Ratios(1.25f, 0.95f, 0.92f);
 
+        /// <summary>共創棟の建物 ID。</summary>
+        public const string KyosoId = "kyoso";
+
+        /// <summary>
+        /// 共創棟は 1F のラーニングスクエアの写真に合わせる（#425）。写真はダウンライトで
+        /// 床と木ルーバーの天井が明るく、柱と壁はそれより暗く、電球色に寄っている。
+        /// 全体を明るくして青みを抜き、縦の面が受ける赤道の色を下げる。
+        /// </summary>
+        public static readonly Ratios Kyoso = new Ratios(1.9f, 0.7f, 0.8f, new Color(1.03f, 1f, 0.94f, 1f));
+
         public static Ratios For(string buildingId)
         {
-            return buildingId == LectureId ? Lecture : Default;
+            switch (buildingId)
+            {
+                case LectureId:
+                    return Lecture;
+                case KyosoId:
+                    return Kyoso;
+                default:
+                    return Default;
+            }
         }
 
         /// <summary>基準の屋内の色と建物から、空・赤道・地面の色を返す。</summary>
@@ -45,8 +72,8 @@ namespace KCD
             out Color sky, out Color equator, out Color ground)
         {
             Ratios r = For(buildingId);
-            Color scaled = new Color(baseAmbient.r * r.Scale, baseAmbient.g * r.Scale,
-                baseAmbient.b * r.Scale, baseAmbient.a);
+            Color scaled = new Color(baseAmbient.r * r.Scale * r.Tint.r, baseAmbient.g * r.Scale * r.Tint.g,
+                baseAmbient.b * r.Scale * r.Tint.b, baseAmbient.a);
             sky = scaled;
             equator = scaled * r.Equator;
             ground = scaled * r.Ground;

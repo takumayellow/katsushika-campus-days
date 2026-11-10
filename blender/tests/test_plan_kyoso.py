@@ -53,6 +53,9 @@ for _room in ("east", "west"):
     SECTION_CAPS.update({"3f_" + _room: 1000, "floor_kyoso_3f_" + _room: 20,
                          "wall_kyoso_3f_" + _room: 380})
 SECTION_CAPS.update({"floor_kyoso_3f_corr": 20, "wall_kyoso_3f_corr": 280})
+# 室の前の廊下の小物（ベンチ・ごみ箱・消火器）は室ごとに分ける
+SECTION_CAPS.update({"corr_" + r: 60 for r in ("c201", "c202", "c203", "c204")})
+SECTION_CAPS.update({"3f_corr_" + r: 60 for r in ("east", "west")})
 
 
 def _ear_candidates(contours):
@@ -127,7 +130,7 @@ def test_seats_are_registered(built):
 
 
 def test_seats_stand_on_a_floor_and_clear_of_solids(built):
-    floors = (0.0, D.DECK_H, D.Z2)
+    floors = (0.0, D.DECK_H, D.Z2, D.Z3)
     seats = built.seat_list()
     for q in seats:
         assert min(abs(q["c"][2] - z) for z in floors) < 1e-6, q["c"]
