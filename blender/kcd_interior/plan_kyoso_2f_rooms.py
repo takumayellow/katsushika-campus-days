@@ -50,6 +50,7 @@ CORRIDOR_SEED = 425     # 掲示の紙の揺れ（ctx の乱数を使うと他�
 CLOCK_W, CLOCK_Z = 0.32, 2.3    # 黒板の上の時計（幅と下端の床からの高さ）
 SHEET_DY = 0.45         # 黒板の端から時間割の紙の中心まで
 SHEET_W, SHEET_Z = 0.30, (1.3, 1.72)    # 時間割の紙の幅と、下端・上端の床からの高さ
+SHEET_MARGIN = 0.05      # 時間割の紙の下に敷くコルクの板の、紙からのはみ出し（白い壁と見分けるため）
 
 
 def rooms():
@@ -208,7 +209,9 @@ def board_extras(mb, t):
     t.vplate(mb, 0.008, 0.043, -0.008, 0.043, zc, zc + 0.11, "plastic_black")     # 長針
     t.vplate(mb, 0.0, 0.044, -0.08, 0.044, zc - 0.006, zc + 0.006, "plastic_black")  # 短針
     x = -BOARD_W * 0.5 - SHEET_DY
-    t.vplate(mb, x + SHEET_W * 0.5, 0.003, x - SHEET_W * 0.5, 0.003, SHEET_Z[0], SHEET_Z[1], "paper_white")
+    w, m = SHEET_W * 0.5, SHEET_MARGIN
+    t.vplate(mb, x + w + m, 0.003, x - w - m, 0.003, SHEET_Z[0] - m, SHEET_Z[1] + m, "fabric_beige")
+    t.vplate(mb, x + w, 0.006, x - w, 0.006, SHEET_Z[0], SHEET_Z[1], "paper_white")
 
 
 def classroom_furniture(mb, xa, first, desk_ys, z):
