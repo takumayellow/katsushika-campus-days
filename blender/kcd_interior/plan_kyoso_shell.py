@@ -12,6 +12,7 @@ from . import plan_kyoso_dims as D
 WALL = "wall_white"
 GREY = "wall_grey"
 CARPET = "kyoso_floor_carpet_grey"
+LOUNGE_CARPET = "kyoso_floor_carpet_bluegrey"   # 2F のラウンジ（スラブ B）
 STEEL = "kyoso_steel_black"
 GLASS = "glass_clear"
 COLUMN = "kyoso_column_pale"
@@ -229,9 +230,9 @@ def slabs_2f(c, mb):
     z = D.Z2
     sx0, sy0, sx1, sy1 = D.SLAB_B
     hx0, hy0, hx1, hy1 = D.STAIR_HOLE
-    for rect in (D.SLAB_A, (sx0, sy0, sx1, hy0), (hx1, hy0, sx1, sy1),
-                 (sx0, hy1, hx1, sy1)):
-        shell.floor(mb, rect[0], rect[1], rect[2], rect[3], z, CARPET, thickness=0.40,
+    for rect, mat in ((D.SLAB_A, CARPET), ((sx0, sy0, sx1, hy0), LOUNGE_CARPET),
+                      ((hx1, hy0, sx1, sy1), LOUNGE_CARPET), ((sx0, hy1, hx1, sy1), LOUNGE_CARPET)):
+        shell.floor(mb, rect[0], rect[1], rect[2], rect[3], z, mat, thickness=0.40,
                     side_mat=WALL)
     shell.ceiling(mb, D.CORE_E[0], D.SLAB_A[1] - 0.3, D.CORE_W[0], D.SLAB_B[3],
                   D.Z_CEIL2, "ceiling_white", grid=1.8)
