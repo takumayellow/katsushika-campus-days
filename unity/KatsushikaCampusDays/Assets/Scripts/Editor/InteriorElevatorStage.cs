@@ -31,7 +31,7 @@ namespace KCD.Editor
         /// <summary>
         /// 階ごとの用途。行き先の画面で階の名前の横に出す。研究棟 2 号館の 3F〜6F は各階の EV ホールの看板
         /// （blender/kcd_interior/plan_research2_dims.py の UPPER_USE）から階の名前を除いたもの。
-        /// 講義棟は spec（docs/ref/interiors/lecture/spec.md §1-12）の表のとおり。7F は研究室の階（推定）。
+        /// 講義棟は spec（docs/ref/interiors/lecture/spec.md §1-12）の表のとおり。7F の用途は未確認なので表示しない。
         /// 食堂は 1F が食堂、2F がカフェテリア（blender/kcd_interior/plan_cafeteria.py）で、第2研究棟の西の端の階段の画面にも出る (#303)。
         /// </summary>
         private static readonly Dictionary<string, string[]> Uses = new Dictionary<string, string[]>
@@ -49,7 +49,7 @@ namespace KCD.Editor
             { "lecture_4F", new[] { "講義室・会議室", "Classrooms & Meeting Room" } },
             { "lecture_5F", new[] { "講義室・会議室", "Classrooms & Meeting Room" } },
             { "lecture_6F", new[] { "講義室・会議室", "Classrooms & Meeting Room" } },
-            { "lecture_7F", new[] { "研究室", "Labs" } },
+            // 7F の用途は未確認。Uses に無ければ行き先の画面は階名だけを表示する（#447）。
         };
 
         /// <summary>乗り場を置き、階ごとの明かりを付ける。置いた乗り場の数を返す（無ければ 0）。</summary>
