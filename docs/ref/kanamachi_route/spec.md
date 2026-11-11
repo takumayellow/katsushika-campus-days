@@ -47,3 +47,13 @@ JR 金町駅を降り、北口から東京理科大学葛飾キャンパスへ�
 ## 現地撮影メモ
 
 北口の外、各曲がり角の前後、横断箇所、理科大大学通り、キャンパス入口を進行方向と逆方向から撮る。北口から入口までの連続動画も一本撮り、曲がり角の順序を記録する。人の顔が写らないようにし、写った場合は共有前に顔が分からないよう処理する。
+
+## コード上の接続点（2026-11-11 確認）
+
+- `SceneBuilder.BuildCampus` は `CampusStage.Build` → `WorldBoundsStage.Build` → 寮の `RouteStage.Build` → `CampusStage.BakeNavMesh` の順。駅ルートをモデルとして追加する場合は、NavMesh を焼く前に地面と境界を配置する。既存の寮ルートは `route.fbx` が無いと何もしない。
+- `WorldBounds.DefaultArea` は x/z とも −340〜340 m の矩形。 `WorldBoundsStage` が四辺に見えない BoxCollider を作り、実行時の `WorldBounds` も同じ範囲を見張る。駅方面がこの範囲を越える場合、壁の開口・追加区画の囲い・実行時の見張りをセットで変える。境界を外すだけの変更はしない。
+- 寮ルートは `RouteStage.OpenWestGate` と `BuildAnnexWalls`、`WidenWorldBounds` で西の追加区画を扱う。駅ルート側は東側の別区画として設計し、西側の門と既存の寮区画を維持する。
+- `MinimapAssets` は `Assets/Textures/minimap.png` と `minimap.json` を読む。画像が無い場合の中心・半幅はキャンパスだけの既定値（中心 13.69, −29.15、半幅 175.37 m）。駅を含む描画範囲とミニマップの扱いは別途決める必要がある。
+- FBX は `Assets/Models/Campus/` に置く。既存の `RouteStage` と `CharacterImporter` はこの場所のキャンパス用取り込み設定を前提にしている（`blender/README_route.md`）。
+
+この節はコードの現状だけを述べる。駅ルートの実際の折れ線や追加区画の寸法は、地図データと現地確認前には決めない。
