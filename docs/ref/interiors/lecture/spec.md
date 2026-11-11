@@ -358,7 +358,7 @@ Y=54.9                                                            +------------+
 - **西の階段（2F〜7F）**: 外形 CJ の西の張り出し X −33.18〜−28.6、Y 28.73〜33.62 を階段室にする（外壁 0.3 m、内法 X −32.88〜−28.6、Y 29.03〜33.32）。折り返し階段で、西ロビーから南の半分（Y 29.03〜31.1）を西へ 12 段上り、西の端の踊り場（X −32.88〜−31.35）で折り返して北の半分（Y 31.25〜33.32）を東へ 12 段上り、上の階の西ロビーへ出る。蹴上げ 0.175 m（4.2 m を 24 段）、踏面 0.25 m、2 本の段の間は壁、段の外側に黒い手すり。2F は上りだけ（1F の外は屋外なので下りる段は作らない）、7F は下りだけ（南の半分の口は壁でふさぎ、階段室の天井は 7F の天井の高さ）。
   - 位置の根拠: ユーザーの実地の記憶では 2F 以降の西ロビーの奥（西の側）に階段があり、その側に扉は無い。JSPE p3 は西の階段を Y ≈ 25.8〜31.3、p4 は Y ≈ 24.4〜30.7 に西の外壁をまたいで描くが、図は模式で外形の外にはみ出す。屋内は外形の中に収めるので、外形 CJ の張り出し（Y 28.73〜33.62）を階段室にした（推定）。
 - `InteriorElevatorStage` は乗り場から扉の側へ `PanelSetback` 0.7 m の所（X −21.7、床から 1.0 m）に操作盤を置き、`PanelRange` 2.4 m の範囲で反応する。階の境は乗り場の高さ − `FloorMargin` 0.5（1F −0.5、2F 4.1、3F 8.3、4F 12.5、5F 16.7、6F 20.9、7F 25.1）。
-- 行き先の画面の用途（`InteriorElevatorStage.Uses`）: `lecture_1F` 「講義室・生協 / Lecture Halls & Co-op」、`lecture_2F` 「講義室・ラウンジ / Classrooms & Lounge」、`lecture_3F` 「講義室・PC ルーム・ラウンジ / Classrooms, PC Room & Lounges」、`lecture_4F`〜`lecture_6F` 「講義室・会議室 / Classrooms & Meeting Room」（410・509・610）、`lecture_7F` 「研究室 / Labs」（7F は推定）。
+- 行き先の画面の用途（`InteriorElevatorStage.Uses`）: `lecture_1F` 「講義室・生協 / Lecture Halls & Co-op」、`lecture_2F` 「講義室・ラウンジ / Classrooms & Lounge」、`lecture_3F` 「講義室・PC ルーム・ラウンジ / Classrooms, PC Room & Lounges」、`lecture_4F`〜`lecture_6F` 「講義室・会議室 / Classrooms & Meeting Room」（410・509・610）、`lecture_7F` は用途未確認のため説明文を付けず、階数だけを表示する（#447）。
 - 南東の EV には `ev_lecture_` の Empty を置かない。`CollectStops` は `ev_lecture_` で始まる Empty を全部集めるので、2 本目の EV に置くと同じ階の乗り場が 2 つになる。
 - エスカレータで階をまたぐと、`InteriorFloorLights` が足の高さで階を決めるので、斜路の途中（次の階の FL − 0.5）で明かりが切り替わる。
 - 7F へは EV か西の階段で来る。7F の EV の前の操作盤から 1F〜6F へ戻れる。
