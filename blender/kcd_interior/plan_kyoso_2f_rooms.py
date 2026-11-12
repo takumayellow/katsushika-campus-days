@@ -19,6 +19,7 @@ import random
 
 from . import furniture as F, kit, shell
 from . import plan_kyoso_dims as D
+from . import plan_kyoso_shell as SH
 
 WALL = "wall_white"
 GLASS = "glass_clear"
@@ -90,7 +91,7 @@ def _shell(c, key, xa, xb, first, last):
         shell.light_strip(mb, xa + 0.8, y, xb - 0.8, y, D.Z_CEIL2, "light_strip", w=0.2)
     # モール側の窓の帯（外面の線 -> 進行方向の左手が室内）
     shell.outer_wall(mb, (xa, yf), (xb, yf), D.Z_SLAB, D.Z_CEIL2, wall=WALL, glass=GLASS,
-                     sill=SILL, header=HEADER, seg=1.8)
+                     sill=SILL, header=HEADER, seg=1.8, mullion_mat=SH.SASH_UPPER)
     # 廊下の側の壁と引き戸。口は上まで開くので、扉の上をふさぐ
     gaps = [(x - xa - DOOR_W * 0.5, x - xa + DOOR_W * 0.5) for x in door_xs(xa, xb)]
     shell.partition(mb, (xa, yw), (xb, yw), D.Z2, D.Z_CEIL2, WALL, gaps=gaps)

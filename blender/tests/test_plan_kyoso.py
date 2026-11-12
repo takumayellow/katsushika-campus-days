@@ -11,6 +11,7 @@ from kcd_interior import plan_kyoso_2f_rooms as R2
 from kcd_interior import plan_kyoso_3f as P3
 from kcd_interior import plan_kyoso_4f as P4
 from kcd_interior import plan_kyoso_dims as D
+from kcd_interior import plan_kyoso_shell as SH
 from kcd_interior import registry, signs
 from kcd_interior import shell as ishell
 from kcd_interior import spec as ispec
@@ -395,6 +396,24 @@ def test_3f_floor_continues_under_sliding_doors(built):
         room_front = min(v[1] for v in parts["floor_kyoso_3f_" + key].verts)
         assert room_front <= corr_back + 1e-6, key
 
+
+
+def _mat_zs(mb, mat):
+    return [mb.verts[k][2] for f, m in zip(mb.faces, mb.face_mat) if mb.mat_names[m] == mat
+            for k in f]
+
+
+def test_sash_material_by_floor(built):
+    """外周の方立ては 1F が外観のカーテンウォールと同じ SASH、2F より上は外観の上階の縦フィンと同じ
+    SASH_UPPER。2F の教室と 4F の室の窓の帯も SASH_UPPER。"""
+    parts = {mb.name: mb for mb in built.parts}
+    outer = built.wall
+    assert max(_mat_zs(outer, SH.SASH)) <= D.Z_SLAB + 1e-6
+    assert min(_mat_zs(outer, SH.SASH_UPPER)) >= D.Z_SLAB - 1e-6
+    rooms = (["wall_kyoso_2f_" + r[0].lower() for r in R2.rooms()]
+             + ["wall_kyoso_4f_" + k for k, _, _ in P3.rooms()])
+    for name in rooms:
+        assert _mat_zs(parts[name], SH.SASH_UPPER), name
 
 
 def test_4f_rooms_windows_and_roof(built):
