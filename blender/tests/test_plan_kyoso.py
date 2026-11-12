@@ -9,6 +9,7 @@ import raycast
 import stubs
 from kcd_interior import plan_kyoso_2f_rooms as R2
 from kcd_interior import plan_kyoso_3f as P3
+from kcd_interior import plan_kyoso_4f as P4
 from kcd_interior import plan_kyoso_dims as D
 from kcd_interior import registry, signs
 from kcd_interior import shell as ishell
@@ -40,7 +41,7 @@ SOLIDS = (
 )
 # 区画ごとの三角形の上限（現在の値に 1 割強の余裕）。wall は看板の文字を含む。
 SECTION_CAPS = {
-    "floor": 100, "wall": 16000, "entry": 200, "lobby": 500, "cafe": 900, "store": 8800,
+    "floor": 100, "wall": 16000, "entry": 200, "lobby": 500, "cafe": 900, "store": 4800,
     "lounge": 2400, "ls": 1100, "studio": 1100, "ls2": 2000, "core": 900, "hall": 1600,
     "escsteps_kyoso_1f": 200,
 }
@@ -48,14 +49,15 @@ SECTION_CAPS = {
 for _room in ("c201", "c202", "c203", "c204"):
     SECTION_CAPS.update({_room: 1400, "floor_kyoso_2f_" + _room: 20,
                          "wall_kyoso_2f_" + _room: 360})
-# 3F は 2 室と廊下で床・壁・家具を分ける
-for _room in ("east", "west"):
-    SECTION_CAPS.update({"3f_" + _room: 1000, "floor_kyoso_3f_" + _room: 20,
-                         "wall_kyoso_3f_" + _room: 380})
-SECTION_CAPS.update({"floor_kyoso_3f_corr": 20, "wall_kyoso_3f_corr": 280})
+# 3F・4F は 2 室と廊下で床・壁・家具を分ける（4F の壁は窓の帯の外壁と屋上を含む）
+for _lv, _wall, _corr in (("3f", 380, 280), ("4f", 410, 320)):
+    for _room in ("east", "west"):
+        SECTION_CAPS.update({_lv + "_" + _room: 1000, "floor_kyoso_%s_%s" % (_lv, _room): 20,
+                             "wall_kyoso_%s_%s" % (_lv, _room): _wall})
+    SECTION_CAPS.update({"floor_kyoso_%s_corr" % _lv: 20, "wall_kyoso_%s_corr" % _lv: _corr})
 # 室の前の廊下の小物（ベンチ・ごみ箱・消火器）は室ごとに分ける
 SECTION_CAPS.update({"corr_" + r: 60 for r in ("c201", "c202", "c203", "c204")})
-SECTION_CAPS.update({"3f_corr_" + r: 60 for r in ("east", "west")})
+SECTION_CAPS.update({lv + "_corr_" + r: 60 for lv in ("3f", "4f") for r in ("east", "west")})
 
 
 def _ear_candidates(contours):
@@ -130,7 +132,7 @@ def test_seats_are_registered(built):
 
 
 def test_seats_stand_on_a_floor_and_clear_of_solids(built):
-    floors = (0.0, D.DECK_H, D.Z2, D.Z3)
+    floors = (0.0, D.DECK_H, D.Z2, D.Z3, D.Z4)
     seats = built.seat_list()
     for q in seats:
         assert min(abs(q["c"][2] - z) for z in floors) < 1e-6, q["c"]
@@ -360,7 +362,32 @@ def test_3f_floor_continues_under_sliding_doors(built):
         assert room_front <= corr_back + 1e-6, key
 
 
-@pytest.mark.parametrize("floor,z", [("1F", 0.0), ("2F", D.Z2), ("3F", D.Z3)])
+
+def test_4f_rooms_windows_and_roof(built):
+    """4F: 3F の真上に 2 室と廊下。室の奥は窓の帯のある外壁で、窓の外の吹き抜けの頂部に屋上の面がある。"""
+    parts = {mb.name: mb for mb in built.parts}
+    for key in ("east", "west", "corr"):
+        assert min(v[2] for v in parts["floor_kyoso_4f_" + key].verts) == pytest.approx(D.Z4)
+    furns = dict(built.furns)
+    for key, _, _ in P3.rooms():
+        mb = next(m for n, m in furns.items() if n.endswith("_4f_" + key))
+        assert min(v[2] for v in mb.verts) == pytest.approx(D.Z4)
+        wall = parts["wall_kyoso_4f_" + key]
+        glass = [wall.verts[k] for f, m in zip(wall.faces, wall.face_mat)
+                 if wall.mat_names[m] == P3.GLASS for k in f]
+        assert glass, key
+        assert min(v[2] for v in glass) == pytest.approx(D.Z4 + P4.SILL, abs=0.02)
+        assert max(v[1] for v in glass) <= D.ROOMS3[3] + P3.WALL_T + 1e-6
+    corr = parts["wall_kyoso_4f_corr"]
+    roof = [corr.verts[k] for f, m in zip(corr.faces, corr.face_mat)
+            if corr.mat_names[m] == P4.ROOF for k in f]
+    assert roof and all(v[2] == pytest.approx(D.Z_TOP) for v in roof)
+    zones = [z for z in built.closure_zones if z["z_min"] < D.Z4 < z["z_max"]]
+    assert len(zones) == 1
+    assert min(v[1] for v in roof) >= zones[0]["y_back"] - 1e-6      # 屋上は 4F の外周の外
+
+@pytest.mark.parametrize("floor,z", [("1F", 0.0), ("2F", D.Z2), ("3F", D.Z3),
+                                     ("4F", D.Z4)])
 def test_stair_doors_stop_on_every_floor(built, floor, z):
     """東のコアの西の面の階段室の扉: 扉の前（1 m）と着いた向き（さらに 1 m 西）の Empty が各階にある。"""
     e = dict(built.empties)
@@ -369,7 +396,7 @@ def test_stair_doors_stop_on_every_floor(built, floor, z):
     assert p[2] == pytest.approx(z) and f[2] == pytest.approx(z)
     assert p[0] == pytest.approx(D.CORE_E[2] + P3.STAIR_OUT)
     assert f - p == pytest.approx((1.0, 0.0, 0.0))
-    if floor != "3F":       # 1F・2F は鉄骨階段の上端より奥（階段に掛からない）
+    if floor in ("1F", "2F"):       # 1F・2F は鉄骨階段の上端より奥（階段に掛からない）
         assert p[1] > D.STAIR_END_Y + 0.3
     else:
         cx0, cy0, cx1, cy1 = P3.CORR

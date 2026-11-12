@@ -60,6 +60,16 @@
    "y": 9.6,
    "z": 19.95
   },
+  "st_kyoso_core_4F": {
+   "x": -6.1,
+   "y": 14.2,
+   "z": 19.95
+  },
+  "st_kyoso_core_4F_f": {
+   "x": -5.1,
+   "y": 14.2,
+   "z": 19.95
+  },
   "esc_kyoso_1f_lo": {
    "x": -20.9,
    "y": 0.0,
@@ -303,6 +313,31 @@
   "lamp_kyoso_3F_6": {
    "x": 9.2,
    "y": 12.2,
+   "z": 19.95
+  },
+  "lamp_kyoso_4F_1": {
+   "x": -1.85,
+   "y": 16.8,
+   "z": 25.2
+  },
+  "lamp_kyoso_4F_2": {
+   "x": 6.85,
+   "y": 16.8,
+   "z": 25.2
+  },
+  "lamp_kyoso_4F_3": {
+   "x": -3.4,
+   "y": 16.8,
+   "z": 19.95
+  },
+  "lamp_kyoso_4F_4": {
+   "x": 3.0,
+   "y": 16.8,
+   "z": 19.95
+  },
+  "lamp_kyoso_4F_5": {
+   "x": 9.2,
+   "y": 16.8,
    "z": 19.95
   },
   "poi_kyoso_store": {
@@ -2961,68 +2996,98 @@
    "z": 20.98
   },
   "seat_kyoso_119": {
-   "x": -1.05,
-   "y": 5.4,
-   "z": 14.63
+   "x": -1.85,
+   "y": 14.2,
+   "z": 21.0
   },
   "seat_kyoso_119_f": {
-   "x": -1.05,
-   "y": 5.4,
-   "z": 14.85
+   "x": -1.85,
+   "y": 14.2,
+   "z": 20.78
   },
   "seat_kyoso_119_s": {
-   "x": -0.15,
-   "y": 5.4,
-   "z": 14.63
+   "x": -2.75,
+   "y": 14.2,
+   "z": 21.0
   },
   "seat_kyoso_119_a0": {
-   "x": -1.65,
-   "y": 5.4,
-   "z": 14.65
+   "x": -1.25,
+   "y": 14.2,
+   "z": 20.98
   },
   "seat_kyoso_119_a1": {
-   "x": -1.05,
-   "y": 5.4,
-   "z": 14.65
+   "x": -1.85,
+   "y": 14.2,
+   "z": 20.98
   },
   "seat_kyoso_119_a2": {
-   "x": -0.45,
-   "y": 5.4,
-   "z": 14.65
+   "x": -2.45,
+   "y": 14.2,
+   "z": 20.98
   },
   "seat_kyoso_120": {
-   "x": 13.15,
+   "x": -1.05,
    "y": 5.4,
    "z": 14.63
   },
   "seat_kyoso_120_f": {
-   "x": 13.15,
+   "x": -1.05,
    "y": 5.4,
    "z": 14.85
   },
   "seat_kyoso_120_s": {
-   "x": 14.05,
+   "x": -0.15,
    "y": 5.4,
    "z": 14.63
   },
   "seat_kyoso_120_a0": {
-   "x": 12.55,
+   "x": -1.65,
    "y": 5.4,
    "z": 14.65
   },
   "seat_kyoso_120_a1": {
-   "x": 13.15,
+   "x": -1.05,
    "y": 5.4,
    "z": 14.65
   },
   "seat_kyoso_120_a2": {
+   "x": -0.45,
+   "y": 5.4,
+   "z": 14.65
+  },
+  "seat_kyoso_121": {
+   "x": 13.15,
+   "y": 5.4,
+   "z": 14.63
+  },
+  "seat_kyoso_121_f": {
+   "x": 13.15,
+   "y": 5.4,
+   "z": 14.85
+  },
+  "seat_kyoso_121_s": {
+   "x": 14.05,
+   "y": 5.4,
+   "z": 14.63
+  },
+  "seat_kyoso_121_a0": {
+   "x": 12.55,
+   "y": 5.4,
+   "z": 14.65
+  },
+  "seat_kyoso_121_a1": {
+   "x": 13.15,
+   "y": 5.4,
+   "z": 14.65
+  },
+  "seat_kyoso_121_a2": {
    "x": 13.75,
    "y": 5.4,
    "z": 14.65
   }
  },
- "triangles": 44977,
- "seats": 172,
+ "triangles": 44251,
+ "seats": 175,
  "notes": [
   "1F=エントランスホール・スタジオ・ラーニングスクエア1/2・ホール・スターバックス・ファミリーマート、2F=ラウンジ・教室 C201〜C204、3F=ガラスの教室 2 室と廊下（東のコアの階段室の扉で 1F〜3F）。q_coffee の舞台"
  ],
@@ -3035,6 +3100,12 @@
   "wall_kyoso_3f_west",
   "floor_kyoso_3f_corr",
   "wall_kyoso_3f_corr",
+  "floor_kyoso_4f_east",
+  "wall_kyoso_4f_east",
+  "floor_kyoso_4f_west",
+  "wall_kyoso_4f_west",
+  "floor_kyoso_4f_corr",
+  "wall_kyoso_4f_corr",
   "escsteps_kyoso_1f",
   "floor_kyoso_2f_c201",
   "wall_kyoso_2f_c201",
@@ -3058,14 +3129,18 @@
   "furn_kyoso_12_3f_corr_east",
   "furn_kyoso_13_3f_west",
   "furn_kyoso_14_3f_corr_west",
-  "furn_kyoso_15_c201",
-  "furn_kyoso_16_corr_c201",
-  "furn_kyoso_17_c202",
-  "furn_kyoso_18_corr_c202",
-  "furn_kyoso_19_c203",
-  "furn_kyoso_20_corr_c203",
-  "furn_kyoso_21_c204",
-  "furn_kyoso_22_corr_c204"
+  "furn_kyoso_15_4f_east",
+  "furn_kyoso_16_4f_corr_east",
+  "furn_kyoso_17_4f_west",
+  "furn_kyoso_18_4f_corr_west",
+  "furn_kyoso_19_c201",
+  "furn_kyoso_20_corr_c201",
+  "furn_kyoso_21_c202",
+  "furn_kyoso_22_corr_c202",
+  "furn_kyoso_23_c203",
+  "furn_kyoso_24_corr_c203",
+  "furn_kyoso_25_c204",
+  "furn_kyoso_26_corr_c204"
  ],
  "signs": [
   {
@@ -3710,6 +3785,20 @@
    ],
    "z_min": 9.1,
    "z_max": 10.1
+  },
+  {
+   "x0": -7.4,
+   "x1": 11.5,
+   "y_face": 18.3,
+   "y_back": 29.1,
+   "notch": [
+    -7.4,
+    21.6,
+    -6.5,
+    29.1
+   ],
+   "z_min": 13.7,
+   "z_max": 14.7
   }
  ],
  "ext": {
@@ -3717,7 +3806,7 @@
    "ext_kyoso",
    "ext_kyoso_trees"
   ],
-  "triangles": 28019,
+  "triangles": 28240,
   "radius": 30.0,
   "dz": -0.03
  }

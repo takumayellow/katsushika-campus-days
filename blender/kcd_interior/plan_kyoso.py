@@ -9,6 +9,7 @@ from . import common
 from . import plan_kyoso_2f as P2
 from . import plan_kyoso_2f_rooms as R2
 from . import plan_kyoso_3f as P3
+from . import plan_kyoso_4f as P4
 from . import plan_kyoso_dims as D
 from . import plan_kyoso_esc as ESC
 from . import plan_kyoso_shell as SH
@@ -44,6 +45,8 @@ def _lamps(c, rooms2):
         c._put("lamp_%s_2F_%d" % (c.spec.id, n), x, y, D.Z2 + D.LAMP_DZ)
     for n, (x, y) in enumerate(lamps_3f(), 1):
         c._put("lamp_%s_3F_%d" % (c.spec.id, n), x, y, D.Z3 + D.LAMP_DZ)
+    for n, (x, y) in enumerate(P4.lamps(), 1):
+        c._put("lamp_%s_4F_%d" % (c.spec.id, n), x, y, D.Z4 + D.LAMP_DZ)
 
 
 def _lights(c, rooms2):
@@ -64,8 +67,9 @@ def _lights(c, rooms2):
     c.lights_from(rooms2, D.Z_CEIL2, energy=170.0, radius=1.4)
     c.lights_from([(x, y) for x in (-2.0, 2.5, 7.0) for y in (32.0, 36.5)],
                   D.Z_ATRIUM - 0.1, energy=900.0, radius=2.0)
-    c.lights_from([(x, y) for x in (-2.0, 7.0) for y in (23.5, 27.8)] + list(P3.corridor_lamps()),
-                  D.Z_CEIL3 - 0.1, energy=170.0, radius=1.4)
+    upper = [(x, y) for x in (-2.0, 7.0) for y in (23.5, 27.8)] + list(P3.corridor_lamps())
+    for ceil in (D.Z_CEIL3, D.Z_CEIL4):     # 3F・4F は同じ平面
+        c.lights_from(upper, ceil - 0.1, energy=170.0, radius=1.4)
 
 
 def build(c):
@@ -80,6 +84,7 @@ def build(c):
     SH.slabs_2f(c, c.wall)
     SH.atrium(c, c.wall)
     P3.build(c)
+    P4.build(c)
     SH.stair(c, c.wall)
     ESC.build(c)
 
