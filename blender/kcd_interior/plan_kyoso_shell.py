@@ -15,6 +15,7 @@ CARPET = "kyoso_floor_carpet_grey"
 LOUNGE_CARPET = "kyoso_floor_carpet_bluegrey"   # 2F のラウンジ（スラブ B）
 STEEL = "kyoso_steel_black"
 GLASS = "glass_clear"
+SASH = "metal_charcoal"   # 外周のガラスの方立てと入口の枠（外観のカーテンウォールと同じ材質）
 COLUMN = "kyoso_column_pale"
 
 # 1F の木ルーバーを切る所（エスカレーター・階段・吹き抜けの開口と東のコアの上）
@@ -36,7 +37,7 @@ def _edge(mb, p, q, ranges, gaps_of=None):
         gaps = gaps_of(s0, s1) if gaps_of else ()
         for z0, z1, sill, header in bands:
             shell.outer_wall(mb, a, b, z0, z1, wall=WALL, glass=None if solid else GLASS,
-                             sill=sill, header=header, seg=1.8, gaps=gaps,
+                             sill=sill, header=header, seg=1.8, gaps=gaps, mullion_mat=SASH,
                              gap_top=3.2 if gaps else None)
 
 
@@ -70,7 +71,7 @@ def envelope(c):
     r0 = D.ROOMS2_X[0] - D.ROOMS2_END - x0
     r1 = D.ROOMS2_X[-1] + D.ROOMS2_END - x0
     _edge(mb, (x0, ya), (x1, ya), ((0.0, r0, LIFT, True), (r1, x1 - x0, LIFT, True)))
-    shell.glass_entrance(mb, d0, d1, 0.0, 3.2, ya + shell.WALL * 0.5)
+    shell.glass_entrance(mb, d0, d1, 0.0, 3.2, ya + shell.WALL * 0.5, frame=SASH)
 
     # 公園側（西 -> 東）。距離は x1 から
     def pk(x):
