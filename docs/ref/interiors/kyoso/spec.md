@@ -265,7 +265,7 @@ OC の 1F 案内図は、モール側の西半分にスタジオ、東半分に�
 | `kyoso_steel_black` | 2A2A2A（metallic 0.7） | ガラス壁の方立て、階段の側桁、丸テーブル | 写真で確定 |
 | `kyoso_concrete_exposed` / `kyoso_column_bluegrey` / `kyoso_sage_grey` / `kyoso_wall_terracotta` / `kyoso_glass_frosted` | B9B7B2 / A9BBC2 / 9DB0AA / B98478 / E9EDED（alpha 0.55） | パレットにあり、今の配置では使わない | 推定 |
 
-- 共有の材質も使う: 床 `floor_tile_grey`、外周のガラス `glass_clear` と方立て `metal_white`、屋内のガラス `glass_interior`、`plastic_white`、`metal_dark`、`sign_plate_blue`（REPO、確定）。
+- 共有の材質も使う: 床 `floor_tile_grey`、外周のガラス `glass_clear` と方立て `metal_charcoal`（1F）・`metal_grey`（2F より上）（§5）、教室の扉の枠とスクリーンの箱 `metal_white`、屋内のガラス `glass_interior`、`plastic_white`、`metal_dark`、`sign_plate_blue`（REPO、確定）。
 - 照明は暖色の点光源（色 (1.0, 0.80, 0.56)）。1F は天井の下（Z 4.5）に 440 W、2F は 2F の天井（Z 8.6）に 170 W、3F の教室と廊下は天井の下（Z 12.5）に 170 W、吹き抜けは頂部の下（Z 13.5）に 900 W。東のコア・エスカレーターの開口・階段の開口の中には置かない（REPO、確定。プレビュー用）。
 
 ### 3-1. 天井
