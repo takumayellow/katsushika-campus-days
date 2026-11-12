@@ -92,6 +92,9 @@ namespace KCD.Tests
                 yield return ShootPeriods(rooms, player, cycle, folder, bad);
             }
 
+            yield return CheckBeforeClass(rooms, player, cycle, folder, bad);
+            yield return CheckQuiz(rooms, player, cycle, folder, bad);
+
             cycle.SetHours(LunchHour);
             yield return PlayModeScenes.Advance(10, 1.0f);
             foreach (Classroom room in rooms)
@@ -198,6 +201,140 @@ namespace KCD.Tests
                     }
                 }
             }
+        }
+
+        /// <summary>授業の前の、学生が集まってくる時刻（月曜 2 限の 4 分前、10:36）。</summary>
+        private const float BeforeShotHour = 10.6f;
+
+        /// <summary>小テストの時間に入ってからの分。小テストは始まりから ClassTimetable.QuizMinutes 分続く。</summary>
+        private const float QuizShotMinutes = 5f;
+
+        /// <summary>
+        /// 授業の前は、着いた学生だけが席にいる (#424)。席にいる人数が ClassAttendance の決める人数と合い、
+        /// 誰もいないのでも全員でもない途中の人数になっているかを確かめ、後ろから撮る。
+        /// </summary>
+        private static IEnumerator CheckBeforeClass(List<Classroom> rooms, PlayerController player, DayNightCycle cycle,
+            string folder, List<string> bad)
+        {
+            int day = GameManager.Instance.DayNumber;
+            cycle.SetHours(BeforeShotHour);
+            foreach (Classroom room in rooms)
+            {
+                Vector3 back = BackOf(room, out Vector3 boardFacing);
+                player.Teleport(back, Quaternion.LookRotation(-boardFacing).eulerAngles.y);
+                yield return PlayModeScenes.Advance(5, 0.5f);
+                yield return CloseDialogue();
+                ClassAttendance.Moment moment = ClassAttendance.At(Classroom.Timetable, room.RoomId, day, BeforeShotHour);
+                if (moment.Phase != ClassAttendance.Phase.Before)
+                {
+                    bad.Add(room.RoomId + ": " + BeforeShotHour + " 時が授業の前になっていない（テストの前提が崩れている）");
+                    continue;
+                }
+
+                int expected = ClassAttendance.TakenCount(moment, room.Seats.Count);
+                int seated = SeatedCount(room);
+                if (seated != expected)
+                {
+                    bad.Add(room.RoomId + ": 授業の前に席にいる学生が " + seated + " 人（" + expected + " 人のはず）");
+                }
+
+                if (expected == 0 || expected == room.Seats.Count)
+                {
+                    bad.Add(room.RoomId + ": 授業の 4 分前の人数が途中の人数でない（" + expected + "/" + room.Seats.Count + "）");
+                }
+
+                if (CanRender)
+                {
+                    string name = room.RoomId + "-" + Mathf.RoundToInt(BeforeShotHour * 60f).ToString("0000")
+                        + "-before-" + seated + ".png";
+                    yield return Shoot(Path.Combine(folder, name), back + Vector3.up * 1.6f, room.Board.transform.parent.position);
+                    Debug.Log("[classroom] " + name + " 席 " + seated + "/" + room.Seats.Count);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 時間割の最初の小テストの曜日・時限に合わせ、始まって数分の教室で小テストをしているかを確かめて撮る。
+        /// 小テストは月曜には無いので、日を小テストの曜日に動かし、終わったら戻す。
+        /// </summary>
+        private static IEnumerator CheckQuiz(List<Classroom> rooms, PlayerController player, DayNightCycle cycle,
+            string folder, List<string> bad)
+        {
+            ClassTimetable timetable = Classroom.Timetable;
+            if (timetable.Quizzes.Count == 0)
+            {
+                bad.Add("時間割に小テストが無い");
+                yield break;
+            }
+
+            ClassTimetable.QuizSlot slot = timetable.Quizzes[0];
+            Classroom room = rooms.Find(r => r.RoomId == slot.RoomId);
+            ClassTimetable.Period period = null;
+            foreach (ClassTimetable.Period p in timetable.Periods)
+            {
+                if (p.Number == slot.Period)
+                {
+                    period = p;
+                }
+            }
+
+            int quizDay = -1;
+            for (int d = 1; d <= 7 && quizDay < 0; d++)
+            {
+                if (ClassTimetable.WeekdayOf(d) == slot.Weekday)
+                {
+                    quizDay = d;
+                }
+            }
+
+            if (room == null || period == null || quizDay < 0)
+            {
+                bad.Add("小テストの教室 " + slot.RoomId + " の " + slot.Period + " 限が見つからない");
+                yield break;
+            }
+
+            GameManager game = GameManager.Instance;
+            int day = game.DayNumber;
+            game.DayNumber = quizDay;
+            try
+            {
+                float hour = period.StartHour + QuizShotMinutes / 60f;
+                cycle.SetHours(hour);
+                Vector3 back = BackOf(room, out Vector3 boardFacing);
+                player.Teleport(back, Quaternion.LookRotation(-boardFacing).eulerAngles.y);
+                yield return PlayModeScenes.Advance(5, 0.5f);
+                yield return CloseDialogue();
+                if (!room.InQuiz)
+                {
+                    bad.Add(room.RoomId + ": " + quizDay + " 日目の " + slot.Period + " 限の始めに小テストをしていない");
+                }
+
+                if (CanRender)
+                {
+                    string name = room.RoomId + "-quiz-" + slot.Period + ".png";
+                    yield return Shoot(Path.Combine(folder, name), back + Vector3.up * 1.6f, room.Board.transform.parent.position);
+                    Debug.Log("[classroom] " + name + " 小テスト " + room.InQuiz);
+                }
+            }
+            finally
+            {
+                game.DayNumber = day;
+            }
+        }
+
+        /// <summary>席にいる学生の数。People の先頭から席の数までが学生。</summary>
+        private static int SeatedCount(Classroom room)
+        {
+            int count = 0;
+            for (int i = 0; i < room.Seats.Count && i < room.People.Count; i++)
+            {
+                if (room.People[i] != null && room.People[i].activeSelf)
+                {
+                    count++;
+                }
+            }
+
+            return count;
         }
 
         /// <summary>講師の動きを撮る時刻（月曜 2 限の始まってすぐ、10:42）。</summary>
