@@ -62,7 +62,7 @@ StreamingAssets はビルドにそのまま入るので、配布物にもフォ�
 建物の形は上の地図データに基づく。キャラクターの顔・柄（`Assets/Models/Characters/*/`、`blender/kcd_chara/`）、ミニマップ（`tools/render_minimap.py`）、
 ミニマップの印（`Assets/Generated/UI/minimap_*.png`、`Scripts/Editor/MinimapAssets.cs` が描く）もスクリプトの出力。
 
-地面・舗装・芝・土・コンクリート・煉瓦の面のテクスチャ（`Assets/Textures/surfaces/`、#59 #109）は [ambientCG](https://ambientcg.com/) の素材から作った。
+地面・舗装・芝・土・コンクリート・煉瓦・屋根・金属・木の面のテクスチャ（`Assets/Textures/surfaces/`、#59 #109 #416）は [ambientCG](https://ambientcg.com/) の素材から作った。
 `tools/fetch_textures.py` が `data/textures/surfaces.json` に書いた素材を取得し、平均色を `MaterialLibrary.cs` の CampusColors に合わせて焼き直す。
 煉瓦だけは素材から肌の粒を借り、`tools/brick_bond.py` で張り方・1 枚ずつの色・目地を組み直している。
 
@@ -74,8 +74,13 @@ StreamingAssets はビルドにそのまま入るので、配布物にもフォ�
 | [Ground048](https://ambientcg.com/a/Ground048) | bed_soil（花壇の土）・soil（テニスコート）・sand（遊び場） | 同上 | 確認済み（2026-09-24） |
 | [Concrete034](https://ambientcg.com/a/Concrete034) | concrete_light・concrete_grey・concrete_dark（外壁） | 同上 | 確認済み（2026-09-24） |
 | [Bricks092](https://ambientcg.com/a/Bricks092) | brick_red（外壁の煉瓦） | 同上 | 確認済み |
+| [Concrete046](https://ambientcg.com/a/Concrete046) | roof_grey（屋根・庇の上面） | 同上 | 確認済み（2026-11-12） |
+| [Metal032](https://ambientcg.com/a/Metal032) | metal_grey（パラペット・屋上の設備・方立て） | 同上 | 確認済み（2026-11-12） |
+| [Metal016](https://ambientcg.com/a/Metal016) | metal_white（温室の壁・白い金属の枠） | 同上 | 確認済み（2026-11-12） |
+| [Wood049](https://ambientcg.com/a/Wood049) | wood（ベンチ・公園の木部） | 同上 | 確認済み（2026-11-12） |
+| [Planks029S](https://ambientcg.com/a/Planks029S) | deck_wood（寮の屋上テラスのデッキ） | 同上 | 確認済み（2026-11-12） |
 
-> Created using PavingStones136, Asphalt033, Grass004, Ground048, Concrete034 and Bricks092 from ambientCG.com, licensed under the Creative Commons CC0 1.0 Universal License.
+> Created using PavingStones136, Asphalt033, Grass004, Ground048, Concrete034, Bricks092, Concrete046, Metal032, Metal016, Wood049 and Planks029S from ambientCG.com, licensed under the Creative Commons CC0 1.0 Universal License.
 
 低木と草むら（`Assets/Models/Campus/shrubs.fbx`、#78）の形は [Kenney](https://kenney.nl/) の Nature Kit 2.1 から借りた。
 `tools/fetch_shrubs.py` が zip から低木 6 点と草むら 4 点の頂点と三角形だけを `data/shrubs/kenney_shrubs.json` に写し、
