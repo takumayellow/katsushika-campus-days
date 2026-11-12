@@ -106,6 +106,11 @@ ROOMS3 = (ATRIUM[0], 21.6, ATRIUM[2], ATRIUM[1])     # 教室の奥の壁から�
 ROOMS3_SPLIT = 2.5      # 2 室の境の X
 COLUMNS3 = tuple((x, 28.4) for x in (10.8, 7.8, 4.6, -4.8))   # 1F・2F の柱の続き
 
+# 4F: 3F の廊下と教室の真上。吹き抜けの頂部（Z_TOP）の上にスラブを載せる
+SLAB4 = 0.4             # 4F のスラブの厚さ（吹き抜けの頂部の上）
+Z4 = Z_TOP + SLAB4      # 4F の床（3F の床から 4.6 m 上）
+Z_CEIL4 = Z4 + 3.0      # 4F の天井
+
 # 入れない区画（建物の X, Y）: 風除室・東のコア・西のコア・公園側の部屋と階段
 CLOSED = (
     VESTIBULE,

@@ -9,6 +9,7 @@ from . import plan_kyoso_dims as D
 
 WOOD = "kyoso_wood_oak"
 BLACK = "kyoso_steel_black"
+CHAIRS = ("kyoso_fabric_navy", "kyoso_fabric_white")   # 丸机の両脇のラウンジチェア（西・東）
 
 
 def _sofa(mb, x, y, ang, mat="kyoso_sofa_grey"):
@@ -30,8 +31,9 @@ def lounge(c, mb):
     # 丸机とラウンジチェア
     for ty in (21.0, 23.5):
         F.round_table(mb, 12.5, ty, r=0.4, top=WOOD)
-        for dx in (-0.8, 0.8):
-            F.lounge_chair(mb, 12.5 + dx, ty, D.FACE_WEST if dx < 0 else D.FACE_EAST)
+        for dx, mat in zip((-0.8, 0.8), CHAIRS):
+            F.lounge_chair(mb, 12.5 + dx, ty, D.FACE_WEST if dx < 0 else D.FACE_EAST,
+                           mat=mat, cushion=mat)
     # 吹き抜けに向いた長いカウンターとスツール
     F.counter(mb, -3.6, 27.4, 10.2, 27.9, h=1.0, body=WOOD, top=WOOD, toe=False)
     for k in range(13):

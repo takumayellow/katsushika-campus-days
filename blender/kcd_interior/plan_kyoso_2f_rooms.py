@@ -19,6 +19,7 @@ import random
 
 from . import furniture as F, kit, shell
 from . import plan_kyoso_dims as D
+from . import plan_kyoso_shell as SH
 
 WALL = "wall_white"
 GLASS = "glass_clear"
@@ -47,6 +48,16 @@ SKIRT_T = 0.012         # 巾木の厚み
 SKIRT = "plastic_black"
 BOARD2_W, BOARD2_H, BOARD2_Z = 2.4, 1.1, 1.0    # 扉の間の掲示板（幅・高さ・下端の床からの高さ）
 CORRIDOR_SEED = 425     # 掲示の紙の揺れ（ctx の乱数を使うと他の部品の配置が変わる）
+CLOCK_W, CLOCK_Z = 0.32, 2.3    # 黒板の上の時計（幅と下端の床からの高さ）
+SCREEN_CASE = "metal_white"      # 黒板の上の巻き上げスクリーンの箱（写真が無いので推定）
+SCREEN_DROP = (0.30, 0.18)       # スクリーンの箱の下端と上端（天井から下へ）
+SCREEN_D = 0.14                  # スクリーンの箱の奥行き（壁から）
+PROJ_DX = 3.0                    # 黒板の面からプロジェクターの中心まで（机の 2 列目の上）
+PROJ_DROP = (0.50, 0.36)         # プロジェクターの本体の下端と上端（天井から下へ）
+PROJ_LENS = "plastic_black"       # プロジェクターのレンズ
+SHEET_DY = 0.45         # 黒板の端から時間割の紙の中心まで
+SHEET_W, SHEET_Z = 0.30, (1.3, 1.72)    # 時間割の紙の幅と、下端・上端の床からの高さ
+SHEET_MARGIN = 0.05      # 時間割の紙の下に敷くコルクの板の、紙からのはみ出し（白い壁と見分けるため）
 
 
 def rooms():
@@ -80,7 +91,7 @@ def _shell(c, key, xa, xb, first, last):
         shell.light_strip(mb, xa + 0.8, y, xb - 0.8, y, D.Z_CEIL2, "light_strip", w=0.2)
     # モール側の窓の帯（外面の線 -> 進行方向の左手が室内）
     shell.outer_wall(mb, (xa, yf), (xb, yf), D.Z_SLAB, D.Z_CEIL2, wall=WALL, glass=GLASS,
-                     sill=SILL, header=HEADER, seg=1.8)
+                     sill=SILL, header=HEADER, seg=1.8, mullion_mat=SH.SASH_UPPER)
     # 廊下の側の壁と引き戸。口は上まで開くので、扉の上をふさぐ
     gaps = [(x - xa - DOOR_W * 0.5, x - xa + DOOR_W * 0.5) for x in door_xs(xa, xb)]
     shell.partition(mb, (xa, yw), (xb, yw), D.Z2, D.Z_CEIL2, WALL, gaps=gaps)
@@ -192,13 +203,49 @@ def board(mb, xf, yc):
     t.box_nb(mb, -hw - f, 0.0, z0 - f, hw + f, 0.03, z1 + f, "metal_gray")
     t.vplate(mb, hw, 0.031, -hw, 0.031, z0, z1, "board_green")
     t.box_nb(mb, -hw, 0.03, z0 - f, hw, 0.12, z0 - f + 0.04, "metal_gray")
+    board_extras(mb, t)
 
 
-def classroom_furniture(mb, xa, first, desk_ys, z):
-    """東の壁の黒板と教卓、西を向いた長机と椅子を組んで高さ z へ持ち上げる（2F・3F の教室で共有）。"""
+def board_extras(mb, t):
+    """黒板の上の壁の時計と、黒板の脇の時間割の紙。壁に付く面は作らない（屋内の三角形の予算）。"""
+    h = CLOCK_W * 0.5
+    z0, z1 = CLOCK_Z, CLOCK_Z + CLOCK_W
+    zc = (z0 + z1) * 0.5
+    t.box_open(mb, -h, 0.0, z0, h, 0.04, z1, "plastic_black", skip=("-y",))
+    t.vplate(mb, h - 0.025, 0.041, -h + 0.025, 0.041, z0 + 0.025, z1 - 0.025, "plastic_white")
+    t.vplate(mb, 0.008, 0.043, -0.008, 0.043, zc, zc + 0.11, "plastic_black")     # 長針
+    t.vplate(mb, 0.0, 0.044, -0.08, 0.044, zc - 0.006, zc + 0.006, "plastic_black")  # 短針
+    x = -BOARD_W * 0.5 - SHEET_DY
+    w, m = SHEET_W * 0.5, SHEET_MARGIN
+    t.vplate(mb, x + w + m, 0.003, x - w - m, 0.003, SHEET_Z[0] - m, SHEET_Z[1] + m, "fabric_beige")
+    t.vplate(mb, x + w, 0.006, x - w, 0.006, SHEET_Z[0], SHEET_Z[1], "paper_white")
+
+
+def screen_case(mb, xf, yc, ceil):
+    """東の壁の面 xf の黒板の上、天井の下に付く巻き上げスクリーンの箱（z=0 で組む）。"""
+    t = kit.T(xf, yc, 0.0, D.FACE_WEST)
+    hw = BOARD_W * 0.5 + 0.1
+    t.box(mb, -hw, 0.0, ceil - SCREEN_DROP[0], hw, SCREEN_D, ceil - SCREEN_DROP[1], SCREEN_CASE)
+
+
+def ceiling_projector(mb, x, yc, ceil):
+    """天井から竿で吊った、東の黒板を向くプロジェクター（z=0 で組む）。ローカルの +Y が東。"""
+    t = kit.T(x, yc, 0.0, D.FACE_EAST)
+    z0, z1 = ceil - PROJ_DROP[0], ceil - PROJ_DROP[1]
+    t.box(mb, -0.2, -0.15, z0, 0.2, 0.15, z1, "plastic_white")
+    t.vplate(mb, 0.05, 0.151, -0.05, 0.151, z0 + 0.02, z0 + 0.12, PROJ_LENS)  # 本体の東の面のすぐ前
+    t.box_open(mb, -0.025, -0.025, z1, 0.025, 0.025, ceil, "metal_gray", skip=("top",))
+
+
+def classroom_furniture(mb, xa, first, desk_ys, z, ceil):
+    """東の壁の黒板と教卓、西を向いた長机と椅子、天井のプロジェクターとスクリーンの箱を組んで
+    高さ z へ持ち上げる（2F・3F・4F の教室で共有）。ceil は床から天井まで。"""
     base = len(mb.verts)
     yc = (desk_ys[0] + desk_ys[-1]) * 0.5
-    board(mb, east_face(xa, first), yc)
+    xf = east_face(xa, first)
+    board(mb, xf, yc)
+    screen_case(mb, xf, yc, ceil)
+    ceiling_projector(mb, xf + PROJ_DX, yc, ceil)
     F.podium(mb, xa + 1.4, yc, D.FACE_WEST)
     for dx in ROW_DX:
         x = xa + dx
@@ -226,7 +273,8 @@ def build(c):
         _floor(c, key, xa, xb)
         wall = _shell(c, key, xa, xb, first=i == 0, last=i == len(rs) - 1)
         corridor_wall(wall, xa, xb, D.Z2, rng)
-        classroom_furniture(c.furn(name.lower()), xa, i == 0, DESK_Y, D.Z2)
+        classroom_furniture(c.furn(name.lower()), xa, i == 0, DESK_Y, D.Z2,
+                            D.Z_CEIL2 - D.Z2)
         corridor_props(c.furn("corr_" + name.lower()), CORRIDOR_KINDS[i], xa, xb, D.Z2)
         pts.extend(lamp_points(xa, xb))
     return pts
