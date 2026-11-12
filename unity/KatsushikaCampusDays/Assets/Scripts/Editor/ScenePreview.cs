@@ -2393,9 +2393,10 @@ namespace KCD.Editor
                 + ", " + value.z.ToString("F2", CultureInfo.InvariantCulture) + ")";
         }
 
+        /// <summary>数として読めないとき、NaN・Infinity のときは fallback。</summary>
         private static float ParseFloat(string text, float fallback)
         {
-            return float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out float value)
+            return float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out float value) && float.IsFinite(value)
                 ? value
                 : fallback;
         }
