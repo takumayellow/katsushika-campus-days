@@ -1,0 +1,484 @@
+{
+  "periods": [
+    {
+      "period": 1,
+      "start": "09:00",
+      "end": "10:20"
+    },
+    {
+      "period": 2,
+      "start": "10:40",
+      "end": "12:00"
+    },
+    {
+      "period": 3,
+      "start": "13:00",
+      "end": "14:10"
+    },
+    {
+      "period": 4,
+      "start": "14:25",
+      "end": "15:35"
+    },
+    {
+      "period": 5,
+      "start": "15:50",
+      "end": "17:00"
+    }
+  ],
+  "weekdays": [
+    {
+      "ja": "月",
+      "en": "Mon"
+    },
+    {
+      "ja": "火",
+      "en": "Tue"
+    },
+    {
+      "ja": "水",
+      "en": "Wed"
+    },
+    {
+      "ja": "木",
+      "en": "Thu"
+    },
+    {
+      "ja": "金",
+      "en": "Fri"
+    }
+  ],
+  "lecturers": [
+    {
+      "field": "math",
+      "body": "prof",
+      "hair": "#5f5a55",
+      "top": "#3d4656",
+      "bottom": "#3b3f46",
+      "shoes": "#2a2522",
+      "height": 1.74
+    },
+    {
+      "field": "physics",
+      "body": "prof",
+      "hair": "#8e8a84",
+      "top": "#6b5a44",
+      "bottom": "#45403a",
+      "shoes": "#3a2a20",
+      "height": 1.7
+    },
+    {
+      "field": "info",
+      "body": "prof",
+      "hair": "#77726c",
+      "top": "#55575c",
+      "bottom": "#2f3136",
+      "shoes": "#1e1e22",
+      "height": 1.77
+    }
+  ],
+  "subjects": [
+    {
+      "id": "calculus",
+      "field": "math",
+      "name": "微分積分",
+      "name_en": "Calculus",
+      "lines": [
+        {
+          "ja": "微分積分　テイラー展開",
+          "en": "Calculus: Taylor series"
+        },
+        {
+          "ja": "f(x) = f(a) + f'(a)(x − a) + f''(a)(x − a)² / 2! + …",
+          "en": "f(x) = f(a) + f'(a)(x − a) + f''(a)(x − a)² / 2! + …"
+        },
+        {
+          "ja": "例）e<sup>x</sup> = 1 + x + x²/2! + x³/3! + …",
+          "en": "e.g. e<sup>x</sup> = 1 + x + x²/2! + x³/3! + …"
+        },
+        {
+          "ja": "sin x = x − x³/3! + x<sup>5</sup>/5! − …",
+          "en": "sin x = x − x³/3! + x<sup>5</sup>/5! − …"
+        },
+        {
+          "ja": "x が小さいとき　sin x ≈ x",
+          "en": "for small x:  sin x ≈ x"
+        }
+      ]
+    },
+    {
+      "id": "linear_algebra",
+      "field": "math",
+      "name": "線形代数",
+      "name_en": "Linear Algebra",
+      "lines": [
+        {
+          "ja": "線形代数　固有値と固有ベクトル",
+          "en": "Linear algebra: eigenvalues"
+        },
+        {
+          "ja": "A v = λ v　（v ≠ 0）",
+          "en": "A v = λ v   (v ≠ 0)"
+        },
+        {
+          "ja": "det(A − λI) = 0 を解く",
+          "en": "solve det(A − λI) = 0"
+        },
+        {
+          "ja": "例）A = (2 1 / 1 2)　→　(2 − λ)² − 1 = 0",
+          "en": "e.g. A = (2 1 / 1 2)  →  (2 − λ)² − 1 = 0"
+        },
+        {
+          "ja": "λ = 1, 3",
+          "en": "λ = 1, 3"
+        }
+      ]
+    },
+    {
+      "id": "probability",
+      "field": "math",
+      "name": "確率統計",
+      "name_en": "Probability",
+      "lines": [
+        {
+          "ja": "確率統計　期待値と分散",
+          "en": "Probability: mean and variance"
+        },
+        {
+          "ja": "E[X] = Σ x P(X = x)",
+          "en": "E[X] = Σ x P(X = x)"
+        },
+        {
+          "ja": "V[X] = E[X²] − (E[X])²",
+          "en": "V[X] = E[X²] − (E[X])²"
+        },
+        {
+          "ja": "さいころ 1 個：E[X] = 7/2",
+          "en": "one die:  E[X] = 7/2"
+        },
+        {
+          "ja": "V[X] = 91/6 − 49/4 = 35/12",
+          "en": "V[X] = 91/6 − 49/4 = 35/12"
+        }
+      ]
+    },
+    {
+      "id": "mechanics",
+      "field": "physics",
+      "name": "力学",
+      "name_en": "Mechanics",
+      "lines": [
+        {
+          "ja": "力学　運動方程式",
+          "en": "Mechanics: equation of motion"
+        },
+        {
+          "ja": "m a = F",
+          "en": "m a = F"
+        },
+        {
+          "ja": "等加速度：v = v<sub>0</sub> + a t",
+          "en": "constant a:  v = v<sub>0</sub> + a t"
+        },
+        {
+          "ja": "x = v<sub>0</sub> t + a t² / 2",
+          "en": "x = v<sub>0</sub> t + a t² / 2"
+        },
+        {
+          "ja": "自由落下：a = g ≈ 9.8 m/s²",
+          "en": "free fall:  a = g ≈ 9.8 m/s²"
+        }
+      ]
+    },
+    {
+      "id": "electromagnetism",
+      "field": "physics",
+      "name": "電磁気学",
+      "name_en": "Electromagnetism",
+      "lines": [
+        {
+          "ja": "電磁気学　クーロンの法則",
+          "en": "EM: Coulomb's law"
+        },
+        {
+          "ja": "F = k q<sub>1</sub> q<sub>2</sub> / r²",
+          "en": "F = k q<sub>1</sub> q<sub>2</sub> / r²"
+        },
+        {
+          "ja": "k ≈ 9.0 × 10<sup>9</sup> N·m²/C²",
+          "en": "k ≈ 9.0 × 10<sup>9</sup> N·m²/C²"
+        },
+        {
+          "ja": "電場　E = F / q",
+          "en": "electric field  E = F / q"
+        },
+        {
+          "ja": "同符号は反発、異符号は引き合う",
+          "en": "like charges repel, unlike attract"
+        }
+      ]
+    },
+    {
+      "id": "thermodynamics",
+      "field": "physics",
+      "name": "熱力学",
+      "name_en": "Thermodynamics",
+      "lines": [
+        {
+          "ja": "熱力学　第一法則",
+          "en": "Thermodynamics: first law"
+        },
+        {
+          "ja": "ΔU = Q − W",
+          "en": "ΔU = Q − W"
+        },
+        {
+          "ja": "Q：加えた熱　W：気体がした仕事",
+          "en": "Q: heat in   W: work done by gas"
+        },
+        {
+          "ja": "定積変化：W = 0　→　ΔU = Q",
+          "en": "constant volume:  W = 0  →  ΔU = Q"
+        },
+        {
+          "ja": "等温変化（理想気体）：ΔU = 0　→　Q = W",
+          "en": "isothermal (ideal gas):  ΔU = 0  →  Q = W"
+        }
+      ]
+    },
+    {
+      "id": "algorithms",
+      "field": "info",
+      "name": "アルゴリズム",
+      "name_en": "Algorithms",
+      "lines": [
+        {
+          "ja": "アルゴリズム　二分探索",
+          "en": "Algorithms: binary search"
+        },
+        {
+          "ja": "整列済みの配列の真ん中と比べる",
+          "en": "compare with the middle of a sorted array"
+        },
+        {
+          "ja": "小さければ左半分、大きければ右半分へ",
+          "en": "smaller: go left   larger: go right"
+        },
+        {
+          "ja": "比較の回数は O(log n)",
+          "en": "comparisons: O(log n)"
+        },
+        {
+          "ja": "n = 1024 なら多くて 11 回",
+          "en": "n = 1024: at most 11 times"
+        }
+      ]
+    },
+    {
+      "id": "data_structures",
+      "field": "info",
+      "name": "データ構造",
+      "name_en": "Data Structures",
+      "lines": [
+        {
+          "ja": "データ構造　スタックとキュー",
+          "en": "Data structures: stack and queue"
+        },
+        {
+          "ja": "スタック：後に入れたものから出る（LIFO）",
+          "en": "stack: last in, first out (LIFO)"
+        },
+        {
+          "ja": "push(1)　push(2)　pop() → 2",
+          "en": "push(1)  push(2)  pop() → 2"
+        },
+        {
+          "ja": "キュー：先に入れたものから出る（FIFO）",
+          "en": "queue: first in, first out (FIFO)"
+        },
+        {
+          "ja": "enqueue(1)　enqueue(2)　dequeue() → 1",
+          "en": "enqueue(1)  enqueue(2)  dequeue() → 1"
+        }
+      ]
+    },
+    {
+      "id": "programming",
+      "field": "info",
+      "name": "プログラミング",
+      "name_en": "Programming",
+      "lines": [
+        {
+          "ja": "プログラミング　再帰",
+          "en": "Programming: recursion"
+        },
+        {
+          "ja": "def fib(n):",
+          "en": "def fib(n):"
+        },
+        {
+          "ja": "    if n < 2: return n",
+          "en": "    if n < 2: return n"
+        },
+        {
+          "ja": "    return fib(n - 1) + fib(n - 2)",
+          "en": "    return fib(n - 1) + fib(n - 2)"
+        },
+        {
+          "ja": "fib(10) → 55",
+          "en": "fib(10) → 55"
+        }
+      ]
+    },
+    {
+      "id": "logic_circuits",
+      "field": "info",
+      "name": "論理回路",
+      "name_en": "Logic Circuits",
+      "lines": [
+        {
+          "ja": "論理回路　半加算器",
+          "en": "Logic circuits: half adder"
+        },
+        {
+          "ja": "AND：両方 1 なら 1　OR：どちらか 1 なら 1",
+          "en": "AND: 1 if both 1   OR: 1 if either 1"
+        },
+        {
+          "ja": "NOT：0 と 1 を入れかえる",
+          "en": "NOT: swaps 0 and 1"
+        },
+        {
+          "ja": "和 S = A XOR B　桁上げ C = A AND B",
+          "en": "sum S = A XOR B   carry C = A AND B"
+        },
+        {
+          "ja": "1 + 1　→　S = 0, C = 1",
+          "en": "1 + 1  →  S = 0, C = 1"
+        }
+      ]
+    }
+  ],
+  "rooms": [
+    {
+      "id": "104",
+      "week": [
+        [
+          "calculus",
+          "electromagnetism",
+          "",
+          "calculus",
+          "electromagnetism"
+        ],
+        [
+          "thermodynamics",
+          "",
+          "linear_algebra",
+          "",
+          "data_structures"
+        ],
+        [
+          "",
+          "probability",
+          "mechanics",
+          "data_structures",
+          "probability"
+        ],
+        [
+          "calculus",
+          "electromagnetism",
+          "data_structures",
+          "",
+          ""
+        ],
+        [
+          "thermodynamics",
+          "data_structures",
+          "linear_algebra",
+          "",
+          "algorithms"
+        ]
+      ]
+    },
+    {
+      "id": "202",
+      "week": [
+        [
+          "",
+          "logic_circuits",
+          "linear_algebra",
+          "thermodynamics",
+          "programming"
+        ],
+        [
+          "logic_circuits",
+          "probability",
+          "mechanics",
+          "programming",
+          ""
+        ],
+        [
+          "calculus",
+          "electromagnetism",
+          "programming",
+          "",
+          "electromagnetism"
+        ],
+        [
+          "thermodynamics",
+          "programming",
+          "",
+          "thermodynamics",
+          "data_structures"
+        ],
+        [
+          "programming",
+          "",
+          "mechanics",
+          "data_structures",
+          "probability"
+        ]
+      ]
+    },
+    {
+      "id": "304",
+      "week": [
+        [
+          "algorithms",
+          "probability",
+          "mechanics",
+          "",
+          "probability"
+        ],
+        [
+          "calculus",
+          "electromagnetism",
+          "",
+          "calculus",
+          "electromagnetism"
+        ],
+        [
+          "thermodynamics",
+          "",
+          "linear_algebra",
+          "thermodynamics",
+          "programming"
+        ],
+        [
+          "",
+          "probability",
+          "mechanics",
+          "programming",
+          "probability"
+        ],
+        [
+          "calculus",
+          "electromagnetism",
+          "programming",
+          "calculus",
+          ""
+        ]
+      ]
+    }
+  ]
+}
