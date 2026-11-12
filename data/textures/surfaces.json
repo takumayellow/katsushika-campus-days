@@ -167,6 +167,66 @@
         "pore_ratio": 0.55
       },
       "note": "講義棟の打放しの壁。素材を落とさず tools/formwork.py が型枠の割付けから描く。横使いの合板パネル 1820×910 mm の目地（幅 3 mm）と、パネル 1 枚に 2 段 × 4 列の P コンの穴（直径 30 mm、455 mm 間隔）、控えめなムラと気泡。平均色は InteriorPalette の宣言 hex に合わせる。床・スラブの小口は lecture_concrete / lecture_concrete_light のまま平らに残す (#423)。"
+    },
+    {
+      "asset": "Concrete046",
+      "tile_cm": 240,
+      "size_px": 512,
+      "saturation": 0.2,
+      "contrast": 0.45,
+      "depth": 0.2,
+      "materials": [
+        "roof_grey"
+      ],
+      "note": "陸屋根（キャンパスの建物と背景の建物の屋上）。押えコンクリートの平らな屋上に合わせ、模様の少ない平滑なコンクリート（tags: plain, smooth）を選んだ。外壁の Concrete034 と別の素材にして、壁と屋上が同じ模様に見えないようにする。瓦（RoofingTiles*）と茅葺きは陸屋根に合わない。tile_cm は API の dimensionX。"
+    },
+    {
+      "asset": "Metal032",
+      "tile_cm": 100,
+      "size_px": 512,
+      "saturation": 0.2,
+      "contrast": 0.5,
+      "depth": 0.25,
+      "materials": [
+        "metal_grey"
+      ],
+      "note": "灰色の金属（窓の方立て・縦フィン・手すり・照明柱・ベンチの脚）。塗装した鋼材に近い、模様の無い灰色の金属（tags: grey, smooth）。錆・傷の強い素材は新しい建物に合わない。API に寸法の登録が無いため、tile_cm は 100 cm と置いた。"
+    },
+    {
+      "asset": "Metal016",
+      "tile_cm": 100,
+      "size_px": 512,
+      "saturation": 0.2,
+      "contrast": 0.25,
+      "depth": 0.08,
+      "materials": [
+        "metal_white"
+      ],
+      "note": "白い金属（白い方立て・庇・手すり）。白く塗った鋼材（tags: light, painted, steel, white）。塗膜のムラが強く、そのままでは汚れて見えるのでColor の明暗を 1/4、凹凸の焼き込みを 0.08 に抑える。API に寸法の登録が無いため、tile_cm は 100 cm と置いた。"
+    },
+    {
+      "asset": "Wood049",
+      "tile_cm": 80,
+      "size_px": 512,
+      "saturation": 0.45,
+      "contrast": 1.0,
+      "depth": 0.2,
+      "materials": [
+        "wood"
+      ],
+      "note": "ベンチの座面などの木部。木目が横に通る家具用の板（tags: grain, horizontal, modern）。節の多い荒材は公共のベンチに合わない。tile_cm は API の dimensionX。"
+    },
+    {
+      "asset": "Planks029S",
+      "tile_cm": 240,
+      "size_px": 512,
+      "saturation": 0.4,
+      "contrast": 0.7,
+      "depth": 0.35,
+      "materials": [
+        "deck_wood"
+      ],
+      "note": "屋外のウッドデッキ（テラス）。デッキ材の板張り（tags: planks, terrace）。板の目地は AO と Displacement から焼く。tile_cm は API の dimensionX。"
     }
   ]
 }

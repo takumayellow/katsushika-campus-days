@@ -93,7 +93,7 @@ DETAIL_MAPS = ("AmbientOcclusion", "Displacement")
 # 取りに行く先と、受け取る大きさの上限。1K-JPG の zip は 1 本 4〜11 MB、中の jpg は大きくて 2.3 MB。
 SOURCE_HOST = "ambientcg.com"
 MAX_BYTES = 64 * 2**20
-ASSET_NAME = re.compile(r"[A-Za-z]+\d+")
+ASSET_NAME = re.compile(r"[A-Za-z]+\d+[A-Z]?")  # Planks029S のように末尾に版の 1 字が付く素材がある
 VARIANT_NAME = re.compile(r"\d+K-(JPG|PNG)")
 # マテリアル名は書き出すファイル名になる。CampusColors の名前と同じ書き方だけを通す
 MATERIAL_NAME = re.compile(r"[a-z0-9_]+")
