@@ -319,6 +319,40 @@ def test_2f_boards_stand_out_of_east_walls(built):
         assert max(xs) < xb, name
 
 
+def _classroom_furns(built):
+    """教室の家具の (名前, メッシュ, 黒板の面の X, 床, 天井)。2F の 4 室と 3F・4F の東西の 2 室。"""
+    furns = {n.split("_", 3)[3]: m for n, m in built.furns}
+    out = [(name.lower(), xa, i == 0, D.Z2, D.Z_CEIL2) for i, (name, xa, _) in enumerate(R2.rooms())]
+    for lv in (P3.L3, P4.L4):
+        out += [(lv.tag + "_" + k, xa, i == 0, lv.z, lv.ceil) for i, (k, xa, _) in enumerate(P3.rooms())]
+    return [(key, furns[key], R2.east_face(xa, first), z, ceil) for key, xa, first, z, ceil in out]
+
+
+def _face_normal(mb, f):
+    a, b, c = (np.array(mb.verts[k]) for k in f[:3])
+    n = np.cross(b - a, c - a)
+    return n / np.linalg.norm(n)
+
+
+def test_classrooms_have_a_projector_and_screen_case(built):
+    """各教室の天井から吊ったプロジェクター（竿の上端が天井に届き、レンズは東の黒板を向く）と、
+    黒板の上の時計より上のスクリーンの箱。どちらも天井を突き抜けない。"""
+    for key, mb, xf, z, ceil in _classroom_furns(built):
+        top = max(v[2] for v in mb.verts)
+        assert top == pytest.approx(ceil, abs=1e-3), key
+        case = [mb.verts[k] for f, m in zip(mb.faces, mb.face_mat)
+                if mb.mat_names[m] == R2.SCREEN_CASE for k in f]
+        assert case, key
+        assert min(v[2] for v in case) > z + R2.CLOCK_Z + R2.CLOCK_W, key
+        px = xf + R2.PROJ_DX
+        lens = [f for f, m in zip(mb.faces, mb.face_mat) if mb.mat_names[m] == R2.PROJ_LENS
+                and all(abs(mb.verts[k][0] - px) < 0.3 and mb.verts[k][2] > ceil - 0.6
+                        for k in f)]
+        assert len(lens) == 1, key
+        assert all(mb.verts[k][0] < px for k in lens[0]), key       # 本体の東の側
+        assert _face_normal(mb, lens[0])[0] < -0.99, key            # 東（-X）を向く
+
+
 def test_upper_floors_lit_by_lamps(built):
     """Unity（InteriorStage）は lamp_ がある建物では、いちばん低い lamp_ の階（床の高さ − 0.5）より上の
     看板・poi に明かりを足さない。そこにある看板・poi は、どれも lamp_ の届く範囲（9 m）に入る。"""
