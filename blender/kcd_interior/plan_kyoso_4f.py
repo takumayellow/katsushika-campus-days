@@ -13,6 +13,7 @@ from . import kit, shell
 from . import plan_kyoso_2f_rooms as R2
 from . import plan_kyoso_3f as P3
 from . import plan_kyoso_dims as D
+from . import plan_kyoso_shell as SH
 
 L4 = P3.Level("4f", D.Z4, D.Z_CEIL4, D.Z_TOP, D.Z_CEIL4 + 0.2)   # 壁は天井裏 0.2 m まで
 SILL = 0.9              # 窓の帯の腰壁（床から）
@@ -25,7 +26,7 @@ def _window_face(mb, xa, xb):
     """室の奥の外壁と窓の帯。外面は ROOMS3 の奥の線から WALL_T 外。"""
     y = D.ROOMS3[3] + P3.WALL_T
     shell.outer_wall(mb, (xb, y), (xa, y), L4.z, L4.ceil, glass=P3.GLASS, thick=P3.WALL_T,
-                     sill=SILL, header=HEADER, seg=P3.MULLION, mullion_mat=P3.FRAME)
+                     sill=SILL, header=HEADER, seg=P3.MULLION, mullion_mat=SH.SASH_UPPER)
 
 
 def roof(mb):
