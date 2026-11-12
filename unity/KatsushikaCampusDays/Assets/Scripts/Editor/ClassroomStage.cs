@@ -418,7 +418,7 @@ namespace KCD.Editor
                 animator.keepAnimatorStateOnDisable = true;
             }
 
-            renderers = EnabledRenderers(body);
+            renderers = MobStage.PaintableRenderers(body).ToArray();
             Material[][] original = new Material[renderers.Length][];
             for (int i = 0; i < renderers.Length; i++)
             {
@@ -464,21 +464,6 @@ namespace KCD.Editor
             }
 
             return npc;
-        }
-
-        /// <summary><see cref="MobStage.PaintNear"/> と同じ並びの renderer（有効なものだけ、子の順）。</summary>
-        private static Renderer[] EnabledRenderers(GameObject body)
-        {
-            var result = new List<Renderer>();
-            foreach (Renderer renderer in body.GetComponentsInChildren<Renderer>(true))
-            {
-                if (renderer.enabled)
-                {
-                    result.Add(renderer);
-                }
-            }
-
-            return result.ToArray();
         }
 
         /// <summary>屋内に NavMesh は無いので、歩く部品を外して動かないようにする。</summary>

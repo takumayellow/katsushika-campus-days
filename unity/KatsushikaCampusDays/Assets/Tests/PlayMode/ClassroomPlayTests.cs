@@ -127,7 +127,7 @@ namespace KCD.Tests
 
         /// <summary>
         /// 時限ごとの板書と、講師の 3 つの動き（書く・指す・振り返る）を撮る。
-        /// 板書は時刻ごとに後ろから、講師の動きは 2 限の終わり際に黒板の脇から、周期の中の 3 つの時点で撮る。
+        /// 板書は時刻ごとに後ろから、講師の動きは 2 限の始まってすぐに黒板の脇から、それぞれの動きに入って向きが収まった時点で撮る。
         /// </summary>
         private static IEnumerator ShootPeriods(List<Classroom> rooms, PlayerController player, DayNightCycle cycle,
             string folder, List<string> bad)
@@ -159,37 +159,86 @@ namespace KCD.Tests
                     Debug.Log("[classroom] " + name + " 板書 " + lines + " 行");
                 }
 
-                cycle.SetHours(11.9f);
+                if (!Classroom.Timetable.SessionAt(room.RoomId, day, LecturerShotHours).IsInClass)
+                {
+                    // 講師は授業中にしか出ないので、空きの時限の部屋は動きを撮らない。
+                    Debug.Log("[classroom] " + room.RoomId + " は " + LecturerShotHours + " 時に授業が無いので講師を撮らない");
+                    continue;
+                }
+
+                // ゲームの 1 分は実時間 0.5 秒なので、時限の終わり近くだと撮っている間に授業が終わる。始まってすぐの時刻で撮る。
+                cycle.SetHours(LecturerShotHours);
                 player.Teleport(back, Quaternion.LookRotation(-boardFacing).eulerAngles.y);
                 yield return PlayModeScenes.Advance(5, 0.5f);
                 yield return CloseDialogue();
                 Vector3 side = frame.position + boardFacing * 2.4f + Vector3.Cross(Vector3.up, boardFacing) * 2.6f;
                 side.y = room.FloorY + 1.7f;
                 Vector3 focus = room.Lecturer.position + Vector3.up * 1.3f;
-                string[] poses = { "write", "point", "turn" };
-                float[] at =
+                Classroom.LecturerMotion[] motions =
                 {
-                    Classroom.WriteSeconds * 0.7f,
-                    Classroom.WriteSeconds + Classroom.PointSeconds * 0.8f,
-                    Classroom.GestureCycle - 0.3f,
+                    Classroom.LecturerMotion.Write, Classroom.LecturerMotion.Point, Classroom.LecturerMotion.Turn,
                 };
-                for (int i = 0; i < poses.Length; i++)
+                foreach (Classroom.LecturerMotion motion in motions)
                 {
-                    yield return WaitForPhase(room.RoomId, at[i]);
-                    yield return Shoot(Path.Combine(folder, room.RoomId + "-lecturer-" + poses[i] + ".png"), side, focus);
+                    string path = Path.Combine(folder, room.RoomId + "-lecturer-" + motion.ToString().ToLowerInvariant() + ".png");
+                    bool caught = false;
+                    for (int attempt = 0; attempt < LecturerShotAttempts && !caught; attempt++)
+                    {
+                        // 時計を戻すのは授業中を保つため。動きの位相は Time.time で決まるので、これでは揃わない。
+                        cycle.SetHours(LecturerShotHours);
+                        yield return WaitForMotion(room, motion);
+                        yield return Shoot(path, side, focus);
+                        // 撮っている間に次の動きへ移っていたら、名前と画が食い違うので撮り直す。
+                        caught = AtPose(room, motion);
+                    }
+
+                    if (!caught)
+                    {
+                        bad.Add(room.RoomId + ": 講師の「" + motion + "」を撮れなかった");
+                    }
                 }
             }
         }
 
-        /// <summary>講師の動きの周期がその時点に来るまで待つ（実時間）。</summary>
-        private static IEnumerator WaitForPhase(string roomId, float phase)
+        /// <summary>講師の動きを撮る時刻（月曜 2 限の始まってすぐ、10:42）。</summary>
+        private const float LecturerShotHours = 10.7f;
+
+        /// <summary>
+        /// 講師が回り終えてから、さらに待つ秒数。手の重みは LecturerGesture.BlendSeconds（0.35 秒）で移るので、それより少し長く待つ。
+        /// いちばん短い「指す」は 1.5 秒で、向き替え（最大約 135 度を 200 度/秒で約 0.7 秒）とこの待ちを引いても 0.4 秒ほど残る。
+        /// </summary>
+        private const float MotionSettleSeconds = 0.4f;
+
+        /// <summary>撮っている間に動きが移ったときに撮り直す回数。残りの 0.4 秒を外すのはフレームが重いときだけなので、3 回あれば足りる。</summary>
+        private const int LecturerShotAttempts = 3;
+
+        /// <summary>講師がその動きをしていて、向きが回り切っているか。</summary>
+        private static bool AtPose(Classroom room, Classroom.LecturerMotion motion)
         {
-            for (int i = 0; i < 2000; i++)
+            return room.Motion == motion && room.LecturerFacingSettled;
+        }
+
+        /// <summary>講師がその動きの向きまで回り切り、手が収まるまで待つ。</summary>
+        private static IEnumerator WaitForMotion(Classroom room, Classroom.LecturerMotion motion)
+        {
+            float settledAt = -1f;
+            float giveUp = Time.time + Classroom.GestureCycle * 4f;
+            while (Time.time < giveUp)
             {
-                float now = Mathf.Repeat(Time.time + Classroom.PhaseOffset(roomId), Classroom.GestureCycle);
-                if (now >= phase && now < phase + 0.25f)
+                if (AtPose(room, motion))
                 {
-                    yield break;
+                    if (settledAt < 0f)
+                    {
+                        settledAt = Time.time;
+                    }
+                    else if (Time.time - settledAt >= MotionSettleSeconds)
+                    {
+                        yield break;
+                    }
+                }
+                else
+                {
+                    settledAt = -1f;
                 }
 
                 yield return null;

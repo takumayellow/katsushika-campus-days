@@ -39,6 +39,9 @@ namespace KCD
         /// <summary>講師が向きを変える速さ（度/秒）。</summary>
         private const float TurnDegreesPerSecond = 200f;
 
+        /// <summary>向きの残りがこの角度（度）より小さければ、回り切ったとみなす。</summary>
+        private const float FacingSettledDegrees = 1f;
+
         private static readonly int SitHash = Animator.StringToHash("Sit");
         private static readonly int TalkHash = Animator.StringToHash("Talk");
 
@@ -134,6 +137,27 @@ namespace KCD
         /// <summary>いま授業をしているか（最後に確かめた時点）。</summary>
         public bool InSession => _session.IsInClass;
 
+        /// <summary>講師の 1 周期の中の動き。</summary>
+        public enum LecturerMotion
+        {
+            None,
+            Write,
+            Point,
+            Turn,
+        }
+
+        /// <summary>
+        /// 最後のフレームで講師がしていた動き。授業中でないときと講師がいないときは None。
+        /// 動きの画を撮るテストが、撮る時点の動きと名前の一致を待つために読む。
+        /// </summary>
+        public LecturerMotion Motion { get; private set; }
+
+        /// <summary>
+        /// 講師がいまの動きの向きまで回り切っているか（最後のフレーム）。
+        /// 動きの画を撮るテストが、向き替えの途中を撮らないために読む。
+        /// </summary>
+        public bool LecturerFacingSettled { get; private set; }
+
         /// <summary>SceneBuilder（ClassroomStage）が組み立てた中身を渡す。</summary>
         public void Configure(string roomId, float floorY, Bounds room, GameObject[] people, Seat[] seats,
             Transform lecturer, Transform lecturerBody, Renderer[] lecturerRenderers, LecturerLook[] looks,
@@ -224,6 +248,11 @@ namespace KCD
             {
                 AnimateStudents(Time.time);
                 AnimateLecturer(Time.time, Time.deltaTime);
+            }
+            else
+            {
+                Motion = LecturerMotion.None;
+                LecturerFacingSettled = false;
             }
         }
 
@@ -466,6 +495,8 @@ namespace KCD
         {
             if (_lecturer == null || _boardFrame == null)
             {
+                Motion = LecturerMotion.None;
+                LecturerFacingSettled = false;
                 return;
             }
 
@@ -484,6 +515,7 @@ namespace KCD
                     + Vector3.up * (0.02f * Mathf.Sin(phase * 9f));
                 facing = -toRoom;
                 Reach(onBoard + toRoom * 0.02f, 1f, onBoard);
+                Motion = LecturerMotion.Write;
             }
             else if (phase < WriteSeconds + PointSeconds)
             {
@@ -492,6 +524,7 @@ namespace KCD
                 facing = (toRoom - right).normalized;
                 Reach(Vector3.Lerp(_lecturer.position + Vector3.up * 1.35f, text, 0.55f), 0.9f, _audience);
                 talking = true;
+                Motion = LecturerMotion.Point;
             }
             else
             {
@@ -499,10 +532,12 @@ namespace KCD
                 _gesture?.Release();
                 _gesture?.LookAt(_audience);
                 talking = true;
+                Motion = LecturerMotion.Turn;
             }
 
             Quaternion goal = Quaternion.LookRotation(facing, Vector3.up);
             _lecturer.rotation = Quaternion.RotateTowards(_lecturer.rotation, goal, TurnDegreesPerSecond * deltaTime);
+            LecturerFacingSettled = Quaternion.Angle(_lecturer.rotation, goal) < FacingSettledDegrees;
             if (_hasTalk && _lecturerAnimator != null)
             {
                 _lecturerAnimator.SetBool(TalkHash, talking);

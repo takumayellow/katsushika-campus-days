@@ -326,22 +326,34 @@ namespace KCD.Editor
         /// <summary>塗る renderer（輪郭の反転ハル <c>&lt;id&gt;_outline</c> は取り込み時に止めてあるので除く）と、上着があるか。</summary>
         private static List<Renderer> PaintedRenderers(GameObject body, MobSchedule.Variant variant, out bool hasOuter)
         {
-            var renderers = new List<Renderer>();
+            List<Renderer> renderers = PaintableRenderers(body);
             hasOuter = false;
-            foreach (Renderer renderer in body.GetComponentsInChildren<Renderer>(true))
+            foreach (Renderer renderer in renderers)
             {
-                if (!renderer.enabled)
-                {
-                    continue;
-                }
-
-                renderers.Add(renderer);
                 foreach (Material material in renderer.sharedMaterials)
                 {
                     if (material != null && System.Array.IndexOf(OuterSlots, SlotOf(variant.BodyId, material.name)) >= 0)
                     {
                         hasOuter = true;
                     }
+                }
+            }
+
+            return renderers;
+        }
+
+        /// <summary>
+        /// 塗る renderer（有効なものだけ、子の順）。<see cref="PaintNear"/> の戻り値はこの並びなので、
+        /// 塗った材質を後から差し替える側（講義棟の教室の講師, #439）もこれで renderer を集める。
+        /// </summary>
+        internal static List<Renderer> PaintableRenderers(GameObject body)
+        {
+            var renderers = new List<Renderer>();
+            foreach (Renderer renderer in body.GetComponentsInChildren<Renderer>(true))
+            {
+                if (renderer.enabled)
+                {
+                    renderers.Add(renderer);
                 }
             }
 

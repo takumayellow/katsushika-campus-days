@@ -52,8 +52,8 @@
     {
       "field": "math",
       "body": "prof",
-      "hair": "#3a3532",
-      "top": "#4a5868",
+      "hair": "#5f5a55",
+      "top": "#3d4656",
       "bottom": "#3b3f46",
       "shoes": "#2a2522",
       "height": 1.74
@@ -70,9 +70,9 @@
     {
       "field": "info",
       "body": "prof",
-      "hair": "#1f1d22",
-      "top": "#3f5a4a",
-      "bottom": "#2f3440",
+      "hair": "#77726c",
+      "top": "#55575c",
+      "bottom": "#2f3136",
       "shoes": "#1e1e22",
       "height": 1.77
     }
