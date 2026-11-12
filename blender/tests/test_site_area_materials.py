@@ -124,6 +124,41 @@ def test_court_axes_follow_the_long_sides():
     assert 0.0 < ang < math.degrees(math.atan2(1.0, 36.0))
 
 
+def _split_edge(poly, i, parts):
+    """poly の i 番目の辺（poly[i] → poly[i + 1]）を parts 本に等分した多角形。"""
+    a, b = poly[i], poly[(i + 1) % len(poly)]
+    mids = [geom.add(a, geom.mul(geom.sub(b, a), k / parts)) for k in range(1, parts)]
+    return poly[:i + 1] + mids + poly[i + 1:]
+
+
+@pytest.mark.parametrize("split", [(0,), (0, 1)], ids=["one_long_side", "both_long_sides"])
+def test_court_axes_follow_the_long_sides_when_they_are_split(split):
+    """長辺が 3 本に割れて、割れた 1 本（12.2 m）が短辺（17.6 m）より短くなっても長手の向きは変わらない。"""
+    u = geom.normalize((math.cos(math.radians(70.45)), math.sin(math.radians(70.45))))
+    poly = geom.ensure_ccw(_rotated_rect((10.0, 5.0), u, 36.7, 17.6))
+    i_long = [i for i in range(4) if geom.length(geom.sub(poly[(i + 1) % 4], poly[i])) > 30.0]
+    assert len(i_long) == 2
+    for i in sorted((i_long[k] for k in split), reverse=True):
+        poly = _split_edge(poly, i, 3)
+    _c, d = site.court_axes(poly)
+    assert abs(geom.dot(d, u)) == pytest.approx(1.0)
+
+
+def test_build_tennis_court_rejects_a_pitch_smaller_than_the_court():
+    """区画に収まらないコートは敷かずに止める（はみ出すと区画の外の地面や道と重なってちらつく）。"""
+    poly = _rotated_rect((0.0, 0.0), (1.0, 0.0), site.COURT_LEN - 1.0, 18.3)
+    with pytest.raises(ValueError):
+        site.build_tennis_court(MeshBuilder("t"), poly)
+
+
+def test_build_tennis_court_rejects_a_notch_that_cuts_into_the_court():
+    """凹んだ区画で 4 隅は内側でも、凹みがコートに食い込んでいれば止める。"""
+    hl, hw = 18.3, 9.15
+    poly = [(-hl, -hw), (hl, -hw), (hl, hw), (1.0, hw), (0.0, 0.0), (-1.0, hw), (-hl, hw)]
+    with pytest.raises(ValueError):
+        site.build_tennis_court(MeshBuilder("t"), poly)
+
+
 def test_build_tennis_court_lays_the_court_in_the_middle_of_the_pitch():
     u = geom.normalize((0.3346, 0.9424))
     c0 = (173.0, 70.2)

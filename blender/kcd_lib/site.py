@@ -186,15 +186,34 @@ def _area_material(a):
     return _KIND_MAT.get(a["kind"], "grass")
 
 
+# 長手の向きを決めるとき、向きの差がこの角度以内の辺を同じ側の辺とみなす
+COURT_AXIS_TOL_DEG = 20.0
+
+
 def court_axes(poly):
-    """コートの中心（区画の重心）と長手の向き（長い 2 辺の向きの平均。単位ベクトル）。"""
+    """コートの中心（区画の重心）と長手の向き（単位ベクトル）。
+
+    辺を向きの近いもの（差が COURT_AXIS_TOL_DEG 以内、逆向きも同じとみなす）でまとめ、長さの合計が
+    最も大きいまとまりの辺の向きを平均する。長辺が何本かに割れて、割れた 1 本が短辺より短くなっても、
+    長手は長辺の側で決まる。"""
     poly = geom.ensure_ccw(geom.dedup(poly))
     n = len(poly)
-    edges = sorted((geom.sub(poly[(i + 1) % n], poly[i]) for i in range(n)), key=geom.length, reverse=True)
-    e0, e1 = geom.normalize(edges[0]), geom.normalize(edges[1])
-    if geom.dot(e0, e1) < 0:
-        e1 = geom.mul(e1, -1.0)
-    return geom.centroid(poly), geom.normalize(geom.add(e0, e1))
+    if n < 3:
+        raise ValueError("コートの区画の頂点が 3 つ未満")
+    edges = [geom.sub(poly[(i + 1) % n], poly[i]) for i in range(n)]
+    dirs = [geom.normalize(e) for e in edges]
+    cos_tol = math.cos(math.radians(COURT_AXIS_TOL_DEG))
+
+    def group(ref):
+        return [k for k, d in enumerate(dirs) if abs(geom.dot(d, ref)) >= cos_tol]
+
+    best = max((group(d) for d in dirs), key=lambda g: sum(geom.length(edges[k]) for k in g))
+    ref = dirs[max(best, key=lambda k: geom.length(edges[k]))]
+    total = (0.0, 0.0)
+    for k in best:
+        d = dirs[k]
+        total = geom.add(total, d if geom.dot(d, ref) > 0 else geom.mul(d, -1.0))
+    return geom.centroid(poly), geom.normalize(total)
 
 
 def _box(s0, s1, t0, t1):
@@ -230,7 +249,14 @@ def build_tennis_court(mb, poly):
         return [geom.add(c, p) for p in f.rect(s0, t0, s1, t1)]
 
     hl, hw = COURT_LEN / 2, COURT_WIDTH / 2
-    mb.add_ngon_flat(place(-hl, -hw, hl, hw), Z_COURT, "hardcourt_inner")
+    corners = place(-hl, -hw, hl, hw)
+    # 4 隅が区画の内側にあり、区画の頂点が 1 つもコートの内側に入っていなければ、コートは区画に収まる
+    # （凹んだ区画で、辺だけがコートに食い込む場合も頂点の側で捕まえる）
+    poking = any(abs(s) < hl and abs(t) < hw for s, t in (f.uv(geom.sub(p, c)) for p in poly))
+    if poking or not all(geom.point_in_poly(p, poly) for p in corners):
+        # はみ出した青と白線は区画の外の地面や道と同じ高さで重なり、ちらつく
+        raise ValueError("ハードコートが区画に収まらない（区画の大きさか長手の向きが合わない）")
+    mb.add_ngon_flat(corners, Z_COURT, "hardcourt_inner")
     for r in court_lines():
         mb.add_ngon_flat(place(*r), Z_COURT_LINE, "line_white")
 

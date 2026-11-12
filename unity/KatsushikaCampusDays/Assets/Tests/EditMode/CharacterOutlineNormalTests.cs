@@ -17,6 +17,10 @@ namespace KCD.Tests
     /// 40〜60° ずれる（内積 0.5〜0.75）。そこで一致の度合いではなく、軸の取り違えを見分ける。
     /// 軸の並びか向きを 1 つでも取り違えると、mirai では内積の平均が 0.49 以下に下がる。
     /// 2026-09-30 の 7 体の実測は、平均 0.936〜0.984、内側を向く頂点 0.34% 以下。
+    ///
+    /// 顔の材質の頂点だけは、tangent に頭の前方向を入れ、殻の向きを法線へ移している (#14、FaceShading)。
+    /// w は FaceShading.FrameTag + (1 − 太さの倍率) で、Outline パスはその頂点を法線の向きへ押す。
+    /// 顔の頂点では法線そのものが殻の向きなので、陰の法線との比較から外す。
     /// </summary>
     public sealed class CharacterOutlineNormalTests
     {
@@ -33,6 +37,11 @@ namespace KCD.Tests
 
         /// <summary>輪郭線を細くした頂点と見なす w（太さの倍率 0.5 未満。鼻の NOSE_OUTLINE_WIDTH は 0.3）。</summary>
         private const float ThinOutlineW = OutlineNormalTag + 0.5f;
+
+        private static bool IsFaceFrame(float w)
+        {
+            return w >= FaceShading.FrameTag && w <= FaceShading.FrameTag + 1f;
+        }
 
         [Test]
         public void 輪郭線の殻の向きが_tangent_に入っている()
@@ -79,7 +88,9 @@ namespace KCD.Tests
             int count = 0;
             foreach (Vector4 t in mesh.tangents)
             {
-                count += t.w > ThinOutlineW ? 1 : 0;
+                bool thinBody = t.w > ThinOutlineW && t.w <= OutlineNormalTag + 1f;
+                bool thinFace = t.w > FaceShading.FrameTag + 0.5f && IsFaceFrame(t.w);
+                count += thinBody || thinFace ? 1 : 0;
             }
 
             return count;
@@ -101,9 +112,21 @@ namespace KCD.Tests
 
             double dotSum = 0;
             int outward = 0;
+            int compared = 0;
             for (int i = 0; i < tangents.Length; i++)
             {
                 Vector4 t = tangents[i];
+                if (IsFaceFrame(t.w))
+                {
+                    if (Mathf.Abs(new Vector3(t.x, t.y, t.z).magnitude - 1f) > 1e-3f
+                        || Mathf.Abs(normals[i].magnitude - 1f) > 1e-3f)
+                    {
+                        return string.Format("顔の頂点 {0} の tangent が {1}、法線が {2}", i, t, normals[i]);
+                    }
+
+                    continue;
+                }
+
                 var outline = new Vector3(t.x, t.y, t.z);
                 if (t.w < OutlineNormalTag || t.w > OutlineNormalTag + 1f || Mathf.Abs(outline.magnitude - 1f) > 1e-3f)
                 {
@@ -113,10 +136,16 @@ namespace KCD.Tests
                 float dot = Vector3.Dot(outline, normals[i]);
                 dotSum += dot;
                 outward += dot > 0f ? 1 : 0;
+                compared++;
             }
 
-            double meanDot = dotSum / tangents.Length;
-            float outwardShare = (float)outward / tangents.Length;
+            if (compared == 0)
+            {
+                return null;
+            }
+
+            double meanDot = dotSum / compared;
+            float outwardShare = (float)outward / compared;
             if (meanDot < MinMeanDot)
             {
                 return string.Format("殻の向きと陰の法線の内積の平均が {0:F3}", meanDot);
