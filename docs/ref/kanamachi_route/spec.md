@@ -80,4 +80,16 @@ JR 金町駅を降り、北口から東京理科大学葛飾キャンパスへ�
 
 同じ駅中心を `tools/osm_common.py` の原点・投影に入れると x ≈ +672 m、z ≈ −267 m。現在の `WorldBounds.DefaultArea` の東端 x = +340 m の外である。したがって、駅から開始できるシーンには東側の区画拡張、見えない壁と実行時の境界の更新が必要。範囲と出口位置は北口の現地記録と OSM 折れ線から確定する。#41 の寮ルート用の bbox と `route.json` は書き換えない。
 
+## 寮ルートから再利用できる部分と駅側で分ける部分
+
+| コード・データ | 再利用の方針 | 理由 |
+| --- | --- | --- |
+| `tools/osm_common.py` | 原点・投影をそのまま使う | `campus.json` と駅側の座標を一致させる |
+| `blender/kcd_route/ground.py` の道路重複除外、`roads.py` の面・線の作り方 | 考え方を参考にする | `campus.json` と重なる道を二重に敷かず、舗装の高さをそろえる |
+| `RouteStage.Dress` の名前に応じた当たり判定とレイヤー設定 | 駅側モデルにも同じ約束を適用する | 歩行面・建物・背景の衝突と描画を既存シーンに合わせる |
+| `DormRoute.Info`、`OpenWestGate`、`BuildAnnexWalls`、`WidenWorldBounds` | 駅の門や範囲にそのまま使わない | 寮の西門、x が負の増築区画、寮の sidecar に固有 |
+| `data/osm/route.json` と `route_query.ql` | 駅側とは別ファイルのまま保つ | 現在の bbox は駅に届かず、#41 の選別結果・寮のデータを維持する |
+
+`WorldBounds.HalfExtent` は 340 m だが、既存の地面の継ぎ目は `blender/kcd_route/ground.py` の `GROUND_E = 350` m。駅側へ地面を足すときは、**見えない壁の開口 x=340 と地面の継ぎ目 x=350 を別々に扱う**。駅側も `WorldBoundsStage` の壁・実行時の `WorldBounds._area`・地面の衝突面を同時に更新し、駅から入るときとキャンパスへ戻るときの両方向で通れるか Unity で確認する。
+
 この節はコードの現状だけを述べる。駅ルートの実際の折れ線や追加区画の寸法は、地図データと現地確認前には決めない。
