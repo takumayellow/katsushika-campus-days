@@ -18,7 +18,7 @@ namespace KCD.Editor
         /// <summary>取り込み規則を変えたら上げる。既存の FBX が取り込み直される。</summary>
         public override uint GetVersion()
         {
-            return 9;
+            return 10;
         }
 
         /// <summary>
@@ -51,6 +51,8 @@ namespace KCD.Editor
                     + " 枚ある。和柄の Generated 座標はメッシュごとの箱で焼くので、Blender と柄の大きさがずれる");
             }
 
+            string characterId = CharacterIdOf(assetPath);
+            int faces = 0;
             foreach (SkinnedMeshRenderer renderer in root.GetComponentsInChildren<SkinnedMeshRenderer>(true))
             {
                 if (renderer.name.EndsWith("_outline", System.StringComparison.Ordinal))
@@ -69,7 +71,105 @@ namespace KCD.Editor
                 {
                     BakeGeneratedCoordinates(root.transform, renderer);
                 }
+
+                faces += BakeFaceFrame(root.transform, renderer, characterId) ? 1 : 0;
             }
+
+            if (faces == 0)
+            {
+                Debug.LogWarning("[KCD] " + assetPath + " に顔の材質（face）の面が無いので、頭の向きを焼けなかった。"
+                    + "顔の陰は物体の正面の向きで付く");
+            }
+        }
+
+        /// <summary>
+        /// 顔の材質の頂点に、顔の陰を決める頭の前方向と顔の左右の位置を焼く (#14)。
+        ///
+        /// KCD/Toon の _FACE_SHADOW_ON は、顔の明暗を法線ではなくこの 2 つで決める（FaceShading.Lit）。
+        /// 法線で塗ると、鼻や頬のふくらみで陰がまだらになり、表情のブレンドシェイプで陰が揺れる。
+        /// 頭の前方向は tangent の xyz に入れる。tangent はスキニングで頭の骨と一緒に回るので、首を振っても陰が付いてくる。
+        /// tangent に入っていた輪郭線の殻の向き（BakeOutlineNormals）は法線へ移し、太さの倍率は w に残す
+        /// （w = FaceShading.FrameTag + (1 − 太さの倍率)）。顔の陰は法線を使わないので、法線は殻の向きでよい。
+        /// 左右の位置は UV の 2 枚目の x（髪の天使の輪の座標。顔の頂点では使っていない）に入れる。
+        /// モデルの根元の空間（+Z が正面、+X がキャラの右）で、顔の面の左右の端を ±FaceShading.EdgeSine にした値。
+        /// どちらも既にある頂点のデータを書き換えるだけなので、頂点のデータは増えない。
+        /// </summary>
+        private static bool BakeFaceFrame(Transform root, SkinnedMeshRenderer renderer, string characterId)
+        {
+            Mesh mesh = renderer.sharedMesh;
+            if (mesh == null || mesh.vertexCount == 0)
+            {
+                return false;
+            }
+
+            var face = new HashSet<int>();
+            Material[] materials = renderer.sharedMaterials;
+            for (int i = 0; i < mesh.subMeshCount && i < materials.Length; i++)
+            {
+                if (materials[i] != null && IsFaceMaterial(materials[i].name, characterId))
+                {
+                    face.UnionWith(mesh.GetIndices(i));
+                }
+            }
+
+            Vector4[] tangents = mesh.tangents;
+            Vector3[] normals = mesh.normals;
+            var sides = new List<Vector2>();
+            mesh.GetUVs(FaceShading.SideUvChannel, sides);
+            if (face.Count == 0 || tangents.Length != mesh.vertexCount || normals.Length != mesh.vertexCount
+                || sides.Count != mesh.vertexCount)
+            {
+                return false;
+            }
+
+            Matrix4x4 toRoot = root.worldToLocalMatrix * renderer.transform.localToWorldMatrix;
+            Vector3[] vertices = mesh.vertices;
+            float minX = float.PositiveInfinity;
+            float maxX = float.NegativeInfinity;
+            foreach (int index in face)
+            {
+                float x = toRoot.MultiplyPoint3x4(vertices[index]).x;
+                minX = Mathf.Min(minX, x);
+                maxX = Mathf.Max(maxX, x);
+            }
+
+            float center = 0.5f * (minX + maxX);
+            float halfWidth = 0.5f * (maxX - minX);
+            Vector3 forward = toRoot.inverse.MultiplyVector(Vector3.forward).normalized;
+            foreach (int index in face)
+            {
+                Vector4 t = tangents[index];
+                bool tagged = t.w >= OutlineNormalTag && t.w <= OutlineNormalTag + 1f;
+                float thin = tagged ? t.w - OutlineNormalTag : 0f;
+                if (tagged)
+                {
+                    normals[index] = new Vector3(t.x, t.y, t.z);
+                }
+
+                tangents[index] = new Vector4(forward.x, forward.y, forward.z, FaceShading.FrameTag + thin);
+                float side = FaceShading.Side(toRoot.MultiplyPoint3x4(vertices[index]).x, center, halfWidth);
+                sides[index] = new Vector2(side, sides[index].y);
+            }
+
+            mesh.normals = normals;
+            mesh.tangents = tangents;
+            mesh.SetUVs(FaceShading.SideUvChannel, sides);
+            return true;
+        }
+
+        /// <summary>顔の材質か。取り込み中は FBX の名前（face, face.001）か、差し替えた後の名前（mirai_face）。</summary>
+        public static bool IsFaceMaterial(string materialName, string characterId)
+        {
+            string name = materialName.Trim().ToLowerInvariant();
+            int dot = name.IndexOf('.');
+            name = dot > 0 ? name.Substring(0, dot) : name;
+            string prefix = characterId.ToLowerInvariant() + "_";
+            if (name.StartsWith(prefix, System.StringComparison.Ordinal))
+            {
+                name = name.Substring(prefix.Length);
+            }
+
+            return name == "face";
         }
 
         /// <summary>

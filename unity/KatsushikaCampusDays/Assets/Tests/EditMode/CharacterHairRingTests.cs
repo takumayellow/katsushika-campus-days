@@ -212,9 +212,17 @@ namespace KCD.Tests
                 return string.Format("天使の輪を置く高さの髪の頂点が 前 {0} / 後ろ {1}", front, back);
             }
 
-            // 髪でない頂点は (1, 1)。1 枚目の UV（顔のタイル）と取り違えていないことも、ここで分かる
-            int others = Enumerable.Range(0, mesh.vertexCount).Count(i => !hair.Contains(i) && ring[i] != Vector2.one);
+            // 髪でない頂点は (1, 1)。1 枚目の UV（顔のタイル）と取り違えていないことも、ここで分かる。
+            // 顔の頂点だけは x に顔の左右の位置が入る（FaceShading。天使の輪は髪の材質しか読まない）ので y だけを見る
+            Vector4[] tangents = mesh.tangents;
+            int others = Enumerable.Range(0, mesh.vertexCount).Count(i => !hair.Contains(i)
+                && (IsFaceFrame(tangents, i) ? ring[i].y != 1f : ring[i] != Vector2.one));
             return others == 0 ? null : string.Format("髪でない頂点 {0} 個の座標が (1, 1) でない", others);
+        }
+
+        private static bool IsFaceFrame(Vector4[] tangents, int i)
+        {
+            return i < tangents.Length && tangents[i].w >= FaceShading.FrameTag && tangents[i].w <= FaceShading.FrameTag + 1f;
         }
     }
 }
