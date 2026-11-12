@@ -191,6 +191,7 @@
     "ui.npc.ta_306": "TA",
     "ui.npc.pc_306": "PC",
     "ui.npc.class_entry": "Student",
+    "ui.npc.class_break": "Student",
     "ui.npc.class_prof": "Lecturer",
     "ui.npc.class_student": "Student",
     "ui.npc.tateishi": "Tateishi Minato",

@@ -160,6 +160,20 @@
           "ja": "V[X] = 91/6 − 49/4 = 35/12",
           "en": "V[X] = 91/6 − 49/4 = 35/12"
         }
+      ],
+      "quiz": [
+        {
+          "ja": "小テスト（15 分）　出席を兼ねる",
+          "en": "Quiz (15 min) — counts as attendance"
+        },
+        {
+          "ja": "問1　硬貨を 4 枚投げる。表と裏の出方は何通りか",
+          "en": "Q1  Toss 4 coins. How many head/tail patterns are there?"
+        },
+        {
+          "ja": "問2　表がちょうど 2 枚になる確率を求めよ",
+          "en": "Q2  Find the probability of exactly 2 heads."
+        }
       ]
     },
     {
@@ -300,6 +314,20 @@
           "ja": "enqueue(1)　enqueue(2)　dequeue() → 1",
           "en": "enqueue(1)  enqueue(2)  dequeue() → 1"
         }
+      ],
+      "quiz": [
+        {
+          "ja": "小テスト（15 分）　出席を兼ねる",
+          "en": "Quiz (15 min) — counts as attendance"
+        },
+        {
+          "ja": "問1　8 ビットで表せる値は何通りか",
+          "en": "Q1  How many different values fit in 8 bits?"
+        },
+        {
+          "ja": "問2　スタックに 1, 2, 3 の順に積み、2 回取り出す。残る値は",
+          "en": "Q2  Push 1, 2, 3 onto a stack and pop twice. What is left?"
+        }
       ]
     },
     {
@@ -355,6 +383,20 @@
         {
           "ja": "1 + 1　→　S = 0, C = 1",
           "en": "1 + 1  →  S = 0, C = 1"
+        }
+      ],
+      "quiz": [
+        {
+          "ja": "小テスト（15 分）　出席を兼ねる",
+          "en": "Quiz (15 min) — counts as attendance"
+        },
+        {
+          "ja": "問1　入力が 3 本の真理値表は何行か",
+          "en": "Q1  How many rows does a 3-input truth table have?"
+        },
+        {
+          "ja": "問2　半加算器で A = 1, B = 1 のときの S と C",
+          "en": "Q2  Half adder, A = 1, B = 1: find S and C."
         }
       ]
     }
@@ -479,6 +521,23 @@
           ""
         ]
       ]
+    }
+  ],
+  "quizzes": [
+    {
+      "room": "202",
+      "weekday": 1,
+      "period": 1
+    },
+    {
+      "room": "304",
+      "weekday": 3,
+      "period": 2
+    },
+    {
+      "room": "104",
+      "weekday": 3,
+      "period": 3
     }
   ]
 }

@@ -43,6 +43,34 @@
           "text_en": "(I'll watch from the back for a bit.)"
         }
       ]
+    },
+    {
+      "id": "t_quiz",
+      "lines": [
+        {
+          "text": "（小声で）いま小テスト中。始めの 15 分で、出席も兼ねてるんだって。",
+          "text_en": "(whispering) There's a quiz on. The first 15 minutes, and it counts as attendance."
+        },
+        {
+          "speaker": "自分",
+          "text": "（終わるまで静かにしていよう。）",
+          "text_en": "(I'll stay quiet until it's over.)"
+        }
+      ]
+    },
+    {
+      "id": "t_quiz_minato",
+      "lines": [
+        {
+          "text": "（小声で）小テスト中だよ。何通りあるか数える問題が出てる。",
+          "text_en": "(whispering) Quiz time. There's a question about counting how many ways."
+        },
+        {
+          "speaker": "自分",
+          "text": "（2 を何回かけるか数えればいい。みなとと黒板の問題を解いたときと同じ考え方だ。）",
+          "text_en": "(Just count how many times to multiply by 2. Same idea as the board problem I solved with Minato.)"
+        }
+      ]
     }
   ]
 }
