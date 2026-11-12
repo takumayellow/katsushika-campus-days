@@ -173,7 +173,8 @@ def build_level(c, lv, face, rng, kinds):
                     thickness=0.0)
         wall = room_shell(c, lv, key, xa, xb, first=i == 0, last=i == len(rs) - 1, face=face)
         R2.corridor_wall(wall, xa, xb, lv.z, rng, y=CORR[3], ang=D.FACE_MALL)
-        R2.classroom_furniture(c.furn(lv.tag + "_" + key), xa, i == 0, DESK_Y, lv.z)
+        R2.classroom_furniture(c.furn(lv.tag + "_" + key), xa, i == 0, DESK_Y, lv.z,
+                               lv.ceil - lv.z)
         R2.corridor_props(c.furn(lv.tag + "_corr_" + key), kinds[i], xa, xb, lv.z,
                           y=CORR[3], ang=D.FACE_MALL)
         pts.append(((xa + xb) * 0.5, (D.ROOMS3[1] + D.ROOMS3[3]) * 0.5))
