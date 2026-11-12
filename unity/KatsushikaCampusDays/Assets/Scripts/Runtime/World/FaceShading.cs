@@ -46,11 +46,11 @@ namespace KCD
         }
 
         /// <summary>
-        /// シェーダの FaceLit と同じ式（顔の明部の割合、0〜1。影の減衰は掛けない。境目は softness の幅）。
-        /// headForward は頭の前方向、side は焼いた左右の位置、lightDirection は光へ向かう向き
+        /// シェーダの FaceLit と同じ式で、変数名も揃えてある（顔の明部の割合、0〜1。影の減衰は掛けない。境目は softness の幅）。
+        /// headForward は頭の前方向、u は焼いた左右の位置、lightDirection は光へ向かう向き
         /// （URP の Light.direction と同じ向き）。すべてワールド空間。
         /// </summary>
-        public static float Lit(Vector3 headForward, float side, Vector3 lightDirection, float softness, float bias)
+        public static float Lit(Vector3 headForward, float u, Vector3 lightDirection, float softness, float bias)
         {
             var forward = new Vector2(headForward.x, headForward.z);
             forward *= 1f / Mathf.Sqrt(Mathf.Max(Vector2.Dot(forward, forward), 1e-6f));
@@ -59,8 +59,8 @@ namespace KCD
             float lengthH = lightH.magnitude;
             Vector2 lightN = lightH / Mathf.Max(lengthH, 1e-4f);
             float front = Vector2.Dot(forward, lightN);
-            float across = Vector2.Dot(right, lightN);
-            float facing = side * across + Mathf.Sqrt(Mathf.Clamp01(1f - side * side)) * front;
+            float side = Vector2.Dot(right, lightN);
+            float facing = u * side + Mathf.Sqrt(Mathf.Clamp01(1f - u * u)) * front;
             float threshold = Mathf.Lerp(-1f - 2f * softness, -bias * (1f - Mathf.Abs(front)), Mathf.Clamp01(lengthH * 2f));
             return SmoothStep(threshold - softness, threshold + softness, facing);
         }
