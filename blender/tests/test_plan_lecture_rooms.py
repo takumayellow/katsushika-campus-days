@@ -123,6 +123,25 @@ def test_open_leaves_slide_clear_of_the_other_openings():
                 assert not [g for g in W.halls(fl, side) if lo < g[1] and hi > g[0]], (fl, x)
 
 
+def test_edge_strips_run_along_both_room_walls_under_the_ceiling():
+    """廊下の天井際の光の帯は、南北の教室の側の壁ぎわを西端から東端まで切れ目なく続き、廊下の内に収まる。"""
+    for fl in RD.FLOORS:
+        spans = W.edge_strip_spans(fl)
+        for y_wall, south in ((D.Y_ROOM_S1, True), (D.Y_ROOM_N0, False)):
+            row = sorted(s for s in spans if (s[2] < W.Y_MID) == south)
+            assert row[0][0] == pytest.approx(W.X_WALL0 + 0.1) and row[-1][1] == W.x_wall1(fl), fl
+            assert all(a[1] == b[0] for a, b in zip(row, row[1:])), fl
+            for _a, _b, y0, y1 in row:
+                assert D.Y_ROOM_S1 < y0 < y1 < D.Y_ROOM_N0
+                assert min(abs(y0 - y_wall), abs(y1 - y_wall)) == pytest.approx(W.EDGE_GAP)
+
+
+def test_room_ceiling_lights_are_thin_lines_along_the_desks():
+    """教室の天井の照明は、机と同じ南北に長い細い線（4F の教室の写真）。"""
+    w, l = R.PANEL
+    assert l >= 6 * w
+
+
 def test_wall_pieces_never_cut_through_an_opening():
     hw = RD.DOOR_W * 0.5 + W.FRAME_OUT
     for fl in RD.FLOORS:
@@ -311,8 +330,25 @@ def test_type_a_rooms_have_rows_that_leave_a_back_aisle(upper):
         if room[6] != "A":
             continue
         assert R.rows(room) >= 2, room[0]
-        backs = _mat_xs(_room_furn(c, room[0]), "lecture_panel_dark")
+        backs = _mat_xs(_room_furn(c, room[0]), "chair_grey")
         assert min(backs) - RD.room_faces(room)[0] >= 1.4, room[0]
+
+
+def test_desk_bench_has_a_dark_front_panel_and_a_light_grey_back():
+    """長椅子の背（いちばん高い箱）は明るい灰色、机の前板は濃い灰色（4F の教室の写真）。"""
+    from kcd_interior import furn_lecture as FL
+    boxes = []
+
+    class Rec:
+        def box_nb(self, _mb, *a):
+            boxes.append((a[5], a[6]))
+
+        def box_open(self, _mb, *a, skip=()):
+            boxes.append((a[5], a[6]))
+
+    FL.desk_bench(None, Rec())
+    assert max(boxes)[1] == "chair_grey"
+    assert (0.70, FL.PANEL) in boxes
 
 
 def test_type_a_podium_projector_and_clock_follow_the_east_board(upper):

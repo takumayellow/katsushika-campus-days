@@ -36,6 +36,7 @@ Y_MID = (D.Y_CORE0 + D.Y_CORE1) * 0.5    # 南の帯と北の帯の境（27.5）
 STRIP = 0.06                          # コアの天井際の光の帯の出
 FRAME_OUT = 0.07                      # 扉の枠の見付（shell.door）
 DOWN = 0.30                           # ダウンライトの一辺
+EDGE_GAP, EDGE_W = 0.04, 0.14         # 天井際の光の帯: 廊下の壁の面からの隙間と幅
 FACE = {"S": (D.Y_ROOM_S1, 0.0), "N": (D.Y_ROOM_N0, math.pi)}   # 廊下の面の Y と、そこに貼る扉の向き
 
 # 南東の EV ホール（4F〜7F。§1-6）: x01 の東の境と階段の西の壁の間、南の室の奥行きの途中まで
@@ -290,6 +291,25 @@ def _ceilings(bs, floor):
     h = DOWN * 0.5
     for x, y in downlight_centers():
         kit.plate(bs.at(x, y), x - h, y - h, x + h, y + h, z - 0.005, "light_panel", flip=True)
+    _edge_strips(bs, floor, z)
+
+
+def edge_strip_spans(floor):
+    """廊下の天井の、教室の側の壁ぎわに沿う光の帯 (西端, 東端, Y の南端, Y の北端) の列。SPLIT_X の境で切る。"""
+    x0, x1 = X_WALL0 + 0.1, x_wall1(floor)
+    xs = [x0] + [b for b in SPLIT_X if x0 < b < x1] + [x1]
+    out = []
+    for y0, y1 in ((D.Y_ROOM_S1 + EDGE_GAP, D.Y_ROOM_S1 + EDGE_GAP + EDGE_W),
+                   (D.Y_ROOM_N0 - EDGE_GAP - EDGE_W, D.Y_ROOM_N0 - EDGE_GAP)):
+        out += [(a, b, y0, y1) for a, b in zip(xs[:-1], xs[1:])]
+    return out
+
+
+def _edge_strips(bs, floor, z):
+    """教室の入口の並びの上の天井際の光の帯（4F の廊下の写真の、教室の側の天井の縁に続く間接照明。#423）。
+    下向きの 1 枚板で、区画ごとに 2 三角形。"""
+    for a, b, y0, y1 in edge_strip_spans(floor):
+        kit.plate(bs.at((a + b) * 0.5, y0), a, y0, b, y1, z - 0.004, "light_panel", flip=True)
 
 
 def _core_side(bs, p, q, z0, z1, strip):
