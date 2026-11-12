@@ -1,0 +1,48 @@
+{
+  "id": "class_entry",
+  "speaker": "学生",
+  "topics": [
+    {
+      "id": "t_math",
+      "lines": [
+        {
+          "text": "（小声で）あ、いま授業中だよ。数学、ちょうど式の続きを書いてるところ。",
+          "text_en": "(whispering) Hey, there's a class going on. Math, they're in the middle of writing out a formula."
+        },
+        {
+          "speaker": "自分",
+          "text": "（静かに見ていこう。）",
+          "text_en": "(I'll just watch quietly.)"
+        }
+      ]
+    },
+    {
+      "id": "t_physics",
+      "lines": [
+        {
+          "text": "（小声で）授業中だよ。物理、今日は式を一つずつ組み立ててる。",
+          "text_en": "(whispering) Class is on. Physics. Today they're building up the equations one at a time."
+        },
+        {
+          "speaker": "自分",
+          "text": "（邪魔しないようにしよう。）",
+          "text_en": "(Better not get in the way.)"
+        }
+      ]
+    },
+    {
+      "id": "t_info",
+      "lines": [
+        {
+          "text": "（小声で）授業中だよ。情報系の授業。板書、写すの追いつかない……。",
+          "text_en": "(whispering) Class is on. It's a computing lecture. I can't keep up copying the board..."
+        },
+        {
+          "speaker": "自分",
+          "text": "（後ろから少しだけ見ていこう。）",
+          "text_en": "(I'll watch from the back for a bit.)"
+        }
+      ]
+    }
+  ]
+}

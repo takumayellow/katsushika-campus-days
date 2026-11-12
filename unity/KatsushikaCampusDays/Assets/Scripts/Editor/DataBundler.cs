@@ -19,7 +19,7 @@ namespace KCD.Editor
         /// <summary>同期するフォルダ。Assets/Data/&lt;name&gt; → Assets/Resources/KCD/&lt;name&gt;。</summary>
         public static readonly string[] Folders =
         {
-            "Quests", "Dialogue", "Collectibles", "Localization", "Mobs", "Ending"
+            "Quests", "Dialogue", "Collectibles", "Localization", "Mobs", "Ending", "Classes"
         };
 
         /// <summary>全フォルダを同期し、コピーした本数を返す。</summary>
