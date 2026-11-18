@@ -1,0 +1,106 @@
+{
+  "id": "board_7F",
+  "speaker": "白板",
+  "topics": [
+    {
+      "id": "t_answer",
+      "requiresStep": "q_sq_hello_world/s6",
+      "lines": [
+        {
+          "speaker": "白板",
+          "text": "HELLO,",
+          "text_en": "HELLO,",
+          "written": true
+        },
+        {
+          "speaker": "白板",
+          "text": "WORLD　　world!　　WORLD　　Ｗｏｒｌｄ　　WORLD.",
+          "text_en": "WORLD    world!    WORLD    Ｗｏｒｌｄ    WORLD.",
+          "written": true
+        },
+        {
+          "speaker": "白板",
+          "text": "WORLD ―― そら",
+          "text_en": "WORLD -- Sora",
+          "written": true
+        },
+        {
+          "speaker": "自分",
+          "text": "いちばん上の HELLO, は教授の字だ。その下に、いろんな字の続きが並んでいる。",
+          "text_en": "The HELLO, at the top is in the professor's hand. Below it, the rest goes on in many different hands."
+        },
+        {
+          "speaker": "自分",
+          "text": "下のほうの丸い字に、見覚えがある。……ペンが置いてある。",
+          "text_en": "The round handwriting near the bottom looks familiar... A marker has been left here."
+        }
+      ],
+      "choices": [
+        {
+          "text": "WORLD と書く",
+          "text_en": "Write WORLD",
+          "setsFlag": "hello_world_reply",
+          "lines": [
+            {
+              "speaker": "自分",
+              "text": "WORLD と書き足した。HELLO, WORLD。……1 行だけのプログラムが、最後まで動いた気がする。",
+              "text_en": "You add WORLD. HELLO, WORLD... It feels like a one-line program has finally run to the end."
+            }
+          ]
+        },
+        {
+          "text": "GOODBYE と書く",
+          "text_en": "Write GOODBYE",
+          "retry": true,
+          "lines": [
+            {
+              "speaker": "自分",
+              "text": "……いや、まだ何も始まっていない。ペンを置いた。",
+              "text_en": "...No. Nothing has even started yet. You put the marker down."
+            }
+          ]
+        },
+        {
+          "text": "書かずにおく",
+          "text_en": "Leave it for now",
+          "retry": true,
+          "lines": [
+            {
+              "speaker": "自分",
+              "text": "並んだ字をもう一度眺めた。書くのは、もう少しあとでいい。",
+              "text_en": "You look over the rows once more. Writing can wait a little."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "t_idle",
+      "lines": [
+        {
+          "speaker": "白板",
+          "text": "HELLO,",
+          "text_en": "HELLO,",
+          "written": true
+        },
+        {
+          "speaker": "白板",
+          "text": "WORLD　　world!　　WORLD　　Ｗｏｒｌｄ　　WORLD.",
+          "text_en": "WORLD    world!    WORLD    Ｗｏｒｌｄ    WORLD.",
+          "written": true
+        },
+        {
+          "speaker": "白板",
+          "text": "WORLD ―― そら",
+          "text_en": "WORLD -- Sora",
+          "written": true
+        },
+        {
+          "speaker": "自分",
+          "text": "毎年、誰かが HELLO, の続きを書き足しているらしい。",
+          "text_en": "Every year, someone seems to add to what comes after HELLO,."
+        }
+      ]
+    }
+  ]
+}

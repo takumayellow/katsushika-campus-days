@@ -115,11 +115,11 @@ def build_business(mb: M.MeshBuilder, p: dict, head, *, nu: int = 160, nv: int =
 
 
 # --------------------------------------------------------------------------
-# 眼鏡（細い金属の縁）
+# 眼鏡（金属の縁）
 # --------------------------------------------------------------------------
 
 #: 眼鏡の輪郭線の太さ（顔の輪郭線に対する倍率）。縁は直径数ミリの線なので、顔と同じ
-#: 太さで囲むと銀の縁の両側に黒い線が付いて 3 本線に見える。
+#: 太さで囲むと縁の両側に黒い線が付いて 3 本線に見える。
 GLASSES_OUTLINE_WIDTH = 0.35
 
 
@@ -136,12 +136,14 @@ def _lens_loop(cx, cz, half_w, half_h, sgn, n=36):
 
 def build_metal_glasses(mb: M.MeshBuilder, p: dict, head, fs, uv_box,
                         mat: str = "glasses") -> None:
-    """鼻に乗せて耳に掛ける、細い金属の縁の眼鏡（part は glasses）。
+    """鼻に乗せて耳に掛ける縁の眼鏡（part は glasses）。
 
-    レンズは目の横幅の glasses_lens[0] 倍、縦は横の glasses_lens[1] 倍。縁は顔の
-    面の手前に置き、外側ほど奥へ回す（顔の丸みに沿う）。ブリッジは鼻筋の上を通し、
-    鼻パッドを鼻の横に当てる。つるは頭の横に沿わせて耳の付け根の上を通し、
-    耳の後ろへ下ろす。
+    縁の太さは glasses_tube（頭幅比）。レンズは目の横幅の glasses_lens[0] 倍、
+    縦は横の glasses_lens[1] 倍。縁は、目の中心の顔の面から glasses_front（頭幅比）
+    手前の面に置き、外側ほど奥へ回す（顔の丸みに沿う）。回す量は glasses_wrap
+    （頭幅比。中心からの横の距離の 2 乗に比例し、0 なら平ら）。縁はどこでも、顔の面から
+    頭幅の 0.022 倍以上手前に置く。ブリッジは鼻筋の上を通し、鼻パッドを鼻の横に当てる。つるは頭の
+    横に沿わせて耳の付け根の上を通し、耳の後ろへ下ろす。
     """
     fl = p["face_layout"]
     x0, x1, z0, z1 = uv_box
@@ -155,11 +157,12 @@ def build_metal_glasses(mb: M.MeshBuilder, p: dict, head, fs, uv_box,
     cz = ez - hw * 0.012
     tube = hw * p.get("glasses_tube", 0.0095)
     clear = hw * 0.022           # 顔の面からの最小の隙間
-    y_front = fs.y_at(ex, ez) - hw * 0.040
+    y_front = fs.y_at(ex, ez) - hw * p.get("glasses_front", 0.040)
+    wrap_k = p.get("glasses_wrap", 0.30)
 
     def frame_y(x, z):
         # 正面の平面を外側ほど奥へ回し、顔より手前に保つ
-        wrap = hw * 0.30 * (np.abs(x) / hw) ** 2
+        wrap = hw * wrap_k * (np.abs(x) / hw) ** 2
         y_face = np.array([fs.y_at(float(a), float(b)) for a, b in zip(x, z)])
         return np.minimum(y_front + wrap, y_face - clear)
 

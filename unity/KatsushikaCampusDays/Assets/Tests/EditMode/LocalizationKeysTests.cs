@@ -69,6 +69,9 @@ namespace KCD.Tests
                 "屋内のある建物（Models/Interiors/<id>.json）。OtherKeySources_ExistInEveryDictionary が見る"),
             ("InteriorLoader.cs", "\"ui.building.\" + entry.Id",
                 "屋内のある建物（Models/Interiors/<id>.json）。OtherKeySources_ExistInEveryDictionary が見る"),
+            ("ElevatorMenu.cs", "\"ui.building.\" + stop.BuildingId",
+                "屋内をまたぐ階段（InteriorStairStage.Links）の行き先の建物。どれも屋内のある建物（Models/Interiors/<id>.json）。" +
+                "OtherKeySources_ExistInEveryDictionary が見る"),
             ("VisitZone.cs", "\"ui.place.\" + placeId",
                 "クエストの visit 目標。写真スポットは photo.*.name を、表示名の無い屋内 poi_* はトーストを出さない。" +
                 "残りは Quests_GiversAndTargetsHaveNamesInEveryDictionary が見る"),

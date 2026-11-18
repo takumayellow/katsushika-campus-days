@@ -30,7 +30,18 @@ RESIDENTIAL_ID = 9102
 MOTORWAY_ID = 9103
 FAR_ROAD_ID = 9104
 PARK_ID = 9201
+PITCH_TAGGED_ID = 9202  # OSM に surface がある運動場
+PITCH_TABLE_ID = 9203   # surface が無く、PITCH_SURFACE で補う運動場
+PITCH_BARE_ID = 9204    # どちらにも無い運動場
 NO_GEOM_ID = 9301
+
+# 名前付きの建物。SHOP_NAME は周辺の店の名前の代わり（実在の名前は書かない）。
+NAMED_BG_ID = 9010
+NAMED_DORM_ID = 9011
+NAMED_MISC_ID = 9012
+LABELED_BG_ID = 9013
+LABELED_MISC_ID = 9014
+SHOP_NAME = "テスト商店"
 
 
 def _box(lat, lon, dlat, dlon, closed=True, cw=False):
@@ -91,10 +102,31 @@ def _elements():
     ]
 
 
+def _named_elements():
+    """_elements() に、名前を持つ背景の建物・寮・敷地内のその他の建物と、総称の表に載せる 2 棟を足す。"""
+    south = LAT0 - DLAT - 0.0004
+    return _elements() + [
+        _way(NAMED_BG_ID, _box(south, LON0 - 0.0006, 0.00005, 0.00005), building="retail", name=SHOP_NAME),
+        _way(NAMED_DORM_ID, _box(south, LON0 + 0.0009, 0.00005, 0.00005), building="dormitory", name=SHOP_NAME),
+        _way(NAMED_MISC_ID, _box(LAT0 - 0.0006, LON0 + 0.0006, 0.00005, 0.00005), building="yes", name=SHOP_NAME),
+        _way(LABELED_BG_ID, _box(south, LON0 + 0.0012, 0.00005, 0.00005), building="yes", name=SHOP_NAME),
+        _way(LABELED_MISC_ID, _box(LAT0 - 0.0006, LON0 + 0.0009, 0.00005, 0.00005), building="yes", name=SHOP_NAME),
+    ]
+
+
 @pytest.fixture()
 def extracted(monkeypatch):
     elements = _elements()
     monkeypatch.setattr(osm_extract, "_load", lambda: elements)
+    return osm_extract.extract()
+
+
+@pytest.fixture()
+def named_extracted(monkeypatch):
+    elements = _named_elements()
+    monkeypatch.setattr(osm_extract, "_load", lambda: elements)
+    monkeypatch.setitem(osm_extract.GENERIC_LABELS, LABELED_BG_ID, "テスト総称")
+    monkeypatch.setitem(osm_extract.GENERIC_LABELS, LABELED_MISC_ID, "テスト総称その他")
     return osm_extract.extract()
 
 
@@ -179,6 +211,30 @@ def test_background_building_heights(extracted):
     assert NO_GEOM_ID not in b
 
 
+def test_osm_name_stays_out_of_display(named_extracted):
+    """カタログに無い建物は、名前があっても display に使わない。OSM の名前は osm_name にだけ残る (#371)。"""
+    b = _by_osm_id(named_extracted)
+    assert b[NAMED_BG_ID]["style"] == "background"
+    assert b[NAMED_DORM_ID]["style"] == "dormitory"
+    assert b[NAMED_MISC_ID]["style"] == "misc" and b[NAMED_MISC_ID]["on_campus"]
+    for wid in (NAMED_BG_ID, NAMED_DORM_ID, NAMED_MISC_ID):
+        assert b[wid]["osm_name"] == SHOP_NAME
+        assert b[wid]["display"] == ""
+        assert SHOP_NAME not in b[wid]["desc"]
+
+
+@pytest.mark.parametrize("wid, style, label", [
+    (LABELED_BG_ID, "background", "テスト総称"),
+    (LABELED_MISC_ID, "misc", "テスト総称その他"),
+])
+def test_generic_label_replaces_the_osm_name(named_extracted, wid, style, label):
+    """総称の表にある建物は、OSM の名前に関わらず display がその総称になる (#371)。"""
+    labeled = _by_osm_id(named_extracted)[wid]
+    assert labeled["style"] == style
+    assert labeled["display"] == label
+    assert labeled["osm_name"] == SHOP_NAME
+
+
 def test_building_order_and_footprints(extracted):
     buildings = extracted["buildings"]
     keys = [(STYLE_ORDER.index(b["style"]), b["id"]) for b in buildings]
@@ -207,6 +263,26 @@ def test_areas(extracted):
     for a in extracted["areas"]:
         assert oc.ring_area(a["polygon"]) > 0
         assert a["polygon"][0] != a["polygon"][-1]
+        assert "surface" not in a and "osm_id" not in a     # 運動場だけが持つ
+
+
+def test_pitch_keeps_osm_id_sport_and_surface(monkeypatch):
+    """運動場は osm_id・sport・surface を持つ。surface は OSM のタグを優先し、無ければ表で補う (#59)。"""
+    elements = _elements() + [
+        _way(PITCH_TAGGED_ID, _box(LAT0 + 0.0006, LON0 - 0.0006, 0.0001, 0.0001),
+             leisure="pitch", sport="tennis", surface="clay"),
+        _way(PITCH_TABLE_ID, _box(LAT0 + 0.0006, LON0, 0.0001, 0.0001), leisure="pitch", sport="tennis"),
+        _way(PITCH_BARE_ID, _box(LAT0 + 0.0006, LON0 + 0.0006, 0.0001, 0.0001), leisure="pitch"),
+    ]
+    monkeypatch.setattr(osm_extract, "_load", lambda: elements)
+    monkeypatch.setitem(osm_extract.PITCH_SURFACE, PITCH_TAGGED_ID, "acrylic")
+    monkeypatch.setitem(osm_extract.PITCH_SURFACE, PITCH_TABLE_ID, "acrylic")
+    pitches = {a["osm_id"]: a for a in osm_extract.extract()["areas"] if a["kind"] == "pitch"}
+    assert set(pitches) == {PITCH_TAGGED_ID, PITCH_TABLE_ID, PITCH_BARE_ID}
+    assert pitches[PITCH_TAGGED_ID]["surface"] == "clay"
+    assert pitches[PITCH_TABLE_ID]["surface"] == "acrylic"
+    assert pitches[PITCH_TABLE_ID]["sport"] == "tennis"
+    assert pitches[PITCH_BARE_ID]["sport"] is None and pitches[PITCH_BARE_ID]["surface"] is None
 
 
 def test_points(extracted):
@@ -255,6 +331,14 @@ def test_committed_campus_json_invariants(campus_json):
             assert b["on_campus"], b["id"]
 
 
+def test_committed_pitches_have_sport_and_surface(campus_json):
+    """campus.json の運動場は 3 区画とも競技を持ち、表面は PITCH_SURFACE と一致する (#59)。"""
+    pitches = {a["osm_id"]: a for a in campus_json["areas"] if a["kind"] == "pitch"}
+    assert {k: a["surface"] for k, a in pitches.items()} == osm_extract.PITCH_SURFACE
+    assert {k: a["sport"] for k, a in pitches.items()} == {
+        771657617: "tennis", 771657619: "tennis", 771657620: "soccer"}
+
+
 def test_committed_kyoso_and_research1_parts(campus_json):
     """共創棟は手で与えた約 72 × 35.5 m の長方形、北東の帯は第1研究棟の parts (#281)。"""
     by_id = {b["id"]: b for b in campus_json["buildings"]}
@@ -271,3 +355,23 @@ def test_committed_kyoso_and_research1_parts(campus_json):
     for poly in r1:
         assert not any(oc.point_in_poly(x, y, poly) for x, y in fp)
         assert not any(oc.point_in_poly(x, y, fp) for x, y in poly)
+
+
+def test_committed_display_comes_only_from_hand_written_names(campus_json):
+    """カタログ・手入力の建物以外の display は、総称の表にある語か空。OSM の名前は osm_name にだけ入る (#371)。"""
+    hand_written = ({m["id"] for m in osm_extract.BUILDING_CATALOG.values()}
+                    | {m["id"] for m in osm_extract.UNNAMED_BUILDINGS.values()}
+                    | {m["id"] for m in osm_extract.MANUAL_BUILDINGS})
+    others = [b for b in campus_json["buildings"] if b["id"] not in hand_written]
+    assert others
+    for b in others:
+        assert b["display"] == osm_extract.GENERIC_LABELS.get(b["osm_id"], ""), b["id"]
+    # 総称の表の OSM id は campus.json の建物にある（取り違えや消えた建物に気付く）
+    assert set(osm_extract.GENERIC_LABELS) <= {b["osm_id"] for b in others}
+
+
+def test_unity_copy_of_campus_json_is_identical():
+    """Unity が読む Assets/Data/campus.json は data/osm/campus.json のコピー (docs/DESIGN.md)。"""
+    source = oc.ROOT / "data" / "osm" / "campus.json"
+    copy = oc.ROOT / "unity" / "KatsushikaCampusDays" / "Assets" / "Data" / "campus.json"
+    assert copy.read_bytes() == source.read_bytes()

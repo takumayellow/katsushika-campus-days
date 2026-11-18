@@ -25,11 +25,47 @@
       "tile_cm": 110
     },
     {
+      "material": "deck_wood",
+      "tile_cm": 240
+    },
+    {
       "material": "grass",
       "tile_cm": 140
     },
     {
       "material": "grass_dark",
+      "tile_cm": 140
+    },
+    {
+      "material": "lecture_brick",
+      "tile_cm": 230
+    },
+    {
+      "material": "lecture_concrete_light_wall",
+      "tile_cm": 182
+    },
+    {
+      "material": "lecture_concrete_wall",
+      "tile_cm": 182
+    },
+    {
+      "material": "metal_grey",
+      "tile_cm": 100
+    },
+    {
+      "material": "metal_white",
+      "tile_cm": 100
+    },
+    {
+      "material": "roof_grey",
+      "tile_cm": 240
+    },
+    {
+      "material": "sand",
+      "tile_cm": 140
+    },
+    {
+      "material": "soil",
       "tile_cm": 140
     },
     {
@@ -39,6 +75,10 @@
     {
       "material": "stone_light",
       "tile_cm": 200
+    },
+    {
+      "material": "wood",
+      "tile_cm": 80
     }
   ]
 }

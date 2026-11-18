@@ -104,8 +104,9 @@ namespace KCD
         /// <summary>
         /// 表示する本文。テストや他の画面からも同じ文面を使えるように公開する。
         /// 中身は docs/CREDITS.md の権利表と合わせる (#74)。本文の枠は 1084x536 px で、26 px の行は 31.2 px、
-        /// 80% の行は 25 px の高さを取る。見出しの行だけ 26 px にして補足は 80% で書き、今の 18 行で約 515 px。
-        /// 行を足すときは、1 行 52 字（80% の全角）を超えて折り返さないかも見る。
+        /// 80% の行は 25 px の高さを取る。見出しの行だけ 26 px にして補足は 80% で書く。
+        /// 行を足すときは、枠の高さに収まるか（PlayMode の CreditsLayoutTests が測る）と、
+        /// 1 行 52 字（80% の全角）を超えて折り返さないかを見る。
         /// </summary>
         public static string BuildText(bool touch = false, bool portrait = false)
         {
@@ -140,10 +141,8 @@ namespace KCD
 
             builder.Append(L.Get("ui.credits.setting", "舞台: 東京理科大学 葛飾キャンパス"));
             AppendNote(builder, note, L.Pick(
-                "「坊っちゃん」「マドンナちゃん」は東京理科大学の公式キャラクターで、3D モデルは独自制作です。\n"
-                + "スターバックス、ファミリーマートなどの店名は各社の商標です。\n",
-                "\"Botchan\" and \"Madonna-chan\" are official characters of the university; the 3D models are our own.\n"
-                + "Store names such as Starbucks and FamilyMart are trademarks of their owners.\n")
+                "「坊っちゃん」「マドンナちゃん」は東京理科大学の公式キャラクターで、3D モデルは独自制作です。\n",
+                "\"Botchan\" and \"Madonna-chan\" are official characters of the university; the 3D models are our own.\n")
                 + L.Get("ui.credits.disclaimer", "本作は非公式・非営利のファン作品です。登場する学生・教授は架空の人物です。"));
             builder.Append("\n\n");
 

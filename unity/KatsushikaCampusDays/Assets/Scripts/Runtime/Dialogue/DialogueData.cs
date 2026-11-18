@@ -27,10 +27,41 @@ namespace KCD
         /// <summary>紙に書かれた文（メモ・手紙）。声を鳴らさずに出す（JSON の written）(#175)。</summary>
         public bool Written;
 
-        /// <summary>画面に出す本文。いまの言語で選ぶ。</summary>
-        public string DisplayText => InputMode.IsTouch && !string.IsNullOrEmpty(TextTouch)
-            ? L.Pick(TextTouch, TextTouchEn)
-            : L.Pick(Text, TextEn);
+        /// <summary>
+        /// 時間帯で言い分ける本文（JSON の text_morning / text_after_school / text_night と、それぞれの _en）(#41)。
+        /// 空の時間帯は Text を出す。授業中は常に Text。
+        /// </summary>
+        public string TextMorning = string.Empty;
+
+        public string TextMorningEn = string.Empty;
+        public string TextAfterSchool = string.Empty;
+        public string TextAfterSchoolEn = string.Empty;
+        public string TextNight = string.Empty;
+        public string TextNightEn = string.Empty;
+
+        /// <summary>画面に出す本文。いまの言語と時間帯で選ぶ。</summary>
+        public string DisplayText => DisplayTextAt(DayPart.Current);
+
+        /// <summary>時間帯を渡して本文を選ぶ（テストから呼ぶ）。指の操作の言い換えがあればそちらを優先する。</summary>
+        public string DisplayTextAt(DayPartKind part)
+        {
+            if (InputMode.IsTouch && !string.IsNullOrEmpty(TextTouch))
+            {
+                return L.Pick(TextTouch, TextTouchEn);
+            }
+
+            switch (part)
+            {
+                case DayPartKind.Morning when !string.IsNullOrEmpty(TextMorning):
+                    return L.Pick(TextMorning, TextMorningEn);
+                case DayPartKind.AfterSchool when !string.IsNullOrEmpty(TextAfterSchool):
+                    return L.Pick(TextAfterSchool, TextAfterSchoolEn);
+                case DayPartKind.Night when !string.IsNullOrEmpty(TextNight):
+                    return L.Pick(TextNight, TextNightEn);
+                default:
+                    return L.Pick(Text, TextEn);
+            }
+        }
 
         /// <summary>画面に出す話者名。日本語ではデータのまま、英語では辞書の名前（無ければデータのまま）。</summary>
         public string DisplaySpeaker =>
@@ -53,6 +84,11 @@ namespace KCD
         /// <summary>選んだときに立てるフラグ。</summary>
         public string SetsFlag = string.Empty;
 
+        /// <summary>
+        /// 選んでも話題を答えた話題にしない（JSON の retry）。外れの答えに付けると、次に話しかけたときにまた聞く (#389)。
+        /// </summary>
+        public bool Retry;
+
         /// <summary>選んだあとに続く行。空なら選んだところで会話を閉じる。</summary>
         public readonly List<DialogueLine> Lines = new List<DialogueLine>();
 
@@ -70,6 +106,12 @@ namespace KCD
 
         /// <summary>このクエストが完了済みのときだけ出す。空なら無条件。</summary>
         public string RequiresCompletedQuest = string.Empty;
+
+        /// <summary>
+        /// 「クエスト id/段の id」。そのクエストを受注中で、いまの段がこれのときだけ出す。空なら無条件 (#389)。
+        /// 段より先に答えさせると、立てたフラグはその段で数えられないので、問いはこの条件で段に合わせて出す。
+        /// </summary>
+        public string RequiresStep = string.Empty;
 
         /// <summary>隠しアイテムをこの数以上拾っているときだけ出す。0 なら無条件。</summary>
         public int RequiresHiddenCount;
@@ -166,6 +208,7 @@ namespace KCD
                 Id = MiniJson.GetString(node, "id", "t" + index),
                 RequiresActiveQuest = MiniJson.GetString(node, "requiresActiveQuest"),
                 RequiresCompletedQuest = MiniJson.GetString(node, "requiresCompletedQuest"),
+                RequiresStep = MiniJson.GetString(node, "requiresStep"),
                 RequiresHiddenCount = MiniJson.GetInt(node, "requiresHiddenCount"),
                 RequiresItem = MiniJson.GetString(node, "requiresItem"),
                 RequiresAffinity = MiniJson.GetInt(node, "requiresAffinity"),
@@ -186,7 +229,8 @@ namespace KCD
                         Text = MiniJson.GetString(choiceNode, "text"),
                         TextEn = MiniJson.GetString(choiceNode, "text_en"),
                         Affinity = MiniJson.GetInt(choiceNode, "affinity"),
-                        SetsFlag = MiniJson.GetString(choiceNode, "setsFlag")
+                        SetsFlag = MiniJson.GetString(choiceNode, "setsFlag"),
+                        Retry = MiniJson.GetBool(choiceNode, "retry")
                     };
                     ParseLines(MiniJson.GetArray(choiceNode, "lines"), data, choice.Lines);
                     topic.Choices.Add(choice);
@@ -212,6 +256,12 @@ namespace KCD
                         TextEn = MiniJson.GetString(lineNode, "text_en"),
                         TextTouch = MiniJson.GetString(lineNode, "text_touch"),
                         TextTouchEn = MiniJson.GetString(lineNode, "text_touch_en"),
+                        TextMorning = MiniJson.GetString(lineNode, "text_morning"),
+                        TextMorningEn = MiniJson.GetString(lineNode, "text_morning_en"),
+                        TextAfterSchool = MiniJson.GetString(lineNode, "text_after_school"),
+                        TextAfterSchoolEn = MiniJson.GetString(lineNode, "text_after_school_en"),
+                        TextNight = MiniJson.GetString(lineNode, "text_night"),
+                        TextNightEn = MiniJson.GetString(lineNode, "text_night_en"),
                         Written = MiniJson.GetBool(lineNode, "written")
                     });
                 }

@@ -1,23 +1,30 @@
 #if KCD_CINEMACHINE
-using System.Collections.Generic;
 using Unity.Cinemachine;
 using UnityEngine;
 
 namespace KCD
 {
     /// <summary>
-    /// Cinemachine の入力軸を KCDInput につなぐ。
+    /// Cinemachine の軌道カメラ（CinemachineOrbitalFollow）の軸を KCDInput につなぐ。
     /// 既定の CinemachineInputAxisController は InputActionReference アセットを要求するため、
     /// コードだけでシーンを組む都合に合わせて軸を直接動かす。
+    /// 軸は名指しで動かす。OrbitalFollow が軸に付ける目安（Hint）は役割を表さず、
+    /// 半径の軸（Orbit Scale）にも縦の軸と同じ Y が付いている。
     /// 起動時に、同じカメラの壁よけを CinemachineCameraGuard にそろえる (#12)。
     /// </summary>
     public sealed class CinemachineInputBridge : MonoBehaviour
     {
-        [SerializeField] private float _lookSensitivity = 2.2f;
-        [SerializeField] private float _zoomSensitivity = 3.5f;
+        [SerializeField] private float _lookSensitivity = CameraMath.LookSensitivity;
+
+        /// <summary>
+        /// ズームの量（<see cref="KCDInput.Zoom"/>）に掛ける感度。掛けた量 z で、軌道の半径の倍率を e^-z 倍にする
+        /// （<see cref="CameraMath.ZoomedRadialScale"/>）。
+        /// </summary>
+        [SerializeField] private float _zoomSensitivity = CameraMath.ZoomSensitivity;
+
         [SerializeField] private bool _invertVertical = true;
 
-        private readonly List<IInputAxisOwner.AxisDescriptor> _axes = new List<IInputAxisOwner.AxisDescriptor>();
+        private CinemachineOrbitalFollow _orbital;
 
         /// <summary>会話中などに視点操作を止める。</summary>
         public bool InputEnabled { get; set; } = true;
@@ -29,7 +36,7 @@ namespace KCD
 
         private void OnEnable()
         {
-            Collect();
+            _orbital = GetComponentInChildren<CinemachineOrbitalFollow>();
         }
 
         /// <summary>
@@ -58,19 +65,9 @@ namespace KCD
             return guard;
         }
 
-        /// <summary>軸の持ち主（OrbitalFollow など）から駆動対象を集める。</summary>
-        private void Collect()
-        {
-            _axes.Clear();
-            foreach (IInputAxisOwner owner in GetComponentsInChildren<IInputAxisOwner>())
-            {
-                owner.GetInputAxes(_axes);
-            }
-        }
-
         private void Update()
         {
-            if (!InputEnabled || _axes.Count == 0 || KCDInput.LookBlocked || KCDInput.PhotoMode)
+            if (!InputEnabled || _orbital == null || KCDInput.LookBlocked || KCDInput.PhotoMode)
             {
                 return;
             }
@@ -79,31 +76,25 @@ namespace KCD
             float lookSensitivity = _lookSensitivity * CameraPrefs.SensitivityScale;
             float verticalSign = (_invertVertical ? -1f : 1f) * CameraPrefs.VerticalSign;
             Vector2 look = KCDInput.Look;
-            float zoom = KCDInput.Zoom;
+            float zoom = KCDInput.Zoom * _zoomSensitivity;
 
-            for (int i = 0; i < _axes.Count; i++)
+            Nudge(ref _orbital.HorizontalAxis, look.x * lookSensitivity);
+            Nudge(ref _orbital.VerticalAxis, look.y * lookSensitivity * verticalSign);
+            if (Mathf.Abs(zoom) >= 0.0001f)
             {
-                IInputAxisOwner.AxisDescriptor descriptor = _axes[i];
-                if (descriptor.DrivenAxis == null)
-                {
-                    continue;
-                }
-
-                ref InputAxis axis = ref descriptor.DrivenAxis();
-                float delta = descriptor.Hint switch
-                {
-                    IInputAxisOwner.AxisDescriptor.Hints.X => look.x * lookSensitivity,
-                    IInputAxisOwner.AxisDescriptor.Hints.Y => look.y * lookSensitivity * verticalSign,
-                    _ => -zoom * _zoomSensitivity
-                };
-
-                if (Mathf.Abs(delta) < 0.0001f)
-                {
-                    continue;
-                }
-
-                axis.Value = axis.ClampValue(axis.Value + delta);
+                ref InputAxis radial = ref _orbital.RadialAxis;
+                radial.Value = radial.ClampValue(CameraMath.ZoomedRadialScale(radial.Value, zoom));
             }
+        }
+
+        private static void Nudge(ref InputAxis axis, float delta)
+        {
+            if (Mathf.Abs(delta) < 0.0001f)
+            {
+                return;
+            }
+
+            axis.Value = axis.ClampValue(axis.Value + delta);
         }
     }
 }

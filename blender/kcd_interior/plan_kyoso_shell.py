@@ -12,8 +12,11 @@ from . import plan_kyoso_dims as D
 WALL = "wall_white"
 GREY = "wall_grey"
 CARPET = "kyoso_floor_carpet_grey"
+LOUNGE_CARPET = "kyoso_floor_carpet_bluegrey"   # 2F のラウンジ（スラブ B）
 STEEL = "kyoso_steel_black"
 GLASS = "glass_clear"
+SASH = "metal_charcoal"   # 1F の外周のガラスの方立てと入口の枠（外観のカーテンウォールと同じ材質）
+SASH_UPPER = "metal_grey"  # 2F より上の外周のガラスの方立て（外観の上階の縦フィンと同じ材質）
 COLUMN = "kyoso_column_pale"
 
 # 1F の木ルーバーを切る所（エスカレーター・階段・吹き抜けの開口と東のコアの上）
@@ -36,6 +39,7 @@ def _edge(mb, p, q, ranges, gaps_of=None):
         for z0, z1, sill, header in bands:
             shell.outer_wall(mb, a, b, z0, z1, wall=WALL, glass=None if solid else GLASS,
                              sill=sill, header=header, seg=1.8, gaps=gaps,
+                             mullion_mat=SASH if z0 < D.Z_SLAB else SASH_UPPER,
                              gap_top=3.2 if gaps else None)
 
 
@@ -65,8 +69,11 @@ def envelope(c):
 
     # モール側（東 -> 西）
     _edge(mb, (x0, ya), (x1, ya), ((0.0, x1 - x0, ONE, False),), door_gaps)
-    _edge(mb, (x0, ya), (x1, ya), ((0.0, x1 - x0, LIFT, True),))
-    shell.glass_entrance(mb, d0, d1, 0.0, 3.2, ya + shell.WALL * 0.5)
+    # 2F の教室の前（窓の帯は plan_kyoso_2f_rooms が室ごとに立てる）を抜く
+    r0 = D.ROOMS2_X[0] - D.ROOMS2_END - x0
+    r1 = D.ROOMS2_X[-1] + D.ROOMS2_END - x0
+    _edge(mb, (x0, ya), (x1, ya), ((0.0, r0, LIFT, True), (r1, x1 - x0, LIFT, True)))
+    shell.glass_entrance(mb, d0, d1, 0.0, 3.2, ya + shell.WALL * 0.5, frame=SASH)
 
     # 公園側（西 -> 東）。距離は x1 から
     def pk(x):
@@ -145,7 +152,7 @@ def columns(c):
 
 
 # ---- コア -------------------------------------------------------------- #
-def _door(mb, x, y, ang, w=1.0, h=2.1):
+def door(mb, x, y, ang, w=1.0, h=2.1):
     """閉じた鉄の扉（階段・トイレ・機械室）。(x, y) は壁の面、ang の正面へ出す。"""
     t = kit.T(x, y, 0.0, ang)
     t.box(mb, -w * 0.5, 0.0, 0.0, w * 0.5, 0.06, h, "kyoso_wall_bluegrey")
@@ -172,7 +179,7 @@ def core_east(c, mb):
     for y in (20.6, 23.0):
         shell.elevator_bank(mb, e0, y, count=1, ang=D.FACE_EAST, w=0.65, h=2.3)
     for x in (-15.2, -12.6):
-        _door(mb, x, y0, D.FACE_MALL)
+        door(mb, x, y0, D.FACE_MALL)
 
 
 def core_west(c, mb):
@@ -191,7 +198,7 @@ def core_west(c, mb):
         shell.elevator_bank(mb, e2, y, count=1, ang=D.FACE_WEST, w=0.65, h=2.3)
     sx = (D.EV_SINGLE_X[0] + D.EV_SINGLE_X[1]) * 0.5
     shell.elevator_bank(mb, sx, y1, count=1, ang=D.FACE_MALL, w=0.65, h=2.3)
-    _door(mb, 22.0, y1, D.FACE_PARK)
+    door(mb, 22.0, y1, D.FACE_PARK)
     for y in D.VENDING_Y:
         shell.vending(mb, D.VENDING_X, y, ang=D.FACE_EAST)
 
@@ -207,10 +214,10 @@ def park_band(c, mb):
     for x in (D.FM[0], D.STAIRWELL_E[0], D.STAIRWELL_E[2], D.STAIRWELL_W[0],
               D.STAIRWELL_W[2]):
         kit.box(mb, x - t * 0.5, y, 0.0, x + t * 0.5, D.Y_PARK, D.Z_SLAB, WALL)
-    _door(mb, -25.6, y, D.FACE_MALL, w=1.6)
-    _door(mb, D.STAIRWELL_E[0] + 0.8, y, D.FACE_MALL)
-    _door(mb, D.STAIRWELL_W[0] + 0.8, y, D.FACE_MALL)
-    _door(mb, 30.0, y, D.FACE_MALL, w=1.6)
+    door(mb, -25.6, y, D.FACE_MALL, w=1.6)
+    door(mb, D.STAIRWELL_E[0] + 0.8, y, D.FACE_MALL)
+    door(mb, D.STAIRWELL_W[0] + 0.8, y, D.FACE_MALL)
+    door(mb, 30.0, y, D.FACE_MALL, w=1.6)
     shell.exit_sign(mb, D.STAIRWELL_E[0] + 0.8, y - 0.06, 2.45, ang=D.FACE_MALL)
     shell.exit_sign(mb, D.STAIRWELL_W[0] + 0.8, y - 0.06, 2.45, ang=D.FACE_MALL)
     # コンビニの正面（自動扉の上まで）と白い帯
@@ -226,9 +233,9 @@ def slabs_2f(c, mb):
     z = D.Z2
     sx0, sy0, sx1, sy1 = D.SLAB_B
     hx0, hy0, hx1, hy1 = D.STAIR_HOLE
-    for rect in (D.SLAB_A, (sx0, sy0, sx1, hy0), (hx1, hy0, sx1, sy1),
-                 (sx0, hy1, hx1, sy1)):
-        shell.floor(mb, rect[0], rect[1], rect[2], rect[3], z, CARPET, thickness=0.40,
+    for rect, mat in ((D.SLAB_A, CARPET), ((sx0, sy0, sx1, hy0), LOUNGE_CARPET),
+                      ((hx1, hy0, sx1, sy1), LOUNGE_CARPET), ((sx0, hy1, hx1, sy1), LOUNGE_CARPET)):
+        shell.floor(mb, rect[0], rect[1], rect[2], rect[3], z, mat, thickness=0.40,
                     side_mat=WALL)
     shell.ceiling(mb, D.CORE_E[0], D.SLAB_A[1] - 0.3, D.CORE_W[0], D.SLAB_B[3],
                   D.Z_CEIL2, "ceiling_white", grid=1.8)
@@ -237,7 +244,10 @@ def slabs_2f(c, mb):
     z0, z1 = D.Z_CEIL, D.Z_CEIL2
     ya = D.SLAB_A[1]
     lx = D.ESC_LAND_X
-    kit.box(mb, D.ESC_VOID[0] - 0.3, ya - 0.3, z0, D.CORE_W[0], ya, z1, WALL)   # モール側
+    # モール側（教室の前は 2F の床の下まで。上は plan_kyoso_2f_rooms の廊下の壁）
+    rx = D.ROOMS2_X[0] - D.ROOMS2_END
+    kit.box(mb, D.ESC_VOID[0] - 0.3, ya - 0.3, z0, rx, ya, z1, WALL)
+    kit.box(mb, rx, ya - 0.3, z0, D.CORE_W[0], ya, D.Z_SLAB, WALL)
     kit.box(mb, D.ESC_VOID[0] - 0.3, ya, z0, D.ESC_VOID[0], D.ESC_VOID[3] + 0.3, z1, WALL)
     kit.box(mb, D.ESC_VOID[0], D.ESC_VOID[3], z0, lx, D.ESC_VOID[3] + 0.3, z1, WALL)
     kit.box(mb, lx - 0.3, D.ESC_VOID[3] + 0.3, z0, lx, D.CORE_E[1], z1, WALL)    # 降り口の東

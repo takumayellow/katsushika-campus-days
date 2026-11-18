@@ -6,6 +6,7 @@ namespace KCD
     /// 屋内のエレベーターの乗り場。EV の扉の前で E を押すと <see cref="ElevatorMenu"/> を開き、選んだ階の乗り場へ移る (#275)。
     /// 乗り場は FBX の ev_&lt;id&gt;_&lt;階&gt; Empty（扉から 1.4 m 前の床）で、InteriorStage が階ごとに 1 つずつ置く。
     /// 階段室の扉も同じ仕組みで階を移る (#303)。<see cref="Stairs"/> のときは文言だけ「階段」にする。
+    /// 第2研究棟の西の端の階段は食堂の 1F・2F にも下りるので、行き先の階は別の建物の屋内でもよい（<see cref="Stop.BuildingId"/>）。
     /// </summary>
     public sealed class ElevatorPanel : Interactable
     {
@@ -24,6 +25,15 @@ namespace KCD
 
             /// <summary>着いたときに立つ位置と向き。</summary>
             public Transform Landing;
+
+            /// <summary>その階がある建物の id。空なら乗り場と同じ建物。</summary>
+            public string BuildingId;
+        }
+
+        /// <summary>stop の階がある建物の id。<see cref="Stop.BuildingId"/> が空なら here（乗り場の建物）。</summary>
+        public static string BuildingOf(Stop stop, string here)
+        {
+            return string.IsNullOrEmpty(stop.BuildingId) ? here : stop.BuildingId;
         }
 
         [SerializeField] private string _buildingId = string.Empty;
@@ -155,14 +165,14 @@ namespace KCD
             }
         }
 
-        /// <summary>この乗り場の階が <see cref="Stops"/> の何番目か。無ければ -1。</summary>
+        /// <summary>この乗り場の階が <see cref="Stops"/> の何番目か。建物も比べる。無ければ -1。</summary>
         public int CurrentIndex
         {
             get
             {
                 for (int i = 0; i < _stops.Length; i++)
                 {
-                    if (_stops[i].Floor == _floor)
+                    if (_stops[i].Floor == _floor && BuildingOf(_stops[i], _buildingId) == _buildingId)
                     {
                         return i;
                     }
@@ -173,7 +183,8 @@ namespace KCD
         }
 
         /// <summary>
-        /// i 番目の階へ移る。今の階・範囲の外・乗り場の無い階なら何もせず false。
+        /// i 番目の階へ移る。別の建物の階なら、その建物の中に入ったことにして移る（<see cref="InteriorLoader.MoveAcross"/>）。
+        /// 今の階・範囲の外・乗り場の無い階なら何もせず false。
         /// </summary>
         public bool GoTo(int i)
         {
@@ -189,7 +200,10 @@ namespace KCD
             }
 
             Transform landing = _stops[i].Landing;
-            return loader.MoveWithin(landing.position, landing.eulerAngles.y);
+            string building = BuildingOf(_stops[i], _buildingId);
+            return building == _buildingId
+                ? loader.MoveWithin(landing.position, landing.eulerAngles.y)
+                : loader.MoveAcross(building, landing.position, landing.eulerAngles.y);
         }
     }
 }

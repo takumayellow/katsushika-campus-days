@@ -16,8 +16,8 @@ namespace KCD.Tests
     /// どちらかを手で直して流し直さないと、面が黙って単色に戻るか、違う大きさで並ぶ。
     /// 画像が無い名前は単色で塗られ、警告がコンソールに流れるだけで気付きにくい。
     ///
-    /// 画像の平均色は CampusColors の宣言 hex に合わせて焼く。CampusColors に無い名前は
-    /// 狙いの色が無いので焼けず、MaterialLibrary.Repaint も触らない。
+    /// 画像の平均色は CampusColors（屋内の面は InteriorPalette の Surface）の宣言 hex に合わせて焼く。
+    /// どちらにも無い名前は狙いの色が無いので焼けず、MaterialLibrary.Repaint も触らない。
     ///
     /// EditMode のアセンブリは KCD.Runtime しか参照しないので、CampusSurfaces や
     /// MaterialLibrary は使わず、JSON は MiniJson で、CampusColors はソースを字面で読む。
@@ -99,6 +99,24 @@ namespace KCD.Tests
             return names;
         }
 
+        /// <summary>InteriorPalette の屋内の面（Surface）の名前を、CampusColorNames と同じくソースの字面で読む。</summary>
+        private static HashSet<string> InteriorSurfaceNames()
+        {
+            string path = Path.Combine(
+                Application.dataPath, "Scripts", "Editor", "InteriorPalette.cs");
+            Assert.IsTrue(File.Exists(path), path + " が無い");
+
+            var names = new HashSet<string>();
+            foreach (Match m in Regex.Matches(
+                File.ReadAllText(path), @"\{\s*""(?<n>[a-z0-9_]+)"",\s*new\s+Surface\(\s*""[0-9A-Fa-f]{6}"""))
+            {
+                names.Add(m.Groups["n"].Value);
+            }
+
+            Assert.Greater(names.Count, 20, "InteriorPalette の Surface を読めていない");
+            return names;
+        }
+
         [Test]
         public void タイリングの名前には画像と取り込み設定がある()
         {
@@ -166,6 +184,7 @@ namespace KCD.Tests
         public void タイリングの名前はキャンパスの色表にある()
         {
             HashSet<string> colors = CampusColorNames();
+            colors.UnionWith(InteriorSurfaceNames());
             var unknown = new List<string>();
             foreach (string name in Tiling().Keys)
             {
@@ -177,7 +196,7 @@ namespace KCD.Tests
 
             Assert.IsEmpty(
                 unknown,
-                "CampusColors に無い名前は狙いの平均色が無く、Repaint も触らない:\n"
+                "CampusColors にも InteriorPalette の Surface にも無い名前は狙いの平均色が無く、Repaint も触らない:\n"
                 + string.Join("\n", unknown));
         }
 

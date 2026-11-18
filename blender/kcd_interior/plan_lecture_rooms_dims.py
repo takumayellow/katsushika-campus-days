@@ -68,7 +68,7 @@ def _upper_rooms():
 
 
 # (室番号, 階, 並び, 西の境, 東の境, 扉の中心 X（西から順）, 型)
-#   型 A: 黒板が西の壁、机は西を向く。型 B: PC ルーム。型 C: ロの字の机の会議室。型 L: ラウンジ（§1-11）
+#   型 A: 黒板が東の壁、机は東を向く。型 B: PC ルーム。型 C: ロの字の机の会議室。型 L: ラウンジ（§1-11）
 ROOMS = (
     ("203", "2F", "S", D.X_W, -10.9, (-26.5, -12.4), "A"),
     ("202", "2F", "S", -10.9, 6.9, (-9.9, 5.9), "A"),
@@ -180,6 +180,48 @@ ROOM_PLATES = (("203", -25.2, "S"), ("202", -8.6, "S"), ("305", -24.6, "S"), ("3
                ("308", -1.2, "N"), ("309", 9.6, "N")) + tuple(
     (r[0], upper_plate_x(r), r[2]) for r in _upper_rooms() if r[1] != TOP_FLOOR)
 
+# 扉の横の小さい室番号の札（#423）。室名札（大きい白い板）が横に無い扉の、室の内側へ 1.3 m の所に貼る。
+# 教室（型 A・B・C と中を作らない室）だけで、ラウンジ（型 L の 310・311）、番号の分からない 7F と 2F の北の室には付けない。
+DOOR_PLATE = (0.30, 0.18)             # 幅・高さ（文字は番号と「Room 番号」の 2 行。札を小さくして字の三角形を減らす）
+DOOR_PLATE_OFF = 1.3                  # 扉の中心から札の中心まで（室名札と同じ）
+DOOR_PLATE_NEAR = 1.5                 # この距離より近くに室名札がある扉には付けない
+
+
+def _named_rooms():
+    """番号のある室 (室番号, 階, 並び, 西の境, 東の境, 扉, 型)。7F を除き、ラウンジを除く。"""
+    low = tuple(r for r in ROOMS if r[1] in FLOORS[:2])
+    upper = tuple(r for r in _upper_rooms() if r[1] != TOP_FLOOR)
+    return tuple(r for r in low + upper if r[6] != "L")
+
+
+def _big_plate_x():
+    """室番号 -> 室名札（大きい白い板）の X。plan_lecture_dims にある 201・302 も含む。"""
+    out = {no: x for no, x, _ in ROOM_PLATES}
+    out.update({r[1]: r[5] for r in D.SIGNS if r[0] == "wall" and r[2] == "Room " + r[1]})
+    return out
+
+
+def door_plates():
+    """扉の横の小さい札 (室番号, X, 並び)。室名札が横に無い扉ごとに 1 枚。"""
+    big = _big_plate_x()
+    out = []
+    for no, _fl, side, x0, x1, doors, _kind in _named_rooms():
+        mid = (x0 + x1) * 0.5
+        for d in doors:
+            if abs(big[no] - d) < DOOR_PLATE_NEAR:
+                continue
+            out.append((no, round(d + (DOOR_PLATE_OFF if d < mid else -DOOR_PLATE_OFF), 3), side))
+    return tuple(out)
+
+
+def _door_plate(no, x, side):
+    x, y, z, ang = plate_at(no, x, side)
+    w, h = DOOR_PLATE
+    return ("wall", no, "Room " + no, w, h, x, y, z, ang, WHITE, NO_ANCHOR)
+
+
+DOOR_PLATES = door_plates()
+
 FLOOR_NAMES = {"2F": "2nd Floor", "3F": "3rd Floor", "4F": "4th Floor", "5F": "5th Floor",
                "6F": "6th Floor", "7F": "7th Floor"}
 
@@ -190,6 +232,32 @@ def _partition_sign(fl):
              NO_ANCHOR),)
 
 
+# 西ロビーの西の外周壁（EV を降りると正面。西の階段の口より南）の大きな階表示と、その下の室番号の案内板（#423）。
+# 階表示は 1F の黒いコアの白抜きの「1F」（YT 00:33）、案内板は 1F の案内板（YT 00:34）の型。上の階に
+# あるかは写真で未確認。7F は用途がどの資料にも無いので案内板を置かない（spec §1-10）。
+LOBBY_SIGN_Y = 26.0                   # 板の中心の Y（階段の口 29.03 と南の廊下の面 19.8 の間）
+LOBBY_FLOOR_SIGN = (1.1, 1.0, 2.0)    # 階表示の幅・高さ・中心の高さ（床から）
+LOBBY_DIRECTORY = (1.6, 0.42, 1.15)   # 案内板の幅・高さ・中心の高さ（床から）
+LOBBY_ROOMS = {"2F": ("201–203・ラウンジ", "Rooms 201–203 / Lounge"),
+               "3F": ("301–311・自習室", "Rooms 301–311 / Study Room"),
+               "4F": ("401–411", "Rooms 401–411"),
+               "5F": ("501–511", "Rooms 501–511"),
+               "6F": ("601–611", "Rooms 601–611")}
+
+
+def _lobby_signs(fl):
+    x, z = X_IN_W + 0.01, FLOOR_Z[fl]
+    w, h, dz = LOBBY_FLOOR_SIGN
+    rows = [("wall", fl, FLOOR_NAMES[fl], w, h, x, LOBBY_SIGN_Y, z + dz, E, BLACK, NO_ANCHOR)]
+    if fl in LOBBY_ROOMS:
+        ja, en = LOBBY_ROOMS[fl]
+        w, h, dz = LOBBY_DIRECTORY
+        rows.append(("wall", ja, en, w, h, x, LOBBY_SIGN_Y, z + dz, E, WHITE, NO_ANCHOR))
+    return tuple(rows)
+
+
 SIGNS = (sum((_floor_signs(f, FLOOR_NAMES[f], FLOOR_Z[f]) for f in FLOORS), ())
          + sum((_partition_sign(f) for f in FLOORS[2:-1]), ())
-         + tuple(_plate(no, x, side) for no, x, side in ROOM_PLATES))
+         + sum((_lobby_signs(f) for f in FLOORS), ())
+         + tuple(_plate(no, x, side) for no, x, side in ROOM_PLATES)
+         + tuple(_door_plate(no, x, side) for no, x, side in DOOR_PLATES))

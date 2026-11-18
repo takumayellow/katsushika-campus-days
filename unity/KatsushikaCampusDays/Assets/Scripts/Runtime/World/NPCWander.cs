@@ -286,9 +286,8 @@ namespace KCD
         }
 
         /// <summary>
-        /// Animator の Speed に渡す値。歩きのクリップは 2.6 m/s（PlayerController.DefaultWalkSpeed）に置いてある。
-        /// 1.1 m/s の NPC に 2.6 を渡すと脚は振り切れるが足が毎秒 1.5 m 滑るので（#13 の対処の副作用）、
-        /// 歩幅と歩調を同じ割合で落とす PlayerAnimatorDriver.SolveGait に一本化した（#43）。
+        /// Animator の Speed に渡す値。歩きのクリップは 1.3 m/s（PlayerAnimatorDriver.WalkClipSpeed）に置いてある。
+        /// それより遅い NPC には、歩幅と歩調を同じ割合で落とす PlayerAnimatorDriver.SolveGait に一本化した（#43）。
         /// </summary>
         public static float AnimatorSpeed(float agentSpeed, float walkSpeed)
         {

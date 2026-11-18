@@ -1,11 +1,11 @@
 """走りの腕の振り (#232)。
 
-軽い小走り（ジョグ）の腕: 上腕は脇に下ろしたまま肩から前後に片振幅 10〜15 度だけ振り、
-肘は 40〜60 度だけ軽く曲げて開閉は小さい（前で 10 度ほど深く、後ろで浅く曲がる）。
-前腕はいつも斜め下を向き、前へ振っても水平まで上がらない（前腕が前へ突き出ると、はさみを
-構えたように見える）。胸の回旋もごく小さい。
+ふつうのランニングの腕: 上腕は脇に下ろしたまま肩から前後に片振幅 12〜20 度振り、
+肘は 50〜70 度曲げて開閉は小さい（前で 10 度ほど深く、後ろで浅く曲がる）。人の肘は 70〜90 度だが、
+前傾した胴の前でそこまで曲げると前腕が水平より上へ突き出し、はさみを構えたように見えるので、
+前腕がいつも水平より下を向く深さにとどめる。胸の回旋もごく小さい。
 手はバストより下、肩関節のほぼ真下を通る（横に開かず、体の中心線も越えない）。
-歩きの腕は #43 で見直し中なので変えない。
+歩きと小走りの腕は test_chara_walk_jog が見る。
 
 肘の曲がりと手の位置は胸から見たもの（胴のひねりと前傾は含めない）。ボーンの向きに
 腕下ろしを合成したモーションの回転を当てて求める（test_chara_arms と同じ方法）。
@@ -74,25 +74,12 @@ def _world(name, side):
     return [gait_fk.arm(gait_fk.joints(name, "Run", ph), side) for ph in CYCLE]
 
 
-def test_walk_arms_are_unchanged():
-    """歩きの腕は #43 で保留中なので、値も回転も元のまま。"""
-    assert anim.GAIT_ARMS["Walk"] == dict(arm=26.0, elbow=(14.0, 24.0), arm_in=0.0,
-                                          abd=4.0, thx=0.70, fwd=0.0)
-    D = math.radians
-    for f in PHASES:
-        spec = _swing("Walk", f)
-        for side, sgn in (("Left", 1.0), ("Right", -1.0)):
-            fs = f * sgn
-            assert spec[side + "UpperArm"] == [("Y", D(-4.0) * sgn), ("X", D(26.0) * fs)]
-            assert spec[side + "LowerArm"] == [("X", -(D(14.0) + D(24.0) * (0.5 - 0.5 * fs)))]
-
-
 @pytest.mark.parametrize("side", ["Left", "Right"])
 @pytest.mark.parametrize("name", params.ALL_IDS)
 def test_run_upper_arm_swings_fore_and_aft_evenly(name, side):
-    """画面上の上腕は前後とも 10〜16 度だけ振り、前傾した胴に引かれて後ろへ偏らない。"""
+    """画面上の上腕は前後とも 12〜20 度振り、前傾した胴に引かれて後ろへ偏らない。"""
     sw = [a["swing"] for a in _world(name, side)]
-    assert -16.0 < min(sw) < -10.0 and 10.0 < max(sw) < 16.0, (name, side, min(sw), max(sw))
+    assert -20.0 < min(sw) < -12.0 and 12.0 < max(sw) < 20.0, (name, side, min(sw), max(sw))
     assert abs(max(sw) + min(sw)) < 6.0, (name, side, min(sw), max(sw))
 
 
@@ -116,7 +103,7 @@ def test_chibi_run_upper_arm_stays_down(name, side):
 @pytest.mark.parametrize("name", params.ALL_IDS)
 def test_run_elbow_opens_and_closes_with_the_swing(name, side):
     bends = [_bend(*_arm(name, f, side)[1:]) for f in PHASES]
-    assert 36.0 < min(bends) < 50.0 and 48.0 < max(bends) < 62.0, (name, side, min(bends), max(bends))
+    assert 50.0 < min(bends) < 60.0 and 60.0 < max(bends) < 70.0, (name, side, min(bends), max(bends))
     # 開閉は小さい（10 度前後）。振りの間ずっと固まってもいない
     assert 6.0 < max(bends) - min(bends) < 16.0, (name, side, bends)
     # 前へ振ったとき（f=-1 は左腕が前）に深く、後ろへ振ったときに浅く曲がる
@@ -127,9 +114,12 @@ def test_run_elbow_opens_and_closes_with_the_swing(name, side):
 @pytest.mark.parametrize("side", ["Left", "Right"])
 @pytest.mark.parametrize("name", params.ALL_IDS)
 def test_run_forearm_points_down(name, side):
-    """画面上の前腕は 1 周期を通して水平より 15 度以上下を向き、後ろへ振ると 45 度より下がる。"""
+    """画面上の前腕は 1 周期を通して水平より 5 度以上下を向き、後ろへ振ると 45 度より下がる。
+
+    背の高いキャラは前へ振りきっても水平より 11 度下。2 頭身のキャラは胴が短く 7 度下。
+    """
     rise = [a["fore_rise"] for a in _world(name, side)]
-    assert max(rise) < -15.0, (name, side, max(rise))
+    assert max(rise) < -5.0, (name, side, max(rise))
     assert min(rise) < -45.0, (name, side, min(rise))
 
 
@@ -157,18 +147,22 @@ def test_chibi_run_hand_stays_below_the_chest(name, side):
 @pytest.mark.parametrize("side", ["Left", "Right"])
 @pytest.mark.parametrize("name", params.ALL_IDS)
 def test_run_hand_stays_under_the_shoulder(name, side):
-    """手首は体の中心線を越えず、肩関節から横へ 6 cm 以上は離れない（腕を横に開かない）。"""
+    """手首は体の中心線を越えず、肩関節から横へ 6.5 cm 以上は離れない（腕を横に開かない）。
+
+    いちばん外に来るのは、振袖の袂を見せるために腕を開いているマドンナちゃん（6.2 cm）。
+    """
     out = 1.0 if side == "Left" else -1.0
     for f in PHASES:
         sh, upper, fore = _arm(name, f, side)
         x = (sh + upper + fore)[0] * out
         assert x > 0.03, (name, side, f, x)
-        assert x < sh[0] * out + 0.06, (name, side, f, x, sh[0] * out)
+        assert x < sh[0] * out + 0.065, (name, side, f, x, sh[0] * out)
 
 
-def test_elbow_override_is_only_for_run():
-    """肘の上書きは Run だけ。Walk に渡すと黙って捨てずに弾く（歩きは #43 まで変えない）。"""
+def test_elbow_override_is_only_for_running_gaits():
+    """肘の上書きは滞空のある歩容（Jog / Run）だけ。Walk に渡すと黙って捨てずに弾く。"""
     arm = gait_fk.mathutils_np.FakeArmature(gait_fk.rest("mirai"))
     gait_fk.ANIM.Gait(arm, "Run", elbow=(70.0, 10.0))
+    gait_fk.ANIM.Gait(arm, "Jog", elbow=(70.0, 10.0))
     with pytest.raises(KeyError, match="elbow"):
         gait_fk.ANIM.Gait(arm, "Walk", elbow=(70.0, 10.0))

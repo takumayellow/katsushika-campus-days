@@ -33,6 +33,24 @@ namespace KCD
         /// <summary>タイトルの「つづきから」で読んだセーブ。位置と屋内はキャンパスの最初のフレームで当てる。</summary>
         private static SaveData _pending;
 
+        /// <summary>
+        /// セーブを消す。展示モードで次の人が前の人のセーブを F9 やポーズの「ロード」で読まないようにする (#466)。
+        /// 消せなくても遊べるので、失敗は知らせるだけにする。消したか（もともと無かったときも含む）を返す。
+        /// </summary>
+        public static bool Delete()
+        {
+            try
+            {
+                SaveStore.Delete(FilePath);
+                return true;
+            }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            {
+                Debug.LogWarning("[KCD] save delete failed: " + e.GetType().Name);
+                return false;
+            }
+        }
+
         /// <summary>セーブが存在するか（読めるかどうかは見ない。見るなら <see cref="Read"/>）。</summary>
         public static bool HasSave => SaveStore.Exists(FilePath);
 
@@ -53,6 +71,7 @@ namespace KCD
             data.Talked = DayStats.SortedTalkedIds();
             data.Affinity = NpcAffinity.SortedValues();
             data.AnsweredChoices = NpcAffinity.SortedAnswered();
+            data.SpentTopics = OnceTopics.Sorted();
 
             var player = UnityEngine.Object.FindAnyObjectByType<PlayerController>();
             if (player != null)
@@ -261,6 +280,7 @@ namespace KCD
 
             DayStats.Restore(data.Buildings, data.Collected, data.PhotoSpots, data.Talked);
             NpcAffinity.Restore(data.Affinity, data.AnsweredChoices);
+            OnceTopics.Restore(data.SpentTopics);
             manager.Quests?.NoteHeldFromSave(data.Collected);
             manager.Quests?.Restore(data.Quests);
 

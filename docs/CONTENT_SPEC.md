@@ -97,7 +97,7 @@ Assets/Data/Ending       → Assets/Resources/KCD/Ending
 
 ---
 
-## 2. `Quests/q_sq_*.json`（サブクエスト 6 本）
+## 2. `Quests/q_sq_*.json`（サブクエスト）
 
 既存 `QuestData.Parse` が読むキー（`id,title,summary,order,autoStart,rewardText,prerequisites[],steps[{id,text,type,target,count,timeLimit,minHour}]`）はそのまま。**追加キー**:
 
@@ -118,6 +118,9 @@ Assets/Data/Ending       → Assets/Resources/KCD/Ending
 | `q_sq_stray_book` | 14 | inari `t_sq_stray_book_start` | q_park | enter library → visit `poi_library_stacks` → `poi_library_desk` → `poi_library_counter` → talk inari | `c_inari_bookmark` |
 | `q_sq_photo_walk` | 15 | autoStart | q_orientation | visit `ps_mall_view` → `ps_kyoso_facade` → `ps_pond_library` | `ach_photo_walk` |
 | `q_sq_night_walk` | 16 | autoStart | q_sunset | visit `gate_main` (minHour 19) | `ach_full_day` |
+| `q_sq_hello_world` | 18 | lecture `t_hello_start` | q_lecture | talk `board_203` → `board_302` → `board_402` → `board_502` → `board_602` → flag `hello_world_reply`（7F の白板 `board_7F` の選択肢）→ talk lecture | `ach_hello_world` |
+| `q_sq_first_program` | 19 | lecture `t_program_start` | q_sq_hello_world | talk `ta_306`（306 の TA）→ flag `first_program_ran`（最前列の PC `pc_306` の選択肢）→ talk `ta_306` → talk lecture | `ach_first_program` |
+| `q_sq_pop_quiz` | 21 | tateishi `t_start`（101 の隣の席の学生） | q_lecture | talk `board_lecture_101`（101 の黒板）→ flag `pop_quiz_answered`（tateishi `t_quiz` の選択肢。外れは答え直せる。正解で好感度 +1） | なし |
 
 **屋内 `visit` を動かすために必要なもの**: 屋内 `poi_*` を対象にする `visit` ステップは、その Empty の位置に `VisitZone(PlaceId = poi 名)` が要る。
 `InteriorStage.AddPoiZones` が、全 Interiors の `poi_*` Empty に 4×3×4 m の VisitZone を自動生成する。
@@ -128,6 +131,7 @@ Assets/Data/Ending       → Assets/Resources/KCD/Ending
 各 NPC の `topics` に `t_sq_<quest>_start / _active / _done` を **`t_idle` の直前** に挿入した（`SelectTopic` は先頭一致なので、既存話題の優先順位は変わらない）。
 `_start` は `requiresCompletedQuest` + `once` + `startsQuest`、`_active` は `requiresActiveQuest`、`_done` は `requiresCompletedQuest` + `once`。
 既存話題の `lines` は文字列から `{ "text", "text_en" }` オブジェクトに変え、話者付き行は `{ "speaker", "text", "text_en" }`。`DialogueData` は既にオブジェクト形式（speaker 省略時は NPC）を受け付ける。
+行には時間帯で言い分ける本文 `text_morning` / `text_after_school` / `text_night`（と各 `_en`）を足せる（#41）。時間帯は `DayPart`（1 限の前・5 限の終わりまで・日の入りまで・日の入り後）で決め、空の時間帯と授業中は `text` を出す。指で遊んでいて `text_touch` がある行は、時間帯より `text_touch` を優先する。
 
 ---
 

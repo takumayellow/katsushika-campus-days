@@ -1,15 +1,17 @@
 """走りの脚の運び (#232)。
 
-軽い小走り（ジョグ）の脚。速さは歩数（ピッチ）で出し、1 歩は小さく、脚は高く上げない:
+人のふつうのランニングを脚長で縮めた脚。歩幅を取ってピッチを落とし（小走りに見せない）、
+脚は高く上げない:
 
 - 接地: 膝の屈曲は 20 度前後でほぼ伸び、すねは鉛直から 5〜8 度以内。足は体の少し前に降りる
-- 立脚中期: 膝は 30〜40 度まで沈む
-- 遊脚: 蹴り出した脚は軽く畳み（膝 60〜90 度）、腿は前で 30〜35 度までしか上げない。
-  後ろへの蹴り上げも小さく、足を地面から高く離さない
+- 立脚中期: 膝は 35〜45 度まで沈む（人は 40〜45 度）
+- 遊脚: 蹴り出した脚はすぐ畳み（膝 65〜85 度）、腿は前で 40〜50 度まで上げる（人は 40〜50 度）。
+  後ろへは 36 度まで引き、足を地面から高く離さない
+- ピッチ: 背の高いキャラは毎分 260 歩以下（5.4 m/s のときは 360 歩で小走りに見えた）
 
 関節の角度は gait_fk で組み立てた位置から測る。位相 0 が左足の接地。
 2 頭身のキャラは歩幅に対して脚が短く接地がごく短いので、接地の形だけを見る。
-歩きの脚は変えない。
+歩きと小走りの脚は test_chara_walk_jog が見る。
 """
 
 import pytest
@@ -38,10 +40,20 @@ def test_run_lands_with_a_nearly_straight_knee(name):
 
 
 @pytest.mark.parametrize("name", TALL)
-def test_run_stance_knee_sinks_to_mid_thirties(name):
+def test_run_stance_knee_sinks_to_about_forty(name):
     g = gait_fk.gait(name, "Run")
     knee = max(L["knee"] for ph, L in _cycle(name) if ph < g.duty)
-    assert 30.0 < knee < 42.0, (name, knee)
+    assert 35.0 < knee < 45.0, (name, knee)
+
+
+@pytest.mark.parametrize("name", TALL)
+def test_run_cadence_is_not_a_scurry(name):
+    """1 周期（2 歩）のフレーム数から毎分の歩数を出す。260 歩を超えると小走りに見える。"""
+    g = gait_fk.gait(name, "Run")
+    steps_per_min = 2 * 60.0 * anim.FPS / g.nframes
+    assert 200.0 < steps_per_min < 265.0, (name, steps_per_min)
+    # 1 歩は脚長の 1.3 倍以上（人は 1.6 倍前後）
+    assert anim.GAIT_TARGET["Run"]["v"] * 60.0 / steps_per_min / g.leg > 1.3, name
 
 
 @pytest.mark.parametrize("name", TALL)
@@ -49,26 +61,26 @@ def test_run_swing_leg_folds_lightly(name):
     g = gait_fk.gait(name, "Run")
     rows = _cycle(name)
     swing = [L for ph, L in rows if ph >= g.duty]
-    assert 60.0 < max(L["knee"] for L in swing) < 90.0, name
+    assert 65.0 < max(L["knee"] for L in swing) < 85.0, name
     # 蹴り出した脚を後ろへ伸ばしたまま浮かせない
     folded = [L["knee"] for ph, L in rows if g.duty + 0.08 < ph < g.duty + 0.12]
     assert folded and min(folded) > 22.0, (name, folded)
 
 
-@pytest.mark.parametrize("name", params.ALL_IDS)
+@pytest.mark.parametrize("name", TALL)
 def test_run_thigh_does_not_thrust_forward(name):
-    """腿は前で 30〜35 度まで。それ以上は脚を上げすぎて走るように見える (#232)。"""
+    """腿は前で 40〜50 度まで。55 度を超えると脚を振り上げて見える (#232)。"""
     hip = max(L["hip"] for ph, L in _cycle(name))
-    assert 28.0 < hip < 36.0, (name, hip)
+    assert 40.0 < hip < 50.0, (name, hip)
 
 
 @pytest.mark.parametrize("name", TALL)
 def test_run_back_kick_is_small(name):
-    """蹴り上げた脚は後ろへ 20 度以上は引かず、足首は地面から脚長の 17 % より上がらない。"""
+    """蹴り出した脚は後ろへ 36 度より引かず、足首は地面から脚長の 19 % より上がらない。"""
     rows = _cycle(name)
-    assert min(L["hip"] for ph, L in rows) > -20.0, name
+    assert min(L["hip"] for ph, L in rows) > -36.0, name
     z = [gait_fk.joints(name, "Run", ph)["LeftFoot"][2] for ph, L in rows]
-    assert (max(z) - min(z)) / gait_fk.gait(name, "Run").leg < 0.17, name
+    assert (max(z) - min(z)) / gait_fk.gait(name, "Run").leg < 0.19, name
 
 
 @pytest.mark.parametrize("name", CHIBI)
@@ -98,20 +110,3 @@ def test_run_leg_is_not_locked_straight_before_landing(name):
     g = gait_fk.gait(name, "Run")
     ahead = max(L["foot_ahead"] for ph, L in _cycle(name) if ph > 0.80) / g.leg
     assert ahead < 0.35, (name, ahead)
-
-
-def test_walk_target_is_unchanged():
-    assert anim.GAIT_TARGET["Walk"] == dict(v=2.6, duty=0.45, reach=0.95, nf=(10, 22))
-
-
-@pytest.mark.parametrize("name, ph, knee, hip", [
-    ("mirai", 0.0, 18.25, 31.46), ("mirai", 0.25, 27.31, 6.27),
-    ("mirai", 0.5, 11.52, -26.59), ("mirai", 0.75, 73.92, 40.65),
-    ("botchan", 0.0, 21.37, 28.86), ("botchan", 0.5, 90.81, 9.59),
-    ("madonna", 0.0, 20.47, 25.13), ("madonna", 0.5, 79.70, 12.40),
-])
-def test_walk_legs_are_unchanged(name, ph, knee, hip):
-    """走りの脚の値は歩きに及ばない（値は歩きの脚の実測）。"""
-    L = gait_fk.leg(gait_fk.joints(name, "Walk", ph), "Left")
-    assert L["knee"] == pytest.approx(knee, abs=0.01)
-    assert L["hip"] == pytest.approx(hip, abs=0.01)

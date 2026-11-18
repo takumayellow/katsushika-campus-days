@@ -14,7 +14,7 @@ from . import geom, props
 Z_GROUND = 0.000     # 外周の地面（敷地の外）
 Z_PARK = 0.003       # 公園・空地（敷地の芝より下。敷地の中では芝に隠れる）
 Z_CAMPUS = 0.006     # キャンパス敷地の芝
-Z_AREA = 0.009       # グラウンド・広場・駐車場
+Z_AREA = 0.009       # グラウンド・広場・駐車場（ハードコートの青と白線はこの上に 3 mm ずつ。Z_COURT・Z_COURT_LINE）
 Z_ROAD = 0.012       # 車道（帯の厚み 0.06 m は地面の下へ埋まる）
 Z_LINE = 0.015       # 車道の白線（厚みなし。車道から 3 mm）
 Z_FOOT = 0.018       # 歩道・水盤の前の石張り
@@ -126,6 +126,12 @@ class Occupancy:
         k = self._idx(x, y)
         return True if k is None else bool(self.grid[k])
 
+    def copy(self):
+        """今の占有の写し。後から stamp しても元に影響しない。"""
+        other = Occupancy(self.lo, self.lo + (self.n - 1) * self.CELL)
+        other.grid = bytearray(self.grid)
+        return other
+
 
 def _clip_polyline(pts, limit):
     """±limit の外に出る点で折れ線を分割する。"""
@@ -143,22 +149,133 @@ def _clip_polyline(pts, limit):
     return out
 
 
+_KIND_MAT = {"park": "grass", "pitch": "soil", "playground": "sand",
+             "parking": "asphalt", "university": None}
+
+# 運動場（leisure=pitch）の地面を、競技（sport）と表面（surface）で決める。表に無い組み合わせは soil。
+# campus.json の 3 区画の surface は OSM に無いので、tools/osm_extract.py の PITCH_SURFACE が
+# 航空写真（docs/ref/aerial/README.md の crop_sports_north）で見た値を補っている (#59)。
+_PITCH_MAT = {
+    ("soccer", "artificial_turf"): "grass",     # サッカー場。白線の引かれた人工芝の緑
+    ("tennis", "acrylic"): "hardcourt_outer",   # ハードコート。内側の青と白線は build_tennis_court
+    ("tennis", "artificial_turf"): "soil",      # 砂入り人工芝。上から見ると砂の色が勝つ
+}
+
+# テニスのハードコート（#59）。寸法は ITF のルールの値で、線の外側で測る
+COURT_LEN = 23.77        # ダブルスのコートの長さ
+COURT_WIDTH = 10.97      # ダブルスのコートの幅
+COURT_SINGLES = 8.23     # シングルスのコートの幅
+COURT_SERVICE = 6.40     # ネットからサービスラインまで
+COURT_LINE_W = 0.08      # 線の幅。実物は 5 cm だが、低い視点で遠くの線が途切れないよう太くする
+COURT_BASELINE_W = 0.10  # ベースラインの幅（ルールの上限）
+COURT_MARK = 0.10        # センターマークの長さ
+# コートの内側の青は区画の緑から 3 mm、白線はそこから 3 mm 上。車道（Z_ROAD）と白線（Z_LINE）と
+# 同じ高さになるが、ハードコートの区画には道が掛からないので重ならない（test_site_area_materials）
+Z_COURT = Z_AREA + 0.003
+Z_COURT_LINE = Z_AREA + 0.006
+
+
+def area_materials(areas):
+    """areas の各区画の地面のマテリアル（None は張らない）。"""
+    return [_area_material(a) for a in areas]
+
+
+def _area_material(a):
+    if a["kind"] == "pitch":
+        return _PITCH_MAT.get((a.get("sport"), a.get("surface")), _KIND_MAT["pitch"])
+    return _KIND_MAT.get(a["kind"], "grass")
+
+
+# 長手の向きを決めるとき、向きの差がこの角度以内の辺を同じ側の辺とみなす
+COURT_AXIS_TOL_DEG = 20.0
+
+
+def court_axes(poly):
+    """コートの中心（区画の重心）と長手の向き（単位ベクトル）。
+
+    辺を向きの近いもの（差が COURT_AXIS_TOL_DEG 以内、逆向きも同じとみなす）でまとめ、長さの合計が
+    最も大きいまとまりの辺の向きを平均する。長辺が何本かに割れて、割れた 1 本が短辺より短くなっても、
+    長手は長辺の側で決まる。"""
+    poly = geom.ensure_ccw(geom.dedup(poly))
+    n = len(poly)
+    if n < 3:
+        raise ValueError("コートの区画の頂点が 3 つ未満")
+    edges = [geom.sub(poly[(i + 1) % n], poly[i]) for i in range(n)]
+    dirs = [geom.normalize(e) for e in edges]
+    cos_tol = math.cos(math.radians(COURT_AXIS_TOL_DEG))
+
+    def group(ref):
+        return [k for k, d in enumerate(dirs) if abs(geom.dot(d, ref)) >= cos_tol]
+
+    best = max((group(d) for d in dirs), key=lambda g: sum(geom.length(edges[k]) for k in g))
+    ref = dirs[max(best, key=lambda k: geom.length(edges[k]))]
+    total = (0.0, 0.0)
+    for k in best:
+        d = dirs[k]
+        total = geom.add(total, d if geom.dot(d, ref) > 0 else geom.mul(d, -1.0))
+    return geom.centroid(poly), geom.normalize(total)
+
+
+def _box(s0, s1, t0, t1):
+    """長手の範囲 s0〜s1 と短手の範囲 t0〜t1（どちらも大小の順は問わない）を、
+    court_lines の矩形 (s の小, t の小, s の大, t の大) にする。引数は軸ごと、戻り値は交互に並ぶ。"""
+    return (min(s0, s1), min(t0, t1), max(s0, s1), max(t0, t1))
+
+
+def court_lines():
+    """白線の矩形 (s0, t0, s1, t1) のリスト。s はコートの長手、t は短手で、原点はコートの中心。
+
+    同じ高さの面が重なるとちらつくので、線の交わる所はどちらか一方だけに含める。"""
+    hl, hw, hs = COURT_LEN / 2, COURT_WIDTH / 2, COURT_SINGLES / 2
+    w, bw, sv = COURT_LINE_W, COURT_BASELINE_W, COURT_SERVICE
+    lines = [_box(-(sv - w), sv - w, -w / 2, w / 2)]                     # センターサービスライン
+    for k in (-1, 1):
+        lines += [
+            _box(k * hl, k * (hl - bw), -hw, hw),                         # ベースライン
+            _box(-(hl - bw), hl - bw, k * hw, k * (hw - w)),              # ダブルスのサイドライン
+            _box(-(hl - bw), hl - bw, k * hs, k * (hs - w)),              # シングルスのサイドライン
+            _box(k * sv, k * (sv - w), -(hs - w), hs - w),                # サービスライン
+            _box(k * (hl - bw), k * (hl - bw - COURT_MARK), -w / 2, w / 2),   # センターマーク
+        ]
+    return lines
+
+
+def build_tennis_court(mb, poly):
+    """区画 poly の中央に、長手をそろえてハードコート 1 面（内側の青と白線）を敷く。ネットは置かない。"""
+    c, u = court_axes(poly)
+    f = geom.Frame(u)
+
+    def place(s0, t0, s1, t1):
+        return [geom.add(c, p) for p in f.rect(s0, t0, s1, t1)]
+
+    hl, hw = COURT_LEN / 2, COURT_WIDTH / 2
+    corners = place(-hl, -hw, hl, hw)
+    # 4 隅が区画の内側にあり、区画の頂点が 1 つもコートの内側に入っていなければ、コートは区画に収まる
+    # （凹んだ区画で、辺だけがコートに食い込む場合も頂点の側で捕まえる）
+    poking = any(abs(s) < hl and abs(t) < hw for s, t in (f.uv(geom.sub(p, c)) for p in poly))
+    if poking or not all(geom.point_in_poly(p, poly) for p in corners):
+        # はみ出した青と白線は区画の外の地面や道と同じ高さで重なり、ちらつく
+        raise ValueError("ハードコートが区画に収まらない（区画の大きさか長手の向きが合わない）")
+    mb.add_ngon_flat(corners, Z_COURT, "hardcourt_inner")
+    for r in court_lines():
+        mb.add_ngon_flat(place(*r), Z_COURT_LINE, "line_white")
+
+
 def build_ground(mb, data, frame, occ=None):
     # 全体を覆う地面
     E = 350.0
     mb.add_ngon_flat([(-E, -E), (E, -E), (E, E), (-E, E)], Z_GROUND, "grass_dark")
     # キャンパス敷地
     mb.add_ngon_flat(geom.ensure_ccw(geom.dedup(data["campus_boundary"])), Z_CAMPUS, "grass")
-    kind_mat = {"park": "grass", "pitch": "soil", "playground": "sand",
-                "parking": "asphalt", "university": None}
-    for a in data["areas"]:
-        mat = kind_mat.get(a["kind"], "grass")
+    for a, mat in zip(data["areas"], area_materials(data["areas"])):
         if mat is None:
             continue
         poly = geom.ensure_ccw(geom.dedup(a["polygon"]))
         hard_kind = a["kind"] in ("pitch", "playground", "parking")
         z = Z_AREA if hard_kind else Z_PARK
         mb.add_ngon_flat(poly, z, mat)
+        if mat == "hardcourt_outer":
+            build_tennis_court(mb, poly)
         if hard_kind and occ is not None:
             # グラウンド・駐車場に木を生やさない
             occ.stamp_poly(poly, margin=1.0)

@@ -61,8 +61,8 @@ INT_BUDGET = 450000       # 屋内の合計
 INT_BUDGET_ONE = {        # 屋内 1 棟
     "library": 80000,
     "cafeteria": 62000,
-    "research2": 20000,
-    "lecture": 130000,
+    "research2": 14000,   # 6,000 を lecture へ（lecture の spec §7-8）
+    "lecture": 136000,
     "research1": 50000,
     "kyoso": 45000,
     "gym": 21000,

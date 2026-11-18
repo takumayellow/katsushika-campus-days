@@ -7,6 +7,10 @@
       --out-dir unity/KatsushikaCampusDays/Assets/Models/Campus \
       --preview
 
+  低木と草むらだけを書き直すとき（shrubs.fbx と shrubs.json。campus.fbx と trees.fbx は触らない）:
+    ... --python blender/build_campus.py -- --json data/osm/campus.json --only-shrubs \
+      --out-dir unity/KatsushikaCampusDays/Assets/Models/Campus
+
 座標: campus.json の (x=東, z=北) を Blender の (x, y) に、z を上方向とする。
 FBX は axis_forward='-Z' / axis_up='Y' / bake_space_transform=True で書き出すので、
 Unity 側では (x, y=Blender z, z=Blender y) = (x, 上, 北) になる。
@@ -24,7 +28,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import bpy  # noqa: E402
 
-from kcd_lib import buildings, entrances, geom, mats, props, render, site, uv  # noqa: E402
+from kcd_lib import buildings, entrances, geom, mats, props, render, shrubs, site, uv  # noqa: E402
 from kcd_lib import park as parklib  # noqa: E402
 from kcd_lib.mesh import MeshBuilder  # noqa: E402
 
@@ -78,6 +82,8 @@ def parse_args(argv):
     p.add_argument("--trees", type=int, default=900, help="樹木の最大本数")
     p.add_argument("--engine", default="auto", choices=["auto", "eevee", "workbench"])
     p.add_argument("--seed", type=int, default=20250920)
+    p.add_argument("--only-shrubs", action="store_true",
+                   help="shrubs.fbx と shrubs.json だけ書く（campus.fbx と trees.fbx は書き直さない）")
     return p.parse_args(argv)
 
 
@@ -190,6 +196,7 @@ def build_campus(data, frame, rng, max_trees, park):
     park_mb = MeshBuilder("site_props_park")
     n_bridge = parklib.build_bridges(site_mb, park_mb, data, park, hard)
     print("[park] bridges over the water: %d" % n_bridge)
+    ctx["hard_pre"] = hard.copy()    # 水盤・公園の池と橋だけの占有（低木と草むらが避ける。kcd_lib.shrubs）
     n_cut, n_faces = site_mb.split_by_grid(SITE_GRID)
     print("[site] split %d faces by %.0f m grid -> %d faces" % (n_cut, SITE_GRID, n_faces))
     site_obj = site_mb.to_object(scene_coll)
@@ -343,6 +350,64 @@ def place_tree_instances(trees, tree_objs, collection=None):
     return made
 
 
+def check_trees_sidecar(trees, out_dir):
+    """組み直した木が、書き出し済みの trees.json と同じ位置か確かめる（--only-shrubs 用）。
+
+    低木と草むらは木の位置を避けて置く。木が trees.json とずれていると、shrubs.json が
+    ゲームに入っている木とは別の木を避けたことになるので、止める。"""
+    with open(os.path.join(out_dir, "trees.json"), encoding="utf-8") as fp:
+        saved = json.load(fp)["trees"]
+    same = len(saved) == len(trees) and all(
+        abs(s["x"] - t[0]) < 1e-3 and abs(s["y"] - t[1]) < 1e-3 for s, t in zip(saved, trees))
+    if not same:
+        raise RuntimeError("[shrubs] 組み直した木 %d 本が trees.json（%d 本）と違います。"
+                           "先に campus.fbx と trees.fbx を作り直してください" % (len(trees), len(saved)))
+    print("[shrubs] trees match trees.json: %d" % len(trees))
+
+
+def write_shrubs(args, data, frame, ctx, trees):
+    """shrubs.fbx（低木と草むらの原型 + shrub_<n> Empty）と shrubs.json を書く（#78）。
+
+    置き場所は kcd_lib.shrubs.plan。乱数は木と別の列（--seed + SEED_OFFSET）なので木の位置は動かない。
+    trees.fbx と同じ作り: 原型 shrub_mesh_<モデル> と、グループ shrubs_<モデル> の下の shrub_<n>。
+    シーンは作り直す（campus.fbx と trees.fbx の後に呼ぶ）。"""
+    models = shrubs.load()["models"]
+    stats = {}
+    items = shrubs.plan(data, frame, ctx, trees, ctx["hard_pre"],
+                        random.Random(args.seed + shrubs.SEED_OFFSET), models=models, stats=stats)
+    used = {name: models[name] for name in sorted({it[2] for it in items})}
+
+    for o in list(bpy.context.scene.objects):
+        bpy.data.objects.remove(o, do_unlink=True)
+    protos = shrubs.build_prototypes(used)
+    groups = {name: add_empty("shrubs_%s" % name, (0.0, 0.0, 0.0), size=4.0) for name, _obj in protos}
+    for i, (x, y, name, sc, rot) in enumerate(items):
+        e = add_empty("shrub_%d" % i, (x, y, 0.0), parent=groups[name], size=0.5, kind="SINGLE_ARROW")
+        e.rotation_euler = (0.0, 0.0, rot)
+        e.scale = (sc, sc, sc)
+    shrubs_fbx = os.path.join(args.out_dir, "shrubs.fbx")
+    size = export_fbx(shrubs_fbx)
+    with open(os.path.join(args.out_dir, "shrubs.json"), "w", encoding="utf-8") as fp:
+        json.dump(shrubs.sidecar(items, used), fp, ensure_ascii=False, indent=1)
+
+    bushes = sum(1 for it in items if models[it[2]]["group"] == "bush")
+    return {"bushes": bushes, "grass": len(items) - bushes, "models": len(used),
+            "tris": shrubs.triangle_total(items, used),
+            "proto_tris": sum(len(m["triangles"]) for m in used.values()),
+            "proto_verts": sum(len(o.data.vertices) for _name, o in protos),
+            "size": size, "stats": stats}
+
+
+def print_shrub_report(report):
+    s = report["stats"]
+    print("[shrubs] bushes %d  grass %d  models %d  tris %d (prototypes %d tris, %d verts)  shrubs.fbx %.1f KB"
+          % (report["bushes"], report["grass"], report["models"], report["tris"],
+             report["proto_tris"], report["proto_verts"], report["size"] / 1024.0))
+    print("[shrubs] host walls %d  trees near hosts %d  before the cap: bushes %d grass %d  rejected %s"
+          % (s.get("hosts", 0), s.get("near_trees", 0), s.get("wanted", (0, 0))[0], s.get("wanted", (0, 0))[1],
+             ", ".join("%s %d" % kv for kv in sorted(s.get("rejected", {}).items()))))
+
+
 # --------------------------------------------------------------------------- #
 #  プレビュー
 # --------------------------------------------------------------------------- #
@@ -409,6 +474,11 @@ def main():
         print("   %-20s %7d verts  %7d faces  %7d tris"
               % (o.name, len(o.data.vertices), len(o.data.polygons), tris))
 
+    if args.only_shrubs:
+        check_trees_sidecar(trees, args.out_dir)
+        print_shrub_report(write_shrubs(args, data, frame, ctx, trees))
+        return
+
     campus_fbx = os.path.join(args.out_dir, "campus.fbx")
     size_campus = export_fbx(campus_fbx, frame.u)
     print("[fbx] %s  %.2f MB" % (campus_fbx, size_campus / 1048576.0))
@@ -453,12 +523,15 @@ def main():
     with open(os.path.join(args.out_dir, "trees.json"), "w", encoding="utf-8") as fp:
         json.dump(meta, fp, ensure_ascii=False, indent=1)
 
+    shrub_report = write_shrubs(args, data, frame, ctx, trees)
+
     total = time.time()
     print("=" * 64)
     print("campus verts : %d  (limit 2,000,000)" % campus_verts)
     print("tree  verts  : %d x %d instances" % (tree_verts, len(trees)))
     print("campus.fbx   : %.2f MB" % (size_campus / 1048576.0))
     print("trees.fbx    : %.2f MB" % (size_trees / 1048576.0))
+    print_shrub_report(shrub_report)
     print("entrances    : %d   doors: %d   signs: %d"
           % (len(ctx["entrance"]), len(ctx.get("door", [])), len(ctx["sign"])))
     print("engine       : %s" % engine)

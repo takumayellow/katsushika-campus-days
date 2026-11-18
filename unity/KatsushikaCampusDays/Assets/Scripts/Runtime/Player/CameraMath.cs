@@ -3,11 +3,23 @@ using UnityEngine;
 namespace KCD
 {
     /// <summary>
-    /// 肩越しカメラとフォトモードの自由カメラで使う、距離と高さの計算 (#12)。
-    /// 物理にも Cinemachine にも触らない純粋関数だけを置き、EditMode テストで確かめる。
+    /// 肩越しカメラとフォトモードの自由カメラで使う、距離と高さの計算 (#12) と、ズームで寄せる倍率の計算 (#187)。
+    /// 物理にも Cinemachine にも触らない純粋関数と既定の値だけを置き、EditMode テストで確かめる。
     /// </summary>
     public static class CameraMath
     {
+        /// <summary>
+        /// 肩越しカメラの視点の感度の既定。CinemachineInputBridge の既定で、<see cref="KCDInput.Look"/> に掛けて軌道の角度（度）にする。
+        /// シーンには組んだときの値が保存され、それが効く。変えたら SceneBuilder で組み直す（CameraMathTests が照らし合わせる）。
+        /// </summary>
+        public const float LookSensitivity = 2.2f;
+
+        /// <summary>
+        /// 肩越しカメラのズームの感度の既定。CinemachineInputBridge の既定で、<see cref="KCDInput.Zoom"/> に掛けて
+        /// <see cref="ZoomedRadialScale"/> に渡す。シーンとの関係は <see cref="LookSensitivity"/> と同じ。
+        /// </summary>
+        public const float ZoomSensitivity = 3.5f;
+
         /// <summary>
         /// 見る点からカメラまでに置いてよい距離。
         /// hitDistance は見る点からカメラの向きへ球を飛ばして、最初に当たった所までの距離（当たらなければ負）。
@@ -105,6 +117,16 @@ namespace KCD
         public static float MaxOrbitHeight(float radius, float maxRadialScale, float maxPitchDegrees)
         {
             return Mathf.Max(0f, radius * maxRadialScale * Mathf.Sin(maxPitchDegrees * Mathf.Deg2Rad));
+        }
+
+        /// <summary>
+        /// 軌道の半径の倍率 scale を、ズームの量 zoom（正で寄る）だけ寄せた倍率。scale を e^-zoom 倍にするので、
+        /// どの倍率からでも同じ量で同じ比だけ寄る。zoom は <see cref="KCDInput.Zoom"/> に CinemachineInputBridge の
+        /// ズームの感度を掛けた量で、2 本指の間隔を r 倍に広げると ln r になり、倍率は 1/r 倍になる。
+        /// </summary>
+        public static float ZoomedRadialScale(float scale, float zoom)
+        {
+            return scale * Mathf.Exp(-zoom);
         }
     }
 }

@@ -54,6 +54,26 @@ namespace KCD
         public static bool IsTouch => Current == InputKind.Touch;
 
         /// <summary>
+        /// 本物のゲームパッドがつながっているか。つながっていれば操作の案内にパッドのボタンを出す。
+        /// タッチの操作 UI の仮想のゲームパッド（native でない）は数えない。
+        /// </summary>
+        public static bool PadConnected
+        {
+            get
+            {
+                foreach (Gamepad pad in Gamepad.all)
+                {
+                    if (pad.native)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        }
+
+        /// <summary>
         /// 次の入力の種類。指が触れていれば Touch。Touch のときはキーかゲームパッドを使うか（keyPressed）、
         /// 指を離して <see cref="MouseAfterTouchGrace"/> 秒より後にマウスを使ったら Pointer に戻す。
         /// </summary>

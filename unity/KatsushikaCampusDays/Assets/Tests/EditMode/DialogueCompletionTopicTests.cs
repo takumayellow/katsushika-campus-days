@@ -31,6 +31,10 @@ namespace KCD.Tests
             new[] { "q_sq_lost_card", "kaname", "t_sq_lost_card_done" },
             new[] { "q_sq_lab_notebook", "sora", "t_sq_lab_notebook_done" },
             new[] { "q_sq_stray_book", "inari", "t_sq_stray_book_done" },
+            // 黒板を読み、7F の白板に書いたあと、講義の教授に伝える (#389)。
+            new[] { "q_sq_hello_world", "lecture", "t_hello_done" },
+            // 306 の PC で HELLO, WORLD を動かし、TA に見せたあと、講義の教授に伝える (#392)。
+            new[] { "q_sq_first_program", "lecture", "t_program_done" },
             new[] { "q_secret_spring_hunt", "inari", "t_secret_done" },
         };
 

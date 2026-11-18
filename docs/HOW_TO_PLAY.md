@@ -6,12 +6,14 @@
 
 ブラウザ版: https://takumayellow.github.io/katsushika-campus-days/ を開くだけ（Chrome / Edge / Firefox、WebGL 2）。
 セーブはブラウザ内に保存されるので、ブラウザのサイトデータを消すと消える。
+ゲーム中はマウスカーソルが画面に取られる。Esc でカーソルが戻り、画面をクリックするとまた取られる。Ctrl+F で全画面とページ内表示を切り替える。
 
 Windows 版:
 
-1. zip を展開し、`KatsushikaCampusDays/KatsushikaCampusDays.exe` を起動する。
-2. Windows 10/11 64bit、DirectX 11 対応 GPU。インストールは不要。
-3. セーブデータは `%USERPROFILE%\AppData\LocalLow\KCD\Katsushika Campus Days\kcd_save.json` に 1 枠。見たエンドの記録は同じフォルダの `kcd_endings.json` にあり、「はじめから」でも消えない。
+1. zip を右クリックして「すべて展開」し、`KatsushikaCampusDays/KatsushikaCampusDays.exe` を起動する（zip の中から直接は起動しない）。
+2. 初めて起動するとき「Windows によって PC が保護されました」と出ることがある（exe に署名をしていないため）。「詳細情報」を選ぶと出る「実行」を押すと起動する。
+3. Windows 10/11 64bit、DirectX 11 対応 GPU。インストールは不要。
+4. セーブデータは `%USERPROFILE%\AppData\LocalLow\KCD\Katsushika Campus Days\kcd_save.json` に 1 枠。見たエンドの記録は同じフォルダの `kcd_endings.json` にあり、「はじめから」でも消えない。
 
 ## 動作環境
 
@@ -117,14 +119,14 @@ P（ゲームパッドは Y）で入る。画面の表示が消えて時間が�
 
 ## 既知の問題
 
-2026-09-24 時点。直っていない不具合の一覧は https://github.com/takumayellow/katsushika-campus-days/issues?q=is%3Aopen+label%3Abug にある。
+2026-10-21 時点。見つかっている不具合と直したい点の一覧は https://github.com/takumayellow/katsushika-campus-days/issues にある。
 
-- ブラウザ版はゲーム画面をクリックするとマウスカーソルが画面に取られる。Esc でカーソルが戻り、Ctrl+F で全画面になる（#48）。
-- 走るとスカートから脚が突き抜けて見える（#49）。
-- 建物の中の窓の外に景色が無い（#60）。
+- 歩くと重心がぶれて、体がくねくねして見える（#43）。
+- 走ると、坊っちゃんとマドンナちゃんの袴の裾から脚が突き抜けて見えることがある。
 
 ## うまく動かないとき
 
+- 起動する前に Windows に止められる: Smart App Control が有効な PC では、署名のないアプリが止められることがあり、個別に許可する方法が無い。その PC ではブラウザ版で遊ぶ。
 - 画面が真っ暗、または起動しない: `KatsushikaCampusDays.exe -force-d3d12` で起動して DirectX 12 に切り替える（既定は DirectX 11）。
 - ログ: `%USERPROFILE%\AppData\LocalLow\KCD\Katsushika Campus Days\Player.log`
 

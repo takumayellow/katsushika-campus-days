@@ -27,7 +27,7 @@ namespace KCD
         /// <summary>縦角の範囲（度。正が上）。</summary>
         public Vector2 PitchRange { get; }
 
-        /// <summary>軌道の半径に掛ける倍率の範囲（ホイールのズーム）。</summary>
+        /// <summary>軌道の半径に掛ける倍率の範囲（ホイールと 2 本指のつまみのズーム）。</summary>
         public Vector2 RadialRange { get; }
 
         /// <summary>半径 radius のとき、カメラが見る点から離れる最大の距離（m）。</summary>

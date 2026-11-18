@@ -96,12 +96,25 @@ namespace KCD
                 return;
             }
 
-            hud.ShowToast(L.Pick(
-                "WASD / 矢印キーで移動　Shift でダッシュ　E で話す　Tab でクエスト",
-                "WASD / Arrows Move   Shift Sprint   E Talk   Tab Quests"));
-            hud.ShowToast(L.Pick(
-                "P でフォトモード（時間が止まり、カメラを自由に動かして撮れる）",
-                "P Photo mode (time stops and you can move the camera freely)"));
+            if (InputMode.PadConnected)
+            {
+                // 配信で遊ぶ人はゲームパッドを持っていることが多い。パッドのボタンで伝える。
+                hud.ShowToast(L.Pick(
+                    "左スティックで移動　右スティックで見回す　LB でダッシュ　X で話す",
+                    "L-stick Move   R-stick Look   LB Sprint   X Talk"));
+                hud.ShowToast(L.Pick(
+                    "BACK でクエスト　START でメニュー　Y でフォトモード",
+                    "BACK Quests   START Menu   Y Photo mode"));
+            }
+            else
+            {
+                hud.ShowToast(L.Pick(
+                    "WASD / 矢印キーで移動　Shift でダッシュ　E で話す　Tab でクエスト",
+                    "WASD / Arrows Move   Shift Sprint   E Talk   Tab Quests"));
+                hud.ShowToast(L.Pick(
+                    "P でフォトモード（時間が止まり、カメラを自由に動かして撮れる）",
+                    "P Photo mode (time stops and you can move the camera freely)"));
+            }
 
             // Web 版はカーソルがブラウザのポインターロックに取られる。外し方と全画面の出し方を最初に伝える (#48)。
             if (Application.platform == RuntimePlatform.WebGLPlayer)

@@ -14,13 +14,13 @@ height / heads / silhouette_pad
 -------------------------------
 `height` と `heads` は **仕上がりのシルエット** を指す。すなわち
 
-    height = 履物の底 → 髪の先端 の全高
+    height = 履物の底 → 髪パーツ（髪飾りを含む）の先端 の全高
     heads  = その全高 / 素体の頭高（顎 → 頭蓋の天端。髪は含まない）
 
 素体は「床 → 頭蓋の天端」しか作らないので、髪が上へ、履物が床下へはみ出す。
 `silhouette_pad = (髪, 履物)` にそのはみ出し量を head_h 比で宣言しておき、
 `resolve()` が素体の高さからそのぶんを引く。これをやらないと宣言値と出来上がりが
-食い違う（坊っちゃんは宣言 1.150m/2.92 頭身に対して実測 1.318m/3.36 頭身だった）。
+食い違う（坊っちゃんなら髪と下駄のぶん、頭身が 0.44 大きく仕上がる）。
 
 pad は hair.py と cloth.py の形から決まる **実測値** なので、髪型や履物を変えたら
 「髪パーツの最高 z - 頭蓋の天端 z」と「-（メッシュ最低 z）」を head_h で割って
@@ -244,8 +244,19 @@ CHARACTERS: dict[str, dict] = {
         # 2.73 まで詰めると胴が潰れて見えるため（見た目は 35% 前後で合う）。
         # silhouette_pad は組み上げたメッシュの実測値（髪の天端と下駄の底を
         # head_h で割ったもの）。髪型・履物を変えたら測り直すこと。
-        height=1.15, heads=2.83, silhouette_pad=(0.183, 0.257),
+        # height は下駄の底から髪の先までの全高。素体（足の裏〜頭蓋の天端）は
+        # 1.08 m で、マドンナちゃんの素体 1.11 m より少し低い。全高で 6 cm 上回るのは
+        # 高下駄（head_h の 0.257 倍 = 12 cm）を履くため。
+        height=1.28, heads=2.83, silhouette_pad=(0.183, 0.257),
         build="chibi_m", chibi=True, levels=BODY_LEVELS_BOTCHAN,
+        # 脚が短く走りのピッチが下限の 8 フレームに張り付くので、1 歩が脚長の 3 倍を超える。
+        # 既定の歩幅では遊脚の足首が股関節の脚長の 58 % 下まで蹴り上がり、腰へ近づいて見えた。
+        # 歩きも脚長に対して速く（フルード数 0.81）、既定の蹴り出し（かかと上げ 45 度）では
+        # 足首ごと骨盤が持ち上がって上下動が 10 cm になる。かかと上げを浅くして 3.7 cm に抑える。
+        # 小走りは走りより接地が長いぶん蹴り出した足が上がるので、足の持ち上げも小さくする
+        # （足首は股関節から脚長の 62 % 下までにとどまる）。
+        gait={"Walk": dict(p_toe=20.0), "Jog": dict(reach=0.80, clear=0.03),
+              "Run": dict(reach=0.80, clear=0.08)},
         skin=_c("#EBBE9C"),
         # 黒髪の地の色は、色味をわずかに残した明度 L* 30 の灰にする（Homura の黒髪は
         # #4E494B で L* 31.6）。暗くすると陰も輪郭線（L* 10）と同じ暗さになり、髪の房も
@@ -292,7 +303,8 @@ CHARACTERS: dict[str, dict] = {
         # 髪を除いた頭蓋は 68px なので 211/68 = 3.10 …だが heads は
         # 「素体の頭高」に対する比なので、髪のはみ出しは silhouette_pad で
         # 別に引く。3.10 のままだと胴が長く見えるので 2.98 に留める。
-        height=1.14, heads=2.98, silhouette_pad=(0.210, 0.018),
+        # height はブーツの底から頭頂のリボンの先までの全高で、素体は 1.11 m。
+        height=1.22, heads=2.98, silhouette_pad=(0.252, 0.028),
         build="chibi_f", chibi=True,
         skin=_c("#F5CDBA"),
         # 公式の髪は明るい黄土色 #AA6D26。#8B5A2B は暗くて赤黒い。
@@ -342,7 +354,9 @@ CHARACTERS: dict[str, dict] = {
         # 行灯袴にブーツなので小股で歩く。既定の歩幅だと前へ出た腿が袴の前を
         # 押し広げて裂けて見えた（#49）。速さはゲーム側と同じまま、1 歩を
         # 短くして歩数を増やす（見える素肌 Walk 53 → 38 / Run 85 → 59）。
-        gait={"Walk": dict(reach=0.75), "Run": dict(reach=0.85)},
+        # かかと上げはぼっちゃんと同じ理由で浅くする（上下動 10 → 4 cm）。
+        gait={"Walk": dict(reach=0.75, p_toe=20.0), "Jog": dict(reach=0.85),
+              "Run": dict(reach=0.85)},
         sign_items=("ハート柄の振袖", "頭頂の赤リボン", "編み上げブーツ"),
         outward_faces=True,
     ),
@@ -360,12 +374,21 @@ CHARACTERS: dict[str, dict] = {
         blush_color=_c("#FF98A2"), blush_strength=0.46,
         mouth_color=_c("#C8434B"), mouth_style="smile", mouth_w=0.034,
         eye_style="round", eye_tilt=6.0,
+        # 眉は前髪の歯の下に細く出す。鼻筋（face_keel）を通して眼鏡を鼻に乗せる。
+        brow_width=0.028, face_keel=0.085,
         hair="twintail", hair_accessory="glasses_red",
+        # 赤い縁の眼鏡。レンズは目を囲む丸みのある形にし、頬紅は中心をレンズの縁より下に置く。
+        # レンズが縦に長く、縁を外側ほど奥へ回すと横から縦長の輪に見えるので、縁は目より
+        # 手前のほぼ平らな面に置き、横からは目の前の 1 本の線に見せる。
+        glasses_tube=0.011, glasses_lens=(1.40, 1.08),
+        glasses_front=0.066, glasses_wrap=0.08,
+        blush_layout=dict(dx=0.235, y=0.255, rx=0.075, ry=0.035),
         tail_ribbon=True,
         outfit="seifuku",
         face_layout=dict(eye_y=0.418, eye_dx=0.188, eye_rx=0.078, eye_ry=0.100),
+        # 結び目のリボン（ribbon_red の部品）は紫にする。
         mat_colors={"hair": "#49454F", "eye_l": "#8E5FC0", "eye_r": "#8E5FC0",
-                    "cloth_ribbon_green": "#2E6FBF"},
+                    "cloth_ribbon_green": "#2E6FBF", "ribbon_red": "#7B4FB4"},
         accessories=(),
         sign_items=("赤縁メガネ", "ツインテール", "結び目の紫リボン"),
         outward_faces=True,
@@ -425,14 +448,15 @@ CHARACTERS: dict[str, dict] = {
         lash_color=_c("#3A3A44"),
         brow_color=_c("#2E2C30"),
         blush_color=_c("#D89080"), blush_strength=0.0,
-        mouth_color=_c("#8E4038"), mouth_style="line", mouth_w=0.028,
+        mouth_color=_c("#8E4038"), mouth_style="line", mouth_w=0.034,
         # 大人の男の顔 (#172): 目は横長の細い目にし、虹彩は小さな濃い茶の円、光は 1 点だけ。
-        # まぶたは上の線 1 本で、目尻の跳ねと下まつ毛は付けない。眉は目に近い直線寄りの眉。
-        # 鼻筋（face_keel）を通して眼鏡を鼻に乗せる。輪郭は顎を張らせる。
+        # まぶたは上の線 1 本で、目尻の跳ねと下まつ毛は付けない。眉は目に近い、太く直線寄りの眉。
+        # 鼻筋（face_keel）を通して眼鏡を鼻に乗せる。輪郭は頬のふくらみを抑え、エラの角と
+        # 幅のある平らな顎先を作る（head_jaw、body._jaw_width）。卵形の細い顎は丸顔に見えた。
         eye_style="narrow", eye_tilt=0.0,
-        brow_width=0.0120, brow_arch=0.005, brow_lift=0.080,
+        brow_width=0.0220, brow_arch=0.005, brow_lift=0.080,
         lash_scale=0.95, lash_lower=False, lash_flick=0.0, crease_lift=0.85,
-        eye_shine=0.55, head_square=0.50, face_keel=0.080,
+        eye_shine=0.55, head_square=0.50, head_jaw=1.0, face_keel=0.080,
         hair="business", hair_accessory="glasses_gray",
         # 細い金属の縁の眼鏡。レンズは目の横幅に対する倍率と、縦横比で決める。
         glasses_tube=0.0060, glasses_lens=(1.50, 0.60),

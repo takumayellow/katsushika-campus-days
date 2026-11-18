@@ -8,7 +8,7 @@ namespace KCD.Editor
     ///
     /// 立て看板（blender/kcd_lib/props.py の add_pylon_sign）は「文字は Unity 側で貼る」約束の白い板。
     /// 表と裏の両方に、カメラを向かない TextMeshPro を板と平行に貼る。建物の名前が出るのはこの板だけで、
-    /// 板の外に浮かぶ札は置かない。店（共創棟のスターバックスとファミリーマート）は外に看板も名前も出さない。
+    /// 板の外に浮かぶ札は置かない。店（共創棟のカフェとコンビニ）は外に看板も名前も出さない。
     /// 言語の切り替えは SignFaceText が受けて ui.building.&lt;id&gt; を引き直す。
     /// 文字のマテリアルはフォントの既定マテリアルを共有させる。renderer.material・fontMaterial・
     /// outlineWidth / outlineColor の setter は編集時にマテリアルを複製してシーンへ埋め込むので使わない（#64）。

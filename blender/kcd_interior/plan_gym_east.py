@@ -1,16 +1,55 @@
 """東棟: 廊下・体育事務室・更衣室とシャワー室の扉・サブアリーナ。"""
 
+import math
+
 from . import kit, shell
 from . import plan_gym_dims as D
 from . import plan_gym_shell as S
 
 H = D.C_EAST
 WALL_X0, WALL_X1 = D.E_WALL
+BEAM_W = 1.4                               # サブアリーナの梁の幅
+BEAM_OFF = (-6.75, -2.25, 2.25, 6.75)      # 室の中心から梁の芯まで（梁に直交する向き）
+DL_CENTERS = (-9.0, -4.5, 0.0, 4.5, 9.0)   # 梁の間の菱形の中心（梁と同じ座標）
+DL_R = 0.15                                # ダウンライトの半径
+DL_CLEAR = 1.0                             # ダウンライトの中心から梁の芯までの最小の距離
 
 
 def _ex(y):
     """東壁（辺 4）の室内側の面の少し奥の X。仕切りを壁の中へ差し込む。"""
     return D.edge_point(D.E_WING_E, 1, y)[0] - 0.1
+
+
+def _beam_strips(x0, y0, x1, y1, xc, yc):
+    """45° と -45° に交差する梁の帯を室の矩形で切り、(向きの番号, 多角形) で返す。"""
+    r = math.sqrt(0.5)
+    out = []
+    for fam, (d, n) in enumerate((((r, r), (-r, r)), ((-r, r), (-r, -r)))):
+        for o in BEAM_OFF:
+            pts = [(xc + n[0] * (o + w) + d[0] * s, yc + n[1] * (o + w) + d[1] * s)
+                   for w, s in ((-BEAM_W / 2, -30.0), (-BEAM_W / 2, 30.0),
+                                (BEAM_W / 2, 30.0), (BEAM_W / 2, -30.0))]
+            poly = S._clip(pts, x0, y0, x1, y1)
+            if len(poly) >= 3:
+                out.append((fam, poly))
+    return out
+
+
+def _downlights(mb, x0, y0, x1, y1, xc, yc, z):
+    """梁の間の天井に下を向く 8 角形のダウンライトを置く（菱形ごとに中心と十字の 4 か所。
+    矩形 x0..x1, y0..y1 の外と、梁の芯から DL_CLEAR より近いものは置かない）。"""
+    r = math.sqrt(0.5)
+    for cu in DL_CENTERS:
+        for cv in DL_CENTERS:
+            for du, dv in ((0, 0), (1, 1), (1, -1), (-1, 1), (-1, -1)):
+                u, v = cu + du, cv + dv
+                if min(min(abs(u - o), abs(v - o)) for o in BEAM_OFF) < DL_CLEAR:
+                    continue
+                x, y = xc + r * (u - v), yc + r * (u + v)
+                if not (x0 <= x <= x1 and y0 <= y <= y1):
+                    continue
+                mb.add_face([(x + DL_R * math.cos(t), y - DL_R * math.sin(t), z)
+                             for t in (2 * math.pi * j / 8 for j in range(8))], "gym_light_linear")
 
 
 def partitions(c):
@@ -61,25 +100,34 @@ def office(c):
 def sub_arena(c):
     mb = c.wall
     x0, y0, x1, y1 = D.SUB
-    # 天井の梁（床の上 3.2 m）と照明
-    for k in range(5):
-        y = y0 + 1.5 + k * 3.5
-        kit.box(mb, x0, y, D.C_BEAM, x1 + 0.3, y + 0.3, H, "gym_beam_beige")
-    pts = shell.ceiling_lights(mb, x0 + 1.0, y0 + 1.0, x1 - 0.5, y1 - 1.0, D.C_BEAM - 0.02,
-                               sx=3.5, sy=3.5, w=0.2, l=1.6, mat="gym_light_linear", limit=20)
-    c.lights_from(pts, D.C_BEAM, energy=300.0, step=3, radius=3.5)
-    # 壁の羽目板（横張りの木）: 西・南・北・東の内面
+    xc, yc = (x0 + x1) / 2, (y0 + y1) / 2
+    # 斜めに交差する下がり梁（下端は床の上 3.2 m。交差で底面が重ならないよう向きごとに 5 mm ずらす）。
+    # 南は仕切りの室内側の面で止め、東は外周壁の中まで通す
+    for fam, poly in _beam_strips(x0, y0 + 0.16, x1 + 0.3, y1, xc, yc):
+        mb.add_prism(poly, D.C_BEAM + 0.005 * fam, H, "gym_beam_beige", None, "gym_beam_beige")
+    # 梁の間の天井のダウンライトと、菱形の中心の点光源 3 個
+    _downlights(mb, x0 + 0.4, y0 + 0.4, x1 - 0.4, y1 - 0.4, xc, yc, H - 0.005)
+    c.lights_from([(xc, yc + k * 4.5 * math.sqrt(2)) for k in (-1, 0, 1)], D.C_BEAM,
+                  energy=300.0, step=1, radius=3.5)
+    # 壁の羽目板（横張りの木）: 西・南・北・東の内面に天井の近くまで張り、西は扉の上にも続く。
+    # 西は南の仕切りの室内側の面から始める
     wood = "gym_wall_wood_horizontal"
-    for g0, g1 in ((y0, D.SUB_DOORS[0][0]), (D.SUB_DOORS[0][1], D.SUB_DOORS[1][0]),
+    zt = H - 0.1
+    ys = y0 + 0.16
+    for g0, g1 in ((ys, D.SUB_DOORS[0][0]), (D.SUB_DOORS[0][1], D.SUB_DOORS[1][0]),
                    (D.SUB_DOORS[1][1], y1)):
-        kit.box(mb, x0, g0, 0.0, x0 + 0.05, g1, 2.4, wood)
-    S.xwall(mb, x0 + 0.16, _ex(y0), y0 + 0.16, y0 + 0.2, 0.0, 2.4, wood)
-    S.xwall(mb, x0 + 0.16, _ex(y1), y1 - 0.04, y1, 0.0, 2.4, wood)
+        kit.box(mb, x0, g0, 0.0, x0 + 0.05, g1, D.DOOR_H, wood)
+    kit.box(mb, x0, ys, D.DOOR_H, x0 + 0.05, y1, zt, wood)
+    # 南と北は西の板の面から外周壁の中まで通す
+    S.xwall(mb, x0 + 0.05, _ex(y0), ys, ys + 0.04, 0.0, zt, wood)
+    S.xwall(mb, x0 + 0.05, _ex(y1), y1 - 0.04, y1, 0.0, zt, wood)
+    # 東は外周壁の室内側の面より 2 cm 手前に張る
     a, b = D.edge_span(D.E_WING_E, 1, y0, y1)
     n = S._normal(a, b)
-    pa = (a[0] + n[0] * shell.WALL, a[1] + n[1] * shell.WALL)
-    pb = (b[0] + n[0] * shell.WALL, b[1] + n[1] * shell.WALL)
-    kit.vplate(mb, pa, pb, 0.0, 2.4, wood, flip=True)
+    off = shell.WALL + 0.02
+    pa = (a[0] + n[0] * off, a[1] + n[1] * off)
+    pb = (b[0] + n[0] * off, b[1] + n[1] * off)
+    kit.vplate(mb, pa, pb, 0.0, zt, wood, flip=True)
     # 床の吊りゴールと用具
     m = c.furn("sub")
     kit.box(m, 26.4, 36.0, 0.0, 27.2, 37.0, 0.3, "gym_mat_dark")

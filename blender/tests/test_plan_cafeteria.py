@@ -6,6 +6,7 @@ import pytest
 
 import stubs
 from kcd_interior import furn_research2 as FR
+from kcd_interior import plan_cafeteria as PC
 from kcd_interior import plan_research2_1f as P1
 from kcd_interior import plan_research2_2f as P2
 from kcd_interior import plan_research2_dims as D
@@ -13,7 +14,8 @@ from kcd_interior import plan_research2_finish as FIN
 from kcd_interior import plan_research2_poly as P
 from kcd_interior import plan_research2_shell as S
 from kcd_interior import plan_research2_signs as PS
-from kcd_interior import registry, signs
+from kcd_interior import plan_research2_upper as U
+from kcd_interior import registry, shell, signs
 from kcd_interior import spec as ispec
 from kcd_interior.ctx import Ctx
 from kcd_lib import signtext
@@ -30,6 +32,8 @@ DOOR = "research2_door_steel"
 NEW_MATS = ("research2_floor_1f_honey", "research2_floor_2f_honey", "research2_grille_black",
             "research2_cassette_white", "research2_roll_white", "research2_floor_mat_black")
 HOLES = D.HOLES
+WEST = (("1F", D.Z1, S.FLOOR1), ("2F", D.Z2, D.FLOOR2))   # 階、床の高さ、床の外形
+BODY = (0.05, 1.7)                                       # 床から測った体の高さの帯
 
 
 def _ear_candidates(contours):
@@ -211,6 +215,55 @@ def test_entrance_mat_is_at_the_spawn(built):
     x0, y0, x1, y1 = FIN.VEST_MAT
     assert x0 < D.SPAWN[0] < x1 and y0 < D.SPAWN[1] < y1
     assert all(p[2] == pytest.approx(D.Z1 + 0.004) for p in faces[0])
+
+
+def test_west_stair_point_stands_stair_out_in_front_of_the_door():
+    (x, y), (dx, dy) = PC.west_stair_point()
+    assert x == D.WEST_STAIR_X
+    assert y == pytest.approx(D.NW_Y - shell.WALL - U.STAIR_OUT)
+    assert (dx, dy) == (0.0, -1.0)
+
+
+def test_west_stair_landings_are_on_the_1f_and_2f_floors(built):
+    got = dict(_empties(built, "st_cafeteria_"))
+    assert sorted(got) == sorted("st_cafeteria_west_%s%s" % (f, s) for f, *_ in WEST for s in ("", "_f"))
+    (x, y), (dx, dy) = PC.west_stair_point()
+    for floor, z, outline in WEST:
+        name = "st_cafeteria_west_" + floor
+        assert got[name] == pytest.approx((x, y, z))
+        assert got[name + "_f"] == pytest.approx((x + dx, y + dy, z))
+        for px, py, _pz in (got[name], got[name + "_f"]):
+            assert P.inside((px, py), outline) and P.inside((px, py), D.INNER), name
+            assert not any(_in_rect((px, py), h) for h in HOLES), name
+
+
+def test_west_stair_doors_are_closed_on_the_wall_face(built):
+    face, hw = D.NW_Y - shell.WALL, U.DOOR_W * 0.5
+    faces = [f for f in _faces_of(built, DOOR) if abs(_center(f)[0] - D.WEST_STAIR_X) < 2.0]
+    assert len(faces) == 10                     # 扉の板は底の無い箱（5 面）で、1F・2F に 1 枚ずつ
+    for f in faces:
+        zs = [p[2] for p in f]
+        z0 = D.Z1 if max(zs) < D.Z2 else D.Z2
+        for x, y, z in f:
+            assert abs(x - D.WEST_STAIR_X) <= hw + 1e-6
+            assert face - 0.07 < y < face - 0.03
+            assert z0 - 1e-6 <= z <= z0 + U.DOOR_H + 1e-6
+
+
+def test_nothing_stands_between_the_west_stair_door_and_its_landing(built):
+    (x, y), (_dx, dy) = PC.west_stair_point()
+    x0, x1 = x - 0.6, x + 0.6
+    y0, y1 = y + dy - 0.5, D.NW_Y - shell.WALL - 0.15   # _f の 0.5 m 先から、扉の取っ手の手前まで
+    for floor, z, _outline in WEST:
+        for mb in built.builders():
+            for f, m in zip(mb.faces, mb.face_mat):
+                pts = [mb.verts[i] for i in f]
+                if max(p[2] for p in pts) < z + BODY[0] or min(p[2] for p in pts) > z + BODY[1]:
+                    continue
+                if (max(p[0] for p in pts) < x0 or min(p[0] for p in pts) > x1
+                        or max(p[1] for p in pts) < y0 or min(p[1] for p in pts) > y1):
+                    continue
+                pytest.fail("%s: %s の %s が扉の前をふさぐ" % (floor, mb.name, mb.mat_names[m]))
 
 
 def test_stair_is_the_same_shape_along_x_and_y():

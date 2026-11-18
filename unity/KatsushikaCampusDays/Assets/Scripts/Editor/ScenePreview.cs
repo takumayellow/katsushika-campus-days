@@ -20,6 +20,12 @@ namespace KCD.Editor
     /// 足せる引数:
     ///   -previewShots shot_dorm_hall,shot_dorm_interior  撮る画を絞る（部分一致・既定は全部）
     ///   -previewInteriorFill 1.2                         屋内が暗すぎたときだけ補助光を足す（既定 0 = 足さない）
+    ///   -previewScale 2                                  書き出す大きさを Width x Height の何倍にするか（既定 1、スライド用は 2）
+    ///   -previewQuality 0                                品質レベルを切り替えて撮る（0 = Mobile = WebGL 版、1 = PC）。
+    ///                                                    ファイル名に _q0 のように添える。付けなければ保存された品質のまま
+    ///   -previewIndoorScale 1.34                         屋内の環境光（_indoorAmbient）の明るさを何倍にして撮るか（既定 1）。
+    ///                                                    床の明るさを写真と比べるための what-if で、ゲームの値は変わらない。
+    ///                                                    ファイル名に _a134 のように倍率（%）を添える
     ///
     /// シーンは開くだけで **保存しない**。撮影のために作った GameObject には HideFlags.DontSave を付け、
     /// 撮り終わったら必ず捨てる（finally）。一時的に点け直したライトも元の状態へ戻す。
@@ -99,6 +105,20 @@ namespace KCD.Editor
 
             /// <summary>ログに出すひとこと。</summary>
             public string Note;
+
+            /// <summary>
+            /// この 1 枚だけ霧を切る。霧は 220 m から掛かるので、上空から全体を撮ると白くかすむ。
+            /// 紹介用の俯瞰（README・スライド）だけで使う。
+            /// </summary>
+            public bool NoFog;
+
+            /// <summary>
+            /// この 1 枚だけ、ゲームの屋内と同じ光にする。太陽を消し、霧を止め、環境光を DayNightCycle の
+            /// 屋内の色（_indoorAmbient）にそろえる（DayNightCycle.ApplyIndoor と同じ値）。
+            /// 保存されたままの Sun と環境光は屋外の昼のもので、屋内の床や壁の明るさが本番と食い違うので、
+            /// 実際に遊ぶ画面と見比べる 1 枚（体育館など）だけが立てる。
+            /// </summary>
+            public bool Indoor;
         }
 
         /// <summary>
@@ -311,6 +331,61 @@ namespace KCD.Editor
             },
             new Shot
             {
+                Name = "shot_aerial_southwest",
+                Space = Frame.World,
+                Eye = new Vector3(-200f, 330f, -290f),
+                Look = new Vector3(15f, 0f, -30f),
+                Fov = 40f,
+                Sun = OutdoorSun,
+                NoFog = true,
+                Note = "南西の上空から全体（紹介用。図書館・公園・研究棟と周りの街）",
+            },
+            new Shot
+            {
+                Name = "shot_aerial_southeast",
+                Space = Frame.World,
+                Eye = new Vector3(250f, 320f, -300f),
+                Look = new Vector3(0f, 0f, -30f),
+                Fov = 40f,
+                Sun = OutdoorSun,
+                NoFog = true,
+                Note = "南東の上空から全体（紹介用。研究棟の並びと公園の小川）",
+            },
+            new Shot
+            {
+                Name = "shot_aerial_north",
+                Space = Frame.World,
+                Eye = new Vector3(-40f, 300f, 230f),
+                Look = new Vector3(20f, 0f, -60f),
+                Fov = 42f,
+                Sun = OutdoorSun,
+                NoFog = true,
+                Note = "北の上空から全体（紹介用。講義棟のまわりとメインストリート）",
+            },
+            new Shot
+            {
+                Name = "shot_aerial_park",
+                Space = Frame.World,
+                Eye = new Vector3(-190f, 110f, -220f),
+                Look = new Vector3(-70f, 5f, -50f),
+                Fov = 38f,
+                Sun = OutdoorSun,
+                NoFog = true,
+                Note = "公園の上から図書館と研究棟（紹介用）",
+            },
+            new Shot
+            {
+                Name = "shot_aerial_east",
+                Space = Frame.World,
+                Eye = new Vector3(290f, 130f, 80f),
+                Look = new Vector3(12f, 0f, -72f),
+                Fov = 40f,
+                Sun = OutdoorSun,
+                NoFog = true,
+                Note = "東の上空から全体（紹介用。講義棟・研究棟・図書館のドームと外周の道路）",
+            },
+            new Shot
+            {
                 Name = "shot_item_leaf",
                 Space = Frame.World,
                 Eye = new Vector3(-82.9f, 1.25f, -113.1f),
@@ -417,6 +492,86 @@ namespace KCD.Editor
                 Note = "車道のアスファルトと芝生",
             },
 
+            // 運動場と遊び場の地面（#59）。座標は data/osm/campus.json の areas（x = 東, z = 北）をそのまま使う。
+            // 運動場は leisure=pitch の一番大きい区画（四隅 (56,110) (144,52) (181,113) (96,169)）の西の隅から中へ、
+            // 遊び場は leisure=playground の北の端（(209,-63) (198,-92) (234,-103) (242,-77) のあたり）から南へ
+            new Shot
+            {
+                Name = "shot_surface_pitch_grass",
+                Space = Frame.World,
+                Eye = new Vector3(68f, 1.6f, 110f),
+                Look = new Vector3(100f, 0f, 112f),
+                Fov = 0f,
+                Sun = OutdoorSun,
+                Note = "運動場の芝（grass。航空写真では人工芝のサッカー場）",
+            },
+            new Shot
+            {
+                Name = "shot_surface_playground_sand",
+                Space = Frame.World,
+                Eye = new Vector3(214f, 1.6f, -72f),
+                Look = new Vector3(228f, 0f, -96f),
+                Fov = 0f,
+                Sun = OutdoorSun,
+                Note = "遊び場の砂（sand）",
+            },
+
+            // テニスのハードコート（#59）。OSM の way 771657619 の区画で、中心は (173.0, 70.2)、
+            // 長手の向きは (0.335, 0.942)（北北東）。どちらも南のベースラインの 9 m 後ろから北北東を向く。
+            // 低い方は目の高さから長手に沿って、高い方は長手の軸の上 9 m から見下ろす
+            new Shot
+            {
+                Name = "shot_surface_tennis_hardcourt",
+                Space = Frame.World,
+                Eye = new Vector3(164.58f, 1.6f, 50.94f),
+                Look = new Vector3(171.68f, 0f, 66.46f),
+                Fov = 0f,
+                Sun = OutdoorSun,
+                Note = "テニスのハードコート（hardcourt_inner / hardcourt_outer と白線）",
+            },
+            new Shot
+            {
+                Name = "shot_surface_tennis_hardcourt_high",
+                Space = Frame.World,
+                Eye = new Vector3(165.99f, 9f, 50.44f),
+                Look = new Vector3(172.02f, 0f, 67.40f),
+                Fov = 0f,
+                Sun = OutdoorSun,
+                Note = "テニスのハードコートを斜め上から（線の配置）",
+            },
+
+            // 屋根・金属・木の面のテクスチャ（#416）。座標は data/osm の footprint（ワールド XY = Unity XZ）から
+            new Shot
+            {
+                Name = "shot_surface_lab2_roof",
+                Space = Frame.World,
+                Eye = new Vector3(84.9f, 15f, 30f),
+                Look = new Vector3(84.9f, 9f, 45f),
+                Fov = 0f,
+                Sun = OutdoorSun,
+                Note = "第2実験棟の陸屋根を南の上から（roof_grey）",
+            },
+            new Shot
+            {
+                Name = "shot_surface_kyoso_fins",
+                Space = Frame.World,
+                Eye = new Vector3(-24f, 1.6f, -98f),
+                Look = new Vector3(-24f, 9f, -84f),
+                Fov = 0f,
+                Sun = OutdoorSun,
+                Note = "共創棟の南面の縦フィンとルーバー（metal_grey）",
+            },
+            new Shot
+            {
+                Name = "shot_surface_dorm_terrace",
+                Space = Frame.World,
+                Eye = new Vector3(-447f, 24f, 172f),
+                Look = new Vector3(-458f, 18f, 190f),
+                Fov = 0f,
+                Sun = OutdoorSun,
+                Note = "寮の屋上のウッドデッキと白い手すり（deck_wood・metal_white）",
+            },
+
             // 屋内の正面（#120・#169）。座標は Models/Interiors/<id>.json の empties と同じ屋内のローカル座標
             new Shot
             {
@@ -437,6 +592,29 @@ namespace KCD.Editor
                 Look = new Vector3(-12f, 1.2f, 26f),
                 Fov = 0f,
                 Note = "食堂 1F",
+            },
+
+            // 食堂の西の端の階段室の扉（#303・#418）。扉は北西の塊の南の壁（Z 32.35）の X −40.6、
+            // empties の st_cafeteria_west_1F/2F の少し手前から北を向く
+            new Shot
+            {
+                Name = "shot_cafeteria_west_stairs_1F",
+                Space = Frame.Interior,
+                Building = "cafeteria",
+                Eye = new Vector3(-38.6f, 1.6f, 25.5f),
+                Look = new Vector3(-40.6f, 1.3f, 32.35f),
+                Fov = 0f,
+                Note = "食堂 1F の西の端の階段室の扉",
+            },
+            new Shot
+            {
+                Name = "shot_cafeteria_west_stairs_2F",
+                Space = Frame.Interior,
+                Building = "cafeteria",
+                Eye = new Vector3(-38.6f, 6.4f, 25.5f),
+                Look = new Vector3(-40.6f, 6.1f, 32.35f),
+                Fov = 0f,
+                Note = "食堂 2F の西の端の階段室の扉",
             },
             new Shot
             {
@@ -528,6 +706,229 @@ namespace KCD.Editor
                 Fov = 0f,
                 Note = "図書館大ホールの舞台のピアノ",
             },
+            // 講義棟 3F の廊下と教室の小物（#279）。床は 8.8 m
+            new Shot
+            {
+                Name = "shot_lec279_corr3f_s",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(12.0f, 10.4f, 22.0f),
+                Look = new Vector3(-14.0f, 9.9f, 19.9f),
+                Fov = 0f,
+                Note = "講義棟 3F の廊下、南の壁（掲示板・消火器・扉の窓・巾木）",
+            },
+            new Shot
+            {
+                Name = "shot_lec279_corr3f_n",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-16.0f, 10.4f, 33.0f),
+                Look = new Vector3(12.0f, 9.9f, 35.1f),
+                Fov = 0f,
+                Note = "講義棟 3F の廊下、北の壁（消火栓・掲示板）",
+            },
+            new Shot
+            {
+                Name = "shot_lec279_room304_back",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-5.0f, 10.6f, 17.0f),
+                Look = new Vector3(-17.7f, 9.8f, 9.0f),
+                Fov = 0f,
+                Note = "講義棟 304、黒板の側から後ろの壁と窓（掲示板・ブラインド）",
+            },
+            new Shot
+            {
+                Name = "shot_lec279_room304_front",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-16.5f, 10.6f, 6.0f),
+                Look = new Vector3(-3.6f, 9.8f, 13.0f),
+                Fov = 0f,
+                Note = "講義棟 304、後ろから黒板と教卓",
+            },
+            // 講義棟の色を写真に合わせる前後（#279）。床は 1F 0・2F 4.6・5F 17.2・6F 21.4・7F 25.6 m
+            new Shot
+            {
+                Name = "shot_lec279c_coop_front",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(35.5f, 1.6f, 28.0f),
+                Look = new Vector3(40.5f, 1.0f, 36.5f),
+                Fov = 0f,
+                Note = "講義棟 1F の廊下から生協の入口（石の床・黒い帯）",
+            },
+            new Shot
+            {
+                Name = "shot_lec279c_coop_in",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(38.5f, 1.6f, 36.6f),
+                Look = new Vector3(46.0f, 0.8f, 44.0f),
+                Fov = 0f,
+                Note = "講義棟 1F の生協の中（レジの台・床）",
+            },
+            new Shot
+            {
+                Name = "shot_lec279c_room202",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-9.5f, 6.2f, 6.0f),
+                Look = new Vector3(6.8f, 5.4f, 13.0f),
+                Fov = 0f,
+                Note = "講義棟 202、後ろから黒板と教卓",
+            },
+            new Shot
+            {
+                Name = "shot_lec279c_room502",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(8.7f, 18.8f, 6.0f),
+                Look = new Vector3(21.7f, 18.0f, 13.0f),
+                Fov = 0f,
+                Note = "講義棟 502、後ろから黒板と教卓",
+            },
+            new Shot
+            {
+                Name = "shot_lec279c_room602",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(8.7f, 23.0f, 6.0f),
+                Look = new Vector3(21.7f, 22.2f, 13.0f),
+                Fov = 0f,
+                Note = "講義棟 602、後ろから黒板と教卓",
+            },
+            new Shot
+            {
+                Name = "shot_lec279c_corr7f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(12.0f, 27.2f, 22.0f),
+                Look = new Vector3(-14.0f, 26.7f, 19.9f),
+                Fov = 0f,
+                Note = "講義棟 7F の廊下、南の壁（閉じた扉・カーペット）",
+            },
+            // 講義棟の作り込みの後の見回り（#279）。床は 2F 4.6・3F 8.8・4F 13.0・5F 17.2・6F 21.4 m
+            new Shot
+            {
+                Name = "shot_lec279v_coop_left",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(37.5f, 1.6f, 26.0f),
+                Look = new Vector3(32.5f, 1.6f, 35.1f),
+                Fov = 0f,
+                Note = "講義棟 1F の東端ホールから生協の前の左（受付窓の面と北の出口の通路）",
+            },
+            new Shot
+            {
+                Name = "shot_lec279v_bridge",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(38.6f, 6.3f, 33.4f),
+                Look = new Vector3(49.0f, 5.0f, 31.6f),
+                Fov = 0f,
+                Note = "講義棟 2F の渡り（床・ガラスの手すり・直通階段の上り口）",
+            },
+            new Shot
+            {
+                Name = "shot_lec279v_corr2f_n",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-16.0f, 6.3f, 33.4f),
+                Look = new Vector3(38.0f, 5.8f, 33.0f),
+                Fov = 0f,
+                Note = "講義棟 2F の北の廊下を東へ。奥が渡り",
+            },
+            new Shot
+            {
+                Name = "shot_lec279v_corr2f_s",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-26.5f, 6.3f, 21.6f),
+                Look = new Vector3(16.0f, 6.0f, 21.0f),
+                Fov = 0f,
+                Note = "講義棟 2F の南の廊下を西の端から東へ",
+            },
+            new Shot
+            {
+                Name = "shot_lec279v_room201",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(8.3f, 6.2f, 6.0f),
+                Look = new Vector3(28.2f, 5.4f, 13.0f),
+                Fov = 0f,
+                Note = "講義棟 201、後ろから黒板と教卓",
+            },
+            new Shot
+            {
+                Name = "shot_lec279v_room203",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-27.0f, 6.2f, 6.0f),
+                Look = new Vector3(-11.2f, 5.4f, 13.0f),
+                Fov = 0f,
+                Note = "講義棟 203、後ろから黒板と教卓",
+            },
+            new Shot
+            {
+                Name = "shot_lec279v_room306_back",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-27.6f, 10.6f, 37.0f),
+                Look = new Vector3(-18.2f, 9.8f, 45.5f),
+                Fov = 0f,
+                Note = "講義棟 306 の PC ルームを後ろの角から（PC の机の列・白板）",
+            },
+            new Shot
+            {
+                Name = "shot_lec279v_room307",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-16.4f, 10.6f, 48.0f),
+                Look = new Vector3(-3.8f, 9.8f, 40.0f),
+                Fov = 0f,
+                Note = "講義棟 307、後ろから黒板と教卓",
+            },
+            new Shot
+            {
+                Name = "shot_lec279v_room402",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(8.7f, 14.6f, 6.0f),
+                Look = new Vector3(21.7f, 13.8f, 13.0f),
+                Fov = 0f,
+                Note = "講義棟 402、後ろから黒板と教卓",
+            },
+            new Shot
+            {
+                Name = "shot_lec279v_corr4f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-27.0f, 14.7f, 21.6f),
+                Look = new Vector3(30.0f, 14.4f, 21.6f),
+                Fov = 0f,
+                Note = "講義棟 4F の南の廊下を西の端から東へ",
+            },
+            new Shot
+            {
+                Name = "shot_lec279v_corr5f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(12.0f, 18.8f, 22.0f),
+                Look = new Vector3(-14.0f, 18.3f, 19.9f),
+                Fov = 0f,
+                Note = "講義棟 5F の廊下、南の壁",
+            },
+            new Shot
+            {
+                Name = "shot_lec279v_corr6f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-16.0f, 23.0f, 33.0f),
+                Look = new Vector3(12.0f, 22.5f, 35.1f),
+                Fov = 0f,
+                Note = "講義棟 6F の廊下、北の壁",
+            },
             new Shot
             {
                 Name = "shot_kyoso_entrance",
@@ -536,6 +937,7 @@ namespace KCD.Editor
                 Eye = new Vector3(1.5f, 1.65f, 4.8f),
                 Look = new Vector3(-1.5f, 3.0f, 30.0f),
                 Fov = 0f,
+                Indoor = true,
                 Note = "共創棟 1F の入口から奥",
             },
             new Shot
@@ -546,6 +948,7 @@ namespace KCD.Editor
                 Eye = new Vector3(2.4f, 1.7f, 15.4f),
                 Look = new Vector3(12.0f, 0.8f, 26.0f),
                 Fov = 0f,
+                Indoor = true,
                 Note = "共創棟 1F のラーニングスクエア1（段床とソファ）",
             },
             new Shot
@@ -556,6 +959,7 @@ namespace KCD.Editor
                 Eye = new Vector3(1.0f, 1.7f, 32.0f),
                 Look = new Vector3(16.0f, 2.0f, 35.0f),
                 Fov = 0f,
+                Indoor = true,
                 Note = "共創棟 1F のカフェとラーニングスクエア2",
             },
             new Shot
@@ -566,6 +970,7 @@ namespace KCD.Editor
                 Eye = new Vector3(15.4f, 7.0f, 27.6f),
                 Look = new Vector3(-3.0f, 6.1f, 20.5f),
                 Fov = 0f,
+                Indoor = true,
                 Note = "共創棟 2F のラウンジ",
             },
             new Shot
@@ -576,7 +981,573 @@ namespace KCD.Editor
                 Eye = new Vector3(-8.6f, 1.65f, 31.2f),
                 Look = new Vector3(-18.0f, 1.2f, 37.2f),
                 Fov = 0f,
+                Indoor = true,
                 Note = "共創棟 1F の売店",
+            },
+            new Shot
+            {
+                Name = "shot_kyoso_c202",
+                Space = Frame.Interior,
+                Building = "kyoso",
+                Eye = new Vector3(2.1f, 7.0f, 13.2f),
+                Look = new Vector3(-4.6f, 6.4f, 7.6f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "共創棟 2F の教室 C202（後ろから黒板）",
+            },
+            new Shot
+            {
+                Name = "shot_kyoso_corridor2f",
+                Space = Frame.Interior,
+                Building = "kyoso",
+                Eye = new Vector3(-10.0f, 7.0f, 16.4f),
+                Look = new Vector3(14.0f, 6.2f, 14.6f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "共創棟 2F の廊下と教室の扉",
+            },
+            new Shot
+            {
+                Name = "shot_kyoso_3f_room",
+                Space = Frame.Interior,
+                Building = "kyoso",
+                Eye = new Vector3(1.9f, 11.2f, 22.2f),
+                Look = new Vector3(-6.2f, 10.6f, 25.6f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "共創棟 3F の東の教室（後ろから黒板と吹き抜けのガラス）",
+            },
+            new Shot
+            {
+                Name = "shot_kyoso_3f_corr",
+                Space = Frame.Interior,
+                Building = "kyoso",
+                Eye = new Vector3(10.6f, 11.2f, 19.9f),
+                Look = new Vector3(-7.1f, 10.6f, 20.0f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "共創棟 3F の廊下と、東の端の階段室の扉",
+            },
+            new Shot
+            {
+                Name = "shot_kyoso_4f_room",
+                Space = Frame.Interior,
+                Building = "kyoso",
+                Eye = new Vector3(1.9f, 15.4f, 22.2f),
+                Look = new Vector3(-6.2f, 14.8f, 25.6f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "共創棟 4F の東の教室（後ろから黒板と窓の帯）",
+            },
+            new Shot
+            {
+                Name = "shot_kyoso_4f_corr",
+                Space = Frame.Interior,
+                Building = "kyoso",
+                Eye = new Vector3(10.6f, 15.4f, 19.9f),
+                Look = new Vector3(-7.1f, 14.8f, 20.0f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "共創棟 4F の廊下と、東の端の階段室の扉",
+            },
+            new Shot
+            {
+                Name = "shot_kyoso_stairdoor2f",
+                Space = Frame.Interior,
+                Building = "kyoso",
+                Eye = new Vector3(-2.6f, 7.0f, 24.6f),
+                Look = new Vector3(-7.1f, 6.4f, 27.8f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "共創棟 2F の階段の上端と、東のコアの階段室の扉",
+            },
+            new Shot
+            {
+                Name = "shot_kyoso_esc",
+                Space = Frame.Interior,
+                Building = "kyoso",
+                Eye = new Vector3(-26.0f, 1.65f, 11.5f),
+                Look = new Vector3(-14.0f, 3.0f, 15.5f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "共創棟 1F のエスカレーターの乗り口から: 欄干のガラス（lecture_glass_rail, #435）",
+            },
+            new Shot
+            {
+                Name = "shot_lecture_board_203",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-16.2f, 6.2f, 10.6f),
+                Look = new Vector3(-11.0f, 6.0f, 10.4f),
+                Fov = 0f,
+                Note = "講義棟 203 の黒板。右の端の板書（q_sq_hello_world の 1/5, #389）",
+            },
+            new Shot
+            {
+                Name = "shot_lecture_board_7F",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-22.4f, 27.2f, 23.6f),
+                Look = new Vector3(-22.4f, 27.0f, 19.87f),
+                Fov = 0f,
+                Note = "講義棟 7F の廊下の白板（q_sq_hello_world の答える所, #389）",
+            },
+            new Shot
+            {
+                Name = "shot_lecture_306_ta",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-23.0f, 10.45f, 42.6f),
+                Look = new Vector3(-18.6f, 9.9f, 42.9f),
+                Fov = 0f,
+                Note = "講義棟 306 の PC ルーム。白板の前の TA と最前列の PC（q_sq_first_program, #392）",
+            },
+            // 101 の隣の席の学生と板書（q_sq_pop_quiz, #424）。客席の POI は (14.0, -0.6, 11.55)、板書は (14.65, 0.3, 4.4)
+            new Shot
+            {
+                Name = "shot_lec424_seatmate",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(14.0f, 1.35f, 14.6f),
+                Look = new Vector3(12.2f, -0.5f, 10.0f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 101 の西と中央のブロックの間の通路から: 客席の POI の隣の席の学生（#424）",
+            },
+            new Shot
+            {
+                Name = "shot_lec424_board_seat",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(14.0f, 0.95f, 11.55f),
+                Look = new Vector3(14.65f, 0.3f, 4.4f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 101 の客席の POI に立った目の高さから、前の黒板の板書（#424）",
+            },
+            new Shot
+            {
+                Name = "shot_lec424_board_near",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(14.65f, 0.35f, 6.6f),
+                Look = new Vector3(14.65f, 0.3f, 4.4f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 101 の板書を、調べられる距離（約 2.2 m）から（#424）",
+            },
+            // 講義棟の内装の 2 巡目（#423）。Eye / Look は spec §8 の blender の (x, y, z) を Unity の (x, z, y) に読み替えたもの。
+            new Shot
+            {
+                Name = "shot_lec423_lobby",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(1.5f, 1.70f, 7.80f),
+                Look = new Vector3(2.0f, 5.00f, 27.50f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 1F の南の入口ロビー: レンガと掲示ケース、奥の南廊下（#423 の内装の 2 巡目の前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_hall101",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(17.8f, 1.60f, 18.45f),
+                Look = new Vector3(17.8f, 0.40f, 4.55f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 1F の 101 の最後列の後ろから前壁: 段床・席・黒板・ルーバー（#423 の内装の 2 巡目の前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_corr1f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-27.0f, 1.70f, 21.60f),
+                Look = new Vector3(30.0f, 1.70f, 21.60f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 1F の南廊下を西端から東へ: 打放しの壁、アルコーブ、コア（#423 の内装の 2 巡目の前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_atrium",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(1.9f, 1.50f, 24.20f),
+                Look = new Vector3(1.9f, 20.00f, 27.50f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 1F の吹き抜けの下から見上げる: 白い手すり壁（#423 の内装の 2 巡目の前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_coop",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(40.5f, 1.70f, 14.00f),
+                Look = new Vector3(40.5f, 2.20f, 35.10f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 1F の東端ホールから生協の店頭（#423 の内装の 2 巡目の前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_east",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(39.0f, 1.70f, 10.20f),
+                Look = new Vector3(45.5f, 2.40f, 19.00f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 1F の東端ホールの南から北東へ: 吹き抜けと直通階段（#423 の内装の 2 巡目の前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_room104",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(9.0f, 1.70f, 36.40f),
+                Look = new Vector3(15.5f, 1.30f, 46.00f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 1F の 104 の南西の隅から北東へ: 机の列と黒板（#423 の内装の 2 巡目の前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_arc3f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(37.6f, 10.40f, 23.60f),
+                Look = new Vector3(41.0f, 9.70f, 38.00f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 3F の弧の自習室: 湾曲したガラス、丸柱、丸テーブル（#423 の内装の 2 巡目の前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_esc2f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(19.4f, 6.30f, 27.50f),
+                Look = new Vector3(30.6f, 6.00f, 27.50f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 2F の西の乗り口から東へ: エスカレータと穴の手すり（#423 の内装の 2 巡目の前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_room402",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(8.6f, 14.70f, 12.00f),
+                Look = new Vector3(21.6f, 14.20f, 12.00f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 4F の 402 の西の壁際から東の黒板（#423 の内装の 2 巡目の前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_ev2f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-21.6f, 6.20f, 27.50f),
+                Look = new Vector3(-28.3f, 6.30f, 25.20f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 2F の EV を降りて西ロビーの西の壁（階表示・案内板。#423 の階ごとの違いの前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_corrn2f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-27.5f, 6.30f, 33.00f),
+                Look = new Vector3(10.0f, 5.60f, 32.00f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 2F の北の廊下を西の端から東へ（ベンチ・掲示板。#423 の階ごとの違いの前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_ev3f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-21.6f, 10.40f, 27.50f),
+                Look = new Vector3(-28.3f, 10.50f, 25.20f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 3F の EV を降りて西ロビーの西の壁（階表示・案内板。#423 の階ごとの違いの前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_corrn3f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-27.5f, 10.50f, 33.00f),
+                Look = new Vector3(10.0f, 9.80f, 32.00f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 3F の北の廊下を西の端から東へ（ベンチ・掲示板。#423 の階ごとの違いの前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_ev4f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-21.6f, 14.60f, 27.50f),
+                Look = new Vector3(-28.3f, 14.70f, 25.20f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 4F の EV を降りて西ロビーの西の壁（階表示・案内板。#423 の階ごとの違いの前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_corrn4f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-27.5f, 14.70f, 33.00f),
+                Look = new Vector3(10.0f, 14.00f, 32.00f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 4F の北の廊下を西の端から東へ（ベンチ・掲示板。#423 の階ごとの違いの前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_ev5f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-21.6f, 18.80f, 27.50f),
+                Look = new Vector3(-28.3f, 18.90f, 25.20f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 5F の EV を降りて西ロビーの西の壁（階表示・案内板。#423 の階ごとの違いの前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_corrn5f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-27.5f, 18.90f, 33.00f),
+                Look = new Vector3(10.0f, 18.20f, 32.00f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 5F の北の廊下を西の端から東へ（ベンチ・掲示板。#423 の階ごとの違いの前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_ev6f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-21.6f, 23.00f, 27.50f),
+                Look = new Vector3(-28.3f, 23.10f, 25.20f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 6F の EV を降りて西ロビーの西の壁（階表示・案内板。#423 の階ごとの違いの前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_corrn6f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-27.5f, 23.10f, 33.00f),
+                Look = new Vector3(10.0f, 22.40f, 32.00f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 6F の北の廊下を西の端から東へ（ベンチ・掲示板。#423 の階ごとの違いの前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_ev7f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-21.6f, 27.20f, 27.50f),
+                Look = new Vector3(-28.3f, 27.30f, 25.20f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 7F の EV を降りて西ロビーの西の壁（階表示・案内板。#423 の階ごとの違いの前後）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423_corrn7f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-27.5f, 27.30f, 33.00f),
+                Look = new Vector3(10.0f, 26.60f, 32.00f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 7F の北の廊下を西の端から東へ（ベンチ・掲示板。#423 の階ごとの違いの前後）",
+            },
+            // #423 の 3 巡目: 扉の横の室番号の札と掲示ケース。Eye / Look は blender の (x, y, z) を Unity の (x, z, y) に読み替えたもの。
+            new Shot
+            {
+                Name = "shot_lec423d_plate2f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-17.0f, 6.20f, 21.90f),
+                Look = new Vector3(-13.7f, 6.40f, 19.81f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 2F の南の廊下から 203 の東の扉の横の室番号の札（#423）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423d_plate3f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-9.0f, 10.40f, 21.90f),
+                Look = new Vector3(-5.8f, 10.60f, 19.81f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 3F の南の廊下から 304 の扉の横の室番号の札（#423）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423d_plate4f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-9.0f, 14.60f, 33.00f),
+                Look = new Vector3(-5.8f, 14.80f, 35.09f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 4F の北の廊下から 407 の扉の横の室番号の札（#423）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423d_plate5f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(1.8f, 18.80f, 21.90f),
+                Look = new Vector3(5.0f, 19.00f, 19.81f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 5F の南の廊下から 503 の扉の横の室番号の札（#423）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423d_plate6f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(27.0f, 23.00f, 33.00f),
+                Look = new Vector3(30.1f, 23.20f, 35.09f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 6F の北の廊下から 611 の扉の横の室番号の札（#423）",
+            },
+            new Shot
+            {
+                Name = "shot_lec423d_case5f",
+                Space = Frame.Interior,
+                Building = "lecture",
+                Eye = new Vector3(-6.0f, 18.60f, 22.60f),
+                Look = new Vector3(-6.0f, 18.60f, 19.81f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "講義棟 5F の南の廊下の掲示ケース（ポスターが枠とガラスの奥に収まる）（#423）",
+            },
+
+            // 体育館（#115）。公式の写真と同じ向きで撮って並べる。Eye / Look は blender の (x, y, z) を
+            // Unity の (x, z, y) に読み替えたもの。Indoor でゲームの屋内と同じ光にする。
+            // 向きの根拠: アリーナは西が G（ガラスの窓の辺）・東が B（トレーニングルームのガラス帯の側）・北が木の壁。
+            new Shot
+            {
+                Name = "shot_gym_arena_p2",
+                Space = Frame.Interior,
+                Building = "gym",
+                Eye = new Vector3(-5.2f, 6.2f, 35.6f),
+                Look = new Vector3(-17.0f, 1.5f, 13.0f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "体育館のアリーナ。北東の高みから南南西へ。右に G のガラス、床の明るさを写真と比べる（#115）",
+            },
+            new Shot
+            {
+                Name = "shot_gym_arena_p1",
+                Space = Frame.Interior,
+                Building = "gym",
+                Eye = new Vector3(-26.4f, 6.2f, 35.0f),
+                Look = new Vector3(-6.0f, 3.0f, 22.0f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "体育館のアリーナ。北西の高みから東南東へ。左に北の木の壁、奥にトレーニングルームのガラス帯（#115）",
+            },
+            new Shot
+            {
+                Name = "shot_gym_arena_p1_match",
+                Space = Frame.Interior,
+                Building = "gym",
+                Eye = new Vector3(-25.2f, 6.3f, 14.0f),
+                Look = new Vector3(-2.2f, 2.0f, 33.3f),
+                Fov = 60f,
+                Indoor = true,
+                Note = "体育館のアリーナ。南西の高みから北東へ（P1 と同じ並び）。左に北の木の壁（時計、丸穴の鼻先、吊りゴール）、正面に観覧席とトレーニングルームのガラス帯（#115）",
+            },
+            new Shot
+            {
+                Name = "shot_gym_hoop_g",
+                Space = Frame.Interior,
+                Building = "gym",
+                Eye = new Vector3(-17.0f, 3.6f, 24.5f),
+                Look = new Vector3(-25.2f, 3.9f, 21.85f),
+                Fov = 40f,
+                Indoor = true,
+                Note = "体育館の吊りゴール（G の鼻先、y 21.85）。ガラスの板・白い枠・赤いリング（#115）",
+            },
+            new Shot
+            {
+                Name = "shot_gym_north_wall",
+                Space = Frame.Interior,
+                Building = "gym",
+                Eye = new Vector3(-15.9f, 3.0f, 24.5f),
+                Look = new Vector3(-15.9f, 6.0f, 38.85f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "体育館のアリーナの北の木の壁。金属の目地・スピーカー・時計（#115）",
+            },
+            new Shot
+            {
+                Name = "shot_gym_north_open",
+                Space = Frame.Interior,
+                Building = "gym",
+                Eye = new Vector3(-11.0f, 1.8f, 24.0f),
+                Look = new Vector3(-5.7f, 1.3f, 38.85f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "体育館のアリーナの北壁の東端の開口（spec は暗い開口、#115 の確認事項 c）",
+            },
+            new Shot
+            {
+                Name = "shot_gym_g_wall",
+                Space = Frame.Interior,
+                Building = "gym",
+                Eye = new Vector3(-6.0f, 2.0f, 26.0f),
+                Look = new Vector3(-27.4f, 6.0f, 18.0f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "体育館のアリーナの G の壁。ガラスの上のルーバー天井の帯（#115 の確認事項 a）",
+            },
+            new Shot
+            {
+                Name = "shot_gym_training_p3",
+                Space = Frame.Interior,
+                Building = "gym",
+                Eye = new Vector3(5.4f, 6.4f, 12.6f),
+                Look = new Vector3(5.6f, 5.6f, 29.0f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "体育館のトレーニングルーム。南端から北へ。左にマシンとガラス、右にオレンジの壁（P3 と同じ並び、#115）",
+            },
+            new Shot
+            {
+                Name = "shot_gym_subarena_p7",
+                Space = Frame.Interior,
+                Building = "gym",
+                Eye = new Vector3(16.4f, 1.6f, 22.0f),
+                Look = new Vector3(26.0f, 1.4f, 37.0f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "体育館のサブアリーナ。南西の隅から北東へ（P7 と同じ並び、#115）",
             },
         };
 
@@ -695,6 +1666,72 @@ namespace KCD.Editor
             }
         }
 
+        /// <summary>
+        /// <see cref="Shot.Indoor"/> の 1 枚だけ、ゲームの屋内（DayNightCycle.ApplyIndoor）と同じ光にする。
+        /// 元の太陽と環境光を覚えておき、屋外の 1 枚へ戻るときと撮り終わったときに返す。
+        /// </summary>
+        private sealed class IndoorLight
+        {
+            /// <summary>シーンに屋内の色が見つからないときの値。DayNightCycle の既定と同じ。</summary>
+            private static readonly Color FallbackAmbient = new Color(0.56f, 0.57f, 0.60f);
+
+            private readonly Light _sun;
+            private readonly bool _sunEnabled;
+            private readonly Color _sky = RenderSettings.ambientSkyColor;
+            private readonly Color _equator = RenderSettings.ambientEquatorColor;
+            private readonly Color _ground = RenderSettings.ambientGroundColor;
+            private readonly Color _indoor;
+            private bool _applied;
+            private string _building = string.Empty;
+
+            public IndoorLight(Transform sun, float scale)
+            {
+                _sun = sun != null ? sun.GetComponent<Light>() : null;
+                _sunEnabled = _sun != null && _sun.enabled;
+                Color ambient = ReadIndoorAmbient();
+                _indoor = new Color(ambient.r * scale, ambient.g * scale, ambient.b * scale, ambient.a);
+            }
+
+            /// <summary>屋内なら太陽を消して環境光を建物の屋内の色にし、そうでなければ覚えておいた元へ戻す。</summary>
+            public void Apply(bool indoor, string building)
+            {
+                string key = indoor ? building ?? string.Empty : string.Empty;
+                if (indoor == _applied && key == _building)
+                {
+                    return;
+                }
+
+                _applied = indoor;
+                _building = key;
+                if (_sun != null)
+                {
+                    _sun.enabled = _sunEnabled && !indoor;
+                }
+
+                // DayNightCycle.ApplyIndoor と同じ。ambientLight は Trilight の空の色と同じ値。
+                IndoorAmbientProfile.Resolve(key, _indoor, out Color sky, out Color equator, out Color ground);
+                RenderSettings.ambientSkyColor = indoor ? sky : _sky;
+                RenderSettings.ambientEquatorColor = indoor ? equator : _equator;
+                RenderSettings.ambientGroundColor = indoor ? ground : _ground;
+
+                // Trilight の環境光は球面調和に焼いてあるので、色を変えたら焼き直す。
+                DynamicGI.UpdateEnvironment();
+            }
+
+            /// <summary>シーンの DayNightCycle に保存された屋内の環境光（_indoorAmbient）。無ければ既定。</summary>
+            private static Color ReadIndoorAmbient()
+            {
+                DayNightCycle cycle = UnityEngine.Object.FindAnyObjectByType<DayNightCycle>(FindObjectsInactive.Include);
+                if (cycle == null)
+                {
+                    return FallbackAmbient;
+                }
+
+                SerializedProperty property = new SerializedObject(cycle).FindProperty("_indoorAmbient");
+                return property != null ? property.colorValue : FallbackAmbient;
+            }
+        }
+
         /// <summary>バッチの入口。Campus.unity を開いて表のぶんだけ撮る。</summary>
         [MenuItem("KCD/プレビューを撮る")]
         public static void Capture()
@@ -708,6 +1745,27 @@ namespace KCD.Editor
 
             string filter = EditorPaths.ReadArgument("-previewShots", string.Empty);
             float fill = ParseFloat(EditorPaths.ReadArgument("-previewInteriorFill", "0"), 0f);
+            float indoorScale = Mathf.Max(0f, ParseFloat(EditorPaths.ReadArgument("-previewIndoorScale", "1"), 1f));
+            int scale = Mathf.Clamp(Mathf.RoundToInt(ParseFloat(EditorPaths.ReadArgument("-previewScale", "1"), 1f)), 1, 3);
+            int width = Width * scale;
+            int height = Height * scale;
+
+            // 品質レベルの指定。WebGL 版は Mobile（Forward・1 つの物に当たる追加光は 4 つまで）で、
+            // Editor の既定の PC（Forward+）とは明るさが違いうる。指定したときだけ切り替え、撮り終えたら戻す。
+            int qualityWas = QualitySettings.GetQualityLevel();
+            int quality = Mathf.RoundToInt(ParseFloat(EditorPaths.ReadArgument("-previewQuality", "-1"), -1f));
+            if (quality >= QualitySettings.names.Length)
+            {
+                EditorPaths.Report("-previewQuality " + quality + " は品質レベルの数（" + QualitySettings.names.Length
+                    + "）を超えているので切り替えません。");
+                quality = -1;
+            }
+
+            string suffix = quality >= 0 ? "_q" + quality : string.Empty;
+            if (!Mathf.Approximately(indoorScale, 1f))
+            {
+                suffix += "_a" + Mathf.RoundToInt(indoorScale * 100f);
+            }
 
             Scene scene = EditorSceneManager.OpenScene(EditorPaths.CampusScene, OpenSceneMode.Single);
             if (!scene.IsValid())
@@ -722,7 +1780,7 @@ namespace KCD.Editor
             // 地面探りのために当たり判定の位置を確定させ、環境光（Trilight）の球面調和を焼き直す。
             Physics.SyncTransforms();
             DynamicGI.UpdateEnvironment();
-            ReportEnvironment(folder);
+            ReportEnvironment(folder, width, height);
 
             Transform interior = FindByName("Interior_" + DormRoute.Id);
             Vector3 dormOrigin = ResolveDormOrigin(interior);
@@ -737,6 +1795,8 @@ namespace KCD.Editor
             // 別の処理をされても困らないよう、撮り終わったら元の姿勢へ必ず戻す（finally）。
             Transform sun = FindByName("Sun");
             Quaternion sunWas = sun != null ? sun.rotation : Quaternion.identity;
+            bool fogWas = RenderSettings.fog;
+            var indoorLight = new IndoorLight(sun, indoorScale);
 
             var restore = new Restore();
             GameObject rig = null;
@@ -747,6 +1807,16 @@ namespace KCD.Editor
 
             try
             {
+                if (quality >= 0)
+                {
+                    QualitySettings.SetQualityLevel(quality, true);
+                    EditorPaths.Report("品質レベルを " + QualitySettings.names[quality] + "（" + quality + "）に切り替えました。"
+                        + " レンダーパイプライン: "
+                        + (UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline != null
+                            ? UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline.name
+                            : "(なし)"));
+                }
+
                 // 屋内の明かり。DormStage.AddLights は有効な状態で置くので普段は何も起きないが、
                 // 誰かが切っていた・親ごと非アクティブだったときのために点け直す。
                 WakeInteriorLights(interior, restore);
@@ -761,14 +1831,14 @@ namespace KCD.Editor
 
                 // URP は Linear 色空間なので、RenderTexture は必ず sRGB で作る。
                 // linear のまま ReadPixels すると白っぽい（ガンマの掛かっていない）PNG になる。
-                target = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
+                target = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
                 target.antiAliasing = 1;   // アンチエイリアスは URP 側の FXAA に任せる
                 target.useMipMap = false;
                 target.Create();
                 camera.targetTexture = target;
 
                 // 読み戻し先。linear: false なので、RenderTexture のバイト列がそのまま PNG になる。
-                buffer = new Texture2D(Width, Height, TextureFormat.RGB24, false, false);
+                buffer = new Texture2D(width, height, TextureFormat.RGB24, false, false);
 
                 // 「描けたか」を見分ける目印が、この RenderTexture でいくつの輝度になるかを実測しておく。
                 MeasureMarker(target, buffer);
@@ -793,13 +1863,16 @@ namespace KCD.Editor
                         sun.rotation = shot.Sun.HasValue ? Quaternion.Euler(shot.Sun.Value) : sunWas;
                     }
 
+                    RenderSettings.fog = fogWas && !shot.NoFog && !shot.Indoor;
+                    indoorLight.Apply(shot.Indoor, shot.Building);
+
                     if (!TryOrigin(shot, dormOrigin, out Vector3 offset))
                     {
                         failed++;
                         continue;
                     }
 
-                    if (Shoot(camera, target, buffer, shot, offset, folder, ref path))
+                    if (Shoot(camera, target, buffer, shot, offset, folder, suffix, ref path))
                     {
                         taken++;
                     }
@@ -852,6 +1925,14 @@ namespace KCD.Editor
                 if (sun != null)
                 {
                     sun.rotation = sunWas;
+                }
+
+                RenderSettings.fog = fogWas;
+                indoorLight.Apply(false, null);
+
+                if (quality >= 0)
+                {
+                    QualitySettings.SetQualityLevel(qualityWas, true);
                 }
 
                 restore.Undo();
@@ -917,7 +1998,7 @@ namespace KCD.Editor
         /// </summary>
         private static bool Shoot(
             Camera camera, RenderTexture target, Texture2D buffer, Shot shot, Vector3 offset, string folder,
-            ref DrawPath path)
+            string suffix, ref DrawPath path)
         {
             Vector3 eye = shot.Eye + offset;
             Vector3 look = shot.Look + offset;
@@ -933,7 +2014,7 @@ namespace KCD.Editor
             Levels levels = Draw(camera, target, buffer, ref path);
             bool undrawn = Undrawn(levels);
 
-            string file = Path.Combine(folder, shot.Name + ".png");
+            string file = Path.Combine(folder, shot.Name + suffix + ".png");
             if (!undrawn)
             {
                 File.WriteAllBytes(file, buffer.EncodeToPNG());
@@ -1128,7 +2209,7 @@ namespace KCD.Editor
         /// （SkyFactory が置くゲーム開始 8:30 の向き。空のマテリアルも同じ時刻の色）のままになる。
         /// 画が想像と違ったときは、まずここの値を疑う。
         /// </summary>
-        private static void ReportEnvironment(string folder)
+        private static void ReportEnvironment(string folder, int width, int height)
         {
             int level = QualitySettings.GetQualityLevel();
             string[] names = QualitySettings.names;
@@ -1136,7 +2217,7 @@ namespace KCD.Editor
                 UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline;
 
             EditorPaths.Report("プレビュー: シーン " + EditorPaths.CampusScene
-                + " / " + Width + "x" + Height + " → " + folder);
+                + " / " + width + "x" + height + " → " + folder);
             EditorPaths.Report("  品質 " + (level >= 0 && level < names.Length ? names[level] : level.ToString())
                 + " / パイプライン " + (pipeline != null ? pipeline.name : "(なし = ビルトイン)")
                 + " / 色空間 " + QualitySettings.activeColorSpace);
@@ -1367,9 +2448,10 @@ namespace KCD.Editor
                 + ", " + value.z.ToString("F2", CultureInfo.InvariantCulture) + ")";
         }
 
+        /// <summary>数として読めないとき、NaN・Infinity のときは fallback。</summary>
         private static float ParseFloat(string text, float fallback)
         {
-            return float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out float value)
+            return float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out float value) && float.IsFinite(value)
                 ? value
                 : fallback;
         }

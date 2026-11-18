@@ -8,6 +8,7 @@ import pytest
 from kcd_interior import plan_lecture_atrium as AT
 from kcd_interior import plan_lecture_dims as D
 from kcd_interior import plan_lecture_esc as ESC
+from kcd_interior import plan_lecture_props as P
 from kcd_interior import plan_lecture_rooms as R
 from kcd_interior import plan_lecture_rooms_dims as RD
 from kcd_interior import plan_lecture_shell as SH
@@ -46,6 +47,7 @@ def _build(c):
     UP.build(c, SG.hang_roots())
     AT.build(c)
     counts = R.build(c, lamps)
+    P.corridors(c)
     ESC.build(c)
     W.ev_empties(c)
     return counts
@@ -121,6 +123,25 @@ def test_open_leaves_slide_clear_of_the_other_openings():
                 assert not [g for g in W.halls(fl, side) if lo < g[1] and hi > g[0]], (fl, x)
 
 
+def test_edge_strips_run_along_both_room_walls_under_the_ceiling():
+    """廊下の天井際の光の帯は、南北の教室の側の壁ぎわを西端から東端まで切れ目なく続き、廊下の内に収まる。"""
+    for fl in RD.FLOORS:
+        spans = W.edge_strip_spans(fl)
+        for y_wall, south in ((D.Y_ROOM_S1, True), (D.Y_ROOM_N0, False)):
+            row = sorted(s for s in spans if (s[2] < W.Y_MID) == south)
+            assert row[0][0] == pytest.approx(W.X_WALL0 + 0.1) and row[-1][1] == W.x_wall1(fl), fl
+            assert all(a[1] == b[0] for a, b in zip(row, row[1:])), fl
+            for _a, _b, y0, y1 in row:
+                assert D.Y_ROOM_S1 < y0 < y1 < D.Y_ROOM_N0
+                assert min(abs(y0 - y_wall), abs(y1 - y_wall)) == pytest.approx(W.EDGE_GAP)
+
+
+def test_room_ceiling_lights_are_thin_lines_along_the_desks():
+    """教室の天井の照明は、机と同じ南北に長い細い線（4F の教室の写真）。"""
+    w, l = R.PANEL
+    assert l >= 6 * w
+
+
 def test_wall_pieces_never_cut_through_an_opening():
     hw = RD.DOOR_W * 0.5 + W.FRAME_OUT
     for fl in RD.FLOORS:
@@ -189,17 +210,6 @@ def test_every_room_has_its_own_floor_wall_and_furniture(upper):
         assert [mb for mb in _parts(c, r"furn_lecture_\d+_r%s(_\d+)?" % no) if mb.faces], no
 
 
-def test_type_a_rooms_have_rows_that_leave_a_back_aisle():
-    for room in RD.ROOMS:
-        if room[6] != "A":
-            continue
-        xf0, xf1, _, _ = RD.room_faces(room)
-        n = R.rows(room)
-        assert n >= 2, room[0]
-        back = xf0 + R.FRONT0 + R.DESK_DEPTH + (n - 1) * R.ROW_PITCH + 0.52
-        assert xf1 - back >= 1.4, room[0]
-
-
 def _room_furn(c, no):
     return _parts(c, r"furn_lecture_\d+_r%s(_\d+)?" % no)
 
@@ -208,13 +218,187 @@ def _mat_faces(mbs, mat):
     return sum(1 for mb in mbs for f in range(len(mb.faces)) if mb.mat_names[mb.face_mat[f]] == mat)
 
 
+def _mat_verts(mbs, mat):
+    """材質 mat の面の頂点。"""
+    return [mb.verts[i] for mb in mbs for f, face in enumerate(mb.faces)
+            if mb.mat_names[mb.face_mat[f]] == mat for i in face]
+
+
+def _mat_xs(mbs, mat):
+    """材質 mat の面の頂点の X。"""
+    return [v[0] for v in _mat_verts(mbs, mat)]
+
+
+def _mid(vs, k):
+    """頂点 vs の座標 k の幅の中央。"""
+    return (min(v[k] for v in vs) + max(v[k] for v in vs)) * 0.5
+
+
+def _row_fronts(xs, gap=0.5):
+    """X の並びを gap より広い隙間で列に分け、各列の東の端を東から順に返す。"""
+    xs = sorted(xs)
+    return [a for a, b in zip(xs, xs[1:] + [math.inf]) if b - a > gap][::-1]
+
+
+BOARDS = {"A": "lecture_board_room", "B": "board_white", "C": "board_white"}
+
+
+def test_boards_hang_on_the_east_wall(upper):
+    """型 A の黒板と型 B・C の白板は、東の壁（金町駅の側）に掛かる。"""
+    c, _ = upper
+    for room in RD.ROOMS:
+        mat = BOARDS.get(room[6])
+        if mat is None:
+            continue
+        _, xf1, _, _ = RD.room_faces(room)
+        xs = _mat_xs(_room_furn(c, room[0]), mat)
+        assert xs, room[0]
+        assert xf1 - 0.2 <= min(xs) and max(xs) <= xf1, room[0]
+
+
+
+def _board_empties(c):
+    return dict((n, p) for n, p in c.empties if n.startswith("board_lecture_"))
+
+
+def _front(boards, name):
+    """板の面から _f への水平のベクトル。"""
+    p, f = boards[name], boards[name + "_f"]
+    assert f[2] == pytest.approx(p[2])
+    return f[0] - p[0], f[1] - p[1]
+
+
+def test_every_board_has_an_empty_on_its_face(upper):
+    """黒板・白板のある室には、板の面の中央に board_lecture_<室> の Empty がある（Unity が板書を貼る）。"""
+    c, _ = upper
+    boards = _board_empties(c)
+    for room in RD.ROOMS:
+        name = "board_lecture_" + room[0]
+        if room[6] not in BOARDS:
+            assert name not in boards, room[0]
+            continue
+        _, xf1, yf0, yf1 = RD.room_faces(room)
+        x, y, z = boards[name]
+        cy = R.C_RING_Y if room[6] == "C" else (yf0 + yf1) * 0.5
+        assert xf1 - 0.1 < x < xf1, room[0]
+        assert y == pytest.approx(cy), room[0]
+        assert z == pytest.approx(RD.FLOOR_Z[room[1]] + R.BOARD_Z), room[0]
+        assert _front(boards, name) == pytest.approx((-1.0, 0.0)), room[0]   # 室の中（西）を向く
+
+
+def test_hall_board_hangs_on_the_7f_corridor_wall(upper):
+    """7F の廊下の南の壁に白板と board_lecture_7F がある。705 の扉と室名札に重ならない。"""
+    c, _ = upper
+    boards = _board_empties(c)
+    x, y, z = boards["board_lecture_7F"]
+    assert _front(boards, "board_lecture_7F") == pytest.approx((0.0, 1.0))   # 廊下（北）を向く
+    assert x == pytest.approx(R.HALL_BOARD_X)
+    assert D.Y_ROOM_S1 < y < D.Y_ROOM_S1 + 0.1
+    assert z == pytest.approx(RD.FLOOR_Z["7F"] + R.BOARD_Z)
+    hw = R.HALL_BOARD_W * 0.5 + 0.04
+    room = next(r for r in RD.CLOSED if r[0] == "705")
+    plate = RD.upper_plate_x(room + (None,))
+    for lo, hi in [(d - 0.87, d + 0.87) for d in room[5]] + [(plate - 0.21, plate + 0.21)]:
+        assert hi < x - hw or x + hw < lo, (lo, hi)
+    zf = RD.FLOOR_Z["7F"]
+    assert _faces_in(c, (x - 0.5, x + 0.5, D.Y_ROOM_S1 + 0.06, D.Y_ROOM_S1 + 0.08,
+                         zf + 1.0, zf + 2.0))
+
+
+def test_hall_board_leaves_the_corridor_walkable(upper):
+    c, _ = upper
+    x = R.HALL_BOARD_X
+    assert _faces_in(c, _walk("7F", x - 1.5, x + 1.5, D.Y_ROOM_S1 + 0.3, D.Y_ROOM_S1 + 1.3)) == 0
+
+def test_type_a_desks_face_the_east_board(upper):
+    """型 A の最前列の天板の前の縁は東の壁から FRONT0 にあり、長椅子は机の西の側にある（席は東を向く）。"""
+    c, _ = upper
+    for room in RD.ROOMS:
+        if room[6] != "A":
+            continue
+        _, xf1, _, _ = RD.room_faces(room)
+        mbs = _room_furn(c, room[0])
+        tops, seats = _mat_xs(mbs, "lecture_desk_ivory"), _mat_xs(mbs, "chair_grey")
+        assert max(tops) == pytest.approx(xf1 - R.FRONT0), room[0]
+        assert max(seats) < max(tops) and min(seats) < min(tops), room[0]
+
+
+def test_type_a_rooms_have_rows_that_leave_a_back_aisle(upper):
+    """型 A は 2 列以上あり、最後の列の長椅子の背から西の壁まで 1.4 m 以上の通路が残る。"""
+    c, _ = upper
+    for room in RD.ROOMS:
+        if room[6] != "A":
+            continue
+        assert R.rows(room) >= 2, room[0]
+        backs = _mat_xs(_room_furn(c, room[0]), "chair_grey")
+        assert min(backs) - RD.room_faces(room)[0] >= 1.4, room[0]
+
+
+def test_desk_bench_has_a_dark_front_panel_and_a_light_grey_back():
+    """長椅子の背（いちばん高い箱）は明るい灰色、机の前板は濃い灰色（4F の教室の写真）。"""
+    from kcd_interior import furn_lecture as FL
+    boxes = []
+
+    class Rec:
+        def box_nb(self, _mb, *a):
+            boxes.append((a[5], a[6]))
+
+        def box_open(self, _mb, *a, skip=()):
+            boxes.append((a[5], a[6]))
+
+    FL.desk_bench(None, Rec())
+    assert max(boxes)[1] == "chair_grey"
+    assert (0.70, FL.PANEL) in boxes
+
+
+def test_type_a_podium_projector_and_clock_follow_the_east_board(upper):
+    """型 A の教卓は黒板と最前列の間、プロジェクターは天井の下でレンズを東へ向け、時計は西の壁で東を向く。"""
+    c, _ = upper
+    for room in RD.ROOMS:
+        if room[6] != "A":
+            continue
+        no, z = room[0], RD.FLOOR_Z[room[1]]
+        xf0, _, yf0, yf1 = RD.room_faces(room)
+        mbs = _room_furn(c, no)
+        podium = _mat_verts(mbs, "lecture_lectern_walnut")
+        assert max(_mat_xs(mbs, "lecture_desk_ivory")) < min(v[0] for v in podium), no
+        assert max(v[0] for v in podium) < min(_mat_xs(mbs, "lecture_board_room")), no
+        assert _mid(podium, 1) == pytest.approx((yf0 + yf1) * 0.5), no
+        west = xf0 + 0.5                     # これより西は西の壁の時計
+        whites, blacks = _mat_verts(mbs, "plastic_white"), _mat_verts(mbs, "plastic_black")
+        body = [v for v in whites if v[0] > west]
+        lens = [v for v in blacks if v[0] > west and v[2] > z + 2.0]    # 教卓のマイクは z + 2.0 より下
+        assert z + 2.0 < min(v[2] for v in body) and max(v[2] for v in body) <= z + RD.CEIL_H, no
+        assert _mid(lens, 0) > _mid(body, 0), no
+        clock = [v for v in whites if v[0] < west]
+        hands = [v for v in blacks if v[0] < west]
+        assert min(v[0] for v in clock) == pytest.approx(xf0), no
+        assert min(v[0] for v in hands) >= max(v[0] for v in clock) - 1e-6, no
+
+
+def test_type_b_pc_desks_face_the_east_board(upper):
+    """306 の PC の机は東の壁から PC_FRONT0 を最前列に PC_PITCH おき、椅子は机の西の側（席は東を向く）、先生の机は白板と最前列の間。"""
+    c, _ = upper
+    room = next(r for r in RD.ROOMS if r[6] == "B")
+    xf0, xf1, yf0, yf1 = RD.room_faces(room)
+    mbs = _room_furn(c, room[0])
+    panels, seats = _mat_xs(mbs, "lecture_panel_dark"), _mat_xs(mbs, "chair_grey")
+    assert _row_fronts(panels) == pytest.approx([xf1 - R.PC_FRONT0 - k * R.PC_PITCH for k in range(R.PC_ROWS)])
+    assert max(seats) < max(panels) and min(seats) < min(panels)
+    assert min(seats) - xf0 >= 1.4
+    teacher = [v for v in _mat_verts(mbs, "desk_white") if v[0] > max(panels) + 1e-6]
+    assert teacher
+    assert max(v[0] for v in teacher) < min(_mat_xs(mbs, "board_white"))
+    assert _mid(teacher, 1) == pytest.approx((yf0 + yf1) * 0.5)
+
+
 def test_lounges_have_sofas_to_sit_on_and_311_sells_bento(upper):
     """310・311 はラウンジ: 西の壁ぎわのソファに座れる。311 だけが弁当の保温ケースを置き、黒板は無い。"""
     c, _ = upper
     for no in ("310", "311"):
         mbs = _room_furn(c, no)
         assert sum(len(getattr(mb, "seats", ())) for mb in mbs) == len(R.SOFA_Y), no
-        assert _mat_faces(mbs, "lecture_board_green") == 0, no
+        assert _mat_faces(mbs, "lecture_board_room") == 0, no
     assert _mat_faces(_room_furn(c, "311"), "stainless") > 0
     assert _mat_faces(_room_furn(c, "310"), "stainless") == 0
 
@@ -399,3 +583,33 @@ def test_every_upper_part_sees_at_most_four_lamps(upper):
     over = [(mb.name, _lamps_near(mb, lamps)) for mb in parts]
     assert max(o[1] for o in over) > 0, "どの部品にも点光源が数えられていない"
     assert [o for o in over if o[1] > LAMPS_PER_PART] == []
+
+
+def test_door_plates_sit_inside_their_rooms_clear_of_doors_and_big_plates():
+    """扉の横の小さい札は自分の室の壁の中にあり、同じ並びのどの扉の開口・室名札にも重ならない。"""
+    rooms = {r[0]: r for r in RD._named_rooms()}
+    big = RD._big_plate_x()
+    hw = RD.DOOR_PLATE[0] * 0.5
+    assert len(RD.DOOR_PLATES) == 41
+    for no, x, side in RD.DOOR_PLATES:
+        _no, fl, rside, x0, x1, _doors, _kind = rooms[no]
+        assert side == rside and fl in RD.FLOORS[:-1], no
+        assert x0 + hw < x < x1 - hw, (no, x)
+        for r in rooms.values():
+            if r[1] != fl or r[2] != side:
+                continue
+            for d in r[5]:
+                assert abs(x - d) > 0.87 + hw, (no, x, r[0], d)
+            assert abs(x - big[r[0]]) > 0.21 + hw, (no, x, r[0])
+
+
+def test_every_door_of_a_named_room_has_a_plate_beside_it():
+    """番号のある室の扉は、どれも横（DOOR_PLATE_OFF の所）に室名札か小さい札がある。"""
+    big = RD._big_plate_x()
+    small = {}
+    for no, x, _side in RD.DOOR_PLATES:
+        small.setdefault(no, []).append(x)
+    for no, _fl, _side, x0, x1, doors, _kind in RD._named_rooms():
+        for d in doors:
+            xs = [big[no]] + small.get(no, [])
+            assert any(abs(abs(x - d) - RD.DOOR_PLATE_OFF) < 0.01 for x in xs), (no, d, xs)

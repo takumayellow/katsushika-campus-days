@@ -1,0 +1,129 @@
+{
+  "id": "ta_306",
+  "speaker": "TA",
+  "topics": [
+    {
+      "id": "t_done",
+      "requiresCompletedQuest": "q_sq_first_program",
+      "lines": [
+        {
+          "text": "次は、名前を聞いて HELLO のあとに出すやつ。課題で出るから、先にやっとくと楽だよ。",
+          "text_en": "Next up is the one that asks your name and prints it after HELLO. It shows up in an assignment, so doing it early makes life easier."
+        },
+        {
+          "text": "エラーが出たら、まず行番号を見る。だいたいその 1 行上が犯人だから。",
+          "text_en": "When you get an error, look at the line number first. The culprit is usually the line just above it."
+        }
+      ]
+    },
+    {
+      "id": "t_show",
+      "requiresStep": "q_sq_first_program/s3",
+      "lines": [
+        {
+          "text": "お、出た？",
+          "text_en": "Oh, did it print?"
+        },
+        {
+          "speaker": "自分",
+          "text": "出ました。HELLO, WORLD。セミコロンが 1 個足りなかっただけでした。",
+          "text_en": "It did. HELLO, WORLD. All it was missing was one semicolon."
+        },
+        {
+          "text": "最初はみんなそこで止まるんだよ。俺もそうだった。",
+          "text_en": "Everyone gets stuck right there at first. I did too."
+        },
+        {
+          "text": "……7 階の白板、見た？　WORLD のあとにピリオドが付いてるやつ。",
+          "text_en": "...Did you see the whiteboard on 7F? The WORLD with a period after it."
+        },
+        {
+          "speaker": "自分",
+          "text": "ありました。1 個だけ点が付いてるのが。",
+          "text_en": "I saw it. The only one with a dot."
+        },
+        {
+          "text": "あれ、俺の字。1 年のとき、セミコロンを忘れて半日つぶした次の週に書いた。",
+          "text_en": "That's my handwriting. I wrote it in first year, the week after I lost half a day to a missing semicolon."
+        },
+        {
+          "text": "文の終わりに何か付けないと、落ち着かなくなってたんだよね。",
+          "text_en": "By then I couldn't stand ending a line without putting something at the end."
+        },
+        {
+          "text": "教授に言っておいで。あの人、こういう報告がいちばん好きだから。",
+          "text_en": "Go tell the professor. That's the kind of report he likes best."
+        }
+      ]
+    },
+    {
+      "id": "t_wait_report",
+      "requiresStep": "q_sq_first_program/s4",
+      "lines": [
+        {
+          "text": "教授なら大教室にいると思うよ。動いたって言うだけで、たぶん喜ぶ。",
+          "text_en": "The professor's probably in the big classroom. Just telling him it ran will make his day."
+        }
+      ]
+    },
+    {
+      "id": "t_run",
+      "requiresStep": "q_sq_first_program/s2",
+      "lines": [
+        {
+          "text": "前の列の PC に、コードを開いておいたから。コンパイルして、動かしてみて。",
+          "text_en": "I left the code open on a PC in the front row. Compile it and run it."
+        },
+        {
+          "text": "エラーが出ても、怒られてるわけじゃないからね。どこが分からないか教えてくれてるだけ。",
+          "text_en": "If you get an error, it's not yelling at you. It's just telling you which part it doesn't understand."
+        }
+      ]
+    },
+    {
+      "id": "t_meet",
+      "requiresStep": "q_sq_first_program/s1",
+      "lines": [
+        {
+          "text": "自習？　空いてる席ならどこでも使っていいよ。",
+          "text_en": "Here to study? Any free seat is yours."
+        },
+        {
+          "speaker": "自分",
+          "text": "教授に、ここへ行くように言われて。黒板の 1 バイトを読んだんです。",
+          "text_en": "The professor told me to come here. I read the bytes on the blackboards."
+        },
+        {
+          "text": "ああ、あれ読んだんだ。毎年、何人かここに来るんだよね。",
+          "text_en": "Ah, so you read those. A few people turn up here every year."
+        },
+        {
+          "text": "前の列の PC に、HELLO, WORLD を出すだけのコードを開いておく。動かしてみて。",
+          "text_en": "I'll open some code on a PC in the front row. All it does is print HELLO, WORLD. Give it a run."
+        },
+        {
+          "speaker": "自分",
+          "text": "書いてあるなら、動かすだけですよね。",
+          "text_en": "If it's already written, I just have to run it, right?"
+        },
+        {
+          "text": "……まあ、やってみて。",
+          "text_en": "...Well, give it a try."
+        }
+      ]
+    },
+    {
+      "id": "t_idle",
+      "lines": [
+        {
+          "text": "ここは 306、PC ルーム。課題の締め切りの前の晩は、だいたい満席になる。",
+          "text_en": "This is 306, the PC room. The night before an assignment is due, it's usually packed."
+        },
+        {
+          "text": "プリンタはよく紙が切れてるから、印刷は早めにね。",
+          "text_en": "The printer runs out of paper a lot, so print things early."
+        }
+      ]
+    }
+  ]
+}

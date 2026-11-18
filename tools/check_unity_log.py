@@ -13,6 +13,9 @@
     - シェーダの欠け    ... "Shader ... not found" / "シェーダ ... が見つかりません"
     - 編集時の複製      ... "Instantiating material due to calling renderer.material"
                             （シーンに複製したマテリアルが埋め込まれる, #64）
+    - ライセンス切れ    ... "[Licensing::...] Error: ... Found 0 entitlement groups" / "[Licensing::...] Error: '...' was not found"
+                            （Unity がライセンスを取れないと、コードに入る前に終了コード 198 で止まる。
+                            ビルドもテストも走っていない, #18）
     - テストの失敗      ... .xml を渡すと NUnit の結果として読み、失敗したテストを拾う
     - 進捗              ... "[KCD] " で始まる行
     - シーンの保存      ... "Saved scene:"
@@ -41,6 +44,9 @@ NAVMESH = re.compile(r"Failed to create agent|can only be called on an active ag
 SHADER = re.compile(r"\bshader\b.*\bnot found\b|シェーダ.*が見つかりません", re.IGNORECASE)
 # 編集時に renderer.material / MeshFilter.mesh を呼ぶと、複製がシーンに埋め込まれて残る。
 LEAK = re.compile(r"Instantiating (?:material|mesh) due to calling")
+# Unity がライセンスを取れないと、コードに入る前に終了コード 198 で止まり、ログにコードの失敗は出ない。
+# "Access token is unavailable" と "Code 10 while verifying" は有効なときのログにも出るので使わず、失敗したときだけ出る 2 種類の行を拾う (#18)。
+LICENSE = re.compile(r"\[Licensing::\w+\] Error: (?:Code \d+ .*Found 0 entitlement groups|'[^']+' was not found)")
 SAVED = re.compile(r"Saved scene:\s*(\S+)")
 RESULT = re.compile(r"ビルド結果:\s*(\S+)")
 
@@ -137,6 +143,7 @@ def scan(path: Path, out: io.TextIOBase) -> int:
     navmesh = [line for line in checked if NAVMESH.search(line)]
     shaders = [line for line in checked if SHADER.search(line)]
     leaks = [line for line in checked if LEAK.search(line)]
+    licenses = [line for line in checked if LICENSE.search(line)]
     saved = [m.group(1) for line in lines for m in [SAVED.search(line)] if m]
     results = [m.group(1) for line in lines for m in [RESULT.search(line)] if m]
     progress = [line for line in lines if "[KCD] " in line]
@@ -148,6 +155,7 @@ def scan(path: Path, out: io.TextIOBase) -> int:
     out.write(f"NavMesh  : {len(navmesh)}\n")
     out.write(f"Shader   : {len(shaders)}\n")
     out.write(f"Leak     : {len(leaks)}\n")
+    out.write(f"License  : {len(licenses)}\n")
     out.write(f"Known    : {sum(known.values())}\n")
 
     for tag, found in (
@@ -157,6 +165,7 @@ def scan(path: Path, out: io.TextIOBase) -> int:
         ("NAV", navmesh),
         ("SHADER", shaders),
         ("LEAK", leaks),
+        ("LICENSE", licenses),
     ):
         for line in found[:20]:
             out.write(f"  [{tag}] {line.strip()}\n")
@@ -170,7 +179,7 @@ def scan(path: Path, out: io.TextIOBase) -> int:
         out.write(f"  [BUILD] {result}\n")
 
     failed_builds = [r for r in results if "Succeeded" not in r]
-    failed = errors or warnings or exceptions or navmesh or shaders or leaks or failed_builds
+    failed = errors or warnings or exceptions or navmesh or shaders or leaks or licenses or failed_builds
     return 1 if failed else 0
 
 

@@ -124,6 +124,7 @@ namespace KCD.Editor
                     + (stairs > 0 ? " stairs " + stairs : string.Empty));
             }
 
+            InteriorStairStage.Link(group.transform);
             AddOutsideGround(group.transform, FirstSlotX - 200f, cursor + 200f, pits);
             CampusStage.CutOuterGround(root, pits);
             EditorPaths.Report("屋内を " + placed + " 棟置きました。");
@@ -474,8 +475,9 @@ namespace KCD.Editor
         }
 
         /// <summary>
-        /// 入った直後の立ち位置と、外の入口の位置を InteriorLoader に教える。扉が 2 つ以上ある建物では、
-        /// 扉ごとの立ち位置と、その扉から出たときに立つ外の所（Entrance_&lt;扉の id&gt; の外 2 m）も教える。
+        /// 入った直後の立ち位置と、外の入口の位置を InteriorLoader に教える。あわせて扉ごと（扉が 1 つの建物では玄関だけ）の
+        /// 立ち位置と、その扉から出たときに立つ外の所（Entrance_&lt;扉の id&gt; の外 2 m）も教える。玄関の外の所は、
+        /// 階段で別の建物から移ってきたときの戻り先になる（InteriorLoader.MoveAcross, #303）。
         /// </summary>
         private static void Register(InteriorLoader loader, Transform interior, string id)
         {
@@ -495,20 +497,16 @@ namespace KCD.Editor
                 EntranceWorld = entrance != null ? entrance.transform.position : Vector3.zero
             };
 
-            List<string> doors = DoorsOf(id);
-            if (doors.Count > 1)
+            foreach (string doorId in DoorsOf(id))
             {
-                foreach (string doorId in doors)
+                Transform spawn = doorId == id ? main : SpawnPoint(interior, doorId);
+                if (spawn == null)
                 {
-                    Transform spawn = doorId == id ? main : SpawnPoint(interior, doorId);
-                    if (spawn == null)
-                    {
-                        EditorPaths.Report("屋内 " + id + " に spawn_" + doorId + " がありません。");
-                        continue;
-                    }
-
-                    entry.Doors.Add(DoorOf(doorId, spawn));
+                    EditorPaths.Report("屋内 " + id + " に spawn_" + doorId + " がありません。");
+                    continue;
                 }
+
+                entry.Doors.Add(DoorOf(doorId, spawn));
             }
 
             loader.Register(entry);

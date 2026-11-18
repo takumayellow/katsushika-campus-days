@@ -199,6 +199,49 @@ namespace KCD.Tests
             Assert.IsFalse(KCDInput.GameplayBlocked);
         }
 
+        // ---- 階段で別の建物の屋内へ（MoveAcross, #303）----
+
+        [Test]
+        public void MoveAcross_WhileOutside_IsRefused()
+        {
+            InteriorLoader loader = MakeLoader("cafeteria", "research2");
+
+            Assert.IsFalse(loader.MoveAcross("cafeteria", Vector3.zero, 0f), "外から階段で屋内へ入った");
+            Assert.IsFalse(loader.IsInside);
+            Assert.IsFalse(loader.IsBusy);
+            Assert.IsFalse(KCDInput.GameplayBlocked);
+        }
+
+        [Test]
+        public void MoveAcross_ToABuildingWithoutAnInterior_IsRefused()
+        {
+            InteriorLoader loader = MakeLoader("research2");
+            var back = new Vector3(3f, 0f, -4f);
+            loader.RestoreInside("research2", back, 90f);
+
+            Assert.IsFalse(loader.MoveAcross("cafeteria", Vector3.zero, 0f), "屋内の無い建物へ移ろうとした");
+            Assert.AreEqual("research2", loader.CurrentId);
+            Assert.AreEqual(back, loader.ReturnPosition);
+            Assert.IsFalse(loader.IsBusy);
+            Assert.IsFalse(KCDInput.GameplayBlocked);
+        }
+
+        [Test]
+        public void MoveAcross_WithoutAPlayer_KeepsTheBuildingAndTheWayOut()
+        {
+            Assume.That(Object.FindAnyObjectByType<PlayerController>() == null, "EditMode のシーンにプレイヤーが残っている");
+            InteriorLoader loader = MakeLoader("cafeteria", "research2");
+            var back = new Vector3(3f, 0f, -4f);
+            loader.RestoreInside("research2", back, 90f);
+
+            Assert.IsFalse(loader.MoveAcross("cafeteria", Vector3.zero, 0f));
+            Assert.AreEqual("research2", loader.CurrentId, "移れなかったのに建物が変わった");
+            Assert.AreEqual(back, loader.ReturnPosition, "移れなかったのに戻り先が変わった");
+            Assert.AreEqual(90f, loader.ReturnYaw, 0.0001f);
+            Assert.IsFalse(loader.IsBusy);
+            Assert.IsFalse(KCDInput.GameplayBlocked);
+        }
+
         // ---- 出口（InteriorExit）----
 
         [Test]

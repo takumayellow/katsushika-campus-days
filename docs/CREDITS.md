@@ -54,7 +54,7 @@ StreamingAssets はビルドにそのまま入るので、配布物にもフォ�
 |---|---|---|---|---|
 | 坊っちゃん・マドンナちゃん | 東京理科大学の公式キャラクター。3D モデルとその顔・柄のテクスチャは本作が Blender で生成したもの | `blender/build_characters.py`、`blender/kcd_chara/`。公式イラスト `docs/ref/tus_chara01.jpg` / `tus_chara02.jpg` を頭身・形・色の参照に使った（画像そのものはゲームに入らない） | 公式キャラクターであることと、モデルが独自制作であることを表示する | 大学の許諾の記録なし（未確認） |
 | みらい・いなり・かなめ・そら・教授 | 本作のオリジナルキャラクター | `docs/DESIGN.md` | 学生・教授は架空の人物と表示する | 確認済み |
-| スターバックス、ファミリーマート、ローソン | 各社の商標。店名は会話文・クエストの文と、OSM の名称（`campus.json` の `display` / `desc`）にだけ出る。建物の外にも講義棟・共創棟などの屋内にも店の看板・店名・ブランドの色の帯を出さず、ロゴも描いていない（屋内の看板は「生協」「レジ」「カフェ」「コンビニ」のような一般の語だけ） | `Assets/Data/campus.json`、`Localization/*.json`、`Assets/Data/Dialogue/`、`Assets/Data/Quests/`、`CampusSignFaceTests` | 各社の商標であることを表示する | 使用の許諾の記録なし |
+| 実在の店の名前・ロゴ | 画面に出る文では「カフェ」「コンビニ」と書く。建物の外にも講義棟・共創棟などの屋内にも店の看板・店名・ブランドの色の帯を出さず、ロゴも描いていない（屋内の看板は「生協」「レジ」「カフェ」「コンビニ」のような一般の語だけ）。OSM の元の名前の欄（`osm_name`）は地図データとして残すが、画面には使わない | `Assets/Data/campus.json`、`Localization/*.json`、`Assets/Data/Dialogue/`、`Assets/Data/Quests/`、`ShopNameTests`、`CampusSignFaceTests` | 表示は要らない | 確認済み |
 
 ## 3D モデル・テクスチャ
 
@@ -62,7 +62,7 @@ StreamingAssets はビルドにそのまま入るので、配布物にもフォ�
 建物の形は上の地図データに基づく。キャラクターの顔・柄（`Assets/Models/Characters/*/`、`blender/kcd_chara/`）、ミニマップ（`tools/render_minimap.py`）、
 ミニマップの印（`Assets/Generated/UI/minimap_*.png`、`Scripts/Editor/MinimapAssets.cs` が描く）もスクリプトの出力。
 
-地面・舗装・芝・土・コンクリート・煉瓦の面のテクスチャ（`Assets/Textures/surfaces/`、#59 #109）は [ambientCG](https://ambientcg.com/) の素材から作った。
+地面・舗装・芝・土・コンクリート・煉瓦・屋根・金属・木の面のテクスチャ（`Assets/Textures/surfaces/`、#59 #109 #416）は [ambientCG](https://ambientcg.com/) の素材から作った。
 `tools/fetch_textures.py` が `data/textures/surfaces.json` に書いた素材を取得し、平均色を `MaterialLibrary.cs` の CampusColors に合わせて焼き直す。
 煉瓦だけは素材から肌の粒を借り、`tools/brick_bond.py` で張り方・1 枚ずつの色・目地を組み直している。
 
@@ -71,11 +71,24 @@ StreamingAssets はビルドにそのまま入るので、配布物にもフォ�
 | [PavingStones136](https://ambientcg.com/a/PavingStones136) | stone_light・stone_dark（舗装） | CC0 1.0（表記は義務ではない） | 確認済み（2026-09-24） |
 | [Asphalt033](https://ambientcg.com/a/Asphalt033) | asphalt（車道・駐車場） | 同上 | 確認済み（2026-09-24） |
 | [Grass004](https://ambientcg.com/a/Grass004) | grass・grass_dark（芝地） | 同上 | 確認済み（2026-09-24） |
-| [Ground048](https://ambientcg.com/a/Ground048) | bed_soil（花壇の土） | 同上 | 確認済み（2026-09-24） |
+| [Ground048](https://ambientcg.com/a/Ground048) | bed_soil（花壇の土）・soil（テニスコート）・sand（遊び場） | 同上 | 確認済み（2026-09-24） |
 | [Concrete034](https://ambientcg.com/a/Concrete034) | concrete_light・concrete_grey・concrete_dark（外壁） | 同上 | 確認済み（2026-09-24） |
 | [Bricks092](https://ambientcg.com/a/Bricks092) | brick_red（外壁の煉瓦） | 同上 | 確認済み |
+| [Concrete046](https://ambientcg.com/a/Concrete046) | roof_grey（屋根・庇の上面） | 同上 | 確認済み（2026-11-12） |
+| [Metal032](https://ambientcg.com/a/Metal032) | metal_grey（パラペット・屋上の設備・方立て） | 同上 | 確認済み（2026-11-12） |
+| [Metal016](https://ambientcg.com/a/Metal016) | metal_white（温室の壁・白い金属の枠） | 同上 | 確認済み（2026-11-12） |
+| [Wood049](https://ambientcg.com/a/Wood049) | wood（ベンチ・公園の木部） | 同上 | 確認済み（2026-11-12） |
+| [Planks029S](https://ambientcg.com/a/Planks029S) | deck_wood（寮の屋上テラスのデッキ） | 同上 | 確認済み（2026-11-12） |
 
-> Created using PavingStones136, Asphalt033, Grass004, Ground048, Concrete034 and Bricks092 from ambientCG.com, licensed under the Creative Commons CC0 1.0 Universal License.
+> Created using PavingStones136, Asphalt033, Grass004, Ground048, Concrete034, Bricks092, Concrete046, Metal032, Metal016, Wood049 and Planks029S from ambientCG.com, licensed under the Creative Commons CC0 1.0 Universal License.
+
+低木と草むら（`Assets/Models/Campus/shrubs.fbx`、#78）の形は [Kenney](https://kenney.nl/) の Nature Kit 2.1 から借りた。
+`tools/fetch_shrubs.py` が zip から低木 6 点と草むら 4 点の頂点と三角形だけを `data/shrubs/kenney_shrubs.json` に写し、
+`blender/kcd_lib/shrubs.py` が CampusColors の色を付け直して地図の上に置く。Kenney の材質（単色）と元のファイルは入れていない。
+
+| 素材 | 使っている形 | 条件・表記 | 確認状況 |
+|---|---|---|---|
+| [Nature Kit 2.1](https://kenney.nl/assets/nature-kit)（Kenney） | 低木 `plant_bush`・`plant_bushDetailed`・`plant_bushLarge`・`plant_bushLargeTriangle`・`plant_bushSmall`・`plant_bushTriangle`、草むら `grass`・`grass_large`・`grass_leafs`・`grass_leafsLarge` | CC0 1.0（表記は義務ではない。同梱の License.txt と配布ページに記載。zip の SHA-256 は `tools/fetch_shrubs.py` に固定） | 確認済み（2026-10-21） |
 
 ## 参考資料（`docs/ref`、ゲームには入らない）
 
@@ -106,4 +119,4 @@ StreamingAssets はビルドにそのまま入るので、配布物にもフォ�
 3. ピアノ伴奏の採譜に入れた元の音源と、ヤマハの採譜サービスの利用規約。
 4. 沿道の建物の高さが PLATEAU 由来か。由来なら PLATEAU の利用規約に沿った表記を足す。
 5. `docs/ref` の画像を公開リポジトリに置き続けてよいか。
-6. 坊っちゃん・マドンナちゃんの 3D 化と、店名・ブランドの色の使用。
+6. 坊っちゃん・マドンナちゃんの 3D 化と、ブランドの色の使用。

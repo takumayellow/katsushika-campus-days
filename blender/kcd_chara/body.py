@@ -22,11 +22,30 @@ from .tex import TILE_BASE, TILE_FEATURE, tile_uv
 # --------------------------------------------------------------------------
 
 
-def _head_deform(d: np.ndarray, square: float = 0.0) -> np.ndarray:
+#: 大人の男の下顔の輪郭（jaw=1）。正規化した高さ z（顎先 -1）ごとの横の半幅。
+#: 頬骨の下からほぼまっすぐ下ろし、耳たぶの下（z=-0.64）にエラの角を作り、
+#: そこから幅のある顎先へ直線で絞る。卵形は z=-0.9 で半幅 0.33 まで細るが、
+#: こちらは 0.47 残し、顎の底は半幅 0.32 の平らな面になる。
+_JAW_Z = np.array([-1.00, -0.92, -0.80, -0.64, -0.45, 0.00])
+_JAW_W = np.array([0.32, 0.47, 0.63, 0.79, 0.87, 1.00])
+#: jaw=1 で頬のふくらみを何割落とすか
+JAW_CHEEK_CUT = 0.70
+
+
+def _jaw_width(z: np.ndarray, r_ball: np.ndarray, w: np.ndarray) -> np.ndarray:
+    """大人の男の輪郭の幅の倍率。z >= -0.30 は w のまま、z <= -0.50 で輪郭の幅に入れ替わる。"""
+    target = np.interp(z, _JAW_Z, _JAW_W) / r_ball
+    k = M.smoothstep(-0.30, -0.50, z)
+    return w * (1.0 - k) + np.minimum(target, 1.85) * k
+
+
+def _head_deform(d: np.ndarray, square: float = 0.0, jaw: float = 0.0) -> np.ndarray:
     """単位球の方向ベクトル群をアニメ顔のシルエットへ変形する。
 
     square は輪郭の角張り具合。0 で従来の卵形（高頭身キャラ向け）、
     1 で「角の丸い四角」（ちびキャラ向け）。間は線形に混ぜる。
+    jaw は下顔を大人の男の輪郭（エラの角と幅のある顎先）へ寄せる割合 (#172)。
+    0 のキャラは従来と同じ計算をそのまま通る。
     """
     x, y, z = d[:, 0], d[:, 1], d[:, 2]
     az = np.abs(z)
@@ -48,14 +67,23 @@ def _head_deform(d: np.ndarray, square: float = 0.0) -> np.ndarray:
     w_box = np.minimum(w_box, 1.85)
     s = float(np.clip(square, 0.0, 1.0))
     w = w_egg * (1.0 - s) + w_box * s
+    w_depth = w
+    j = float(np.clip(jaw, 0.0, 1.0))
+    if j > 0.0:
+        w = w * (1.0 - j) + _jaw_width(z, r_ball, w) * j
     X = x * w
-    Y = y * w
+    # 奥行きには顎の張りを入れない。入れると横顔の下顔が箱になり、首の後ろまで太る。
+    Y = y * w_depth
     Z = np.where(z >= 0.0, z, z * 0.94)
     # 正面は平らめ、後頭部はふっくら
     Y = np.where(Y < 0.0, Y * 0.870, Y * 1.070)
-    # 頬のふくらみ。目の下から顎にかけて広く取り、平たい逆三角形を避ける
+    # 頬のふくらみ。目の下から顎にかけて広く取り、平たい逆三角形を避ける。
+    # 大人の男の輪郭（jaw）では頬のふくらみは子どもの丸顔の記号になるので抑える。
     cheek = (np.exp(-((z + 0.26) / 0.46) ** 2)
              * np.exp(-((np.abs(x) - 0.52) / 0.52) ** 2))
+    if j > 0.0:
+        # 目の高さ（z >= -0.05）から上、眼鏡と髪が乗る所は変えない
+        cheek = cheek * (1.0 - JAW_CHEEK_CUT * j * M.smoothstep(-0.05, -0.40, z))
     front = np.clip(-y, 0.0, 1.0)
     Y -= 0.135 * cheek * front
     # 横へ張る向きは正中で 0 からなめらかに立ち上げる。sign(x) だと正中の列が
@@ -78,7 +106,8 @@ class Head:
         # ちびは「角の丸い四角」、高頭身はこれまでどおり卵形
         # head_square で途中の値も選べる（教授は顎の張った大人の男の輪郭にする #172）
         self.square = float(p.get("head_square", 1.0 if p.get("chibi") else 0.0))
-        probe = _head_deform(_sphere_dirs(48, 32), self.square)
+        self.jaw = float(p.get("head_jaw", 0.0))
+        probe = _head_deform(_sphere_dirs(48, 32), self.square, self.jaw)
         self.sx = (hw * 0.5) / float(np.abs(probe[:, 0]).max())
         self.sy = (hd * 0.5) / float(np.abs(probe[:, 1]).max())
         zmin, zmax = float(probe[:, 2].min()), float(probe[:, 2].max())
@@ -93,7 +122,7 @@ class Head:
         e = np.asarray(el, dtype=float)
         se = np.sin(e)
         d = np.stack([np.cos(a) * se, np.sin(a) * se, np.cos(e)], axis=-1)
-        loc = _head_deform(d.reshape(-1, 3), self.square)
+        loc = _head_deform(d.reshape(-1, 3), self.square, self.jaw)
         return loc * self.scale + self.center
 
 

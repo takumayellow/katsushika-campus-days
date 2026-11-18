@@ -38,7 +38,7 @@ import subprocess
 import sys
 import time
 import xml.etree.ElementTree as ET
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 
 TOOLS = Path(__file__).resolve().parent
 REPO = TOOLS.parent
@@ -133,8 +133,53 @@ def drop_exited(pids: list[int], alive=windows_process_alive) -> list[int]:
     return [pid for pid in pids if alive(pid)]
 
 
+def windows_process_path(pid: int) -> str | None:
+    """PID の実行ファイルのフルパス。調べられなければ None。"""
+    import ctypes
+
+    process_query_limited_information = 0x1000
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.OpenProcess.restype = ctypes.c_void_p
+    handle = kernel32.OpenProcess(process_query_limited_information, False, pid)
+    if not handle:
+        return None
+    try:
+        size = ctypes.c_ulong(32768)
+        buffer = ctypes.create_unicode_buffer(size.value)
+        if not kernel32.QueryFullProcessImageNameW(ctypes.c_void_p(handle), 0, buffer, ctypes.byref(size)):
+            return None
+        return buffer.value
+    finally:
+        kernel32.CloseHandle(ctypes.c_void_p(handle))
+
+
+def is_hub_helper(path: str | None) -> bool:
+    """Unity Hub が serve で常駐させる unity.exe なら True。
+
+    Hub は自分のフォルダ（名前に UnityHub か Unity Hub を含む）の下の resources\\unity.exe を常駐させる。
+    プロジェクトは開かないので待たない。それ以外の Unity.exe は、--unity などで別の場所に置いた本体も
+    含めて数える。パスが分からなければ数える側に倒す。
+    """
+    if path is None:
+        return False
+    exe = PureWindowsPath(path)
+    if exe.name.lower() != UNITY_IMAGE.lower() or exe.parent.name.lower() != "resources":
+        return False
+    return any("unityhub" in part.lower().replace(" ", "") for part in exe.parent.parent.parts)
+
+
+def drop_hub_helpers(pids: list[int], path_of=windows_process_path) -> list[int]:
+    """Unity Hub の常駐の unity.exe を除く。"""
+    return [pid for pid in pids if not is_hub_helper(path_of(pid))]
+
+
+def unity_pids_from_tasklist(text: str, alive=windows_process_alive, path_of=windows_process_path) -> list[int]:
+    """tasklist の CSV から、終わるのを待つべき Unity の PID を拾う（終わったものと Hub の常駐は除く）。"""
+    return drop_hub_helpers(drop_exited(parse_tasklist_csv(text), alive=alive), path_of=path_of)
+
+
 def running_unity_pids() -> list[int]:
-    """いま動いている Unity.exe の PID。調べられなければ空。"""
+    """いま動いている Unity の PID（Unity Hub の常駐の unity.exe は除く）。調べられなければ空。"""
     if os.name == "nt":
         try:
             raw = subprocess.run(
@@ -145,7 +190,7 @@ def running_unity_pids() -> list[int]:
             ).stdout
         except (OSError, subprocess.SubprocessError) as error:
             raise RuntimeError(f"tasklist を実行できません: {error}") from error
-        return drop_exited(parse_tasklist_csv(raw.decode("mbcs", errors="replace")))
+        return unity_pids_from_tasklist(raw.decode("mbcs", errors="replace"))
 
     try:
         raw = subprocess.run(

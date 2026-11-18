@@ -152,6 +152,9 @@ namespace KCD.Editor
             // ここに無かったので、どれも B0B0AC の灰色で .mat が作られていた。
             { "line_white", "F3F3F1" },
             { "soil", "AA957C" },
+            // テニスのハードコート（#59）。内側の青と外周の緑
+            { "hardcourt_inner", "5F93AD" },
+            { "hardcourt_outer", "518C78" },
             { "bg_wall_0", "C7C1B3" },
             { "bg_wall_1", "B2B0A9" },
             { "bg_wall_2", "A3A3A1" },
@@ -221,6 +224,7 @@ namespace KCD.Editor
             if (material != null)
             {
                 Repaint(material, name, CampusSurfaces.LoadTiling());
+                ToonPasses.Apply(material, name);
                 return material;
             }
 
@@ -288,6 +292,7 @@ namespace KCD.Editor
                 material.SetColor(BaseColorId, Color.white);
             }
 
+            ToonPasses.Apply(material, name);
             Save(material, path);
             return material;
         }
@@ -323,8 +328,18 @@ namespace KCD.Editor
 
             if (!CampusColors.TryGetValue(name, out string hex))
             {
-                return InteriorPalette.TryGetSurface(name, out InteriorPalette.Surface surface)
-                    && PaintFallback(material, name, surface);
+                if (PaintFallbackGlass(material, name))
+                {
+                    return true;
+                }
+
+                if (!InteriorPalette.TryGetSurface(name, out InteriorPalette.Surface surface))
+                {
+                    return false;
+                }
+
+                bool painted = PaintFallback(material, name, surface);
+                return RepaintInteriorMap(material, name, surface, tiling) || painted;
             }
 
             Color declared = Parse(hex);
@@ -362,6 +377,74 @@ namespace KCD.Editor
             ApplySurface(material, name, surface);
             EditorUtility.SetDirty(material);
             return true;
+        }
+
+        /// <summary>
+        /// 屋内のパレットのガラス（<see cref="InteriorPalette"/> の Glass）で、仮の灰色の不透明のままの .mat を
+        /// パレットの色とアルファの半透明にする。塗ったら true。
+        /// ガラスを半透明にするのは <see cref="EnsureCampus"/> が新しく作るときだけなので、Glass に載る前に
+        /// できた .mat（講義棟の手すりのガラスなど、#435）は不透明の灰色のまま残り、奥が隠れていた。
+        /// 仮の灰色でない .mat は手で調整した値なので触らない。
+        /// </summary>
+        private static bool PaintFallbackGlass(Material material, string name)
+        {
+            if (!InteriorPalette.TryGetGlass(name, out string glassHex, out float glassAlpha)
+                || !material.HasProperty(BaseColorId)
+                || !Same(material.GetColor(BaseColorId), Parse(FallbackHex)))
+            {
+                return false;
+            }
+
+            MakeTransparent(material, glassAlpha, Parse(glassHex));
+            material.SetFloat("_Smoothness", 0.95f);
+
+            // 新しく作った .mat は取り込みのときに URP が半透明の設定（RenderType のタグ・乗算済みアルファの
+            // ブレンド・影と深度のパスを切る）を足すが、既にある .mat には足さない。新しく作ったガラス
+            // （glass_interior.mat など）と同じ値にそろえる。
+            material.SetOverrideTag("RenderType", "Transparent");
+            material.SetFloat("_SrcBlend", (float)BlendMode.One);
+            material.SetFloat("_SrcBlendAlpha", (float)BlendMode.One);
+            material.SetFloat("_DstBlendAlpha", (float)BlendMode.OneMinusSrcAlpha);
+            material.EnableKeyword("_ALPHAPREMULTIPLY_ON");
+            material.SetShaderPassEnabled("DepthOnly", false);
+            material.SetShaderPassEnabled("SHADOWCASTER", false);
+            material.SetShaderPassEnabled("MOTIONVECTORS", false);
+            EditorUtility.SetDirty(material);
+            return true;
+        }
+
+        /// <summary>
+        /// 屋内のパレットの面の画像（講義棟の打放しの壁の型枠の跡など、#423）を tiling.json に合わせる。
+        /// 画像を貼ったら _BaseColor は白、このフォルダの画像を外したらパレットの色に戻す。直したら true。
+        /// tiling.json に無く画像も貼っていない面は何もしない（手で調整した色を上書きしない）。
+        /// </summary>
+        private static bool RepaintInteriorMap(
+            Material material, string name, InteriorPalette.Surface surface, Dictionary<string, float> tiling)
+        {
+            bool changed = CampusSurfaces.Apply(material, name, tiling, out bool textured);
+            if (!material.HasProperty(BaseColorId) || (!textured && !changed))
+            {
+                if (changed)
+                {
+                    EditorUtility.SetDirty(material);
+                }
+
+                return changed;
+            }
+
+            Color target = textured ? Color.white : Parse(surface.Hex);
+            if (!Same(material.GetColor(BaseColorId), target))
+            {
+                material.SetColor(BaseColorId, target);
+                changed = true;
+            }
+
+            if (changed)
+            {
+                EditorUtility.SetDirty(material);
+            }
+
+            return changed;
         }
 
         private static void ApplySurface(Material material, string name, InteriorPalette.Surface surface)
@@ -418,6 +501,9 @@ namespace KCD.Editor
         private static readonly int ShadeColorId = Shader.PropertyToID("_ShadeColor");
         private static readonly int VertexColorId = Shader.PropertyToID("_VertexColor");
         private static readonly int OutlineScreenFlatId = Shader.PropertyToID("_OutlineScreenFlat");
+        private static readonly int FaceShadowId = Shader.PropertyToID("_FaceShadow");
+        private static readonly int FaceShadowSoftnessId = Shader.PropertyToID("_FaceShadowSoftness");
+        private static readonly int FaceShadowBiasId = Shader.PropertyToID("_FaceShadowBias");
         private static readonly int ShadeCrispId = Shader.PropertyToID("_ShadeCrisp");
         private static readonly int ShadeThresholdId = Shader.PropertyToID("_ShadeThreshold");
         private static readonly int FlatAmbientId = Shader.PropertyToID("_FlatAmbient");
@@ -482,6 +568,7 @@ namespace KCD.Editor
             if (material != null)
             {
                 RepaintCharacter(material, name, palette, patterns);
+                ToonPasses.Apply(material, characterId + "_" + name);
                 return material;
             }
 
@@ -526,6 +613,7 @@ namespace KCD.Editor
                 material.SetFloat("_SpecularIntensity", 0.8f);
             }
 
+            ToonPasses.Apply(material, characterId + "_" + name);
             Save(material, path);
             return material;
         }
@@ -898,7 +986,8 @@ namespace KCD.Editor
                 && Mathf.Approximately(material.GetFloat("_ShadeThreshold2"), threshold2)
                 && !NeedsOutlineScreenFlat(material)
                 && !NeedsShadeCrisp(material)
-                && !NeedsFlatAmbient(material);
+                && !NeedsFlatAmbient(material)
+                && !NeedsFaceShadow(material, !eye);
             if (same)
             {
                 return false;
@@ -915,7 +1004,45 @@ namespace KCD.Editor
             ApplyOutlineScreenFlat(material);
             ApplyShadeCrisp(material);
             ApplyFlatAmbient(material);
+            ApplyFaceShadow(material, !eye);
             return true;
+        }
+
+        /// <summary>
+        /// 顔の陰を頭の向きで決める KCD/Toon の _FACE_SHADOW_ON (#14)。顔（目は除く）だけに付ける。
+        /// 頭の向きは CharacterImporter.BakeFaceFrame が顔の頂点に焼く。
+        /// </summary>
+        private static bool NeedsFaceShadow(Material material, bool on)
+        {
+            if (!material.HasProperty(FaceShadowId))
+            {
+                return false;
+            }
+
+            return material.IsKeywordEnabled(FaceShading.Keyword) != on
+                || !Mathf.Approximately(material.GetFloat(FaceShadowId), on ? 1f : 0f)
+                || (on && !Mathf.Approximately(material.GetFloat(FaceShadowSoftnessId), FaceShading.Softness))
+                || (on && !Mathf.Approximately(material.GetFloat(FaceShadowBiasId), FaceShading.Bias));
+        }
+
+        private static void ApplyFaceShadow(Material material, bool on)
+        {
+            if (!material.HasProperty(FaceShadowId))
+            {
+                return;
+            }
+
+            material.SetFloat(FaceShadowId, on ? 1f : 0f);
+            if (on)
+            {
+                material.SetFloat(FaceShadowSoftnessId, FaceShading.Softness);
+                material.SetFloat(FaceShadowBiasId, FaceShading.Bias);
+                material.EnableKeyword(FaceShading.Keyword);
+            }
+            else
+            {
+                material.DisableKeyword(FaceShading.Keyword);
+            }
         }
 
         private static bool NeedsOutlineScreenFlat(Material material)

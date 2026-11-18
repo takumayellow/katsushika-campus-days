@@ -15,7 +15,6 @@ namespace KCD
         private static DialogueSystem _instance;
 
         private readonly Dictionary<string, DialogueData> _data = new Dictionary<string, DialogueData>();
-        private readonly HashSet<string> _spentTopics = new HashSet<string>();
         private readonly HashSet<string> _flags = new HashSet<string>();
 
         private DialogueTopic _topic;
@@ -198,7 +197,7 @@ namespace KCD
             KCDInput.Block(this);
 
             // talk の報告は封鎖のあと。「〜と話す」で達成したときに PlayerAnimatorDriver が会話中だと分かって手を振らない。
-            _topic = ReportTalkAndSelect(data, GameManager.Instance.Quests, _spentTopics, chosen);
+            _topic = ReportTalkAndSelect(data, GameManager.Instance.Quests, OnceTopics.Keys, chosen);
             _lines = _topic.Lines;
             _topicKey = data.Id + "/" + _topic.Id;
             _dialogueId = data.Id;
@@ -208,7 +207,40 @@ namespace KCD
 
         private DialogueTopic SelectTopic(DialogueData data)
         {
-            return SelectTopic(data, GameManager.Instance.Quests, _spentTopics);
+            return SelectTopic(data, GameManager.Instance.Quests, OnceTopics.Keys);
+        }
+
+        /// <summary>
+        /// いま dialogueId の NPC に話しかけると、依頼（startsQuest）の話題が出るか (#410)。
+        /// ミニマップが、依頼を受けられる人の点の色を変えるのに使う。話しかけたときと同じく <see cref="SelectTopic(DialogueData)"/> で選ぶ。
+        /// </summary>
+        public bool OffersQuest(string dialogueId)
+        {
+            if (string.IsNullOrEmpty(dialogueId) || !_data.TryGetValue(dialogueId, out DialogueData data) ||
+                GameManager.Instance == null)
+            {
+                return false;
+            }
+
+            return OffersQuest(data, GameManager.Instance.Quests, OnceTopics.Keys, LiveHiddenCount(), DayStats.HasCollected);
+        }
+
+        /// <summary>
+        /// <see cref="OffersQuest(string)"/> の、会話データと進行を渡せる版（テストから呼ぶ）。
+        /// 選ばれる話題が、まだ受けていない実在のクエストを頼むものなら true。受注中・完了済み・前提のそろわない依頼は
+        /// SelectTopic が選ばないので、ここでは数えない。
+        /// </summary>
+        public static bool OffersQuest(DialogueData data, QuestSystem quests, ICollection<string> spentTopics,
+            int hiddenCount, Func<string, bool> hasItem)
+        {
+            if (quests == null)
+            {
+                return false;
+            }
+
+            DialogueTopic topic = SelectTopic(data, quests, spentTopics, hiddenCount, hasItem);
+            return topic != null && topic.Lines.Count > 0 && !string.IsNullOrEmpty(topic.StartsQuest) &&
+                quests.Find(topic.StartsQuest) != null;
         }
 
         /// <summary>
@@ -251,7 +283,7 @@ namespace KCD
                 }
 
                 // クエストを頼む話題は、そのクエストを受注中・完了済みなら出さない。
-                // 使い終えた話題（_spentTopics）はセーブに載らないので、ロード直後に同じ依頼をもう一度されるのを防ぐ。
+                // 使い終えた話題の記録（OnceTopics）を持たない古いセーブを読んだあとにも、同じ依頼をもう一度されないようにする。
                 if (!string.IsNullOrEmpty(topic.StartsQuest) && quests != null &&
                     (quests.IsActive(topic.StartsQuest) || quests.IsCompleted(topic.StartsQuest)))
                 {
@@ -285,6 +317,16 @@ namespace KCD
                 if (!string.IsNullOrEmpty(topic.RequiresCompletedQuest))
                 {
                     if (quests == null || !quests.IsCompleted(topic.RequiresCompletedQuest))
+                    {
+                        continue;
+                    }
+
+                    conditional = true;
+                }
+
+                if (!string.IsNullOrEmpty(topic.RequiresStep))
+                {
+                    if (!StepConditionMet(topic.RequiresStep, quests))
                     {
                         continue;
                     }
@@ -331,7 +373,7 @@ namespace KCD
         /// talk を報告し、この話しかけで達成したクエストのお礼の話題があればそれを、無ければ chosen を返す（テストから呼ぶ）(#94)。
         /// chosen は報告の前に <see cref="SelectTopic(DialogueData, QuestSystem, ICollection{string})"/> で選んだもの。
         ///
-        /// 以前は話題を選んでから報告していたので、牛乳を届けた会話で要が「ファミマは共創棟の 1 階」と
+        /// 以前は話題を選んでから報告していたので、牛乳を届けた会話で要が「コンビニは共創棟の 1 階」と
         /// 受注中のヒント（requiresActiveQuest）を言い、お礼（requiresCompletedQuest）は次に話したときに出ていた。
         /// 報告のあとに選び直すだけだと、オリエンテーションを終えた会話で教授の最初のあいさつ（無条件の t_welcome）より
         /// 体育館の依頼（t_gym_start）が先に出てしまうので、差し替えるのはこの報告で達成になったクエストのお礼だけにする。
@@ -391,6 +433,11 @@ namespace KCD
                     continue;
                 }
 
+                if (!string.IsNullOrEmpty(topic.RequiresStep) && !StepConditionMet(topic.RequiresStep, quests))
+                {
+                    continue;
+                }
+
                 if (topic.HasItemCondition && !ItemConditionMet(topic, hiddenCount, hasItem))
                 {
                     continue;
@@ -410,6 +457,28 @@ namespace KCD
             }
 
             return chosen;
+        }
+
+        /// <summary>
+        /// 「クエスト id/段の id」の条件を満たしているか（テストから呼ぶ）。そのクエストを受注中で、いまの段がその id のとき true。
+        /// 区切りの無い値や、どちらかが空の値は満たさない (#389)。
+        /// </summary>
+        public static bool StepConditionMet(string requiresStep, QuestSystem quests)
+        {
+            if (quests == null || string.IsNullOrEmpty(requiresStep))
+            {
+                return false;
+            }
+
+            int slash = requiresStep.IndexOf('/');
+            if (slash <= 0 || slash >= requiresStep.Length - 1)
+            {
+                return false;
+            }
+
+            string questId = requiresStep.Substring(0, slash);
+            string stepId = requiresStep.Substring(slash + 1);
+            return quests.CurrentStepId(questId) == stepId;
         }
 
         /// <summary>話題の、隠しアイテムの数と持ち物の条件を満たしているか。条件が無ければ true。</summary>
@@ -549,13 +618,7 @@ namespace KCD
             return ((index + step) % count + count) % count;
         }
 
-        /// <summary>TapChoice に渡すと、どの選択肢も選ばずに会話を閉じる（指の「やめる」）。</summary>
-        public const int CloseChoice = -1;
-
-        /// <summary>
-        /// 指で選択肢を叩いたとき。選択肢を出したあとに置いた指でなければ選ばない。
-        /// <see cref="CloseChoice"/> は選ばずに閉じる（キーの Esc と同じ。答えた話題にはならない）。
-        /// </summary>
+        /// <summary>指で選択肢を叩いたとき。選択肢を出したあとに置いた指でなければ選ばない。</summary>
         public bool TapChoice(int index)
         {
             if (!_tapArmed || !_choosing)
@@ -563,13 +626,22 @@ namespace KCD
                 return false;
             }
 
-            if (index == CloseChoice)
+            return Choose(index);
+        }
+
+        /// <summary>
+        /// 指で「やめる」を叩いたとき。どの選択肢も選ばずに会話を閉じる（キーの Esc と同じで、答えた話題にはならない）。
+        /// 選択肢を出したあとに置いた指でなければ閉じない。
+        /// </summary>
+        public bool TapClose()
+        {
+            if (!_tapArmed || !_choosing)
             {
-                Finish();
-                return true;
+                return false;
             }
 
-            return Choose(index);
+            Finish();
+            return true;
         }
 
         /// <summary>
@@ -609,7 +681,10 @@ namespace KCD
             return true;
         }
 
-        /// <summary>選んだ選択肢の好感度を NPC に足し、話題を答えた話題として覚える（テストから呼ぶ）。</summary>
+        /// <summary>
+        /// 選んだ選択肢の好感度を NPC に足し、話題を答えた話題として覚える（テストから呼ぶ）。
+        /// 答え直せる選択肢（retry）は覚えないので、次に話しかけたときにもう一度聞く (#389)。
+        /// </summary>
         public static void ApplyChoice(string dialogueId, string topicKey, DialogueChoice choice)
         {
             if (choice == null)
@@ -618,7 +693,10 @@ namespace KCD
             }
 
             NpcAffinity.Add(dialogueId, choice.Affinity);
-            NpcAffinity.NoteAnswered(topicKey);
+            if (!choice.Retry)
+            {
+                NpcAffinity.NoteAnswered(topicKey);
+            }
         }
 
         /// <summary>
@@ -655,7 +733,7 @@ namespace KCD
             {
                 if (SpendsOnFinish(finished, finishedKey))
                 {
-                    _spentTopics.Add(finishedKey);
+                    OnceTopics.Note(finishedKey);
                 }
 
                 QuestSystem quests = GameManager.Instance.Quests;

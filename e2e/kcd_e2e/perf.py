@@ -154,6 +154,7 @@ def summarize(frames: list[dict]) -> dict:
     """perf_probe.js のフレームの配列を, fps・1% low・処理時間・描画コール・三角形にまとめる。
 
     fps は間隔の平均から, 1% low は間隔の遅い 1%（少なくとも 1 個）の平均から出す。
+    shadow_draws と shadow_triangles は, 描画コールと三角形のうち影のマップに描いた分の平均。
     """
     if len(frames) < 2:
         raise ValueError("フレームが 2 つ以上いる")
@@ -163,6 +164,8 @@ def summarize(frames: list[dict]) -> dict:
     work = [frame["work"] for frame in frames]
     draws = [frame["draws"] for frame in frames]
     tris = [frame["triangles"] for frame in frames]
+    shadow_draws = [frame["shadow_draws"] for frame in frames]
+    shadow_tris = [frame["shadow_triangles"] for frame in frames]
     return {
         "frames": len(frames),
         "seconds": (times[-1] - times[0]) / 1000,
@@ -174,6 +177,8 @@ def summarize(frames: list[dict]) -> dict:
         "draws_max": max(draws),
         "triangles": sum(tris) / len(tris),
         "triangles_max": max(tris),
+        "shadow_draws": sum(shadow_draws) / len(shadow_draws),
+        "shadow_triangles": sum(shadow_tris) / len(shadow_tris),
     }
 
 

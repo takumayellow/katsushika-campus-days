@@ -178,6 +178,54 @@ def test_every_known_line_says_why():
         assert "(#" in known.reason, known.pattern.pattern
 
 
+# ---- #18: ライセンス切れ ----
+
+# Unity がライセンスを取れなかったときのバッチログ（終了コード 198）にあった行。Unity はコードに入る前に止まる。
+LICENSE_EXPIRED_LINES = [
+    "[Licensing::Module] Error: Access token is unavailable; failed to update",
+    "[Licensing::Client] Error: Code 404 while processing request "
+    "(status: Found 0 entitlement groups and 0 free entitlements matching requested entitlement ids)",
+    "[Licensing::Client] Successfully updated license, isAsync: False, time: 0.02",
+    "[Licensing::Client] Error: Code 404 while processing request "
+    "(status: Found 0 entitlement groups and 0 free entitlements matching requested entitlement ids)",
+    "[Licensing::Module] Error: 'com.unity.editor.headless' was not found.",
+    "[Licensing::Module] Licensing is initialized (took 1.99s).",
+    "[ExitDontLaunchBugReporter] Exiting without the bug reporter. Application will exit with return code 198",
+]
+
+# ライセンスが有効なバッチログにも毎回出る行。これらで失敗にしてはいけない。
+LICENSE_VALID_LINES = [
+    "[Licensing::Module] Error: Access token is unavailable; failed to update",
+    '[Licensing::Client] Code 10 while verifying Licensing Client signature (process Id: 1, path: '
+    '"C:/Program Files/Unity/Hub/Editor/6000.6.2f1/Editor/Data/Resources/Licensing/Client/Unity.Licensing.Client.exe")',
+    "[Licensing::Module] LicensingClient has failed validation; ignoring",
+    "[Licensing::Module] Licensing is initialized (took 0.07s).",
+    "[ExitDontLaunchBugReporter] Exiting without the bug reporter. Application will exit with return code 0",
+]
+
+
+def test_expired_license_fails(tmp_path):
+    # ビルドもテストも走っていないのに、コンパイルエラーも例外も出ない。この 2 種類の行だけが手がかり。
+    code, text = scan_text(tmp_path, "\n".join(LICENSE_EXPIRED_LINES) + "\n")
+    assert code == 1, text
+    assert "License  : 3" in text
+    assert text.count("[LICENSE]") == 3
+    assert "[LICENSE] [Licensing::Module] Error: 'com.unity.editor.headless' was not found." in text
+
+
+def test_valid_license_lines_do_not_fail(tmp_path):
+    code, text = scan_text(tmp_path, "\n".join(LICENSE_VALID_LINES) + "\nビルド結果: Succeeded\n")
+    assert code == 0, text
+    assert "License  : 0" in text
+
+
+def test_not_found_lines_outside_licensing_are_not_license_failures(tmp_path):
+    # 前置きの [Licensing::...] が無い行は数えない（作り物の行。形だけ合わせている）。
+    code, text = scan_text(tmp_path, "Error: 'com.example.package' was not found.\n")
+    assert code == 0, text
+    assert "License  : 0" in text
+
+
 # ---- NUnit の結果 XML ----
 
 PASSED_XML = """<?xml version="1.0" encoding="utf-8"?>

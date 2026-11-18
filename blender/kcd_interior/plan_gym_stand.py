@@ -10,6 +10,11 @@ from . import plan_gym_shell as S
 LANE_HALF = 0.6          # 階段レーンの幅（中心から片側）
 FRONT = 0.45             # 階段レーンで下げる段の前縁の幅
 STEP_DROP = 0.21         # 階段レーンの蹴上（段の高さの半分）
+VENT_R = 0.25            # ギャラリーの鼻先の丸い吹出口の半径
+VENT_STEP = 1.55         # 吹出口の間隔
+VENT_Z = 4.3             # 吹出口の中心の高さ
+VENT_SEG = 12
+VENT_END = 0.6           # 辺の端から最初の吹出口の中心までの最小の距離
 
 
 def _intervals():
@@ -47,6 +52,24 @@ def tiers(c):
     kit.lift(mb2, base, D.TIERS[1][2])
 
 
+def _vents(mb, a, b, out):
+    """鼻先の線 a -> b に沿って丸い吹出口を中央にそろえて並べる。out は鼻先の面の外向きの法線。"""
+    L = math.hypot(b[0] - a[0], b[1] - a[1])
+    u = ((b[0] - a[0]) / L, (b[1] - a[1]) / L)
+    k = int((L - 2 * VENT_END) / VENT_STEP) + 1
+    s0 = (L - (k - 1) * VENT_STEP) / 2
+    for i in range(k):
+        s = s0 + i * VENT_STEP
+        cx = a[0] + u[0] * s + out[0] * 0.005
+        cy = a[1] + u[1] * s + out[1] * 0.005
+        ring = [(cx + VENT_R * math.cos(t) * u[0], cy + VENT_R * math.cos(t) * u[1],
+                 VENT_Z + VENT_R * math.sin(t))
+                for t in (2 * math.pi * j / VENT_SEG for j in range(VENT_SEG))]
+        if u[1] * out[0] - u[0] * out[1] < 0:   # この並びの法線 (u1, -u0) が out と逆なら裏返す
+            ring.reverse()
+        mb.add_face(ring, "gym_vent_dark")
+
+
 def gallery(c):
     mb = c.wall
     top, side = "gym_floor_grey", "gym_concrete_nose"
@@ -57,14 +80,15 @@ def gallery(c):
     kit.box(mb, x_w, 6.7, z0, -25.4, 37.0, z1, side, top=top)
     # 手すり（U 字の内側）
     shell.railing(c.wall, [(-4.2, 6.7), (-25.4, 6.7), (-25.4, 37.0), (-4.2, 37.0)], D.Z2,
-                  h=1.05, mat="gym_rail_metal", glass="gym_rail_mesh", post=2.4)
+                  h=D.RAIL_H, mat="gym_rail_metal", glass="gym_rail_mesh", post=2.4)
     # 壁 B の上の手すり（観覧席の前の落下防止）
     shell.railing(c.wall, [(-3.85, D.STAND_Y[0]), (-3.85, D.STAND_Y[1])], D.Z_FRONT,
                   h=D.RAIL_TOP - D.Z_FRONT, mat="gym_rail_metal", glass="gym_rail_mesh", post=2.4)
-    # 吹き抜けの通気口（ギャラリー前面の丸い抜き）
-    for k in range(8):
-        x = -24.0 + 2.5 * k
-        kit.vplate(mb, (x - 0.12, 6.695), (x + 0.12, 6.695), 4.1, 4.3, "gym_vent_dark", flip=True)
+    # 鼻先の丸い吹出口（南・西・北の 3 辺）
+    for a, b, out in (((-25.4, 6.7), (-4.0, 6.7), (0.0, 1.0)),
+                      ((-25.4, 6.7), (-25.4, 37.0), (1.0, 0.0)),
+                      ((-25.4, 37.0), (-4.0, 37.0), (0.0, -1.0))):
+        _vents(mb, a, b, out)
 
 
 def band(c):

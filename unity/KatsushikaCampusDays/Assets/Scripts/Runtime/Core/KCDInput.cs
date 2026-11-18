@@ -172,7 +172,16 @@ namespace KCD
             }
         }
 
-        /// <summary>カメラのズーム操作（ホイールと 2 本指のつまみ, #187）。前方向・広げる向きが正。</summary>
+        /// <summary>
+        /// ホイール 1 目盛りのズームの量（<see cref="Zoom"/> の単位）。2 本指の間隔を 1/0.9 倍に広げたのと同じで、
+        /// CinemachineInputBridge は軌道の半径の倍率を 0.9 倍にする。ホイールは Input System の既定で 1 目盛り ±1 に揃っている。
+        /// </summary>
+        public static readonly float ZoomPerWheelNotch = TouchInput.PinchToZoom(0.9f, 1f);
+
+        /// <summary>
+        /// カメラのズーム操作（ホイールと 2 本指のつまみ, #187）。前方向・広げる向きが正。
+        /// ホイールの分は、回した目盛りの数から <see cref="WheelZoom"/> で量にする。
+        /// </summary>
         public static float Zoom
         {
             get
@@ -181,11 +190,20 @@ namespace KCD
                 Mouse mouse = Mouse.current;
                 if (mouse != null && !InputMode.IsTouch)
                 {
-                    zoom += mouse.scroll.ReadValue().y * 0.01f;
+                    zoom += WheelZoom(mouse.scroll.ReadValue().y);
                 }
 
                 return zoom;
             }
+        }
+
+        /// <summary>
+        /// ホイールを notches 目盛り回したときのズームの量（<see cref="Zoom"/> の単位）。前方向が正。
+        /// 1 フレームで大きく回しても ±3 目盛りまでにする（<see cref="PhotoZoom"/> と同じ）。
+        /// </summary>
+        public static float WheelZoom(float notches)
+        {
+            return Mathf.Clamp(notches, -3f, 3f) * ZoomPerWheelNotch;
         }
 
         /// <summary>
@@ -223,7 +241,10 @@ namespace KCD
             (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame) ||
             (Gamepad.current != null && Gamepad.current.startButton.wasPressedThisFrame);
 
-        /// <summary>キャラクター選択などの水平メニュー移動。-1 / 0 / +1。</summary>
+        /// <summary>
+        /// キャラクター選択などの水平メニュー移動。-1 / 0 / +1。ゲームパッドは十字キーと左スティック
+        /// （半分より倒した瞬間だけ。倒したままでは進まない）。
+        /// </summary>
         public static int MenuHorizontal
         {
             get
@@ -238,8 +259,8 @@ namespace KCD
                 Gamepad gamepad = Gamepad.current;
                 if (gamepad != null)
                 {
-                    if (gamepad.dpad.right.wasPressedThisFrame) { return 1; }
-                    if (gamepad.dpad.left.wasPressedThisFrame) { return -1; }
+                    if (gamepad.dpad.right.wasPressedThisFrame || gamepad.leftStick.right.wasPressedThisFrame) { return 1; }
+                    if (gamepad.dpad.left.wasPressedThisFrame || gamepad.leftStick.left.wasPressedThisFrame) { return -1; }
                 }
 
                 return 0;
@@ -261,8 +282,8 @@ namespace KCD
                 Gamepad gamepad = Gamepad.current;
                 if (gamepad != null)
                 {
-                    if (gamepad.dpad.down.wasPressedThisFrame) { return 1; }
-                    if (gamepad.dpad.up.wasPressedThisFrame) { return -1; }
+                    if (gamepad.dpad.down.wasPressedThisFrame || gamepad.leftStick.down.wasPressedThisFrame) { return 1; }
+                    if (gamepad.dpad.up.wasPressedThisFrame || gamepad.leftStick.up.wasPressedThisFrame) { return -1; }
                 }
 
                 return 0;

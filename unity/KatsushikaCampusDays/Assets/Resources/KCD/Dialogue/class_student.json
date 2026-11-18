@@ -1,0 +1,15 @@
+{
+  "id": "class_student",
+  "speaker": "学生",
+  "topics": [
+    {
+      "id": "t_whisper",
+      "lines": [
+        {
+          "text": "（小声で）……ごめん、いま授業中だよ。終わったら話そう。",
+          "text_en": "(whispering) ...Sorry, we're in class right now. Let's talk after."
+        }
+      ]
+    }
+  ]
+}

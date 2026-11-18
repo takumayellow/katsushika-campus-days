@@ -153,32 +153,51 @@ namespace KCD
                 return;
             }
 
-            int index = TappedChoice(linkId, _dialogue.Choices.Count);
-            if (index != NoTap)
+            switch (TappedChoice(linkId, _dialogue.Choices.Count, out int index))
             {
-                _dialogue.TapChoice(index);
+                case Tap.Choice:
+                    _dialogue.TapChoice(index);
+                    break;
+                case Tap.Close:
+                    _dialogue.TapClose();
+                    break;
             }
         }
 
-        /// <summary>叩いたリンクが選択肢でも「やめる」でもないときの値。</summary>
-        public const int NoTap = int.MinValue;
+        /// <summary>叩いたリンクが指すもの。</summary>
+        public enum Tap
+        {
+            /// <summary>選択肢でも「やめる」でもない（空白、形の崩れたリンク、番号の範囲の外）。</summary>
+            None,
 
-        /// <summary>「やめる」のリンクの id。選ばずに会話を閉じる（DialogueSystem.CloseChoice）。</summary>
-        public const string CloseLinkId = "choice:-1";
+            /// <summary>選択肢のどれか。番号は <see cref="TappedChoice"/> の index。</summary>
+            Choice,
+
+            /// <summary>「やめる」。選ばずに会話を閉じる。</summary>
+            Close
+        }
 
         /// <summary>
-        /// 叩いたリンクが指す選択肢の番号。「やめる」なら DialogueSystem.CloseChoice、
-        /// 選択肢でも「やめる」でもなければ <see cref="NoTap"/>。
+        /// 「やめる」のリンクの id。選択肢が count 個のとき、選択肢の番号（0 から count - 1）の次の番号を使う。
         /// </summary>
-        public static int TappedChoice(string linkId, int count)
+        public static string CloseLinkId(int count)
         {
-            if (linkId == CloseLinkId)
+            return "choice:" + count;
+        }
+
+        /// <summary>
+        /// 叩いたリンクが選択肢（0 から count - 1）か「やめる」（count）かを分ける。
+        /// 選択肢のときだけ index にその番号が入る。
+        /// </summary>
+        public static Tap TappedChoice(string linkId, int count, out int index)
+        {
+            index = TmpLinkTap.ChoiceIn(linkId, count + 1);
+            if (index < 0)
             {
-                return DialogueSystem.CloseChoice;
+                return Tap.None;
             }
 
-            int index = TmpLinkTap.ChoiceIn(linkId, count);
-            return index >= 0 ? index : NoTap;
+            return index == count ? Tap.Close : Tap.Choice;
         }
 
         /// <summary>指のときの選択肢の文字の大きさ（本文の欄の文字に対する割合）。「やめる」を足しても縦の欄 300 に収める。</summary>
@@ -269,7 +288,7 @@ namespace KCD
             if (touch)
             {
                 // 指には Esc が無いので、選ばずに閉じるリンクを最後に置く。
-                builder.Append("<link=\"").Append(CloseLinkId).Append("\">   ")
+                builder.Append("<link=\"").Append(CloseLinkId(choices.Count)).Append("\">   ")
                     .Append(L.Pick("やめる", "Cancel")).Append("</link></size>");
             }
             else

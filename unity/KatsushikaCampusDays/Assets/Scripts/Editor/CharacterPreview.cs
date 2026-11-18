@@ -20,11 +20,16 @@ namespace KCD.Editor
     /// 足せる引数:
     ///   -charaIds mirai,botchan   撮るキャラ（既定は Assets/Models/Characters にいる全員）
     ///   -charaOut &lt;dir&gt;          出力先（既定は docs/previews/characters）
-    ///   -charaPose run            動きの途中を撮る（idle / walk / run / jump。既定は idle）(#49)
+    ///   -charaPose run            動きの途中を撮る（idle / walk / jog / run / jump。既定は idle）(#49)
     ///   -charaPoseTimes 0.1,0.3   動き出してから何秒後を撮るか（既定は 0.1,0.2,0.3,0.4）
+    ///   -charaLights 0,45,90,180  光の方位を変えて顔を撮る (#14)。方位はキャラの正面から左手の側へ測った度で、
+    ///                             90 が左の真横、180 が真後ろ。仰角はどれも既定の光と同じ 37 度
     ///
     /// 動きを撮るときは顔を撮らず、全身を正面・35 度・真横から撮る。スカートや袴から脚が
     /// 突き抜けていないかを見るため。ファイル名は &lt;id&gt;_&lt;pose&gt;&lt;ミリ秒&gt;_body_f90.png のようになる。
+    ///
+    /// 光の方位を指定したときは、方位ごとに顔だけを正面・35 度・真横から撮る。カメラはキャラの右手の側に
+    /// 回るので、左から当たる光の陰が写る。ファイル名は &lt;id&gt;_face_f35_l90.png のようになる。
     ///
     /// 1 キャラにつき 顔（正面・35 度・真横）と全身（正面・35 度）を撮る。
     ///
@@ -70,6 +75,24 @@ namespace KCD.Editor
             new Shot { Suffix = "body_f35", Yaw = 35f, Face = false },
             new Shot { Suffix = "body_f90", Yaw = 90f, Face = false },
         };
+
+        private static readonly Shot[] LightShots =
+        {
+            new Shot { Suffix = "face_f0", Yaw = 0f, Face = true },
+            new Shot { Suffix = "face_f35", Yaw = 35f, Face = true },
+            new Shot { Suffix = "face_f90", Yaw = 90f, Face = true },
+        };
+
+        /// <summary>光の向き。Custom でなければ既定の向き（キャラの左前の上）で、ファイル名に何も挟まない。</summary>
+        private struct Lighting
+        {
+            public bool Custom;
+            public float Azimuth;
+
+            public string Label => Custom
+                ? "_l" + Mathf.RoundToInt(Azimuth).ToString(CultureInfo.InvariantCulture)
+                : string.Empty;
+        }
 
         private struct Frame
         {
@@ -123,6 +146,7 @@ namespace KCD.Editor
                 buffer = new Texture2D(Width, Height, TextureFormat.RGB24, false, false);
 
                 int taken = 0;
+                List<Lighting> lights = Lights();
                 foreach (string id in Ids())
                 {
                     var source = AssetDatabase.LoadAssetAtPath<GameObject>(ActorFactory.FbxPathOf(id));
@@ -148,14 +172,6 @@ namespace KCD.Editor
                         Vector3 forward = body.transform.forward;
                         Vector3 head = HeadCenter(model, bounds, out float headSpan);
 
-                        // 光はカメラ（正面）の左上から。保存された太陽の向きだと顔が逆光になることがある。
-                        if (sun != null)
-                        {
-                            Vector3 toward = -forward + Quaternion.AngleAxis(90f, Vector3.up) * forward * 0.6f;
-                            sun.transform.rotation = Quaternion.LookRotation(
-                                (toward.normalized * 0.8f + Vector3.down * 0.6f).normalized, Vector3.up);
-                        }
-
                         int shellsDrawn = 0;
                         foreach (Renderer shell in Shells(body))
                         {
@@ -165,8 +181,10 @@ namespace KCD.Editor
                             }
                         }
 
-                        foreach (Shot shot in frame.Pose == "idle" ? Shots : MotionShots)
+                        foreach ((Lighting lighting, Shot shot) in ShotsFor(frame, lights))
                         {
+                            AimSun(sun, forward, lighting);
+                            string name = id + frame.Label + "_" + shot.Suffix + lighting.Label;
                             Vector3 dir = Quaternion.AngleAxis(shot.Yaw, Vector3.up) * forward;
                             Vector3 look;
                             float distance;
@@ -188,12 +206,12 @@ namespace KCD.Editor
                             camera.transform.SetPositionAndRotation(eye, Quaternion.LookRotation(look - eye, Vector3.up));
                             if (Draw(camera, target, buffer))
                             {
-                                File.WriteAllBytes(Path.Combine(folder, id + frame.Label + "_" + shot.Suffix + ".png"), buffer.EncodeToPNG());
+                                File.WriteAllBytes(Path.Combine(folder, name + ".png"), buffer.EncodeToPNG());
                                 taken++;
                             }
                             else
                             {
-                                EditorPaths.Report("描けませんでした: " + id + frame.Label + "_" + shot.Suffix + "（-nographics を付けていないか）");
+                                EditorPaths.Report("描けませんでした: " + name + "（-nographics を付けていないか）");
                             }
                         }
 
@@ -431,7 +449,7 @@ namespace KCD.Editor
         private static IEnumerable<Frame> Frames()
         {
             string pose = EditorPaths.ReadArgument("-charaPose", "idle").Trim().ToLowerInvariant();
-            if (pose != "walk" && pose != "run" && pose != "jump")
+            if (pose != "walk" && pose != "jog" && pose != "run" && pose != "jump")
             {
                 yield return new Frame { Pose = "idle", Time = 0f };
                 yield break;
@@ -452,6 +470,64 @@ namespace KCD.Editor
             {
                 EditorPaths.Report("-charaPoseTimes を数として読めませんでした: " + times);
             }
+        }
+
+        /// <summary>-charaLights の方位。指定が無ければ既定の向きの 1 つだけ。</summary>
+        private static List<Lighting> Lights()
+        {
+            string list = EditorPaths.ReadArgument("-charaLights", string.Empty);
+            var lights = new List<Lighting>();
+            foreach (string a in list.Split(','))
+            {
+                if (float.TryParse(a.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out float azimuth))
+                {
+                    lights.Add(new Lighting { Custom = true, Azimuth = azimuth });
+                }
+            }
+
+            if (lights.Count == 0)
+            {
+                if (list.Trim().Length > 0)
+                {
+                    EditorPaths.Report("-charaLights を数として読めませんでした: " + list);
+                }
+
+                lights.Add(new Lighting());
+            }
+
+            return lights;
+        }
+
+        /// <summary>光の向きごとに撮るショット。方位を指定したときは顔だけを撮る。</summary>
+        private static IEnumerable<(Lighting, Shot)> ShotsFor(Frame frame, List<Lighting> lights)
+        {
+            foreach (Lighting lighting in lights)
+            {
+                foreach (Shot shot in lighting.Custom ? LightShots : frame.Pose == "idle" ? Shots : MotionShots)
+                {
+                    yield return (lighting, shot);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 太陽をキャラに向ける。保存された太陽の向きだと顔が逆光になることがあるので、既定はキャラの左前の上
+        /// （カメラから見て右上。下の方位で 31 度）から当てる。方位を指定したときは、正面から左手の側へその角度だけ
+        /// 回した向きから当てる。仰角はどちらも 37 度（水平 0.8 : 鉛直 0.6）。
+        /// </summary>
+        private static void AimSun(Light sun, Vector3 forward, Lighting lighting)
+        {
+            if (sun == null)
+            {
+                return;
+            }
+
+            // 光の進む向きの水平成分。AngleAxis の正の向きはキャラの右手の側なので、左手の側へは負に回す。
+            Vector3 toward = lighting.Custom
+                ? -(Quaternion.AngleAxis(-lighting.Azimuth, Vector3.up) * forward)
+                : -forward + Quaternion.AngleAxis(90f, Vector3.up) * forward * 0.6f;
+            sun.transform.rotation = Quaternion.LookRotation(
+                (toward.normalized * 0.8f + Vector3.down * 0.6f).normalized, Vector3.up);
         }
 
         /// <summary>
@@ -481,7 +557,7 @@ namespace KCD.Editor
 
             // ゲームと同じパラメータ名で動かす。ただし GaitRate は既定の 1 のままなので、クリップは
             // 本来の速さで進む（ゲームでは PlayerAnimatorDriver が移動速度に合わせて変える）。
-            // 歩き・走りは Locomotion ブレンドツリーの中の切り替えなので遷移は無い。Speed を入れてから
+            // 歩き・小走り・走りは Locomotion ブレンドツリーの中の切り替えなので遷移は無い。Speed を入れてから
             // 十分に回して周期の頭をそろえ、そこから Time 秒進める。
             if (frame.Pose == "jump")
             {
@@ -492,7 +568,10 @@ namespace KCD.Editor
             }
             else
             {
-                animator.SetFloat("Speed", frame.Pose == "run" ? AnimatorFactory.RunSpeed : AnimatorFactory.WalkSpeed);
+                float speed = frame.Pose == "run" ? AnimatorFactory.RunSpeed
+                    : frame.Pose == "jog" ? AnimatorFactory.JogSpeed
+                    : AnimatorFactory.WalkSpeed;
+                animator.SetFloat("Speed", speed);
                 for (int i = 0; i < 30; i++)
                 {
                     animator.Update(1f / 30f);

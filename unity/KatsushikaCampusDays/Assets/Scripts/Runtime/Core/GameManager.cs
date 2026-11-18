@@ -48,6 +48,9 @@ namespace KCD
             }
         }
 
+        /// <summary>もう作られているか。<see cref="Instance"/> と違って、無いときに作らない。</summary>
+        public static bool HasInstance => _instance != null;
+
         /// <summary>プレイヤーが操作するキャラクターの id。</summary>
         public string SelectedCharacterId
         {
@@ -129,6 +132,20 @@ namespace KCD
             }
 
             SubscribeQuests();
+
+            // 展示モードでは、放置されたらタイトルへ戻す見張りを付ける (#466)。
+            if (ExhibitMode.Enabled)
+            {
+                UseExhibitSaveFolder();
+                UseExhibitFullscreen();
+                // 言語・音量・感度・画質は、展示モードでは保存された値を読まずに既定で始まる。ここは先に読まれていたときの保険。
+                ResetSettingsForNextVisitor();
+                ExhibitLog.Launched();
+                if (GetComponent<ExhibitIdle>() == null)
+                {
+                    gameObject.AddComponent<ExhibitIdle>();
+                }
+            }
         }
 
         /// <summary>クエストの変化で称号を数え直す。同じ QuestSystem に二重には付けない。</summary>
@@ -166,6 +183,30 @@ namespace KCD
             return quests;
         }
 
+        /// <summary>展示モードではセーブと写真を普段のものと別のフォルダに置く (#466)。テストが差し替えていれば触らない。</summary>
+        private static void UseExhibitSaveFolder()
+        {
+            string dir = ExhibitMode.SaveDirectory(Application.persistentDataPath);
+            if (dir == null)
+            {
+                return;
+            }
+
+            try
+            {
+                System.IO.Directory.CreateDirectory(dir);
+            }
+            catch (System.Exception e) when (e is System.IO.IOException || e is System.UnauthorizedAccessException)
+            {
+                Debug.LogWarning("[KCD] exhibit save folder unavailable: " + e.GetType().Name);
+                return;
+            }
+
+            SaveSystem.DirectoryOverride = SaveSystem.DirectoryOverride ?? dir;
+            // 写真も同じフォルダの下に置き、来場者の写真を普段の写真と混ぜない。
+            PhotoSystem.DirectoryOverride = ExhibitMode.PhotoRoot(PhotoSystem.DirectoryOverride, dir);
+        }
+
         /// <summary>
         /// タイトルの「はじめから」。前の周回の残りを初期値に戻す (#53)。
         ///
@@ -173,11 +214,18 @@ namespace KCD
         /// 裏エンド（<see cref="DormEnding"/>）やリザルトの「タイトルへ」でタイトルに帰ったあとの新規開始が、
         /// サボった時刻・2 日目・達成済みのクエストのまま始まる。
         ///
-        /// セーブファイルは消さない。消すと「つづきから」(F9) の戻り先を潰すし、
+        /// 展示モードのほかではセーブファイルは消さない。消すと「つづきから」(F9) の戻り先を潰すし、
         /// 戻すべきものはすべてメモリ上の値なのでファイルとは独立している（次のセーブで上書きされる）。
         /// </summary>
         public void BeginNewGame()
         {
+            // 展示モードでは前の人のセーブを消す。F9 やポーズの「ロード」で前の人の続きに入らないように (#466)。
+            // 展示用のフォルダを作れなかったとき（置き場が普段のまま）は、PC の持ち主のセーブなので消さない。
+            if (ExhibitMode.Enabled && SaveSystem.DirectoryOverride != null)
+            {
+                ExhibitLog.NoteSaveReset(SaveSystem.Delete());
+            }
+
             // 時計は DayNightCycle が持つが、キャンパスに入るまで（HUD の時刻表示など）はここの値が使われる。
             GameTimeHours = DayRestart.DayStartHour;
 
@@ -191,6 +239,7 @@ namespace KCD
             // 探索率のもと。static なのでアプリを起動している間ずっと残る（シーンでは消えない）。
             DayStats.Reset();
             NpcAffinity.Reset();
+            OnceTopics.Reset();
 
             // 「つづきから」を選びかけて読んだセーブが残っていたら、キャンパスで当てないよう捨てる。
             SaveSystem.DiscardPending();
@@ -338,7 +387,61 @@ namespace KCD
         /// </summary>
         public void ReturnToTitle()
         {
+            // 展示モードの記録。放置で戻すときは ExhibitIdle が先に idle で書くので、ここは何もしない。
+            ExhibitLog.EndSession("title");
+            if (ExhibitMode.Enabled)
+            {
+                // 前の人が言語や音量を変えたり、設定画面でウィンドウ表示にしていても、次の人は既定の設定と全画面で始める。
+                ResetSettingsForNextVisitor();
+                UseExhibitFullscreen();
+            }
+
             Loader.Load(TitleSceneName, true);
+        }
+
+        /// <summary>展示モード (#466): 来場者が設定画面で変えたもの（言語・音量・カメラ・画質）を既定へ戻す。保存はしない。</summary>
+        private static void ResetSettingsForNextVisitor()
+        {
+            L.ResetForNextVisitor();
+            CameraPrefs.ResetForNextVisitor();
+            QualityManager.ResetForNextVisitor();
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.ResetVolumesForNextVisitor();
+            }
+        }
+
+        /// <summary>展示モード (#466): 起動引数で画面を指定していなければ、画面の解像度の全画面ウィンドウにする。</summary>
+        private static void UseExhibitFullscreen()
+        {
+            string[] args;
+            try
+            {
+                args = System.Environment.GetCommandLineArgs();
+            }
+            catch (System.Exception)
+            {
+                args = null;
+            }
+
+            if (Application.isEditor || !ExhibitMode.ShouldForceFullscreen(args))
+            {
+                return;
+            }
+
+            int width = Display.main.systemWidth;
+            int height = Display.main.systemHeight;
+            if (width > 0 && height > 0 && (Screen.fullScreenMode != FullScreenMode.FullScreenWindow ||
+                                            Screen.width != width || Screen.height != height))
+            {
+                Screen.SetResolution(width, height, FullScreenMode.FullScreenWindow);
+                Debug.Log("[KCD] exhibit: fullscreen " + width + "x" + height);
+            }
+        }
+
+        private void OnApplicationQuit()
+        {
+            ExhibitLog.EndSession("quit");
         }
 
         /// <summary>シーンにインスタンスが無くても起動時に必ず用意する。</summary>

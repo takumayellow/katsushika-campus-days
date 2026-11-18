@@ -46,7 +46,12 @@ namespace KCD
         {
             EnsureLoaded();
             s_Current = tier;
-            QualityTiers.Save(tier);
+            if (!ExhibitMode.Enabled)
+            {
+                // 展示モードでは来場者が変えた段を保存しない (#466)。
+                QualityTiers.Save(tier);
+            }
+
             if (Application.isPlaying)
             {
                 ApplyAll();
@@ -108,8 +113,29 @@ namespace KCD
                 return;
             }
 
-            s_Current = QualityTiers.Load(QualityTiers.TargetPlatform, Application.isMobilePlatform);
+            s_Current = ExhibitMode.Enabled
+                ? DefaultTier
+                : QualityTiers.Load(QualityTiers.TargetPlatform, Application.isMobilePlatform);
             s_Loaded = true;
+        }
+
+        private static QualityTier DefaultTier =>
+            QualityTiers.DefaultFor(QualityTiers.TargetPlatform, Application.isMobilePlatform);
+
+        /// <summary>展示モード (#466) で次の人のために、そのプラットフォームの既定の段へ戻す。保存はしない。</summary>
+        public static void ResetForNextVisitor()
+        {
+            EnsureLoaded();
+            if (s_Current == DefaultTier)
+            {
+                return;
+            }
+
+            s_Current = DefaultTier;
+            if (Application.isPlaying)
+            {
+                ApplyAll();
+            }
         }
 
         private static void ApplyAll()

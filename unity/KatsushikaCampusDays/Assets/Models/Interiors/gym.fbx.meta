@@ -132,6 +132,11 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: gym_wall_darkgrey
+    second: {fileID: 2100000, guid: 7ad0d7b33ccc8284d8892097994c1f4d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: hoop_orange
     second: {fileID: 2100000, guid: 9b04175411f24d4429e278ba13e266bc, type: 2}
   - first:

@@ -36,6 +36,7 @@ Y_MID = (D.Y_CORE0 + D.Y_CORE1) * 0.5    # 南の帯と北の帯の境（27.5）
 STRIP = 0.06                          # コアの天井際の光の帯の出
 FRAME_OUT = 0.07                      # 扉の枠の見付（shell.door）
 DOWN = 0.30                           # ダウンライトの一辺
+EDGE_GAP, EDGE_W = 0.04, 0.14         # 天井際の光の帯: 廊下の壁の面からの隙間と幅
 FACE = {"S": (D.Y_ROOM_S1, 0.0), "N": (D.Y_ROOM_N0, math.pi)}   # 廊下の面の Y と、そこに貼る扉の向き
 
 # 南東の EV ホール（4F〜7F。§1-6）: x01 の東の境と階段の西の壁の間、南の室の奥行きの途中まで
@@ -47,12 +48,13 @@ EV_POINT = (D.CORE_EV[0] - 1.4, sum(D.EV_DOORS_Y) * 0.5)  # EV の乗り場（�
 LOCKERS = (7.0, 12.8, D.Y_CORE0 - 0.23, 1.8)   # 男子トイレの南の面のロッカー（3F〜6F）: x0, x1, 中心 y, 高さ
 LOCKER_FLOORS = RD.FLOORS[1:-1]
 
-CORR = "lecture_concrete"
+CORR = "lecture_concrete_light"            # 床の小口（平らなまま）
+CORR_WALL = "lecture_concrete_light_wall"  # 廊下の打放しの壁・垂れ壁（型枠の跡、#423）
 CORE = "lecture_core_black"
 CEIL = "lecture_ceiling_upper"
-CARPET = "lecture_carpet_corridor"
+CARPET = "lecture_carpet_upper"
 COOL = "lecture_light_cool"
-DOOR_WOOD = "lecture_door_wood"
+DOOR = "lecture_door_white"
 FRAME = "metal_dark"
 WHITE = "lecture_sign_white"
 
@@ -116,7 +118,7 @@ def pieces(x0, x1, doors, extra=()):
 
 
 def _door(mb, x, y, z, ang, w=RD.DOOR_W, h=RD.DOOR_H, open_=0.0):
-    lifted(mb, z, shell.door, x, y, ang=ang, w=w, h=h, leaf=DOOR_WOOD, frame=FRAME,
+    lifted(mb, z, shell.door, x, y, ang=ang, w=w, h=h, leaf=DOOR, frame=FRAME,
            open_=open_)
 
 
@@ -169,13 +171,13 @@ def corridor_wall(bs, floor, yc, doors, z1, top, x1=X_WALL1, extra=()):
         mb = bs.get(band(yc), k)
         mine = [d for d in doors if a <= d < b]
         gaps = [(lo, hi) for lo, hi in extra if a <= lo < b]
-        SH.part(_Walls(mb), (a, yc), (b, yc), z0, z1, mat=CORR, top=top,
+        SH.part(_Walls(mb), (a, yc), (b, yc), z0, z1, mat=CORR_WALL, top=top,
                 gaps=[(d - hw - a, d + hw - a) for d in mine] + [(lo - a, hi - a) for lo, hi in gaps])
         for d in mine:
-            kit.box(mb, d - hw, yc - t, z0 + RD.DOOR_H, d + hw, yc + t, z1, CORR)
+            kit.box(mb, d - hw, yc - t, z0 + RD.DOOR_H, d + hw, yc + t, z1, CORR_WALL)
             _door(mb, d, yc, z0, slide_ang(d, doors, x1), open_=RD.DOOR_OPEN)
         for lo, hi in gaps:
-            kit.box(mb, lo, yc - t, z0 + SEEV_GAP_H, hi, yc + t, z1, CORR)
+            kit.box(mb, lo, yc - t, z0 + SEEV_GAP_H, hi, yc + t, z1, CORR_WALL)
 
 
 def _closed_rooms(bs, floor):
@@ -213,7 +215,7 @@ def _east_end(bs, floor):
     """4F〜7F: 廊下の東の外壁（X 35.8）と南東の階段の閉じた扉。"""
     z0, z1 = RD.FLOOR_Z[floor], RD.wall_top(floor)
     x = RD.X_UPPER_E
-    SH.part(_Walls(bs.get("c", segment(x))), (x, RD.Y_CS), (x, RD.Y_CN), z0, z1, mat=CORR,
+    SH.part(_Walls(bs.get("c", segment(x))), (x, RD.Y_CS), (x, RD.Y_CN), z0, z1, mat=CORR_WALL,
             top=floor == RD.TOP_FLOOR)
     y = D.Y_ROOM_S1
     _door(bs.at(STAIR_DOOR_X, y), STAIR_DOOR_X, y, z0, 0.0, w=1.0, h=2.1)
@@ -229,9 +231,9 @@ def _seev(c, floor):
     mb = c.part("wall", tag)
     w = _Walls(mb)
     t = RD.T * 0.5
-    SH.part(w, (x0, y0 - t), (x0, RD.Y_CS), z0, z1, mat=CORR, top=top)
-    SH.part(w, (x1, y0 - t), (x1, RD.Y_CS), z0, z1, mat=CORR, top=top)
-    SH.part(w, (x0 + t, y0), (x1 - t, y0), z0, z1, mat=CORR, top=top)
+    SH.part(w, (x0, y0 - t), (x0, RD.Y_CS), z0, z1, mat=CORR_WALL, top=top)
+    SH.part(w, (x1, y0 - t), (x1, RD.Y_CS), z0, z1, mat=CORR_WALL, top=top)
+    SH.part(w, (x0 + t, y0), (x1 - t, y0), z0, z1, mat=CORR_WALL, top=top)
     zc = z0 + RD.CEIL_H
     shell.ceiling(mb, x0 + t, y0 + t, x1 - t, y1, zc, CEIL)
     cx = (x0 + x1) * 0.5
@@ -289,6 +291,25 @@ def _ceilings(bs, floor):
     h = DOWN * 0.5
     for x, y in downlight_centers():
         kit.plate(bs.at(x, y), x - h, y - h, x + h, y + h, z - 0.005, "light_panel", flip=True)
+    _edge_strips(bs, floor, z)
+
+
+def edge_strip_spans(floor):
+    """廊下の天井の、教室の側の壁ぎわに沿う光の帯 (西端, 東端, Y の南端, Y の北端) の列。SPLIT_X の境で切る。"""
+    x0, x1 = X_WALL0 + 0.1, x_wall1(floor)
+    xs = [x0] + [b for b in SPLIT_X if x0 < b < x1] + [x1]
+    out = []
+    for y0, y1 in ((D.Y_ROOM_S1 + EDGE_GAP, D.Y_ROOM_S1 + EDGE_GAP + EDGE_W),
+                   (D.Y_ROOM_N0 - EDGE_GAP - EDGE_W, D.Y_ROOM_N0 - EDGE_GAP)):
+        out += [(a, b, y0, y1) for a, b in zip(xs[:-1], xs[1:])]
+    return out
+
+
+def _edge_strips(bs, floor, z):
+    """教室の入口の並びの上の天井際の光の帯（4F の廊下の写真の、教室の側の天井の縁に続く間接照明。#423）。
+    下向きの 1 枚板で、区画ごとに 2 三角形。"""
+    for a, b, y0, y1 in edge_strip_spans(floor):
+        kit.plate(bs.at((a + b) * 0.5, y0), a, y0, b, y1, z - 0.004, "light_panel", flip=True)
 
 
 def _core_side(bs, p, q, z0, z1, strip):

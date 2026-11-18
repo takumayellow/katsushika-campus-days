@@ -3,16 +3,20 @@
 2F は南の 203・202・201、3F は南の 305〜301 と北の 306〜311、4F〜6F は 402・410・502・509・602・610。
 どの室も床・白い天井と照明の板・外周壁（南と北は窓の帯、西端の室は西の壁）・東の境の間仕切り・
 廊下の壁の室の側の白い面を持つ。西隣の室を作らない階では西の境の間仕切りも持つ。
-型 A は西の壁に緑の黒板・教卓・プロジェクター・東の壁に時計、机は西を向いた 3 人掛けの固定机。
-型 B（306 の PC ルーム）は白板・教員の机・2 人掛けの PC の机。型 C は白板とロの字の机（会議室）。
+型 A は東の壁（金町駅の側）に緑の黒板・教卓・プロジェクター・西の壁に時計、机は東を向いた 3 人掛けの固定机。
+型 B（306 の PC ルーム）は東の壁の白板・教員の机・2 人掛けの PC の机。型 C は東の壁の白板とロの字の机（会議室）。
 型 L（310・311 のラウンジ）はソファ・低い机・丸机と椅子、311 は弁当を売る長机と保温ケースも置く。
-廊下の壁と扉、中を作らない室の閉じた扉は plan_lecture_west。
+廊下の壁と扉、中を作らない室の閉じた扉は plan_lecture_west。ブラインド・後ろの掲示板・教卓の小物・
+天井の吹き出し口は plan_lecture_props.room。
 
 メッシュは室ごとに、さらに灯りの届く範囲ごとに分ける（URP は 1 つのメッシュに効く点光源の数に
 上限がある）。奥行きの RD.ROOM_SPLIT_Y より奥の帯が r<室>、手前を明かりの格子の X で切った片が
 r<室>_<k>（k は西から数えた格子の間の番号）:
     floor_lecture_r<室>[_<k>] / wall_lecture_r<室>[_<k>] / furn_lecture_<nn>_r<室>[_<k>]
     lamp_lecture_<階>_<n>   室の天井の点光源（番号は廊下の点光源の続き）
+    board_lecture_<室>      黒板・白板の面の中央（Unity が板書の文字と調べる対象を置く）
+    board_lecture_7F       7F の廊下の南の壁の白板の面の中央（705 の 2 つの扉の間）
+    board_lecture_<…>_f    板の面から 1 m 手前（板の正面の向きを Unity に渡す）
 """
 
 import math
@@ -23,23 +27,26 @@ from . import furniture as F
 from . import furn_lecture as FL
 from . import kit, shell
 from . import plan_lecture_dims as D
+from . import plan_lecture_props as PROPS
 from . import plan_lecture_rooms_dims as RD
 from . import plan_lecture_shell as SH
 from . import plan_lecture_west as W
 
-CARPET = "lecture_carpet_corridor"
+CARPET = "lecture_carpet_upper"
 CONCRETE = "lecture_concrete"
 WHITE = "wall_white"
 CEIL_WHITE = "ceiling_white"
-FACE_E = -math.pi * 0.5      # 正面 +X（西の壁から室の奥へ）
-FACE_W = math.pi * 0.5       # 正面 -X（西の壁の黒板へ）
+BOARD = "lecture_board_room"           # 型 A の黒板（408 の写真で測った色。101・104 の黒板とは別）
+LECTERN = "lecture_lectern_walnut"     # 型 A の教卓の胴（濃い木）
+FACE_E = -math.pi * 0.5      # 正面 +X（東）
+FACE_W = math.pi * 0.5       # 正面 -X（西）
 LINING = 0.005               # 廊下の壁の室の側の面から白い板まで
-PANEL = (1.2, 0.6)           # 天井の照明の板（東西・南北）
+PANEL = (0.2, 1.5)          # 天井のライン照明（東西・南北）。机と同じ南北に長い細い線（4F の教室の写真。#423）
 PANEL_PITCH = 3.0
 DESK_Y = {"S": (7.55, 10.55, 13.55, 16.55), "N": (38.1, 41.1, 44.1, 47.1)}   # 机の列の中心 Y
 DESK_W = 1.8
 DESK_DEPTH = 0.45            # furn_lecture.desk_bench の天板の奥行き
-FRONT0 = 2.7                 # 西の壁の面から最前列の机の前の縁まで
+FRONT0 = 2.7                 # 東の壁の面から最前列の机の前の縁まで
 ROW_PITCH = 1.0
 BACK_CLEAR = 5.15            # 列の数を決める: 室の幅からこれを引いた残りを 1.0 m ごとに 1 列
 PC_FRONT0, PC_PITCH, PC_ROWS, PC_W, PC_DEPTH = 2.2, 1.3, 5, 1.4, 0.6
@@ -57,6 +64,9 @@ LOW_TABLE_DX = 2.0           # 西の壁の面からソファの前の低い机�
 ROUND_Y = (41.5, 46.0)       # 型 L の丸机の中心 Y
 ROUND_X0, ROUND_PITCH, ROUND_EAST = 3.6, 3.5, 1.2   # 西の壁の面から最初の丸机・間隔・東の壁から空ける幅
 BENTO_ROOM = "311"           # 昼に弁当を売る長机と保温ケースを置くラウンジ（spec §1-11）
+BOARD_Z = 1.5                # 黒板・白板の中心の高さ（床から）
+BOARD_FACE = {"A": 0.031, "B": 0.07, "C": 0.07}   # 壁の面から板の面まで（green_board / whiteboard）
+HALL_BOARD_X, HALL_BOARD_W = -22.4, 2.4             # 7F の廊下の白板の中心 X と幅
 BENTO_X, BENTO_Y, BENTO_W, BENTO_D = 27.8, 38.25, 3.6, 0.7   # 長机の中心・幅（東西）・奥行き
 
 
@@ -182,36 +192,36 @@ def _west(walls, room):
 
 
 def _type_a(mb, room, z):
-    """一般の教室: 西の壁の黒板・教卓・プロジェクター・東の壁の時計・西を向いた固定机の列。"""
+    """一般の教室: 東の壁の黒板・教卓・プロジェクター・西の壁の時計・東を向いた固定机の列。"""
     xf0, xf1, yf0, yf1 = RD.room_faces(room)
     cy = (yf0 + yf1) * 0.5
-    FL.green_board(mb, kit.T(xf0, cy, z, FACE_E))
-    W.lifted(mb, z, F.podium, xf0 + 1.3, cy, ang=FACE_E)
-    F.projector(mb, xf0 + 0.4 * (xf1 - xf0), cy, z + RD.CEIL_H - 0.22, ang=FACE_W)
-    shell.clock(mb, xf1, cy, z + 2.4, ang=FACE_W)
+    FL.green_board(mb, kit.T(xf1, cy, z, FACE_W), board=BOARD)
+    W.lifted(mb, z, F.podium, xf1 - 1.3, cy, ang=FACE_W, body=LECTERN)
+    F.projector(mb, xf1 - 0.4 * (xf1 - xf0), cy, z + RD.CEIL_H - 0.22, ang=FACE_E)
+    shell.clock(mb, xf0, cy, z + 2.4, ang=FACE_E)
     for k in range(rows(room)):
-        x = xf0 + FRONT0 + DESK_DEPTH + k * ROW_PITCH
+        x = xf1 - FRONT0 - DESK_DEPTH - k * ROW_PITCH
         for y in DESK_Y[room[2]]:
-            FL.desk_bench(mb, kit.T(x, y, z, FACE_W), w=DESK_W)
+            FL.desk_bench(mb, kit.T(x, y, z, FACE_E), w=DESK_W)
 
 
 def _type_b(mb, room, z):
-    """306 の PC ルーム: 西の壁の白板・教員の机・西を向いた PC の机の列（spec §1-11）。"""
-    xf0, _, yf0, yf1 = RD.room_faces(room)
+    """306 の PC ルーム: 東の壁の白板・教員の机・東を向いた PC の机の列（spec §1-11）。"""
+    _, xf1, yf0, yf1 = RD.room_faces(room)
     cy = (yf0 + yf1) * 0.5
-    F.whiteboard(mb, xf0, cy, z + 1.5, ang=FACE_E, w=3.6, h=1.2)
-    W.lifted(mb, z, F.desk, xf0 + 1.3, cy, ang=FACE_W, w=1.4, d=0.7, top="desk_white")
+    F.whiteboard(mb, xf1, cy, z + 1.5, ang=FACE_W, w=3.6, h=1.2)
+    W.lifted(mb, z, F.desk, xf1 - 1.3, cy, ang=FACE_E, w=1.4, d=0.7, top="desk_white")
     for k in range(PC_ROWS):
-        x = xf0 + PC_FRONT0 + PC_DEPTH + k * PC_PITCH
+        x = xf1 - PC_FRONT0 - PC_DEPTH - k * PC_PITCH
         for y in DESK_Y[room[2]]:
-            FL.pc_desk(mb, kit.T(x, y, z, FACE_W), w=PC_W)
+            FL.pc_desk(mb, kit.T(x, y, z, FACE_E), w=PC_W)
 
 
 def _type_c(mb, room, z):
-    """会議室: 西の壁の白板・ロの字に組んだ白い長机と、内を向いた灰色の椅子 14 脚（spec §1-11）。"""
+    """会議室: 東の壁の白板・ロの字に組んだ白い長机と、内を向いた灰色の椅子 14 脚（spec §1-11）。"""
     xf0, xf1, _, _ = RD.room_faces(room)
     cx, cy = (xf0 + xf1) * 0.5, C_RING_Y
-    F.whiteboard(mb, xf0, cy, z + 1.5, ang=FACE_E)
+    F.whiteboard(mb, xf1, cy, z + 1.5, ang=FACE_W)
     for sx in (-1.0, 1.0):
         for dy in C_LONG_Y:
             F.table(mb, cx + sx * C_LONG_X, cy + dy, ang=math.pi * 0.5, w=1.8, d=0.6,
@@ -310,6 +320,29 @@ def _route(c, room, role, mb):
         dst.seats.append(dict(seat, vi=len(dst.verts)))   # 頂点はもう移したので、後の kit.lift で動かさない
 
 
+def _board(c, key, p, front):
+    """board_lecture_<key> と、板の正面 front（水平の単位ベクトル）へ 1 m の board_lecture_<key>_f。"""
+    name = "board_lecture_" + key
+    c._put(name, *p)
+    c._put(name + "_f", p[0] + front[0], p[1] + front[1], p[2])
+
+
+def _board_empty(c, room):
+    """黒板・白板の面の中央の Empty。型 C の白板はロの字の机の正面。"""
+    _, xf1, yf0, yf1 = RD.room_faces(room)
+    cy = C_RING_Y if room[6] == "C" else (yf0 + yf1) * 0.5
+    _board(c, room[0], (xf1 - BOARD_FACE[room[6]], cy, RD.FLOOR_Z[room[1]] + BOARD_Z), (-1.0, 0.0))
+
+
+def _hall_board(c):
+    """7F の廊下の南の壁（705 の扉の間）の白板。過去の学生が書き足していく板（#389）。"""
+    z = RD.FLOOR_Z[RD.TOP_FLOOR] + BOARD_Z
+    y = D.Y_ROOM_S1
+    F.whiteboard(W.bands(c, "wall", RD.TOP_FLOOR).at(HALL_BOARD_X, y), HALL_BOARD_X, y, z,
+                 w=HALL_BOARD_W)
+    _board(c, RD.TOP_FLOOR, (HALL_BOARD_X, y + BOARD_FACE["B"], z), (0.0, 1.0))
+
+
 def build(c, lamp_count):
     """lamp_count は階 -> すでに置いた点光源の数。戻り値は教室の点光源を足した数。"""
     count = dict(lamp_count)
@@ -323,7 +356,11 @@ def build(c, lamp_count):
         _east(walls, room)
         _west(walls, room)
         FURNISH[room[6]](furn, room, RD.FLOOR_Z[fl])
+        PROPS.room(furn, walls, room, RD.FLOOR_Z[fl])
         for role, mb in (("floor", floor), ("wall", walls), ("furn", furn)):
             _route(c, room, role, mb)
         count[fl] += _lamps(c, room, count[fl])
+        if room[6] in BOARD_FACE:
+            _board_empty(c, room)
+    _hall_board(c)
     return count

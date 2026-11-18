@@ -1,0 +1,132 @@
+{
+  "id": "tateishi",
+  "speaker": "立石 みなと",
+  "topics": [
+    {
+      "id": "t_done",
+      "requiresCompletedQuest": "q_sq_pop_quiz",
+      "lines": [
+        {
+          "text": "2 を席の数だけかける。……よし、覚えた。次の小テストは取れる気がする。",
+          "text_en": "Multiply two once for every seat... Okay, got it. I think I can actually pass the next quiz."
+        },
+        {
+          "text": "あとは、起きていられるかだな。",
+          "text_en": "Now I just have to stay awake."
+        }
+      ]
+    },
+    {
+      "id": "t_quiz",
+      "requiresStep": "q_sq_pop_quiz/s2",
+      "lines": [
+        {
+          "text": "おかえり。黒板、何か書いてあった？",
+          "text_en": "You're back. Was there anything on the blackboard?"
+        },
+        {
+          "speaker": "自分",
+          "text": "次回は小テストで、それが出席になるって。",
+          "text_en": "Next time there's a pop quiz, and it counts as attendance."
+        },
+        {
+          "text": "……寝てる間に、いちばん大事なとこが終わってた。",
+          "text_en": "...The most important part happened while I was asleep."
+        },
+        {
+          "speaker": "自分",
+          "text": "練習問題もあった。4 席の空きと埋まりの並び方は何通りか。",
+          "text_en": "There was a practice question too. How many ways can 4 seats be empty or taken?"
+        },
+        {
+          "text": "1 席で 2 通り、って言ってたのは覚えてる。じゃあ 4 席だと……何通り？",
+          "text_en": "I remember the part about one seat having two ways. So with four seats... how many?"
+        }
+      ],
+      "choices": [
+        {
+          "text": "8 通り",
+          "text_en": "8 ways",
+          "retry": true,
+          "lines": [
+            {
+              "text": "2 かける 4？　それだと 8 席でも 16 通りで、教授の 256 と合わないんだよな。",
+              "text_en": "Two times four? Then eight seats would only be sixteen, and that doesn't match the professor's 256."
+            }
+          ]
+        },
+        {
+          "text": "16 通り",
+          "text_en": "16 ways",
+          "affinity": 1,
+          "setsFlag": "pop_quiz_answered",
+          "lines": [
+            {
+              "text": "2 を 4 回かけて 16。……あ、8 席で 256 通りって、そういうことか。",
+              "text_en": "Two, multiplied four times, is sixteen... Oh, so that's where 256 for eight seats comes from."
+            },
+            {
+              "text": "ノートに書いとこ。ありがとう、これで出席 1 回ぶんは確保だ。",
+              "text_en": "Let me write that down. Thanks, that's one attendance secured."
+            }
+          ]
+        },
+        {
+          "text": "4 通り",
+          "text_en": "4 ways",
+          "retry": true,
+          "lines": [
+            {
+              "text": "席の数のまま？　全部空きと全部埋まりだけで、もう 2 通りあるけど……もう少し多くない？",
+              "text_en": "Same as the number of seats? All empty and all taken are already two ways... Shouldn't it be more?"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "t_wait",
+      "requiresStep": "q_sq_pop_quiz/s1",
+      "lines": [
+        {
+          "text": "黒板は前のほう、向かって右の板。次回のこと、何か書いてあったら教えて。",
+          "text_en": "The blackboard's at the front, the right-hand panel as you face it. Let me know if it says anything about next time."
+        }
+      ]
+    },
+    {
+      "id": "t_start",
+      "requiresCompletedQuest": "q_lecture",
+      "once": true,
+      "startsQuest": "q_sq_pop_quiz",
+      "lines": [
+        {
+          "text": "……はっ。もう終わった？　後半の記憶がまるごと無い。",
+          "text_en": "...Huh. Is it over already? I don't remember anything from the second half."
+        },
+        {
+          "text": "最後に教授が「次回のことは黒板に書いておく」って言ってた気がするんだよ。",
+          "text_en": "I think right at the end the professor said something like \"I'll leave a note about next time on the blackboard.\""
+        },
+        {
+          "text": "前まで降りるの、ちょっと気まずくて。代わりに見てきてくれない？",
+          "text_en": "Walking all the way down to the front feels a bit awkward. Could you go look for me?"
+        },
+        {
+          "speaker": "自分",
+          "text": "いいよ。見てくる。",
+          "text_en": "Sure. I'll go look."
+        }
+      ]
+    },
+    {
+      "id": "t_idle",
+      "lines": [
+        {
+          "text": "隣、空いてるよ。この教室、後ろのほうがあったかくて眠くなるんだよな。",
+          "text_en": "The seat next to me is free. It's warm at the back of this room. Makes you sleepy."
+        }
+      ]
+    }
+  ]
+}

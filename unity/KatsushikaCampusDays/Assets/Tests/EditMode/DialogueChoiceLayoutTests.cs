@@ -47,10 +47,11 @@ namespace KCD.Tests
             {
                 string text = DialogueView.ComposeChoices(Choices(), 0, true);
                 StringAssert.DoesNotContain("<line-height", text);
-                StringAssert.Contains("<link=\"choice:-1\">   " + label + "</link>", text);
+                string close = DialogueView.CloseLinkId(Choices().Count);
+                StringAssert.Contains("<link=\"" + close + "\">   " + label + "</link>", text);
                 StringAssert.Contains("<link=\"choice:2\">", text);
                 Assert.Less(text.IndexOf("choice:2", StringComparison.Ordinal),
-                    text.IndexOf("choice:-1", StringComparison.Ordinal), "「やめる」は選択肢の後");
+                    text.IndexOf(close, StringComparison.Ordinal), "「やめる」は選択肢の後");
             });
         }
 
@@ -58,20 +59,38 @@ namespace KCD.Tests
         public void Compose_Keys_HaveNoCloseLink()
         {
             string text = DialogueView.ComposeChoices(Choices(), 0, false);
-            StringAssert.DoesNotContain("choice:-1", text);
+            StringAssert.DoesNotContain(DialogueView.CloseLinkId(Choices().Count), text);
             StringAssert.DoesNotContain("<size=" + DialogueView.TouchChoiceSizePercent, text);
         }
 
-        [TestCase("choice:0", 3, 0)]
-        [TestCase("choice:2", 3, 2)]
-        [TestCase("choice:3", 3, DialogueView.NoTap)]
-        [TestCase("choice:-1", 3, DialogueSystem.CloseChoice)]
-        [TestCase("inc:1", 3, DialogueView.NoTap)]
-        [TestCase("", 3, DialogueView.NoTap)]
-        [TestCase(null, 3, DialogueView.NoTap)]
-        public void TappedChoice_MapsLinksToChoicesAndTheCloseLink(string link, int count, int expected)
+        [TestCase("choice:0", 3, DialogueView.Tap.Choice, 0)]
+        [TestCase("choice:2", 3, DialogueView.Tap.Choice, 2)]
+        [TestCase("choice:3", 3, DialogueView.Tap.Close, 3)]
+        [TestCase("choice:4", 3, DialogueView.Tap.None, -1)]
+        [TestCase("choice:-1", 3, DialogueView.Tap.None, -1)]
+        [TestCase("choice:x", 3, DialogueView.Tap.None, -1)]
+        [TestCase("inc:1", 3, DialogueView.Tap.None, -1)]
+        [TestCase("", 3, DialogueView.Tap.None, -1)]
+        [TestCase(null, 3, DialogueView.Tap.None, -1)]
+        public void TappedChoice_MapsLinksToChoicesAndTheCloseLink(string link, int count, DialogueView.Tap expected, int expectedIndex)
         {
-            Assert.AreEqual(expected, DialogueView.TappedChoice(link, count));
+            Assert.AreEqual(expected, DialogueView.TappedChoice(link, count, out int index));
+            if (expected == DialogueView.Tap.Choice)
+            {
+                Assert.AreEqual(expectedIndex, index, "叩いた選択肢の番号");
+            }
+        }
+
+        [TestCase(1)]
+        [TestCase(3)]
+        [TestCase(5)]
+        public void CloseLink_IsTappedAsTheCloseLinkAndNeverAsAChoice(int count)
+        {
+            Assert.AreEqual(DialogueView.Tap.Close, DialogueView.TappedChoice(DialogueView.CloseLinkId(count), count, out _));
+            for (int i = 0; i < count; i++)
+            {
+                Assert.AreNotEqual(DialogueView.CloseLinkId(count), "choice:" + i, "「やめる」のリンクが選択肢 " + i + " と同じ");
+            }
         }
 
         [Test]

@@ -960,44 +960,6 @@ def _bow_shape(pts: np.ndarray, d: np.ndarray) -> np.ndarray:
     return pts * np.array([1.0, 1.0, 1.0]) * k + M.normalize(d) * 0.0
 
 
-def _glasses(mb, p, head, fs, uv_box, mat: str = "glasses"):
-    fl = p["face_layout"]
-    x0, x1, z0, z1 = uv_box
-    hw = p["head_w"]
-    ex = (x1 - x0) * fl["eye_dx"]
-    ez = z0 + (z1 - z0) * fl["eye_y"]
-    rx = (x1 - x0) * fl["eye_rx"] * 1.42
-    rz = (z1 - z0) * fl["eye_ry"] * 1.28
-    # 縁の太さ（頭幅比）
-    tube = hw * p.get("glasses_tube", 0.016)
-    for sgn in (-1, 1):
-        cx = sgn * ex
-        yy = fs.y_at(cx, ez) - hw * 0.055
-        n = 22
-        a = np.linspace(0.0, 2 * math.pi, n, endpoint=False)
-        e = 2.0 / 3.0
-        px = cx + np.sign(np.cos(a)) * np.abs(np.cos(a)) ** e * rx
-        pz = ez + np.sign(np.sin(a)) * np.abs(np.sin(a)) ** e * rz
-        loop = np.stack([px, np.full(n, yy), pz], axis=1)
-        path = np.vstack([loop, loop[:1]])
-        with mb.part("glasses"):
-            mb.add_tube(path, [tube] * len(path), mat, n=6, cap_start=False,
-                        cap_end=False)
-        # つる
-        ear = np.array([sgn * hw * 0.50, p["head_d"] * 0.10, ez + rz * 0.30])
-        temple = np.array([cx + sgn * rx, yy + hw * 0.02, ez + rz * 0.30])
-        with mb.part("glasses"):
-            mb.add_tube(np.array([temple, (temple + ear) * 0.5, ear]),
-                        [tube * 0.9] * 3, mat, n=6)
-    # ブリッジ
-    ybr = fs.y_at(0.0, ez) - hw * 0.050
-    with mb.part("glasses"):
-        mb.add_tube(np.array([[-ex + rx * 0.9, ybr, ez + rz * 0.12],
-                              [0.0, ybr - hw * 0.010, ez + rz * 0.16],
-                              [ex - rx * 0.9, ybr, ez + rz * 0.12]]),
-                    [tube * 0.85] * 3, mat, n=6)
-
-
 # --------------------------------------------------------------------------
 
 
@@ -1032,12 +994,18 @@ def build_hair(mb: M.MeshBuilder, p: dict, head, a, fs, uv_box) -> None:
                end_v=0.655, width=0.116, blunt=0.88)
 
     elif style == "twintail":
-        build_helmet(mb, p, head, front_el=0.64, back_el=1.62, thickness=0.082,
+        # 前髪は bob と同じく殻を毛先の歯まで下ろし、毛先を眉の上で止める。
+        # 前髪は正面から左右に 78.75° ずつで、96 列の殻の列の間隔（3.75°）の 21 個分。
+        # 7 枚の歯は 1 枚が 6 間隔になり、歯の先と切れ込みが頂点の列に乗る。
+        build_helmet(mb, p, head, front_el=0.64, back_el=1.62, thickness=0.12,
                      z_end_side=chin + hh * 0.10, z_end_back=chin + hh * 0.22,
-                     puff=0.9, ridges=14, ridge_amp=0.34, jag=0.026,
-                     hang_lo=0.30, inward=0.80)
-        _bangs(mb, p, head, span=math.radians(76.0), count=11, el=0.58,
-               end_v=0.650, width=0.110)
+                     puff=0.9, ridges=14, ridge_amp=0.12, jag=0.026,
+                     hang_lo=0.30, inward=0.80, nu=96, nv=12,
+                     bangs=dict(reach=math.radians(78.75), teeth=7,
+                                notch=0.070, droop=0.085, end_v=0.690,
+                                tip=0.020, fall=3.0, valley=0.5, fade=0.25,
+                                onset=0.5, groove=0.40, g_from=1.3),
+                     carry=dict(base=0.36, gain=1.15, lift=1.06))
         for sgn in (-1, 1):
             base = scalp_pt(head, FRONT + sgn * math.radians(100.0), 0.86,
                             hw * 0.12)[0]
@@ -1170,11 +1138,9 @@ def build_hair(mb: M.MeshBuilder, p: dict, head, a, fs, uv_box) -> None:
         _bow(mb, p, head)
     elif acc == "bandana":
         _bandana(mb, p, head)
-    elif acc == "glasses_gray":
+    elif acc in ("glasses_gray", "glasses_red"):
         from . import hair_men
         hair_men.build_metal_glasses(mb, p, head, fs, uv_box)
-    elif acc == "glasses_red":
-        _glasses(mb, p, head, fs, uv_box)
 
     _ = a
 
@@ -1204,7 +1170,7 @@ def ring_top(head, co) -> float:
     """髪の頂上の高さ。頭の中心から測り、頭の縦の半径を 1 とする。
 
     頭の軸の近くの髪だけで測るので、横へ跳ねた房は数えない。
-    mirai は髪の殻が厚く 1.43、ほかは 1.10〜1.19（2026-09-30）。
+    mirai は髪の殻が厚く 1.43、inari は 1.25、ほかは 1.10〜1.20。
     """
     d = _head_local(head, co)
     near = np.hypot(d[:, 0], d[:, 1]) < RING_CROWN_RADIUS

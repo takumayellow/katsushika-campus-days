@@ -1,0 +1,141 @@
+{
+  "id": "pc_306",
+  "speaker": "画面",
+  "topics": [
+    {
+      "id": "t_compile",
+      "requiresStep": "q_sq_first_program/s2",
+      "lines": [
+        {
+          "text": "#include <stdio.h>",
+          "text_en": "#include <stdio.h>",
+          "written": true
+        },
+        {
+          "text": "int main(void) {",
+          "text_en": "int main(void) {",
+          "written": true
+        },
+        {
+          "text": "    printf(\"HELLO, WORLD\\n\")",
+          "text_en": "    printf(\"HELLO, WORLD\\n\")",
+          "written": true
+        },
+        {
+          "text": "    return 0;",
+          "text_en": "    return 0;",
+          "written": true
+        },
+        {
+          "text": "}",
+          "text_en": "}",
+          "written": true
+        },
+        {
+          "text": "$ gcc hello.c",
+          "text_en": "$ gcc hello.c",
+          "written": true
+        },
+        {
+          "text": "hello.c:3:29: error: expected ';' before 'return'",
+          "text_en": "hello.c:3:29: error: expected ';' before 'return'",
+          "written": true
+        },
+        {
+          "speaker": "自分",
+          "text": "書いてあるのに動かない。3 行目に、何かが足りないって言っている。",
+          "text_en": "It's all written out, and it still won't run. It says something is missing on line 3."
+        }
+      ],
+      "choices": [
+        {
+          "text": "3 行目の終わりに ; を足す",
+          "text_en": "Add ; to the end of line 3",
+          "setsFlag": "first_program_ran",
+          "lines": [
+            {
+              "text": "$ gcc hello.c && ./a.out",
+              "text_en": "$ gcc hello.c && ./a.out",
+              "written": true
+            },
+            {
+              "text": "HELLO, WORLD",
+              "text_en": "HELLO, WORLD",
+              "written": true
+            },
+            {
+              "speaker": "自分",
+              "text": "……出た。黒板で 1 文字ずつ読んだ言葉が、自分の画面に一瞬で出た。",
+              "text_en": "...There it is. The words I read off the blackboards one letter at a time showed up on my own screen in an instant."
+            }
+          ]
+        },
+        {
+          "text": "4 行目の return 0; を消す",
+          "text_en": "Delete return 0; on line 4",
+          "retry": true,
+          "lines": [
+            {
+              "text": "hello.c:3:29: error: expected ';' before '}' token",
+              "text_en": "hello.c:3:29: error: expected ';' before '}' token",
+              "written": true
+            },
+            {
+              "speaker": "自分",
+              "text": "まだ 3 行目で止まる。消すんじゃなくて、何かを足すんだ。消した行は戻しておこう。",
+              "text_en": "It still stops on line 3. I'm supposed to add something, not delete it. Better put that line back."
+            }
+          ]
+        },
+        {
+          "text": "HELLO を hello に直す",
+          "text_en": "Change HELLO to hello",
+          "retry": true,
+          "lines": [
+            {
+              "text": "hello.c:3:29: error: expected ';' before 'return'",
+              "text_en": "hello.c:3:29: error: expected ';' before 'return'",
+              "written": true
+            },
+            {
+              "speaker": "自分",
+              "text": "同じエラーだ。引用符の中の文字は関係ないらしい。HELLO に戻しておこう。",
+              "text_en": "Same error. What's inside the quotes doesn't seem to matter. I'll change it back to HELLO."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "t_ran",
+      "requiresStep": "q_sq_first_program/s3",
+      "lines": [
+        {
+          "text": "HELLO, WORLD",
+          "text_en": "HELLO, WORLD",
+          "written": true
+        },
+        {
+          "speaker": "自分",
+          "text": "まだ画面に出たままだ。TA に見てもらおう。",
+          "text_en": "It's still on the screen. I should show the TA."
+        }
+      ]
+    },
+    {
+      "id": "t_idle",
+      "lines": [
+        {
+          "text": "ログイン: ________",
+          "text_en": "Login: ________",
+          "written": true
+        },
+        {
+          "speaker": "自分",
+          "text": "学籍番号でログインする PC だ。今は使う用事がない。",
+          "text_en": "A PC you log into with your student number. I don't need it right now."
+        }
+      ]
+    }
+  ]
+}
