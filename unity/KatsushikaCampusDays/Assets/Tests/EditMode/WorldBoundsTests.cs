@@ -170,5 +170,44 @@ namespace KCD.Tests
             // 真下に落ちただけ（水平のずれがほぼ無い）なら元の向きのまま。
             Assert.AreEqual(42f, WorldBounds.ReturnYaw(new Vector3(1f, -20f, 1f), new Vector3(1.05f, 0f, 1f), 42f), 1e-3f);
         }
+
+        [Test]
+        public void NextOffCampus_FlipsOnlyBeyondTheMarginAroundTheWestWall()
+        {
+            float wall = -WorldBounds.HalfExtent;
+            float m = WorldBounds.GateMargin;
+
+            Assert.IsTrue(WorldBounds.NextOffCampus(false, wall - m - 0.1f), "門の外へ出た");
+            Assert.IsFalse(WorldBounds.NextOffCampus(true, wall + m + 0.1f), "門の内へ戻った");
+            Assert.IsFalse(WorldBounds.NextOffCampus(false, wall), "壁の上では前のまま（内）");
+            Assert.IsTrue(WorldBounds.NextOffCampus(true, wall), "壁の上では前のまま（外）");
+            Assert.IsFalse(WorldBounds.NextOffCampus(false, 0f), "キャンパスの真ん中");
+            Assert.IsTrue(WorldBounds.NextOffCampus(false, DormRoute.DefaultDoorX), "寮の玄関は門の外");
+            Assert.IsTrue(WorldBounds.NextOffCampus(true, float.NaN), "NaN は前のまま");
+        }
+
+        [Test]
+        public void ShouldAnnounceGate_OnlyWhenWalkedAcross()
+        {
+            Assert.IsTrue(WorldBounds.ShouldAnnounceGate(true, false, true, 0.2f), "歩いて出た");
+            Assert.IsTrue(WorldBounds.ShouldAnnounceGate(true, true, false, 0.2f), "歩いて戻った");
+            Assert.IsFalse(WorldBounds.ShouldAnnounceGate(true, false, false, 0.2f), "変わっていない");
+            Assert.IsFalse(WorldBounds.ShouldAnnounceGate(false, false, true, 0f), "最初の判定（ロード直後）");
+            Assert.IsFalse(WorldBounds.ShouldAnnounceGate(true, false, true, WorldBounds.TeleportDistance + 1f),
+                "移された（屋内から出た・戻し）");
+        }
+
+        [Test]
+        public void GateToasts_HaveTextInEveryDictionary()
+        {
+            foreach (string key in new[] { "ui.hud.left_campus", "ui.hud.back_on_campus" })
+            {
+                foreach (string lang in new[] { "ja", "en" })
+                {
+                    string path = System.IO.Path.Combine(Application.dataPath, "Data", "Localization", lang + ".json");
+                    StringAssert.Contains("\"" + key + "\":", System.IO.File.ReadAllText(path), lang + " に " + key);
+                }
+            }
+        }
     }
 }

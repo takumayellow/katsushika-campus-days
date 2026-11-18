@@ -33,6 +33,18 @@ namespace KCD
         public const string ToastKey = "ui.hud.returned_to_campus";
         public const string ToastFallback = "道に迷ったので、キャンパスに戻ってきた";
 
+        /// <summary>
+        /// キャンパスの西の壁（x = -HalfExtent）の門を出入りしたと決める余裕（m）。壁の厚さ 2 m より外で決め、
+        /// 門の真ん中で行き来しても知らせが何度も出ないようにする（#41）。
+        /// </summary>
+        public const float GateMargin = 1.5f;
+
+        /// <summary>1 回の見張りでこれより大きく動いたら、歩いたのではなく移された（ロード・屋内から出た・戻し）とみなす（m）。</summary>
+        public const float TeleportDistance = 5f;
+
+        public const string LeftCampusFallback = "キャンパスの門を出た。外の道は西へ続いている";
+        public const string BackOnCampusFallback = "門をくぐって、キャンパスに戻ってきた";
+
         /// <summary>既定の範囲。xz 平面の矩形で、Rect の x がワールド x（東）、y がワールド z（北）。</summary>
         public static Rect DefaultArea => new Rect(-HalfExtent, -HalfExtent, HalfExtent * 2f, HalfExtent * 2f);
 
@@ -48,6 +60,9 @@ namespace KCD
         private bool _hasStart;
         private Vector3 _startPosition;
         private float _sampleTimer;
+        private bool _offCampusKnown;
+        private bool _offCampus;
+        private Vector3 _lastWatched;
 
         /// <summary>見張っている範囲（xz）。</summary>
         public Rect Area => _area;
@@ -62,6 +77,33 @@ namespace KCD
         public static bool IsWithin(Vector3 position, Rect area)
         {
             return area.Contains(new Vector2(position.x, position.z));
+        }
+
+        /// <summary>
+        /// 門の外（キャンパスの西の壁より西）にいるか。前の判定 wasOff を引き継ぎ、壁の前後 GateMargin の間では変えない。
+        /// NaN の x はどちらの比較も偽になるので、前の判定のまま。
+        /// </summary>
+        public static bool NextOffCampus(bool wasOff, float x)
+        {
+            if (x < -HalfExtent - GateMargin)
+            {
+                return true;
+            }
+
+            if (x > -HalfExtent + GateMargin)
+            {
+                return false;
+            }
+
+            return wasOff;
+        }
+
+        /// <summary>
+        /// 門をくぐったと知らせるか。前の判定が無い・移された（moved が TeleportDistance を超える）ときは知らせない。
+        /// </summary>
+        public static bool ShouldAnnounceGate(bool known, bool wasOff, bool nowOff, float moved)
+        {
+            return known && wasOff != nowOff && moved <= TeleportDistance;
         }
 
         /// <summary>
@@ -156,6 +198,9 @@ namespace KCD
             // その最中に戻し始めると、戻し終えたときにその画面の封鎖まで外してしまう。落ちていれば、封鎖が外れてから戻す。
             if (KCDInput.GameplayBlocked)
             {
+                // セーブの読み込み・日の切り替え・ワープは封鎖の間に位置を変えるので、門の判定は封鎖が外れてから取り直す。
+                // 取り直した最初のフレームは一言を出さない（門のそばに着いても「門を出た」と言わない）。
+                _offCampusKnown = false;
                 return;
             }
 
@@ -166,6 +211,11 @@ namespace KCD
             {
                 StartCoroutine(Recover(position));
                 return;
+            }
+
+            if (!inside)
+            {
+                WatchGate(position);
             }
 
             _sampleTimer -= Time.deltaTime;
@@ -180,6 +230,26 @@ namespace KCD
                 _safePosition = position;
                 _hasSafe = true;
             }
+        }
+
+        /// <summary>
+        /// 北西の門を出たとき・戻ったときに一言出す（#41）。外へ出たことに気づかないまま迷わないように。
+        /// 建物の中にいる間は呼ばない。戻し（Recover）の後は判定を取り直し、知らせない（戻しは自分の一言を出す）。
+        /// </summary>
+        private void WatchGate(Vector3 position)
+        {
+            bool nowOff = NextOffCampus(_offCampus, position.x);
+            float moved = _offCampusKnown ? Vector3.Distance(position, _lastWatched) : 0f;
+            if (ShouldAnnounceGate(_offCampusKnown, _offCampus, nowOff, moved))
+            {
+                HUD.Instance?.ShowToast(nowOff
+                    ? L.Get("ui.hud.left_campus", LeftCampusFallback)
+                    : L.Get("ui.hud.back_on_campus", BackOnCampusFallback));
+            }
+
+            _offCampus = nowOff;
+            _offCampusKnown = true;
+            _lastWatched = position;
         }
 
         private PlayerController FindPlayer()
@@ -227,6 +297,7 @@ namespace KCD
             yield return Fade(0f);
 
             HUD.Instance?.ShowToast(L.Get(ToastKey, ToastFallback));
+            _offCampusKnown = false;
             KCDInput.Unblock(this);
             _sampleTimer = SampleInterval;
             _recovering = false;
