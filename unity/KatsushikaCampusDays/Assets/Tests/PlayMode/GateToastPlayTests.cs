@@ -21,8 +21,11 @@ namespace KCD.Tests
         /// <summary>1 フレームに動かす距離（m）。</summary>
         private const float Step = 1f;
 
-        /// <summary>トーストが出るまで待つ上限（実時間の秒）。</summary>
-        private const float ToastWaitSeconds = 4f;
+        /// <summary>
+        /// トーストが出るまで待つ上限（実時間の秒）。入場の 1.2 秒後に歓迎のトーストが 3 件（1 件約 3.1 秒）並ぶので、
+        /// その後ろに門の一言が積まれても間に合う長さにする。
+        /// </summary>
+        private const float ToastWaitSeconds = 15f;
 
         [UnityTest]
         [Timeout(SceneTestTimeoutMs)]
@@ -61,6 +64,7 @@ namespace KCD.Tests
             CollectionAssert.Contains(seen, back, "門から戻った一言が出ない");
 
             Assert.IsFalse(bounds.IsRecovering, "門の外の道でキャンパスへ戻されている");
+            AssertNoErrors("門の出入り");
         }
 
         private static IEnumerator Walk(PlayerController player, float fromX, float toX, float z)
