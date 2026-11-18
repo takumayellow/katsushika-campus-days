@@ -131,6 +131,7 @@ Assets/Data/Ending       → Assets/Resources/KCD/Ending
 各 NPC の `topics` に `t_sq_<quest>_start / _active / _done` を **`t_idle` の直前** に挿入した（`SelectTopic` は先頭一致なので、既存話題の優先順位は変わらない）。
 `_start` は `requiresCompletedQuest` + `once` + `startsQuest`、`_active` は `requiresActiveQuest`、`_done` は `requiresCompletedQuest` + `once`。
 既存話題の `lines` は文字列から `{ "text", "text_en" }` オブジェクトに変え、話者付き行は `{ "speaker", "text", "text_en" }`。`DialogueData` は既にオブジェクト形式（speaker 省略時は NPC）を受け付ける。
+行には時間帯で言い分ける本文 `text_morning` / `text_after_school` / `text_night`（と各 `_en`）を足せる（#41）。時間帯は `DayPart`（1 限の前・5 限の終わりまで・日の入りまで・日の入り後）で決め、空の時間帯と授業中は `text` を出す。
 
 ---
 

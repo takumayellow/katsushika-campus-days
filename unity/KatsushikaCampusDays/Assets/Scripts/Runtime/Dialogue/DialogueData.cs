@@ -27,10 +27,41 @@ namespace KCD
         /// <summary>紙に書かれた文（メモ・手紙）。声を鳴らさずに出す（JSON の written）(#175)。</summary>
         public bool Written;
 
-        /// <summary>画面に出す本文。いまの言語で選ぶ。</summary>
-        public string DisplayText => InputMode.IsTouch && !string.IsNullOrEmpty(TextTouch)
-            ? L.Pick(TextTouch, TextTouchEn)
-            : L.Pick(Text, TextEn);
+        /// <summary>
+        /// 時間帯で言い分ける本文（JSON の text_morning / text_after_school / text_night と、それぞれの _en）(#41)。
+        /// 空の時間帯は Text を出す。授業中は常に Text。
+        /// </summary>
+        public string TextMorning = string.Empty;
+
+        public string TextMorningEn = string.Empty;
+        public string TextAfterSchool = string.Empty;
+        public string TextAfterSchoolEn = string.Empty;
+        public string TextNight = string.Empty;
+        public string TextNightEn = string.Empty;
+
+        /// <summary>画面に出す本文。いまの言語と時間帯で選ぶ。</summary>
+        public string DisplayText => DisplayTextAt(DayPart.Current);
+
+        /// <summary>時間帯を渡して本文を選ぶ（テストから呼ぶ）。指の操作の言い換えがあればそちらを優先する。</summary>
+        public string DisplayTextAt(DayPartKind part)
+        {
+            if (InputMode.IsTouch && !string.IsNullOrEmpty(TextTouch))
+            {
+                return L.Pick(TextTouch, TextTouchEn);
+            }
+
+            switch (part)
+            {
+                case DayPartKind.Morning when !string.IsNullOrEmpty(TextMorning):
+                    return L.Pick(TextMorning, TextMorningEn);
+                case DayPartKind.AfterSchool when !string.IsNullOrEmpty(TextAfterSchool):
+                    return L.Pick(TextAfterSchool, TextAfterSchoolEn);
+                case DayPartKind.Night when !string.IsNullOrEmpty(TextNight):
+                    return L.Pick(TextNight, TextNightEn);
+                default:
+                    return L.Pick(Text, TextEn);
+            }
+        }
 
         /// <summary>画面に出す話者名。日本語ではデータのまま、英語では辞書の名前（無ければデータのまま）。</summary>
         public string DisplaySpeaker =>
@@ -225,6 +256,12 @@ namespace KCD
                         TextEn = MiniJson.GetString(lineNode, "text_en"),
                         TextTouch = MiniJson.GetString(lineNode, "text_touch"),
                         TextTouchEn = MiniJson.GetString(lineNode, "text_touch_en"),
+                        TextMorning = MiniJson.GetString(lineNode, "text_morning"),
+                        TextMorningEn = MiniJson.GetString(lineNode, "text_morning_en"),
+                        TextAfterSchool = MiniJson.GetString(lineNode, "text_after_school"),
+                        TextAfterSchoolEn = MiniJson.GetString(lineNode, "text_after_school_en"),
+                        TextNight = MiniJson.GetString(lineNode, "text_night"),
+                        TextNightEn = MiniJson.GetString(lineNode, "text_night_en"),
                         Written = MiniJson.GetBool(lineNode, "written")
                     });
                 }

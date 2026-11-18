@@ -106,17 +106,43 @@ namespace KCD
 
         /// <summary>
         /// 本文。数字は時刻だけ。探索率も入った建物の数も出さない（この一日は集計しない）。
+        /// 最初の一文は寮で横になった時間帯で言い分ける (#41)。
         /// </summary>
         public static string BodyText(float hours, bool english)
         {
             string clock = FormatClock(hours);
+            string lead = LeadText(DayPart.Of(hours), english);
             return english
-                ? "You crawled under the covers at the dorm and never went to class.\n\n"
+                ? lead + "\n\n"
                   + "<size=200%>" + clock + "</size>\n\n"
                   + "<size=85%>Today does not get counted.</size>"
-                : "寮の布団にもぐりこんで、そのまま授業をサボった。\n\n"
+                : lead + "\n\n"
                   + "<size=200%>" + clock + "</size>\n\n"
                   + "<size=85%>この一日は数えない。</size>";
+        }
+
+        /// <summary>本文の最初の一文。時間帯ごとに、その一日がどう終わったかを言う。</summary>
+        public static string LeadText(DayPartKind part, bool english)
+        {
+            switch (part)
+            {
+                case DayPartKind.Morning:
+                    return english
+                        ? "Before first period even began, you crawled under the covers at the dorm and skipped the whole day."
+                        : "一限が始まる前に寮の布団にもぐりこんで、そのまま一日をサボった。";
+                case DayPartKind.AfterSchool:
+                    return english
+                        ? "After classes, you crawled under the covers at the dorm and dozed off just like that."
+                        : "放課後、寮の布団にもぐりこんで、そのまま眠ってしまった。";
+                case DayPartKind.Night:
+                    return english
+                        ? "After dark, you crawled under the covers at the dorm and slept straight through to morning."
+                        : "日が暮れてから寮の布団にもぐりこみ、そのまま朝まで眠った。";
+                default:
+                    return english
+                        ? "You crawled under the covers at the dorm and never went to class."
+                        : "寮の布団にもぐりこんで、そのまま授業をサボった。";
+            }
         }
 
         /// <summary>
