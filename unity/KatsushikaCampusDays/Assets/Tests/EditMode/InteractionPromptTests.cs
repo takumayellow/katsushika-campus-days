@@ -184,6 +184,16 @@ namespace KCD.Tests
         }
 
         [Test]
+        public void PromptView_LabelFor_ShowsPadButtonsWhenPadConnected()
+        {
+            Assert.AreEqual("[E/X] 話す　[Q/RB] 手を振る", InteractionPromptView.LabelFor("話す", "手を振る", true));
+            Assert.AreEqual("[Q/RB] 手を振る", InteractionPromptView.LabelFor(null, "手を振る", true));
+            Assert.AreEqual("[E/X] 話す", InteractionPromptView.LabelFor("話す", null, true));
+            Assert.AreEqual("[E] 話す　[Q] 手を振る", InteractionPromptView.LabelFor("話す", "手を振る", false),
+                "パッドが無いのにパッドのボタンを出した");
+        }
+
+        [Test]
         public void PromptView_LabelFor_UsesTheConfiguredVerb()
         {
             var go = new GameObject("Prop");
