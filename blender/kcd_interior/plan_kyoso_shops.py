@@ -7,6 +7,10 @@ from . import plan_kyoso_dims as D
 
 WOOD = "kyoso_wood_oak"
 SAGE = "kyoso_sb_sage"
+# 商品の小箱の幅（furniture の既定より大きくして三角形を空ける）。冷蔵ケースの中は扉のガラス越しで
+# ほぼ見えないので大きく、手前から見えるゴンドラは既定に近い幅にする
+CASE_CLUMP = 0.40
+SHELF_CLUMP = 0.16
 
 
 def _on_top(mb, z, build):
@@ -48,10 +52,10 @@ def familymart(c, mb):
     x0, y0, x1, y1 = D.FM
     kit.plate(mb, x0, y0, x1, y1, 0.012, "floor_tile_white")
     for fy in (33.0, 37.0):
-        F.fridge_case(mb, x0 + 0.46, fy, D.FACE_WEST, length=4.0, rng=rng)
-    F.fridge_case(mb, -16.0, y1 - 0.46, D.FACE_MALL, length=6.0, rng=rng)
+        F.fridge_case(mb, x0 + 0.46, fy, D.FACE_WEST, length=4.0, rng=rng, clump=CASE_CLUMP)
+    F.fridge_case(mb, -16.0, y1 - 0.46, D.FACE_MALL, length=6.0, rng=rng, clump=CASE_CLUMP)
     for gx in (-17.8, -14.8):
-        F.gondola(mb, gx, 36.2, D.FACE_EAST, length=2.4, rng=rng)
+        F.gondola(mb, gx, 36.2, D.FACE_EAST, length=2.4, rng=rng, clump=SHELF_CLUMP)
     F.counter(mb, -16.6, 33.0, -13.0, 33.6, h=1.0, body="counter_wood", top="counter_wood")
     for rx in (-15.8, -13.8):
         _on_top(mb, 1.0, lambda rx=rx: F.register(mb, rx, 33.3, math.pi))

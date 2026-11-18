@@ -120,7 +120,7 @@ namespace KCD.Tests
             // ランタイムは Resources/KCD の写しを読む（DataBundler が Assets/Data から写す）。
             // 片方だけ直すと、テストは Data を、ゲームは古い Resources を見ることになる。
             string resources = Path.Combine(Application.dataPath, "Resources", "KCD");
-            foreach (string folder in new[] { "Quests", "Dialogue", "Collectibles", "Localization", "Mobs", "Ending" })
+            foreach (string folder in new[] { "Quests", "Dialogue", "Collectibles", "Localization", "Mobs", "Ending", "Classes" })
             {
                 foreach (string file in Directory.GetFiles(Path.Combine(DataRoot, folder), "*.json"))
                 {

@@ -501,6 +501,9 @@ namespace KCD.Editor
         private static readonly int ShadeColorId = Shader.PropertyToID("_ShadeColor");
         private static readonly int VertexColorId = Shader.PropertyToID("_VertexColor");
         private static readonly int OutlineScreenFlatId = Shader.PropertyToID("_OutlineScreenFlat");
+        private static readonly int FaceShadowId = Shader.PropertyToID("_FaceShadow");
+        private static readonly int FaceShadowSoftnessId = Shader.PropertyToID("_FaceShadowSoftness");
+        private static readonly int FaceShadowBiasId = Shader.PropertyToID("_FaceShadowBias");
         private static readonly int ShadeCrispId = Shader.PropertyToID("_ShadeCrisp");
         private static readonly int ShadeThresholdId = Shader.PropertyToID("_ShadeThreshold");
         private static readonly int FlatAmbientId = Shader.PropertyToID("_FlatAmbient");
@@ -983,7 +986,8 @@ namespace KCD.Editor
                 && Mathf.Approximately(material.GetFloat("_ShadeThreshold2"), threshold2)
                 && !NeedsOutlineScreenFlat(material)
                 && !NeedsShadeCrisp(material)
-                && !NeedsFlatAmbient(material);
+                && !NeedsFlatAmbient(material)
+                && !NeedsFaceShadow(material, !eye);
             if (same)
             {
                 return false;
@@ -1000,7 +1004,45 @@ namespace KCD.Editor
             ApplyOutlineScreenFlat(material);
             ApplyShadeCrisp(material);
             ApplyFlatAmbient(material);
+            ApplyFaceShadow(material, !eye);
             return true;
+        }
+
+        /// <summary>
+        /// 顔の陰を頭の向きで決める KCD/Toon の _FACE_SHADOW_ON (#14)。顔（目は除く）だけに付ける。
+        /// 頭の向きは CharacterImporter.BakeFaceFrame が顔の頂点に焼く。
+        /// </summary>
+        private static bool NeedsFaceShadow(Material material, bool on)
+        {
+            if (!material.HasProperty(FaceShadowId))
+            {
+                return false;
+            }
+
+            return material.IsKeywordEnabled(FaceShading.Keyword) != on
+                || !Mathf.Approximately(material.GetFloat(FaceShadowId), on ? 1f : 0f)
+                || (on && !Mathf.Approximately(material.GetFloat(FaceShadowSoftnessId), FaceShading.Softness))
+                || (on && !Mathf.Approximately(material.GetFloat(FaceShadowBiasId), FaceShading.Bias));
+        }
+
+        private static void ApplyFaceShadow(Material material, bool on)
+        {
+            if (!material.HasProperty(FaceShadowId))
+            {
+                return;
+            }
+
+            material.SetFloat(FaceShadowId, on ? 1f : 0f);
+            if (on)
+            {
+                material.SetFloat(FaceShadowSoftnessId, FaceShading.Softness);
+                material.SetFloat(FaceShadowBiasId, FaceShading.Bias);
+                material.EnableKeyword(FaceShading.Keyword);
+            }
+            else
+            {
+                material.DisableKeyword(FaceShading.Keyword);
+            }
         }
 
         private static bool NeedsOutlineScreenFlat(Material material)

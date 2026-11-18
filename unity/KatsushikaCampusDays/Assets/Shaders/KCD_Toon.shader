@@ -53,6 +53,13 @@ Shader "KCD/Toon"
         _HairRingBack("Hair Ring Strength At Back", Range(0, 1)) = 0.4
         _HairRingDroop("Hair Ring Droop At Silhouette", Range(0, 0.2)) = 0.07
 
+        // 顔の陰を法線ではなく頭の向きで決める (#14)。鼻や頬のふくらみで陰がまだらにならず、
+        // 光が横へ回るほど光と反対の頬から陰が広がる。頭の前方向（tangent）と顔の左右の位置（UV の 2 枚目の x）は
+        // CharacterImporter.BakeFaceFrame が顔の材質の頂点に焼く。
+        [Toggle(_FACE_SHADOW_ON)] _FaceShadow("Face Shadow (Head Direction)", Float) = 0
+        _FaceShadowSoftness("Face Shadow Softness", Range(0.001, 0.5)) = 0.03
+        _FaceShadowBias("Face Shadow Bias", Range(-1, 1)) = 0.1
+
         // Surface / blending state（マテリアル側から差し替える）
         [HideInInspector] _Surface("__surface", Float) = 0.0
         [HideInInspector] _SrcBlend("__src", Float) = 1.0
@@ -100,6 +107,9 @@ Shader "KCD/Toon"
         half   _HairRingToothDepth;
         half   _HairRingBack;
         half   _HairRingDroop;
+        half   _FaceShadow;
+        half   _FaceShadowSoftness;
+        half   _FaceShadowBias;
         half   _Surface;
         half   _SrcBlend;
         half   _DstBlend;
@@ -165,9 +175,13 @@ Shader "KCD/Toon"
                 // CharacterImporter.BakeOutlineNormals）。スカートのヒダの壁のように法線が横を向く所で、
                 // 殻が隣のヒダを越えて折れ返らないようにするため。印の無いメッシュは法線のまま押す。
                 // w = 2 + (1 − 太さの倍率)。鼻のような小さな出っ張りは、殻を細くして黒い弧にしない。
-                bool hasOutlineDir = input.tangentOS.w > 1.5;
+                // 顔の頂点は tangent に頭の前方向を持ち（w が 4〜5。CharacterImporter.BakeFaceFrame）、
+                // 殻の向きは法線に移してある。w = 4 + (1 − 太さの倍率)。
+                bool faceFrame = input.tangentOS.w > 3.5;
+                bool hasOutlineDir = input.tangentOS.w > 1.5 && !faceFrame;
                 float3 outlineOS = hasOutlineDir ? input.tangentOS.xyz : input.normalOS;
-                float widthScale = hasOutlineDir ? saturate(3.0 - input.tangentOS.w) : 1.0;
+                float widthScale = hasOutlineDir ? saturate(3.0 - input.tangentOS.w)
+                    : faceFrame ? saturate(5.0 - input.tangentOS.w) : 1.0;
                 VertexNormalInputs normalInputs = GetVertexNormalInputs(outlineOS);
 
                 // _OutlineNearDistance までは距離に比例させて画面上の太さを一定にし、それより遠くでは
@@ -222,6 +236,7 @@ Shader "KCD/Toon"
             #pragma shader_feature_local _PATTERN_ON
             #pragma shader_feature_local _VERTEXCOLOR_ON
             #pragma shader_feature_local _HAIRRING_ON
+            #pragma shader_feature_local _FACE_SHADOW_ON
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
             #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
@@ -245,8 +260,11 @@ Shader "KCD/Toon"
                 float4 positionOS : POSITION;
                 float3 normalOS   : NORMAL;
                 float2 uv         : TEXCOORD0;
-                #if defined(_HAIRRING_ON)
-                    float2 ring       : TEXCOORD1;
+                #if defined(_HAIRRING_ON) || defined(_FACE_SHADOW_ON)
+                    float2 ring       : TEXCOORD1;  // 髪は天使の輪の座標、顔は x が顔の左右の位置
+                #endif
+                #if defined(_FACE_SHADOW_ON)
+                    float4 tangentOS  : TANGENT;    // 顔の頂点は xyz が頭の前方向
                 #endif
                 #if defined(_PATTERN_ON)
                     float3 generated  : TEXCOORD2;
@@ -261,7 +279,7 @@ Shader "KCD/Toon"
             struct Varyings
             {
                 float4 positionCS : SV_POSITION;
-                float4 uv         : TEXCOORD0;  // xy = _BaseMap, zw = 天使の輪の座標（target 2.0 の補間器は 8 本まで）
+                float4 uv         : TEXCOORD0;  // xy = _BaseMap, zw = 天使の輪の座標か顔の左右の位置（target 2.0 の補間器は 8 本まで）
                 float3 positionWS : TEXCOORD1;
                 half3  normalWS   : TEXCOORD2;
                 half3  vertexSH   : TEXCOORD3;
@@ -269,6 +287,8 @@ Shader "KCD/Toon"
                 #if defined(_PATTERN_ON)
                     float3 generated  : TEXCOORD5;
                     half3  bindNormal : TEXCOORD6;
+                #elif defined(_FACE_SHADOW_ON)
+                    half3  headForwardWS : TEXCOORD5;  // 顔の材質は和柄を使わない
                 #endif
                 #if defined(_VERTEXCOLOR_ON)
                     half3  vertexColor : TEXCOORD7;
@@ -302,6 +322,13 @@ Shader "KCD/Toon"
                 #if defined(_HAIRRING_ON)
                     output.uv.zw = input.ring;
                     output.uv.z -= _HairRingDroop * HairRingSilhouette(positionInputs.positionWS);
+                #endif
+                #if defined(_FACE_SHADOW_ON) && !defined(_PATTERN_ON)
+                    // 頭の前方向は tangent に焼いてあり、スキニングで頭の骨と一緒に回る。
+                    // 焼いていない頂点（w < 3.5）は物体の正面を代わりに使う。
+                    bool baked = input.tangentOS.w > 3.5;
+                    output.headForwardWS = TransformObjectToWorldDir(baked ? input.tangentOS.xyz : float3(0.0, 0.0, 1.0));
+                    output.uv.z = baked ? input.ring.x : 0.0;
                 #endif
                 output.vertexSH = SampleSHVertex(normalInputs.normalWS);
                 output.fogFactor = ComputeFogFactor(positionInputs.positionCS.z);
@@ -400,6 +427,28 @@ Shader "KCD/Toon"
                 return color;
             }
 
+            // 顔の明部の割合 (0..1)。法線ではなく頭の向きで決める（法線で塗ると鼻や頬の凹凸で陰がまだらになる）。
+            // 顔を縦の円柱とみなし、焼いた左右の位置 u = sinθ の面が水平方向の光へ向く度合い cos(θ-φ) で明暗を分ける。
+            // 真横からなら顔の中央、正面からなら顔の外（全部明部）、真後ろからなら全部陰。
+            // 光が真上に近い（水平成分が小さい）ほど境目を顔の外へ出して、顔全体を明部にする。
+            // _FaceShadowBias は斜めの光で境目を陰の側へずらす量。正面と真後ろでは効かせない。
+            // 境目の幅は _ShadeCrisp = 1 で画面の 1 画素（ToonRamp と同じ）。FaceShading.Lit が同じ式を C# で持つ。
+            half FaceLit(half3 headForwardWS, float u, half3 lightDirWS)
+            {
+                float2 forward = headForwardWS.xz;
+                forward *= rsqrt(max(dot(forward, forward), 1e-6));
+                float2 right = float2(forward.y, -forward.x);    // +Z を向くキャラの右は +X
+                float2 lightH = lightDirWS.xz;
+                float lengthH = length(lightH);
+                float2 lightN = lightH / max(lengthH, 1e-4);
+                float front = dot(forward, lightN);
+                float side = dot(right, lightN);
+                float facing = u * side + sqrt(saturate(1.0 - u * u)) * front;
+                float threshold = lerp(-1.0 - 2.0 * _FaceShadowSoftness, -_FaceShadowBias * (1.0 - abs(front)), saturate(lengthH * 2.0));
+                float soft = lerp(_FaceShadowSoftness, max(fwidth(facing), 1e-3), _ShadeCrisp);
+                return (half)smoothstep(threshold - soft, threshold + soft, facing);
+            }
+
             half4 ToonFragment(Varyings input, FRONT_FACE_TYPE isFrontFace : FRONT_FACE_SEMANTIC) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(input);
@@ -431,7 +480,13 @@ Shader "KCD/Toon"
                 Light mainLight = GetMainLight(shadowCoord);
 
                 half ndotl = dot(normalWS, mainLight.direction);
-                half3 color = ToonRamp(ndotl, mainLight.shadowAttenuation, albedo) * mainLight.color;
+                #if defined(_FACE_SHADOW_ON) && !defined(_PATTERN_ON)
+                    // 顔は陰を 1 段にし、落ちた影（建物・木）の中では陰の色にする
+                    half faceLit = FaceLit(input.headForwardWS, input.uv.z, mainLight.direction) * mainLight.shadowAttenuation;
+                    half3 color = lerp(albedo * _ShadeColor.rgb, albedo, faceLit) * mainLight.color;
+                #else
+                    half3 color = ToonRamp(ndotl, mainLight.shadowAttenuation, albedo) * mainLight.color;
+                #endif
 
                 // 環境光（SH）は明部にも暗部にも乗せて、影が真っ黒になるのを防ぐ。
                 // _FlatAmbient = 1（キャラ）では、法線によらない一定の色にする（真上と真下の平均。MToon と同じ）。

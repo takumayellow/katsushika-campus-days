@@ -388,7 +388,7 @@ def test_manifest_surfaces_are_well_formed(manifest):
             assert re.fullmatch(r"[a-z]+\d*", surface["name"]), surface
             assert isinstance(surface["formwork"], dict), surface
         else:
-            assert re.fullmatch(r"[A-Za-z]+\d+", surface["asset"]), surface
+            assert re.fullmatch(r"[A-Za-z]+\d+[A-Z]?", surface["asset"]), surface
             for key in ("saturation", "contrast", "depth"):
                 assert 0 <= surface[key] <= 1, (label, key)
         assert surface["tile_cm"] > 0

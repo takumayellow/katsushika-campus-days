@@ -540,6 +540,38 @@ namespace KCD.Editor
                 Note = "テニスのハードコートを斜め上から（線の配置）",
             },
 
+            // 屋根・金属・木の面のテクスチャ（#416）。座標は data/osm の footprint（ワールド XY = Unity XZ）から
+            new Shot
+            {
+                Name = "shot_surface_lab2_roof",
+                Space = Frame.World,
+                Eye = new Vector3(84.9f, 15f, 30f),
+                Look = new Vector3(84.9f, 9f, 45f),
+                Fov = 0f,
+                Sun = OutdoorSun,
+                Note = "第2実験棟の陸屋根を南の上から（roof_grey）",
+            },
+            new Shot
+            {
+                Name = "shot_surface_kyoso_fins",
+                Space = Frame.World,
+                Eye = new Vector3(-24f, 1.6f, -98f),
+                Look = new Vector3(-24f, 9f, -84f),
+                Fov = 0f,
+                Sun = OutdoorSun,
+                Note = "共創棟の南面の縦フィンとルーバー（metal_grey）",
+            },
+            new Shot
+            {
+                Name = "shot_surface_dorm_terrace",
+                Space = Frame.World,
+                Eye = new Vector3(-447f, 24f, 172f),
+                Look = new Vector3(-458f, 18f, 190f),
+                Fov = 0f,
+                Sun = OutdoorSun,
+                Note = "寮の屋上のウッドデッキと白い手すり（deck_wood・metal_white）",
+            },
+
             // 屋内の正面（#120・#169）。座標は Models/Interiors/<id>.json の empties と同じ屋内のローカル座標
             new Shot
             {
@@ -972,6 +1004,28 @@ namespace KCD.Editor
                 Fov = 0f,
                 Indoor = true,
                 Note = "共創棟 3F の廊下と、東の端の階段室の扉",
+            },
+            new Shot
+            {
+                Name = "shot_kyoso_4f_room",
+                Space = Frame.Interior,
+                Building = "kyoso",
+                Eye = new Vector3(1.9f, 15.4f, 22.2f),
+                Look = new Vector3(-6.2f, 14.8f, 25.6f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "共創棟 4F の東の教室（後ろから黒板と窓の帯）",
+            },
+            new Shot
+            {
+                Name = "shot_kyoso_4f_corr",
+                Space = Frame.Interior,
+                Building = "kyoso",
+                Eye = new Vector3(10.6f, 15.4f, 19.9f),
+                Look = new Vector3(-7.1f, 14.8f, 20.0f),
+                Fov = 0f,
+                Indoor = true,
+                Note = "共創棟 4F の廊下と、東の端の階段室の扉",
             },
             new Shot
             {
@@ -2371,9 +2425,10 @@ namespace KCD.Editor
                 + ", " + value.z.ToString("F2", CultureInfo.InvariantCulture) + ")";
         }
 
+        /// <summary>数として読めないとき、NaN・Infinity のときは fallback。</summary>
         private static float ParseFloat(string text, float fallback)
         {
-            return float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out float value)
+            return float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out float value) && float.IsFinite(value)
                 ? value
                 : fallback;
         }
