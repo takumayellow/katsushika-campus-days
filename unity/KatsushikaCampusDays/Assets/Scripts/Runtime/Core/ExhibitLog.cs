@@ -107,8 +107,7 @@ namespace KCD
             _saveResetPending = false;
             _startedRealtime = Time.realtimeSinceStartup;
 
-            Entry start = Snapshot("start", string.Empty);
-            Append(start);
+            Append(SafeSnapshot("start", string.Empty));
         }
 
         /// <summary>エンドを見た。</summary>
@@ -120,7 +119,7 @@ namespace KCD
             }
 
             _session.ending = endingId ?? string.Empty;
-            Append(Snapshot("ending", string.Empty));
+            Append(SafeSnapshot("ending", string.Empty));
         }
 
         /// <summary>
@@ -134,7 +133,7 @@ namespace KCD
                 return;
             }
 
-            Entry end = Snapshot("end", reason);
+            Entry end = SafeSnapshot("end", reason);
             _session = null;
             Append(end);
         }
@@ -148,6 +147,35 @@ namespace KCD
             }
 
             Append(new Entry { evt = "launch", at = Stamp(DateTimeOffset.Now), version = Application.version });
+        }
+
+        /// <summary>
+        /// 記録のせいでタイトルへ戻れなくなると展示が止まるので、進み具合を読めなかったら読めた分だけで書く。
+        /// </summary>
+        private static Entry SafeSnapshot(string evt, string reason)
+        {
+            try
+            {
+                return Snapshot(evt, reason);
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning("[KCD] exhibit log snapshot failed: " + e.GetType().Name);
+                Entry e2 = new Entry
+                {
+                    evt = evt,
+                    reason = reason ?? string.Empty,
+                    at = Stamp(DateTimeOffset.Now)
+                };
+                if (_session != null)
+                {
+                    e2.session = _session.session;
+                    e2.started = _session.started;
+                    e2.character = _session.character;
+                }
+
+                return e2;
+            }
         }
 
         private static Entry Snapshot(string evt, string reason)
@@ -180,14 +208,15 @@ namespace KCD
 
         private static void Append(Entry entry)
         {
-            string line = FormatLine(entry);
-            Debug.Log("[KCD] exhibit-log " + line);
             try
             {
+                string line = FormatLine(entry);
+                Debug.Log("[KCD] exhibit-log " + line);
                 File.AppendAllText(SaveSystem.PathOf(FileName), line + "\n");
             }
-            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            catch (Exception e)
             {
+                // 書けなくても遊べる。どの例外でも呼び出し元（タイトルへ戻る処理など）へ投げない。
                 Debug.LogWarning("[KCD] exhibit log write failed: " + e.GetType().Name);
             }
         }

@@ -71,6 +71,16 @@ namespace KCD.Tests
         }
 
         [Test]
+        public void WriteFailure_DoesNotStopTheGame()
+        {
+            ExhibitMode.Enabled = true;
+            SaveSystem.DirectoryOverride = Path.Combine(_folder, "missing");
+            Assert.DoesNotThrow(() => ExhibitLog.StartSession("mirai"), "記録を書けないとキャンパスへ入れない");
+            Assert.DoesNotThrow(() => ExhibitLog.EndSession("idle"), "記録を書けないとタイトルへ戻れない");
+            Assert.That(ExhibitLog.InSession, Is.False, "書けなかったときに遊んでいる人が残った");
+        }
+
+        [Test]
         public void Session_WritesStartAndEndOnce()
         {
             ExhibitMode.Enabled = true;
