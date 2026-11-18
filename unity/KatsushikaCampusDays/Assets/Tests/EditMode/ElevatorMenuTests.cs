@@ -122,6 +122,21 @@ namespace KCD.Tests
         }
 
         [Test]
+        public void Compose_WithoutUseCaption_ShowsTheFloorOnly()
+        {
+            var stops = new[]
+            {
+                new ElevatorPanel.Stop { Floor = "1F", BuildingId = "lecture", CaptionJa = "講義室", CaptionEn = "Classrooms" },
+                new ElevatorPanel.Stop { Floor = "7F", BuildingId = "lecture", CaptionJa = string.Empty, CaptionEn = string.Empty }
+            };
+
+            string text = ElevatorMenu.Compose(stops, 0, 1, false, building: "lecture");
+            Assert.AreEqual(string.Empty, ElevatorMenu.Caption(stops[1], "lecture"));
+            StringAssert.Contains("7F", text);
+            Assert.IsFalse(text.Contains("7F  "), "用途が無い階に空の説明欄が付いた");
+        }
+
+        [Test]
         public void Compose_WithLinks_TagsEveryRow_AndDropsTheKeyHint()
         {
             ElevatorPanel.Stop[] stops = MakeStops();

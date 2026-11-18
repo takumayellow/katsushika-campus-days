@@ -17340,8 +17340,8 @@ MonoBehaviour:
     Landing: {fileID: 1450569189}
     BuildingId: 
   - Floor: 7F
-    CaptionJa: "\u7814\u7A76\u5BA4"
-    CaptionEn: Labs
+    CaptionJa: 
+    CaptionEn: 
     Landing: {fileID: 350753179}
     BuildingId: 
   _doorOffset: 0.7
@@ -43839,8 +43839,8 @@ MonoBehaviour:
     Landing: {fileID: 1450569189}
     BuildingId: 
   - Floor: 7F
-    CaptionJa: "\u7814\u7A76\u5BA4"
-    CaptionEn: Labs
+    CaptionJa: 
+    CaptionEn: 
     Landing: {fileID: 350753179}
     BuildingId: 
   _doorOffset: 0.7
@@ -69328,8 +69328,8 @@ MonoBehaviour:
     Landing: {fileID: 1450569189}
     BuildingId: 
   - Floor: 7F
-    CaptionJa: "\u7814\u7A76\u5BA4"
-    CaptionEn: Labs
+    CaptionJa: 
+    CaptionEn: 
     Landing: {fileID: 350753179}
     BuildingId: 
   _doorOffset: 0.7
@@ -113764,8 +113764,8 @@ MonoBehaviour:
     Landing: {fileID: 1450569189}
     BuildingId: 
   - Floor: 7F
-    CaptionJa: "\u7814\u7A76\u5BA4"
-    CaptionEn: Labs
+    CaptionJa: 
+    CaptionEn: 
     Landing: {fileID: 350753179}
     BuildingId: 
   _doorOffset: 0.7
@@ -200111,8 +200111,8 @@ MonoBehaviour:
     Landing: {fileID: 1450569189}
     BuildingId: 
   - Floor: 7F
-    CaptionJa: "\u7814\u7A76\u5BA4"
-    CaptionEn: Labs
+    CaptionJa: 
+    CaptionEn: 
     Landing: {fileID: 350753179}
     BuildingId: 
   _doorOffset: 0.7
@@ -231719,8 +231719,8 @@ MonoBehaviour:
     Landing: {fileID: 1450569189}
     BuildingId: 
   - Floor: 7F
-    CaptionJa: "\u7814\u7A76\u5BA4"
-    CaptionEn: Labs
+    CaptionJa: 
+    CaptionEn: 
     Landing: {fileID: 350753179}
     BuildingId: 
   _doorOffset: 0.7
@@ -234290,8 +234290,8 @@ MonoBehaviour:
     Landing: {fileID: 1450569189}
     BuildingId: 
   - Floor: 7F
-    CaptionJa: "\u7814\u7A76\u5BA4"
-    CaptionEn: Labs
+    CaptionJa: 
+    CaptionEn: 
     Landing: {fileID: 350753179}
     BuildingId: 
   _doorOffset: 0.7
