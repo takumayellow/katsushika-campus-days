@@ -47,6 +47,7 @@ namespace KCD
                 case ExhibitMode.IdleAction.ReturnToTitle:
                     Debug.Log("[KCD] exhibit: idle " + Mathf.RoundToInt(IdleFor) + "s, back to title");
                     MarkActive();
+                    ExhibitLog.EndSession("idle");
                     GameManager.Instance.ReturnToTitle();
                     break;
             }

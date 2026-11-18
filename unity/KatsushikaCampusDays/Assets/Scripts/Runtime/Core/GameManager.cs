@@ -48,6 +48,9 @@ namespace KCD
             }
         }
 
+        /// <summary>もう作られているか。<see cref="Instance"/> と違って、無いときに作らない。</summary>
+        public static bool HasInstance => _instance != null;
+
         /// <summary>プレイヤーが操作するキャラクターの id。</summary>
         public string SelectedCharacterId
         {
@@ -134,6 +137,7 @@ namespace KCD
             if (ExhibitMode.Enabled)
             {
                 UseExhibitSaveFolder();
+                ExhibitLog.Launched();
                 if (GetComponent<ExhibitIdle>() == null)
                 {
                     gameObject.AddComponent<ExhibitIdle>();
@@ -216,7 +220,7 @@ namespace KCD
             // 展示モードでは前の人のセーブを消す。F9 やポーズの「ロード」で前の人の続きに入らないように (#466)。
             if (ExhibitMode.Enabled)
             {
-                SaveSystem.Delete();
+                ExhibitLog.NoteSaveReset(SaveSystem.Delete());
             }
 
             // 時計は DayNightCycle が持つが、キャンパスに入るまで（HUD の時刻表示など）はここの値が使われる。
@@ -380,7 +384,14 @@ namespace KCD
         /// </summary>
         public void ReturnToTitle()
         {
+            // 展示モードの記録。放置で戻すときは ExhibitIdle が先に idle で書くので、ここは何もしない。
+            ExhibitLog.EndSession("title");
             Loader.Load(TitleSceneName, true);
+        }
+
+        private void OnApplicationQuit()
+        {
+            ExhibitLog.EndSession("quit");
         }
 
         /// <summary>シーンにインスタンスが無くても起動時に必ず用意する。</summary>

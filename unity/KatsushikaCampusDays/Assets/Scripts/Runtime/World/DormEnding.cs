@@ -331,6 +331,7 @@ namespace KCD
         private static void RecordSeen()
         {
             EndingProgress.Note(DormRoute.EndingId);
+            ExhibitLog.Ending(DormRoute.EndingId);
             GameManager.Instance.SyncAchievementsQuietly();
         }
 

@@ -35,17 +35,19 @@ namespace KCD
 
         /// <summary>
         /// セーブを消す。展示モードで次の人が前の人のセーブを F9 やポーズの「ロード」で読まないようにする (#466)。
-        /// 消せなくても遊べるので、失敗は知らせるだけにする。
+        /// 消せなくても遊べるので、失敗は知らせるだけにする。消したか（もともと無かったときも含む）を返す。
         /// </summary>
-        public static void Delete()
+        public static bool Delete()
         {
             try
             {
                 SaveStore.Delete(FilePath);
+                return true;
             }
             catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
             {
                 Debug.LogWarning("[KCD] save delete failed: " + e.GetType().Name);
+                return false;
             }
         }
 
