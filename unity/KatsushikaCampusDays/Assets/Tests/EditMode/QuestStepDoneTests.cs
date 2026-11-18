@@ -49,6 +49,29 @@ namespace KCD.Tests
         }
 
         /// <summary>
+        /// セーブを戻したときの追いつきで collect のステップが済んでも、一言は出さない（読み込んだ瞬間に出ると唐突）。
+        /// </summary>
+        [Test]
+        public void StepCompleted_DoesNotFireWhenRestoreCatchesUpHeldItems()
+        {
+            const string json =
+                "{\"id\":\"q_keys\",\"autoStart\":true,\"steps\":[" +
+                "{\"id\":\"s1\",\"type\":\"collect\",\"target\":\"key\",\"count\":1,\"done\":\"鍵があった\",\"done_en\":\"Found the key\"}," +
+                "{\"id\":\"s2\",\"type\":\"visit\",\"target\":\"b\"}]}";
+            var quests = new QuestSystem();
+            quests.Load(new List<QuestData> { Parse(json) });
+            QuestProgress saved = quests.Capture();
+
+            var fired = new List<string>();
+            quests.StepCompleted += (quest, step) => fired.Add(quest.Id + "/" + step.Id);
+            quests.NoteHeldFromSave(new[] { "key" });
+            quests.Restore(saved);
+
+            Assert.AreEqual("s2", quests.Find("q_keys").CurrentStep.Id, "追いつきで collect は済む");
+            CollectionAssert.IsEmpty(fired, "読み込みでは StepCompleted を出さない");
+        }
+
+        /// <summary>
         /// 最後のステップの done は出ない（クエスト完了のトーストが出る）ので書かない。
         /// 英語表示で日本語が混ざらないよう、done には done_en を対にする。
         /// </summary>
