@@ -57,6 +57,14 @@ namespace KCD.Tests
         }
 
         [Test]
+        public void PhotoRoot_UsesExhibitFolder_UnlessOverridden()
+        {
+            string save = Path.Combine("C:" + Path.DirectorySeparatorChar + "data", ExhibitMode.SaveFolderName);
+            Assert.That(ExhibitMode.PhotoRoot(null, save), Is.EqualTo(save), "展示の写真が普段の写真と混ざる");
+            Assert.That(ExhibitMode.PhotoRoot("C:/tmp/smoke", save), Is.EqualTo("C:/tmp/smoke"), "スモークの差し替えを上書きした");
+        }
+
+        [Test]
         public void OffersContinue_HiddenInExhibit()
         {
             Assert.That(ExhibitMode.OffersContinue(false, true), Is.True);

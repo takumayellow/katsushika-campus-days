@@ -172,6 +172,14 @@ namespace KCD
             return string.IsNullOrEmpty(persistent) ? null : Path.Combine(persistent, SaveFolderName);
         }
 
+        /// <summary>
+        /// 展示モードの写真の親フォルダ。テストやスモークが差し替えていればそれを使い、無ければセーブと同じフォルダ。
+        /// </summary>
+        public static string PhotoRoot(string current, string saveDirectory)
+        {
+            return current ?? saveDirectory;
+        }
+
         /// <summary>タイトルで「つづきから」を出すか。展示モードでは前の人の続きを出さない。</summary>
         public static bool OffersContinue(bool exhibit, bool hasReadableSave)
         {
