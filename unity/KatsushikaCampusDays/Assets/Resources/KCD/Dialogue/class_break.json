@@ -1,0 +1,90 @@
+{
+  "id": "class_break",
+  "speaker": "学生",
+  "topics": [
+    {
+      "id": "t_before_math",
+      "lines": [
+        {
+          "text": "次、数学だって。先週の式の続き、まだ追いつけてないんだよね。",
+          "text_en": "Math is next. I still haven't caught up on last week's formulas."
+        },
+        {
+          "speaker": "自分",
+          "text": "（席が少しずつ埋まってきた。）",
+          "text_en": "(The seats are slowly filling up.)"
+        }
+      ]
+    },
+    {
+      "id": "t_before_physics",
+      "lines": [
+        {
+          "text": "次は物理か。電卓、持ってきたっけ……。",
+          "text_en": "Physics next. Did I bring my calculator...?"
+        },
+        {
+          "speaker": "自分",
+          "text": "（みんな教科書を開き始めた。）",
+          "text_en": "(Everyone's starting to open their textbooks.)"
+        }
+      ]
+    },
+    {
+      "id": "t_before_info",
+      "lines": [
+        {
+          "text": "次、情報の授業。課題の締め切りって今日だっけ？",
+          "text_en": "Computing lecture next. Is the assignment due today?"
+        },
+        {
+          "speaker": "自分",
+          "text": "（前の席から埋まっていく。）",
+          "text_en": "(The front rows are filling up first.)"
+        }
+      ]
+    },
+    {
+      "id": "t_after_math",
+      "lines": [
+        {
+          "text": "終わったー。板書、最後の一行だけ写させて。",
+          "text_en": "Done! Let me copy just the last line off the board."
+        },
+        {
+          "speaker": "自分",
+          "text": "（黒板にはまだ式が残っている。）",
+          "text_en": "(The formulas are still up on the board.)"
+        }
+      ]
+    },
+    {
+      "id": "t_after_physics",
+      "lines": [
+        {
+          "text": "今日の式、試験に出そうだよね。",
+          "text_en": "Today's equations look like they'll be on the exam."
+        },
+        {
+          "speaker": "自分",
+          "text": "（みんな少しずつ教室を出ていく。）",
+          "text_en": "(People are trickling out of the room.)"
+        }
+      ]
+    },
+    {
+      "id": "t_after_info",
+      "lines": [
+        {
+          "text": "次の授業、別の棟なんだよね。急がないと。",
+          "text_en": "My next class is in another building. I'd better hurry."
+        },
+        {
+          "speaker": "自分",
+          "text": "（板書を写してから帰る人もいる。）",
+          "text_en": "(Some people stay to copy the board before leaving.)"
+        }
+      ]
+    }
+  ]
+}

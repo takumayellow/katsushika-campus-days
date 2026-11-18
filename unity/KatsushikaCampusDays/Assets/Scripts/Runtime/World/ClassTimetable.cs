@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using UnityEngine;
@@ -56,16 +57,21 @@ namespace KCD
             public string Pick(bool english) => english ? En : Ja;
         }
 
-        /// <summary>科目。field は math / physics / info。板書の最初の行は題目で、授業中はいつも出す。</summary>
+        /// <summary>
+        /// 科目。field は math / physics / info。板書の最初の行は題目で、授業中はいつも出す。
+        /// Quiz は小テストの日の板書（最初の行が題目）。小テストをしない科目は空 (#424)。
+        /// </summary>
         public sealed class Subject
         {
-            public Subject(string id, string field, string name, string nameEn, IReadOnlyList<BoardLine> lines)
+            public Subject(string id, string field, string name, string nameEn, IReadOnlyList<BoardLine> lines,
+                IReadOnlyList<BoardLine> quiz = null)
             {
                 Id = id ?? string.Empty;
                 Field = field ?? string.Empty;
                 Name = name ?? string.Empty;
                 NameEn = string.IsNullOrEmpty(nameEn) ? Name : nameEn;
                 Lines = lines;
+                Quiz = quiz ?? Array.Empty<BoardLine>();
             }
 
             public string Id { get; }
@@ -73,6 +79,22 @@ namespace KCD
             public string Name { get; }
             public string NameEn { get; }
             public IReadOnlyList<BoardLine> Lines { get; }
+            public IReadOnlyList<BoardLine> Quiz { get; }
+        }
+
+        /// <summary>小テストをするコマ（教室・曜日・時限）。授業の始めの <see cref="QuizMinutes"/> 分が小テストになる (#424)。</summary>
+        public sealed class QuizSlot
+        {
+            public QuizSlot(string roomId, int weekday, int period)
+            {
+                RoomId = roomId ?? string.Empty;
+                Weekday = weekday;
+                Period = period;
+            }
+
+            public string RoomId { get; }
+            public int Weekday { get; }
+            public int Period { get; }
         }
 
         /// <summary>分野ごとの講師の見た目（体と、髪・上着・ズボン・靴の色と身長）。</summary>
@@ -139,18 +161,22 @@ namespace KCD
 
         private static readonly Color FallbackColor = new Color(0.5f, 0.5f, 0.5f);
 
+        /// <summary>小テストの長さ（ゲームの分）。授業の始まりからこの間、板は小テストの問題になる。</summary>
+        public const float QuizMinutes = 15f;
+
         private readonly Dictionary<string, Subject> _subjects;
         private readonly Dictionary<string, Room> _rooms;
 
         private ClassTimetable(
             IReadOnlyList<Period> periods, IReadOnlyList<BoardLine> weekdays, IReadOnlyList<Lecturer> lecturers,
-            Dictionary<string, Subject> subjects, Dictionary<string, Room> rooms)
+            Dictionary<string, Subject> subjects, Dictionary<string, Room> rooms, IReadOnlyList<QuizSlot> quizzes)
         {
             Periods = periods;
             Weekdays = weekdays;
             Lecturers = lecturers;
             _subjects = subjects;
             _rooms = rooms;
+            Quizzes = quizzes;
         }
 
         public IReadOnlyList<Period> Periods { get; }
@@ -161,6 +187,7 @@ namespace KCD
         public IReadOnlyList<Lecturer> Lecturers { get; }
         public IEnumerable<Subject> Subjects => _subjects.Values;
         public IEnumerable<Room> Rooms => _rooms.Values;
+        public IReadOnlyList<QuizSlot> Quizzes { get; }
 
         /// <summary>JSON から作る。読めなければ null。</summary>
         public static ClassTimetable Parse(string json)
@@ -230,7 +257,17 @@ namespace KCD
                 }
             }
 
-            return new ClassTimetable(periods, weekdays, lecturers, subjects, rooms);
+            var quizzes = new List<QuizSlot>();
+            foreach (object node in MiniJson.GetArray(root, "quizzes"))
+            {
+                if (node is Dictionary<string, object> q)
+                {
+                    quizzes.Add(new QuizSlot(MiniJson.GetString(q, "room"), MiniJson.GetInt(q, "weekday", -1),
+                        MiniJson.GetInt(q, "period", 0)));
+                }
+            }
+
+            return new ClassTimetable(periods, weekdays, lecturers, subjects, rooms, quizzes);
         }
 
         /// <summary>Resources から読む。無ければ null。</summary>
@@ -316,6 +353,27 @@ namespace KCD
             return new Session(subject, period, weekday, BoardLinesAt(period.Progress(hour), subject.Lines.Count));
         }
 
+        /// <summary>そのコマで小テストをするか。科目に小テストの板書が無ければ false。</summary>
+        public bool HasQuiz(string roomId, int weekday, int periodNumber)
+        {
+            if (!TryGetRoom(roomId, out Room room)
+                || !TryGetSubject(room.SubjectIdAt(weekday, periodNumber), out Subject subject)
+                || subject.Quiz.Count == 0)
+            {
+                return false;
+            }
+
+            foreach (QuizSlot slot in Quizzes)
+            {
+                if (slot.RoomId == roomId && slot.Weekday == weekday && slot.Period == periodNumber)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         /// <summary>"09:40" → 9.6667。読めなければ false。</summary>
         public static bool TryParseClock(string text, out float hour)
         {
@@ -345,8 +403,19 @@ namespace KCD
                 return null;
             }
 
+            return new Subject(
+                MiniJson.GetString(s, "id"),
+                MiniJson.GetString(s, "field"),
+                MiniJson.GetString(s, "name"),
+                MiniJson.GetString(s, "name_en"),
+                ParseLines(MiniJson.GetArray(s, "lines")),
+                ParseLines(MiniJson.GetArray(s, "quiz")));
+        }
+
+        private static List<BoardLine> ParseLines(List<object> nodes)
+        {
             var lines = new List<BoardLine>();
-            foreach (object node in MiniJson.GetArray(s, "lines"))
+            foreach (object node in nodes)
             {
                 if (node is Dictionary<string, object> line)
                 {
@@ -354,12 +423,7 @@ namespace KCD
                 }
             }
 
-            return new Subject(
-                MiniJson.GetString(s, "id"),
-                MiniJson.GetString(s, "field"),
-                MiniJson.GetString(s, "name"),
-                MiniJson.GetString(s, "name_en"),
-                lines);
+            return lines;
         }
 
         private static IReadOnlyList<IReadOnlyList<string>> ParseWeek(List<object> week)
