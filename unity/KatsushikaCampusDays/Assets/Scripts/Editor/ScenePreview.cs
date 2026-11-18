@@ -593,6 +593,29 @@ namespace KCD.Editor
                 Fov = 0f,
                 Note = "食堂 1F",
             },
+
+            // 食堂の西の端の階段室の扉（#303・#418）。扉は北西の塊の南の壁（Z 32.35）の X −40.6、
+            // empties の st_cafeteria_west_1F/2F の少し手前から北を向く
+            new Shot
+            {
+                Name = "shot_cafeteria_west_stairs_1F",
+                Space = Frame.Interior,
+                Building = "cafeteria",
+                Eye = new Vector3(-38.6f, 1.6f, 25.5f),
+                Look = new Vector3(-40.6f, 1.3f, 32.35f),
+                Fov = 0f,
+                Note = "食堂 1F の西の端の階段室の扉",
+            },
+            new Shot
+            {
+                Name = "shot_cafeteria_west_stairs_2F",
+                Space = Frame.Interior,
+                Building = "cafeteria",
+                Eye = new Vector3(-38.6f, 6.4f, 25.5f),
+                Look = new Vector3(-40.6f, 6.1f, 32.35f),
+                Fov = 0f,
+                Note = "食堂 2F の西の端の階段室の扉",
+            },
             new Shot
             {
                 Name = "shot_library_reading",

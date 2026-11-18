@@ -137,6 +137,8 @@ namespace KCD
             if (ExhibitMode.Enabled)
             {
                 UseExhibitSaveFolder();
+                // 起動時の言語は L が展示モードを見て日本語に決めるので、ここは先に英語で読まれていたときの保険。
+                L.ResetForNextVisitor();
                 ExhibitLog.Launched();
                 if (GetComponent<ExhibitIdle>() == null)
                 {
@@ -386,6 +388,12 @@ namespace KCD
         {
             // 展示モードの記録。放置で戻すときは ExhibitIdle が先に idle で書くので、ここは何もしない。
             ExhibitLog.EndSession("title");
+            if (ExhibitMode.Enabled)
+            {
+                // 前の人が英語に切り替えていても、次の人は日本語のタイトルから始める。
+                L.ResetForNextVisitor();
+            }
+
             Loader.Load(TitleSceneName, true);
         }
 
