@@ -33,8 +33,11 @@ namespace KCD
             {
                 Load();
                 _level = ClampLevel(value);
-                PlayerPrefs.SetString(SensitivityPrefKey, _level.ToString(CultureInfo.InvariantCulture));
-                PlayerPrefs.Save();
+                if (!ExhibitMode.Enabled)
+                {
+                    PlayerPrefs.SetString(SensitivityPrefKey, _level.ToString(CultureInfo.InvariantCulture));
+                    PlayerPrefs.Save();
+                }
             }
         }
 
@@ -50,8 +53,11 @@ namespace KCD
             {
                 Load();
                 _invertY = value;
-                PlayerPrefs.SetString(InvertPrefKey, value ? "1" : "0");
-                PlayerPrefs.Save();
+                if (!ExhibitMode.Enabled)
+                {
+                    PlayerPrefs.SetString(InvertPrefKey, value ? "1" : "0");
+                    PlayerPrefs.Save();
+                }
             }
         }
 
@@ -92,10 +98,27 @@ namespace KCD
             _loaded = false;
         }
 
+        /// <summary>
+        /// 展示モード (#466) で次の人のために既定（感度 5・反転なし）へ戻す。保存はしない。
+        /// 展示モードでは保存された値も読まない（変えても保存しないので、普段の設定だけが残っている）。
+        /// </summary>
+        public static void ResetForNextVisitor()
+        {
+            _loaded = true;
+            _level = DefaultLevel;
+            _invertY = false;
+        }
+
         private static void Load()
         {
             if (_loaded)
             {
+                return;
+            }
+
+            if (ExhibitMode.Enabled)
+            {
+                ResetForNextVisitor();
                 return;
             }
 

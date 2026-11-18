@@ -98,9 +98,17 @@ namespace KCD
                 }
             }
 
-            _bgmVolume = PlayerPrefs.GetFloat(BgmPrefKey, DefaultBgmVolume);
-            _seVolume = PlayerPrefs.GetFloat(SePrefKey, DefaultSeVolume);
-            _ambientVolume = PlayerPrefs.GetFloat(AmbientPrefKey, DefaultAmbientVolume);
+            if (ExhibitMode.Enabled)
+            {
+                // 展示モードでは前の人や普段の設定の音量を引き継がない (#466)。
+                ResetVolumesForNextVisitor();
+            }
+            else
+            {
+                _bgmVolume = PlayerPrefs.GetFloat(BgmPrefKey, DefaultBgmVolume);
+                _seVolume = PlayerPrefs.GetFloat(SePrefKey, DefaultSeVolume);
+                _ambientVolume = PlayerPrefs.GetFloat(AmbientPrefKey, DefaultAmbientVolume);
+            }
 
             _bgmA = MakeSource("BGM_A", true);
             _bgmB = MakeSource("BGM_B", true);
@@ -424,9 +432,23 @@ namespace KCD
             }
         }
 
+        /// <summary>展示モード (#466) で次の人のために音量を既定へ戻す。保存はしない。</summary>
+        public void ResetVolumesForNextVisitor()
+        {
+            _bgmVolume = DefaultBgmVolume;
+            _seVolume = DefaultSeVolume;
+            _ambientVolume = DefaultAmbientVolume;
+        }
+
+        /// <summary>音量を変える。展示モードでは保存しない（来場者が変えた音量を次の人に残さない）。</summary>
         private static void SetVolume(ref float field, float value, string key)
         {
             field = Mathf.Clamp01(value);
+            if (ExhibitMode.Enabled)
+            {
+                return;
+            }
+
             PlayerPrefs.SetFloat(key, field);
             PlayerPrefs.Save();
         }
