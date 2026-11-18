@@ -8,7 +8,13 @@
       "lines": [
         {
           "text": "おや、見ない顔だ。ここは学生寮だよ。授業はもう始まっているんじゃないのかい。",
-          "text_en": "Well now, a face I don't know. This is the student dormitory. Shouldn't your class have started by now?"
+          "text_en": "Well now, a face I don't know. This is the student dormitory. Shouldn't your class have started by now?",
+          "text_morning": "おや、見ない顔だ。ここは学生寮だよ。もうすぐ一限が始まるんじゃないのかい。",
+          "text_morning_en": "Well now, a face I don't know. This is the student dormitory. Isn't first period about to start?",
+          "text_after_school": "おや、見ない顔だ。ここは学生寮だよ。授業はもう終わったのかい。",
+          "text_after_school_en": "Well now, a face I don't know. This is the student dormitory. Are your classes over for the day?",
+          "text_night": "おや、見ない顔だ。ここは学生寮だよ。こんな時間までキャンパスにいたのかい。",
+          "text_night_en": "Well now, a face I don't know. This is the student dormitory. Were you on campus all this time?"
         },
         {
           "speaker": "自分",
@@ -41,7 +47,11 @@
         },
         {
           "text": "なに、一日くらいどうということはない。誰にも言わんよ。",
-          "text_en": "Never mind. One day is nothing at all. I won't tell a soul."
+          "text_en": "Never mind. One day is nothing at all. I won't tell a soul.",
+          "text_after_school": "なに、よく歩いた一日だったんだろう。ゆっくり休みなさい。",
+          "text_after_school_en": "Well, it must have been a long day of walking. Rest well.",
+          "text_night": "なに、夜更かしよりはずっといい。ゆっくり休みなさい。",
+          "text_night_en": "Well, it beats staying up all night. Rest well."
         }
       ]
     },
