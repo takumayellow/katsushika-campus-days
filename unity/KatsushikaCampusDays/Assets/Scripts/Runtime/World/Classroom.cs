@@ -7,10 +7,12 @@ using UnityEngine;
 namespace KCD
 {
     /// <summary>
-    /// 講義棟の、時間割どおりに授業をしている教室 1 室（#439）。
-    /// 授業中は講師と学生を出し、板書を時間とともに 1 行ずつ増やす。休み時間・昼休み・放課後は人を消して板を消す。
+    /// 講義棟の、時間割どおりに授業をしている教室 1 室（#439, #424）。
+    /// 授業中は講師と学生を出し、板書を時間とともに 1 行ずつ増やす。授業の前は学生が 1 人ずつ席に着き、
+    /// 後は板書を残したまま 1 人ずつ出ていく（<see cref="ClassAttendance"/>）。それ以外の時間は人を消して板を消す。
     /// 講師は 9 秒の周期で、板に書く → 板を指す → 学生の方へ振り返る を繰り返す。学生は座ってノートを取る。
-    /// 授業中に部屋へ入ると、近くの学生が小声で話しかける（同じ授業では 1 回だけ）。
+    /// 時間割で小テストのあるコマは、始めの 15 分は板に問題を出し、講師は部屋を見て、学生は書き続ける。
+    /// 部屋へ入ると、近くの学生が話しかける（授業の前・中・後それぞれ 1 回だけ）。
     /// 屋内の建物は InteriorLoader が丸ごと出し入れするので、建物の外にいる間はこの Update も止まる。
     /// 別の階にいるときは人を出さない（壁越しに人が透けて見えないように）。
     /// </summary>
@@ -23,6 +25,17 @@ namespace KCD
         public const string LecturerDialogueId = "class_prof";
 
         public const string StudentDialogueId = "class_student";
+
+        /// <summary>休み時間（授業の前後）に部屋へ入ったときの会話（Dialogue/class_break.json, #424）。</summary>
+        public const string BreakDialogueId = "class_break";
+
+        /// <summary>小テストの時間に入ったときの話題（class_entry）。q_sq_pop_quiz を終えていれば、みなとと解いた問題を思い出す。</summary>
+        public const string QuizTopic = "t_quiz";
+
+        public const string QuizRecallTopic = "t_quiz_minato";
+
+        /// <summary>101 の黒板の練習問題のサブクエスト（#427）。</summary>
+        public const string PopQuizQuestId = "q_sq_pop_quiz";
 
         /// <summary>授業の有無を確かめる間隔（秒）。ゲームの 1 分はこれより長い。</summary>
         private const float CheckInterval = 0.3f;
@@ -110,17 +123,22 @@ namespace KCD
         /// <summary>学生の席の真ん中（講師が振り返って見る点）。</summary>
         [SerializeField] private Vector3 _audience;
 
-        /// <summary>挨拶を済ませた授業（日数 × 10 + 時限）。授業は順に進むので、最後の 1 つを覚えれば足りる。</summary>
-        private int _greetedSession = -1;
+        /// <summary>
+        /// 話しかけを済ませた時間（日数 × 100 + 時限 × 10 + 前・中・後）。時間は順に進むので、最後の 1 つを覚えれば足りる。
+        /// </summary>
+        private int _greetedMoment = -1;
 
         private readonly StringBuilder _text = new StringBuilder(256);
         private Transform _player;
         private float _nextCheck;
-        private bool _peopleShown;
+        private bool _studentsShown;
+        private bool _lecturerShown;
         private string _shownSubject;
         private int _shownLines = -1;
         private bool _shownEnglish;
+        private bool _shownQuiz;
         private string _lookField;
+        private ClassAttendance.Moment _moment;
         private ClassTimetable.Session _session;
         private bool _hasTalk;
         private bool _hasSit;
@@ -137,13 +155,20 @@ namespace KCD
         /// <summary>いま授業をしているか（最後に確かめた時点）。</summary>
         public bool InSession => _session.IsInClass;
 
-        /// <summary>講師の 1 周期の中の動き。</summary>
+        /// <summary>いまの授業との関係（前・中・後。最後に確かめた時点）。</summary>
+        public ClassAttendance.Moment Moment => _moment;
+
+        /// <summary>授業の始めの小テストの時間か（最後に確かめた時点）。</summary>
+        public bool InQuiz => _moment.Phase == ClassAttendance.Phase.During && _moment.IsQuiz;
+
+        /// <summary>講師の 1 周期の中の動き。小テストの間は Watch（部屋の方を向いて見回る）。</summary>
         public enum LecturerMotion
         {
             None,
             Write,
             Point,
             Turn,
+            Watch,
         }
 
         /// <summary>
@@ -244,9 +269,13 @@ namespace KCD
                 Check();
             }
 
-            if (_peopleShown && _session.IsInClass)
+            if (_studentsShown)
             {
                 AnimateStudents(Time.time);
+            }
+
+            if (_lecturerShown)
+            {
                 AnimateLecturer(Time.time, Time.deltaTime);
             }
             else
@@ -260,9 +289,10 @@ namespace KCD
         {
             GameManager game = GameManager.Instance;
             ClassTimetable timetable = Timetable;
-            _session = game != null && timetable != null
-                ? timetable.SessionAt(_roomId, game.DayNumber, game.GameTimeHours)
+            _moment = game != null && timetable != null
+                ? ClassAttendance.At(timetable, _roomId, game.DayNumber, game.GameTimeHours)
                 : default;
+            _session = _moment.Phase == ClassAttendance.Phase.During ? _moment.Session : default;
 
             if (_player == null)
             {
@@ -271,55 +301,73 @@ namespace KCD
             }
 
             _sameFloor = _player == null || Mathf.Abs(_player.position.y - _floorY) <= OtherFloorHeight;
-            ShowPeople(_session.IsInClass && _sameFloor);
-            if (_session.IsInClass)
+            ShowPeople(_sameFloor);
+            if (_moment.HasClass)
             {
-                ApplyLook(_session.Subject.Field);
+                ApplyLook(_moment.Session.Subject.Field);
             }
 
             RefreshBoard();
             CheckEntry(game);
         }
 
-        private void ShowPeople(bool show)
+        /// <summary>
+        /// いま席にいるはずの学生だけを出す（授業の前は 1 人ずつ着き、後は 1 人ずつ出ていく）。講師は授業中だけ。
+        /// 別の階にいるときは誰も出さない。<see cref="_people"/> の先頭から席の数までが学生、その後ろが講師。
+        /// </summary>
+        private void ShowPeople(bool sameFloor)
         {
-            if (show == _peopleShown)
+            bool anyStudent = false;
+            bool lecturer = sameFloor && _session.IsInClass;
+            for (int i = 0; i < _people.Length; i++)
+            {
+                GameObject person = _people[i];
+                if (person == null)
+                {
+                    continue;
+                }
+
+                bool isStudent = i < _seats.Length;
+                bool show = isStudent ? sameFloor && ClassAttendance.SeatTaken(_moment, i) : lecturer;
+                anyStudent |= isStudent && show;
+                if (person.activeSelf == show)
+                {
+                    continue;
+                }
+
+                person.SetActive(show);
+                if (show && isStudent)
+                {
+                    SitDown(_seats[i]);
+                }
+            }
+
+            _studentsShown = anyStudent;
+            _lecturerShown = lecturer;
+        }
+
+        private void SitDown(Seat seat)
+        {
+            if (seat == null)
             {
                 return;
             }
 
-            _peopleShown = show;
-            foreach (GameObject person in _people)
+            if (seat.Pose != null)
             {
-                if (person != null)
-                {
-                    person.SetActive(show);
-                }
+                seat.Pose.Sitting = true;
             }
 
-            if (show)
+            if (_hasSit && seat.Animator != null)
             {
-                SitDown();
+                seat.Animator.SetBool(SitHash, true);
             }
         }
 
-        private void SitDown()
-        {
-            foreach (Seat seat in _seats)
-            {
-                if (seat.Pose != null)
-                {
-                    seat.Pose.Sitting = true;
-                }
-
-                if (_hasSit && seat.Animator != null)
-                {
-                    seat.Animator.SetBool(SitHash, true);
-                }
-            }
-        }
-
-        /// <summary>板書をいまの科目と行数にする。変わらなければ何もしない。</summary>
+        /// <summary>
+        /// 板書をいまの時間に合わせる。授業中は時間割の行を進み具合の分だけ、始めの小テストの間は問題を全部、
+        /// 授業の後は消す前の全部の行を出す。授業の前と授業の無い時間は板を消してある。変わらなければ何もしない。
+        /// </summary>
         private void RefreshBoard()
         {
             if (_board == null)
@@ -327,33 +375,37 @@ namespace KCD
                 return;
             }
 
-            string subject = _session.SubjectId;
-            int lines = _session.BoardLines;
+            ClassTimetable.Subject subject = _moment.Phase == ClassAttendance.Phase.Before ? null : _moment.Session.Subject;
+            bool quiz = InQuiz;
+            IReadOnlyList<ClassTimetable.BoardLine> rows = subject == null ? null : quiz ? subject.Quiz : subject.Lines;
+            int lines = rows == null ? 0 : quiz ? rows.Count : _moment.Session.BoardLines;
+            string subjectId = subject != null ? subject.Id : string.Empty;
             bool english = L.IsEnglish;
-            if (subject == _shownSubject && lines == _shownLines && english == _shownEnglish)
+            if (subjectId == _shownSubject && lines == _shownLines && english == _shownEnglish && quiz == _shownQuiz)
             {
                 return;
             }
 
-            if (_session.IsInClass && (subject != _shownSubject || english != _shownEnglish))
+            if (rows != null && (subjectId != _shownSubject || english != _shownEnglish || quiz != _shownQuiz))
             {
-                FitBoardSize(_session.Subject, english);
+                FitBoardSize(rows, english);
             }
 
-            _shownSubject = subject;
+            _shownSubject = subjectId;
             _shownLines = lines;
             _shownEnglish = english;
-            _board.text = _session.IsInClass ? BoardText(_session.Subject, lines, english, _text) : string.Empty;
+            _shownQuiz = quiz;
+            _board.text = BoardText(rows, lines, english, _text);
         }
 
         /// <summary>
         /// 板書の文字の大きさを、全部の行が出たときに枠に収まる大きさに決めて固定する。
         /// 自動の大きさのままだと、行が増えるたびに文字が縮んでしまう。
         /// </summary>
-        private void FitBoardSize(ClassTimetable.Subject subject, bool english)
+        private void FitBoardSize(IReadOnlyList<ClassTimetable.BoardLine> rows, bool english)
         {
             _board.enableAutoSizing = true;
-            _board.text = BoardText(subject, subject.Lines.Count, english, _text);
+            _board.text = BoardText(rows, rows.Count, english, _text);
             _board.ForceMeshUpdate();
             float size = _board.fontSize;
             _board.enableAutoSizing = false;
@@ -361,18 +413,25 @@ namespace KCD
         }
 
         /// <summary>
-        /// 板書の文字列。最初の行（題目）は少し大きく、続く行は出ている分だけ。テストから呼ぶ。
+        /// 科目の板書の文字列。最初の行（題目）は少し大きく、続く行は出ている分だけ。テストから呼ぶ。
         /// </summary>
         public static string BoardText(ClassTimetable.Subject subject, int lines, bool english, StringBuilder buffer = null)
         {
-            if (subject == null || lines <= 0)
+            return subject == null ? string.Empty : BoardText(subject.Lines, lines, english, buffer);
+        }
+
+        /// <summary>板書の行の並びの、先頭から lines 行分の文字列。最初の行（題目）は少し大きくする。</summary>
+        public static string BoardText(IReadOnlyList<ClassTimetable.BoardLine> rows, int lines, bool english,
+            StringBuilder buffer = null)
+        {
+            if (rows == null || lines <= 0)
             {
                 return string.Empty;
             }
 
             StringBuilder text = buffer ?? new StringBuilder(256);
             text.Clear();
-            int count = Mathf.Min(lines, subject.Lines.Count);
+            int count = Mathf.Min(lines, rows.Count);
             for (int i = 0; i < count; i++)
             {
                 if (i > 0)
@@ -380,7 +439,7 @@ namespace KCD
                     text.Append('\n');
                 }
 
-                string line = subject.Lines[i].Pick(english);
+                string line = rows[i].Pick(english);
                 if (i == 0)
                 {
                     text.Append("<size=125%>").Append(line).Append("</size>");
@@ -428,28 +487,65 @@ namespace KCD
         }
 
         /// <summary>
-        /// 授業中に部屋の中にいたら、近くの学生が小声で話しかける。1 つの授業に 1 回だけ。
+        /// 部屋の中にいたら、近くの学生が話しかける。授業中は小声で授業の話（始めの小テストの間はテストの話）、
+        /// 授業の前後は席にいる学生が休み時間の話をする。授業の前・中・後それぞれ 1 回だけ。
         /// 休み時間から部屋にいて授業が始まったときも同じ。会話中なら終わってから出す。
         /// </summary>
         private void CheckEntry(GameManager game)
         {
-            if (!_session.IsInClass || game == null || _player == null || !_sameFloor
+            if (!_moment.HasClass || game == null || _player == null || !_sameFloor
                 || !_room.Contains(_player.position))
             {
                 return;
             }
 
-            int session = game.DayNumber * 10 + _session.PeriodNumber;
-            DialogueSystem dialogue = DialogueSystem.Instance;
-            if (session == _greetedSession || dialogue == null || dialogue.IsPlaying)
+            // 前後の時間は、席に誰もいなければ話しかける人がいない。
+            if (_moment.Phase != ClassAttendance.Phase.During && !_studentsShown)
             {
                 return;
             }
 
-            if (dialogue.PlayTopic(EntryDialogueId, EntryTopicFor(_session.Subject.Field)))
+            // 日・時限・前後を 1 つの数にまとめる。時限（1〜5）と Phase（0〜3）はどちらも 1 桁なので重ならない。
+            int moment = game.DayNumber * 100 + _moment.Session.PeriodNumber * 10 + (int)_moment.Phase;
+            DialogueSystem dialogue = DialogueSystem.Instance;
+            if (moment == _greetedMoment || dialogue == null || dialogue.IsPlaying)
             {
-                _greetedSession = session;
+                return;
             }
+
+            bool popQuizDone = game.Quests != null && game.Quests.IsCompleted(PopQuizQuestId);
+            if (TryEntryTalk(_moment, popQuizDone, out string dialogueId, out string topicId)
+                && dialogue.PlayTopic(dialogueId, topicId))
+            {
+                _greetedMoment = moment;
+            }
+        }
+
+        /// <summary>
+        /// 部屋に入ったときの会話と話題。授業中は class_entry の分野の話題、始めの小テストの間は t_quiz
+        /// （101 の練習問題を解いていれば t_quiz_minato）、前後の時間は class_break の休み時間の話題。テストから呼ぶ。
+        /// </summary>
+        public static bool TryEntryTalk(ClassAttendance.Moment moment, bool popQuizDone, out string dialogueId,
+            out string topicId)
+        {
+            dialogueId = null;
+            topicId = null;
+            if (!moment.HasClass || moment.Session.Subject == null)
+            {
+                return false;
+            }
+
+            string field = moment.Session.Subject.Field;
+            if (moment.Phase == ClassAttendance.Phase.During)
+            {
+                dialogueId = EntryDialogueId;
+                topicId = moment.IsQuiz ? (popQuizDone ? QuizRecallTopic : QuizTopic) : EntryTopicFor(field);
+                return true;
+            }
+
+            dialogueId = BreakDialogueId;
+            topicId = ClassAttendance.BreakTopicFor(moment.Phase, field);
+            return true;
         }
 
         /// <summary>入ったときの話題がある分野。</summary>
@@ -461,19 +557,25 @@ namespace KCD
             return "t_" + (System.Array.IndexOf(EntryFields, field) >= 0 ? field : "info");
         }
 
-        /// <summary>学生は右手でノートに書き、ときどき手を止める。左手はノートを押さえる。</summary>
+        /// <summary>
+        /// 学生は右手でノートに書き、ときどき手を止める。左手はノートを押さえる。
+        /// 小テストの間は手を止めずに書き続け、授業の前後は手をノートの上に置いたまま書かない。
+        /// </summary>
         private void AnimateStudents(float time)
         {
-            foreach (Seat seat in _seats)
+            bool quiz = InQuiz;
+            bool lesson = _session.IsInClass;
+            for (int i = 0; i < _seats.Length; i++)
             {
-                if (seat.Pose == null)
+                Seat seat = _seats[i];
+                if (seat == null || seat.Pose == null || (i < _people.Length && _people[i] != null && !_people[i].activeSelf))
                 {
                     continue;
                 }
 
                 Vector3 forward = Vector3.Cross(seat.Right, Vector3.up);
                 float t = time + seat.Phase;
-                float writing = Mathf.Sin(t * 0.45f) > -0.6f ? 1f : 0f;
+                float writing = !lesson ? 0f : quiz || Mathf.Sin(t * 0.45f) > -0.6f ? 1f : 0f;
                 Vector3 scribble = seat.Right * (0.035f * Mathf.Sin(t * 6.3f) * writing + 0.02f * Mathf.Sin(t * 0.9f))
                     + forward * (0.02f * Mathf.Sin(t * 2.7f) * writing)
                     + Vector3.up * (0.012f * Mathf.Max(0f, Mathf.Sin(t * 12.6f)) * writing);
@@ -490,7 +592,7 @@ namespace KCD
             return Mathf.Repeat(floor * GestureCycle / 3f, GestureCycle);
         }
 
-        /// <summary>講師の 1 周期。書く → 指す → 振り返る。</summary>
+        /// <summary>講師の 1 周期。書く → 指す → 振り返る。始めの小テストの間は、部屋の方を向いて黙って見ている。</summary>
         private void AnimateLecturer(float time, float deltaTime)
         {
             if (_lecturer == null || _boardFrame == null)
@@ -506,7 +608,14 @@ namespace KCD
             Vector3 facing;
             bool talking = false;
 
-            if (phase < WriteSeconds)
+            if (InQuiz)
+            {
+                facing = toRoom;
+                _gesture?.Release();
+                _gesture?.LookAt(_audience);
+                Motion = LecturerMotion.Watch;
+            }
+            else if (phase < WriteSeconds)
             {
                 // 板に向かい、肩の高さで板の面に右手を当て、左から右へ少しずつ動かす。
                 float stroke = Mathf.Repeat(phase, 1.25f) / 1.25f;
