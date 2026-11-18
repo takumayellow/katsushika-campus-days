@@ -101,7 +101,7 @@ namespace KCD
             catch (Exception e)
             {
                 // 目印が読めなくても通常の動きで遊べるので、止めずに通常として続ける。
-                Debug.LogWarning("[KCD] exhibit marker check failed: " + e.Message);
+                Debug.LogWarning("[KCD] exhibit marker check failed: " + e.GetType().Name);
             }
 
             string[] args;
