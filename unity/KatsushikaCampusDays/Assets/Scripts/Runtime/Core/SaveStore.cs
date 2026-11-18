@@ -44,6 +44,20 @@ namespace KCD
 #endif
         }
 
+        /// <summary>保存したものを消す。無ければ何もしない。</summary>
+        public static void Delete(string path)
+        {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            PlayerPrefs.DeleteKey(Key(path));
+            PlayerPrefs.Save();
+#else
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+#endif
+        }
+
         /// <summary>PlayerPrefs のキー。パスの末尾（ファイル名）だけ使う。</summary>
         public static string Key(string path)
         {

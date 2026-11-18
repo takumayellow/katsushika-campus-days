@@ -48,6 +48,9 @@ namespace KCD
             }
         }
 
+        /// <summary>もう作られているか。<see cref="Instance"/> と違って、無いときに作らない。</summary>
+        public static bool HasInstance => _instance != null;
+
         /// <summary>プレイヤーが操作するキャラクターの id。</summary>
         public string SelectedCharacterId
         {
@@ -129,6 +132,17 @@ namespace KCD
             }
 
             SubscribeQuests();
+
+            // 展示モードでは、放置されたらタイトルへ戻す見張りを付ける (#466)。
+            if (ExhibitMode.Enabled)
+            {
+                UseExhibitSaveFolder();
+                ExhibitLog.Launched();
+                if (GetComponent<ExhibitIdle>() == null)
+                {
+                    gameObject.AddComponent<ExhibitIdle>();
+                }
+            }
         }
 
         /// <summary>クエストの変化で称号を数え直す。同じ QuestSystem に二重には付けない。</summary>
@@ -176,8 +190,39 @@ namespace KCD
         /// セーブファイルは消さない。消すと「つづきから」(F9) の戻り先を潰すし、
         /// 戻すべきものはすべてメモリ上の値なのでファイルとは独立している（次のセーブで上書きされる）。
         /// </summary>
+        /// <summary>展示モードではセーブを普段のものと別のフォルダに置く (#466)。テストが差し替えていれば触らない。</summary>
+        private static void UseExhibitSaveFolder()
+        {
+            if (SaveSystem.DirectoryOverride != null)
+            {
+                return;
+            }
+
+            string dir = ExhibitMode.SaveDirectory(Application.persistentDataPath);
+            if (dir == null)
+            {
+                return;
+            }
+
+            try
+            {
+                System.IO.Directory.CreateDirectory(dir);
+                SaveSystem.DirectoryOverride = dir;
+            }
+            catch (System.Exception e) when (e is System.IO.IOException || e is System.UnauthorizedAccessException)
+            {
+                Debug.LogWarning("[KCD] exhibit save folder unavailable: " + e.GetType().Name);
+            }
+        }
+
         public void BeginNewGame()
         {
+            // 展示モードでは前の人のセーブを消す。F9 やポーズの「ロード」で前の人の続きに入らないように (#466)。
+            if (ExhibitMode.Enabled)
+            {
+                ExhibitLog.NoteSaveReset(SaveSystem.Delete());
+            }
+
             // 時計は DayNightCycle が持つが、キャンパスに入るまで（HUD の時刻表示など）はここの値が使われる。
             GameTimeHours = DayRestart.DayStartHour;
 
@@ -339,7 +384,14 @@ namespace KCD
         /// </summary>
         public void ReturnToTitle()
         {
+            // 展示モードの記録。放置で戻すときは ExhibitIdle が先に idle で書くので、ここは何もしない。
+            ExhibitLog.EndSession("title");
             Loader.Load(TitleSceneName, true);
+        }
+
+        private void OnApplicationQuit()
+        {
+            ExhibitLog.EndSession("quit");
         }
 
         /// <summary>シーンにインスタンスが無くても起動時に必ず用意する。</summary>

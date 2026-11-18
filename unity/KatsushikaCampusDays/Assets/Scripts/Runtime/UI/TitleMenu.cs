@@ -261,7 +261,8 @@ namespace KCD
             KCDInput.GameplayBlocked = false;
 
             // 既定は「つづきから」。遊んだ人がタイトルに戻ってきて Enter を押したとき、進行を消さない側。
-            _hasSave = SaveSystem.Read() != null;
+            // 展示モードでは次の人が前の人の続きから始めないよう、「つづきから」を出さない (#466)。
+            _hasSave = ExhibitMode.OffersContinue(ExhibitMode.Enabled, SaveSystem.Read() != null);
             _choice = 0;
 
             if (_selectRoot != null)

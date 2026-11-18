@@ -211,6 +211,39 @@ namespace KCD
         }
 
         /// <summary>
+        /// いま dialogueId の NPC に話しかけると、依頼（startsQuest）の話題が出るか (#410)。
+        /// ミニマップが、依頼を受けられる人の点の色を変えるのに使う。話しかけたときと同じく <see cref="SelectTopic(DialogueData)"/> で選ぶ。
+        /// </summary>
+        public bool OffersQuest(string dialogueId)
+        {
+            if (string.IsNullOrEmpty(dialogueId) || !_data.TryGetValue(dialogueId, out DialogueData data) ||
+                GameManager.Instance == null)
+            {
+                return false;
+            }
+
+            return OffersQuest(data, GameManager.Instance.Quests, OnceTopics.Keys, LiveHiddenCount(), DayStats.HasCollected);
+        }
+
+        /// <summary>
+        /// <see cref="OffersQuest(string)"/> の、会話データと進行を渡せる版（テストから呼ぶ）。
+        /// 選ばれる話題が、まだ受けていない実在のクエストを頼むものなら true。受注中・完了済み・前提のそろわない依頼は
+        /// SelectTopic が選ばないので、ここでは数えない。
+        /// </summary>
+        public static bool OffersQuest(DialogueData data, QuestSystem quests, ICollection<string> spentTopics,
+            int hiddenCount, Func<string, bool> hasItem)
+        {
+            if (quests == null)
+            {
+                return false;
+            }
+
+            DialogueTopic topic = SelectTopic(data, quests, spentTopics, hiddenCount, hasItem);
+            return topic != null && topic.Lines.Count > 0 && !string.IsNullOrEmpty(topic.StartsQuest) &&
+                quests.Find(topic.StartsQuest) != null;
+        }
+
+        /// <summary>
         /// 条件に合う話題を選ぶ。隠しアイテムの数と持ち物は、いま拾っているもの（DayStats）で判定する。
         /// spentTopics は「NPC id/話題 id」の集合で、once の話題を二度出さないために使う。
         /// </summary>
