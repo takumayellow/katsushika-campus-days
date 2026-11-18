@@ -307,6 +307,7 @@ namespace KCD
             // 取りやめた時点では進行がまだ消えていない。
             GameManager.Instance.BeginNewGame();
             GameManager.Instance.SelectedCharacterId = GameManager.PlayableCharacterIds[_index];
+            ExhibitLog.StartSession(GameManager.Instance.SelectedCharacterId);
             GameManager.Instance.EnterCampus();
         }
     }
