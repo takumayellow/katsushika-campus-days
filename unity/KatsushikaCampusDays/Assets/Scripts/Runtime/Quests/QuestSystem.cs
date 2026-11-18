@@ -262,20 +262,25 @@ namespace KCD
             }
 
             Activate(quest);
+            if (!_silent)
+            {
+                // 手で受けたものはそのまま追う (#410)。
+                _chosenId = quest.Id;
+            }
+
             Changed?.Invoke();
             return true;
         }
 
         /// <summary>
         /// 受注中に加えて開始イベントを出す。手動受注も自動開始もここを通す。
-        /// 受けたものをそのまま追う (#410)。読み込みで黙って受けたものは追わない（規則で選ぶ）。
+        /// どれを追うかは呼び出し側（<see cref="StartQuest"/> と <see cref="AutoStartUnlocked"/>）が決める (#410)。
         /// </summary>
         private void Activate(QuestData quest)
         {
             _active.Add(quest.Id);
             if (!_silent)
             {
-                _chosenId = quest.Id;
                 QuestStarted?.Invoke(quest);
             }
 
@@ -676,8 +681,9 @@ namespace KCD
                 }
             }
 
-            // いくつも同時に始まったら、order が最も小さいものを追う（Activate は受けるたびに選び直す）。
-            if (firstStarted != null && !_silent)
+            // いくつも同時に始まったら、order が最も小さいものを追う。
+            // ただし、プレイヤーが選んだものがまだ受注中なら、別のクエストを終えて自動で始まったものに奪わせない。
+            if (firstStarted != null && !_silent && ChosenQuest == null)
             {
                 _chosenId = firstStarted;
             }

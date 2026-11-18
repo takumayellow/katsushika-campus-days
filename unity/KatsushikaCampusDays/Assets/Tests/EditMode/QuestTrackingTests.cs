@@ -125,6 +125,22 @@ namespace KCD.Tests
         }
 
         [Test]
+        public void AutoStartAfterAnotherQuest_KeepsTheQuestThePlayerChose()
+        {
+            QuestSystem quests = Make(AJson, BJson, CJson, AfterBJson);
+            quests.StartQuest("q_a");
+            quests.StartQuest("q_b");
+            quests.StartQuest("q_c");
+            Assert.IsTrue(quests.Track("q_c"));
+
+            quests.ReportEnter("b");
+
+            Assert.IsTrue(quests.IsActive("q_after_b"));
+            Assert.AreEqual("q_c", quests.ChosenQuest.Id, "選んだ q_c は終わっていないので、自動で始まった q_after_b に替えない");
+            Assert.AreEqual("q_c", quests.TrackedQuest.Id);
+        }
+
+        [Test]
         public void Load_TracksTheFirstAutoStart_ButASilentLoadChoosesNothing()
         {
             QuestSystem quests = Make(AJson, AfterBJson.Replace(",\"prerequisites\":[\"q_b\"]", string.Empty));
