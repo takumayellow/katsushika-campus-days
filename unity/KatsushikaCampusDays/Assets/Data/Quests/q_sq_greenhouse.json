@@ -27,7 +27,9 @@
       "type": "visit",
       "target": "poi_greenhouse_plants",
       "text": "栽培ベンチの鉢に水をやる",
-      "text_en": "Water the pots on the growing benches"
+      "text_en": "Water the pots on the growing benches",
+      "done": "鉢に水をやった。教授に報告しよう",
+      "done_en": "You watered the pots. Report to the professor"
     },
     {
       "id": "s3",

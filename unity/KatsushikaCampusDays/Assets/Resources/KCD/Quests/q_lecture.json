@@ -24,7 +24,9 @@
       "type": "visit",
       "target": "poi_lecture_hall_seats",
       "text": "大教室の席に着く",
-      "text_en": "Take a seat in the big classroom"
+      "text_en": "Take a seat in the big classroom",
+      "done": "席に着いた。講義のあと、教卓の教授に質問しよう",
+      "done_en": "You took a seat. After the lecture, ask the professor a question"
     },
     {
       "id": "s3",

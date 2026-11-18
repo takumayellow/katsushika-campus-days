@@ -67,6 +67,18 @@ namespace KCD
 
         /// <summary>画面に出す目標文。いまの言語で選ぶ。</summary>
         public string DisplayText => L.Pick(Text, TextEn);
+
+        /// <summary>
+        /// 達成したときにトーストで出す一言（JSON の done）。地点を踏むだけで終わるステップで、
+        /// そこで何が分かったかを伝える (#410)。空なら何も出さない。
+        /// </summary>
+        public string DoneText = string.Empty;
+
+        /// <summary>英語の一言（JSON の done_en）。空なら英語表示でも DoneText を出す。</summary>
+        public string DoneTextEn = string.Empty;
+
+        /// <summary>達成したときに出す一言。いまの言語で選ぶ。</summary>
+        public string DisplayDoneText => L.Pick(DoneText, DoneTextEn);
     }
 
     /// <summary>クエスト 1 件。JSON 1 ファイルに 1 件対応する。</summary>
@@ -193,6 +205,8 @@ namespace KCD
                         Id = MiniJson.GetString(stepNode, "id", "s" + (i + 1)),
                         Text = MiniJson.GetString(stepNode, "text"),
                         TextEn = MiniJson.GetString(stepNode, "text_en"),
+                        DoneText = MiniJson.GetString(stepNode, "done"),
+                        DoneTextEn = MiniJson.GetString(stepNode, "done_en"),
                         Kind = ParseKind(MiniJson.GetString(stepNode, "type", "flag")),
                         Target = MiniJson.GetString(stepNode, "target"),
                         Count = System.Math.Max(1, MiniJson.GetInt(stepNode, "count", 1)),

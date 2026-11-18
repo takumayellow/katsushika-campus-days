@@ -50,6 +50,12 @@ namespace KCD
         public event Action<QuestData, QuestStep> StepTooEarly;
 
         /// <summary>
+        /// 途中のステップを達成した（クエストはまだ続く）。最後のステップは QuestCompleted が知らせる。
+        /// 読み込み中は出さない。
+        /// </summary>
+        public event Action<QuestData, QuestStep> StepCompleted;
+
+        /// <summary>
         /// ゲーム内の時刻（時）を返す時計。null なら GameManager の時刻を使う。テストから差し込む。
         /// </summary>
         public Func<float> Clock { get; set; }
@@ -537,6 +543,11 @@ namespace KCD
             }
             else
             {
+                if (!_silent)
+                {
+                    StepCompleted?.Invoke(quest, step);
+                }
+
                 // 次のステップが制限時間つきなら、ここから数える。
                 StartTimerIfTimed(quest);
                 CatchUpHeld(quest);

@@ -25,14 +25,18 @@
       "type": "visit",
       "target": "poi_research1_notice",
       "text": "1 階の掲示板で研究室の場所を確かめる",
-      "text_en": "Check where the labs are on the ground-floor noticeboard"
+      "text_en": "Check where the labs are on the ground-floor noticeboard",
+      "done": "研究室の場所が分かった。のぞいてみよう",
+      "done_en": "You found where the labs are. Take a peek"
     },
     {
       "id": "s3",
       "type": "visit",
       "target": "poi_research1_lab_a",
       "text": "研究室をのぞく",
-      "text_en": "Peek into a lab"
+      "text_en": "Peek into a lab",
+      "done": "研究室をのぞいた。教授に何が見えたか伝えよう",
+      "done_en": "You peeked into a lab. Tell the professor what you saw"
     },
     {
       "id": "s4",
