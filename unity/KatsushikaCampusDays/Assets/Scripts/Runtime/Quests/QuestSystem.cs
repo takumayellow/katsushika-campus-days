@@ -75,6 +75,13 @@ namespace KCD
         private bool _silent;
 
         /// <summary>
+        /// プレイヤーが追うと決めたクエスト (#410)。受注した直後はそれを、Tab の一覧で選び直したらそれを指す。
+        /// 終わったら忘れ、<see cref="TrackedQuest"/> は order の規則に戻る。
+        /// セーブには書かない。読み込んだあとは規則で選び、一覧から選び直せる。
+        /// </summary>
+        private string _chosenId;
+
+        /// <summary>
         /// 「◯時ごろにまた来よう」（<see cref="StepTooEarly"/>）を知らせ済みのステップ (#54)。
         /// 以前は入るたびに知らせていたので、時刻前に同じ場所を出入りするとそのたびにトーストが出た。
         /// 時計が巻き戻ったとき（<see cref="ObserveClock"/>）と、読み込み直したときに忘れる。
@@ -143,6 +150,7 @@ namespace KCD
                 _completed.Clear();
                 _held.Clear();
                 ForgetTooEarlyNotices();
+                _chosenId = null;
 
                 if (quests != null)
                 {
@@ -254,11 +262,20 @@ namespace KCD
             }
 
             Activate(quest);
+            if (!_silent)
+            {
+                // 手で受けたものはそのまま追う (#410)。
+                _chosenId = quest.Id;
+            }
+
             Changed?.Invoke();
             return true;
         }
 
-        /// <summary>受注中に加えて開始イベントを出す。手動受注も自動開始もここを通す。</summary>
+        /// <summary>
+        /// 受注中に加えて開始イベントを出す。手動受注も自動開始もここを通す。
+        /// どれを追うかは呼び出し側（<see cref="StartQuest"/> と <see cref="AutoStartUnlocked"/>）が決める (#410)。
+        /// </summary>
         private void Activate(QuestData quest)
         {
             _active.Add(quest.Id);
@@ -280,11 +297,38 @@ namespace KCD
         }
 
         /// <summary>
+        /// プレイヤーが選んだクエスト (#410)。受注した直後のもの、または <see cref="Track"/> で選んだもの。
+        /// 受注中でなければ null。制限時間を数えている最中のものが別にあると <see cref="TrackedQuest"/> と違う。
+        /// </summary>
+        public QuestData ChosenQuest => _chosenId != null && _active.Contains(_chosenId) ? Find(_chosenId) : null;
+
+        /// <summary>
+        /// 追うクエストを選ぶ (#410)。受注中のものだけ選べる。選び直したら Changed を出し、
+        /// 追跡表示とミニマップの輪を切り替える。
+        /// </summary>
+        public bool Track(string questId)
+        {
+            if (string.IsNullOrEmpty(questId) || !_active.Contains(questId))
+            {
+                return false;
+            }
+
+            if (_chosenId != questId)
+            {
+                _chosenId = questId;
+                Changed?.Invoke();
+            }
+
+            return true;
+        }
+
+        /// <summary>
         /// HUD に出す「いま追いかけているクエスト」。制限時間を数えている最中のものを最優先し、
+        /// 次にプレイヤーが選んだもの（<see cref="ChosenQuest"/>）、
         /// 次に時間切れ・ロード直後で再挑戦を待っている制限時間つきのもの、
-        /// どちらも無ければ受注中で order が最も小さいもの。
-        /// order だけで選ぶと、先に受けたクエスト（図書館・食堂など）の陰に隠れて残り時間や
-        /// 「依頼主に話しかけると再挑戦できる」の案内が見えなくなる。
+        /// どれも無ければ受注中で order が最も小さいもの。
+        /// order だけで選ぶと、先に受けたクエスト（図書館・食堂など）の陰に隠れて、受けたばかりのクエストや
+        /// 残り時間、「依頼主に話しかけると再挑戦できる」の案内が見えなくなる。
         /// </summary>
         public QuestData TrackedQuest
         {
@@ -317,7 +361,7 @@ namespace KCD
                     }
                 }
 
-                return waiting ?? first;
+                return ChosenQuest ?? waiting ?? first;
             }
         }
 
@@ -532,6 +576,12 @@ namespace KCD
             {
                 _active.Remove(quest.Id);
                 _completed.Add(quest.Id);
+                if (_chosenId == quest.Id)
+                {
+                    // 追っていたものが終わったら、次は規則で選ぶ（続けて自動で受けたものがあればそれ）。
+                    _chosenId = null;
+                }
+
                 QuestCompleted?.Invoke(quest);
                 AutoStartUnlocked();
             }
@@ -619,6 +669,7 @@ namespace KCD
 
         private void AutoStartUnlocked()
         {
+            string firstStarted = null;
             for (int i = 0; i < _all.Count; i++)
             {
                 QuestData quest = _all[i];
@@ -626,7 +677,15 @@ namespace KCD
                     PrerequisitesMet(quest))
                 {
                     Activate(quest);
+                    firstStarted ??= quest.Id;
                 }
+            }
+
+            // いくつも同時に始まったら、order が最も小さいものを追う。
+            // ただし、プレイヤーが選んだものがまだ受注中なら、別のクエストを終えて自動で始まったものに奪わせない。
+            if (firstStarted != null && !_silent && ChosenQuest == null)
+            {
+                _chosenId = firstStarted;
             }
         }
     }
