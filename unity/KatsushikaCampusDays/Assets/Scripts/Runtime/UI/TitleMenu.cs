@@ -150,7 +150,10 @@ namespace KCD
 
             if (!_hasSave)
             {
-                _promptLabel.text = L.Get("ui.title.press_start", "Enter か [A] ではじめる") +
+                string start = InputMode.PadConnected
+                    ? L.Pick("Enter か [A] ではじめる", "Press Enter or [A] to start")
+                    : L.Get("ui.title.press_start", "Enter ではじめる");
+                _promptLabel.text = start +
                                     "<size=70%>" + extras + "</size>";
                 return;
             }
@@ -161,6 +164,10 @@ namespace KCD
                 L.Get("ui.title.continue", "つづきから"),
                 L.Get("ui.title.new_game", "はじめから"));
             string hint = L.Get("ui.title.continue_hint", "← → でえらぶ　Enter で決定　（F9 でもつづきから）");
+            if (InputMode.PadConnected)
+            {
+                hint += L.Pick("\n十字キーでえらぶ　[A] で決定", "\nD-pad to choose   [A] to confirm");
+            }
             _promptLabel.text = line + "<size=70%>\n" + hint + extras + "</size>";
         }
 
