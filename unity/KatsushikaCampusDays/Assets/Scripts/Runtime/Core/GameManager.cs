@@ -183,24 +183,9 @@ namespace KCD
             return quests;
         }
 
-        /// <summary>
-        /// タイトルの「はじめから」。前の周回の残りを初期値に戻す (#53)。
-        ///
-        /// GameManager は DontDestroyOnLoad でシーンをまたいで生き続けるので、ここで戻さないと
-        /// 裏エンド（<see cref="DormEnding"/>）やリザルトの「タイトルへ」でタイトルに帰ったあとの新規開始が、
-        /// サボった時刻・2 日目・達成済みのクエストのまま始まる。
-        ///
-        /// セーブファイルは消さない。消すと「つづきから」(F9) の戻り先を潰すし、
-        /// 戻すべきものはすべてメモリ上の値なのでファイルとは独立している（次のセーブで上書きされる）。
-        /// </summary>
-        /// <summary>展示モードではセーブを普段のものと別のフォルダに置く (#466)。テストが差し替えていれば触らない。</summary>
+        /// <summary>展示モードではセーブと写真を普段のものと別のフォルダに置く (#466)。テストが差し替えていれば触らない。</summary>
         private static void UseExhibitSaveFolder()
         {
-            if (SaveSystem.DirectoryOverride != null)
-            {
-                return;
-            }
-
             string dir = ExhibitMode.SaveDirectory(Application.persistentDataPath);
             if (dir == null)
             {
@@ -210,18 +195,33 @@ namespace KCD
             try
             {
                 System.IO.Directory.CreateDirectory(dir);
-                SaveSystem.DirectoryOverride = dir;
             }
             catch (System.Exception e) when (e is System.IO.IOException || e is System.UnauthorizedAccessException)
             {
                 Debug.LogWarning("[KCD] exhibit save folder unavailable: " + e.GetType().Name);
+                return;
             }
+
+            SaveSystem.DirectoryOverride = SaveSystem.DirectoryOverride ?? dir;
+            // 写真も同じフォルダの下に置き、来場者の写真を普段の写真と混ぜない。
+            PhotoSystem.DirectoryOverride = ExhibitMode.PhotoRoot(PhotoSystem.DirectoryOverride, dir);
         }
 
+        /// <summary>
+        /// タイトルの「はじめから」。前の周回の残りを初期値に戻す (#53)。
+        ///
+        /// GameManager は DontDestroyOnLoad でシーンをまたいで生き続けるので、ここで戻さないと
+        /// 裏エンド（<see cref="DormEnding"/>）やリザルトの「タイトルへ」でタイトルに帰ったあとの新規開始が、
+        /// サボった時刻・2 日目・達成済みのクエストのまま始まる。
+        ///
+        /// 展示モードのほかではセーブファイルは消さない。消すと「つづきから」(F9) の戻り先を潰すし、
+        /// 戻すべきものはすべてメモリ上の値なのでファイルとは独立している（次のセーブで上書きされる）。
+        /// </summary>
         public void BeginNewGame()
         {
             // 展示モードでは前の人のセーブを消す。F9 やポーズの「ロード」で前の人の続きに入らないように (#466)。
-            if (ExhibitMode.Enabled)
+            // 展示用のフォルダを作れなかったとき（置き場が普段のまま）は、PC の持ち主のセーブなので消さない。
+            if (ExhibitMode.Enabled && SaveSystem.DirectoryOverride != null)
             {
                 ExhibitLog.NoteSaveReset(SaveSystem.Delete());
             }
