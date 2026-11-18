@@ -129,6 +129,12 @@ namespace KCD
             }
 
             SubscribeQuests();
+
+            // 展示モードでは、放置されたらタイトルへ戻す見張りを付ける (#466)。
+            if (ExhibitMode.Enabled && GetComponent<ExhibitIdle>() == null)
+            {
+                gameObject.AddComponent<ExhibitIdle>();
+            }
         }
 
         /// <summary>クエストの変化で称号を数え直す。同じ QuestSystem に二重には付けない。</summary>
