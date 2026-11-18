@@ -139,13 +139,18 @@ namespace KCD
                 return;
             }
 
-            string extras = L.Pick(
-                "\nC クレジット　/　O 設定",
-                "\nC: Credits   /   O: Settings");
+            // ゲームパッドで遊ぶ人にも、クレジット（Y）と設定（BACK）の開き方を見せる。
+            string extras = InputMode.PadConnected
+                ? L.Pick(
+                    "\nC か [Y] クレジット　/　O か [BACK] 設定",
+                    "\nC or [Y]: Credits   /   O or [BACK]: Settings")
+                : L.Pick(
+                    "\nC クレジット　/　O 設定",
+                    "\nC: Credits   /   O: Settings");
 
             if (!_hasSave)
             {
-                _promptLabel.text = L.Get("ui.title.press_start", "Enter ではじめる") +
+                _promptLabel.text = L.Get("ui.title.press_start", "Enter か [A] ではじめる") +
                                     "<size=70%>" + extras + "</size>";
                 return;
             }

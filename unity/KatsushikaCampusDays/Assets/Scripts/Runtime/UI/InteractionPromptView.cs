@@ -60,7 +60,7 @@ namespace KCD
                 string text = touch
                     ? target.PromptLabel
                     : LabelFor(target != null ? target.PromptLabel : null,
-                        wave ? L.Get("ui.interact.wave", "手を振る") : null);
+                        wave ? L.Get("ui.interact.wave", "手を振る") : null, InputMode.PadConnected);
                 if (_label.text != text)
                 {
                     _label.text = text;
@@ -77,7 +77,13 @@ namespace KCD
         /// <summary>案内の文言。「[E] 話す」の形。</summary>
         public static string LabelFor(string promptLabel)
         {
-            return "[E] " + promptLabel;
+            return LabelFor(promptLabel, false);
+        }
+
+        /// <summary>案内の文言。ゲームパッドがつながっていれば「[E/X] 話す」とパッドのボタンも並べる。</summary>
+        public static string LabelFor(string promptLabel, bool pad)
+        {
+            return (pad ? "[E/X] " : "[E] ") + promptLabel;
         }
 
         /// <summary>
@@ -85,13 +91,19 @@ namespace KCD
         /// </summary>
         public static string LabelFor(string promptLabel, string waveLabel)
         {
+            return LabelFor(promptLabel, waveLabel, false);
+        }
+
+        /// <summary>E と Q の案内を 1 行に並べる。ゲームパッドがつながっていれば X と RB も並べる。</summary>
+        public static string LabelFor(string promptLabel, string waveLabel, bool pad)
+        {
             if (waveLabel == null)
             {
-                return LabelFor(promptLabel);
+                return LabelFor(promptLabel, pad);
             }
 
-            string wave = "[Q] " + waveLabel;
-            return promptLabel == null ? wave : LabelFor(promptLabel) + "　" + wave;
+            string wave = (pad ? "[Q/RB] " : "[Q] ") + waveLabel;
+            return promptLabel == null ? wave : LabelFor(promptLabel, pad) + "　" + wave;
         }
 
         private void Update()
