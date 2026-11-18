@@ -59,11 +59,11 @@ namespace KCD.Tests
             File.WriteAllText(save, SaveDataRules.ToJson(new SaveData { DayNumber = 2 }));
             File.WriteAllText(other, "{}");
 
-            SaveSystem.Delete();
+            Assert.IsTrue(SaveSystem.Delete(), "消したのに消せなかったと返した");
 
             Assert.IsFalse(SaveSystem.HasSave, "展示モードの新規開始で前の人のセーブが残っている");
             Assert.IsTrue(File.Exists(other), "セーブ以外のファイルまで消した");
-            Assert.DoesNotThrow(SaveSystem.Delete, "セーブが無いときに消そうとして止まった");
+            Assert.IsTrue(SaveSystem.Delete(), "セーブが無いときに消そうとして止まった");
         }
 
         [Test]

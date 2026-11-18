@@ -160,7 +160,7 @@ namespace KCD
             }
             catch (Exception e)
             {
-                Debug.LogWarning("[KCD] exhibit log snapshot failed: " + e.GetType().Name);
+                Debug.LogWarning("[KCD] exhibit log snapshot failed: " + Kind(e));
                 Entry e2 = new Entry
                 {
                     evt = evt,
@@ -217,8 +217,21 @@ namespace KCD
             catch (Exception e)
             {
                 // 書けなくても遊べる。どの例外でも呼び出し元（タイトルへ戻る処理など）へ投げない。
-                Debug.LogWarning("[KCD] exhibit log write failed: " + e.GetType().Name);
+                Debug.LogWarning("[KCD] exhibit log write failed: " + Kind(e));
             }
+        }
+
+        /// <summary>
+        /// 例外の種類を短く書く（DirectoryNotFoundException → DirectoryNotFound）。記録の失敗は遊ぶのを止めないので、
+        /// ログの点検（"…Exception" を含む行を落ちた証拠に数える）に例外として拾わせない。
+        /// </summary>
+        public static string Kind(Exception e)
+        {
+            string name = e == null ? string.Empty : e.GetType().Name;
+            const string Suffix = "Exception";
+            return name.Length > Suffix.Length && name.EndsWith(Suffix, StringComparison.Ordinal)
+                ? name.Substring(0, name.Length - Suffix.Length)
+                : name;
         }
 
         /// <summary>テスト用。遊んでいる人と通し番号を捨てる。</summary>

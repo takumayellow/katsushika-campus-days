@@ -1,7 +1,9 @@
 using System;
 using System.IO;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace KCD.Tests
 {
@@ -75,9 +77,19 @@ namespace KCD.Tests
         {
             ExhibitMode.Enabled = true;
             SaveSystem.DirectoryOverride = Path.Combine(_folder, "missing");
+            LogAssert.Expect(LogType.Warning, new Regex(@"exhibit log write failed: DirectoryNotFound$"));
+            LogAssert.Expect(LogType.Warning, new Regex(@"exhibit log write failed: DirectoryNotFound$"));
             Assert.DoesNotThrow(() => ExhibitLog.StartSession("mirai"), "記録を書けないとキャンパスへ入れない");
             Assert.DoesNotThrow(() => ExhibitLog.EndSession("idle"), "記録を書けないとタイトルへ戻れない");
             Assert.That(ExhibitLog.InSession, Is.False, "書けなかったときに遊んでいる人が残った");
+        }
+
+        [Test]
+        public void Kind_DropsTheExceptionSuffix()
+        {
+            Assert.That(ExhibitLog.Kind(new DirectoryNotFoundException()), Is.EqualTo("DirectoryNotFound"));
+            Assert.That(ExhibitLog.Kind(new Exception()), Is.EqualTo("Exception"));
+            Assert.That(ExhibitLog.Kind(null), Is.EqualTo(string.Empty));
         }
 
         [Test]
