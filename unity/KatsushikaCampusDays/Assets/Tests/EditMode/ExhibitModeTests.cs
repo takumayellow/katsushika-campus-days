@@ -47,6 +47,15 @@ namespace KCD.Tests
         }
 
         [Test]
+        public void SaveDirectory_IsASubfolderOfPersistent()
+        {
+            string persistent = Path.Combine("C:" + Path.DirectorySeparatorChar + "data", "kcd");
+            Assert.That(ExhibitMode.SaveDirectory(persistent),
+                Is.EqualTo(Path.Combine(persistent, ExhibitMode.SaveFolderName)));
+            Assert.That(ExhibitMode.SaveDirectory(string.Empty), Is.Null);
+        }
+
+        [Test]
         public void OffersContinue_HiddenInExhibit()
         {
             Assert.That(ExhibitMode.OffersContinue(false, true), Is.True);

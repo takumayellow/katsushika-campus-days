@@ -27,6 +27,11 @@ namespace KCD
         /// <summary>戻す何秒前に予告を出すか。</summary>
         public const float WarnBeforeSeconds = 20f;
 
+        /// <summary>
+        /// 展示モードのセーブの置き場（persistentDataPath の下）。同じ PC で普段遊んでいるセーブには触らない。
+        /// </summary>
+        public const string SaveFolderName = "exhibit";
+
         private static bool? _enabled;
 
         /// <summary>展示モードか。起動して最初に聞かれたときに決め、以後は変えない。テストからは差し替えられる。</summary>
@@ -121,6 +126,12 @@ namespace KCD
             }
 
             return enabled;
+        }
+
+        /// <summary>展示モードのセーブを置くフォルダ。persistent が空なら null（置き場を変えない）。</summary>
+        public static string SaveDirectory(string persistent)
+        {
+            return string.IsNullOrEmpty(persistent) ? null : Path.Combine(persistent, SaveFolderName);
         }
 
         /// <summary>タイトルで「つづきから」を出すか。展示モードでは前の人の続きを出さない。</summary>

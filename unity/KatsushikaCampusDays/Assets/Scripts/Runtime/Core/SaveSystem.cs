@@ -33,6 +33,22 @@ namespace KCD
         /// <summary>タイトルの「つづきから」で読んだセーブ。位置と屋内はキャンパスの最初のフレームで当てる。</summary>
         private static SaveData _pending;
 
+        /// <summary>
+        /// セーブを消す。展示モードで次の人が前の人のセーブを F9 やポーズの「ロード」で読まないようにする (#466)。
+        /// 消せなくても遊べるので、失敗は知らせるだけにする。
+        /// </summary>
+        public static void Delete()
+        {
+            try
+            {
+                SaveStore.Delete(FilePath);
+            }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            {
+                Debug.LogWarning("[KCD] save delete failed: " + e.GetType().Name);
+            }
+        }
+
         /// <summary>セーブが存在するか（読めるかどうかは見ない。見るなら <see cref="Read"/>）。</summary>
         public static bool HasSave => SaveStore.Exists(FilePath);
 
