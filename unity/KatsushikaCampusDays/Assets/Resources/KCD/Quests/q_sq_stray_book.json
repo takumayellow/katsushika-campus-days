@@ -27,21 +27,27 @@
       "type": "visit",
       "target": "poi_library_stacks",
       "text": "開架書架のいちばん奥を探す",
-      "text_en": "Search the far end of the open stacks"
+      "text_en": "Search the far end of the open stacks",
+      "done": "奥の書架には無かった。次は個人閲覧ブースを探そう",
+      "done_en": "Not in the far stacks. Try the study carrels next"
     },
     {
       "id": "s3",
       "type": "visit",
       "target": "poi_library_desk",
       "text": "個人閲覧ブースを探す",
-      "text_en": "Search the study carrels"
+      "text_en": "Search the study carrels",
+      "done": "あった。ブースの机に置き忘れられている。カウンターに知らせよう",
+      "done_en": "Found it, left on a carrel desk. Tell the counter"
     },
     {
       "id": "s4",
       "type": "visit",
       "target": "poi_library_counter",
       "text": "カウンターに本の場所を伝える",
-      "text_en": "Tell the counter where the book is"
+      "text_en": "Tell the counter where the book is",
+      "done": "カウンター係が書架に戻してくれる。いなりに報告しよう",
+      "done_en": "The counter staff will reshelve it. Report back to Inari"
     },
     {
       "id": "s5",

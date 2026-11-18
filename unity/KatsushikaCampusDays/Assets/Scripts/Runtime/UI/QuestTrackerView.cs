@@ -36,6 +36,9 @@ namespace KCD
         /// <summary>計時を始めたクエスト。会話を閉じてからスタートの案内を出す。</summary>
         private QuestData _pendingStart;
 
+        /// <summary>会話中に達成したステップの一言。会話を閉じてから順に出す (#410)。</summary>
+        private readonly List<string> _pendingDone = new List<string>();
+
         /// <summary>
         /// 会話の最中に受けたクエスト (#410)。会話の間は HUD ごと隠れていてトーストが見えないので、閉じてから知らせる。
         /// お礼の会話で達成して、続けて自動で受けたときにここへ溜まる。
@@ -77,6 +80,7 @@ namespace KCD
             _quests.TimerStarted += OnTimerStarted;
             _quests.ChallengeRetryNeeded += OnChallengeRetryNeeded;
             _quests.StepTooEarly += OnStepTooEarly;
+            _quests.StepCompleted += OnStepCompleted;
             L.LocaleChanged += Refresh;
             Refresh();
         }
@@ -93,6 +97,7 @@ namespace KCD
                 _quests.TimerStarted -= OnTimerStarted;
                 _quests.ChallengeRetryNeeded -= OnChallengeRetryNeeded;
                 _quests.StepTooEarly -= OnStepTooEarly;
+                _quests.StepCompleted -= OnStepCompleted;
             }
         }
 
@@ -119,6 +124,16 @@ namespace KCD
             {
                 ShowStartToast(_pendingStart);
                 _pendingStart = null;
+            }
+
+            if (_pendingDone.Count > 0 && !KCDInput.GameplayBlocked)
+            {
+                for (int i = 0; i < _pendingDone.Count; i++)
+                {
+                    HUD.Instance?.ShowToast(_pendingDone[i], false);
+                }
+
+                _pendingDone.Clear();
             }
 
             if (_recentFailure != null && Time.unscaledTime >= _recentFailureUntil)
@@ -308,6 +323,28 @@ namespace KCD
         /// 時刻の条件より前に目的地へ着いた (#66)。進まない理由と、いつ来ればよいかを出す。
         /// QuestSystem は入った瞬間にだけ知らせるので、留まっていても繰り返し出ない。
         /// </summary>
+        /// <summary>
+        /// 途中のステップを達成したとき、データに一言（done）があれば出す。地点を踏むだけのステップでも、
+        /// そこで何が分かったかが伝わるようにする (#410)。会話中なら閉じてから出す。
+        /// </summary>
+        private void OnStepCompleted(QuestData quest, QuestStep step)
+        {
+            string done = step?.DisplayDoneText;
+            if (string.IsNullOrEmpty(done))
+            {
+                return;
+            }
+
+            if (KCDInput.GameplayBlocked)
+            {
+                _pendingDone.Add(done);
+                return;
+            }
+
+            // 進んだ音は AudioManager が鳴らすので、トーストの通知音は重ねない。
+            HUD.Instance?.ShowToast(done, false);
+        }
+
         private static void OnStepTooEarly(QuestData quest, QuestStep step)
         {
             if (step == null)

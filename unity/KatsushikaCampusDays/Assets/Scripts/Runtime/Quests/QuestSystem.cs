@@ -50,6 +50,12 @@ namespace KCD
         public event Action<QuestData, QuestStep> StepTooEarly;
 
         /// <summary>
+        /// 途中のステップを達成した（クエストはまだ続く）。最後のステップは QuestCompleted が知らせる。
+        /// 読み込み中（「はじめから」の Load と、セーブの Restore での追いつき）は出さない。
+        /// </summary>
+        public event Action<QuestData, QuestStep> StepCompleted;
+
+        /// <summary>
         /// ゲーム内の時刻（時）を返す時計。null なら GameManager の時刻を使う。テストから差し込む。
         /// </summary>
         public Func<float> Clock { get; set; }
@@ -73,6 +79,12 @@ namespace KCD
         /// インスタンスが同じなら付け替えない）なので、黙らせないとタイトルで quest_start が鳴る。
         /// </summary>
         private bool _silent;
+
+        /// <summary>
+        /// セーブを戻している最中か。Restore の追いつき（CatchUpAllHeld）がステップを済ませても、
+        /// 読み込んだ瞬間に「分かったこと」の一言を出さない。ほかのイベントの扱いは変えない。
+        /// </summary>
+        private bool _restoring;
 
         /// <summary>
         /// プレイヤーが追うと決めたクエスト (#410)。受注した直後はそれを、Tab の一覧で選び直したらそれを指す。
@@ -587,6 +599,11 @@ namespace KCD
             }
             else
             {
+                if (!_silent && !_restoring)
+                {
+                    StepCompleted?.Invoke(quest, step);
+                }
+
                 // 次のステップが制限時間つきなら、ここから数える。
                 StartTimerIfTimed(quest);
                 CatchUpHeld(quest);

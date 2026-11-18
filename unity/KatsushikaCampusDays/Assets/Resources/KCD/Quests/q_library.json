@@ -24,7 +24,9 @@
       "type": "visit",
       "target": "poi_library_counter",
       "text": "カウンターで取り置きの本を受け取る",
-      "text_en": "Pick up the reserved book at the counter"
+      "text_en": "Pick up the reserved book at the counter",
+      "done": "取り置きの本を受け取った。水盤のいなりに届けよう",
+      "done_en": "You picked up the reserved book. Take it to Inari by the pool"
     },
     {
       "id": "s3",
