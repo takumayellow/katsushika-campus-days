@@ -32,7 +32,10 @@ namespace KCD
 
         public static bool IsEnglish => Locale == "en";
 
-        /// <summary>言語を切り替えて保存する。辞書が無い言語は無視する。</summary>
+        /// <summary>
+        /// 言語を切り替えて保存する。辞書が無い言語は無視する。
+        /// 展示モード (#466) では保存しない（来場者が選んだ言語を次の人や普段の設定に残さない）。
+        /// </summary>
         public static void SetLocale(string locale)
         {
             Ensure();
@@ -41,9 +44,37 @@ namespace KCD
                 return;
             }
 
-            PlayerPrefs.SetString(PrefKey, locale);
-            PlayerPrefs.Save();
+            if (!ExhibitMode.Enabled)
+            {
+                PlayerPrefs.SetString(PrefKey, locale);
+                PlayerPrefs.Save();
+            }
+
             LocaleChanged?.Invoke();
+        }
+
+        /// <summary>
+        /// 展示モード (#466) で次の人のために既定の言語（日本語）へ戻す。保存はしない。
+        /// もう既定の言語なら何もしない（描き直しも起こさない）。
+        /// </summary>
+        public static void ResetForNextVisitor()
+        {
+            bool loaded = _table != null;
+            if (loaded && _locale == DefaultLocale)
+            {
+                return;
+            }
+
+            if (!Load(DefaultLocale))
+            {
+                Ensure();
+                return;
+            }
+
+            if (loaded)
+            {
+                LocaleChanged?.Invoke();
+            }
         }
 
         public static void Toggle()
@@ -83,6 +114,13 @@ namespace KCD
             return IsEnglish && !string.IsNullOrEmpty(en) ? en : ja;
         }
 
+        /// <summary>テスト用。読んだ辞書を捨て、次に使うときに設定から読み直す。</summary>
+        public static void ReloadForTests()
+        {
+            _table = null;
+            _locale = null;
+        }
+
         private static void Ensure()
         {
             if (_table != null)
@@ -90,7 +128,8 @@ namespace KCD
                 return;
             }
 
-            string wanted = PlayerPrefs.GetString(PrefKey, DefaultLocale);
+            // 展示モードでは前の人や普段の設定の言語を引き継がず、いつも既定の言語で始める (#466)。
+            string wanted = ExhibitMode.Enabled ? DefaultLocale : PlayerPrefs.GetString(PrefKey, DefaultLocale);
             if (!Load(wanted) && !Load(DefaultLocale))
             {
                 _table = new Dictionary<string, string>();
