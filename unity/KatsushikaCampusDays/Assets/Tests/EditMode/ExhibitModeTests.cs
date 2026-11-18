@@ -1,5 +1,6 @@
 using System.IO;
 using NUnit.Framework;
+using UnityEngine;
 
 namespace KCD.Tests
 {
@@ -101,6 +102,120 @@ namespace KCD.Tests
         {
             Assert.That(ExhibitMode.Decide(ExhibitMode.IdleSeconds + 30f, false, true),
                 Is.EqualTo(ExhibitMode.IdleAction.None));
+        }
+
+        // ---- 全画面 ----
+
+        [Test]
+        public void ShouldForceFullscreen_NoScreenArguments_Forces()
+        {
+            Assert.That(ExhibitMode.ShouldForceFullscreen(new[] { "game.exe" }), Is.True);
+            Assert.That(ExhibitMode.ShouldForceFullscreen(new[] { "game.exe", "-kcd-exhibit", "-logFile", "x.log" }), Is.True);
+            Assert.That(ExhibitMode.ShouldForceFullscreen(null), Is.True);
+            Assert.That(ExhibitMode.ShouldForceFullscreen(new[] { "game.exe", "-screen-quality", "Low" }), Is.True,
+                "画質の指定だけで全画面をやめた");
+        }
+
+        [TestCase("-screen-fullscreen")]
+        [TestCase("-Screen-Width")]
+        [TestCase("-screen-height")]
+        [TestCase("-window-mode")]
+        [TestCase("-popupwindow")]
+        public void ShouldForceFullscreen_ScreenArgument_FollowsIt(string arg)
+        {
+            Assert.That(ExhibitMode.ShouldForceFullscreen(new[] { "game.exe", arg, "0" }), Is.False,
+                "起動引数で画面を指定したのに全画面にした");
+        }
+
+        // ---- 来場者が変えた設定を次の人に残さない ----
+
+        [Test]
+        public void Exhibit_CameraSettings_AreNotSavedAndGoBackToDefault()
+        {
+            using (new PlayerPrefsKeyScope(CameraPrefs.SensitivityPrefKey))
+            using (new PlayerPrefsKeyScope(CameraPrefs.InvertPrefKey))
+            {
+                try
+                {
+                    PlayerPrefs.SetString(CameraPrefs.SensitivityPrefKey, "9");
+                    ExhibitMode.Enabled = true;
+                    CameraPrefs.Reload();
+                    Assert.AreEqual(CameraPrefs.DefaultLevel, CameraPrefs.SensitivityLevel, "展示モードで保存された感度を使った");
+
+                    CameraPrefs.SensitivityLevel = 2;
+                    CameraPrefs.InvertY = true;
+                    Assert.AreEqual(2, CameraPrefs.SensitivityLevel, "展示モードで感度を変えられない");
+                    Assert.AreEqual("9", PlayerPrefs.GetString(CameraPrefs.SensitivityPrefKey), "来場者が変えた感度を保存した");
+                    Assert.IsFalse(PlayerPrefs.HasKey(CameraPrefs.InvertPrefKey), "来場者が変えた反転を保存した");
+
+                    CameraPrefs.ResetForNextVisitor();
+                    Assert.AreEqual(CameraPrefs.DefaultLevel, CameraPrefs.SensitivityLevel);
+                    Assert.IsFalse(CameraPrefs.InvertY);
+                }
+                finally
+                {
+                    ExhibitMode.ResetForTests();
+                    CameraPrefs.Reload();
+                }
+            }
+        }
+
+        [Test]
+        public void Exhibit_Volume_IsNotSavedAndGoesBackToDefault()
+        {
+            const string BgmKey = "KCD.Volume.Bgm";
+            var go = new GameObject("AudioManagerTest");
+            try
+            {
+                using (new PlayerPrefsKeyScope(BgmKey))
+                {
+                    PlayerPrefs.DeleteKey(BgmKey);
+                    AudioManager audio = go.AddComponent<AudioManager>();
+                    ExhibitMode.Enabled = true;
+
+                    audio.BgmVolume = 0.1f;
+                    Assert.AreEqual(0.1f, audio.BgmVolume, 1e-5f, "展示モードで音量を変えられない");
+                    Assert.IsFalse(PlayerPrefs.HasKey(BgmKey), "来場者が変えた音量を保存した");
+
+                    audio.ResetVolumesForNextVisitor();
+                    Assert.AreEqual(AudioManager.DefaultBgmVolume, audio.BgmVolume, 1e-5f);
+                    Assert.AreEqual(AudioManager.DefaultSeVolume, audio.SeVolume, 1e-5f);
+                    Assert.AreEqual(AudioManager.DefaultAmbientVolume, audio.AmbientVolume, 1e-5f);
+                }
+            }
+            finally
+            {
+                Object.DestroyImmediate(go);
+            }
+        }
+
+        [Test]
+        public void Exhibit_QualityTier_IsNotSavedAndGoesBackToDefault()
+        {
+            QualityTier before = QualityManager.Current;
+            QualityTier fallback = QualityTiers.DefaultFor(QualityTiers.TargetPlatform, Application.isMobilePlatform);
+            QualityTier other = fallback == QualityTier.Low ? QualityTier.High : QualityTier.Low;
+            using (new PlayerPrefsKeyScope(QualityTiers.PrefKey))
+            {
+                try
+                {
+                    PlayerPrefs.DeleteKey(QualityTiers.PrefKey);
+                    ExhibitMode.Enabled = true;
+
+                    QualityManager.SetTier(other);
+                    Assert.AreEqual(other, QualityManager.Current, "展示モードで画質を変えられない");
+                    Assert.IsFalse(PlayerPrefs.HasKey(QualityTiers.PrefKey), "来場者が変えた画質を保存した");
+
+                    QualityManager.ResetForNextVisitor();
+                    Assert.AreEqual(fallback, QualityManager.Current);
+                }
+                finally
+                {
+                    // 段を元に戻す（展示モードのままなので保存はしない）。
+                    QualityManager.SetTier(before);
+                    ExhibitMode.ResetForTests();
+                }
+            }
         }
     }
 }

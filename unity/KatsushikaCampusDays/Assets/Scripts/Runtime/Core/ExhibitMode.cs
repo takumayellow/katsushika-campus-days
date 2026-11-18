@@ -128,6 +128,44 @@ namespace KCD
             return enabled;
         }
 
+        /// <summary>画面のモードや大きさを指定する起動引数。</summary>
+        private static readonly string[] ScreenArgs =
+        {
+            "-screen-fullscreen", "-screen-width", "-screen-height", "-window-mode", "-popupwindow"
+        };
+
+        /// <summary>
+        /// 展示モードの起動で全画面にするか。Unity は前回の画面の設定（ウィンドウ表示や大きさ）を覚えていて、
+        /// 引数なしで起動するとそれを使うので、スモークがウィンドウで起動したあとの配信がウィンドウのまま始まる。
+        /// 起動引数で画面を指定しているとき（スモークなど）はその指定に従う。
+        /// </summary>
+        public static bool ShouldForceFullscreen(string[] args)
+        {
+            if (args == null)
+            {
+                return true;
+            }
+
+            for (int i = 0; i < args.Length; i++)
+            {
+                string a = args[i];
+                if (a == null)
+                {
+                    continue;
+                }
+
+                for (int j = 0; j < ScreenArgs.Length; j++)
+                {
+                    if (string.Equals(a, ScreenArgs[j], StringComparison.OrdinalIgnoreCase))
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
         /// <summary>展示モードのセーブを置くフォルダ。persistent が空なら null（置き場を変えない）。</summary>
         public static string SaveDirectory(string persistent)
         {
