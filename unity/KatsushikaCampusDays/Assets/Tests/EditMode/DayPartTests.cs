@@ -35,6 +35,18 @@ namespace KCD.Tests
         }
 
         [Test]
+        public void Current_WithoutGameManager_IsClassAndDoesNotCreateOne()
+        {
+            if (GameManager.HasInstance)
+            {
+                Assert.Ignore("GameManager が残っている環境では確かめられない");
+            }
+
+            Assert.AreEqual(DayPartKind.Class, DayPart.Current);
+            Assert.IsFalse(GameManager.HasInstance);
+        }
+
+        [Test]
         public void Of_TreatsNaNAsMorning()
         {
             Assert.AreEqual(DayPartKind.Morning, DayPart.Of(float.NaN));

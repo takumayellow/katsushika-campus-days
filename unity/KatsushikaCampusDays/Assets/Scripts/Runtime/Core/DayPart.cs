@@ -38,8 +38,11 @@ namespace KCD
             return hours < NightStartHour ? DayPartKind.AfterSchool : DayPartKind.Night;
         }
 
-        /// <summary>いまの時間帯。GameManager が無いとき（エディタのテストなど）は授業中として扱う。</summary>
+        /// <summary>
+        /// いまの時間帯。GameManager が無いとき（エディタのテストなど）は授業中として扱う。
+        /// 会話の行を読むたびに呼ばれるので、GameManager を作らない（エディタで作ると DontDestroyOnLoad が例外になる）。
+        /// </summary>
         public static DayPartKind Current =>
-            GameManager.Instance != null ? Of(GameManager.Instance.GameTimeHours) : DayPartKind.Class;
+            GameManager.HasInstance ? Of(GameManager.Instance.GameTimeHours) : DayPartKind.Class;
     }
 }
