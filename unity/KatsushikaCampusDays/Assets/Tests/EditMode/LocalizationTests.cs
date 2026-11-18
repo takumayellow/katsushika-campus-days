@@ -29,6 +29,7 @@ namespace KCD.Tests
         [TearDown]
         public void TearDown()
         {
+            ExhibitMode.ResetForTests();
             L.SetLocale(_savedLocale);
             if (_hadPref)
             {
@@ -182,6 +183,81 @@ namespace KCD.Tests
             Assert.AreEqual("en", L.Locale);
 
             L.Toggle();
+            Assert.AreEqual("ja", L.Locale);
+        }
+
+        // ---- 展示モード (#466) ----
+
+        private static int CountEvents(System.Action action)
+        {
+            int raised = 0;
+            void OnChanged() => raised++;
+            L.LocaleChanged += OnChanged;
+            try
+            {
+                action();
+            }
+            finally
+            {
+                L.LocaleChanged -= OnChanged;
+            }
+
+            return raised;
+        }
+
+        [Test]
+        public void Exhibit_Start_IgnoresTheSavedLanguage()
+        {
+            PlayerPrefs.SetString(L.PrefKey, "en");
+            ExhibitMode.Enabled = true;
+            L.ReloadForTests();
+            Assert.AreEqual("ja", L.Locale, "展示モードなのに保存された英語で始まった");
+
+            ExhibitMode.Enabled = false;
+            L.ReloadForTests();
+            Assert.AreEqual("en", L.Locale, "展示モードでないのに保存された言語を使っていない");
+        }
+
+        [Test]
+        public void Exhibit_SetLocale_SwitchesButDoesNotSave()
+        {
+            PlayerPrefs.SetString(L.PrefKey, "ja");
+            ExhibitMode.Enabled = true;
+            int raised = CountEvents(() => L.SetLocale("en"));
+
+            Assert.AreEqual("en", L.Locale, "展示モードで言語を切り替えられない");
+            Assert.AreEqual(1, raised);
+            Assert.AreEqual("ja", PlayerPrefs.GetString(L.PrefKey), "来場者が選んだ言語を保存した");
+        }
+
+        [Test]
+        public void ResetForNextVisitor_BringsBackJapaneseWithoutSaving()
+        {
+            PlayerPrefs.SetString(L.PrefKey, "ja");
+            ExhibitMode.Enabled = true;
+            L.SetLocale("en");
+
+            int raised = CountEvents(L.ResetForNextVisitor);
+
+            Assert.AreEqual("ja", L.Locale, "次の人のために日本語へ戻っていない");
+            Assert.AreEqual(1, raised, "戻したのに画面を描き直していない");
+            Assert.AreEqual("ja", PlayerPrefs.GetString(L.PrefKey));
+        }
+
+        [Test]
+        public void ResetForNextVisitor_AlreadyJapanese_DoesNotRaiseTheEvent()
+        {
+            Assert.AreEqual(0, CountEvents(L.ResetForNextVisitor));
+            Assert.AreEqual("ja", L.Locale);
+        }
+
+        [Test]
+        public void ResetForNextVisitor_BeforeFirstUse_LoadsJapaneseQuietly()
+        {
+            PlayerPrefs.SetString(L.PrefKey, "en");
+            L.ReloadForTests();
+
+            Assert.AreEqual(0, CountEvents(L.ResetForNextVisitor), "まだ何も描いていないのに描き直しを起こした");
             Assert.AreEqual("ja", L.Locale);
         }
     }
