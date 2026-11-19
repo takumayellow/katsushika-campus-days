@@ -1,19 +1,19 @@
 {
   "version": 1,
-  "coordinate_note": "x,z は campus.json 座標 (= Unity のワールド座標, x=東 m, z=北 m)。{entrance: <building id>} は Campus シーンの entrance_<id>（ドア前の床）、{place: <id>} は CampusProps の VisitZone (Zone_<id>) の位置。SceneBuilder（MobStage）がどの点も NavMesh の上に下ろし、下ろせなかった点を通る道は使わない（CampusMobTests が確かめる）。variants は既存のキャラクターの体かモブだけの男子学生の体 student_m（body）を、髪（hair）・上着かブラウスかシャツ（top）・スカートかズボンと胸のリボン（bottom。男子学生はズボンだけ）・靴（shoes）の色だけ変えて使う。variants は並んだ順に枠へ 1 つずつ焼き込まれる。枠と同じ 24 通りあり、どの 2 つも体か色が見て分かるほど違うので、同時に出ている人に同じ見た目はいない（MobScheduleTests が確かめる）。男の体（prof・student_m）は 3〜4 つおきに置いて男女をおよそ 3 対 7 に混ぜているので、並べ替えるときは偏らないようにする（MobScheduleTests が確かめる）。",
+  "coordinate_note": "x,z は campus.json 座標 (= Unity のワールド座標, x=東 m, z=北 m)。{entrance: <building id>} は Campus シーンの entrance_<id>（ドア前の床）、{place: <id>} は CampusProps の VisitZone (Zone_<id>) の位置。SceneBuilder（MobStage）がどの点も NavMesh の上に下ろし、下ろせなかった点を通る道は使わない（CampusMobTests が確かめる）。variants は既存のキャラクターの体かモブだけの男子学生の体 student_m（body）を、髪（hair）・上着かブラウスかシャツ（top）・スカートかズボンと胸のリボン（bottom。男子学生はズボンだけ）・靴（shoes）の色だけ変えて使う。variants は並んだ順に枠へ 1 つずつ焼き込まれる。枠と同じ 24 通りあり、どの 2 つも体か色が見て分かるほど違うので、同時に出ている人に同じ見た目はいない（MobScheduleTests が確かめる）。男の体（prof・student_m）と女の体をおよそ交互に置いて男女を半々に混ぜているので、並べ替えるときは偏らないようにする（MobScheduleTests が確かめる）。",
   "spawn_stagger_seconds": 2.5,
   "respawn_delay_seconds": 6.0,
   "avoid_player_radius": 1.2,
   "variants": [
     {
       "id": "mob_a",
-      "body": "sora",
-      "label": "そらの体・黒髪・白のブラウス・紺のスカート",
-      "hair": "#2b2320",
-      "top": "#f4f4f2",
-      "bottom": "#33405e",
+      "body": "student_m",
+      "label": "男子学生の体・茶髪・キャメルのシャツ・ブラウンのズボン",
+      "hair": "#6b4a2f",
+      "top": "#9a7b4f",
+      "bottom": "#7a6a55",
       "shoes": "#ffffff",
-      "height": 1.62
+      "height": 1.71
     },
     {
       "id": "mob_g",
@@ -27,13 +27,13 @@
     },
     {
       "id": "mob_b",
-      "body": "inari",
-      "label": "いなりの体・茶髪・からし色のカーディガン・デニムのスカート・黒縁メガネ",
-      "hair": "#6b4a2f",
-      "top": "#c9a24a",
-      "bottom": "#3f5878",
+      "body": "student_m",
+      "label": "男子学生の体・明るい茶髪・深緑のシャツ・グレーのズボン",
+      "hair": "#a0703f",
+      "top": "#2f5d50",
+      "bottom": "#6e7178",
       "shoes": "#f2f2f2",
-      "height": 1.58
+      "height": 1.67
     },
     {
       "id": "mob_d",
@@ -107,13 +107,13 @@
     },
     {
       "id": "mob_k",
-      "body": "kaname",
-      "label": "かなめの体・黒髪・テラコッタのエプロン・紺のスカート",
-      "hair": "#2a2222",
-      "top": "#c8553d",
-      "bottom": "#2b3a55",
+      "body": "student_m",
+      "label": "男子学生の体・黒髪・からし色のシャツ・こげ茶のズボン",
+      "hair": "#1c1a1a",
+      "top": "#c9a24a",
+      "bottom": "#4a3a2e",
       "shoes": "#ffffff",
-      "height": 1.57
+      "height": 1.74
     },
     {
       "id": "mob_l",
@@ -137,13 +137,13 @@
     },
     {
       "id": "mob_n",
-      "body": "mirai",
-      "label": "みらいの体・黒髪・生成りのブラウス・深緑のスカート",
-      "hair": "#2a2220",
-      "top": "#f2ead8",
-      "bottom": "#3a4a3a",
+      "body": "student_m",
+      "label": "男子学生の体・明るい茶髪・紫のシャツ・こげ茶のズボン",
+      "hair": "#a0703f",
+      "top": "#6a4a7a",
+      "bottom": "#4a3a2e",
       "shoes": "#5a4634",
-      "height": 1.64
+      "height": 1.68
     },
     {
       "id": "mob_o",
@@ -177,13 +177,13 @@
     },
     {
       "id": "mob_r",
-      "body": "sora",
-      "label": "そらの体・こげ茶の髪・えんじのパーカー・グレーのスカート",
-      "hair": "#3a2a24",
-      "top": "#8c2f3a",
-      "bottom": "#808590",
+      "body": "student_m",
+      "label": "男子学生の体・茶髪・朱色のシャツ・濃いグレーのズボン",
+      "hair": "#6b4a2f",
+      "top": "#c8553d",
+      "bottom": "#55606e",
       "shoes": "#ffffff",
-      "height": 1.66
+      "height": 1.78
     },
     {
       "id": "mob_s",
@@ -366,7 +366,7 @@
           "end": "despawn"
         },
         {
-          "weight": 2,
+          "weight": 1,
           "waypoints": [
             {
               "x": -62.0,
@@ -437,7 +437,7 @@
             },
             {
               "place": "library_pond",
-              "wait": 40.0
+              "wait": 15.0
             },
             {
               "entrance": "library"
@@ -611,7 +611,7 @@
           "end": "despawn"
         },
         {
-          "weight": 2,
+          "weight": 1,
           "waypoints": [
             {
               "entrance": "library"
@@ -622,7 +622,7 @@
             },
             {
               "place": "library_pond",
-              "wait": 40.0
+              "wait": 20.0
             },
             {
               "entrance": "library"
@@ -815,8 +815,7 @@
               "z": -10.0
             },
             {
-              "place": "library_pond",
-              "wait": 30.0
+              "place": "library_pond"
             },
             {
               "x": -1.0,
@@ -937,7 +936,7 @@
           "end": "despawn"
         },
         {
-          "weight": 2,
+          "weight": 1,
           "waypoints": [
             {
               "entrance": "library"
