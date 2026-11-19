@@ -133,6 +133,12 @@ namespace KCD
 
             SubscribeQuests();
 
+            // はじめての講義で席に着いたら、教授の短い講義を流す (#410)。
+            if (GetComponent<LectureScene>() == null)
+            {
+                gameObject.AddComponent<LectureScene>();
+            }
+
             // 展示モードでは、放置されたらタイトルへ戻す見張りを付ける (#466)。
             if (ExhibitMode.Enabled)
             {

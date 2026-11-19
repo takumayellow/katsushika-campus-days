@@ -3,6 +3,37 @@
   "speaker": "教授",
   "topics": [
     {
+      "id": "t_lecture_talk",
+      "requiresStep": "q_lecture/s3",
+      "once": true,
+      "lines": [
+        {
+          "text": "では始めよう。今日は、この教室の席の話をする。",
+          "text_en": "Let us begin. Today I will talk about the seats in this room."
+        },
+        {
+          "text": "この 101 には 270 の席がある。きみが座った席は埋まっている。隣は空いている。",
+          "text_en": "This room, 101, has 270 seats. The one you sat in is taken. The one beside you is empty."
+        },
+        {
+          "text": "空いているか、埋まっているか。2 つにひとつ。この 2 択を 1 つ書き留める量を 1 ビットと呼ぶ。",
+          "text_en": "Empty or taken. One of two. The amount it takes to write down one such choice is called one bit."
+        },
+        {
+          "text": "席を 2 つ並べれば 4 通り、3 つなら 8 通り。1 つ増えるたびに倍になる。",
+          "text_en": "Two seats side by side give four patterns, three give eight. Each seat you add doubles them."
+        },
+        {
+          "text": "計算機の中では、空きと埋まりが、電気が流れているかいないかに置き換わっている。",
+          "text_en": "Inside a computer, empty and taken become whether a current flows or not."
+        },
+        {
+          "text": "……そういう話を 90 分かけてするのが、これからの 4 年間だ。",
+          "text_en": "...Talks like this, ninety minutes at a time, are what the next four years are made of."
+        }
+      ]
+    },
+    {
       "id": "t_lecture_done",
       "requiresCompletedQuest": "q_lecture",
       "once": true,
