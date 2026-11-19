@@ -61,6 +61,8 @@ EXIT_BUSY = 3
 # ここに無いスキップはこれまでどおり失敗に数える。
 KNOWN_SKIPS = {
     "KCD.Tests.MobCrowdCaptureTests.水盤の前に集めて撮る": "KCD_MOB_CAPTURE_DIR を渡して撮るときだけ走る",
+    "KCD.Tests.ExhibitViewCaptureTests.オリエンテーションのあとの次の行き先を撮る": "KCD_VIEW_CAPTURE_DIR を渡して撮るときだけ走る",
+    "KCD.Tests.ExhibitViewCaptureTests.図書館の水盤のまわりの人を数えて撮る": "KCD_VIEW_CAPTURE_DIR を渡して撮るときだけ走る",
 }
 
 # Unity -runTests の終了コード
