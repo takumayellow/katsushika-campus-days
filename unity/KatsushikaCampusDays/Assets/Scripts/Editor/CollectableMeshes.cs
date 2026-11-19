@@ -65,6 +65,19 @@ namespace KCD.Editor
                 };
             }
 
+            if (itemId == StrayBookId)
+            {
+                return new Model
+                {
+                    Mesh = Save(BuildBook(), "Book"),
+                    Materials = new[]
+                    {
+                        MaterialLibrary.EnsureCampus("vending_red"),
+                        MaterialLibrary.EnsureCampus("white"),
+                    },
+                };
+            }
+
             if (itemId == "milk")
             {
                 return new Model
@@ -148,6 +161,58 @@ namespace KCD.Editor
 
         /// <summary>紙パックの胴の高さの半分 [m]。原点が胴の中心なので、台に立てるときはこの分だけ上げる。</summary>
         public const float MilkCartonHalfHeight = 0.12f;
+
+        /// <summary>迷子の本（q_sq_stray_book, #410）の拾い物の id。</summary>
+        public const string StrayBookId = "stray_book";
+
+        /// <summary>本の大きさ（m、幅・厚さ・高さ）。四六判のハードカバーを 1.3 倍にして、机の上で見つけやすくする。</summary>
+        public static readonly Vector3 BookSize = new Vector3(0.17f, 0.045f, 0.25f);
+
+        /// <summary>
+        /// 台に寝かせて置いたとき、原点から底までの高さ（m）。本は厚さの半分、紙パックは胴の半分、それ以外は 0。
+        /// </summary>
+        public static float RestingHalfHeight(string itemId)
+        {
+            if (itemId == StrayBookId)
+            {
+                return BookSize.y * 0.5f;
+            }
+
+            return itemId == "milk" ? MilkCartonHalfHeight : 0f;
+        }
+
+        /// <summary>
+        /// 寝かせた本。原点は中心、+Z が天、-X が背。サブメッシュ 0 = 表紙（えんじ）、1 = 小口の紙（白）。
+        /// 表紙は紙より一回り大きく、背の反対側の 3 辺から紙がわずかに引っ込んで見える。
+        /// </summary>
+        public static Mesh BuildBook()
+        {
+            const float board = 0.005f;
+            const float inset = 0.006f;
+            Vector3 s = BookSize;
+
+            var vertices = new List<Vector3>();
+            var cover = new List<int>();
+            var pages = new List<int>();
+
+            // 表紙と裏表紙、背。
+            AddBox(vertices, cover, new Vector3(0f, (s.y - board) * 0.5f, 0f), new Vector3(s.x, board, s.z));
+            AddBox(vertices, cover, new Vector3(0f, -(s.y - board) * 0.5f, 0f), new Vector3(s.x, board, s.z));
+            AddBox(vertices, cover, new Vector3(-(s.x - board) * 0.5f, 0f, 0f), new Vector3(board, s.y, s.z));
+
+            // 紙の束。背の側は背に付け、残りの 3 辺は表紙から inset だけ引っ込める。
+            float pagesX = s.x - board - inset;
+            AddBox(vertices, pages, new Vector3(-s.x * 0.5f + board + pagesX * 0.5f, 0f, 0f),
+                new Vector3(pagesX, s.y - board * 2f, s.z - inset * 2f));
+
+            var mesh = new Mesh { name = "Book", subMeshCount = 2 };
+            mesh.SetVertices(vertices);
+            mesh.SetTriangles(cover, 0);
+            mesh.SetTriangles(pages, 1);
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            return mesh;
+        }
 
         /// <summary>
         /// 200 ml の紙パック（実物 6.5 x 6.5 x 12 cm）を 2 倍にしたもの。原点は胴の中心。
