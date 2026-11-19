@@ -238,10 +238,10 @@ namespace KCD.Editor
             EditorPaths.Report(place.QuestId + "/" + place.StepId + ": " + place.Target + " を " + surface.ToString("F2") + " に置きました。");
         }
 
-        /// <summary>話す人。toward の方（カウンターなど）に背を向け、来た人の方を向いて立つ。</summary>
+        /// <summary>話す人。toward の方（カウンターの客の側など）を向いて立つ。</summary>
         private static void PlacePerson(Transform group, Place place, Vector3 floor, Vector3 facing)
         {
-            float yaw = Mathf.Atan2(-facing.x, -facing.z) * Mathf.Rad2Deg;
+            float yaw = Mathf.Atan2(facing.x, facing.z) * Mathf.Rad2Deg;
             string name = string.IsNullOrEmpty(place.Name) ? place.Target : place.Name;
             GameObject npc = ActorFactory.CreateNpc(group, place.Body, name, floor, yaw, 0f);
             npc.name = "NPC_" + place.Target;
