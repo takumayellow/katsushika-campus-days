@@ -8,8 +8,8 @@
       "once": true,
       "lines": [
         {
-          "text": "見た？ 18 時の水盤。",
-          "text_en": "Did you see it? The pool at six."
+          "text": "来てくれたんだ。……きれいだったね、18 時の水盤。",
+          "text_en": "You came. ...Wasn't it beautiful? The pool at six."
         },
         {
           "text": "あの深い軒が西日を切って、水の面にだけ橙が残るの。年に何回かしか、あの色にならない。",
@@ -36,6 +36,10 @@
         {
           "text": "明日からは、ここがもっと狭く感じるよ。知っている場所が増えると、キャンパスって縮むの。",
           "text_en": "From tomorrow, this place will feel smaller. The more places you know, the more a campus shrinks."
+        },
+        {
+          "text": "帰りは、メインストリートの街灯の下を正門まで歩いてみて。夜の石畳も、ちょっといいから。",
+          "text_en": "On your way home, walk Main Street under the lamps to the main gate. The paving stones at night are nice, too."
         }
       ]
     },
@@ -58,8 +62,16 @@
           "text_en": "Are you sure I can have it?"
         },
         {
-          "text": "いいの。次はあなたが誰かに貸す番ね。",
-          "text_en": "Of course. Next time it's your turn to lend it to someone."
+          "text": "いいの。……そうだ、押し花、作ってみない？",
+          "text_en": "Of course. ...Oh, I know. Want to try pressing some yourself?"
+        },
+        {
+          "text": "キャンパスの北のみらい公園に、理科大グリーンの葉が落ちてるの。5 枚集めたら、押し花にできるよ。",
+          "text_en": "In Mirai Park, north of campus, there are leaves in Rikadai green. Gather five and you can press them."
+        },
+        {
+          "text": "18 時の約束も、忘れないでね。",
+          "text_en": "And don't forget about six o'clock."
         }
       ]
     },
@@ -106,6 +118,19 @@
         {
           "text": "……という理由じゃ、だめ？",
           "text_en": "...Is that not a good enough reason?"
+        },
+        {
+          "speaker": "自分",
+          "text": "……わかりました。",
+          "text_en": "...All right."
+        },
+        {
+          "text": "ありがとう。それと、もうひとつ。18 時になったら、ここに戻ってきて。",
+          "text_en": "Thanks. And one more thing. Come back here at six o'clock."
+        },
+        {
+          "text": "その時間だけ、この水盤に夕日が落ちるの。今日の用事を済ませてから、いっしょに見よう。",
+          "text_en": "That's the only hour the sunset falls into this pool. Finish what you have to do today, and we'll watch it together."
         }
       ]
     },

@@ -332,5 +332,55 @@ namespace KCD.Tests
 
             Assert.AreSame(chosen, DialogueSystem.ReportTalkAndSelect(npc, null, null, chosen));
         }
+
+        private static string AllText(DialogueTopic topic)
+        {
+            var text = new System.Text.StringBuilder();
+            for (int i = 0; i < topic.Lines.Count; i++)
+            {
+                text.Append(topic.Lines[i].Text).Append(' ');
+            }
+
+            return text.ToString();
+        }
+
+        [Test]
+        public void Library_ThanksLeadIntoThePark_InTheSameTalk()
+        {
+            // 栞のお礼に続けて押し花を勧め、その会話で公園の依頼が受注される (#410)。
+            List<DialogueData> dialogues = LoadDialogues();
+            DialogueData inari = dialogues.Find(d => d.Id == "inari");
+            QuestSystem quests = NewGame(14f);
+            var spent = new HashSet<string>();
+            RestoreJustBeforeTheLastTalk(quests, quests.Find("q_library"));
+
+            DialogueTopic shown = Talk(inari, quests, spent);
+            Finish(inari, shown, quests, spent);
+
+            Assert.AreEqual("t_done", shown.Id);
+            StringAssert.Contains("みらい公園", AllText(shown), "お礼から公園の依頼につながらない");
+            StringAssert.Contains("18 時", AllText(shown), "夕日の約束を念押ししない");
+            Assert.IsTrue(quests.IsActive("q_park"), "お礼の会話のあと公園の依頼が受注されていない");
+            StringAssert.Contains("いなり", quests.Find("q_park").Summary);
+        }
+
+        [Test]
+        public void Morning_InariPromisesTheSunset_AndProfNamesHer()
+        {
+            // 朝のうちに「18 時に水盤で夕日」を約束し、教授がいなりを名指しで紹介する (#410)。
+            List<DialogueData> dialogues = LoadDialogues();
+            DialogueTopic start = dialogues.Find(d => d.Id == "inari").Topics.Find(t => t.Id == "t_start");
+            DialogueTopic welcome = dialogues.Find(d => d.Id == "prof").Topics.Find(t => t.Id == "t_welcome");
+            QuestSystem quests = NewGame(10f);
+
+            StringAssert.Contains("18 時", AllText(start));
+            StringAssert.Contains("夕日", AllText(start));
+            StringAssert.Contains("花之木いなり", AllText(welcome));
+            StringAssert.Contains("いなりとの約束", quests.Find("q_sunset").Summary);
+            for (int i = 0; i < start.Lines.Count; i++)
+            {
+                Assert.IsNotEmpty(start.Lines[i].TextEn, "t_start の " + i + " 行目に英語が無い");
+            }
+        }
     }
 }
