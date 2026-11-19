@@ -11,7 +11,7 @@ namespace KCD.Tests
     ///
     /// 朝は門か北西の駅側から建物へ 18 人、昼はメインストリート・池・北側に散って 20 人、午後は建物の間を 14 人、
     /// 夕方は門か駅側へ 10 人、夜はほとんど誰もいない（2 人）。8 時より前は誰も出さない (#165)。
-    /// どの時間帯も同時に出す上限の 24 人を超えない。見た目は男女がおよそ 3 対 7 (#165)。
+    /// どの時間帯も同時に出す上限の 24 人を超えない。見た目は男女がおよそ半々 (#165)。
     /// 見た目は枠と同じ数だけあり、どの 2 つも体か色で見分けがつく。
     /// </summary>
     public sealed class MobScheduleTests
@@ -208,10 +208,10 @@ namespace KCD.Tests
         }
 
         [Test]
-        public void 男女はおよそ3対7で並びのどこを切っても偏らない()
+        public void 男女はおよそ半々で並びのどこを切っても偏らない()
         {
             // MobStage は枠 i に Variants[i % 数] を焼き込み、MobPool は枠を順に貸す。
-            // 全枠で男が 25〜35%、続けて貸す夕方の人数ぶんの枠のどこを切っても男が 2 人以上・4 人以下。
+            // 全枠で男が 45〜55%、続けて貸す夕方の人数ぶんの枠のどこを切っても男が 4 人以上・6 人以下。
             MobSchedule schedule = Load();
             IReadOnlyList<MobSchedule.Variant> variants = schedule.Variants;
             int slots = MobScheduler.MaxActive;
@@ -223,7 +223,7 @@ namespace KCD.Tests
                 total += male[i] ? 1 : 0;
             }
 
-            Assert.That(total / (float)slots, Is.InRange(0.25f, 0.35f), "全枠の男の割合");
+            Assert.That(total / (float)slots, Is.InRange(0.45f, 0.55f), "全枠の男の割合");
 
             int window = schedule.Bands.First(band => band.Id == "evening").Count;
             for (int start = 0; start < slots; start++)
@@ -234,7 +234,7 @@ namespace KCD.Tests
                     count += male[(start + k) % slots] ? 1 : 0;
                 }
 
-                Assert.That(count, Is.InRange(2, 4), start + " 番の枠から " + window + " 人の男の数");
+                Assert.That(count, Is.InRange(4, 6), start + " 番の枠から " + window + " 人の男の数");
             }
         }
 
