@@ -127,5 +127,43 @@ namespace KCD.Tests
             Assert.AreEqual(16f, DayEndEvaluator.WalkedHours(0.5f, Start), 0.001f);
             Assert.Greater(DayEndEvaluator.WalkedHours(0.5f, Start), DayEndEvaluator.WalkedHours(23.5f, Start));
         }
+
+        [Test]
+        public void WalkingHome_PushesTheDayEndBackTwoHours()
+        {
+            Assert.AreEqual(End, DayEndEvaluator.DayEndHourFor(End, false), 1e-4f, "帰り道を受けていないのに延びた");
+            Assert.AreEqual(End + DayEndEvaluator.WalkHomeGraceHours, DayEndEvaluator.DayEndHourFor(End, true), 1e-4f,
+                "帰り道の間に一日の終わりが延びない");
+            Assert.AreEqual(23.5f, DayEndEvaluator.DayEndHourFor(22.5f, true), 1e-4f, "延ばして 24 時をまたいだ");
+        }
+
+        [Test]
+        public void WalkingHome_EndsTheDayOnceTheQuestIsDone()
+        {
+            bool latched = false;
+
+            // 20:30 にまだ帰り道の途中なら終わらない。正門に着いてクエストが終わった時点で 20 時を過ぎていれば、すぐ終わる。
+            latched = DayEndEvaluator.LatchDayEnd(latched, 20.5f, Start, DayEndEvaluator.DayEndHourFor(End, true));
+            Assert.IsFalse(DayEndEvaluator.ShouldEndDay(latched, false, false), "帰り道の途中で一日が終わった");
+            latched = DayEndEvaluator.LatchDayEnd(latched, 20.6f, Start, DayEndEvaluator.DayEndHourFor(End, false));
+            Assert.IsTrue(DayEndEvaluator.ShouldEndDay(latched, false, false), "正門に着いても一日が終わらない");
+        }
+
+        [Test]
+        public void WalkingHome_ReleasesALatchSetDuringTheSunsetTalk()
+        {
+            bool latched = false;
+
+            // 夕日の会話の最中に 20 時を過ぎて掛け金が立ち、会話が終わると帰り道を受けている。
+            Assert.IsFalse(Frame(ref latched, 20.1f, true), "会話の上にリザルトが出た");
+            Assert.IsTrue(latched, "会話中に 20 時を過ぎたことを覚えていない");
+            latched = DayEndEvaluator.LatchDayEnd(latched, 20.2f, Start, DayEndEvaluator.DayEndHourFor(End, true));
+            Assert.IsFalse(DayEndEvaluator.ShouldEndDay(latched, false, false), "帰り道を受けたのに一日が終わった");
+
+            // 帰り道の途中でも、延ばした時刻を過ぎれば終わる。
+            latched = DayEndEvaluator.LatchDayEnd(latched, DayEndEvaluator.DayEndHourFor(End, true), Start,
+                DayEndEvaluator.DayEndHourFor(End, true));
+            Assert.IsTrue(DayEndEvaluator.ShouldEndDay(latched, false, false), "延ばした時刻を過ぎても終わらない");
+        }
     }
 }
