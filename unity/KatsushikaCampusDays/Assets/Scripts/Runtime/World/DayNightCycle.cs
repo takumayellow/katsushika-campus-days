@@ -54,7 +54,7 @@ namespace KCD
 
         /// <summary>
         /// 時計を進めるか。止めてあるとき、会話を読んでいるあいだ、一日の長さが無いときは進めない。
-        /// 夕日（18〜20 時）は実時間で 60 秒しかなく、会話で削られないようにする（#410）。
+        /// 夕日（18〜20 時）は実時間で 100 秒しかなく、会話で削られないようにする（#410）。
         /// </summary>
         public static bool Advances(bool paused, bool talking, float realSecondsPerGameDay)
         {
