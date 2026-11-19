@@ -28,7 +28,10 @@ namespace KCD.Tests
             NpcAffinity.Reset();
             _spent = new HashSet<string>();
             _quests = new QuestSystem();
-            _quests.Load(new[] { QuestData.FromJson(Read("Quests", ParkId)), QuestData.FromJson(Read("Quests", BookId)) }, true);
+            // 公園の依頼の前の段（図書館の予約本）はここでは扱わないので、前提を外して読む。
+            Dictionary<string, object> park = Read("Quests", ParkId);
+            park["prerequisites"] = new List<object>();
+            _quests.Load(new[] { QuestData.FromJson(park), QuestData.FromJson(Read("Quests", BookId)) }, true);
         }
 
         [TearDown]
@@ -93,7 +96,8 @@ namespace KCD.Tests
 
         private void CompletePark()
         {
-            Assert.IsTrue(_quests.StartQuest(ParkId));
+            // 公園の依頼は autoStart なので、前提を外すと読み込んだ時点で始まっている。
+            Assert.IsTrue(_quests.IsActive(ParkId) || _quests.StartQuest(ParkId), "公園の依頼を受けられない");
             // 公園の依頼は葉を拾うだけ。数を集める段でも、上限までに必ず終わる。
             for (int i = 0; i < 20 && _quests.IsActive(ParkId); i++)
             {
