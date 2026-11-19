@@ -6,6 +6,9 @@
   "summary_en": "After running comes sitting, says the professor. There is a short lecture for new students in the big classroom of the lecture building. Take a seat and listen, and when it is over, go and ask the professor at the lectern a question.",
   "order": 7,
   "autoStart": false,
+  "offer": "教授を探して話しかける（地図の輪が居場所）",
+  "offer_en": "Find the professor and talk to them (the ring on the map shows where)",
+  "offerNpc": "prof",
   "prerequisites": [
     "q_gym"
   ],

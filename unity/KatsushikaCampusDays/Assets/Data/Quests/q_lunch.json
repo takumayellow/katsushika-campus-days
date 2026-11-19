@@ -6,6 +6,9 @@
   "summary_en": "At lunchtime the cafeteria fills up and seats run short. At the lunch peak, they've run out of milk. Buy milk at the convenience store on the first floor of Kyoso Hall and bring it to Nakagawa Kaname.",
   "order": 3,
   "autoStart": false,
+  "offer": "食堂の前で、かなめに話しかける",
+  "offer_en": "Talk to Kaname outside the cafeteria",
+  "offerNpc": "kaname",
   "prerequisites": [
     "q_orientation"
   ],
