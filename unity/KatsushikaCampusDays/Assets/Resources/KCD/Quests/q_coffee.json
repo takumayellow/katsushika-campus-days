@@ -6,6 +6,9 @@
   "summary_en": "Kanamachi Sora caught you in front of the coffee shop on the first floor of Kyoso Hall. Before her latte goes cold, you're walking together to a bench on Main Street.",
   "order": 4,
   "autoStart": false,
+  "offer": "共創棟の前で、そらに話しかける",
+  "offer_en": "Talk to Sora outside Kyoso Hall",
+  "offerNpc": "sora",
   "prerequisites": [
     "q_orientation"
   ],

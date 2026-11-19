@@ -129,6 +129,40 @@ namespace KCD
         /// <summary>依頼主の NPC id。制限時間つきのステップは、この NPC に話しかけると再挑戦できる。</summary>
         public string Giver = string.Empty;
 
+        /// <summary>
+        /// まだ受けていないこのクエストへの道案内（JSON の offer / offer_en）(#410)。
+        /// 受注中の本編が無いとき、追跡枠に「次の行き先」として出す。空なら案内しない。
+        /// </summary>
+        public string Offer = string.Empty;
+
+        public string OfferEn = string.Empty;
+
+        /// <summary>このクエストを頼む NPC の id（JSON の offerNpc）。ミニマップはこの人を指す。</summary>
+        public string OfferNpc = string.Empty;
+
+        private QuestStep _offerStep;
+
+        /// <summary>道案内をステップの形にしたもの（OfferNpc に話しかける）。案内が無ければ null。</summary>
+        public QuestStep OfferStep
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(Offer) || string.IsNullOrEmpty(OfferNpc))
+                {
+                    return null;
+                }
+
+                return _offerStep ?? (_offerStep = new QuestStep
+                {
+                    Id = "offer",
+                    Kind = QuestStepKind.Talk,
+                    Target = OfferNpc,
+                    Text = Offer,
+                    TextEn = OfferEn
+                });
+            }
+        }
+
         public readonly List<string> Prerequisites = new List<string>();
         public readonly List<QuestStep> Steps = new List<QuestStep>();
 
@@ -190,7 +224,10 @@ namespace KCD
                 RewardTextEn = MiniJson.GetString(node, "rewardText_en"),
                 RewardType = MiniJson.GetString(node, "rewardType"),
                 RewardId = MiniJson.GetString(node, "rewardId"),
-                Giver = MiniJson.GetString(node, "giver")
+                Giver = MiniJson.GetString(node, "giver"),
+                Offer = MiniJson.GetString(node, "offer"),
+                OfferEn = MiniJson.GetString(node, "offer_en"),
+                OfferNpc = MiniJson.GetString(node, "offerNpc")
             };
 
             quest.Prerequisites.AddRange(MiniJson.ToStringList(MiniJson.GetArray(node, "prerequisites")));

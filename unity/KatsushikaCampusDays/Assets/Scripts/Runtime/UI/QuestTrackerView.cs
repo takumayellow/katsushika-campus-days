@@ -149,6 +149,17 @@ namespace KCD
                 return;
             }
 
+            // 「次の行き先」を出しているあいだは数えない。出す理由が消えたら（変化の通知が無くても）出し直す。
+            if (_shownQuest == null)
+            {
+                if (_quests.OfferedQuest == null)
+                {
+                    Refresh();
+                }
+
+                return;
+            }
+
             float remaining = _quests.RemainingSeconds(tracked);
             if (remaining < 0f)
             {
@@ -461,8 +472,66 @@ namespace KCD
             return L.Format("ui.hud.quest_completed", quest.DisplayTitle);
         }
 
+        /// <summary>「次の行き先」の見出し（ui.hud.next_destination）。</summary>
+        public const string NextDestinationFallback = "次の行き先";
+
+        /// <summary>「次の行き先」の本文。依頼主への道案内をいまの言語で出す (#410)。</summary>
+        public static string OfferLine(QuestData quest)
+        {
+            QuestStep step = quest?.OfferStep;
+            return step == null ? string.Empty : "・" + step.DisplayText;
+        }
+
+        /// <summary>本編を受けていないあいだの「次の行き先」。出したら true。</summary>
+        private bool ShowOffer()
+        {
+            QuestData offered = _quests != null && _recentFailure == null ? _quests.OfferedQuest : null;
+            if (offered == null)
+            {
+                return false;
+            }
+
+            if (_root != null && !_root.activeSelf)
+            {
+                _root.SetActive(true);
+            }
+
+            _shownQuest = null;
+            _shownSecond = -1;
+
+            if (_titleLabel != null)
+            {
+                _titleLabel.text = L.Get("ui.hud.next_destination", NextDestinationFallback);
+            }
+
+            if (_stepLabel != null)
+            {
+                if (_stepSize <= 0f)
+                {
+                    _stepSize = _stepLabel.enableAutoSizing ? _stepLabel.fontSizeMax : _stepLabel.fontSize;
+                }
+
+                string line = OfferLine(offered);
+                if (line != _fittedBody)
+                {
+                    _stepLabel.text = line;
+                    OrphanLineFit.Apply(_stepLabel, _stepSize);
+                    _fittedBody = line;
+                }
+
+                _stepLabel.text = line;
+            }
+
+            return true;
+        }
+
         private void Refresh()
         {
+            if (ShowOffer())
+            {
+                return;
+            }
+
             QuestData tracked = _quests != null ? Tracked() : null;
 
             if (_root != null)

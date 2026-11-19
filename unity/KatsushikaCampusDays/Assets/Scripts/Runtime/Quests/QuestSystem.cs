@@ -94,6 +94,12 @@ namespace KCD
         private string _chosenId;
 
         /// <summary>
+        /// <see cref="_chosenId"/> を一覧（<see cref="Track"/>）で選んだか (#410)。
+        /// 受けただけ・自動で始まっただけのサブクエストは、本編の「次の行き先」（<see cref="OfferedQuest"/>）を隠さない。
+        /// </summary>
+        private bool _chosenFromLog;
+
+        /// <summary>
         /// 「◯時ごろにまた来よう」（<see cref="StepTooEarly"/>）を知らせ済みのステップ (#54)。
         /// 以前は入るたびに知らせていたので、時刻前に同じ場所を出入りするとそのたびにトーストが出た。
         /// 時計が巻き戻ったとき（<see cref="ObserveClock"/>）と、読み込み直したときに忘れる。
@@ -163,6 +169,7 @@ namespace KCD
                 _held.Clear();
                 ForgetTooEarlyNotices();
                 _chosenId = null;
+                _chosenFromLog = false;
 
                 if (quests != null)
                 {
@@ -278,6 +285,7 @@ namespace KCD
             {
                 // 手で受けたものはそのまま追う (#410)。
                 _chosenId = quest.Id;
+                _chosenFromLog = false;
             }
 
             Changed?.Invoke();
@@ -325,9 +333,10 @@ namespace KCD
                 return false;
             }
 
-            if (_chosenId != questId)
+            if (_chosenId != questId || !_chosenFromLog)
             {
                 _chosenId = questId;
+                _chosenFromLog = true;
                 Changed?.Invoke();
             }
 
@@ -374,6 +383,73 @@ namespace KCD
                 }
 
                 return ChosenQuest ?? waiting ?? first;
+            }
+        }
+
+        /// <summary>
+        /// 次に受けられる本編のクエストのうち、道案内（offer）があって order が最も小さいもの (#410)。
+        /// 本編・隠しでないもの・未受注・未完了・前提がそろったものから選ぶ。無ければ null。
+        /// </summary>
+        public QuestData NextOffer
+        {
+            get
+            {
+                QuestData best = null;
+                for (int i = 0; i < _all.Count; i++)
+                {
+                    QuestData quest = _all[i];
+                    if (quest.Side || quest.Secret || quest.OfferStep == null ||
+                        _active.Contains(quest.Id) || _completed.Contains(quest.Id) || !PrerequisitesMet(quest))
+                    {
+                        continue;
+                    }
+
+                    if (best == null || quest.Order < best.Order)
+                    {
+                        best = quest;
+                    }
+                }
+
+                return best;
+            }
+        }
+
+        /// <summary>
+        /// 追跡枠とミニマップに「次の行き先」として出すクエスト (#410)。
+        /// 本編を受けていない（サブクエストだけ、または何も受けていない）ときの <see cref="NextOffer"/>。
+        /// 追うクエストを一覧で選んだとき、制限時間を数えているとき・再挑戦を待っているときは、そちらを出すので null。
+        /// ミッションを終えたあと、次の依頼主に話しかけるまで何をすればいいか分からなくならないようにする。
+        /// </summary>
+        public QuestData OfferedQuest
+        {
+            get
+            {
+                if (_chosenFromLog && ChosenQuest != null)
+                {
+                    return null;
+                }
+
+                for (int i = 0; i < _all.Count; i++)
+                {
+                    QuestData quest = _all[i];
+                    if (!_active.Contains(quest.Id))
+                    {
+                        continue;
+                    }
+
+                    if (!quest.Side)
+                    {
+                        return null;
+                    }
+
+                    QuestStep step = quest.CurrentStep;
+                    if (step != null && (step.Timer.IsRunning || step.AwaitingGiver))
+                    {
+                        return null;
+                    }
+                }
+
+                return NextOffer;
             }
         }
 
@@ -703,6 +779,7 @@ namespace KCD
             if (firstStarted != null && !_silent && ChosenQuest == null)
             {
                 _chosenId = firstStarted;
+                _chosenFromLog = false;
             }
         }
     }

@@ -19,7 +19,7 @@ namespace KCD.Editor
         // ブレンドツリーで各クリップを置く Speed。クリップ自体の前進速度（Blender の anim.GAIT_TARGET）と
         // 同じ値なので、その速さで動くあいだ足が滑らない。プレイヤーの既定の移動 2.6 m/s は小走り（#43）。
         public const float WalkSpeed = PlayerAnimatorDriver.WalkClipSpeed;
-        public const float JogSpeed = PlayerController.DefaultWalkSpeed;
+        public const float JogSpeed = PlayerAnimatorDriver.JogClipSpeed;
         public const float RunSpeed = PlayerController.DefaultRunSpeed;
 
         /// <summary>FBX からコントローラを作る。クリップが 1 つも無ければ null。</summary>
