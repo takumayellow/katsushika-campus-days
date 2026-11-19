@@ -6,6 +6,9 @@
   "summary_en": "By the shallow reflecting pool that wraps around the library like a moat, Hananoki Inari asked you to pick up a reserved book. The library is the glass building with the octagonal 600-seat hall on its roof.",
   "order": 2,
   "autoStart": false,
+  "offer": "図書館のまわりの水盤のほとりで、いなりに話しかける",
+  "offer_en": "Talk to Inari by the reflecting pool around the library",
+  "offerNpc": "inari",
   "prerequisites": [
     "q_orientation"
   ],

@@ -380,8 +380,7 @@ namespace KCD
                 return;
             }
 
-            QuestData quest = GameManager.Instance.Quests?.TrackedQuest;
-            QuestStep step = quest?.CurrentStep;
+            QuestStep step = ObjectiveStep(GameManager.Instance.Quests);
 
             string building = InteriorLoader.Instance != null ? InteriorLoader.Instance.CurrentId : null;
             if (step == null || !TryGoal(step, focus, building, out Vector3 position))
@@ -395,6 +394,20 @@ namespace KCD
             _objective.rectTransform.anchoredPosition = offset;
             _objective.rectTransform.localScale = Vector3.one * pulse;
             _objective.gameObject.SetActive(true);
+        }
+
+        /// <summary>
+        /// 輪で指すステップ。本編を受けていないあいだは、次の依頼主（「次の行き先」）を指す (#410)。
+        /// </summary>
+        public static QuestStep ObjectiveStep(QuestSystem quests)
+        {
+            if (quests == null)
+            {
+                return null;
+            }
+
+            QuestData offered = quests.OfferedQuest;
+            return offered != null ? offered.OfferStep : quests.TrackedQuest?.CurrentStep;
         }
 
         /// <summary>

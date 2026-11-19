@@ -61,6 +61,7 @@
     "ui.settings.apply": "Apply",
     "ui.settings.reset": "Reset to Defaults",
     "ui.hud.quest_tracker": "Current Quest",
+    "ui.hud.next_destination": "Where to next",
     "ui.hud.time_remaining": "{0} s left",
     "ui.hud.challenge_start": "Go! You have {0} seconds",
     "ui.hud.challenge_cleared": "Made it with {0:0.0} seconds to spare!",

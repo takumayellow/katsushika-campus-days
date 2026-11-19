@@ -8,6 +8,9 @@
   "summary_touch_en": "According to the professor, the gym gets locked in one minute. Turn north off Main Street and tap the Run button once to sprint, and you should make it. If you miss it, talk to the professor to try again.",
   "order": 5,
   "autoStart": false,
+  "offer": "講義棟の前で、教授に話しかける",
+  "offer_en": "Talk to the professor outside the Lecture Building",
+  "offerNpc": "prof",
   "prerequisites": [
     "q_orientation"
   ],
