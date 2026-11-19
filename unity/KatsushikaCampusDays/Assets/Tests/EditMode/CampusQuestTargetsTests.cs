@@ -109,32 +109,18 @@ namespace KCD.Tests
             return quests;
         }
 
-        private static HashSet<string> DialogueFlags()
+        /// <summary>シーンにいる相手のうち、会話でこのフラグを立てる人（白板・PC を含む）がいるか。</summary>
+        private bool TalkerRaises(string flag)
         {
-            var flags = new HashSet<string>();
+            var dialogues = new Dictionary<string, DialogueData>();
             foreach (string file in Directory.GetFiles(Path.Combine(DataRoot, "Dialogue"), "*.json"))
             {
                 DialogueData data = DialogueData.FromJson(ReadObject(file));
                 Assert.IsNotNull(data, file);
-                foreach (DialogueTopic topic in data.Topics)
-                {
-                    if (!string.IsNullOrEmpty(topic.SetsFlag))
-                    {
-                        flags.Add(topic.SetsFlag);
-                    }
-
-                    // 7F の白板（board_7F）のように、選択肢で立つフラグもある (#389)。
-                    foreach (DialogueChoice choice in topic.Choices)
-                    {
-                        if (!string.IsNullOrEmpty(choice.SetsFlag))
-                        {
-                            flags.Add(choice.SetsFlag);
-                        }
-                    }
-                }
+                dialogues[data.Id] = data;
             }
 
-            return flags;
+            return _npcs.Exists(n => dialogues.TryGetValue(n.NpcId, out DialogueData found) && found.RaisesFlag(flag));
         }
 
         private static Dictionary<string, object> Totals()
@@ -253,10 +239,11 @@ namespace KCD.Tests
 
                             break;
                         default:
-                            // flag は、シーンの物（PropInteractable）を調べるか、会話（setsFlag）で立つ。
-                            if (!_props.Exists(p => p.FlagId == step.Target) && !DialogueFlags().Contains(step.Target))
+                            // flag は、シーンの物（PropInteractable）を調べるか、シーンにいる相手との会話（setsFlag）で立つ。
+                            // 相手がシーンにいれば、ミニマップの輪がその相手を指せる (#410)。
+                            if (!_props.Exists(p => p.FlagId == step.Target) && !TalkerRaises(step.Target))
                             {
-                                missing.Add(where + ": フラグを立てる物（PropInteractable）も会話（setsFlag）も無い");
+                                missing.Add(where + ": フラグを立てる物（PropInteractable）も、会話で立てる相手（NPCTalker）も無い");
                             }
 
                             break;

@@ -45,6 +45,13 @@ namespace KCD
         /// <summary>会話中か。</summary>
         public bool IsPlaying => _topic != null;
 
+        /// <summary>その会話データのどこかがこのフラグを立てるか（#410）。会話データが無ければ false。</summary>
+        public bool RaisesFlag(string dialogueId, string flag)
+        {
+            return !string.IsNullOrEmpty(dialogueId) && _data.TryGetValue(dialogueId, out DialogueData data) &&
+                data.RaisesFlag(flag);
+        }
+
         /// <summary>表示中の行。会話していなければ null。</summary>
         public DialogueLine CurrentLine =>
             _topic != null && !_choosing && _lines != null && _lineIndex < _lines.Count ? _lines[_lineIndex] : null;
