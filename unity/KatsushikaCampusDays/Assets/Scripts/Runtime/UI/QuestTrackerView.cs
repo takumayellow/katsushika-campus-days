@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
@@ -35,6 +36,15 @@ namespace KCD
         /// <summary>計時を始めたクエスト。会話を閉じてからスタートの案内を出す。</summary>
         private QuestData _pendingStart;
 
+        /// <summary>会話中に達成したステップの一言。会話を閉じてから順に出す (#410)。</summary>
+        private readonly List<string> _pendingDone = new List<string>();
+
+        /// <summary>
+        /// 会話の最中に受けたクエスト (#410)。会話の間は HUD ごと隠れていてトーストが見えないので、閉じてから知らせる。
+        /// お礼の会話で達成して、続けて自動で受けたときにここへ溜まる。
+        /// </summary>
+        private readonly List<QuestData> _pendingAccepted = new List<QuestData>();
+
         /// <summary>SceneBuilder から差し込む。</summary>
         public void Bind(GameObject root, TMP_Text title, TMP_Text step)
         {
@@ -64,11 +74,13 @@ namespace KCD
 
             _quests = quests;
             _quests.Changed += Refresh;
+            _quests.QuestStarted += OnQuestStarted;
             _quests.QuestCompleted += OnQuestCompleted;
             _quests.StepTimedOut += OnStepTimedOut;
             _quests.TimerStarted += OnTimerStarted;
             _quests.ChallengeRetryNeeded += OnChallengeRetryNeeded;
             _quests.StepTooEarly += OnStepTooEarly;
+            _quests.StepCompleted += OnStepCompleted;
             L.LocaleChanged += Refresh;
             Refresh();
         }
@@ -79,11 +91,13 @@ namespace KCD
             if (_quests != null)
             {
                 _quests.Changed -= Refresh;
+                _quests.QuestStarted -= OnQuestStarted;
                 _quests.QuestCompleted -= OnQuestCompleted;
                 _quests.StepTimedOut -= OnStepTimedOut;
                 _quests.TimerStarted -= OnTimerStarted;
                 _quests.ChallengeRetryNeeded -= OnChallengeRetryNeeded;
                 _quests.StepTooEarly -= OnStepTooEarly;
+                _quests.StepCompleted -= OnStepCompleted;
             }
         }
 
@@ -94,11 +108,32 @@ namespace KCD
                 return;
             }
 
+            // 受注は「スタート」より先に出す（受けてから数え始めるので、その順に見せる）。
+            if (_pendingAccepted.Count > 0 && !KCDInput.GameplayBlocked)
+            {
+                for (int i = 0; i < _pendingAccepted.Count; i++)
+                {
+                    ShowStartedToast(_pendingAccepted[i]);
+                }
+
+                _pendingAccepted.Clear();
+            }
+
             // 再挑戦を依頼主に話しかけて始めたときは会話中なので、会話を閉じてから「スタート」を出す。
             if (_pendingStart != null && !KCDInput.GameplayBlocked)
             {
                 ShowStartToast(_pendingStart);
                 _pendingStart = null;
+            }
+
+            if (_pendingDone.Count > 0 && !KCDInput.GameplayBlocked)
+            {
+                for (int i = 0; i < _pendingDone.Count; i++)
+                {
+                    HUD.Instance?.ShowToast(_pendingDone[i], false);
+                }
+
+                _pendingDone.Clear();
             }
 
             if (_recentFailure != null && Time.unscaledTime >= _recentFailureUntil)
@@ -111,6 +146,17 @@ namespace KCD
             QuestData tracked = Tracked();
             if (tracked == null || _stepLabel == null)
             {
+                return;
+            }
+
+            // 「次の行き先」を出しているあいだは数えない。出す理由が消えたら（変化の通知が無くても）出し直す。
+            if (_shownQuest == null)
+            {
+                if (_quests.OfferedQuest == null)
+                {
+                    Refresh();
+                }
+
                 return;
             }
 
@@ -170,6 +216,41 @@ namespace KCD
             }
 
             return _quests.TrackedQuest;
+        }
+
+        /// <summary>
+        /// 受注をトーストで知らせる (#410)。受注の音（quest_start）は AudioManager が鳴らすので、トーストの音は重ねない。
+        /// 会話などで操作が止まっている間は溜めておき、閉じてから出す。
+        /// </summary>
+        private void OnQuestStarted(QuestData quest)
+        {
+            if (quest == null)
+            {
+                return;
+            }
+
+            if (KCDInput.GameplayBlocked)
+            {
+                if (!_pendingAccepted.Contains(quest))
+                {
+                    _pendingAccepted.Add(quest);
+                }
+            }
+            else
+            {
+                ShowStartedToast(quest);
+            }
+        }
+
+        private static void ShowStartedToast(QuestData quest)
+        {
+            HUD.Instance?.ShowToast(StartedMessage(quest), false);
+        }
+
+        /// <summary>受注のトースト（ui.hud.quest_started）。題名はいまの言語で出す。</summary>
+        public static string StartedMessage(QuestData quest)
+        {
+            return L.Format("ui.hud.quest_started", quest.DisplayTitle);
         }
 
         private void OnTimerStarted(QuestData quest)
@@ -253,6 +334,28 @@ namespace KCD
         /// 時刻の条件より前に目的地へ着いた (#66)。進まない理由と、いつ来ればよいかを出す。
         /// QuestSystem は入った瞬間にだけ知らせるので、留まっていても繰り返し出ない。
         /// </summary>
+        /// <summary>
+        /// 途中のステップを達成したとき、データに一言（done）があれば出す。地点を踏むだけのステップでも、
+        /// そこで何が分かったかが伝わるようにする (#410)。会話中なら閉じてから出す。
+        /// </summary>
+        private void OnStepCompleted(QuestData quest, QuestStep step)
+        {
+            string done = step?.DisplayDoneText;
+            if (string.IsNullOrEmpty(done))
+            {
+                return;
+            }
+
+            if (KCDInput.GameplayBlocked)
+            {
+                _pendingDone.Add(done);
+                return;
+            }
+
+            // 進んだ音は AudioManager が鳴らすので、トーストの通知音は重ねない。
+            HUD.Instance?.ShowToast(done, false);
+        }
+
         private static void OnStepTooEarly(QuestData quest, QuestStep step)
         {
             if (step == null)
@@ -369,8 +472,66 @@ namespace KCD
             return L.Format("ui.hud.quest_completed", quest.DisplayTitle);
         }
 
+        /// <summary>「次の行き先」の見出し（ui.hud.next_destination）。</summary>
+        public const string NextDestinationFallback = "次の行き先";
+
+        /// <summary>「次の行き先」の本文。依頼主への道案内をいまの言語で出す (#410)。</summary>
+        public static string OfferLine(QuestData quest)
+        {
+            QuestStep step = quest?.OfferStep;
+            return step == null ? string.Empty : "・" + step.DisplayText;
+        }
+
+        /// <summary>本編を受けていないあいだの「次の行き先」。出したら true。</summary>
+        private bool ShowOffer()
+        {
+            QuestData offered = _quests != null && _recentFailure == null ? _quests.OfferedQuest : null;
+            if (offered == null)
+            {
+                return false;
+            }
+
+            if (_root != null && !_root.activeSelf)
+            {
+                _root.SetActive(true);
+            }
+
+            _shownQuest = null;
+            _shownSecond = -1;
+
+            if (_titleLabel != null)
+            {
+                _titleLabel.text = L.Get("ui.hud.next_destination", NextDestinationFallback);
+            }
+
+            if (_stepLabel != null)
+            {
+                if (_stepSize <= 0f)
+                {
+                    _stepSize = _stepLabel.enableAutoSizing ? _stepLabel.fontSizeMax : _stepLabel.fontSize;
+                }
+
+                string line = OfferLine(offered);
+                if (line != _fittedBody)
+                {
+                    _stepLabel.text = line;
+                    OrphanLineFit.Apply(_stepLabel, _stepSize);
+                    _fittedBody = line;
+                }
+
+                _stepLabel.text = line;
+            }
+
+            return true;
+        }
+
         private void Refresh()
         {
+            if (ShowOffer())
+            {
+                return;
+            }
+
             QuestData tracked = _quests != null ? Tracked() : null;
 
             if (_root != null)

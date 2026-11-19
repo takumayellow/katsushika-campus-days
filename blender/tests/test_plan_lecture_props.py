@@ -56,7 +56,8 @@ def test_every_floor_has_boards_extinguishers_and_skirting_on_both_walls(corr):
     for fl in RD.FLOORS:
         for side, (y, _) in W.FACE.items():
             items = [k for k, _ in P.wall_items(fl, side)]
-            assert items.count("board") == 2, (fl, side)
+            assert sorted(items) == sorted(k for k, _ in P.wants(fl, side)), (fl, side)   # 全部置けた
+            assert items.count("board") + items.count("case") >= 1, (fl, side)
             assert items.count("ext") >= 1, (fl, side)
             near = [v for v in _on_floor(_mat_verts(mbs, "lecture_skirting"), fl) if abs(v[1] - y) < 0.01]
             assert near, (fl, side)
@@ -186,3 +187,98 @@ def test_room_props_stay_inside_the_room():
             for v in mb.verts:
                 assert xf0 - 1e-6 <= v[0] <= xf1 + 1e-6, room[0]
                 assert yf0 - 1e-6 <= v[1] <= max(yf1, yf0) + 0.5, room[0]
+
+
+def _floor_signature(fl):
+    """階の廊下の小物の並び（掲示の種類と X、ベンチ、ゴミ箱の数、ラックの有無）。"""
+    notices = tuple((side, k, round(x, 1)) for side in ("S", "N") for k, x in P.wall_items(fl, side)
+                    if k in ("board", "case"))
+    return notices, P.FLOOR_BENCHES[fl], len(P.bins_x(fl)), fl in P.RACK_FLOORS
+
+
+def test_no_two_floors_have_the_same_corridor_props():
+    """#423: 2F〜7F の廊下がどの階も同じに見えないよう、掲示・ベンチ・ゴミ箱・ラックの組を階ごとに変える。"""
+    sigs = [_floor_signature(fl) for fl in RD.FLOORS]
+    assert len(set(sigs)) == len(RD.FLOORS)
+
+
+def test_benches_and_bins_stay_clear_of_core_doors():
+    """コアの北の面のベンチは多目的トイレの扉（X -17.6）、南の面のゴミ箱はトイレの扉（X -7.8・14.0）にかからず、
+    どちらもコアの箱の面の中に収まる。"""
+    hw = P.BENCH_W * 0.5
+    for fl in RD.FLOORS:
+        for x in P.FLOOR_BENCHES[fl]:
+            assert abs(x - (-17.6)) > hw + 0.6 + P.CLEAR, (fl, x)
+            assert (W.CORE_W[0] <= x - hw and x + hw <= W.CORE_W[2]) or                 (W.CORE_M[0] <= x - hw and x + hw <= W.CORE_M[2]), (fl, x)
+        for x in P.bins_x(fl):
+            assert W.CORE_W[0] <= x - 0.15 and x + 0.15 <= -7.8 - 0.5 - P.CLEAR, (fl, x)
+
+
+def test_rack_sits_on_the_lobby_wall_clear_of_the_signs_and_the_stair():
+    y, w, _ = P.RACK
+    lo, hi = y - w * 0.5, y + w * 0.5
+    sign_lo = RD.LOBBY_SIGN_Y - RD.LOBBY_DIRECTORY[0] * 0.5
+    assert W.FACE["S"][0] + P.CLEAR <= lo and hi + P.CLEAR <= sign_lo
+    for fl in P.RACK_FLOORS:
+        for a, b in P.WS.halves(fl):
+            assert hi < a, fl
+
+
+
+def _case_faces():
+    from kcd_interior.kit import T
+    mb = MeshBuilder("case")
+    P.case(mb, T())
+    return [(mb.mat_names[m], [mb.verts[i] for i in f]) for f, m in zip(mb.faces, mb.face_mat)]
+
+
+def test_case_posters_sit_behind_the_frame():
+    """掲示ケースのコルクとポスターは枠の前の面より奥（壁の側）にある。"""
+    faces = _case_faces()
+    inner = [pts for mat, pts in faces if mat in (P.CORK, P.PAPER) + P.POSTERS]
+    assert inner
+    for pts in inner:
+        assert all(0.0 < y < P.CASE_DEPTH * 0.5 for _x, y, _z in pts), pts
+    metal_y = [y for mat, pts in faces if mat == P.METAL for _x, y, _z in pts]
+    assert max(metal_y) == pytest.approx(P.CASE_DEPTH)
+    assert {mat for mat, _pts in faces} <= {P.METAL, P.CORK, P.PAPER, P.GLASS} | set(P.POSTERS)
+
+
+def test_case_glass_covers_the_posters_inside_the_frame():
+    """ガラスは 1 枚で、ポスターより手前・枠の前の面より奥にあり、ポスターを全部覆う。"""
+    faces = _case_faces()
+    glass = [pts for mat, pts in faces if mat == P.GLASS]
+    assert len(glass) == 1
+    gx = [x for x, _y, _z in glass[0]]
+    gz = [z for _x, _y, z in glass[0]]
+    assert all(y == pytest.approx(P.CASE_GLASS) for _x, y, _z in glass[0])
+    inner = [pts for mat, pts in faces if mat in (P.PAPER,) + P.POSTERS]
+    for pts in inner:
+        assert all(y < P.CASE_GLASS < P.CASE_DEPTH for _x, y, _z in pts)
+        assert all(min(gx) <= x <= max(gx) and min(gz) <= z <= max(gz) for x, _y, z in pts)
+    # 廊下の側（+y）を向く: 面の法線の y が正
+    (ax, ay, az), (bx, by, bz), (cx, cy, cz) = glass[0][:3]
+    ny = (bz - az) * (cx - ax) - (bx - ax) * (cz - az)
+    assert ny > 0
+
+
+def test_box_open_drops_only_the_named_faces():
+    from kcd_interior.kit import T
+    for skip, n in (((), 5), (("top",), 4), (("-x", "+x"), 3), (("-y",), 4)):
+        mb = MeshBuilder("b")
+        T(1.0, 2.0, 0.5, 0.3).box_open(mb, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, "m", skip=skip)
+        assert len(mb.faces) == n, skip
+    with pytest.raises(ValueError):
+        T().box_open(MeshBuilder("b"), 0, 0, 0, 1, 1, 1, "m", skip=("bottom",))
+
+
+def test_box_open_matches_box_nb_without_skips():
+    """skip が無ければ box_nb と同じ頂点の並び（面の向きも同じ）。"""
+    from kcd_interior.kit import T
+    t = T(1.0, 2.0, 0.5, 0.7)
+    a, b = MeshBuilder("a"), MeshBuilder("b")
+    t.box_open(a, -0.2, -0.1, 0.0, 0.3, 0.4, 0.5, "m")
+    t.box_nb(b, -0.2, -0.1, 0.0, 0.3, 0.4, 0.5, "m")
+    fa = sorted(tuple(tuple(round(c, 9) for c in a.verts[i]) for i in f) for f in a.faces)
+    fb = sorted(tuple(tuple(round(c, 9) for c in b.verts[i]) for i in f) for f in b.faces)
+    assert fa == fb

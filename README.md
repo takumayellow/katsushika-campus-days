@@ -2,7 +2,7 @@
 
 東京理科大学 葛飾キャンパスを OpenStreetMap の実測フットプリントから 3D 再現し、
 アニメ調の女の子（と公式マスコットのオマージュ）で歩き回る三人称探索アドベンチャー。
-建物 9 棟は内部まで入れて、学生 NPC との会話でクエストが進み、1 日の終わりにリザルトが出る。
+建物 10 棟は内部まで入れて、学生 NPC との会話でクエストが進み、1 日の終わりにリザルトが出る。
 
 ![東の上空から見たキャンパス（講義棟・研究棟・図書館）](docs/screenshots/aerial_east.jpg)
 
@@ -10,10 +10,18 @@
 
 - エンジン: Unity 6 (6000.6.2f1, URP)
 - アセット生成: Blender 4.5 LTS を headless Python で駆動（手作業ゼロで再生成できる）
-- 音声: BGM 8 / ジングル 2 / SE 41 / 環境音 7。タイトルとキャンパスの BGM 5 曲は東京理科大学校歌（タイトルは東北きりたんの歌唱 + ピアノ伴奏、キャンパスはピアノ伴奏）。図書館のピアノの曲はショパンの夜想曲 作品 9-2 の冒頭（CC0 の録音）。ほかは numpy で合成したオリジナル
+- 音声: BGM 8 / ジングル 2 / SE 42 / 環境音 7。タイトルとキャンパスの BGM 5 曲は東京理科大学校歌（タイトルは東北きりたんの歌唱 + ピアノ伴奏、キャンパスはピアノ伴奏）。図書館のピアノの曲はショパンの夜想曲 作品 9-2 の冒頭（CC0 の録音）。ほかは numpy で合成したオリジナル
 - 設計書: [docs/DESIGN.md](docs/DESIGN.md)、データ仕様: [docs/CONTENT_SPEC.md](docs/CONTENT_SPEC.md)
 - 遊び方: https://takumayellow.github.io/katsushika-campus-days/howto/ （元の文書は [docs/HOW_TO_PLAY.md](docs/HOW_TO_PLAY.md)）
 - 複数のエージェントで分担するときの決まり: [docs/AGENT_COORDINATION.md](docs/AGENT_COORDINATION.md)
+
+## 開発に参加する
+
+1. 既存の Issue と PR、`README.md`、関連するシーン・スクリプトを読み、担当範囲を決める。重なりそうな作業は範囲を分けた Issue を立て、元 Issue にリンクする。
+2. 作業ごとに Issue を立て、変更内容・根拠資料・未確認点を書く。エージェントが着手するときは [分担ルール](docs/AGENT_COORDINATION.md) の書式でコメントし、`Claude対応中` ラベルを付ける。
+3. `dev/game` から Issue ごとの `wf/<話題>` ブランチを作り、既存のフォルダ構成と書き方に合わせて変更する。`Assets/Scenes/Campus.unity` は `SceneBuilder.BuildAll` が生成するため、場面の変更は生成元に反映する。
+4. 現実の建物や道を作るときは大学の公開地図・図面などで形を確認し、推測した箇所は「要確認」と明記する。現地写真・動画は人の顔が分からないものだけを共有する。
+5. `dev/game` 宛てに PR を出し、検証済み・未検証を分けて記載する。実機で確かめていない変更はタイトルに `(未検証)` を付ける。`main` に直接 push せず、マージはメンテナのレビュー後に任せる。
 
 ## 遊ぶ（ブラウザ版）
 
@@ -126,6 +134,9 @@ python -m pytest e2e                               # スモークの部品の単
 `--skip-unity`（pytest だけ）が使える。batchmode が書き換える URP GlobalSettings・`ProjectSettings.asset`・
 `.mat` は、実行前に変更が無かったものだけ元に戻す。終了コードは 0 = 全部通った、1 = 失敗かスキップか
 ログのエラーがある、2 = 走らせられなかった、3 = 別の Unity が動いている。
+PlayMode は描画のデバイスがある状態で走る。`--nographics` を付けると PlayMode も描画のデバイス無しで走り（EditMode は
+いつもこちら）、撮った絵の画素を見る所と目で見るための絵を撮る所を飛ばす（飛ばしたテストはログに「描画のデバイスが無い」と
+出す）。骨の位置・写真の構図と枚数などは、どちらでも確かめる。
 PlayMode のテスト（`Assets/Tests/PlayMode`）は Title と Campus を読み込んで動かすので、
 `SceneBuilder.BuildAll` でシーンを作り直したあとに回す。
 
@@ -168,7 +179,7 @@ Overpass の生データ 2 つは大きいので gitignore。寮への道の分�
 
 | 場所 | 内容 |
 | --- | --- |
-| `blender/` | 外構・キャラ 7 体・建物内部 9 棟の生成スクリプト（`kcd_lib` / `kcd_chara` / `kcd_interior`） |
+| `blender/` | 外構・キャラ 7 体・建物内部 10 棟の生成スクリプト（`kcd_lib` / `kcd_chara` / `kcd_interior`） |
 | `tools/` | OSM 抽出（キャンパス／寮への道）、ミニマップ描画、音声合成、面のテクスチャ取得、Unity ログ検査、スモーク起動、zip 化 |
 | `unity/KatsushikaCampusDays/` | Unity プロジェクト。`Assets/Scripts/Editor` がシーンを組み立て、`Runtime` がゲーム本体 |
 | `unity/KatsushikaCampusDays/Assets/Data/` | クエスト・会話・収集物・ローカライズ・モブ・リザルトの JSON |
@@ -179,7 +190,7 @@ Overpass の生データ 2 つは大きいので gitignore。寮への道の分�
 素材ごとの出所・権利・確認状況は [docs/CREDITS.md](docs/CREDITS.md)。ゲーム内のクレジット画面も同じ内容。
 
 - 地図データ © OpenStreetMap contributors (ODbL)。https://www.openstreetmap.org/copyright
-- 地面・舗装・芝・外壁のテクスチャ: [ambientCG](https://ambientcg.com/) (CC0 1.0) の素材から作ったもの。使った素材は [docs/CREDITS.md](docs/CREDITS.md)
+- 地面・舗装・芝・外壁・屋根・金属・木のテクスチャ: [ambientCG](https://ambientcg.com/) (CC0 1.0) の素材から作ったもの。使った素材は [docs/CREDITS.md](docs/CREDITS.md)
 - 音楽: 東京理科大学校歌（作詞 佐治巌 / 作曲 大和憲史）。歌唱は東北きりたん（NEUTRINO）、ピアノ伴奏はヤマハの自動採譜（Piano Sheet Converter）を手直ししたもの。校歌の権利は未確認で、配布前に確かめる項目を CREDITS.md に並べている
 - 図書館のピアノの曲: ショパン「夜想曲 作品 9-2」の冒頭の一節。演奏 Peter Johnston（Musopen、CC0。Wikimedia Commons から取得）
 - 効果音・環境音・ジングルは numpy で合成したオリジナル

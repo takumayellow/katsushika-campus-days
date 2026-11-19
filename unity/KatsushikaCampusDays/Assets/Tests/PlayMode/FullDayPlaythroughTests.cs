@@ -22,8 +22,9 @@ namespace KCD.Tests
         /// <summary>
         /// 依頼主（話しかけるとクエストが始まる人）。データの giver と、話題で始まるクエストの持ち主。
         /// lecture は大教室の教授で、講義のあとに黒板と 306 のサブクエストを頼む (#390, #394, #406)。
+        /// tateishi は 101 の隣の席の学生で、講義のあとに小テストのサブクエストを頼む (#424)。
         /// </summary>
-        private static readonly string[] Givers = { "prof", "inari", "kaname", "sora", "lecture" };
+        private static readonly string[] Givers = { "prof", "inari", "kaname", "sora", "lecture", "tateishi" };
 
         /// <summary>解き手の周回の上限。クエスト 16 件 × ステップ数より十分に多い。</summary>
         private const int MaxRounds = 80;
@@ -148,6 +149,7 @@ namespace KCD.Tests
             Assert.AreEqual("S", result.Rank, summary);
 
             // 三脚の記念写真は専用のカメラで描いて書く (#170) ので、batchmode でもスポットの数だけ PNG が残る。
+            // 描画のデバイスが無い（-nographics）ときは一色で塗った写真になるが、枚数は同じ。
             string photoFolder = Path.Combine(SaveDirectory, PhotoSystem.FolderName);
             Assert.IsTrue(Directory.Exists(photoFolder), "写真の保存先が " + photoFolder + " になっていない");
             Assert.AreEqual(result.PhotoTotal, Directory.GetFiles(photoFolder, "*.png").Length,

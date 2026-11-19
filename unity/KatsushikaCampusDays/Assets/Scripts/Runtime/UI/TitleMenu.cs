@@ -139,13 +139,21 @@ namespace KCD
                 return;
             }
 
-            string extras = L.Pick(
-                "\nC クレジット　/　O 設定",
-                "\nC: Credits   /   O: Settings");
+            // ゲームパッドで遊ぶ人にも、クレジット（Y）と設定（BACK）の開き方を見せる。
+            string extras = InputMode.PadConnected
+                ? L.Pick(
+                    "\nC か [Y] クレジット　/　O か [BACK] 設定",
+                    "\nC or [Y]: Credits   /   O or [BACK]: Settings")
+                : L.Pick(
+                    "\nC クレジット　/　O 設定",
+                    "\nC: Credits   /   O: Settings");
 
             if (!_hasSave)
             {
-                _promptLabel.text = L.Get("ui.title.press_start", "Enter ではじめる") +
+                string start = InputMode.PadConnected
+                    ? L.Pick("Enter か [A] ではじめる", "Press Enter or [A] to start")
+                    : L.Get("ui.title.press_start", "Enter ではじめる");
+                _promptLabel.text = start +
                                     "<size=70%>" + extras + "</size>";
                 return;
             }
@@ -156,6 +164,10 @@ namespace KCD
                 L.Get("ui.title.continue", "つづきから"),
                 L.Get("ui.title.new_game", "はじめから"));
             string hint = L.Get("ui.title.continue_hint", "← → でえらぶ　Enter で決定　（F9 でもつづきから）");
+            if (InputMode.PadConnected)
+            {
+                hint += L.Pick("\n十字キーでえらぶ　[A] で決定", "\nD-pad to choose   [A] to confirm");
+            }
             _promptLabel.text = line + "<size=70%>\n" + hint + extras + "</size>";
         }
 
@@ -249,7 +261,8 @@ namespace KCD
             KCDInput.GameplayBlocked = false;
 
             // 既定は「つづきから」。遊んだ人がタイトルに戻ってきて Enter を押したとき、進行を消さない側。
-            _hasSave = SaveSystem.Read() != null;
+            // 展示モードでは次の人が前の人の続きから始めないよう、「つづきから」を出さない (#466)。
+            _hasSave = ExhibitMode.OffersContinue(ExhibitMode.Enabled, SaveSystem.Read() != null);
             _choice = 0;
 
             if (_selectRoot != null)

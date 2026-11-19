@@ -164,11 +164,11 @@ def sofa(mb, x, y, ang=0.0, w=2.0, d=0.85, mat="fabric_beige",
     _seat(mb, t, vi, hw, -hd, hd, w - 0.28, 0.22)
 
 
-def lounge_chair(mb, x, y, ang=0.0, mat="fabric_green"):
+def lounge_chair(mb, x, y, ang=0.0, mat="fabric_green", cushion="cushion_red"):
     vi = len(mb.verts)
     t = T(x, y, 0.0, ang)
     t.box(mb, -0.34, -0.34, 0.0, 0.34, 0.34, 0.36, mat)
-    t.box(mb, -0.30, -0.30, 0.36, 0.30, 0.30, 0.43, "cushion_red")
+    t.box(mb, -0.30, -0.30, 0.36, 0.30, 0.30, 0.43, cushion)
     t.box(mb, -0.34, -0.36, 0.36, 0.34, -0.20, 0.78, mat)
     _seat(mb, t, vi, 0.34, -0.36, 0.34, 0.60, 0.22)
 

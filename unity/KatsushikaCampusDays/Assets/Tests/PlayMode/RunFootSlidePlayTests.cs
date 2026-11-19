@@ -34,9 +34,11 @@ namespace KCD.Tests
         /// 数えるので、歩きより大きく出る。実測（#232、5 回走って平均）は走りが 0.9〜1.0 m/s で、
         /// 上限はその 1.2 倍ほどに置いて、歩幅やクリップの速さの食い違いで悪化したときに落とす。
         /// 小走りと歩きも同じく実測（#43）の 1.2 倍ほど: 小走り 0.33 m/s、歩き 0.08 m/s。
+        /// 既定の速さ（小走りと走りを混ぜる 3.2 m/s）も実測 0.47 m/s の 1.2 倍ほど。
         /// </summary>
         private const float RunMeanSlipLimit = 1.2f;
         private const float JogMeanSlipLimit = 0.40f;
+        private const float DefaultMeanSlipLimit = 0.56f;
         private const float WalkMeanSlipLimit = 0.10f;
 
         [UnityTest]
@@ -50,7 +52,14 @@ namespace KCD.Tests
         [Timeout(SceneTestTimeoutMs)]
         public IEnumerator Jog_PlantedFeetDoNotSlide()
         {
-            yield return Measure("jog", PlayerController.DefaultWalkSpeed, JogMeanSlipLimit);
+            yield return Measure("jog", PlayerAnimatorDriver.JogClipSpeed, JogMeanSlipLimit);
+        }
+
+        [UnityTest]
+        [Timeout(SceneTestTimeoutMs)]
+        public IEnumerator DefaultSpeed_PlantedFeetDoNotSlide()
+        {
+            yield return Measure("default", PlayerController.DefaultWalkSpeed, DefaultMeanSlipLimit);
         }
 
         [UnityTest]

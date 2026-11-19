@@ -9,6 +9,7 @@ from . import kit, shell
 from . import plan_lecture_dims as D
 
 CONCRETE = "lecture_concrete"
+CONCRETE_WALL = "lecture_concrete_wall"   # コアの壁の面（型枠の跡、#423）。天面と踊り場は CONCRETE
 CEIL = "lecture_ceiling_dark"
 WHITE = "lecture_rail_white"
 GLASS = "lecture_glass_rail"
@@ -25,6 +26,12 @@ Z_VOID = D.CEIL_EAST_VOID         # 吹き抜けの天井 8.5
 Z_LOW = D.CEIL_EAST_LOW           # 2F の床の下の天井 4.0
 CORE_X = (D.X_STEP, D.EAST_VOID_B[0])        # 南東コアの箱 28.6〜37.8
 
+# 生協の入口（X 37.4〜39.8）の両脇の鉢。西の鉢は「店舗入口はこちら→」の札（X 36.0〜37.2）の
+# 前を空けるため札より西に置く。生協の南の壁の面（Y 35.1）からは葉の半径（鉢の 1.5 倍）ぶん離す
+PLANTER_R = 0.24
+PLANTER_X = (35.5, 40.4)
+PLANTER_Y = Y_FOYER_N - PLANTER_R * 1.5 - 0.05
+
 # 直線階段（1F → 2F の渡り）
 ST_X = (D.DIRECT_STAIR_X[0], X_E_IN)
 ST_Y0, ST_Y1 = D.DIRECT_STAIR_Y            # 20.6 → 30.4
@@ -35,7 +42,7 @@ RAIL_H = 1.0
 
 def _core_box(c):
     x0, x1 = CORE_X
-    kit.box(c.wall, x0, Y_HALL_S, 0.0, x1, Y_MID, D.F3, CONCRETE, top=CONCRETE)
+    kit.box(c.wall, x0, Y_HALL_S, 0.0, x1, Y_MID, D.F3, CONCRETE_WALL, top=CONCRETE)
     # エレベーターの扉は北の面（ホールの側）。階段室の扉は東の面
     shell.elevator_bank(c.wall, 30.0, Y_MID, count=2, ang=3.141592653589793, pitch=2.6)
     shell.door(c.wall, x1, 12.0, ang=-1.5707963267948966, w=1.2, h=2.2, leaf=WOOD,
@@ -125,5 +132,6 @@ def build(c):
     _tactile(c)
     _stair(c)
     _edges(c)
-    shell.planter(c.wall, 41.5, 14.0)
-    shell.planter(c.wall, 41.5, 18.0)
+    # 生協の入口の両脇の小さな鉢植え（生協の紹介の写真では窓口の脇に高さ 1.5 m ほどの鉢がある）
+    for x in PLANTER_X:
+        shell.planter(c.wall, x, PLANTER_Y, r=PLANTER_R, h=0.5, leaf_h=1.0)

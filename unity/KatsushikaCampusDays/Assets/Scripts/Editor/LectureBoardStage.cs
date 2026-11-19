@@ -160,7 +160,7 @@ namespace KCD.Editor
         }
 
         /// <summary>板と平行な文字。TextMeshPro はローカルの −Z の側から読めるので、+Z を板の奥へ向ける。</summary>
-        private static GameObject AddText(Transform board, string name, TMP_FontAsset font, string body,
+        internal static GameObject AddText(Transform board, string name, TMP_FontAsset font, string body,
             Vector3 offset, Vector2 frame, Color32 ink)
         {
             var go = new GameObject(name);

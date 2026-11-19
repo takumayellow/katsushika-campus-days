@@ -222,6 +222,16 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: lecture_concrete_light_wall
+    second: {fileID: 2100000, guid: f805af4e820a1f54aa6a67f619351111, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lecture_concrete_wall
+    second: {fileID: 2100000, guid: 828d40aae3a0b5c4cb75e0e125b5b207, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: lecture_coop_band
     second: {fileID: 2100000, guid: 594d0898fec49c84696e60205539f0d4, type: 2}
   - first:

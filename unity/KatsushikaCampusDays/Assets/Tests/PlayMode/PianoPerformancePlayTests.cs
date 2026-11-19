@@ -9,7 +9,8 @@ namespace KCD.Tests
 {
     /// <summary>
     /// 図書館大ホールのピアノを弾く操作。座ると曲が鳴って BGM が絞られ、立つとどの時点でも止まって BGM が戻る。
-    /// 曲が終わったら座ったまま手を戻す。シーンでは本物の椅子・曲・体で、手が鍵盤に届いていることと見た目の画も確かめる。
+    /// 曲が終わったら座ったまま手を戻す。シーンでは本物の椅子・曲・体で、手が鍵盤に届いていることを確かめる。目で確かめる画は、
+    /// 描画のデバイスがあるときだけ撮って unity/logs/piano/ に置く。
     /// 音は MuteDuringTests で消してある（鳴らす処理は動き、聞こえる音量だけが 0）。
     /// </summary>
     public sealed class PianoPerformancePlayTests : SceneTestBase
@@ -217,7 +218,16 @@ namespace KCD.Tests
 
             Transform anchor = seat.Anchors[0];
             string folder = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "..", "logs", "piano"));
-            Directory.CreateDirectory(folder);
+            if (CanRender)
+            {
+                Directory.CreateDirectory(folder);
+            }
+            else
+            {
+                // 描けないカメラを描かせるとエラーのログが出るうえ、絵も一色になって見る意味が無い。
+                Debug.Log("[piano] 描画のデバイスが無い（-nographics）ので絵は撮らない。手は骨の位置で測る");
+            }
+
             PlayerAppearance appearance = player.GetComponent<PlayerAppearance>();
             Assert.IsNotNull(appearance, "プレイヤーに PlayerAppearance が無い");
 
@@ -252,13 +262,16 @@ namespace KCD.Tests
                 Debug.Log("[piano] " + id + " 座面から見て 肩 " + anchor.InverseTransformPoint(shoulder.position).ToString("F2")
                     + " 手首 " + anchor.InverseTransformPoint(hand.position).ToString("F2")
                     + " 鍵盤 " + anchor.InverseTransformPoint(performance.Keys.position).ToString("F2"));
-                yield return Shoot(Path.Combine(folder, "side-" + id + ".png"), anchor, 1.5f, -0.1f, 1.25f);
-                if (id == "madonna")
+                if (CanRender)
                 {
-                    yield return PlayModeScenes.Advance(10, 0.4f);
-                    yield return Shoot(Path.Combine(folder, "back.png"), anchor, 1.1f, -1.9f, 1.9f);
-                    yield return PlayModeScenes.Advance(10, 0.4f);
-                    yield return Shoot(Path.Combine(folder, "left.png"), anchor, -1.5f, -0.1f, 1.25f);
+                    yield return Shoot(Path.Combine(folder, "side-" + id + ".png"), anchor, 1.5f, -0.1f, 1.25f);
+                    if (id == "madonna")
+                    {
+                        yield return PlayModeScenes.Advance(10, 0.4f);
+                        yield return Shoot(Path.Combine(folder, "back.png"), anchor, 1.1f, -1.9f, 1.9f);
+                        yield return PlayModeScenes.Advance(10, 0.4f);
+                        yield return Shoot(Path.Combine(folder, "left.png"), anchor, -1.5f, -0.1f, 1.25f);
+                    }
                 }
 
                 if (id != "madonna")

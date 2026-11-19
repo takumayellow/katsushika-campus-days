@@ -225,9 +225,11 @@ namespace KCD
 
             _sun.enabled = false;
             RenderSettings.fog = false;
-            RenderSettings.ambientLight = _indoorAmbient;
-            RenderSettings.ambientEquatorColor = _indoorAmbient * 0.92f;
-            RenderSettings.ambientGroundColor = _indoorAmbient * 0.7f;
+            IndoorAmbientProfile.Resolve(loader.CurrentId, _indoorAmbient,
+                out Color sky, out Color equator, out Color ground);
+            RenderSettings.ambientLight = sky;
+            RenderSettings.ambientEquatorColor = equator;
+            RenderSettings.ambientGroundColor = ground;
             return true;
         }
     }

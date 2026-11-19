@@ -11,6 +11,7 @@ namespace KCD.Tests
     /// 行き先の画面から 3F〜6F の各階へ移れる。着いた階の乗り場だけが候補になり（真下の階の乗り場は拾わない）、
     /// 点いている明かりはその階のものだけで、ミニマップの見出しの階も合う。扉のすぐ前まで寄っても乗れる (#303)。
     /// 階段室の扉 2 か所（EV ホールの北 = ロビーの階段室とつながる、廊下の西の端）でも階を移れる (#303)。
+    /// 廊下の西の端の階段は食堂の 1F・2F にも下りる（行き先の 1F・2F は食堂。食堂との行き来は CafeteriaWestStairsPlayTests）。
     /// 1F へ戻って出口から外へ出られる。
     /// </summary>
     public sealed class Research2ElevatorPlayTests : SceneTestBase
@@ -116,12 +117,13 @@ namespace KCD.Tests
             Assert.AreEqual(5, east.Length, "EV ホールの北の階段室の扉は 1F・3F〜6F の 5 つ");
             Assert.AreEqual(4, west.Length, "廊下の西の端の階段室の扉は 3F〜6F の 4 つ");
             CollectionAssert.AreEqual(new[] { "1F", "3F", "4F", "5F", "6F" }, Floors(east[0].Stops), "east の階");
-            CollectionAssert.AreEqual(new[] { "3F", "4F", "5F", "6F" }, Floors(west[0].Stops), "west の階");
+            CollectionAssert.AreEqual(new[] { "1F", "2F", "3F", "4F", "5F", "6F" }, Floors(west[0].Stops),
+                "west の階（1F・2F は食堂）");
             yield return Walk(player, east[0].Stops, 0, prompt, east, bad);
             yield return Ride(player, menu, PanelOf(east, "1F"), 2, prompt, east, bad);
-            yield return Walk(player, west[0].Stops, 1, prompt, west, bad);
-            yield return Ride(player, menu, PanelOf(west, "4F"), 3, prompt, west, bad);
-            yield return Ride(player, menu, PanelOf(west, "6F"), 0, prompt, west, bad);
+            yield return Walk(player, west[0].Stops, 3, prompt, west, bad);
+            yield return Ride(player, menu, PanelOf(west, "4F"), 5, prompt, west, bad);
+            yield return Ride(player, menu, PanelOf(west, "6F"), 2, prompt, west, bad);
             yield return Walk(player, east[0].Stops, 1, prompt, east, bad);
             yield return Ride(player, menu, PanelOf(east, "3F"), 0, prompt, east, bad);
 

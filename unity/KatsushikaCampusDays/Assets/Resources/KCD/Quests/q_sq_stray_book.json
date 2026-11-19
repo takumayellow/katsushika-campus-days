@@ -34,7 +34,9 @@
         "toward": "seat_library_06",
         "shift": -1.75,
         "name": "迷子の本"
-      }
+      },
+      "done": "あった。閲覧席の机に置き忘れられていた。1 階のカウンターの司書に返そう",
+      "done_en": "Found it, left on a study-carrel desk. Return it to the librarian at the first-floor counter"
     },
     {
       "id": "s3",
@@ -50,7 +52,9 @@
         "body": "student_m",
         "name": "司書",
         "range": 3.0
-      }
+      },
+      "done": "司書が書架に戻してくれる。いなりに報告しよう",
+      "done_en": "The librarian will reshelve it. Report back to Inari"
     },
     {
       "id": "s4",

@@ -1,0 +1,31 @@
+{
+  "id": "q_sq_pop_quiz",
+  "title": "出席は小テストで",
+  "title_en": "Attendance by Pop Quiz",
+  "summary": "101 で隣の席だった立石 みなとは、講義の後半をまるごと寝ていたらしい。次回の連絡が黒板に書いてあったか、見てきてほしいと頼まれた。",
+  "summary_en": "Tateishi Minato, who sat next to you in 101, apparently slept through the whole second half of the lecture. Minato asks you to check whether the blackboard says anything about next time.",
+  "order": 21,
+  "autoStart": false,
+  "prerequisites": [
+    "q_lecture"
+  ],
+  "rewardText": "みなとのノートの余白に、16 と書き込まれた",
+  "rewardText_en": "A 16 was written in the margin of Minato's notebook",
+  "side": true,
+  "steps": [
+    {
+      "id": "s1",
+      "type": "talk",
+      "target": "board_lecture_101",
+      "text": "101 の前の黒板で、次回の連絡を読む",
+      "text_en": "Read the note about next time on the blackboard at the front of 101"
+    },
+    {
+      "id": "s2",
+      "type": "flag",
+      "target": "pop_quiz_answered",
+      "text": "みなとと、黒板の練習問題を解く",
+      "text_en": "Work out the practice question on the blackboard with Minato"
+    }
+  ]
+}

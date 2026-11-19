@@ -67,6 +67,18 @@ namespace KCD
 
         /// <summary>画面に出す目標文。いまの言語で選ぶ。</summary>
         public string DisplayText => L.Pick(Text, TextEn);
+
+        /// <summary>
+        /// 達成したときにトーストで出す一言（JSON の done）。地点を踏むだけで終わるステップで、
+        /// そこで何が分かったかを伝える (#410)。空なら何も出さない。
+        /// </summary>
+        public string DoneText = string.Empty;
+
+        /// <summary>英語の一言（JSON の done_en）。空なら英語表示でも DoneText を出す。</summary>
+        public string DoneTextEn = string.Empty;
+
+        /// <summary>達成したときに出す一言。いまの言語で選ぶ。</summary>
+        public string DisplayDoneText => L.Pick(DoneText, DoneTextEn);
     }
 
     /// <summary>クエスト 1 件。JSON 1 ファイルに 1 件対応する。</summary>
@@ -116,6 +128,40 @@ namespace KCD
 
         /// <summary>依頼主の NPC id。制限時間つきのステップは、この NPC に話しかけると再挑戦できる。</summary>
         public string Giver = string.Empty;
+
+        /// <summary>
+        /// まだ受けていないこのクエストへの道案内（JSON の offer / offer_en）(#410)。
+        /// 受注中の本編が無いとき、追跡枠に「次の行き先」として出す。空なら案内しない。
+        /// </summary>
+        public string Offer = string.Empty;
+
+        public string OfferEn = string.Empty;
+
+        /// <summary>このクエストを頼む NPC の id（JSON の offerNpc）。ミニマップはこの人を指す。</summary>
+        public string OfferNpc = string.Empty;
+
+        private QuestStep _offerStep;
+
+        /// <summary>道案内をステップの形にしたもの（OfferNpc に話しかける）。案内が無ければ null。</summary>
+        public QuestStep OfferStep
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(Offer) || string.IsNullOrEmpty(OfferNpc))
+                {
+                    return null;
+                }
+
+                return _offerStep ?? (_offerStep = new QuestStep
+                {
+                    Id = "offer",
+                    Kind = QuestStepKind.Talk,
+                    Target = OfferNpc,
+                    Text = Offer,
+                    TextEn = OfferEn
+                });
+            }
+        }
 
         public readonly List<string> Prerequisites = new List<string>();
         public readonly List<QuestStep> Steps = new List<QuestStep>();
@@ -178,7 +224,10 @@ namespace KCD
                 RewardTextEn = MiniJson.GetString(node, "rewardText_en"),
                 RewardType = MiniJson.GetString(node, "rewardType"),
                 RewardId = MiniJson.GetString(node, "rewardId"),
-                Giver = MiniJson.GetString(node, "giver")
+                Giver = MiniJson.GetString(node, "giver"),
+                Offer = MiniJson.GetString(node, "offer"),
+                OfferEn = MiniJson.GetString(node, "offer_en"),
+                OfferNpc = MiniJson.GetString(node, "offerNpc")
             };
 
             quest.Prerequisites.AddRange(MiniJson.ToStringList(MiniJson.GetArray(node, "prerequisites")));
@@ -193,6 +242,8 @@ namespace KCD
                         Id = MiniJson.GetString(stepNode, "id", "s" + (i + 1)),
                         Text = MiniJson.GetString(stepNode, "text"),
                         TextEn = MiniJson.GetString(stepNode, "text_en"),
+                        DoneText = MiniJson.GetString(stepNode, "done"),
+                        DoneTextEn = MiniJson.GetString(stepNode, "done_en"),
                         Kind = ParseKind(MiniJson.GetString(stepNode, "type", "flag")),
                         Target = MiniJson.GetString(stepNode, "target"),
                         Count = System.Math.Max(1, MiniJson.GetInt(stepNode, "count", 1)),

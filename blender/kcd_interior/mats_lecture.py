@@ -20,6 +20,8 @@ PALETTE = {
     "lecture_board_green":      ((0.061, 0.235, 0.162), 0.85, 0.0, 1.0),  # #468570
     "lecture_carpet_hall":      ((0.042, 0.044, 0.051), 0.95, 0.0, 1.0),  # #3A3B40
     "lecture_concrete":         ((0.275, 0.238, 0.178), 0.85, 0.0, 1.0),  # #8F8675
+    # 打放しの壁・柱・梁。色は lecture_concrete と同じで、型枠の目地と P コンの穴の画像を貼る (#423)
+    "lecture_concrete_wall":    ((0.275, 0.238, 0.178), 0.85, 0.0, 1.0),  # #8F8675
     "lecture_carpet_corridor":  ((0.056, 0.044, 0.040), 0.95, 0.0, 1.0),  # #433B38
     "lecture_ceiling_dark":     ((0.050, 0.040, 0.032), 0.90, 0.0, 1.0),  # #3F3832
     "lecture_ceiling_upper":    ((0.171, 0.175, 0.136), 0.90, 0.0, 1.0),  # #737467
@@ -59,6 +61,8 @@ PALETTE = {
     "lecture_door_white":       ((0.672, 0.658, 0.638), 0.50, 0.0, 1.0),  # #D6D4D1
     "lecture_carpet_upper":     ((0.087, 0.078, 0.080), 0.95, 0.0, 1.0),  # #534F50
     "lecture_concrete_light":   ((0.539, 0.509, 0.491), 0.85, 0.0, 1.0),  # #C2BDBA
+    # 2F〜7F・生協の前の打放しの壁。色は lecture_concrete_light と同じで、型枠の跡の画像を貼る (#423)
+    "lecture_concrete_light_wall": ((0.539, 0.509, 0.491), 0.85, 0.0, 1.0),  # #C2BDBA
 }
 
 TRANSPARENT = {

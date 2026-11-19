@@ -22,7 +22,8 @@ XL = X1 - (RISERS - 1) * RUN           # 踊り場の東の縁（-31.35）
 LANDING_T = 0.20                       # 踊り場の厚み
 RAIL_H = 0.85                          # 手すりの高さ（段鼻から）
 
-WALL = "lecture_concrete"
+WALL = "lecture_concrete"            # 段・踊り場（平らなまま）
+WALL_FACE = "lecture_concrete_wall"  # 階段室の間仕切りの面（型枠の跡、#423）
 TREAD = "lecture_stone_light"
 RAIL = "metal_dark"
 
@@ -73,7 +74,7 @@ def _walls(mb, floor):
     w = _Walls(mb)
     for line in (((X0, Y1), (X0, Y0)), ((X0, Y0), (X1, Y0)), ((X1, Y1), (X0, Y1))):
         SH.wall(w, line, zb, z1, top=top)
-    SH.part(w, (XL, YM), (RD.X_IN_W, YM), z0, z1, mat=WALL, top=top)
+    SH.part(w, (XL, YM), (RD.X_IN_W, YM), z0, z1, mat=WALL_FACE, top=top)
 
 
 def build_floor(mb, floor):

@@ -49,6 +49,7 @@ namespace KCD
             _active.Clear();
             _completed.Clear();
             ForgetTooEarlyNotices();
+            _chosenId = null;
 
             // 前の状態を残さない。セーブに無いクエストのステップが済みのまま残ると、未受注なのに途中から始まる。
             for (int i = 0; i < _all.Count; i++)
@@ -107,7 +108,15 @@ namespace KCD
 
             // このセッションで拾った物は、読み込む前の進行でも持っている (#65)。拾った物は消えていて、
             // 隠しアイテムは出し直さないので、数えないと collect ステップが二度と進まない。
-            CatchUpAllHeld();
+            _restoring = true;
+            try
+            {
+                CatchUpAllHeld();
+            }
+            finally
+            {
+                _restoring = false;
+            }
 
             Changed?.Invoke();
         }

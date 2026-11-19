@@ -11,7 +11,9 @@ namespace KCD.Tests
     /// <summary>
     /// 写真スポットの記念写真 (#170)。6 か所の三脚で E を押すと、キャラが三脚の前へ走って振り向き、
     /// 三脚のカメラが撮った PNG が残る。その写真は一色でなく、キャラのすねから頭までが画角に入り、カメラから胸までを
-    /// 壁や木がふさいでいない。撮った写真は unity/logs/selfie/ に写すので、目で構図を確かめられる。
+    /// 壁や木がふさいでいない。構図は撮ったときのカメラの位置と当たり判定で見るので、描画のデバイスが無くても確かめる。
+    /// 一色でないことは写真の画素で見るので、描画のデバイスがあるときだけ見る。そのときは撮った写真を unity/logs/selfie/ に
+    /// 写すので、目で構図を確かめられる。
     /// </summary>
     public sealed class PhotoSpotSelfiePlayTests : SceneTestBase
     {
@@ -49,7 +51,16 @@ namespace KCD.Tests
 
             string photoFolder = Path.Combine(SaveDirectory, PhotoSystem.FolderName);
             string reviewFolder = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "..", "logs", "selfie"));
-            Directory.CreateDirectory(reviewFolder);
+            if (CanRender)
+            {
+                Directory.CreateDirectory(reviewFolder);
+            }
+            else
+            {
+                // 描画のデバイスが無いと、三脚のカメラは描かずに塗っただけの写真を返す（SelfieCamera）。
+                // 目で見るための絵を、その写真で上書きしない。
+                Debug.Log("[KCD] 描画のデバイスが無い（-nographics）ので、写真が一色でないかは見ず、unity/logs/selfie/ にも写さない");
+            }
 
             var bad = new List<string>();
             foreach (CatalogPhotoSpot spot in CollectibleCatalog.Instance.PhotoSpots)
@@ -71,7 +82,11 @@ namespace KCD.Tests
                     continue;
                 }
 
-                File.Copy(added[0], Path.Combine(reviewFolder, spot.Id + ".png"), true);
+                if (CanRender)
+                {
+                    File.Copy(added[0], Path.Combine(reviewFolder, spot.Id + ".png"), true);
+                }
+
                 CheckShot(spot.Id, added[0], bad);
                 CheckFraming(spot, tripod.transform.position, player, bad);
                 Assert.IsFalse(KCDInput.IsBlockedBy(PhotoSystem.Instance), spot.Id + " の撮影のあと操作の封鎖が残っている");
@@ -88,7 +103,7 @@ namespace KCD.Tests
             return Directory.Exists(folder) ? Directory.GetFiles(folder, "*.png") : new string[0];
         }
 
-        /// <summary>PNG が読めて、大きさが合い、一色（描けていない・真っ黒）でない。</summary>
+        /// <summary>PNG が読めて、大きさが合い、一色（描けていない・真っ黒）でない。一色でないかは、描画のデバイスがあるときだけ見る。</summary>
         private static void CheckShot(string spotId, string path, List<string> bad)
         {
             var image = new Texture2D(2, 2);
@@ -103,6 +118,11 @@ namespace KCD.Tests
                 if (image.width != SelfieCamera.Width || image.height != SelfieCamera.Height)
                 {
                     bad.Add(spotId + ": 大きさが " + image.width + "x" + image.height);
+                }
+
+                if (!CanRender)
+                {
+                    return;
                 }
 
                 Color32[] pixels = image.GetPixels32();

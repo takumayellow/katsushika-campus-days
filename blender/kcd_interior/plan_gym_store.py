@@ -9,7 +9,8 @@ def passage(c):
     """アリーナ北東の通路（壁 B の戸口へ抜ける）と、その奥の閉じた空間を囲う壁。"""
     mb = c.wall
     S.ywall(mb, -7.1, -6.8, 39.3, 47.6, 0.0, D.C_STORE + 0.3, S.WHITE)
-    S.xwall(mb, -6.8, -3.7, 41.7, 42.0, 0.0, D.C_PASS, S.WHITE)
+    # 奥の壁は暗い色にする。アリーナの W_N の開口から覗くと、写真（P1）のように暗く見える。
+    S.xwall(mb, -6.8, -3.7, 41.7, 42.0, 0.0, D.C_PASS, S.DARK)
     pts = [(-5.25, 40.5)]
     c.lights_from(pts, D.C_PASS, energy=120.0, radius=2.5)
     kit.box(mb, -6.78, 39.5, 1.2, -6.7, 40.5, 1.6, "paper_white")

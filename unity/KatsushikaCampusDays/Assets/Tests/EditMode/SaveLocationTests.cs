@@ -52,6 +52,21 @@ namespace KCD.Tests
         }
 
         [Test]
+        public void Delete_RemovesOnlyTheSaveInThatFolder()
+        {
+            string save = Path.Combine(_folder, SaveSystem.FileName);
+            string other = Path.Combine(_folder, "kcd_endings.json");
+            File.WriteAllText(save, SaveDataRules.ToJson(new SaveData { DayNumber = 2 }));
+            File.WriteAllText(other, "{}");
+
+            Assert.IsTrue(SaveSystem.Delete(), "消したのに消せなかったと返した");
+
+            Assert.IsFalse(SaveSystem.HasSave, "展示モードの新規開始で前の人のセーブが残っている");
+            Assert.IsTrue(File.Exists(other), "セーブ以外のファイルまで消した");
+            Assert.IsTrue(SaveSystem.Delete(), "セーブが無いときに消そうとして止まった");
+        }
+
+        [Test]
         public void PathOf_FollowsTheOverrideAndOtherwiseThePersistentDataPath()
         {
             // セーブと同じ置き場の別ファイル（見たエンドの記録）も、差し替えたフォルダに置く。

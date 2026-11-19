@@ -20,14 +20,18 @@
       "type": "visit",
       "target": "poi_cafeteria_ticket",
       "text": "食堂 1 階の注文端末を調べる",
-      "text_en": "Check the order terminals on the first floor of the cafeteria"
+      "text_en": "Check the order terminals on the first floor of the cafeteria",
+      "done": "端末のまわりに手がかりは無い。反対側の奥の返却口も見てみよう",
+      "done_en": "No clues by the terminals. Check the tray return at the far side"
     },
     {
       "id": "s2",
       "type": "visit",
       "target": "poi_cafeteria_tray_return",
       "text": "返却口で落とし主の手がかりを探す",
-      "text_en": "Look for a clue about the owner at the tray return"
+      "text_en": "Look for a clue about the owner at the tray return",
+      "done": "トレーに名前入りの箸箱が残っていた。かなめに伝えよう",
+      "done_en": "A named chopstick case was left on a tray. Tell Kaname"
     },
     {
       "id": "s3",

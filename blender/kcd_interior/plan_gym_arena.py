@@ -74,14 +74,18 @@ def court(c):
 
 # ---- 吊りゴール ----
 def hung_hoop(mb, x, y, ang, rim_z=3.05):
-    """天井から吊るバスケットゴール。ang はバックボードの向き（コート側）。"""
+    """天井から吊るバスケットゴール。ang はバックボードの向き（コート側）。
+
+    白い金属の枠に入ったガラスの板に、リングと付け根は床の赤線と同じ gym_line_red
+    （spec §5。折り畳みのゴールと同じ作り）。
+    """
     t = kit.T(x, y, 0.0, ang)
-    t.box(mb, -0.9, -0.05, rim_z - 0.15, 0.9, 0.0, rim_z + 0.90, "backboard_white")
-    t.box(mb, -0.3, -0.055, rim_z - 0.02, 0.3, -0.05, rim_z + 0.45, "hoop_orange")
+    _glass_board(mb, t, -0.05, 0.0, rim_z - 0.15, rim_z + 0.90)
+    t.box(mb, -0.06, -0.01, rim_z - 0.10, 0.06, 0.15, rim_z + 0.01, "gym_line_red")
     for sx in (-0.7, 0.7):
         a = t.p(sx, -0.03, rim_z + 0.9)
         kit.tube(mb, a, (a[0], a[1], Z_HANG), 0.03, "gym_truss_steel", seg=4)
-    _ring(mb, t, 0.15, rim_z)
+    _ring(mb, t, 0.15, rim_z, "gym_line_red")
 
 
 def _ring(mb, t, dy0, rim_z, mat="hoop_orange"):
@@ -130,13 +134,44 @@ def hoops(c):
     for y in D.CROSS_Y:
         hung_hoop(mb, D.HOOP_G_X, y, -math.pi / 2)
         hung_hoop(mb, D.HOOP_B_X, y, math.pi / 2)
-    hung_hoop(mb, D.HOOP_B_X - 0.1, 14.5, math.pi / 2, rim_z=6.8)
-    hung_hoop(mb, D.HOOP_B_X - 0.1, 29.0, math.pi / 2, rim_z=6.8)
     for y in D.FOLD_Y:
         folded_hoop(mb, D.WALL_B[0], y)
 
 
 # ---- 壁 B・北の仕切り・南壁の付属 ----
+JOINT_PITCH = 2.4   # 木の壁の金属の目地の間隔（spec §5）
+CLOCK_Z = 7.7       # 北の壁の時計の高さ。P1 では観覧席の手すりよりずっと上の木の壁に写る
+
+
+def _round_clock(mb, x, y, z, r=0.3, seg=12):
+    """北の壁（y）から -Y 向きに掛ける白い丸い時計。厚み 5 cm、針は黒い 2 本。"""
+    rim = [(x + r * math.cos(2 * math.pi * k / seg), z + r * math.sin(2 * math.pi * k / seg))
+           for k in range(seg)]
+    mb.add_face([(px, y - 0.05, pz) for px, pz in rim], "plastic_white")
+    for k in range(seg):
+        (ax, az), (bx, bz) = rim[k], rim[(k + 1) % seg]
+        mb.add_quad((ax, y, az), (bx, y, bz), (bx, y - 0.05, bz), (ax, y - 0.05, az), "plastic_white")
+    kit.box(mb, x - 0.02, y - 0.06, z - 0.02, x + 0.02, y - 0.05, z + r * 0.72, "plastic_black")
+    kit.box(mb, x - 0.02, y - 0.06, z - 0.02, x + r * 0.55, y - 0.05, z + 0.02, "plastic_black")
+
+
+def north_wall_details(mb, gaps):
+    """北の仕切りのアリーナ側の付属: 金属の目地・壁付けスピーカー 3 台・白い丸い時計（spec §5・§6）。
+
+    どれも壁の面（y = ARENA[3]）から手前（-Y）へ出す。上部の木の壁は開口の上でも続くので、
+    目地は上部では全幅に通し、下部では開口（gaps）を避ける。
+    """
+    yn = D.ARENA[3]
+    for k in range(9):
+        x = -25.0 + JOINT_PITCH * k
+        kit.box(mb, x, yn - 0.02, 3.0, x + 0.03, yn, D.C_HALL - 0.1, "gym_joint_metal")
+        if not any(g0 - 0.03 <= x <= g1 for g0, g1 in gaps):
+            kit.box(mb, x, yn - 0.02, 0.3, x + 0.03, yn, 3.0, "gym_joint_metal")
+    for x in (-22.0, -16.0, -10.0):
+        kit.box(mb, x - 0.3, yn - 0.3, 8.7, x + 0.3, yn, 9.3, "gym_vent_dark")
+    _round_clock(mb, -19.0, yn, CLOCK_Z)
+
+
 def walls(c):
     mb = c.wall
     x0, x1 = D.WALL_B
@@ -151,6 +186,7 @@ def walls(c):
     S.xwall(mb, -27.8, -4.0, yn, yw, 3.0, D.C_HALL, S.WOOD_U)
     S.xwall(mb, -27.8, -4.0, yw, 39.3, 0.0, D.C_HALL, S.CONC, gaps=gaps, lintel=D.DOOR_H)
     kit.box(mb, D.N_STORE_CLOSED[0], 38.80, 0.0, D.N_STORE_CLOSED[1], 38.85, 2.2, "gym_door_dark")
+    north_wall_details(mb, gaps)
     for a, b in D.S_DOORS:
         y = D.south_y((a + b) / 2)
         kit.box(mb, a, y, 0.0, b, y + 0.04, 2.2, "gym_door_navy")
@@ -164,7 +200,6 @@ def walls(c):
     y = D.south_y(-6.0)
     kit.box(mb, -6.4, y, 1.1, -5.4, y + 0.2, 2.1, "gym_door_dark")
     kit.box(mb, -5.75, y + 0.2, 1.9, -5.65, y + 0.22, 2.0, "fire_red")
-    shell.clock(mb, -3.68, 30.0, 3.4, -math.pi / 2, 0.3)
 
 
 # ---- 屋根・照明・ネット ----

@@ -241,7 +241,10 @@ namespace KCD
             (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame) ||
             (Gamepad.current != null && Gamepad.current.startButton.wasPressedThisFrame);
 
-        /// <summary>キャラクター選択などの水平メニュー移動。-1 / 0 / +1。</summary>
+        /// <summary>
+        /// キャラクター選択などの水平メニュー移動。-1 / 0 / +1。ゲームパッドは十字キーと左スティック
+        /// （半分より倒した瞬間だけ。倒したままでは進まない）。
+        /// </summary>
         public static int MenuHorizontal
         {
             get
@@ -256,8 +259,8 @@ namespace KCD
                 Gamepad gamepad = Gamepad.current;
                 if (gamepad != null)
                 {
-                    if (gamepad.dpad.right.wasPressedThisFrame) { return 1; }
-                    if (gamepad.dpad.left.wasPressedThisFrame) { return -1; }
+                    if (gamepad.dpad.right.wasPressedThisFrame || gamepad.leftStick.right.wasPressedThisFrame) { return 1; }
+                    if (gamepad.dpad.left.wasPressedThisFrame || gamepad.leftStick.left.wasPressedThisFrame) { return -1; }
                 }
 
                 return 0;
@@ -279,8 +282,8 @@ namespace KCD
                 Gamepad gamepad = Gamepad.current;
                 if (gamepad != null)
                 {
-                    if (gamepad.dpad.down.wasPressedThisFrame) { return 1; }
-                    if (gamepad.dpad.up.wasPressedThisFrame) { return -1; }
+                    if (gamepad.dpad.down.wasPressedThisFrame || gamepad.leftStick.down.wasPressedThisFrame) { return 1; }
+                    if (gamepad.dpad.up.wasPressedThisFrame || gamepad.leftStick.up.wasPressedThisFrame) { return -1; }
                 }
 
                 return 0;

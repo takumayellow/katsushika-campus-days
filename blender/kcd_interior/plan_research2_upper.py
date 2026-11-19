@@ -2,7 +2,8 @@
 
 ロビーの EV から各階へ行く（Unity の ElevatorPanel）。扉の奥の部屋・WC・階段は作らない。
 階段室の扉 2 か所（EV ホールの北と廊下の西の端）は、扉の前で E を押して別の階へ移る（Unity の
-InteriorStairStage。EV ホールの北の階段はロビーの階段室とつながる）。
+InteriorStairStage。EV ホールの北の階段はロビーの階段室と、西の端の階段は食堂（plan_cafeteria）の
+1F・2F の扉とつながる）。
 寸法は plan_research2_dims の UPPER_*（host の座標）。ロビーのローカルへは plan_research2_frame で写す。
 床・躯体は階ごと・X の区画ごとに別の物（Ctx.part）にして、1 つの物に届く点光源を 4 つまでに抑える。
 
@@ -10,7 +11,8 @@ Empty:
     ev_research2_<階>      EV を降りた所（床の高さ）。<階> は 3F〜6F（1F はロビーが置く）
     ev_research2_<階>_f    降りた所から 1 m 正面（降りたときに向く向き）
     st_research2_<階段>_<階>   階段室の扉から STAIR_OUT 前の床。<階段> は east（EV ホールの北）と
-                           west（廊下の西の端）。east の 1F はロビーが置く
+                           west（廊下の西の端）。east の 1F はロビーが置く。west の 1F・2F は
+                           食堂が st_cafeteria_west_<階> として置く
     st_research2_<階段>_<階>_f そこから 1 m 正面（扉を背にする）
     lamp_research2_<階>_<n> 廊下の天井の点光源（Unity は今いる階の分だけ点ける）
 """
@@ -157,10 +159,11 @@ def _shell_walls(f):
     f.box(HX0, HY1, 0.0, CX1, OY1, h, WALL)                  # EV ホールの北（階段室の扉）
 
 
-def _door(f, x, y, ang, plate=True):
-    """壁の面 (x, y) に付いた閉じた鋼の扉。ang は扉の正面（廊下側）。"""
-    mb = f.wall_at(x)
-    t = f.t(x, y, 0.0, ang)
+def door_boxes(mb, t, plate=True):
+    """閉じた鋼の扉の枠・板・取っ手と名札。t（kit.T）は壁の面の扉の下端の中心で、正面が扉の前。
+
+    食堂（plan_cafeteria）の西の端の階段室の扉もこれで作る。
+    """
     hw = DOOR_W * 0.5
     # 枠は壁に少し埋め、扉の板は枠の面から浮かせる（面が重なると閉じの検査のレイが裏の面を拾う）
     t.box(mb, -hw - 0.06, -0.02, 0.0, hw + 0.06, 0.03, DOOR_H + 0.06, FRAME)
@@ -169,6 +172,11 @@ def _door(f, x, y, ang, plate=True):
     if plate:
         # 部屋の名札（名前は書かない。研究室名・教員名は出さない）
         t.box(mb, hw + 0.18, -0.01, 1.45, hw + 0.48, 0.02, 1.60, NAME_PLATE)
+
+
+def _door(f, x, y, ang, plate=True):
+    """壁の面 (x, y) に付いた閉じた鋼の扉。ang は扉の正面（廊下側）。"""
+    door_boxes(f.wall_at(x), f.t(x, y, 0.0, ang), plate)
 
 
 def _rooms(f, xs, y, ang, skip=()):

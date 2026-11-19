@@ -17,7 +17,7 @@ from . import shell
 WOOD = "lecture_wood_louver"
 FRAME = "lecture_wood_shell"
 DARK = "lecture_panel_dark"
-CONC = "lecture_concrete"
+CONC = "lecture_concrete_wall"   # 101 の東西の打放しの壁（型枠の跡、#423）
 
 Y_BACK = D.Y_ROOM_S1 - shell.PART       # 後ろの壁（北）の 101 側の面
 Y_FRONT = D.HALL_Y[0]                   # 前壁（南の外壁の内面）
