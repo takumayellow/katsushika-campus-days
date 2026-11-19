@@ -12,6 +12,7 @@ namespace KCD.Tests
     /// <summary>
     /// 展示で来場者が見る場面を本物のキャンパスで撮る。環境変数 KCD_VIEW_CAPTURE_DIR があるときだけ撮る。
     ///   次の行き先（#410）: オリエンテーションを終えた直後の追跡枠とミニマップ。
+    ///   迷子の本（#410）: 2 階の閲覧席の机に置いた本と、1 階カウンターの司書。
     ///   図書館の人（#165）: 時刻ごとに水盤のまわりにいる人の数と男女の内訳を数え、昼の画を撮る。
     /// </summary>
     public sealed class ExhibitViewCaptureTests : SceneTestBase
@@ -27,6 +28,12 @@ namespace KCD.Tests
         private const float ShotHour = 12.5f;
         private const int Width = 1600;
         private const int Height = 900;
+
+        /// <summary>迷子の本・司書を撮るとき、どれだけ離れて立つか（m）。</summary>
+        private const float BookShotDistance = 1.6f;
+        /// <summary>迷子の本の拾い物の id（Editor の CollectableMeshes.StrayBookId と同じ）。</summary>
+        private const string StrayBookId = "stray_book";
+        private const float LibrarianShotDistance = 3.4f;
 
         private static readonly float[] Hours = { 9.5f, 12.5f, 14.75f, 17f };
 
@@ -189,6 +196,71 @@ namespace KCD.Tests
             Directory.CreateDirectory(folder);
             File.WriteAllText(Path.Combine(folder, "library-pond.txt"), report.ToString(), new UTF8Encoding(false));
             Assert.Greater(nearTotal, 0, "どの時刻にも水盤のまわりに誰も来ない");
+        }
+
+        [UnityTest]
+        [Timeout(SceneTestTimeoutMs)]
+        public IEnumerator 迷子の本と司書を撮る()
+        {
+            string folder = Folder();
+            CollectErrorsInsteadOfLogAssert();
+            yield return PlayModeScenes.LoadCampusAsNewGame(Capture);
+            AssertLoaded(GameManager.CampusSceneName);
+            yield return PlayModeScenes.Advance(30, 1f);
+
+            DayNightCycle cycle = Object.FindAnyObjectByType<DayNightCycle>();
+            Assert.IsNotNull(cycle, "DayNightCycle が無い");
+            cycle.Paused = true;
+
+            CampusDriver driver = NewDriver();
+            yield return driver.Settle();
+            yield return driver.GoTo("library");
+            Assert.AreEqual("library", InteriorLoader.Instance.CurrentId, "図書館に入れない: " + string.Join(" / ", driver.Problems));
+
+            CollectableItem book = null;
+            foreach (CollectableItem item in Object.FindObjectsByType<CollectableItem>(FindObjectsInactive.Include))
+            {
+                if (item.ItemId == StrayBookId)
+                {
+                    book = item;
+                }
+            }
+
+            NPCTalker librarian = null;
+            foreach (NPCTalker npc in Object.FindObjectsByType<NPCTalker>(FindObjectsInactive.Include))
+            {
+                if (npc.NpcId == "librarian")
+                {
+                    librarian = npc;
+                }
+            }
+
+            Assert.IsNotNull(book, "閲覧席に迷子の本が無い");
+            Assert.IsNotNull(librarian, "カウンターに司書が居ない");
+
+            PlayerController player = Object.FindAnyObjectByType<PlayerController>();
+            Directory.CreateDirectory(folder);
+            var text = new StringBuilder();
+
+            // 本は机の上。机の手前（-z）に立って本の方を向く。
+            Vector3 bookAt = book.transform.position;
+            player.Teleport(new Vector3(bookAt.x, bookAt.y - 0.74f, bookAt.z - BookShotDistance), 0f);
+            yield return PlayModeScenes.Advance(30, 1f);
+            Shoot(Path.Combine(folder, "stray-book.png"));
+            text.Append("book ").Append(bookAt.ToString("F2")).Append(" interact ").Append(book.CanInteract).Append('\n');
+
+            // 司書はカウンターの内側。客の側（+x）から司書の方を向く。
+            Vector3 deskAt = librarian.transform.position;
+            player.Teleport(new Vector3(deskAt.x + LibrarianShotDistance, deskAt.y, deskAt.z), -90f);
+            yield return PlayModeScenes.Advance(30, 1f);
+            Shoot(Path.Combine(folder, "librarian.png"));
+            text.Append("librarian ").Append(deskAt.ToString("F1")).Append(" yaw ")
+                .Append(librarian.transform.eulerAngles.y.ToString("F0")).Append(" interact ").Append(librarian.CanInteract).Append('\n');
+
+            File.WriteAllText(Path.Combine(folder, "stray-book.txt"), text.ToString(), new UTF8Encoding(false));
+            Assert.IsTrue(book.CanInteract, "迷子の本を拾えない");
+            Assert.IsTrue(librarian.CanInteract, "司書に話しかけられない");
+            AssertNoErrors("迷子の本の場面");
         }
 
         /// <summary>
