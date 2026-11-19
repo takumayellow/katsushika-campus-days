@@ -46,6 +46,15 @@ namespace KCD
         /// <summary>true の間は時計を止める。スモークで同じ時刻の画を撮るときに使う。</summary>
         public bool Paused { get; set; }
 
+        /// <summary>
+        /// 時計を進めるか。止めてあるとき、会話を読んでいるあいだ、一日の長さが無いときは進めない。
+        /// 夕日（18〜20 時）は実時間で 60 秒しかなく、会話で削られないようにする（#410）。
+        /// </summary>
+        public static bool Advances(bool paused, bool talking, float realSecondsPerGameDay)
+        {
+            return !paused && !talking && realSecondsPerGameDay > 0f;
+        }
+
         /// <summary>"HH:MM" 形式の時刻。</summary>
         public string TimeText
         {
@@ -119,7 +128,8 @@ namespace KCD
 
         private void Update()
         {
-            if (Paused || _realSecondsPerGameDay <= 0f)
+            DialogueSystem dialogue = DialogueSystem.Instance;
+            if (!Advances(Paused, dialogue != null && dialogue.IsPlaying, _realSecondsPerGameDay))
             {
                 return;
             }

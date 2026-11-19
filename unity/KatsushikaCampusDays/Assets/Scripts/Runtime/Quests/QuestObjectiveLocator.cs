@@ -49,7 +49,7 @@ namespace KCD
                 case QuestStepKind.Collect:
                     return LocateCollect(target, from, out position);
                 case QuestStepKind.Flag:
-                    return Nearest(_props, from, p => p.FlagId == target, out position);
+                    return LocateFlag(target, from, out position);
                 default:
                     return false;
             }
@@ -97,6 +97,23 @@ namespace KCD
             }
 
             return Nearest(_zones, from, z => z.PlaceId == target, out position);
+        }
+
+        /// <summary>
+        /// flag ステップの行き先。[E] で調べる物（PropInteractable）があればそれを、無ければ
+        /// 会話でそのフラグを立てる相手（7F の白板・306 の PC など）を指す。屋内の相手は、外にいるあいだは
+        /// その建物の入口を指す（#410）。
+        /// </summary>
+        private static bool LocateFlag(string target, Vector3 from, out Vector3 position)
+        {
+            if (LocateHereOrEntrance(_props, from, p => p.FlagId == target, out position))
+            {
+                return true;
+            }
+
+            DialogueSystem dialogue = DialogueSystem.Instance;
+            return dialogue != null &&
+                LocateHereOrEntrance(_npcs, from, n => dialogue.RaisesFlag(n.NpcId, target), out position);
         }
 
         /// <summary>
