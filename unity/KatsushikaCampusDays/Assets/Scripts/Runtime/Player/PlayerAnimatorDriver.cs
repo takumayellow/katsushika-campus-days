@@ -244,9 +244,12 @@ namespace KCD
 
         /// <summary>
         /// 歩きのクリップの前進速度（m/s）。Blender の anim.GAIT_TARGET["Walk"] と同じ値。
-        /// プレイヤーの既定の 2.6 m/s は小走りのクリップで、歩きは NPC とモブがぶらぶら歩く速さ（#43）。
+        /// 歩きは NPC とモブがぶらぶら歩く速さで、プレイヤーは小走りより速く動く（#43）。
         /// </summary>
         public const float WalkClipSpeed = 1.3f;
+
+        /// <summary>小走りのクリップの前進速度（m/s）。Locomotion ブレンドツリーでこの Speed に小走りを置く（#43）。</summary>
+        public const float JogClipSpeed = 2.6f;
 
         /// <summary>
         /// 移動の速さから、ブレンドツリーに渡す値（blend）とクリップの再生速度（rate）を出す。

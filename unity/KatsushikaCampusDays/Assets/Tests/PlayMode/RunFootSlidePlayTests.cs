@@ -37,6 +37,7 @@ namespace KCD.Tests
         /// </summary>
         private const float RunMeanSlipLimit = 1.2f;
         private const float JogMeanSlipLimit = 0.40f;
+        private const float DefaultMeanSlipLimit = 0.80f;
         private const float WalkMeanSlipLimit = 0.10f;
 
         [UnityTest]
@@ -50,7 +51,14 @@ namespace KCD.Tests
         [Timeout(SceneTestTimeoutMs)]
         public IEnumerator Jog_PlantedFeetDoNotSlide()
         {
-            yield return Measure("jog", PlayerController.DefaultWalkSpeed, JogMeanSlipLimit);
+            yield return Measure("jog", PlayerAnimatorDriver.JogClipSpeed, JogMeanSlipLimit);
+        }
+
+        [UnityTest]
+        [Timeout(SceneTestTimeoutMs)]
+        public IEnumerator DefaultSpeed_PlantedFeetDoNotSlide()
+        {
+            yield return Measure("default", PlayerController.DefaultWalkSpeed, DefaultMeanSlipLimit);
         }
 
         [UnityTest]
