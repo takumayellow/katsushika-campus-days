@@ -69,21 +69,23 @@ INTRO = {
 }
 
 # 歌 (1 番). 小節 5 の 4 拍目がアウフタクト「しん」.
+# 小節 8 / 12 / 18 / 28 の音は, 歌の正本 score/school_song_vocal.musicxml と公式音源の採譜
+# score/bgm_yamaha.musicxml (どちらも同じ音) に合わせてある (#29). 小節 8 と 12 の和音も採譜に合わせた.
 VERSE = {
     5: "r:h r:q C4:e:し C4:e:ん",
     6: "F4:q.:せ G4:e:い A4:q:の A4:e.:い Bb4:s",
     7: "A4:q.:ぶ A4:e:き G4:q:も F4:e.:た A4:s:か",
-    8: "C5:q.:ら F4:e:わ D5:q:こ C5:q:う",
+    8: "C5:q.:ら F4:e:わ D5:q:こ D5:q:う",
     9: "C5:h.:ど C5:q:よ",
     10: "D5:h:か C5:q:た A4:e.:き Bb4:s:こ",
     11: "A4:q.:しょ G4:e:う F4:q:の F4:q:い",
-    12: "A4:q.:し F4:e E4:q:ず E4:q:え",
+    12: "A4:q.:し F4:e D4:q:ず E4:q:え",
     13: "C4:h.:を C4:q:ま",
     14: "D4:q.:も D4:e:り D4:q:て E4:q:さ",
     15: "F4:q:ら C4:q:に r:q F4:q:さ",
     16: "A4:q.:か G4:e F4:q:え A4:q:ゆ",
     17: "C5:h.:く F4:q:り",
-    18: "D5:q.:が C5:e:く C5:q:の C5:q:せ",
+    18: "D5:q.:が D5:e:く C5:q:の C5:q:せ",
     19: "F5:q:い C5:q:か r:q A4:e.:か Bb4:s",
     20: "A4:h:ぐ G4:q:わ G4:q:し",
     21: "F4:h.:き r:q",
@@ -93,7 +95,7 @@ VERSE = {
     25: "A4:e.:て G4:s:か A4:e:が Bb4:e:や C5:q:く F4:e.:お A4:s:お",
     26: "C5:h~:わ C5:e C5:e:か A4:e C5:e:き",
     27: "F5:h~ F5:e F5:e:わ E5:e:か D5:e:き",
-    28: "C5:e.:ち C5:s:は C5:e:お D5:e:ど C5:q:る r:e C4:e:わ",
+    28: "C5:e.:ち C5:s:は D5:e:お D5:e:ど C5:q:る r:e D4:e:わ",
     29: "C4:q:れ C4:q:ら G4:q:が G4:e.:が A4:s:く",
 }
 VERSE_END_REPEAT = "F4:h:え F4:e:ん r:e C4:e:し C4:e:ん"   # 1 括弧: 次の番へ
@@ -103,8 +105,8 @@ VERSE_END_FINAL = "F4:h:え F4:e:ん r:e r:q"                 # 2 括弧: 終止
 CHORDS = {
     0: [("F", 4)],
     1: [("F", 4)], 2: [("F", 4)], 3: [("C7", 4)], 4: [("C7", 4)], 5: [("F", 4)],
-    6: [("F", 4)], 7: [("F", 4)], 8: [("F", 2), ("Bb", 1), ("F", 1)], 9: [("C7", 4)],
-    10: [("Bb", 2), ("F", 2)], 11: [("F", 4)], 12: [("F", 2), ("C7", 2)], 13: [("C7", 4)],
+    6: [("F", 4)], 7: [("F", 4)], 8: [("F", 2), ("Bb", 2)], 9: [("C7", 4)],
+    10: [("Bb", 2), ("F", 2)], 11: [("F", 4)], 12: [("F", 2), ("Bb", 1), ("C7", 1)], 13: [("C7", 4)],
     14: [("Gm", 2), ("C7", 2)], 15: [("F", 4)], 16: [("F", 4)], 17: [("F", 4)],
     18: [("Bb", 2), ("F", 2)], 19: [("F", 4)], 20: [("F", 2), ("C7", 2)], 21: [("F", 4)],
     22: [("C7", 4)], 23: [("F", 4)], 24: [("C7", 2), ("Gm", 2)], 25: [("F", 2), ("C7", 1), ("F", 1)],
@@ -253,6 +255,10 @@ def build_part(name: str, inst, bars: list, first_extra: list) -> stream.Part:
     p = stream.Part(id=name)
     p.partName = name
     p.insert(0, inst)
+    # 音符は全パート実音で置いている. これを明示しないと music21 は Trumpet (in B♭) / Horn (in F) の
+    # 音符を記譜音とみなして <transpose> だけを足し, MuseScore が全音 / 完全 5 度低く鳴らす (#29).
+    # True にすると MusicXML は記譜音に直して書き出され, MIDI は実音のまま書かれる.
+    p.atSoundingPitch = True
     for i, (number, elements) in enumerate(bars):
         p.append(measure(number, elements, first_extra if i == 0 else None))
     return p

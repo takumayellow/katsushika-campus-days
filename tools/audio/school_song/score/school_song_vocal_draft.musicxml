@@ -9,7 +9,7 @@
     <creator type="composer">大和憲史</creator>
     <creator type="lyricist">佐治巌</creator>
     <encoding>
-      <encoding-date>2026-09-22</encoding-date>
+      <encoding-date>2026-11-19</encoding-date>
       <software>music21 v.9.9.2</software>
     </encoding>
   </identification>
@@ -20,21 +20,21 @@
     </scaling>
   </defaults>
   <part-list>
-    <score-part id="P01bfc68804fefe37de5b891865d68274">
+    <score-part id="P338a5f98bb73bf75517914c7129aa6ba">
       <part-name>Voice</part-name>
       <part-abbreviation>S</part-abbreviation>
-      <score-instrument id="Ibcdfa0d464dd3a589c6c0883791498b9">
+      <score-instrument id="I1b46184268779b915b57f55ef6675cc8">
         <instrument-name>Soprano</instrument-name>
         <instrument-abbreviation>S</instrument-abbreviation>
       </score-instrument>
-      <midi-instrument id="Ibcdfa0d464dd3a589c6c0883791498b9">
+      <midi-instrument id="I1b46184268779b915b57f55ef6675cc8">
         <midi-channel>1</midi-channel>
         <midi-program>54</midi-program>
       </midi-instrument>
     </score-part>
   </part-list>
   <!--=========================== Part 1 ===========================-->
-  <part id="P01bfc68804fefe37de5b891865d68274">
+  <part id="P338a5f98bb73bf75517914c7129aa6ba">
     <!--========================= Measure 5 ==========================-->
     <measure implicit="no" number="5">
       <attributes>
@@ -276,7 +276,7 @@
       </note>
       <note>
         <pitch>
-          <step>C</step>
+          <step>D</step>
           <octave>5</octave>
         </pitch>
         <duration>10080</duration>
@@ -448,7 +448,7 @@
       </note>
       <note>
         <pitch>
-          <step>E</step>
+          <step>D</step>
           <octave>4</octave>
         </pitch>
         <duration>10080</duration>
@@ -688,7 +688,7 @@
       </note>
       <note>
         <pitch>
-          <step>C</step>
+          <step>D</step>
           <octave>5</octave>
         </pitch>
         <duration>5040</duration>
@@ -1365,7 +1365,7 @@
       </note>
       <note>
         <pitch>
-          <step>C</step>
+          <step>D</step>
           <octave>5</octave>
         </pitch>
         <duration>5040</duration>
@@ -1408,7 +1408,7 @@
       </note>
       <note>
         <pitch>
-          <step>C</step>
+          <step>D</step>
           <octave>4</octave>
         </pitch>
         <duration>5040</duration>
