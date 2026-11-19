@@ -140,6 +140,25 @@ namespace KCD
             return latched && !blocked && !dormEndingShowing;
         }
 
+        /// <summary>夕日のあとの「帰り道」。受けている間は、正門まで歩いて戻れるよう一日の終わりを延ばす (#410)。</summary>
+        public const string WalkHomeQuestId = "q_sq_night_walk";
+
+        /// <summary>
+        /// 帰り道の間に延ばす長さ（ゲーム内の時間）。水盤から正門までは NavMesh で約 248 m あり、歩いて（3.2 m/s）約 78 秒、
+        /// 一日 1200 秒の時計で約 1.6 時間かかる。寄り道の分を足して 2 時間にする。
+        /// クエストが残っている限り、次の日以降も延ばす（帰り道はどの日の夜でも歩ける）。
+        /// </summary>
+        public const float WalkHomeGraceHours = 2f;
+
+        /// <summary>延ばしても日付をまたがない上限。24 時を超えると掛け金が立たなくなる。</summary>
+        private const float LatestDayEndHour = 23.5f;
+
+        /// <summary>今日の終わりの時刻。帰り道を受けている間だけ <see cref="WalkHomeGraceHours"/> 延ばす。</summary>
+        public static float DayEndHourFor(float dayEnd, bool walkingHome)
+        {
+            return walkingHome ? Mathf.Min(dayEnd + WalkHomeGraceHours, LatestDayEndHour) : dayEnd;
+        }
+
         /// <summary>
         /// リザルトの「歩いた時間」。24 時をまたいで 0 時台に終わったときは、その夜の分も足す
         /// （引き算だけだと 0 時間になる）。
@@ -214,7 +233,8 @@ namespace KCD
             // 会話やメニューの上には出さない。ただし 20 時を過ぎたことは封鎖中も覚えておき、
             // 封鎖が外れた最初のフレームで出す (#62)。
             EnsureLoaded();
-            SetDayEndLatched(LatchDayEnd(_dayEndLatched, manager.GameTimeHours, DayStartHour, _dayEndHour));
+            bool walkingHome = manager.Quests != null && manager.Quests.IsActive(WalkHomeQuestId);
+            SetDayEndLatched(LatchDayEnd(_dayEndLatched, manager.GameTimeHours, DayStartHour, DayEndHourFor(_dayEndHour, walkingHome)));
             if (ShouldEndDay(_dayEndLatched, KCDInput.GameplayBlocked,
                     DormEnding.IsAnyShowing || FormalEnding.IsAnyShowing))
             {

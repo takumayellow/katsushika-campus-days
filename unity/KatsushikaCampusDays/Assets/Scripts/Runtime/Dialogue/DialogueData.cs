@@ -155,6 +155,36 @@ namespace KCD
         public string Speaker = string.Empty;
         public readonly List<DialogueTopic> Topics = new List<DialogueTopic>();
 
+        /// <summary>
+        /// どれかの話題か選択肢がこのフラグを立てるか。白板や PC のように、会話でフラグを立てる相手を
+        /// flag のステップの行き先として指すのに使う（#410）。
+        /// </summary>
+        public bool RaisesFlag(string flag)
+        {
+            if (string.IsNullOrEmpty(flag))
+            {
+                return false;
+            }
+
+            foreach (DialogueTopic topic in Topics)
+            {
+                if (topic.SetsFlag == flag)
+                {
+                    return true;
+                }
+
+                foreach (DialogueChoice choice in topic.Choices)
+                {
+                    if (choice.SetsFlag == flag)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
         /// <summary>JSON ノードから組み立てる。id が無ければ null。</summary>
         public static DialogueData FromJson(Dictionary<string, object> node)
         {

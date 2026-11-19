@@ -128,7 +128,7 @@ namespace KCD.Tests
         [Test]
         public void 時刻が飛ばずにつながる()
         {
-            // DayNightCycle は 1 日を 12 分で回すので、1 フレームで進むのは 0.01 時にも満たない。
+            // DayNightCycle は 1 日を 20 分で回すので、1 フレームで進むのは 0.01 時にも満たない。
             // 0.01 時ごとの色の差が小さければ、窓の外の明るさがぱっと切り替わることはない。
             Color previous = InteriorBackdrop.TintAt(0f);
             for (int step = 1; step <= 2400; step++)

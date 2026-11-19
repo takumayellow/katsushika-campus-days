@@ -121,7 +121,7 @@ namespace KCD.Tests
         [Test]
         public void Colors_ChangeWithoutJumps()
         {
-            // 36 秒 (= ゲーム内 0.01 時間 × 1 日 720 秒 / 24) ごとに見て、色がいきなり跳ばないこと。
+            // 0.5 秒 (= ゲーム内 0.01 時間 × 1 日 1200 秒 / 24) ごとに見て、色がいきなり跳ばないこと。
             const float Step = 0.01f;
             SkyState previous = SkyPalette.Evaluate(0f);
             for (int i = 1; i <= 2400; i++)

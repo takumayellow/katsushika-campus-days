@@ -21,7 +21,7 @@ namespace KCD
         private static readonly int[] ChimeHours = { 12, 17 };
 
         /// <summary>
-        /// 正時をまたいでからこの時間（ゲーム内の時間）以内に見えたときだけ鳴らす。0.1 時間 = 実時間 3 秒（1 日 = 12 分）。
+        /// 正時をまたいでからこの時間（ゲーム内の時間）以内に見えたときだけ鳴らす。0.1 時間 = 実時間 5 秒（1 日 = 20 分）。
         /// ロードや日付の繰り返しで時刻が飛んだときは鳴らさない。
         /// </summary>
         public const float ChimeWindowHours = 0.1f;

@@ -140,6 +140,8 @@ namespace KCD.Editor
             LectureStage.Build(root);
             // 隠しアイテム 20 個と写真スポット 6 箇所（collectibles.json）。屋内の poi に置く物があるので屋内のあと (#65)。
             CollectibleStage.Build(root);
+            // クエストのステップの place に書いた屋内の拾い物と話す人（迷子の本と司書, #410）。屋内のあと。
+            QuestPlaceStage.Build(root);
             // 隠しストーリーの「ドームの扉」（図書館 2F の西の壁）(#175)。
             SecretStoryStage.Build(root);
             // サブクエスト「黒板の 1 バイト」の板書と、板を調べる判定（講義棟 203〜602 の黒板と 7F の白板, #389）。

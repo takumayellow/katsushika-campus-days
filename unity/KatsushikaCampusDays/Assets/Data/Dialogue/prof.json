@@ -74,8 +74,8 @@
       "startsQuest": "q_lecture",
       "lines": [
         {
-          "text": "さて、走ったあとは座る番だ。これから講義棟の大教室で、新入生向けに短い講義をする。",
-          "text_en": "Now then, after running comes sitting. I'm about to give a short lecture for new students in the big classroom of the lecture building."
+          "text": "さて、走ったあとは座る番だ。これから講義棟の大教室、101 で、新入生向けに短い講義をする。",
+          "text_en": "Now then, after running comes sitting. I'm about to give a short lecture for new students in 101, the big classroom of the lecture building."
         },
         {
           "speaker": "自分",
@@ -160,8 +160,8 @@
       "requiresActiveQuest": "q_lecture",
       "lines": [
         {
-          "text": "講義棟の大教室だ。席に着いたら始める。",
-          "text_en": "The big classroom in the lecture building. We start once you are seated."
+          "text": "講義棟の大教室、101 だ。席に着いたら始める。",
+          "text_en": "101, the big classroom in the lecture building. We start once you are seated."
         }
       ]
     },
@@ -259,8 +259,8 @@
           "text_en": "Good. Then today, walk wherever you like."
         },
         {
-          "text": "そういえば、図書館を囲む水盤のほとりで、手を貸してくれる人を探している学生がいた。共創棟 1 階のカフェや、昼の食堂にも顔を出してみるといい。",
-          "text_en": "Come to think of it, there was a student by the pool around the library, looking for someone to lend a hand. Drop by the coffee shop on the first floor of Kyoso Hall, and the cafeteria at lunchtime, too."
+          "text": "そういえば、図書館を囲む水盤のほとりで、花之木いなりという学生が手を貸してくれる人を探していた。共創棟 1 階のカフェや、昼の食堂にも顔を出してみるといい。",
+          "text_en": "Come to think of it, a student called Inari Hananoki was by the pool around the library, looking for someone to lend a hand. Drop by the coffee shop on the first floor of Kyoso Hall, and the cafeteria at lunchtime, too."
         }
       ]
     },

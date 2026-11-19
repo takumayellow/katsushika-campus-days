@@ -2,8 +2,8 @@
   "id": "q_park",
   "title": "みらい公園の落とし物",
   "title_en": "Lost and Found in Mirai Park",
-  "summary": "キャンパスの北に隣り合う葛飾にいじゅくみらい公園。芝生と土のグラウンドのあいだに、理科大グリーンの葉が 5 枚散らばっている。",
-  "summary_en": "Katsushika Niijuku Mirai Park sits right next to campus. Between the lawn and the dirt field, five Rikadai-green leaves are scattered about.",
+  "summary": "いなりに押し花を勧められた。キャンパスの北に隣り合う葛飾にいじゅくみらい公園の、芝生と土のグラウンドのあいだに、理科大グリーンの葉が 5 枚散らばっている。",
+  "summary_en": "Inari suggested you try pressing leaves. In Katsushika Niijuku Mirai Park, right next to campus, five Rikadai-green leaves are scattered between the lawn and the dirt field.",
   "order": 6,
   "autoStart": true,
   "prerequisites": [

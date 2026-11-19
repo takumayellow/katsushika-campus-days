@@ -1,0 +1,34 @@
+{
+  "id": "librarian",
+  "speaker": "司書",
+  "topics": [
+    {
+      "id": "t_return",
+      "requiresStep": "q_sq_stray_book/s3",
+      "lines": [
+        {
+          "speaker": "自分",
+          "text": "この本、2 階の閲覧席の机に置いてありました。",
+          "text_en": "I found this book on a desk in the study carrels upstairs."
+        },
+        {
+          "text": "ああ、返却の記録はあるのに、書架に無かった本ですね。ありがとうございます。",
+          "text_en": "Ah, the one that was checked in but never reached the shelf. Thank you."
+        },
+        {
+          "text": "書架に戻しておきます。借りていた人にも、戻ったと伝えてください。",
+          "text_en": "I'll put it back on the shelf. Please tell whoever borrowed it that it's back."
+        }
+      ]
+    },
+    {
+      "id": "t_default",
+      "lines": [
+        {
+          "text": "返却はこちらで受け付けます。閲覧席は 2 階です。",
+          "text_en": "Returns are handled here. The study carrels are on the second floor."
+        }
+      ]
+    }
+  ]
+}
