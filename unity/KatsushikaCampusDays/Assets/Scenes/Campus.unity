@@ -81356,7 +81356,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8c0427ffb665c124f88b4d51f8d4ffad, type: 3}
   m_Name: 
   m_EditorClassIdentifier: KCD.Runtime::KCD.DayNightCycle
-  _realSecondsPerGameDay: 720
+  _realSecondsPerGameDay: 1200
   _startHour: 8.5
   _sunriseHour: 5.5
   _sunsetHour: 18.5
