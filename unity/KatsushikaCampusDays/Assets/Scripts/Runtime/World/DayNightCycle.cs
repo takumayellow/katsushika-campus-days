@@ -3,7 +3,7 @@ using UnityEngine;
 namespace KCD
 {
     /// <summary>
-    /// ゲーム内 1 日 = 実時間 12 分。08:30 から始まり、太陽の角度・色、空（KCD/Sky）・霧・環境光を動かす。
+    /// ゲーム内 1 日 = 実時間 20 分。08:30 から始まり、太陽の角度・色、空（KCD/Sky）・霧・環境光を動かす。
     /// 色は <see cref="SkyPalette"/> が時刻ごとに決める（日没どきは葛飾キャンパスの西日を想定して橙と桃色）。
     /// 太陽は東（+x）から昇り、南（-z）の空を通って西（-x）へ沈む。太陽が沈んだあとは同じライトを月明かりにする。
     /// </summary>
@@ -15,7 +15,13 @@ namespace KCD
         public const float DefaultSunsetHour = 18.5f;
         public const float DefaultLatitudeDegrees = 35.7f;
 
-        [SerializeField] private float _realSecondsPerGameDay = 720f;
+        /// <summary>
+        /// 1 ゲーム日の実時間（秒）。1 ゲーム時間が 50 秒になる。本編を一周する道のり（NavMesh で約 860 m）を
+        /// 走って 4.3 ゲーム時間で、8:30〜18:00 の夕日までに建物の中や寄り道の分が残る長さ (#410)。
+        /// </summary>
+        public const float DefaultRealSecondsPerGameDay = 1200f;
+
+        [SerializeField] private float _realSecondsPerGameDay = DefaultRealSecondsPerGameDay;
         // 一日の始まりは DayRestart が正。ここに 8.5f と書き直すと「もう一日歩く」の朝とずれる。
         [SerializeField] private float _startHour = DayRestart.DayStartHour;
         [SerializeField] private float _sunriseHour = DefaultSunriseHour;

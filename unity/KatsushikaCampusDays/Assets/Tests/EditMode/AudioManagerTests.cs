@@ -95,8 +95,8 @@ namespace KCD.Tests
         [Test]
         public void ChimeWindow_CoversTheLongestFrame()
         {
-            // 1 日 = 実時間 720 秒 (DayNightCycle)。Unity の deltaTime の上限 0.333 秒のフレームでも窓に収まる
-            float perFrame = 0.3333f * 24f / 720f;
+            // 1 日 = 実時間 DayNightCycle.DefaultRealSecondsPerGameDay 秒。Unity の deltaTime の上限 0.333 秒のフレームでも窓に収まる
+            float perFrame = 0.3333f * 24f / DayNightCycle.DefaultRealSecondsPerGameDay;
             Assert.Less(perFrame, AudioManager.ChimeWindowHours);
             Assert.IsTrue(AudioManager.ShouldChime(12f - perFrame * 0.5f, 12f + perFrame * 0.5f));
         }
