@@ -111,6 +111,21 @@ namespace KCD.Tests
             Assert.AreEqual("q_lib", quests.OfferedQuest?.Id, "サブクエストの陰で本編の次の行き先が消えた");
         }
 
+        /// <summary>オリエンテーションのあとに自動で始まるサブクエスト（本物では写真散歩）。</summary>
+        private const string SideAutoJson =
+            "{\"id\":\"q_side_auto\",\"title\":\"Photo\",\"order\":8,\"side\":true,\"autoStart\":true,\"prerequisites\":[\"q_o\"]," +
+            "\"steps\":[{\"id\":\"s1\",\"type\":\"enter\",\"target\":\"z\"}]}";
+
+        [Test]
+        public void AutoStartedSideQuest_DoesNotHideOffer()
+        {
+            QuestSystem quests = Make(OrientationJson, LibraryJson, SideAutoJson);
+            quests.ReportEnter("o");
+
+            Assert.IsTrue(quests.IsActive("q_side_auto"), "サブクエストが自動で始まっていない");
+            Assert.AreEqual("q_lib", quests.OfferedQuest?.Id, "自動で始まったサブクエストの陰で本編の次の行き先が消えた");
+        }
+
         [Test]
         public void ChosenOrTimedSideQuest_HidesOffer()
         {
