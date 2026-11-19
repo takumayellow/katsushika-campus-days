@@ -20,12 +20,23 @@ namespace KCD.Tests
         }
 
         [Test]
-        public void SolveGait_AtPlayerSpeed_PlaysJogClipAtFullRate()
+        public void SolveGait_AtJogClipSpeed_PlaysJogClipAtFullRate()
         {
-            // プレイヤーの既定の 2.6 m/s は小走りのクリップの閾値（#43）。
+            PlayerAnimatorDriver.SolveGait(PlayerAnimatorDriver.JogClipSpeed, out float blend, out float rate);
+
+            Assert.AreEqual(PlayerAnimatorDriver.JogClipSpeed, blend, 1e-5f);
+            Assert.AreEqual(1f, rate, 1e-5f);
+        }
+
+        [Test]
+        public void SolveGait_AtPlayerSpeed_BlendsBetweenJogAndRunAtFullRate()
+        {
+            // プレイヤーの既定の速さは小走りと走りのクリップの間に入る（#43）。
+            Assert.Greater(PlayerController.DefaultWalkSpeed, PlayerAnimatorDriver.JogClipSpeed);
+            Assert.Less(PlayerController.DefaultWalkSpeed, PlayerController.DefaultRunSpeed);
             PlayerAnimatorDriver.SolveGait(PlayerController.DefaultWalkSpeed, out float blend, out float rate);
 
-            Assert.AreEqual(2.6f, blend, 1e-5f);
+            Assert.AreEqual(PlayerController.DefaultWalkSpeed, blend, 1e-5f);
             Assert.AreEqual(1f, rate, 1e-5f);
         }
 

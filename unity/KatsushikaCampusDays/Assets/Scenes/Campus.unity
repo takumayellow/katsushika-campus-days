@@ -205478,7 +205478,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d557794bc92fac746bd3d2427ec729b6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: KCD.Runtime::KCD.PlayerController
-  _walkSpeed: 2.6
+  _walkSpeed: 3.2
   _runSpeed: 4
   _acceleration: 14
   _turnSmoothTime: 0.09
