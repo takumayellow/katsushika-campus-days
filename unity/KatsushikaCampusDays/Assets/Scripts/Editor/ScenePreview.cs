@@ -397,12 +397,13 @@ namespace KCD.Editor
             new Shot
             {
                 Name = "shot_item_milk",
-                Space = Frame.World,
-                Eye = new Vector3(75.19f, 1.35f, -65.24f),    // (u 95.5, v -28.1) メインストリート側から
-                Look = new Vector3(73.97f, 0.42f, -66.49f),   // 共創棟の売店前
+                Space = Frame.Interior,
+                Building = "kyoso",
+                Eye = new Vector3(-14.8f, 1.6f, 31.3f),       // レジの前（poi_kyoso_store のさらに手前）から
+                Look = new Vector3(-14.8f, 1.05f, 33.3f),     // 2 台のレジの間に置いた牛乳
                 Fov = 40f,
-                Sun = OutdoorSun,
-                Note = "売店前の牛乳を近くから",
+                Indoor = true,
+                Note = "共創棟のコンビニのレジの台の牛乳を近くから",
             },
 
             // にいじゅくみらい公園（#168）。座標は data/osm/park.json（x = 東, z = 北）:

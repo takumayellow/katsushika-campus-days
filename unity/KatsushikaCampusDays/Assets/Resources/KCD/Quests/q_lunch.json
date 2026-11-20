@@ -21,7 +21,14 @@
       "target": "milk",
       "count": 1,
       "text": "共創棟 1 階のコンビニで牛乳を買う",
-      "text_en": "Buy milk at the convenience store on the first floor of Kyoso Hall"
+      "text_en": "Buy milk at the convenience store on the first floor of Kyoso Hall",
+      "place": {
+        "building": "kyoso",
+        "at": "poi_kyoso_store",
+        "toward": "npc_kyoso_1",
+        "shift": 0.9,
+        "name": "牛乳"
+      }
     },
     {
       "id": "s2",
