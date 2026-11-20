@@ -102,6 +102,9 @@ namespace KCD
         /// <summary>その NPC に話しかけたことがあるか。</summary>
         public static bool HasTalked(string npcId) => _talked.Contains(npcId);
 
+        /// <summary>その写真スポットで撮ったことがあるか。</summary>
+        public static bool HasPhotographed(string spotId) => _photoSpots.Contains(spotId);
+
         /// <summary>タイトルから新規に始めたときに呼ぶ。</summary>
         public static void Reset()
         {

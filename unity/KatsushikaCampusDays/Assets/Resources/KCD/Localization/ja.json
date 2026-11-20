@@ -63,6 +63,8 @@
     "ui.hud.quest_tracker": "いまのクエスト",
     "ui.hud.next_destination": "次の行き先",
     "ui.hud.explore": "キャンパスを歩こう",
+    "ui.hud.explore_clue": "手がかり: {0}",
+    "ui.hud.explore_hunt": "・水盤のほとりのいなり先輩に話しかける",
     "ui.hud.time_remaining": "残り {0} 秒",
     "ui.hud.challenge_start": "スタート！ 制限時間 {0} 秒",
     "ui.hud.challenge_cleared": "残り {0:0.0} 秒で間に合った！",

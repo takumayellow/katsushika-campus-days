@@ -222,13 +222,13 @@ namespace KCD.Tests
             QuestSystem quests = Make(OrientationJson, LibraryJson);
             quests.ReportEnter("o");
 
-            QuestStep step = Minimap.ObjectiveStep(quests);
+            QuestStep step = Minimap.ObjectiveStep(quests, 0);
             Assert.IsNotNull(step);
             Assert.AreEqual(QuestStepKind.Talk, step.Kind);
             Assert.AreEqual("inari", step.Target);
 
             quests.StartQuest("q_lib");
-            Assert.AreEqual("library", Minimap.ObjectiveStep(quests)?.Target, "受けたあとはクエストの目的地を指す");
+            Assert.AreEqual("library", Minimap.ObjectiveStep(quests, 0)?.Target, "受けたあとはクエストの目的地を指す");
         }
 
         /// <summary>

@@ -291,5 +291,96 @@ namespace KCD.Tests
                 Object.DestroyImmediate(go);
             }
         }
+        /// <summary>隠しクエスト以外のクエストを全部終えた状態（エンディングのあと、探索だけが残る）。</summary>
+        private static QuestSystem AllButSecretDone()
+        {
+            var rows = new List<(string, int, int)>();
+            foreach (QuestData quest in LoadQuests())
+            {
+                if (quest.Id != SecretQuest)
+                {
+                    rows.Add((quest.Id, QuestProgress.StateCompleted, quest.Steps.Count));
+                }
+            }
+
+            return Quests(rows.ToArray());
+        }
+
+        /// <summary>
+        /// 本編とサブを終えたあと、追うものも次の行き先も無い (#410)。隠しアイテムが 5 個になったら、
+        /// ミニマップの輪がいなり先輩を指し、宝探しを受けたら鍵を指す。4 個までは何も指さない。
+        /// </summary>
+        [Test]
+        public void ExploreGuide_AfterEverything_PointsToInariFromFiveHidden()
+        {
+            QuestSystem quests = AllButSecretDone();
+            Assert.IsNull(quests.OfferedQuest, "全部終えたのに次の行き先がある");
+            Assert.IsNull(quests.TrackedQuest, "全部終えたのに追うクエストがある");
+
+            Assert.IsNull(Minimap.ObjectiveStep(quests, 4), "5 個まで拾っていないのにいなり先輩を指している");
+            QuestStep hunt = Minimap.ObjectiveStep(quests, 5);
+            Assert.IsNotNull(hunt, "5 個拾ったのに輪で何も指さない");
+            Assert.AreEqual(QuestStepKind.Talk, hunt.Kind);
+            Assert.AreEqual(ExploreGuide.HuntGiver, hunt.Target);
+
+            DialogueTopic start = Dialogue(ExploreGuide.HuntGiver).Topics.Find(t => t.StartsQuest == SecretQuest);
+            Assert.IsNotNull(start, "案内した先の NPC が宝探しを始めない");
+
+            Assert.IsTrue(quests.StartQuest(SecretQuest));
+            Assert.AreEqual(DomeKey, Minimap.ObjectiveStep(quests, 5)?.Target, "宝探しを受けたあとに鍵を指していない");
+        }
+
+        /// <summary>宝探しの前提（図書館のクエスト）を終えていなければ、いなり先輩へは案内しない。</summary>
+        [Test]
+        public void ExploreGuide_HuntStep_NeedsPrerequisites()
+        {
+            Assert.IsNull(ExploreGuide.HuntStep(20, Quests()), "前提を終えていないのに案内している");
+            Assert.IsNotNull(ExploreGuide.HuntStep(5, Quests(("q_library", QuestProgress.StateCompleted, 0))));
+            Assert.IsNull(ExploreGuide.HuntStep(20, null));
+        }
+
+        /// <summary>
+        /// 次に探す隠しアイテムはメモの番号が最も小さい未取得のもの。手がかりは実データの全 hidden に書いてあり、
+        /// 拾い終えたら写真スポットの名前に移る。
+        /// </summary>
+        [Test]
+        public void ExploreGuide_Clue_FollowsNoteNumbersThenPhotoSpots()
+        {
+            CollectibleCatalog catalog = Catalog();
+            var collected = new HashSet<string>();
+
+            CatalogItem first = ExploreGuide.NextHidden(catalog.Items, collected.Contains);
+            Assert.IsNotNull(first);
+            Assert.AreEqual(1, first.NoteNo);
+
+            var seen = new List<int>();
+            for (CatalogItem next = first; next != null; next = ExploreGuide.NextHidden(catalog.Items, collected.Contains))
+            {
+                Assert.IsFalse(string.IsNullOrEmpty(next.HintJa), next.Id + " に hint_ja が無い");
+                Assert.IsFalse(string.IsNullOrEmpty(next.HintEn), next.Id + " に hint_en が無い");
+                StringAssert.Contains(L.Pick(next.HintJa, next.HintEn), ExploreGuide.ClueText(next, null));
+                seen.Add(next.NoteNo);
+                collected.Add(next.Id);
+            }
+
+            Assert.AreEqual(catalog.HiddenCount, seen.Count, "隠しアイテムを全部たどれていない");
+            for (int i = 1; i < seen.Count; i++)
+            {
+                Assert.Less(seen[i - 1], seen[i], "メモの番号の順に案内していない");
+            }
+
+            var taken = new HashSet<string>();
+            CatalogPhotoSpot spot = ExploreGuide.NextPhotoSpot(catalog.PhotoSpots, taken.Contains);
+            Assert.IsNotNull(spot);
+            StringAssert.Contains(L.Pick(spot.NameJa, spot.NameEn), ExploreGuide.ClueText(null, spot));
+
+            foreach (CatalogPhotoSpot each in catalog.PhotoSpots)
+            {
+                taken.Add(each.Id);
+            }
+
+            Assert.IsNull(ExploreGuide.NextPhotoSpot(catalog.PhotoSpots, taken.Contains));
+            Assert.AreEqual(string.Empty, ExploreGuide.ClueText(null, null));
+        }
     }
 }

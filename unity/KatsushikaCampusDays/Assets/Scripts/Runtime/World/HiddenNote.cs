@@ -53,11 +53,15 @@ namespace KCD
             return topic;
         }
 
-        /// <summary>メモのあとにヒントを出すか。隠しアイテムが 5 個以上で、秘密のクエストを受けても終えてもいないとき。</summary>
+        /// <summary>
+        /// メモのあとにヒントを出すか。隠しアイテムが 5 個以上で、秘密のクエストを受けても終えてもおらず、
+        /// いなり先輩に話しかければ受けられる（前提のクエストを終えている）とき。
+        /// </summary>
         public static bool ShouldHint(int hiddenCount, QuestSystem quests)
         {
-            return hiddenCount >= HintThreshold && quests != null && quests.Find(SecretQuestId) != null &&
-                   !quests.IsActive(SecretQuestId) && !quests.IsCompleted(SecretQuestId);
+            QuestData secret = quests?.Find(SecretQuestId);
+            return hiddenCount >= HintThreshold && secret != null && !quests.IsActive(SecretQuestId) &&
+                   !quests.IsCompleted(SecretQuestId) && quests.PrerequisitesMet(secret);
         }
 
         /// <summary>拾ったアイテムのメモを会話の枠に出す。メモが無い・会話中なら何もしない。</summary>
