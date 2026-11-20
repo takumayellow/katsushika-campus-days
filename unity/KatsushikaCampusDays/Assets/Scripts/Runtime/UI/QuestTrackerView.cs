@@ -491,6 +491,9 @@ namespace KCD
         /// <summary>何も追うものが無いときの見出し（ui.hud.explore）。</summary>
         public const string ExploreFallback = "キャンパスを歩こう";
 
+        /// <summary>宝探しの依頼主への案内の本文（ui.hud.explore_hunt）。</summary>
+        public const string HuntFallback = "・水盤のほとりのいなり先輩に話しかける";
+
         /// <summary>
         /// 何も追うものが無いときの本文。隠しアイテムと写真の「集めた数 / 全部の数」を 1 行で出す。
         /// 行頭は「次の行き先」と同じ「・」。集め終えた項目と、全部の数が 0 の項目は出さない。出すものが無ければ空文字。
@@ -513,8 +516,10 @@ namespace KCD
         }
 
         /// <summary>
-        /// 受けるクエストも次の行き先も無いあいだ、隠しアイテムと写真の残りを出す。出したら true。
-        /// 本編とサブを終えたあとも、まだ探せるものがあると分かるようにする。
+        /// 受けるクエストも次の行き先も無いあいだの枠。出したら true。
+        /// 宝探しを始められるなら「次の行き先」としていなり先輩を案内し、それ以外は隠しアイテムと写真の残りに、
+        /// 次に探すものの手がかり（<see cref="ExploreGuide.ClueText"/>）を 2 行目として添える。
+        /// 本編とサブを終えたあとも、何をすればいいかが分かるようにする。
         /// </summary>
         private bool ShowExplore()
         {
@@ -524,17 +529,39 @@ namespace KCD
                 return false;
             }
 
-            string line = ExploreLine(DayStats.HiddenCollectedCount(catalog), catalog.HiddenCount,
+            int hidden = DayStats.HiddenCollectedCount(catalog);
+            if (ExploreGuide.HuntStep(hidden, _quests) != null)
+            {
+                MarkExploring();
+                ShowPanel(L.Get("ui.hud.next_destination", NextDestinationFallback),
+                    L.Get("ui.hud.explore_hunt", HuntFallback));
+                return true;
+            }
+
+            string line = ExploreLine(hidden, catalog.HiddenCount,
                 DayStats.CatalogPhotoCount(catalog), catalog.PhotoSpotCount);
             if (line.Length == 0)
             {
                 return false;
             }
 
-            _exploring = true;
-            _exploreVersion = DayStats.Version;
+            string clue = ExploreGuide.ClueText(
+                ExploreGuide.NextHidden(catalog.Items, DayStats.HasCollected),
+                ExploreGuide.NextPhotoSpot(catalog.PhotoSpots, DayStats.HasPhotographed));
+            if (clue.Length > 0)
+            {
+                line += SubLine("#CFE8FF", clue, ScreenShape.IsPortrait);
+            }
+
+            MarkExploring();
             ShowPanel(L.Get("ui.hud.explore", ExploreFallback), line);
             return true;
+        }
+
+        private void MarkExploring()
+        {
+            _exploring = true;
+            _exploreVersion = DayStats.Version;
         }
 
         /// <summary>「次の行き先」の本文。依頼主への道案内をいまの言語で出す (#410)。</summary>

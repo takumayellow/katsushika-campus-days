@@ -69,7 +69,7 @@ namespace KCD.Tests
             Assert.IsNotNull(cycle, "DayNightCycle が無い");
             Assert.IsNotNull(scheduler, "MobScheduler が無い");
             Assert.IsNotNull(player, "PlayerController が無い");
-            NPCTalker[] talkers = Object.FindObjectsByType<NPCTalker>(FindObjectsSortMode.None);
+            NPCTalker[] talkers = Object.FindObjectsByType<NPCTalker>();
 
             var report = new StringBuilder();
             report.Append("near ").Append(NearRadius).Append("m clump ").Append(ClumpRadius).Append("m count ")
