@@ -63,6 +63,9 @@ KNOWN_SKIPS = {
     "KCD.Tests.MobCrowdCaptureTests.水盤の前に集めて撮る": "KCD_MOB_CAPTURE_DIR を渡して撮るときだけ走る",
     "KCD.Tests.ExhibitViewCaptureTests.オリエンテーションのあとの次の行き先を撮る": "KCD_VIEW_CAPTURE_DIR を渡して撮るときだけ走る",
     "KCD.Tests.ExhibitViewCaptureTests.図書館の水盤のまわりの人を数えて撮る": "KCD_VIEW_CAPTURE_DIR を渡して撮るときだけ走る",
+    "KCD.Tests.ExhibitViewCaptureTests.迷子の本と司書を撮る": "KCD_VIEW_CAPTURE_DIR を渡して撮るときだけ走る",
+    "KCD.Tests.DayRouteMeasureTests.本編を一周する道のりを測る": "KCD_VIEW_CAPTURE_DIR を渡して測るときだけ走る",
+    "KCD.Tests.MobDensityMeasureTests.見る場所ごとに近くの人と固まりを数える": "KCD_MOB_DENSITY_DIR を渡して数えるときだけ走る",
 }
 
 # Unity -runTests の終了コード

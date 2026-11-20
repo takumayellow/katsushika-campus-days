@@ -328,8 +328,17 @@ def test_unknown_skip_in_the_list_fails_even_if_the_count_matches(monkeypatch):
     assert not summary.ok
 
 
-def test_known_skip_list_names_the_capture_test():
-    assert "KCD.Tests.MobCrowdCaptureTests.水盤の前に集めて撮る" in run_tests.KNOWN_SKIPS
+@pytest.mark.parametrize(
+    "name",
+    [
+        "KCD.Tests.MobCrowdCaptureTests.水盤の前に集めて撮る",
+        "KCD.Tests.ExhibitViewCaptureTests.迷子の本と司書を撮る",
+        "KCD.Tests.DayRouteMeasureTests.本編を一周する道のりを測る",
+        "KCD.Tests.MobDensityMeasureTests.見る場所ごとに近くの人と固まりを数える",
+    ],
+)
+def test_known_skip_list_names_the_env_gated_tests(name):
+    assert name in run_tests.KNOWN_SKIPS
 
 
 def test_empty_run_is_not_ok():
