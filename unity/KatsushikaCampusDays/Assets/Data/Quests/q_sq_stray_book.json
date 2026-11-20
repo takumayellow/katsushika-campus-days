@@ -4,6 +4,9 @@
   "title_en": "The Stray Book",
   "summary": "いなりが返した本が、書架に戻っていないらしい。誰かが 2 階の閲覧席の机に置いていったかもしれない。見つけて 1 階のカウンターの司書に返し、いなりに知らせる。",
   "summary_en": "A book Inari returned never made it back to the shelf. Someone may have left it on a desk in the second-floor study carrels. Find it, return it to the librarian at the first-floor counter, and let Inari know.",
+  "offer": "いなりを探して話しかける（地図の輪が居場所）",
+  "offer_en": "Find Inari and talk to them (the ring on the map shows where)",
+  "offerNpc": "inari",
   "order": 14,
   "autoStart": false,
   "prerequisites": [

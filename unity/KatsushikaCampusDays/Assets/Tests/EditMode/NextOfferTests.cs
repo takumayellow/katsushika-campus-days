@@ -98,7 +98,63 @@ namespace KCD.Tests
 
             quests.StartQuest("q_lunch");
             quests.ReportEnter("cafeteria");
-            Assert.IsNull(quests.OfferedQuest, "案内の無い本編・サブクエストまで案内している");
+            Assert.AreEqual("q_side", quests.OfferedQuest?.Id, "本編を終えたあと、サブクエストの依頼主を案内していない");
+
+            quests.StartQuest("q_side");
+            Assert.IsNull(quests.OfferedQuest, "サブクエストを受けたあとも次の行き先を出している");
+
+            quests.ReportEnter("y");
+            Assert.IsNull(quests.OfferedQuest, "案内の無い本編まで案内している");
+        }
+
+        private const string SideLaterJson =
+            "{\"id\":\"q_side_later\",\"title\":\"Later\",\"order\":5,\"side\":true,\"prerequisites\":[\"q_o\"]," +
+            "\"offer\":\"あとで\",\"offerNpc\":\"prof\"," +
+            "\"steps\":[{\"id\":\"s1\",\"type\":\"enter\",\"target\":\"z\"}]}";
+
+        private const string SecretJson =
+            "{\"id\":\"q_secret\",\"title\":\"Secret\",\"order\":0,\"side\":true,\"secret\":true,\"prerequisites\":[\"q_o\"]," +
+            "\"offer\":\"ひみつ\",\"offerNpc\":\"inari\"," +
+            "\"steps\":[{\"id\":\"s1\",\"type\":\"enter\",\"target\":\"w\"}]}";
+
+        /// <summary>本編が残っているあいだは、order が小さくてもサブクエストより本編を案内する。</summary>
+        [Test]
+        public void MainQuestLeft_OffersMainBeforeSide()
+        {
+            QuestSystem quests = Make(OrientationJson, LibraryJson, SideJson);
+            quests.ReportEnter("o");
+
+            Assert.AreEqual("q_lib", quests.OfferedQuest?.Id, "本編より先にサブクエストを案内している");
+            Assert.AreEqual("q_side", quests.NextSideOffer?.Id);
+        }
+
+        /// <summary>サブクエストを終えたら、次に order の小さいサブクエストへ進む。隠しクエストは案内しない。</summary>
+        [Test]
+        public void SideOffers_FollowOrder_AndSkipSecret()
+        {
+            QuestSystem quests = Make(OrientationJson, SecretJson, SideLaterJson, SideJson);
+            quests.ReportEnter("o");
+
+            Assert.AreEqual("q_side", quests.OfferedQuest?.Id, "order の小さいサブクエストから案内していない");
+
+            quests.StartQuest("q_side");
+            quests.ReportEnter("y");
+            Assert.AreEqual("q_side_later", quests.OfferedQuest?.Id, "終えたら次のサブクエストへ進まない");
+
+            quests.StartQuest("q_side_later");
+            quests.ReportEnter("z");
+            Assert.IsNull(quests.OfferedQuest, "隠しクエストの依頼主を案内している");
+        }
+
+        [Test]
+        public void ExploreLine_ListsOnlyWhatIsLeft()
+        {
+            StringAssert.Contains("3 / 20", QuestTrackerView.ExploreLine(3, 20, 6, 6));
+            StringAssert.DoesNotContain("6 / 6", QuestTrackerView.ExploreLine(3, 20, 6, 6));
+            StringAssert.Contains("2 / 6", QuestTrackerView.ExploreLine(20, 20, 2, 6));
+            StringAssert.DoesNotContain("20 / 20", QuestTrackerView.ExploreLine(20, 20, 2, 6));
+            Assert.AreEqual(string.Empty, QuestTrackerView.ExploreLine(20, 20, 6, 6), "集め終えたのに残りを出している");
+            Assert.AreEqual(string.Empty, QuestTrackerView.ExploreLine(0, 0, 0, 0));
         }
 
         [Test]
@@ -124,6 +180,16 @@ namespace KCD.Tests
 
             Assert.IsTrue(quests.IsActive("q_side_auto"), "サブクエストが自動で始まっていない");
             Assert.AreEqual("q_lib", quests.OfferedQuest?.Id, "自動で始まったサブクエストの陰で本編の次の行き先が消えた");
+        }
+
+        [Test]
+        public void AutoStartedSideQuest_DoesNotHideSideOffer()
+        {
+            QuestSystem quests = Make(OrientationJson, SideAutoJson, SideJson);
+            quests.ReportEnter("o");
+
+            Assert.IsTrue(quests.IsActive("q_side_auto"), "サブクエストが自動で始まっていない");
+            Assert.AreEqual("q_side", quests.OfferedQuest?.Id, "自動で始まったサブクエストの陰でサブの依頼主の案内が消えた");
         }
 
         [Test]
@@ -166,11 +232,12 @@ namespace KCD.Tests
         }
 
         /// <summary>
-        /// 本物のデータで、自分で受ける本編（autoStart でないもの）には案内があり、案内の NPC がその依頼を会話で出す人であること。
+        /// 本物のデータで、自分で受ける本編とサブクエスト（autoStart でも隠しでもないもの）には案内があり、
+        /// 案内の NPC がその依頼を会話で出す人であること。
         /// 食い違うと、案内どおりに話しかけても依頼が出ない。
         /// </summary>
         [Test]
-        public void RealData_EveryManualMainQuestHasOfferFromItsQuestGiver()
+        public void RealData_EveryManualQuestHasOfferFromItsQuestGiver()
         {
             string root = Path.Combine(Application.dataPath, "Data");
             var starters = new Dictionary<string, HashSet<string>>();
@@ -201,7 +268,7 @@ namespace KCD.Tests
             {
                 QuestData quest = Parse(File.ReadAllText(file));
                 Assert.IsNotNull(quest, file);
-                if (quest.Side || quest.Secret || quest.AutoStart)
+                if (quest.Secret || quest.AutoStart)
                 {
                     continue;
                 }
@@ -213,7 +280,7 @@ namespace KCD.Tests
                     quest.Id + " の offerNpc（" + quest.OfferNpc + "）はこの依頼を会話で出さない");
             }
 
-            Assert.Greater(checkedCount, 0, "自分で受ける本編が 1 つも見つからない");
+            Assert.Greater(checkedCount, 0, "自分で受けるクエストが 1 つも見つからない");
         }
     }
 }
