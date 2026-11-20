@@ -38,6 +38,9 @@ Material:
     - _Cull: 0
     - _Cutoff: 0.5
     - _DstBlend: 0
+    - _FaceShadow: 0
+    - _FaceShadowBias: 0.1
+    - _FaceShadowSoftness: 0.03
     - _FlatAmbient: 1
     - _HairRing: 0
     - _HairRingBack: 0.4
@@ -67,13 +70,13 @@ Material:
     - _VertexColor: 0
     - _ZWrite: 1
     m_Colors:
-    - _BaseColor: {r: 0.12352942, g: 0.10000001, b: 0.10000001, a: 1}
+    - _BaseColor: {r: 0.08235294, g: 0.07647059, b: 0.07647059, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _HairRingColor: {r: 1, g: 1, b: 1, a: 1}
     - _OutlineColor: {r: 0.11999995, g: 0.09999997, b: 0.13999996, a: 1}
     - _RimColor: {r: 1, g: 1, b: 1, a: 1}
-    - _ShadeColor: {r: 0.769, g: 0.6459238, b: 0.7131238, a: 1}
-    - _ShadeColor2: {r: 0.22058825, g: 0.199, b: 0.287, a: 1}
+    - _ShadeColor: {r: 0.769, g: 0.7149714, b: 0.7821714, a: 1}
+    - _ShadeColor2: {r: 0.20205884, g: 0.18841177, b: 0.27641177, a: 1}
     - _SpecularColor: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
