@@ -63,6 +63,8 @@
     "ui.hud.quest_tracker": "Current Quest",
     "ui.hud.next_destination": "Where to next",
     "ui.hud.explore": "Explore the campus",
+    "ui.hud.explore_clue": "Clue: {0}",
+    "ui.hud.explore_hunt": "・Talk to Inari by the reflecting pool",
     "ui.hud.time_remaining": "{0} s left",
     "ui.hud.challenge_start": "Go! You have {0} seconds",
     "ui.hud.challenge_cleared": "Made it with {0:0.0} seconds to spare!",

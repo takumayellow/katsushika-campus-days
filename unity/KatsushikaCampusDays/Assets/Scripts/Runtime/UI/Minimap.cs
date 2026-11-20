@@ -380,7 +380,8 @@ namespace KCD
                 return;
             }
 
-            QuestStep step = ObjectiveStep(GameManager.Instance.Quests);
+            QuestStep step = ObjectiveStep(GameManager.Instance.Quests,
+                DayStats.HiddenCollectedCount(CollectibleCatalog.Instance));
 
             string building = InteriorLoader.Instance != null ? InteriorLoader.Instance.CurrentId : null;
             if (step == null || !TryGoal(step, focus, building, out Vector3 position))
@@ -398,8 +399,10 @@ namespace KCD
 
         /// <summary>
         /// 輪で指すステップ。本編を受けていないあいだは、次の依頼主（「次の行き先」）を指す (#410)。
+        /// 追うものも次の行き先も無く、宝探しを始められるなら、いなり先輩を指す（<see cref="ExploreGuide.HuntStep"/>）。
+        /// 隠しアイテムそのものの場所は指さない（探す楽しみを残す）。
         /// </summary>
-        public static QuestStep ObjectiveStep(QuestSystem quests)
+        public static QuestStep ObjectiveStep(QuestSystem quests, int hiddenCount)
         {
             if (quests == null)
             {
@@ -407,7 +410,12 @@ namespace KCD
             }
 
             QuestData offered = quests.OfferedQuest;
-            return offered != null ? offered.OfferStep : quests.TrackedQuest?.CurrentStep;
+            if (offered != null)
+            {
+                return offered.OfferStep;
+            }
+
+            return quests.TrackedQuest?.CurrentStep ?? ExploreGuide.HuntStep(hiddenCount, quests);
         }
 
         /// <summary>
