@@ -164,27 +164,54 @@ namespace KCD.Tests
         /// <summary>牛乳の胴の底と、その真下の天板との隙間の許容 [m]。</summary>
         private const float MilkRestTolerance = 0.03f;
 
+        /// <summary>コンビニのレジの台の高さ [m]（plan_kyoso_shops.py の familymart の counter、h=1.0）。</summary>
+        private const float StoreCounterHeight = 1.0f;
+
+        /// <summary>牛乳を置く点が poi_kyoso_store から npc_kyoso_1 の方へずれる距離 [m]（q_lunch の place）。</summary>
+        private const float MilkShift = 0.9f;
+
         [Test]
-        public void Milk_StandsStillOnTheShopStand()
+        public void Milk_StandsStillOnTheStoreCounter()
         {
             List<CollectableItem> milk = ItemsWithId("milk");
             Assert.AreEqual(1, milk.Count, "牛乳がシーンに 1 個でない");
             CollectableItem carton = milk[0];
             Assert.IsFalse(carton.Floats, "売り物の牛乳が宙で揺れて回る (#186)");
+            Assert.AreEqual("kyoso", InteriorOf(carton.transform), "牛乳が共創棟のコンビニの中に無い (#410)");
+
+            Transform store = FindPoi("kyoso", "poi_kyoso_store");
+            Transform clerk = FindPoi("kyoso", "npc_kyoso_1");
+            Assert.IsNotNull(store, "poi_kyoso_store が無い");
+            Assert.IsNotNull(clerk, "npc_kyoso_1 が無い");
+            Vector3 toward = clerk.position - store.position;
+            toward.y = 0f;
+            Vector3 spot = store.position + toward.normalized * MilkShift;
 
             Vector3 p = carton.transform.position;
+            Assert.Less(Horizontal(p, spot), 0.05f, "牛乳がレジの台の上の決めた点に無い: " + p + " / " + spot);
+
             Assert.IsTrue(Physics.Raycast(p, Vector3.down, out RaycastHit top, 1f, _solidMask), "牛乳の下に台が無い: " + p);
             float bottom = -carton.GetComponent<MeshFilter>().sharedMesh.bounds.min.y * carton.transform.lossyScale.y;
             Assert.AreEqual(bottom, top.distance, MilkRestTolerance,
                 "牛乳が台に立っていない（" + top.collider.name + " まで " + top.distance + " m）");
-            Assert.AreEqual("MilkStand", top.collider.name, "牛乳の下にあるのが売店前のワゴンでない");
-
-            // ワゴンの根元は地面の高さ。根元から下へ撃ったレイは、中から撃つのでワゴン自身には当たらない。
-            Vector3 foot = top.collider.transform.position;
-            Assert.IsTrue(Physics.Raycast(foot + Vector3.up * 0.05f, Vector3.down, out _, 0.3f, _solidMask),
-                "ワゴンが地面から浮いている: " + foot);
+            Assert.AreEqual(StoreCounterHeight, top.point.y - store.position.y, 0.05f,
+                "牛乳の下の面がレジの台の高さでない（" + top.collider.name + "）");
 
             Assert.IsTrue(ItemsWithId("leaf").TrueForAll(i => i.Floats), "葉は目印なので浮かせたまま");
+        }
+
+        private static string InteriorOf(Transform t)
+        {
+            for (Transform p = t; p != null; p = p.parent)
+            {
+                string id = QuestObjectiveLocator.InteriorIdFromName(p.name);
+                if (id != null)
+                {
+                    return id;
+                }
+            }
+
+            return null;
         }
 
         [Test]
