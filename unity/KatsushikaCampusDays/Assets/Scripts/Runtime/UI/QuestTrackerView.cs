@@ -29,6 +29,13 @@ namespace KCD
         private QuestData _shownQuest;
         private int _shownSecond = -1;
 
+        /// <summary>
+        /// 受けるクエストも次の行き先も無く、隠しアイテムと写真の残りを出しているか。
+        /// 出したときの DayStats.Version を覚えておき、拾ったり撮ったりしたら出し直す。
+        /// </summary>
+        private bool _exploring;
+        private int _exploreVersion = -1;
+
         /// <summary>時間切れになったばかりのクエストと、表示を留めておく期限（unscaledTime）。</summary>
         private QuestData _recentFailure;
         private float _recentFailureUntil;
@@ -139,6 +146,12 @@ namespace KCD
             if (_recentFailure != null && Time.unscaledTime >= _recentFailureUntil)
             {
                 _recentFailure = null;
+                Refresh();
+                return;
+            }
+
+            if (_exploring && DayStats.Version != _exploreVersion)
+            {
                 Refresh();
                 return;
             }
@@ -475,6 +488,55 @@ namespace KCD
         /// <summary>「次の行き先」の見出し（ui.hud.next_destination）。</summary>
         public const string NextDestinationFallback = "次の行き先";
 
+        /// <summary>何も追うものが無いときの見出し（ui.hud.explore）。</summary>
+        public const string ExploreFallback = "キャンパスを歩こう";
+
+        /// <summary>
+        /// 何も追うものが無いときの本文。隠しアイテムと写真の「集めた数 / 全部の数」を 1 行で出す。
+        /// 行頭は「次の行き先」と同じ「・」。集め終えた項目と、全部の数が 0 の項目は出さない。出すものが無ければ空文字。
+        /// </summary>
+        public static string ExploreLine(int hidden, int hiddenTotal, int photos, int photoTotal)
+        {
+            string line = string.Empty;
+            if (hiddenTotal > 0 && hidden < hiddenTotal)
+            {
+                line = L.Format("ui.result.collectibles", Mathf.Max(hidden, 0), hiddenTotal);
+            }
+
+            if (photoTotal > 0 && photos < photoTotal)
+            {
+                string part = L.Format("ui.result.photos", Mathf.Max(photos, 0), photoTotal);
+                line = line.Length == 0 ? part : line + L.Pick("　", "   ") + part;
+            }
+
+            return line.Length == 0 ? line : "・" + line;
+        }
+
+        /// <summary>
+        /// 受けるクエストも次の行き先も無いあいだ、隠しアイテムと写真の残りを出す。出したら true。
+        /// 本編とサブを終えたあとも、まだ探せるものがあると分かるようにする。
+        /// </summary>
+        private bool ShowExplore()
+        {
+            CollectibleCatalog catalog = CollectibleCatalog.Instance;
+            if (catalog == null)
+            {
+                return false;
+            }
+
+            string line = ExploreLine(DayStats.HiddenCollectedCount(catalog), catalog.HiddenCount,
+                DayStats.CatalogPhotoCount(catalog), catalog.PhotoSpotCount);
+            if (line.Length == 0)
+            {
+                return false;
+            }
+
+            _exploring = true;
+            _exploreVersion = DayStats.Version;
+            ShowPanel(L.Get("ui.hud.explore", ExploreFallback), line);
+            return true;
+        }
+
         /// <summary>「次の行き先」の本文。依頼主への道案内をいまの言語で出す (#410)。</summary>
         public static string OfferLine(QuestData quest)
         {
@@ -491,6 +553,13 @@ namespace KCD
                 return false;
             }
 
+            ShowPanel(L.Get("ui.hud.next_destination", NextDestinationFallback), OfferLine(offered));
+            return true;
+        }
+
+        /// <summary>追うクエストの無いときの枠（次の行き先・探索）に、見出しと 1 行の本文を出す。</summary>
+        private void ShowPanel(string title, string line)
+        {
             if (_root != null && !_root.activeSelf)
             {
                 _root.SetActive(true);
@@ -501,7 +570,7 @@ namespace KCD
 
             if (_titleLabel != null)
             {
-                _titleLabel.text = L.Get("ui.hud.next_destination", NextDestinationFallback);
+                _titleLabel.text = title;
             }
 
             if (_stepLabel != null)
@@ -511,7 +580,6 @@ namespace KCD
                     _stepSize = _stepLabel.enableAutoSizing ? _stepLabel.fontSizeMax : _stepLabel.fontSize;
                 }
 
-                string line = OfferLine(offered);
                 if (line != _fittedBody)
                 {
                     _stepLabel.text = line;
@@ -521,18 +589,21 @@ namespace KCD
 
                 _stepLabel.text = line;
             }
-
-            return true;
         }
 
         private void Refresh()
         {
+            _exploring = false;
             if (ShowOffer())
             {
                 return;
             }
 
             QuestData tracked = _quests != null ? Tracked() : null;
+            if (tracked == null && _quests != null && ShowExplore())
+            {
+                return;
+            }
 
             if (_root != null)
             {

@@ -390,28 +390,33 @@ namespace KCD
         /// 次に受けられる本編のクエストのうち、道案内（offer）があって order が最も小さいもの (#410)。
         /// 本編・隠しでないもの・未受注・未完了・前提がそろったものから選ぶ。無ければ null。
         /// </summary>
-        public QuestData NextOffer
-        {
-            get
-            {
-                QuestData best = null;
-                for (int i = 0; i < _all.Count; i++)
-                {
-                    QuestData quest = _all[i];
-                    if (quest.Side || quest.Secret || quest.OfferStep == null ||
-                        _active.Contains(quest.Id) || _completed.Contains(quest.Id) || !PrerequisitesMet(quest))
-                    {
-                        continue;
-                    }
+        public QuestData NextOffer => LowestOffer(false);
 
-                    if (best == null || quest.Order < best.Order)
-                    {
-                        best = quest;
-                    }
+        /// <summary>
+        /// 次に受けられるサブクエストのうち、道案内があって order が最も小さいもの。隠しクエストは出さない。
+        /// 本編を出し尽くしたあとの「次の行き先」に使う（<see cref="OfferedQuest"/>）。無ければ null。
+        /// </summary>
+        public QuestData NextSideOffer => LowestOffer(true);
+
+        private QuestData LowestOffer(bool side)
+        {
+            QuestData best = null;
+            for (int i = 0; i < _all.Count; i++)
+            {
+                QuestData quest = _all[i];
+                if (quest.Side != side || quest.Secret || quest.OfferStep == null ||
+                    _active.Contains(quest.Id) || _completed.Contains(quest.Id) || !PrerequisitesMet(quest))
+                {
+                    continue;
                 }
 
-                return best;
+                if (best == null || quest.Order < best.Order)
+                {
+                    best = quest;
+                }
             }
+
+            return best;
         }
 
         /// <summary>
@@ -419,6 +424,8 @@ namespace KCD
         /// 本編を受けていない（サブクエストだけ、または何も受けていない）ときの <see cref="NextOffer"/>。
         /// 追うクエストを一覧で選んだとき、制限時間を数えているとき・再挑戦を待っているときは、そちらを出すので null。
         /// ミッションを終えたあと、次の依頼主に話しかけるまで何をすればいいか分からなくならないようにする。
+        /// 本編を出し尽くしたら、何も受けていないあいだだけ次のサブクエストの依頼主（<see cref="NextSideOffer"/>）を出す。
+        /// 自分で受けたサブクエストがあれば、そちらを追跡枠に出すので null（自動で始まるサブは数えない）。
         /// </summary>
         public QuestData OfferedQuest
         {
@@ -429,6 +436,7 @@ namespace KCD
                     return null;
                 }
 
+                bool anyActive = false;
                 for (int i = 0; i < _all.Count; i++)
                 {
                     QuestData quest = _all[i];
@@ -447,9 +455,12 @@ namespace KCD
                     {
                         return null;
                     }
+
+                    // 自動で始まるサブ（写真散歩・夜の散歩）は自分で受けたものではないので、サブの案内を止めない。
+                    anyActive |= !quest.AutoStart;
                 }
 
-                return NextOffer;
+                return NextOffer ?? (anyActive ? null : NextSideOffer);
             }
         }
 
