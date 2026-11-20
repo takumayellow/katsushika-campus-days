@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "coordinate_note": "x,z は campus.json 座標 (= Unity のワールド座標, x=東 m, z=北 m)。{entrance: <building id>} は Campus シーンの entrance_<id>（ドア前の床）、{place: <id>} は CampusProps の VisitZone (Zone_<id>) の位置。SceneBuilder（MobStage）がどの点も NavMesh の上に下ろし、下ろせなかった点を通る道は使わない（CampusMobTests が確かめる）。variants は既存のキャラクターの体かモブだけの男子学生の体 student_m（body）を、髪（hair）・上着かブラウスかシャツ（top）・スカートかズボンと胸のリボン（bottom。男子学生はズボンだけ）・靴（shoes）の色だけ変えて使う。variants は並んだ順に枠へ 1 つずつ焼き込まれる。枠と同じ 24 通りあり、どの 2 つも体か色が見て分かるほど違うので、同時に出ている人に同じ見た目はいない（MobScheduleTests が確かめる）。男の体（prof・student_m）と女の体をおよそ交互に置いて男女を半々に混ぜているので、並べ替えるときは偏らないようにする（MobScheduleTests が確かめる）。",
+  "coordinate_note": "x,z は campus.json 座標 (= Unity のワールド座標, x=東 m, z=北 m)。{entrance: <building id>} は Campus シーンの entrance_<id>（ドア前の床）、{place: <id>} は CampusProps の VisitZone (Zone_<id>) の位置。SceneBuilder（MobStage）がどの点も NavMesh の上に下ろし、下ろせなかった点を通る道は使わない（CampusMobTests が確かめる）。variants は既存のキャラクターの体かモブだけの男子学生の体 student_m（body）を、髪（hair）・上着かブラウスかシャツ（top）・スカートかズボンと胸のリボン（bottom。男子学生はズボンだけ）・靴（shoes）の色だけ変えて使う。variants は並んだ順に枠へ 1 つずつ焼き込まれる。枠と同じ 24 通りあり、どの 2 つも体か色が見て分かるほど違うので、同時に出ている人に同じ見た目はいない（MobScheduleTests が確かめる）。男の体（prof・student_m）と女の体を 1 つずつ交互に置いて男女を半々に混ぜているので、並べ替えるときは偏らないようにする（MobScheduleTests が確かめる）。",
   "spawn_stagger_seconds": 4.0,
   "respawn_delay_seconds": 6.0,
   "avoid_player_radius": 1.2,
@@ -16,26 +16,6 @@
       "height": 1.71
     },
     {
-      "id": "mob_g",
-      "body": "student_m",
-      "label": "男子学生の体・黒髪・オリーブのシャツ・ベージュのズボン",
-      "hair": "#1e1c1e",
-      "top": "#5f6b45",
-      "bottom": "#bdb39a",
-      "shoes": "#f2f2f2",
-      "height": 1.7
-    },
-    {
-      "id": "mob_b",
-      "body": "student_m",
-      "label": "男子学生の体・明るい茶髪・深緑のシャツ・グレーのズボン",
-      "hair": "#a0703f",
-      "top": "#2f5d50",
-      "bottom": "#6e7178",
-      "shoes": "#f2f2f2",
-      "height": 1.67
-    },
-    {
       "id": "mob_d",
       "body": "kaname",
       "label": "かなめの体・明るい茶髪・理科大グリーンのエプロン・黒のスカート",
@@ -46,14 +26,14 @@
       "height": 1.6
     },
     {
-      "id": "mob_j",
+      "id": "mob_g",
       "body": "student_m",
-      "label": "男子学生の体・茶髪・白のシャツ・黒のズボン",
-      "hair": "#5a3e2c",
-      "top": "#f4f4f2",
-      "bottom": "#2a2a2e",
-      "shoes": "#3a3a3a",
-      "height": 1.76
+      "label": "男子学生の体・黒髪・オリーブのシャツ・ベージュのズボン",
+      "hair": "#1e1c1e",
+      "top": "#5f6b45",
+      "bottom": "#bdb39a",
+      "shoes": "#f2f2f2",
+      "height": 1.7
     },
     {
       "id": "mob_f",
@@ -66,6 +46,16 @@
       "height": 1.58
     },
     {
+      "id": "mob_b",
+      "body": "student_m",
+      "label": "男子学生の体・明るい茶髪・深緑のシャツ・グレーのズボン",
+      "hair": "#a0703f",
+      "top": "#2f5d50",
+      "bottom": "#6e7178",
+      "shoes": "#f2f2f2",
+      "height": 1.67
+    },
+    {
       "id": "mob_c",
       "body": "sora",
       "label": "そらの体・黒髪・紺のブラウス・ベージュのスカート",
@@ -74,6 +64,16 @@
       "bottom": "#c9c5b8",
       "shoes": "#5a4634",
       "height": 1.72
+    },
+    {
+      "id": "mob_j",
+      "body": "student_m",
+      "label": "男子学生の体・茶髪・白のシャツ・黒のズボン",
+      "hair": "#5a3e2c",
+      "top": "#f4f4f2",
+      "bottom": "#2a2a2e",
+      "shoes": "#3a3a3a",
+      "height": 1.76
     },
     {
       "id": "mob_h",
@@ -116,16 +116,6 @@
       "height": 1.74
     },
     {
-      "id": "mob_l",
-      "body": "student_m",
-      "label": "男子学生の体・こげ茶の髪・杢グレーのシャツ・デニムのズボン",
-      "hair": "#3a2a22",
-      "top": "#9a9ea6",
-      "bottom": "#3b4f6e",
-      "shoes": "#f2f2f2",
-      "height": 1.73
-    },
-    {
       "id": "mob_m",
       "body": "sora",
       "label": "そらの体・茶髪・ベージュのパーカー・黒のスカート",
@@ -136,14 +126,14 @@
       "height": 1.56
     },
     {
-      "id": "mob_n",
+      "id": "mob_l",
       "body": "student_m",
-      "label": "男子学生の体・明るい茶髪・紫のシャツ・こげ茶のズボン",
-      "hair": "#a0703f",
-      "top": "#6a4a7a",
-      "bottom": "#4a3a2e",
-      "shoes": "#5a4634",
-      "height": 1.68
+      "label": "男子学生の体・こげ茶の髪・杢グレーのシャツ・デニムのズボン",
+      "hair": "#3a2a22",
+      "top": "#9a9ea6",
+      "bottom": "#3b4f6e",
+      "shoes": "#f2f2f2",
+      "height": 1.73
     },
     {
       "id": "mob_o",
@@ -156,14 +146,14 @@
       "height": 1.6
     },
     {
-      "id": "mob_p",
+      "id": "mob_n",
       "body": "student_m",
-      "label": "男子学生の体・黒髪・黒のシャツ・グレーのズボン",
-      "hair": "#1c1a1a",
-      "top": "#22252b",
-      "bottom": "#6e7178",
-      "shoes": "#f2f2f2",
-      "height": 1.69
+      "label": "男子学生の体・明るい茶髪・紫のシャツ・こげ茶のズボン",
+      "hair": "#a0703f",
+      "top": "#6a4a7a",
+      "bottom": "#4a3a2e",
+      "shoes": "#5a4634",
+      "height": 1.68
     },
     {
       "id": "mob_q",
@@ -176,24 +166,14 @@
       "height": 1.53
     },
     {
-      "id": "mob_r",
+      "id": "mob_p",
       "body": "student_m",
-      "label": "男子学生の体・茶髪・朱色のシャツ・濃いグレーのズボン",
-      "hair": "#6b4a2f",
-      "top": "#c8553d",
-      "bottom": "#55606e",
-      "shoes": "#ffffff",
-      "height": 1.78
-    },
-    {
-      "id": "mob_s",
-      "body": "student_m",
-      "label": "男子学生の体・明るい茶髪・青灰のシャツ・チノのズボン",
-      "hair": "#8a5a36",
-      "top": "#3f6a8a",
-      "bottom": "#c2b08a",
-      "shoes": "#3a3a3a",
-      "height": 1.8
+      "label": "男子学生の体・黒髪・黒のシャツ・グレーのズボン",
+      "hair": "#1c1a1a",
+      "top": "#22252b",
+      "bottom": "#6e7178",
+      "shoes": "#f2f2f2",
+      "height": 1.69
     },
     {
       "id": "mob_t",
@@ -206,6 +186,16 @@
       "height": 1.52
     },
     {
+      "id": "mob_r",
+      "body": "student_m",
+      "label": "男子学生の体・茶髪・朱色のシャツ・濃いグレーのズボン",
+      "hair": "#6b4a2f",
+      "top": "#c8553d",
+      "bottom": "#55606e",
+      "shoes": "#ffffff",
+      "height": 1.78
+    },
+    {
       "id": "mob_u",
       "body": "inari",
       "label": "いなりの体・黒髪・デニムのブラウス・生成りのスカート・黒縁メガネ",
@@ -214,6 +204,16 @@
       "bottom": "#d9d4c7",
       "shoes": "#5a4634",
       "height": 1.65
+    },
+    {
+      "id": "mob_s",
+      "body": "student_m",
+      "label": "男子学生の体・明るい茶髪・青灰のシャツ・チノのズボン",
+      "hair": "#8a5a36",
+      "top": "#3f6a8a",
+      "bottom": "#c2b08a",
+      "shoes": "#3a3a3a",
+      "height": 1.8
     },
     {
       "id": "mob_v",

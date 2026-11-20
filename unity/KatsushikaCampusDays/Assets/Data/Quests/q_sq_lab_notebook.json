@@ -4,6 +4,9 @@
   "title_en": "Sora's Lab Notebook",
   "summary": "そらが第1実験棟にノートを置き忘れた。奥の実験室のドラフトの横にあるはず。ラテのお礼も兼ねて取りに行く。",
   "summary_en": "Sora left a notebook in Experiment Building 1. It should be next to the fume hood in the far lab. Fetch it, and call it thanks for the latte.",
+  "offer": "そらを探して話しかける（地図の輪が居場所）",
+  "offer_en": "Find Sora and talk to them (the ring on the map shows where)",
+  "offerNpc": "sora",
   "order": 13,
   "autoStart": false,
   "prerequisites": [

@@ -4,6 +4,9 @@
   "title_en": "Staying Late in 306",
   "summary": "黒板の HELLO, WORLD を読めたなら、次は自分で動かす番だと教授は言う。3F の 306 PC ルームでは、TA が夕方まで自習を見ているらしい。",
   "summary_en": "Now that you can read HELLO, WORLD on the blackboards, the professor says it is your turn to make it run. In the 3F PC room, 306, a TA keeps an eye on self-study until evening.",
+  "offer": "講義棟 101 で、教授に話しかける",
+  "offer_en": "Talk to the professor in Room 101 of the Lecture Building",
+  "offerNpc": "lecture",
   "order": 19,
   "autoStart": false,
   "prerequisites": [

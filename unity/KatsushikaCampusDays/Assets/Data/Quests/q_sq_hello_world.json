@@ -4,6 +4,9 @@
   "title_en": "One Byte on the Blackboard",
   "summary": "講義棟の黒板には、教授が毎年 0 と 1 を 8 つずつ書き残しているらしい。2F の 203 から上の階へ順に読み、8 つで 1 文字に直していこう。A は 01000001。",
   "summary_en": "Every year, the professor leaves eight 0s and 1s on the blackboards of the lecture building. Read them in order, from 203 on 2F upward, and turn each set of eight into one letter. A is 01000001.",
+  "offer": "講義棟 101 で、教授に話しかける",
+  "offer_en": "Talk to the professor in Room 101 of the Lecture Building",
+  "offerNpc": "lecture",
   "order": 18,
   "autoStart": false,
   "prerequisites": [

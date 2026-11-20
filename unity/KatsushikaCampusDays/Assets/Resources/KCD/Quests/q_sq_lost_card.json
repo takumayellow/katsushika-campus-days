@@ -4,6 +4,9 @@
   "title_en": "Lost in the Cafeteria",
   "summary": "食堂のピークが終わって、注文端末のあたりで学生証の落とし物が出た。かなめに頼まれて、注文端末から返却口まで持ち主の手がかりを追う。",
   "summary_en": "The lunch rush is over and a student ID turned up near the order terminals. Kaname asks you to trace the owner from the order terminals to the tray return.",
+  "offer": "かなめを探して話しかける（地図の輪が居場所）",
+  "offer_en": "Find Kaname and talk to them (the ring on the map shows where)",
+  "offerNpc": "kaname",
   "order": 12,
   "autoStart": false,
   "prerequisites": [
