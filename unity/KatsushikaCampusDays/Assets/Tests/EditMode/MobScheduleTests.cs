@@ -47,15 +47,15 @@ namespace KCD.Tests
 
         [TestCase(0f, 0)]
         [TestCase(7.99f, 0)]
-        [TestCase(8f, 18)]
-        [TestCase(10f, 18)]
-        [TestCase(11.49f, 18)]
-        [TestCase(11.5f, 20)]
-        [TestCase(12.5f, 20)]
-        [TestCase(13.5f, 14)]
-        [TestCase(16.99f, 14)]
-        [TestCase(17f, 10)]
-        [TestCase(18.5f, 10)]
+        [TestCase(8f, 12)]
+        [TestCase(10f, 12)]
+        [TestCase(11.49f, 12)]
+        [TestCase(11.5f, 13)]
+        [TestCase(12.5f, 13)]
+        [TestCase(13.5f, 10)]
+        [TestCase(16.99f, 10)]
+        [TestCase(17f, 7)]
+        [TestCase(18.5f, 7)]
         [TestCase(19f, 2)]
         [TestCase(23.5f, 2)]
         [TestCase(24.5f, 0)]
@@ -211,7 +211,7 @@ namespace KCD.Tests
         public void 男女はおよそ半々で並びのどこを切っても偏らない()
         {
             // MobStage は枠 i に Variants[i % 数] を焼き込み、MobPool は枠を順に貸す。
-            // 全枠で男が 45〜55%、続けて貸す夕方の人数ぶんの枠のどこを切っても男が 4 人以上・6 人以下。
+            // 全枠で男が 45〜55%、続けて貸す夕方の人数ぶんの枠のどこを切っても男が半分 ±1 人（7 人なら 3〜4 人）。
             MobSchedule schedule = Load();
             IReadOnlyList<MobSchedule.Variant> variants = schedule.Variants;
             int slots = MobScheduler.MaxActive;
@@ -234,7 +234,7 @@ namespace KCD.Tests
                     count += male[(start + k) % slots] ? 1 : 0;
                 }
 
-                Assert.That(count, Is.InRange(4, 6), start + " 番の枠から " + window + " 人の男の数");
+                Assert.That(count, Is.InRange((window - 1) / 2, (window + 2) / 2), start + " 番の枠から " + window + " 人の男の数");
             }
         }
 

@@ -4,6 +4,9 @@
   "title_en": "Attendance by Pop Quiz",
   "summary": "101 で隣の席だった立石 みなとは、講義の後半をまるごと寝ていたらしい。次回の連絡が黒板に書いてあったか、見てきてほしいと頼まれた。",
   "summary_en": "Tateishi Minato, who sat next to you in 101, apparently slept through the whole second half of the lecture. Minato asks you to check whether the blackboard says anything about next time.",
+  "offer": "講義棟 101 で、立石に話しかける",
+  "offer_en": "Talk to Tateishi in Room 101 of the Lecture Building",
+  "offerNpc": "tateishi",
   "order": 21,
   "autoStart": false,
   "prerequisites": [

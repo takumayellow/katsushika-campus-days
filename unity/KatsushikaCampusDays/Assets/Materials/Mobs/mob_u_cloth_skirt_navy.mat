@@ -36,6 +36,9 @@ Material:
     - _Cull: 0
     - _Cutoff: 0.5
     - _DstBlend: 0
+    - _FaceShadow: 0
+    - _FaceShadowBias: 0.1
+    - _FaceShadowSoftness: 0.03
     - _FlatAmbient: 1
     - _HairRing: 0
     - _HairRingBack: 0.4
