@@ -51,6 +51,14 @@ namespace KCD
         private static void Bootstrap()
         {
             string[] args = Environment.GetCommandLineArgs();
+            string route = Arg("-kcd-playthrough");
+            if (!string.IsNullOrEmpty(route))
+            {
+                // 動画用の通しプレイ。スモークとは別の自動操縦で、セーブも別のフォルダに書く。
+                PlaythroughDirector.Install(route);
+                return;
+            }
+
             for (int i = 0; i < args.Length; i++)
             {
                 if (args[i].StartsWith("-kcd-", StringComparison.Ordinal))
@@ -85,7 +93,7 @@ namespace KCD
             PhotoSystem.DirectoryOverride = folder;
         }
 
-        private static string Arg(string name)
+        internal static string Arg(string name)
         {
             string[] args = Environment.GetCommandLineArgs();
             for (int i = 0; i < args.Length - 1; i++)
@@ -99,7 +107,7 @@ namespace KCD
             return null;
         }
 
-        private static float ArgFloat(string name, float fallback)
+        internal static float ArgFloat(string name, float fallback)
         {
             string raw = Arg(name);
             if (raw != null && float.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out float value)
