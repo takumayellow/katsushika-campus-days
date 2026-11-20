@@ -1,7 +1,7 @@
 {
   "version": 1,
   "coordinate_note": "x,z は campus.json 座標 (= Unity のワールド座標, x=東 m, z=北 m)。{entrance: <building id>} は Campus シーンの entrance_<id>（ドア前の床）、{place: <id>} は CampusProps の VisitZone (Zone_<id>) の位置。SceneBuilder（MobStage）がどの点も NavMesh の上に下ろし、下ろせなかった点を通る道は使わない（CampusMobTests が確かめる）。variants は既存のキャラクターの体かモブだけの男子学生の体 student_m（body）を、髪（hair）・上着かブラウスかシャツ（top）・スカートかズボンと胸のリボン（bottom。男子学生はズボンだけ）・靴（shoes）の色だけ変えて使う。variants は並んだ順に枠へ 1 つずつ焼き込まれる。枠と同じ 24 通りあり、どの 2 つも体か色が見て分かるほど違うので、同時に出ている人に同じ見た目はいない（MobScheduleTests が確かめる）。男の体（prof・student_m）と女の体をおよそ交互に置いて男女を半々に混ぜているので、並べ替えるときは偏らないようにする（MobScheduleTests が確かめる）。",
-  "spawn_stagger_seconds": 2.5,
+  "spawn_stagger_seconds": 4.0,
   "respawn_delay_seconds": 6.0,
   "avoid_player_radius": 1.2,
   "variants": [
@@ -253,7 +253,7 @@
       "label_en": "Morning",
       "from_hour": 8.0,
       "to_hour": 11.5,
-      "count": 18,
+      "count": 12,
       "walk_speed": 1.4,
       "loop": true,
       "routes": [
@@ -437,7 +437,7 @@
             },
             {
               "place": "library_pond",
-              "wait": 15.0
+              "wait": 10.0
             },
             {
               "entrance": "library"
@@ -470,12 +470,12 @@
       "label_en": "Lunch Break",
       "from_hour": 11.5,
       "to_hour": 13.5,
-      "count": 20,
+      "count": 13,
       "walk_speed": 1.5,
       "loop": true,
       "routes": [
         {
-          "weight": 2,
+          "weight": 1,
           "waypoints": [
             {
               "entrance": "lecture"
@@ -510,7 +510,7 @@
             },
             {
               "place": "mall_bench",
-              "wait": 40.0
+              "wait": 15.0
             },
             {
               "entrance": "kyoso"
@@ -622,7 +622,7 @@
             },
             {
               "place": "library_pond",
-              "wait": 20.0
+              "wait": 10.0
             },
             {
               "entrance": "library"
@@ -639,7 +639,7 @@
             {
               "x": 96.7,
               "z": -77.2,
-              "wait": 30.0
+              "wait": 12.0
             },
             {
               "entrance": "lecture"
@@ -675,7 +675,7 @@
       "label_en": "Afternoon",
       "from_hour": 13.5,
       "to_hour": 17.0,
-      "count": 14,
+      "count": 10,
       "walk_speed": 1.3,
       "loop": true,
       "routes": [
@@ -851,7 +851,7 @@
       "label_en": "Evening",
       "from_hour": 17.0,
       "to_hour": 19.0,
-      "count": 10,
+      "count": 7,
       "walk_speed": 1.45,
       "loop": true,
       "routes": [
