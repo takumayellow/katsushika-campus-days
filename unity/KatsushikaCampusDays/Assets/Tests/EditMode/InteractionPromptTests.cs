@@ -85,11 +85,20 @@ namespace KCD.Tests
         }
 
         [Test]
-        public void TryScore_IgnoresHeight()
+        public void TryScore_IgnoresHeightWithinTheFloor()
         {
             // 棚の上や階段の下にあるものも、平面で近ければ調べられる。
-            Assert.IsTrue(Score(new Vector3(0f, 5f, 1f), 2.2f, out float score), "高さの差で射程の外になっている");
+            Assert.IsTrue(Score(new Vector3(0f, 2.5f, 1f), 2.2f, out float score), "高さの差で射程の外になっている");
             Assert.AreEqual(0f, score, Tolerance);
+            Assert.IsTrue(Score(new Vector3(0f, -1.5f, 1f), 2.2f, out _), "足もとより下の物を拾えない");
+        }
+
+        [Test]
+        public void TryScore_OnAnotherFloor_IsNotACandidate()
+        {
+            // 5 階の黒板の前に立つと、真下の 4 階の黒板（2.8 m 下）も平面では同じ所にある。
+            Assert.IsFalse(Score(new Vector3(0f, -2.8f, 1f), 2.2f, out _), "下の階の物を拾っている");
+            Assert.IsFalse(Score(new Vector3(0f, 5.8f, 1f), 2.2f, out _), "上の階の物を拾っている");
         }
 
         [Test]
