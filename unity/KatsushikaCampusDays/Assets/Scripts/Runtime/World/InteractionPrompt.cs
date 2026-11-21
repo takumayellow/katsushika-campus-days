@@ -8,6 +8,12 @@ namespace KCD
     /// </summary>
     public sealed class InteractionPrompt : MonoBehaviour
     {
+        /// <summary>足もとからこれより下にあるものは、下の階のもの（m）。</summary>
+        public const float MaxBelow = 2f;
+
+        /// <summary>足もとからこれより上にあるものは、上の階のもの（m）。黒板や棚の上は 2 m 前後。</summary>
+        public const float MaxAbove = 3f;
+
         [SerializeField] private float _searchRadius = 3.0f;
         [SerializeField] private float _facingDot = 0.15f;
         [SerializeField] private LayerMask _mask = ~0;
@@ -80,8 +86,10 @@ namespace KCD
         }
 
         /// <summary>
-        /// 候補の点数（小さいほど優先: 近くて、より正面）。高さは見ず、平面の距離が range を超えるか、
+        /// 候補の点数（小さいほど優先: 近くて、より正面）。平面の距離が range を超えるか、
         /// 正面度（forward との内積）が facingDot より小さい（背中側・真横）なら候補にしない。
+        /// 高さは、足もとから <see cref="MaxBelow"/> m 下〜 <see cref="MaxAbove"/> m 上なら見ない（棚の上・階段の下）。
+        /// それより上下は別の階なので候補にしない（講義棟は 402 と 502 の黒板が真上・真下に並ぶ）。
         /// 足もと（平面で 5 cm 未満）は正面にあるものとして扱う。
         /// </summary>
         public static bool TryScore(Vector3 origin, Vector3 forward, Vector3 target, float range, float facingDot,
@@ -89,6 +97,11 @@ namespace KCD
         {
             score = float.MaxValue;
             Vector3 delta = target - origin;
+            if (delta.y < -MaxBelow || delta.y > MaxAbove)
+            {
+                return false;
+            }
+
             delta.y = 0f;
             float distance = delta.magnitude;
             if (distance > range)
